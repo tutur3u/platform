@@ -1,23 +1,23 @@
-import type { NextPage } from "next";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
+import type { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 const Home: NextPage = () => {
   const router = useRouter();
-  const devMode = process.env.NODE_ENV === "development";
+  const devMode = process.env.NODE_ENV === 'development';
 
-  const authProdUrl = "https://auth.tuturuuu.com";
-  const authDevUrl = "http://localhost:7802";
+  const authProdUrl = 'https://auth.tuturuuu.com';
+  const authDevUrl = 'http://localhost:7802';
 
   useEffect(() => {
     const cookie = document.cookie
-      .split(";")
-      .find((c) => c.includes("tuturuuu-auth"));
+      .split(';')
+      .find((c) => c.includes('tuturuuu-auth'));
 
     if (!cookie) {
       router.push(
         (devMode ? authDevUrl : authProdUrl) +
-          "?nextUrl=" +
+          '?nextUrl=' +
           window.location.href
       );
     }
