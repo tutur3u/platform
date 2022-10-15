@@ -3,5 +3,36 @@
     "source.fixAll.eslint": true
   },
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.exclude": {
+    // ESLint, Prettier, Husky and lint-staged
+    ".eslintrc.json": true,
+    ".prettierrc.json": true,
+    ".husky": true,
+    "lint-staged.config.js": true,
+    // Package Manager
+    "node_modules": true,
+    "package-lock.json": true,
+    "pnpm-lock.yaml": true,
+    "yarn.lock": true,
+    // Build
+    "target": true,
+    ".next": true,
+    // TypeScript
+    "tsconfig.json": true,
+    "tsconfig.tsbuildinfo": true,
+    // Tailwind
+    "tailwind.config.js": true,
+    "postcss.config.js": true,
+    // Next.js
+    "vercel.json": true,
+    "next-env.d.ts": true,
+    "next.config.js": true,
+    // Git
+    ".git": true,
+    ".gitignore": true,
+    ".gitattributes": true,
+    // Others
+    "README.md": true
+  }
 }
