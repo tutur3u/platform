@@ -8,6 +8,7 @@
     // ESLint, Prettier, Husky and lint-staged
     ".eslintrc.json": true,
     ".prettierrc.json": true,
+    ".prettierignore": true,
     ".husky": true,
     "lint-staged.config.js": true,
     // Package Manager
