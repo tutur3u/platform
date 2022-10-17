@@ -11,20 +11,10 @@
       }
     },
     {
-      "name": "Debug web-app",
-      "type": "node-terminal",
-      "request": "launch",
-      // runs on port 7803
-      "command": "cd .. && cd web-app && pnpm run dev",
-      "presentation": {
-        "hidden": true
-      }
-    },
-    {
       "name": "Debug web-api",
       "type": "node-terminal",
       "request": "launch",
-      // runs on port 7803
+      // runs on port 7801
       "command": "cd .. && cd web-api && pnpm run dev",
       "presentation": {
         "hidden": true
@@ -34,8 +24,18 @@
       "name": "Debug web-auth",
       "type": "node-terminal",
       "request": "launch",
-      // runs on port 7803
+      // runs on port 7802
       "command": "cd .. && cd web-auth && pnpm run dev",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Debug web-app",
+      "type": "node-terminal",
+      "request": "launch",
+      // runs on port 7803
+      "command": "cd .. && cd web-app && pnpm run dev",
       "presentation": {
         "hidden": true
       }
