@@ -66,6 +66,13 @@
       }
     },
     {
+      "name": "Debug with Auth",
+      "configurations": ["Debug web-auth", "Debug web-app", "Open in browser"],
+      "presentation": {
+        "group": "web-app"
+      }
+    },
+    {
       "name": "Debug with API & Auth",
       "configurations": [
         "Debug web-api",
