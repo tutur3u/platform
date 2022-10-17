@@ -22,8 +22,8 @@
     "tsconfig.json": true,
     "tsconfig.tsbuildinfo": true,
     // Tailwind
-    "tailwind.config.js": true,
-    "postcss.config.js": true,
+    // "tailwind.config.js": true,
+    // "postcss.config.js": true,
     // Next.js
     "vercel.json": true,
     "next-env.d.ts": true,
