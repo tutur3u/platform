@@ -1,0 +1,81 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Resolve dependencies",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "cd .. && cd web-app && pnpm i",
+      "presentation": {
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Debug web-app",
+      "type": "node-terminal",
+      "request": "launch",
+      // runs on port 7803
+      "command": "cd .. && cd web-app && pnpm run dev",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Debug web-api",
+      "type": "node-terminal",
+      "request": "launch",
+      // runs on port 7803
+      "command": "cd .. && cd web-api && pnpm run dev",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Debug web-auth",
+      "type": "node-terminal",
+      "request": "launch",
+      // runs on port 7803
+      "command": "cd .. && cd web-auth && pnpm run dev",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Open in browser",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "start chrome http://localhost:7803",
+      "presentation": {
+        "hidden": true
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug individually",
+      "configurations": ["Debug web-app", "Open in browser"],
+      "presentation": {
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Debug with API",
+      "configurations": ["Debug web-api", "Debug web-app", "Open in browser"],
+      "presentation": {
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Debug with API & Auth",
+      "configurations": [
+        "Debug web-api",
+        "Debug web-auth",
+        "Debug web-app",
+        "Open in browser"
+      ],
+      "presentation": {
+        "group": "web-app"
+      }
+    }
+  ]
+}
