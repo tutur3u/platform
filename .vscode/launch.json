@@ -38,8 +38,7 @@
       // runs on port 7803
       "command": "cd .. && cd web-app && pnpm run dev",
       "presentation": {
-        "order": 2,
-        "group": "web-app"
+        "hidden": true
       }
     },
     {
@@ -48,8 +47,7 @@
       "request": "launch",
       "url": "http://localhost:7803",
       "presentation": {
-        "group": "web-app",
-        "order": 6
+        "hidden": true
       }
     },
     {
@@ -58,33 +56,66 @@
       "request": "launch",
       "url": "http://localhost:7803",
       "presentation": {
-        "order": 7,
-        "group": "web-app"
+        "hidden": true
       }
     }
   ],
   "compounds": [
     {
-      "name": "Debug with API",
-      "configurations": ["Debug", "Debug web-api"],
+      "name": "Chrome: Debug",
+      "configurations": ["Debug", "Open in Google Chrome"],
+      "presentation": {
+        "order": 2,
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Chrome: Debug with Auth",
+      "configurations": ["Debug", "Debug web-auth", "Open in Google Chrome"],
       "presentation": {
         "order": 3,
         "group": "web-app"
       }
     },
     {
-      "name": "Debug with Auth",
-      "configurations": ["Debug", "Debug web-auth"],
+      "name": "Chrome: Debug with Auth & API",
+      "configurations": [
+        "Debug",
+        "Debug web-auth",
+        "Debug web-api",
+        "Open in Google Chrome"
+      ],
       "presentation": {
         "order": 4,
         "group": "web-app"
       }
     },
     {
-      "name": "Debug with API & Auth",
-      "configurations": ["Debug", "Debug web-api", "Debug web-auth"],
+      "name": "Edge: Debug",
+      "configurations": ["Debug", "Open in Microsoft Edge"],
       "presentation": {
         "order": 5,
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Edge: Debug with Auth",
+      "configurations": ["Debug", "Debug web-auth", "Open in Microsoft Edge"],
+      "presentation": {
+        "order": 6,
+        "group": "web-app"
+      }
+    },
+    {
+      "name": "Edge: Debug with Auth & API",
+      "configurations": [
+        "Debug",
+        "Debug web-auth",
+        "Debug web-api",
+        "Open in Microsoft Edge"
+      ],
+      "presentation": {
+        "order": 7,
         "group": "web-app"
       }
     }
