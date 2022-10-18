@@ -7,8 +7,7 @@
       "request": "launch",
       "command": "cd .. && cd web-app && pnpm i",
       "presentation": {
-        "order": 1,
-        "group": "web-app"
+        "hidden": true
       }
     },
     {
