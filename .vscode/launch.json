@@ -7,6 +7,7 @@
       "request": "launch",
       "command": "cd .. && cd web-app && pnpm i",
       "presentation": {
+        "order": 1,
         "group": "web-app"
       }
     },
@@ -31,56 +32,59 @@
       }
     },
     {
-      "name": "Debug web-app",
+      "name": "Debug",
       "type": "node-terminal",
       "request": "launch",
       // runs on port 7803
       "command": "cd .. && cd web-app && pnpm run dev",
       "presentation": {
-        "hidden": true
+        "order": 2,
+        "group": "web-app"
       }
     },
     {
-      "name": "Open in browser",
-      "type": "node-terminal",
+      "name": "Open in Google Chrome",
+      "type": "chrome",
       "request": "launch",
-      "command": "start chrome http://localhost:7803",
+      "url": "http://localhost:7803",
       "presentation": {
-        "hidden": true
+        "group": "web-app",
+        "order": 6
+      }
+    },
+    {
+      "name": "Open in Microsoft Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:7803",
+      "presentation": {
+        "order": 7,
+        "group": "web-app"
       }
     }
   ],
   "compounds": [
     {
-      "name": "Debug individually",
-      "configurations": ["Debug web-app", "Open in browser"],
-      "presentation": {
-        "group": "web-app"
-      }
-    },
-    {
       "name": "Debug with API",
-      "configurations": ["Debug web-api", "Debug web-app", "Open in browser"],
+      "configurations": ["Debug", "Debug web-api"],
       "presentation": {
+        "order": 3,
         "group": "web-app"
       }
     },
     {
       "name": "Debug with Auth",
-      "configurations": ["Debug web-auth", "Debug web-app", "Open in browser"],
+      "configurations": ["Debug", "Debug web-auth"],
       "presentation": {
+        "order": 4,
         "group": "web-app"
       }
     },
     {
       "name": "Debug with API & Auth",
-      "configurations": [
-        "Debug web-api",
-        "Debug web-auth",
-        "Debug web-app",
-        "Open in browser"
-      ],
+      "configurations": ["Debug", "Debug web-api", "Debug web-auth"],
       "presentation": {
+        "order": 5,
         "group": "web-app"
       }
     }
