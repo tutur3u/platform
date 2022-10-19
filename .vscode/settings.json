@@ -5,13 +5,15 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.exclude": {
-    // ESLint, Prettier, Husky and lint-staged
+    // ESLint & Prettier
     ".eslintrc.json": true,
     ".prettierrc.json": true,
     ".prettierignore": true,
+    // Husky and lint-staged
     ".husky": true,
     "lint-staged.config.js": true,
     // Package Manager
+    ".npmrc": true,
     "node_modules": true,
     "package-lock.json": true,
     "pnpm-lock.yaml": true,
@@ -24,7 +26,7 @@
     "tsconfig.tsbuildinfo": true,
     // Tailwind
     // "tailwind.config.js": true,
-    // "postcss.config.js": true,
+    "postcss.config.js": true,
     // Next.js
     "vercel.json": true,
     "next-env.d.ts": true,
@@ -33,6 +35,8 @@
     ".git": true,
     ".gitignore": true,
     ".gitattributes": true,
+    // Jest
+    "jest.config.js": true,
     // Others
     "README.md": true
   }
