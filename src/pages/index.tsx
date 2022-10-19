@@ -1,11 +1,14 @@
-import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { APP_VERSION, AUTH_URL } from '../core/constants';
 import { authenticated } from '../utils/auth-helper';
 
-const Home: NextPage = () => {
+import type { ReactElement } from 'react';
+import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
+import Layout from '../components//layout/Layout';
+
+const Home: PageWithLayoutProps = () => {
   const router = useRouter();
 
   useEffect(() => {
@@ -20,10 +23,16 @@ const Home: NextPage = () => {
   }, [router]);
 
   return (
-    <h1 className="h-screen w-screen bg-zinc-900 text-white flex items-center justify-center text-6xl font-semibold">
+    <>
+    <div className=" bg-zinc-900 text-white flex items-center justify-center text-6xl font-semibold">
       Application v{APP_VERSION}
-    </h1>
+    </div>
+    </>
   );
+};
+
+Home.getLayout = function getLayout(page: ReactElement) {
+  return <Layout>{page}</Layout>;
 };
 
 export default Home;
