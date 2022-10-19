@@ -2,32 +2,26 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
+import { APP_VERSION } from '../core/constants';
+import { authenticated, getAuthUrl } from '../utils/auth-helper';
+
 const Home: NextPage = () => {
   const router = useRouter();
-  const devMode = process.env.NODE_ENV === 'development';
-
-  const authProdUrl = 'https://auth.tuturuuu.com';
-  const authDevUrl = 'http://localhost:7802';
 
   useEffect(() => {
-    if (!router) return;
+    if (authenticated() || !router) return;
 
-    const cookie = document.cookie
-      .split(';')
-      .find((c) => c.includes('tuturuuu-auth'));
+    // Construct the auth URL
+    const params = '?nextUrl=' + window.location.href;
+    const nextUrl = getAuthUrl() + params;
 
-    if (!cookie) {
-      router.push(
-        (devMode ? authDevUrl : authProdUrl) +
-          '?nextUrl=' +
-          window.location.href
-      );
-    }
-  }, [devMode, authDevUrl, authProdUrl, router]);
+    // Redirect to the auth URL
+    router.push(nextUrl);
+  }, [router]);
 
   return (
     <h1 className="h-screen w-screen bg-zinc-900 text-white flex items-center justify-center text-6xl font-semibold">
-      Application
+      Application v{APP_VERSION}
     </h1>
   );
 };
