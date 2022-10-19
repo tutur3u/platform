@@ -3,7 +3,7 @@ import {
   AUTH_COOKIE_NAME,
   AUTH_URL,
   BASE_URL,
-} from '../../src/core/constants';
+} from '../../src/constants/common';
 
 describe('auth cookie', () => {
   it('name is defined', () => {

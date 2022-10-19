@@ -1,5 +1,5 @@
 // auth-helper.test.tsx
-import { AUTH_COOKIE_NAME } from '../../src/core/constants';
+import { AUTH_COOKIE_NAME } from '../../src/constants/common';
 
 import { authenticated } from '../../src/utils/auth-helper';
 

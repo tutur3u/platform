@@ -1,4 +1,4 @@
-import { APP_VERSION } from '../../src/core/constants';
+import { APP_VERSION } from '../../src/constants/common';
 import { version } from '../../src/core/version';
 
 describe('version', () => {
