@@ -21,6 +21,7 @@
     // Build
     "target": true,
     ".next": true,
+    ".swc": true,
     // TypeScript
     "tsconfig.json": true,
     "tsconfig.tsbuildinfo": true,
@@ -28,15 +29,17 @@
     // "tailwind.config.js": true,
     "postcss.config.js": true,
     // Next.js
-    "vercel.json": true,
     "next-env.d.ts": true,
     "next.config.js": true,
+    // Vercel
+    "vercel.json": true,
     // Git
     ".git": true,
     ".gitignore": true,
     ".gitattributes": true,
     // Jest
     "jest.config.js": true,
+    "jest.setup.js": true,
     // Others
     "README.md": true
   }

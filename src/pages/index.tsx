@@ -10,6 +10,8 @@ const Home: NextPage = () => {
   const authDevUrl = 'http://localhost:7802';
 
   useEffect(() => {
+    if (!router) return;
+
     const cookie = document.cookie
       .split(';')
       .find((c) => c.includes('tuturuuu-auth'));
@@ -24,9 +26,9 @@ const Home: NextPage = () => {
   }, [devMode, authDevUrl, authProdUrl, router]);
 
   return (
-    <div className="h-screen w-screen bg-zinc-900 text-white flex items-center justify-center text-6xl font-semibold">
+    <h1 className="h-screen w-screen bg-zinc-900 text-white flex items-center justify-center text-6xl font-semibold">
       Application
-    </div>
+    </h1>
   );
 };
 

@@ -4,9 +4,11 @@ specifiers:
   '@testing-library/jest-dom': ^5.16.5
   '@testing-library/react': ^13.4.0
   '@types/cookie': ^0.5.1
+  '@types/jest': ^29.2.0
   '@types/node': 18.11.2
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/testing-library__jest-dom': ^5.14.5
   '@typescript-eslint/eslint-plugin': ^5.40.1
   '@typescript-eslint/parser': ^5.40.1
   autoprefixer: ^10.4.12
@@ -36,9 +38,11 @@ devDependencies:
   '@testing-library/jest-dom': 5.16.5
   '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
   '@types/cookie': 0.5.1
+  '@types/jest': 29.2.0
   '@types/node': 18.11.2
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/testing-library__jest-dom': 5.14.5
   '@typescript-eslint/eslint-plugin': 5.40.1_ukgdydjtebaxmxfqp5v5ulh64y
   '@typescript-eslint/parser': 5.40.1_z4bbprzjrhnsfa24uvmcbu7f5q
   autoprefixer: 10.4.12_postcss@8.4.18
