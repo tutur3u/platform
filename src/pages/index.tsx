@@ -2,8 +2,8 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
-import { APP_VERSION } from '../core/constants';
-import { authenticated, getAuthUrl } from '../utils/auth-helper';
+import { APP_VERSION, AUTH_URL } from '../core/constants';
+import { authenticated } from '../utils/auth-helper';
 
 const Home: NextPage = () => {
   const router = useRouter();
@@ -12,8 +12,8 @@ const Home: NextPage = () => {
     if (authenticated() || !router) return;
 
     // Construct the auth URL
-    const params = '?nextUrl=' + window.location.href;
-    const nextUrl = getAuthUrl() + params;
+    const params = `nextUrl=${window.location.href}`;
+    const nextUrl = `${AUTH_URL}?${params}`;
 
     // Redirect to the auth URL
     router.push(nextUrl);

@@ -1,17 +1,5 @@
-const devMode = process.env.NODE_ENV === 'development';
-
-const authProdUrl = 'https://auth.tuturuuu.com';
-const authDevUrl = 'http://localhost:7802';
-
-export const getAuthUrl = () => {
-  if (devMode) return authDevUrl;
-  else return authProdUrl;
-};
+import Cookies from 'js-cookie';
 
 export const authenticated = () => {
-  const cookie = document.cookie
-    .split(';')
-    .find((c) => c.includes('tuturuuu-auth'));
-
-  return cookie !== undefined;
+  return Cookies.get('tuturuuu-auth') !== undefined;
 };
