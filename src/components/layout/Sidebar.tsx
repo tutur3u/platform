@@ -36,7 +36,7 @@ export default function Sidebar({ className }: SidebarProps) {
             </div>
           )}
           <button
-            className="rounded-md m-2 p-2 hover:bg-blue-300/20 hover:text-blue-300"
+            className="rounded-md m-2 p-2 text-zinc-300 hover:bg-blue-300/20 hover:text-blue-300"
             onClick={toggle}
           >
             <ChevronDoubleLeftIcon
@@ -51,24 +51,6 @@ export default function Sidebar({ className }: SidebarProps) {
               currentPath={router.pathname}
               icon={<HomeIcon />}
               label="Dashboard"
-            />
-            <SidebarTab
-              href="/tasks"
-              currentPath={router.pathname}
-              icon={<ClipboardDocumentListIcon />}
-              label="Tasks"
-            />
-            <SidebarTab
-              href="/calendar"
-              currentPath={router.pathname}
-              icon={<CalendarIcon />}
-              label="Calendar"
-            />
-            <SidebarTab
-              href="/settings"
-              currentPath={router.pathname}
-              icon={<Cog6ToothIcon />}
-              label="Settings"
             />
           </div>
         </div>

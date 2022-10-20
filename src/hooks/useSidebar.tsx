@@ -6,7 +6,7 @@ import ContextProps from '../types/ContextProps';
 // Then populate the default value with the
 // sidebar state and necessary functions
 const SidebarContext = createContext({
-  isCollapsed: false,
+  isCollapsed: true,
   collapse: () => {
     return;
   },
@@ -21,8 +21,8 @@ const SidebarContext = createContext({
 //* Create a provider for the sidebar
 export function SidebarProvider({ children }: ContextProps) {
   //* Sidebar state
-  // By default sidebar is expanded
-  const [isCollapsed, toggleSidebar] = useToggle([false, true]);
+  // By default sidebar is collapsed
+  const [isCollapsed, toggleSidebar] = useToggle([true, false]);
 
   function collapse() {
     // Only collapse sidebar if it is not collapsed already

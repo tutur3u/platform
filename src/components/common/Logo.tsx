@@ -14,26 +14,24 @@ export default function Logo({
   allowRedirect,
   onClick,
 }: LogoProps) {
-  const label = 'Lora';
+  const label = 'Tuturuuu';
   const css = 'font-bold text-white text-4xl';
 
   return (
     <Link href={allowRedirect ? '/' : '/?no-redirect=true'} onClick={onClick}>
-      <a className={`flex gap-2 ${css}`}>
+      <a className={`flex items-center gap-2 ${css}`}>
         {showLogo && (
           <div className="mt-1">
             <Image
               src="/media/logos/transparent.png"
               alt="logo"
-              width={40}
-              height={40}
+              width={32}
+              height={32}
             />
           </div>
         )}
         {showLabel && (
-          <div className="translate-y-0.5 text-4xl text-sky-200 font-semibold">
-            {label}
-          </div>
+          <div className="text-2xl text-white font-semibold">{label}</div>
         )}
       </a>
     </Link>

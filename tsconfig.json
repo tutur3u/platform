@@ -16,12 +16,6 @@
     "incremental": true,
     "types": ["node", "jest", "@testing-library/jest-dom"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "lint-staged.config.js",
-    "jest.config.ts"
-  ],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "**/node_modules/*"]
 }
