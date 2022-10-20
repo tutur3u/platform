@@ -15,9 +15,11 @@ import {
 
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
 import { useState } from 'react';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const AuthForm = () => {
-  const [type, toggle] = useToggle<AuthMethod>(['login', 'register']);
+  const [type, toggle] = useToggle<AuthMethod>(['login', 'signup']);
+  const [emailSent, setEmailSent] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
 
   const form = useForm({
@@ -47,6 +49,7 @@ const AuthForm = () => {
       const password = form.values.password;
 
       await authenticate(type, email, password);
+      if (type === 'signup') setEmailSent(true);
     } catch (error) {
       alert(error || 'Something went wrong');
     } finally {
@@ -59,8 +62,8 @@ const AuthForm = () => {
       switch (method) {
         case 'login':
           return 'Logging in...';
-        case 'register':
-          return 'Registering...';
+        case 'signup':
+          return 'Signing up...';
       }
 
     return upperFirst(method);
@@ -69,72 +72,83 @@ const AuthForm = () => {
   return (
     <Paper radius="md" p="xl" withBorder>
       <Text size="xl" weight={500} align="center">
-        {upperFirst(type)}
+        {emailSent ? 'One more step...' : upperFirst(type)}
       </Text>
 
-      <form>
+      {emailSent ? (
         <Stack>
-          <TextInput
-            required
-            label="Email"
-            placeholder="example@tuturuuu.com"
-            id="email"
-            value={form.values.email}
-            onChange={(event) =>
-              form.setFieldValue('email', event.currentTarget.value)
-            }
-            error={form.errors.email && 'Invalid email'}
-          />
-
-          <PasswordInput
-            required
-            label="Password"
-            placeholder="Your password"
-            id="password"
-            value={form.values.password}
-            onChange={(event) =>
-              form.setFieldValue('password', event.currentTarget.value)
-            }
-            error={
-              form.errors.password &&
-              'Password should include at least 6 characters'
-            }
-          />
-
-          {type === 'register' && (
-            <Checkbox
-              label="I accept terms and conditions"
-              checked={form.values.terms}
+          <Text size="lg" mt="md" color="muted" align="center">
+            A confirmation email has been sent to your email{' '}
+            <span className="font-semibold">{form.values.email}</span>. Click
+            the link inside to finish your signup.
+          </Text>
+          <CheckCircleIcon className="h-20 text-green-500" />
+        </Stack>
+      ) : (
+        <form>
+          <Stack>
+            <TextInput
+              required
+              label="Email"
+              placeholder="example@tuturuuu.com"
+              id="email"
+              value={form.values.email}
               onChange={(event) =>
-                form.setFieldValue('terms', event.currentTarget.checked)
+                form.setFieldValue('email', event.currentTarget.value)
+              }
+              error={form.errors.email && 'Invalid email'}
+            />
+
+            <PasswordInput
+              required
+              label="Password"
+              placeholder="Your password"
+              id="password"
+              value={form.values.password}
+              onChange={(event) =>
+                form.setFieldValue('password', event.currentTarget.value)
+              }
+              error={
+                form.errors.password &&
+                'Password should include at least 6 characters'
               }
             />
-          )}
-        </Stack>
 
-        <Group position="apart" mt="xl">
-          <Anchor
-            component="button"
-            type="button"
-            color="dimmed"
-            onClick={() => toggle()}
-            size="xs"
-          >
-            {type === 'register'
-              ? 'Already have an account? Login'
-              : "Don't have an account? Register"}
-          </Anchor>
+            {type === 'signup' && (
+              <Checkbox
+                label="I accept terms and conditions"
+                checked={form.values.terms}
+                onChange={(event) =>
+                  form.setFieldValue('terms', event.currentTarget.checked)
+                }
+              />
+            )}
+          </Stack>
 
-          <Button
-            variant="light"
-            type="submit"
-            onClick={handleAuth}
-            disabled={isFormInvalid}
-          >
-            {getCTAText(type, loading)}
-          </Button>
-        </Group>
-      </form>
+          <Group position="apart" mt="xl">
+            <Anchor
+              component="button"
+              type="button"
+              color="dimmed"
+              onClick={() => toggle()}
+              size="xs"
+            >
+              {type === 'signup'
+                ? 'Already have an account? Login'
+                : "Don't have an account? Sign up"}
+            </Anchor>
+
+            <Button
+              variant="light"
+              type="submit"
+              onClick={handleAuth}
+              disabled={isFormInvalid}
+            >
+              {getCTAText(type, loading)}
+            </Button>
+          </Group>
+        </form>
+      )}
     </Paper>
   );
 };

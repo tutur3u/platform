@@ -1,6 +1,6 @@
 import { supabase } from '../clients/supabase';
 
-export type AuthMethod = 'login' | 'register';
+export type AuthMethod = 'login' | 'signup';
 
 export const authenticate = async (
   method: AuthMethod,
@@ -27,7 +27,7 @@ export const authenticate = async (
     .then((res) => res.json())
     .then(async (data) => {
       if (data?.error) throw data?.error;
-      await supabase.auth.setSession(data?.session);
+      if (data?.session) await supabase.auth.setSession(data?.session);
     })
     .catch((err) => {
       throw err?.message || err || 'Something went wrong';
