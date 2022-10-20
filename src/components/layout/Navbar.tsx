@@ -32,7 +32,7 @@ export default function Navbar({ className }: NavbarProps) {
         <div className="flex items-center gap-4">
           <div>{user ? user?.email || user?.phone : 'Not logged in'}</div>
           <button
-            className="p-1 bg-zinc-800 hover:bg-red-500/30 hover:text-red-300 border border-zinc-700 hover:border-red-300/10 rounded transition duration-150"
+            className="p-1 bg-zinc-800 hover:bg-red-500/20 hover:text-red-300 border border-zinc-700 hover:border-red-300/10 rounded transition duration-150"
             onClick={signOut}
           >
             <ArrowRightOnRectangleIcon className="w-6 h-6" />

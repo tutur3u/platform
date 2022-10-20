@@ -14,9 +14,11 @@ import {
 } from '@mantine/core';
 
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
+import { useState } from 'react';
 
 const AuthForm = () => {
   const [type, toggle] = useToggle<AuthMethod>(['login', 'register']);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -38,6 +40,7 @@ const AuthForm = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const email = form.values.email;
@@ -46,7 +49,21 @@ const AuthForm = () => {
       await authenticate(type, email, password);
     } catch (error) {
       alert(error || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const getCTAText = (method: AuthMethod, loading: boolean) => {
+    if (loading)
+      switch (method) {
+        case 'login':
+          return 'Logging in...';
+        case 'register':
+          return 'Registering...';
+      }
+
+    return upperFirst(method);
   };
 
   return (
@@ -114,7 +131,7 @@ const AuthForm = () => {
             onClick={handleAuth}
             disabled={isFormInvalid}
           >
-            {upperFirst(type)}
+            {getCTAText(type, loading)}
           </Button>
         </Group>
       </form>
