@@ -27,11 +27,9 @@ export const authenticate = async (
     .then((res) => res.json())
     .then(async (data) => {
       if (data?.error) throw data?.error;
-      const res = await supabase.auth.setSession(data?.session);
-      console.log(res);
+      await supabase.auth.setSession(data?.session);
     })
     .catch((err) => {
-      console.log(err);
       throw err?.message || err || 'Something went wrong';
     });
 };

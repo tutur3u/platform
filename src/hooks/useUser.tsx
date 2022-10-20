@@ -27,11 +27,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const updateSession = async () => {
       const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.log(error);
-        throw error;
-      }
+      if (error) throw error;
 
       const session = data?.session;
       if (session) await fetchUserData(session);

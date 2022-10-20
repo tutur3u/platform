@@ -48,9 +48,6 @@ const handler = async (
     // If the identifier is an email, login with email~
     if (email) {
       const session = await loginWithEmail(email, password);
-
-      console.log(session);
-
       return res.status(200).json(session);
     }
 
@@ -63,8 +60,6 @@ const handler = async (
     // If the identifier is neither an email nor a username, throw an error
     throw 'Invalid credentials';
   } catch (error) {
-    console.log(error);
-
     return res.status(500).json({
       error: {
         message: 'Something went wrong',
