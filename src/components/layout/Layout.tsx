@@ -15,7 +15,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   }`;
 
   const sidebarCSS = isCollapsed
-    ? 'hidden md:block md:w-[4rem]'
+    ? 'hidden md:block md:w-[4rem] md:hover:w-[16rem] transition-all duration-300'
     : 'w-screen md:w-[16rem]';
 
   const navbarCSS = `overflow-x-hidden ${
