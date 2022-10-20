@@ -11,19 +11,24 @@ interface NavbarProps {
 }
 
 export default function Navbar({ className }: NavbarProps) {
-  const { isCollapsed, toggle } = useSidebar();
+  const { toggle } = useSidebar();
   const { user } = useUser();
 
   return (
     <div
       className={`${className} border-b border-zinc-800/80 bg-zinc-900 sticky top-0 z-10 overflow-y-hidden`}
     >
-      <div className="px-4 py-2 flex items-center justify-between">
+      <div className="px-4 py-3 flex items-center justify-between">
         <Bars3Icon
           onClick={toggle}
           className="md:hidden w-8 p-1 md:p-0 mr-4 hover:cursor-pointer hover:bg-blue-300/20 hover:text-blue-300 transition duration-75 rounded-md"
         />
-        <Logo showLogo={isCollapsed} showLabel />
+        <div className="flex items-center gap-2">
+          <Logo showLabel showLogo={false} />
+          <div className="text-xl text-zinc-500">/</div>
+          <div className="text-xl text-zinc-300 font-semibold">Dashboard</div>
+        </div>
+
         <div className="flex items-center gap-4">
           <div>{user ? user?.email || user?.phone : 'Not logged in'}</div>
           <button

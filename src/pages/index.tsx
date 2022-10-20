@@ -9,11 +9,9 @@ const Home: PageWithLayoutProps = () => {
   AuthProtect();
 
   return (
-    <>
-      <div className="text-blue-200 flex items-center justify-center text-3xl font-semibold">
-        Application v{APP_VERSION}
-      </div>
-    </>
+    <div className="text-blue-200 flex items-center justify-center text-3xl font-semibold">
+      Application v{APP_VERSION}
+    </div>
   );
 };
 
