@@ -1,38 +1,61 @@
 import {
   ArrowRightOnRectangleIcon,
-  Bars3Icon,
+  CalendarIcon,
+  ClipboardDocumentListIcon,
+  Cog6ToothIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline';
-import { useSidebar } from '../../hooks/useSidebar';
-import { useUser, signOut } from '../../hooks/useUser';
+
+import { useRouter } from 'next/router';
+import { signOut } from '../../hooks/useUser';
+import Logo from '../common/Logo';
+import NavbarTab from './NavbarTab';
 
 interface NavbarProps {
   className?: string;
 }
 
 export default function Navbar({ className }: NavbarProps) {
-  const { toggle } = useSidebar();
-  const { user } = useUser();
+  const router = useRouter();
 
   return (
     <div
-      className={`${className} border-b border-zinc-800/80 bg-zinc-900/50 sticky top-0 z-10 overflow-y-hidden`}
+      className={`${className} w-[4.5rem] h-full fixed flex flex-col justify-center items-center top-0 left-0 bg-zinc-900`}
     >
-      <div className="px-4 py-3 flex items-center justify-between">
-        <Bars3Icon
-          onClick={toggle}
-          className="md:hidden w-8 p-1 md:p-0 mr-4 hover:cursor-pointer hover:bg-blue-300/20 hover:text-blue-300 transition duration-75 rounded-md"
-        />
-        <div className="text-xl text-zinc-300 font-semibold">Home</div>
-
-        <div className="flex items-center gap-4">
-          <div>{user ? user?.email || user?.phone : 'Not logged in'}</div>
-          <button
-            className="p-1 bg-zinc-800 hover:bg-red-500/20 hover:text-red-300 border border-zinc-700 hover:border-red-300/10 rounded transition duration-150"
-            onClick={signOut}
-          >
-            <ArrowRightOnRectangleIcon className="w-6 h-6" />
-          </button>
+      <div className="h-[95%] w-full flex flex-col justify-between items-center gap-16">
+        <Logo className="flex-none" />
+        <div className="grow flex flex-col gap-2">
+          <NavbarTab
+            href="/"
+            currentPath={router.pathname}
+            icon={<HomeIcon />}
+            label="Dashboard"
+          />
+          <NavbarTab
+            href="/tasks"
+            currentPath={router.pathname}
+            icon={<ClipboardDocumentListIcon />}
+            label="Tasks"
+          />
+          <NavbarTab
+            href="/calendar"
+            currentPath={router.pathname}
+            icon={<CalendarIcon />}
+            label="Calendar"
+          />
+          <NavbarTab
+            href="/settings"
+            currentPath={router.pathname}
+            icon={<Cog6ToothIcon />}
+            label="Settings"
+          />
         </div>
+        <button
+          className="flex-none m-1 p-2 hover:bg-zinc-300/10 hover:text-zinc-300 hover:border-zinc-600 rounded-full hover:cursor-pointer transition duration-150"
+          onClick={signOut}
+        >
+          <ArrowRightOnRectangleIcon className="w-7 h-7" />
+        </button>
       </div>
     </div>
   );
