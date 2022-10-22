@@ -10,11 +10,12 @@ import SidebarTab from './SidebarTab';
 import { APP_VERSION } from '../../constants/common';
 import { useRouter } from 'next/router';
 import Logo from '../common/Logo';
+import styles from './layout.module.css';
 
 interface SidebarProps {
   className?: string;
 }
-export default function Sidebar({ className }: SidebarProps) {
+function Sidebar({ className }: SidebarProps) {
   const router = useRouter();
 
   return (
@@ -25,7 +26,7 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="px-1 mt-2 relative flex justify-start overflow-hidden border-b border-zinc-800 pb-4 mx-3">
           <Logo showLabel />
         </div>
-        <div className={`overflow-scroll h-full`}>
+        <div className={`${styles.scrollbar} overflow-scroll h-full`}>
           <div className="p-[0.65rem] flex flex-col items-start">
             <SidebarTab
               href="/"
@@ -60,3 +61,14 @@ export default function Sidebar({ className }: SidebarProps) {
     </div>
   );
 }
+
+// function RightSidebar() {
+//   return (
+//     <div className="flex flex-col items-center justify-center w-full h-full">
+//       <div className="text-3xl font-semibold">Right Sidebar</div>
+//     </div>
+//   );
+// }
+
+export default Sidebar;
+// export RightSidebar;
