@@ -20,20 +20,20 @@ export default function SidebarTab({
 
   const extraCss = isActive
     ? 'text-zinc-200'
-    : 'text-zinc-400/50 hover:text-zinc-300';
+    : 'text-zinc-200/50 hover:text-zinc-200';
 
   return (
     <Link href={href ?? '#'}>
-      <div
-        className={`${extraCss} hover:border-zinc-600 text-lg p-2 font-semibold rounded-full hover:cursor-pointer transition duration-300`}
+      <a
+        className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300`}
       >
-        <div className="flex justify-start items-center gap-[1.05rem]">
-          {showIcon && <div className="w-9 flex-none">{icon}</div>}
+        <div className="flex justify-start items-center gap-2">
+          {showIcon && <div className="w-8 flex-none">{icon}</div>}
           {showLabel && (
             <div className="inline-block overflow-hidden">{label}</div>
           )}
         </div>
-      </div>
+      </a>
     </Link>
   );
 }

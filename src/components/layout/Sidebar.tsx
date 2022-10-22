@@ -1,10 +1,9 @@
 import {
+  HomeIcon,
   ClipboardDocumentListIcon,
   CalendarIcon,
   Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
-
-import { HomeIcon } from '@heroicons/react/24/solid';
+} from '@heroicons/react/24/solid';
 
 import SidebarTab from './SidebarTab';
 import { APP_VERSION } from '../../constants/common';
@@ -23,11 +22,11 @@ function Sidebar({ className }: SidebarProps) {
       className={`${className} group z-20 h-full fixed flex-col justify-center items-center top-0 left-0 border-r border-zinc-800/80 bg-zinc-900/50 backdrop-blur-lg`}
     >
       <div className="w-full h-full flex flex-col">
-        <div className="px-1 mt-2 relative flex justify-start overflow-hidden border-b border-zinc-800 pb-4 mx-3">
+        <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-justify-start overflow-hidden border-b border-zinc-700">
           <Logo showLabel />
         </div>
         <div className={`${styles.scrollbar} overflow-scroll h-full`}>
-          <div className="p-[0.65rem] flex flex-col items-start">
+          <div className="mt-4 p-2 flex flex-col items-start gap-6">
             <SidebarTab
               href="/"
               currentPath={router.pathname}

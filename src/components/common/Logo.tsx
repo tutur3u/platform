@@ -18,12 +18,12 @@ export default function Logo({
     <Link href={allowRedirect ? '/' : '/?no-redirect=true'} onClick={onClick}>
       <a className={`flex items-center gap-2 ${css}`}>
         {showLogo && (
-          <div className="mt-3 flex-none">
+          <div className="flex-none translate-y-0.5">
             <Image
               src="/media/logos/transparent.png"
               alt="logo"
-              width={40}
-              height={40}
+              width={32}
+              height={32}
             />
           </div>
         )}
