@@ -1,6 +1,5 @@
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
-import { SidebarProvider } from '../../hooks/useSidebar';
 import { UserProvider } from '../../hooks/useUser';
 
 interface ProvidersProps {
@@ -18,9 +17,7 @@ const Providers = ({ children }: ProvidersProps) => {
       }}
     >
       <UserProvider>
-        <SidebarProvider>
-          <ModalsProvider>{children}</ModalsProvider>
-        </SidebarProvider>
+        <ModalsProvider>{children}</ModalsProvider>
       </UserProvider>
     </MantineProvider>
   );
