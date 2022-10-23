@@ -1,13 +1,12 @@
-import { ReactElement, useRef, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { AuthProtect } from '../hooks/useUser';
 import { Organization } from '../types/primitives/Organization';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { openModal } from '@mantine/modals';
+import OrgEditForm from '../components/forms/OrgEditForm';
 import { showNotification } from '@mantine/notifications';
-import { v4 as uuidv4 } from 'uuid';
-import { closeAllModals, openModal } from '@mantine/modals';
-import { Button, TextInput } from '@mantine/core';
 
 const Home: PageWithLayoutProps = () => {
   AuthProtect();
@@ -25,9 +24,6 @@ const Home: PageWithLayoutProps = () => {
       )
     );
 
-  const removeOrg = (id: string) =>
-    setOrgs((prevOrgs) => prevOrgs.filter((org) => org.id !== id));
-
   const showMaxOrgsReached = () => {
     showNotification({
       title: 'Maximum organizations reached',
@@ -36,50 +32,24 @@ const Home: PageWithLayoutProps = () => {
     });
   };
 
-  const ref = useRef<HTMLInputElement>(null);
+  const removeOrg = (id: string) =>
+    setOrgs((prevOrgs) => prevOrgs.filter((org) => org.id !== id));
 
-  const showEditOrgModal = (id?: string) => {
+  const showEditOrgModal = (org?: Organization) => {
     openModal({
-      title: id ? 'Edit organization' : 'Add organization',
+      title: org?.id ? 'Edit organization' : 'Add organization',
       centered: true,
       children: (
-        <>
-          {id && (
-            <TextInput
-              label="Organization ID"
-              value={id}
-              disabled={!!id}
-              className="mb-2"
-              data-autofocus
-            />
-          )}
-          <TextInput
-            label="Organization name"
-            placeholder="Enter organization name"
-            ref={ref}
-            data-autofocus
-          />
-          <Button
-            fullWidth
-            onClick={() => {
-              const name = ref.current?.value;
-
-              if (!!id) {
-                editOrg({ id, name });
-              } else if (orgs.length < maxOrgs) {
-                const newId = uuidv4();
-                addOrg({ id: newId, name });
-              } else {
-                showMaxOrgsReached();
-              }
-
-              closeAllModals();
-            }}
-            mt="md"
-          >
-            Submit
-          </Button>
-        </>
+        <OrgEditForm
+          org={org}
+          onSubmit={
+            org?.id
+              ? editOrg
+              : orgs.length < maxOrgs
+              ? addOrg
+              : showMaxOrgsReached
+          }
+        />
       ),
     });
   };
@@ -99,7 +69,7 @@ const Home: PageWithLayoutProps = () => {
               <div className="mt-2 flex justify-end gap-2">
                 <button
                   className="p-2 border border-zinc-700/50 bg-zinc-800 hover:bg-zinc-700/80 rounded transition duration-150"
-                  onClick={() => showEditOrgModal(org.id)}
+                  onClick={() => showEditOrgModal(org)}
                 >
                   <PencilIcon className="w-5 h-5" />
                 </button>
