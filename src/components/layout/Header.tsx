@@ -1,5 +1,4 @@
 import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { Avatar } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 
 interface HeaderProps {
@@ -21,13 +20,6 @@ export default function Header({ className }: HeaderProps) {
         <button className="p-2 hover:bg-zinc-300/10 hover:text-zinc-300 hover:border-zinc-600 rounded-full hover:cursor-pointer transition duration-150">
           <BellIcon className="w-6 h-6" />
         </button>
-        <Avatar
-          className="m-2 mr-0"
-          //   src="/media/logos/transparent.png"
-          //   href="/"
-          size="md"
-          radius="xl"
-        />
       </div>
     </div>
   );
