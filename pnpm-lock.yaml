@@ -9,6 +9,7 @@ specifiers:
   '@mantine/hooks': ^5.6.1
   '@mantine/modals': ^5.6.1
   '@mantine/next': ^5.6.1
+  '@mantine/notifications': ^5.6.1
   '@mantine/nprogress': ^5.6.1
   '@supabase/supabase-js': ^2.0.4
   '@testing-library/jest-dom': ^5.16.5
@@ -20,6 +21,7 @@ specifiers:
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
   '@types/testing-library__jest-dom': ^5.14.5
+  '@types/uuid': ^8.3.4
   '@typescript-eslint/eslint-plugin': ^5.40.1
   '@typescript-eslint/parser': ^5.40.1
   autoprefixer: ^10.4.12
@@ -39,6 +41,7 @@ specifiers:
   react-dom: 18.2.0
   tailwindcss: ^3.2.1
   typescript: 4.8.4
+  uuid: ^9.0.0
 
 dependencies:
   '@emotion/react': 11.10.4_bjroym7kxlcs2vvwnej4p3gzwu
@@ -49,12 +52,14 @@ dependencies:
   '@mantine/hooks': 5.6.1_react@18.2.0
   '@mantine/modals': 5.6.1_ogw74x2o63pz64drwzzggd7jle
   '@mantine/next': 5.6.1_6tawbrm53n4muonpugu7ldclma
+  '@mantine/notifications': 5.6.1_ogw74x2o63pz64drwzzggd7jle
   '@mantine/nprogress': 5.6.1_ogw74x2o63pz64drwzzggd7jle
   '@supabase/supabase-js': 2.0.4
   js-cookie: 3.0.1
   next: 12.3.1_6tziyx3dehkoeijunclpkpolha
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
+  uuid: 9.0.0
 
 devDependencies:
   '@testing-library/jest-dom': 5.16.5
@@ -66,6 +71,7 @@ devDependencies:
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
   '@types/testing-library__jest-dom': 5.14.5
+  '@types/uuid': 8.3.4
   '@typescript-eslint/eslint-plugin': 5.40.1_c4zyna56jjjrggqkyejnaxjxfu
   '@typescript-eslint/parser': 5.40.1_wyqvi574yv7oiwfeinomdzmc3m
   autoprefixer: 10.4.12_postcss@8.4.18
@@ -939,6 +945,22 @@ packages:
       - '@emotion/server'
     dev: false
 
+  /@mantine/notifications/5.6.1_ogw74x2o63pz64drwzzggd7jle:
+    resolution: {integrity: sha512-0IYDRhlE0HAhQRUV6wxDWcuedlv2DNNGX/ACAaSiTwmvKNcnwACQ0/geuRPqEx3N3WAHT8nZ3PlmaSGM56CWWg==}
+    peerDependencies:
+      '@mantine/core': 5.6.1
+      '@mantine/hooks': 5.6.1
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@mantine/core': 5.6.1_lw2bnmjkfhtvnumpmzuv42aqpy
+      '@mantine/hooks': 5.6.1_react@18.2.0
+      '@mantine/utils': 5.6.1_react@18.2.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-transition-group: 4.4.2_biqbaboplfbrettd7655fr4n2y
+    dev: false
+
   /@mantine/nprogress/5.6.1_ogw74x2o63pz64drwzzggd7jle:
     resolution: {integrity: sha512-iZeDN19DuctpGMDsWBaDcrSnP41HJcVfTqoKkBY8IwdNB4Kb3jbLIU63QPLwYgvSOmZ4otk5V2tw2z2iJ7D8rA==}
     peerDependencies:
@@ -1518,6 +1540,10 @@ packages:
 
   /@types/tough-cookie/4.0.2:
     resolution: {integrity: sha512-Q5vtl1W5ue16D+nIaW8JWebSSraJVlK+EthKn7e7UcD4KWsaSJ8BqGPXNaPghgtcn/fhvrN17Tv8ksUsQpiplw==}
+    dev: true
+
+  /@types/uuid/8.3.4:
+    resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
     dev: true
 
   /@types/yargs-parser/21.0.0:
@@ -2419,6 +2445,13 @@ packages:
   /dom-accessibility-api/0.5.14:
     resolution: {integrity: sha512-NMt+m9zFMPZe0JcY9gN224Qvk6qLIdqex29clBvc/y75ZBX9YA9wNK3frsYvu2DI1xcCIwxwnX+TlsJ2DSOADg==}
     dev: true
+
+  /dom-helpers/5.2.1:
+    resolution: {integrity: sha512-nRCa7CK3VTrM2NmGkIy4cbK7IZlgBE/PYMn55rrXefr5xXDP0LdtfPnblFDoVdcAfslJ7or6iqAUnx0CCGIWQA==}
+    dependencies:
+      '@babel/runtime': 7.19.4
+      csstype: 3.1.1
+    dev: false
 
   /dom-serializer/1.4.1:
     resolution: {integrity: sha512-VHwB3KfrcOOkelEG2ZOfxqLZdfkil8PtJi4P8N2MMXucZq2yLp75ClViUlOVwyoHEDjYU433Aq+5zWP61+RGag==}
@@ -4830,7 +4863,6 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       react-is: 16.13.1
-    dev: true
 
   /psl/1.9.0:
     resolution: {integrity: sha512-E/ZsdU4HLs/68gYzgGTkMicWTLPdAftJLfJFlLUAAKZGkStNU72sZjT66SnMDVOfOWY/YAoiD7Jxa9iHvngcag==}
@@ -4890,6 +4922,20 @@ packages:
       use-latest: 1.2.1_iapumuv4e6jcjznwuxpf4tt22e
     transitivePeerDependencies:
       - '@types/react'
+    dev: false
+
+  /react-transition-group/4.4.2_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-/RNYfRAMlZwDSr6z4zNKV6xu53/e2BuaBbGhbyYIXTrmgu/bGHzmqOs7mJSJBHy9Ud+ApHx3QjrkKSp1pxvlFg==}
+    peerDependencies:
+      react: '>=16.6.0'
+      react-dom: '>=16.6.0'
+    dependencies:
+      '@babel/runtime': 7.19.4
+      dom-helpers: 5.2.1
+      loose-envify: 1.4.0
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
     dev: false
 
   /react/18.2.0:
@@ -5606,6 +5652,11 @@ packages:
 
   /util-deprecate/1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  /uuid/9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    hasBin: true
+    dev: false
 
   /v8-to-istanbul/9.0.1:
     resolution: {integrity: sha512-74Y4LqY74kLE6IFyIjPtkSTWzUZmj8tdHT9Ii/26dvQ6K9Dl2NbEfj0XgU2sHCtKgt5VupqhlO/5aWuqS+IY1w==}
