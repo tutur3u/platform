@@ -7,6 +7,7 @@ const UserContext = createContext({
   isLoading: true,
   user: null as User | null,
   userData: null,
+  signOut: async () => await supabase.auth.signOut(),
 });
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
@@ -55,6 +56,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     user,
     userData,
+
+    signOut: async () => await supabase.auth.signOut(),
   };
 
   return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
@@ -67,10 +70,6 @@ export const useUser = () => {
     throw new Error(`useUser() must be used within a UserProvider.`);
 
   return context;
-};
-
-export const signOut = async () => {
-  await supabase.auth.signOut();
 };
 
 const AuthHandler = (requireUser: boolean, redirectUrl: string) => {
