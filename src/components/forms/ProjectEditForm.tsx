@@ -2,36 +2,42 @@ import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Organization } from '../../types/primitives/Organization';
+import { Project } from '../../types/primitives/Project';
 
-interface OrgEditFormProps {
-  org?: Organization;
-  onSubmit: (org: Organization) => void;
+interface ProjectEditFormProps {
+  orgId: string;
+  project?: Project;
+  onSubmit: (orgId: string, project: Project) => void;
   onDelete?: () => void;
 }
 
-const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
-  const [name, setName] = useState(org?.name || '');
+const ProjectEditForm = ({
+  orgId,
+  project,
+  onSubmit,
+  onDelete,
+}: ProjectEditFormProps) => {
+  const [name, setName] = useState(project?.name || '');
 
   return (
     <>
-      {org?.id && (
+      {project?.id && (
         <TextInput
-          label="Organization ID"
-          value={org?.id}
-          disabled={!!org?.id}
+          label="Project ID"
+          value={project?.id}
+          disabled={!!project?.id}
           className="mb-2"
         />
       )}
       <TextInput
-        label="Organization name"
-        placeholder="Enter organization name"
+        label="Project name"
+        placeholder="Enter project name"
         value={name}
         onChange={(event) => setName(event.currentTarget.value)}
         data-autofocus
       />
       <div className="flex gap-2">
-        {org?.id && onDelete && (
+        {project?.id && onDelete && (
           <Button
             fullWidth
             variant="subtle"
@@ -49,18 +55,18 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newOrg = { id: org?.id || uuidv4(), name };
+            const newProject = { id: project?.id || uuidv4(), name };
 
-            onSubmit(newOrg);
+            onSubmit(orgId, newProject);
             closeAllModals();
           }}
           mt="md"
         >
-          {org?.id ? 'Save' : 'Add'}
+          {project?.id ? 'Save' : 'Add'}
         </Button>
       </div>
     </>
   );
 };
 
-export default OrgEditForm;
+export default ProjectEditForm;

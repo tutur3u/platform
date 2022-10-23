@@ -7,12 +7,16 @@ import { PencilIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
 import { showNotification } from '@mantine/notifications';
+import { Project } from '../types/primitives/Project';
+import ProjectEditForm from '../components/forms/ProjectEditForm';
 
 const Home: PageWithLayoutProps = () => {
   AuthProtect();
 
   const [orgs, setOrgs] = useState<Organization[]>([]);
+
   const maxOrgs = 3;
+  const maxProjects = 3;
 
   const addOrg = (org: Organization) =>
     setOrgs((prevOrgs) => [...prevOrgs, org]);
@@ -24,6 +28,48 @@ const Home: PageWithLayoutProps = () => {
       )
     );
 
+  const removeOrg = (id: string) =>
+    setOrgs((prevOrgs) => prevOrgs.filter((org) => org.id !== id));
+
+  const addProject = (orgId: string, project: Project) =>
+    setOrgs((prevOrgs) =>
+      prevOrgs.map((prevOrg) =>
+        prevOrg.id === orgId
+          ? { ...prevOrg, projects: [...(prevOrg.projects || []), project] }
+          : prevOrg
+      )
+    );
+
+  const editProject = (orgId: string, project: Project) =>
+    setOrgs((prevOrgs) =>
+      prevOrgs.map((prevOrg) =>
+        prevOrg.id === orgId
+          ? {
+              ...prevOrg,
+              projects: (prevOrg.projects || []).map((prevProject) =>
+                prevProject.id === project.id
+                  ? { ...prevProject, ...project }
+                  : prevProject
+              ),
+            }
+          : prevOrg
+      )
+    );
+
+  const removeProject = (orgId: string, projectId: string) =>
+    setOrgs((prevOrgs) =>
+      prevOrgs.map((prevOrg) =>
+        prevOrg.id === orgId
+          ? {
+              ...prevOrg,
+              projects: (prevOrg.projects || []).filter(
+                (project) => project.id !== projectId
+              ),
+            }
+          : prevOrg
+      )
+    );
+
   const showMaxOrgsReached = () => {
     showNotification({
       title: 'Maximum organizations reached',
@@ -32,12 +78,19 @@ const Home: PageWithLayoutProps = () => {
     });
   };
 
-  const removeOrg = (id: string) =>
-    setOrgs((prevOrgs) => prevOrgs.filter((org) => org.id !== id));
+  const showMaxProjectsReached = () => {
+    showNotification({
+      title: 'Maximum projects reached',
+      message: `You can only have ${maxProjects} projects per organization.`,
+      color: 'red',
+    });
+  };
+
+  const getOrg = (id: string) => orgs.find((org) => org.id === id);
 
   const showEditOrgModal = (org?: Organization) => {
     openModal({
-      title: org?.id ? 'Edit organization' : 'Add organization',
+      title: org?.id ? 'Edit organization' : 'New organization',
       centered: true,
       children: (
         <OrgEditForm
@@ -50,6 +103,29 @@ const Home: PageWithLayoutProps = () => {
               : showMaxOrgsReached
           }
           onDelete={org?.id ? () => removeOrg(org?.id) : undefined}
+        />
+      ),
+    });
+  };
+
+  const showEditProjectModal = (orgId: string, project?: Project) => {
+    openModal({
+      title: project?.id ? 'Edit project' : 'New project',
+      centered: true,
+      children: (
+        <ProjectEditForm
+          orgId={orgId}
+          project={project}
+          onSubmit={
+            project?.id
+              ? editProject
+              : (getOrg(orgId)?.projects?.length || 0) < maxProjects
+              ? addProject
+              : showMaxProjectsReached
+          }
+          onDelete={
+            project?.id ? () => removeProject(orgId, project?.id) : undefined
+          }
         />
       ),
     });
@@ -74,8 +150,30 @@ const Home: PageWithLayoutProps = () => {
                 </button>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                <div className="p-2 h-32 flex justify-center items-center bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 font-semibold text-xl rounded transition duration-150 cursor-pointer">
-                  New project
+                {org?.projects?.map((project) => (
+                  <div
+                    key={project.id}
+                    className="p-4 h-32 flex bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+                    onClick={() => showEditProjectModal(org.id, project)}
+                  >
+                    {project?.name || `Unnamed project`}
+                  </div>
+                ))}
+                <div
+                  className={`p-2 h-32 flex justify-center items-center font-semibold text-xl rounded transition duration-150 ${
+                    (org?.projects?.length || 0) < maxProjects
+                      ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 cursor-pointer'
+                      : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
+                  }`}
+                  onClick={() =>
+                    (org?.projects?.length || 0) < maxProjects
+                      ? showEditProjectModal(org.id)
+                      : undefined
+                  }
+                >
+                  {(org?.projects?.length || 0) < maxProjects
+                    ? 'New project'
+                    : 'Maximum projects reached'}
                 </div>
               </div>
             </div>
@@ -97,7 +195,9 @@ const Home: PageWithLayoutProps = () => {
         }`}
         onClick={() => (orgs.length < maxOrgs ? showEditOrgModal() : null)}
       >
-        New organization
+        {orgs.length < maxOrgs
+          ? 'New organization'
+          : 'Maximum organizations reached'}
       </button>
     </>
   );
