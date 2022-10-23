@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
+import { NotificationsProvider } from '@mantine/notifications';
 import { UserProvider } from '../../hooks/useUser';
 
 interface ProvidersProps {
@@ -17,7 +18,11 @@ const Providers = ({ children }: ProvidersProps) => {
       }}
     >
       <UserProvider>
-        <ModalsProvider>{children}</ModalsProvider>
+        <ModalsProvider>
+          <NotificationsProvider position="bottom-left">
+            {children}
+          </NotificationsProvider>
+        </ModalsProvider>
       </UserProvider>
     </MantineProvider>
   );
