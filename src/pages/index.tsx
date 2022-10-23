@@ -3,7 +3,7 @@ import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { AuthProtect } from '../hooks/useUser';
 import { Organization } from '../types/primitives/Organization';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
 import { showNotification } from '@mantine/notifications';
@@ -49,6 +49,7 @@ const Home: PageWithLayoutProps = () => {
               ? addOrg
               : showMaxOrgsReached
           }
+          onDelete={org?.id ? () => removeOrg(org?.id) : undefined}
         />
       ),
     });
@@ -58,27 +59,24 @@ const Home: PageWithLayoutProps = () => {
     <>
       <h1 className="text-4xl font-semibold mb-4">Home</h1>
       {orgs.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid gap-4">
           {orgs.map((org) => (
-            <div
-              key={org.id}
-              className="p-4 border border-zinc-800/80 bg-[#19191d] rounded"
-            >
-              {org?.name || `Unnamed organization`}
-
-              <div className="mt-2 flex justify-end gap-2">
+            <div key={org.id}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-blue-200 text-2xl font-semibold">
+                  {org?.name || `Unnamed organization`}
+                </div>
                 <button
-                  className="p-2 border border-zinc-700/50 bg-zinc-800 hover:bg-zinc-700/80 rounded transition duration-150"
+                  className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
                   onClick={() => showEditOrgModal(org)}
                 >
-                  <PencilIcon className="w-5 h-5" />
+                  <PencilIcon className="w-4 h-4" />
                 </button>
-                <button
-                  className="p-2 border border-zinc-700/50 bg-zinc-800 hover:bg-zinc-700/80 rounded transition duration-150"
-                  onClick={() => removeOrg(org.id)}
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <div className="p-2 h-32 flex justify-center items-center bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 font-semibold text-xl rounded transition duration-150 cursor-pointer">
+                  New project
+                </div>
               </div>
             </div>
           ))}
@@ -92,8 +90,12 @@ const Home: PageWithLayoutProps = () => {
       )}
 
       <button
-        className="mt-8 bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 font-semibold px-6 py-4 rounded"
-        onClick={() => showEditOrgModal()}
+        className={`mt-8 font-semibold px-6 py-4 rounded ${
+          orgs.length < maxOrgs
+            ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
+            : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
+        }`}
+        onClick={() => (orgs.length < maxOrgs ? showEditOrgModal() : null)}
       >
         New organization
       </button>
