@@ -28,7 +28,7 @@ export default function Logo({
           </div>
         )}
         {showLabel && (
-          <div className="text-2xl absolute left-[2.75rem] md:opacity-0 md:-translate-x-2 group-hover:static group-hover:translate-x-0 group-hover:opacity-100 transition duration-500 text-white font-semibold">
+          <div className="text-2xl absolute left-[2.75rem] md:opacity-0 md:-translate-x-2 group-hover:static group-hover:translate-x-0 group-hover:opacity-100 transition duration-200 text-white font-semibold">
             {label}
           </div>
         )}

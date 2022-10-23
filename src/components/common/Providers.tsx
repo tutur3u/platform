@@ -14,7 +14,6 @@ const Providers = ({ children }: ProvidersProps) => {
       withNormalizeCSS
       theme={{
         colorScheme: 'dark',
-        defaultRadius: 'md',
       }}
     >
       <UserProvider>
