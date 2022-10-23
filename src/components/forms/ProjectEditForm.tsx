@@ -42,10 +42,7 @@ const ProjectEditForm = ({
             fullWidth
             variant="subtle"
             color="red"
-            onClick={() => {
-              onDelete();
-              closeAllModals();
-            }}
+            onClick={onDelete}
             mt="md"
           >
             Delete

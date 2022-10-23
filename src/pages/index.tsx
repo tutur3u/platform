@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout';
 import { AuthProtect } from '../hooks/useUser';
 import { Organization } from '../types/primitives/Organization';
 import { PencilIcon } from '@heroicons/react/24/solid';
-import { openModal } from '@mantine/modals';
+import { closeAllModals, openConfirmModal, openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
 import { showNotification } from '@mantine/notifications';
 import { Project } from '../types/primitives/Project';
@@ -88,6 +88,48 @@ const Home: PageWithLayoutProps = () => {
 
   const getOrg = (id: string) => orgs.find((org) => org.id === id);
 
+  const showDeleteOrgConfirmation = (orgId: string) => {
+    openConfirmModal({
+      title: 'Delete organization',
+      centered: true,
+      children: (
+        <div className="text-center">
+          <p className="mb-4">
+            Are you sure you want to delete this organization?
+          </p>
+        </div>
+      ),
+      labels: {
+        cancel: 'Cancel',
+        confirm: 'Delete',
+      },
+      onConfirm: () => {
+        removeOrg(orgId);
+        closeAllModals();
+      },
+    });
+  };
+
+  const showDeleteProjectConfirmation = (orgId: string, projectId: string) => {
+    openConfirmModal({
+      title: 'Delete project',
+      centered: true,
+      children: (
+        <div className="text-center">
+          <p className="mb-4">Are you sure you want to delete this project?</p>
+        </div>
+      ),
+      labels: {
+        cancel: 'Cancel',
+        confirm: 'Delete',
+      },
+      onConfirm: () => {
+        removeProject(orgId, projectId);
+        closeAllModals();
+      },
+    });
+  };
+
   const showEditOrgModal = (org?: Organization) => {
     openModal({
       title: org?.id ? 'Edit organization' : 'New organization',
@@ -102,7 +144,9 @@ const Home: PageWithLayoutProps = () => {
               ? addOrg
               : showMaxOrgsReached
           }
-          onDelete={org?.id ? () => removeOrg(org?.id) : undefined}
+          onDelete={
+            org?.id ? () => showDeleteOrgConfirmation(org.id) : undefined
+          }
         />
       ),
     });
@@ -124,7 +168,9 @@ const Home: PageWithLayoutProps = () => {
               : showMaxProjectsReached
           }
           onDelete={
-            project?.id ? () => removeProject(orgId, project?.id) : undefined
+            project?.id
+              ? () => showDeleteProjectConfirmation(orgId, project.id)
+              : undefined
           }
         />
       ),

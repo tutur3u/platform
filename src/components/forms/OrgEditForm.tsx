@@ -36,10 +36,7 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
             fullWidth
             variant="subtle"
             color="red"
-            onClick={() => {
-              onDelete();
-              closeAllModals();
-            }}
+            onClick={onDelete}
             mt="md"
           >
             Delete
