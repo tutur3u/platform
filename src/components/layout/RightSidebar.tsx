@@ -4,12 +4,12 @@ import SidebarTab from './SidebarTab';
 import { useRouter } from 'next/router';
 import styles from './layout.module.css';
 import { Avatar } from '@mantine/core';
-import { useUser } from '../../hooks/useUser';
 import { SidebarProps } from '../../types/SidebarProps';
+import { useUser } from '@supabase/auth-helpers-react';
 
 function RightSidebar({ className }: SidebarProps) {
   const router = useRouter();
-  const { user } = useUser();
+  const user = useUser();
 
   return (
     <div

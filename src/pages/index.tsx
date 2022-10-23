@@ -1,7 +1,6 @@
 import { ReactElement, useState } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
-import { AuthProtect } from '../hooks/useUser';
 import { Organization } from '../types/primitives/Organization';
 import { PencilIcon } from '@heroicons/react/24/solid';
 import { closeAllModals, openConfirmModal, openModal } from '@mantine/modals';
@@ -11,8 +10,6 @@ import { Project } from '../types/primitives/Project';
 import ProjectEditForm from '../components/forms/ProjectEditForm';
 
 const Home: PageWithLayoutProps = () => {
-  AuthProtect();
-
   const [orgs, setOrgs] = useState<Organization[]>([]);
 
   const maxOrgs = 3;

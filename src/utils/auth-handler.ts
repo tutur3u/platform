@@ -1,12 +1,20 @@
-import { supabase } from '../clients/supabase';
+import { SupabaseClient } from '@supabase/auth-helpers-react';
 
 export type AuthMethod = 'login' | 'signup';
 
-export const authenticate = async (
-  method: AuthMethod,
-  email: string,
-  password: string
-) => {
+interface AuthProps {
+  supabaseClient: SupabaseClient;
+  method: AuthMethod;
+  email: string;
+  password: string;
+}
+
+export const authenticate = async ({
+  supabaseClient,
+  method,
+  email,
+  password,
+}: AuthProps) => {
   // If the method is empty, throw an error
   if (!method) throw new Error('No method provided');
 
@@ -27,7 +35,7 @@ export const authenticate = async (
     .then((res) => res.json())
     .then(async (data) => {
       if (data?.error) throw data?.error;
-      if (data?.session) await supabase.auth.setSession(data?.session);
+      if (data?.session) await supabaseClient.auth.setSession(data?.session);
     })
     .catch((err) => {
       throw err?.message || err || 'Something went wrong';

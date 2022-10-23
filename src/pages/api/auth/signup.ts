@@ -1,5 +1,6 @@
+import { SupabaseClient } from '@supabase/auth-helpers-react';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../../clients/supabase';
 import { AuthRequest, AuthResponse } from '../../../types/AuthData';
 
 const handler = async (
@@ -38,9 +39,13 @@ const handler = async (
         },
       });
 
-    // If the identifier is an email, signup with email
+    const supabase = createServerSupabaseClient({
+      req,
+      res,
+    });
 
-    const session = await signup(email, password);
+    // If the identifier is an email, signup with email
+    const session = await signup(supabase, email, password);
     return res.status(200).json(session);
   } catch (error) {
     return res.status(500).json({
@@ -49,7 +54,11 @@ const handler = async (
   }
 };
 
-const signup = async (email: string, password: string) => {
+const signup = async (
+  supabase: SupabaseClient,
+  email: string,
+  password: string
+) => {
   const { data: session, error } = await supabase.auth.signUp({
     email,
     password,

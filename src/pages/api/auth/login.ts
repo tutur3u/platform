@@ -1,5 +1,6 @@
+import { SupabaseClient } from '@supabase/auth-helpers-react';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../../clients/supabase';
 import { AuthRequest, AuthResponse } from '../../../types/AuthData';
 
 const handler = async (
@@ -45,15 +46,20 @@ const handler = async (
         },
       });
 
+    const supabase = createServerSupabaseClient({
+      req,
+      res,
+    });
+
     // If the identifier is an email, login with email~
     if (email) {
-      const session = await loginWithEmail(email, password);
+      const session = await loginWithEmail(supabase, email, password);
       return res.status(200).json(session);
     }
 
     // If the identifier is a username, login with username
     if (username) {
-      const session = await loginWithUsername(username, password);
+      const session = await loginWithUsername(supabase, username, password);
       return res.status(200).json(session);
     }
 
@@ -68,7 +74,11 @@ const handler = async (
   }
 };
 
-const loginWithEmail = async (email: string, password: string) => {
+const loginWithEmail = async (
+  supabase: SupabaseClient,
+  email: string,
+  password: string
+) => {
   const { data: session, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -83,7 +93,11 @@ const loginWithEmail = async (email: string, password: string) => {
   return session;
 };
 
-const loginWithUsername = async (username: string, password: string) => {
+const loginWithUsername = async (
+  supabase: SupabaseClient,
+  username: string,
+  password: string
+) => {
   const { data, error } = await supabase
     .from('users')
     .select('email')
@@ -102,7 +116,7 @@ const loginWithUsername = async (username: string, password: string) => {
   // Check if the email is valid
   if (!email) throw 'Something went wrong';
 
-  return loginWithEmail(email, password);
+  return loginWithEmail(supabase, email, password);
 };
 
 export default handler;

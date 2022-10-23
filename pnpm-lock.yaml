@@ -11,6 +11,8 @@ specifiers:
   '@mantine/next': ^5.6.1
   '@mantine/notifications': ^5.6.1
   '@mantine/nprogress': ^5.6.1
+  '@supabase/auth-helpers-nextjs': ^0.4.1
+  '@supabase/auth-helpers-react': ^0.3.0
   '@supabase/supabase-js': ^2.0.4
   '@testing-library/jest-dom': ^5.16.5
   '@testing-library/react': ^13.4.0
@@ -54,6 +56,8 @@ dependencies:
   '@mantine/next': 5.6.1_6tawbrm53n4muonpugu7ldclma
   '@mantine/notifications': 5.6.1_ogw74x2o63pz64drwzzggd7jle
   '@mantine/nprogress': 5.6.1_ogw74x2o63pz64drwzzggd7jle
+  '@supabase/auth-helpers-nextjs': 0.4.1
+  '@supabase/auth-helpers-react': 0.3.0
   '@supabase/supabase-js': 2.0.4
   js-cookie: 3.0.1
   next: 12.3.1_6tziyx3dehkoeijunclpkpolha
@@ -1293,6 +1297,22 @@ packages:
     dependencies:
       '@sinonjs/commons': 1.8.3
     dev: true
+
+  /@supabase/auth-helpers-nextjs/0.4.1:
+    resolution: {integrity: sha512-qrtMYlLoxm/Xf2U1l+OeDlckEzQHbRusIRcj5JKOj+gV/r62/VkDpB92cgjt3bbVtPDka5szXF4tBku6ZZkMeQ==}
+    dependencies:
+      '@supabase/auth-helpers-shared': 0.2.0
+    dev: false
+
+  /@supabase/auth-helpers-react/0.3.0:
+    resolution: {integrity: sha512-yCJPUdtElPxmlk6FXZJdMWLnCuYU1qD7pzHxVjF+vO+NwddZ00qKTi53UJu83+H3QeDgZZrNR1ueCi/sLY+kYw==}
+    dependencies:
+      '@supabase/auth-helpers-shared': 0.2.0
+    dev: false
+
+  /@supabase/auth-helpers-shared/0.2.0:
+    resolution: {integrity: sha512-GaWzuP3RjLSdSlFajbgwQkZO24A14DSEIJG5sUva/sUYWkriEWROjf8Vbwg4YsSxqeU6fP3lloFeync9BwgyYA==}
+    dev: false
 
   /@supabase/functions-js/2.0.0:
     resolution: {integrity: sha512-ozb7bds2yvf5k7NM2ZzUkxvsx4S4i2eRKFSJetdTADV91T65g4gCzEs9L3LUXSrghcGIkUaon03VPzOrFredqg==}

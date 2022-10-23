@@ -16,9 +16,12 @@ import {
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
 import { useState } from 'react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 const AuthForm = () => {
-  const [type, toggle] = useToggle<AuthMethod>(['login', 'signup']);
+  const { supabaseClient } = useSessionContext();
+
+  const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
   const [emailSent, setEmailSent] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
 
@@ -48,8 +51,8 @@ const AuthForm = () => {
       const email = form.values.email;
       const password = form.values.password;
 
-      await authenticate(type, email, password);
-      if (type === 'signup') setEmailSent(true);
+      await authenticate({ supabaseClient, method, email, password });
+      if (method === 'signup') setEmailSent(true);
     } catch (error) {
       alert(error || 'Something went wrong');
     } finally {
@@ -72,7 +75,7 @@ const AuthForm = () => {
   return (
     <Paper radius="md" p="xl" withBorder>
       <Text size="xl" weight={500} align="center">
-        {emailSent ? 'One more step...' : upperFirst(type)}
+        {emailSent ? 'One more step...' : upperFirst(method)}
       </Text>
 
       {emailSent ? (
@@ -114,7 +117,7 @@ const AuthForm = () => {
               }
             />
 
-            {type === 'signup' && (
+            {method === 'signup' && (
               <Checkbox
                 label="I accept terms and conditions"
                 checked={form.values.terms}
@@ -133,7 +136,7 @@ const AuthForm = () => {
               onClick={() => toggle()}
               size="xs"
             >
-              {type === 'signup'
+              {method === 'signup'
                 ? 'Already have an account? Login'
                 : "Don't have an account? Sign up"}
             </Anchor>
@@ -144,7 +147,7 @@ const AuthForm = () => {
               onClick={handleAuth}
               disabled={isFormInvalid}
             >
-              {getCTAText(type, loading)}
+              {getCTAText(method, loading)}
             </Button>
           </Group>
         </form>
