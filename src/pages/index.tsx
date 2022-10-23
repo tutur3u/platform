@@ -206,11 +206,11 @@ const Home: PageWithLayoutProps = () => {
                   </div>
                 ))}
                 <div
-                  className={`p-2 h-32 flex justify-center items-center font-semibold text-xl rounded transition duration-150 ${
+                  className={`p-2 h-32 flex justify-center items-center font-semibold text-xl rounded ${
                     (org?.projects?.length || 0) < maxProjects
                       ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 cursor-pointer'
                       : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
-                  }`}
+                  } transition duration-300`}
                   onClick={() =>
                     (org?.projects?.length || 0) < maxProjects
                       ? showEditProjectModal(org.id)
@@ -238,7 +238,7 @@ const Home: PageWithLayoutProps = () => {
           orgs.length < maxOrgs
             ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
             : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
-        }`}
+        } transition duration-300`}
         onClick={() => (orgs.length < maxOrgs ? showEditOrgModal() : null)}
       >
         {orgs.length < maxOrgs
