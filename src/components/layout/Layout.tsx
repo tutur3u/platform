@@ -14,7 +14,7 @@ const Layout: FC<LayoutProps> = ({ label, children }) => {
     <div className="flex w-full h-screen min-h-screen">
       <LeftSidebar className="w-[4rem] hover:w-[16rem] transition-all duration-300" />
       <main
-        className={`${styles.scrollbar} bg-[#111113] md:px-56 flex flex-col p-7 gap-5 h-screen fixed left-16 right-16 top-0 min-h-full overflow-scroll`}
+        className={`${styles.scrollbar} bg-[#111113] md:px-56 flex flex-col p-7 gap-5 h-screen fixed left-0 right-0 md:left-16 md:right-16 top-0 min-h-full overflow-scroll`}
       >
         <Header label={label} />
         <div>{children}</div>

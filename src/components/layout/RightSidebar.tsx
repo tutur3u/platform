@@ -16,7 +16,7 @@ function RightSidebar({ className }: SidebarProps) {
 
   return (
     <div
-      className={`${className} group z-20 h-full fixed flex-col justify-center items-center top-0 right-0 border-l border-zinc-800/80 bg-zinc-900/50 backdrop-blur-lg`}
+      className={`${className} hidden md:block group z-20 h-full fixed flex-col justify-center items-center top-0 right-0 border-l border-zinc-800/80 bg-zinc-900/50 backdrop-blur-lg`}
     >
       <div className="w-full h-full flex flex-col">
         <div className="pb-4 mx-3 mt-4 relative flex justify-start items-center gap-2 overflow-hidden border-b border-zinc-700">
