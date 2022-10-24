@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import Layout from '../../components/layout/Layout';
 import { TextInput } from '@mantine/core';
@@ -6,31 +6,40 @@ import { CheckIcon } from '@heroicons/react/20/solid';
 import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const SettingPage: PageWithLayoutProps = () => {
+  const router = useRouter();
   const { supabaseClient } = useSessionContext();
 
   const user = useUser();
-  const { data } = useUserData();
+  const { data, updateData } = useUserData();
 
   const [saving, setSaving] = useState(false);
 
-  const [displayName, setDisplayName] = useState(data?.displayName || '');
-  const [username, setUsername] = useState(data?.username || '');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    if (data) {
+      setDisplayName(data?.displayName || '');
+      setUsername(data?.username || '');
+    }
+  }, [data]);
 
   const handleSave = async () => {
     setSaving(true);
 
-    await fetch('/api/user', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        display_name: displayName,
-      }),
+    if (!updateData) {
+      setSaving(false);
+      throw new Error('No updateData function');
+    }
+
+    await updateData({
+      displayName,
+      username,
     });
 
     setSaving(false);
@@ -38,6 +47,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const handleSignOut = async () => {
     await supabaseClient.auth.signOut();
+    router.push('/login');
   };
 
   return (

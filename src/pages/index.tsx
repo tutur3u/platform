@@ -8,6 +8,9 @@ import OrgEditForm from '../components/forms/OrgEditForm';
 import { showNotification } from '@mantine/notifications';
 import { Project } from '../types/primitives/Project';
 import ProjectEditForm from '../components/forms/ProjectEditForm';
+import { withPageAuth } from '@supabase/auth-helpers-nextjs';
+
+export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const Home: PageWithLayoutProps = () => {
   const [orgs, setOrgs] = useState<Organization[]>([]);

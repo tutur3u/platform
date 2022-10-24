@@ -17,8 +17,10 @@ import { authenticate, AuthMethod } from '../../utils/auth-handler';
 import { useState } from 'react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useSessionContext } from '@supabase/auth-helpers-react';
+import { useRouter } from 'next/router';
 
 const AuthForm = () => {
+  const router = useRouter();
   const { supabaseClient } = useSessionContext();
 
   const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
@@ -53,6 +55,7 @@ const AuthForm = () => {
 
       await authenticate({ supabaseClient, method, email, password });
       if (method === 'signup') setEmailSent(true);
+      else router.push('/');
     } catch (error) {
       alert(error || 'Something went wrong');
     } finally {
