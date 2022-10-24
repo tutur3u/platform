@@ -8,21 +8,21 @@ import {
 
 type Theme = 'light' | 'dark';
 type ContentWidth = 'full' | 'padded';
-type SidebarPreference = 'auto' | 'open' | 'closed';
+export type SidebarPreference = 'auto' | 'open' | 'closed';
 
 const AppearanceContext = createContext({
-  theme: 'dark',
+  theme: 'dark' as Theme,
   changeTheme: (theme: Theme) => localStorage.setItem(themePrefs, theme),
 
-  leftSidebar: 'auto',
+  leftSidebar: 'auto' as SidebarPreference,
   changeLeftSidebar: (pref: SidebarPreference) =>
     localStorage.setItem(leftSidebarPrefs, pref),
 
-  rightSidebar: 'auto',
+  rightSidebar: 'auto' as SidebarPreference,
   changeRightSidebar: (pref: SidebarPreference) =>
     localStorage.setItem(rightSidebarPrefs, pref),
 
-  contentWidth: 'full',
+  contentWidth: 'full' as ContentWidth,
   changeContentWidth: (width: ContentWidth) =>
     localStorage.setItem(contentWidthPrefs, width),
 });
