@@ -5,17 +5,18 @@ import styles from './layout.module.css';
 import RightSidebar from './RightSidebar';
 
 interface LayoutProps {
+  label?: string;
   children: React.ReactNode;
 }
 
-const Layout: FC<LayoutProps> = ({ children }) => {
+const Layout: FC<LayoutProps> = ({ label, children }) => {
   return (
     <div className="flex w-full h-screen min-h-screen">
       <LeftSidebar className="w-[4rem] hover:w-[16rem] transition-all duration-300" />
       <main
-        className={`${styles.scrollbar} bg-[#111113] flex flex-col p-7 gap-5 h-screen fixed left-16 right-16 top-0 min-h-full overflow-scroll`}
+        className={`${styles.scrollbar} bg-[#111113] md:px-56 flex flex-col p-7 gap-5 h-screen fixed left-16 right-16 top-0 min-h-full overflow-scroll`}
       >
-        <Header />
+        <Header label={label} />
         <div>{children}</div>
       </main>
       <RightSidebar className="w-[4rem] hover:w-[16rem] transition-all duration-300" />

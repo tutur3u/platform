@@ -179,7 +179,6 @@ const Home: PageWithLayoutProps = () => {
 
   return (
     <>
-      <h1 className="text-4xl font-semibold mb-4">Home</h1>
       {orgs.length > 0 ? (
         <div className="grid gap-4">
           {orgs.map((org) => (
@@ -250,7 +249,7 @@ const Home: PageWithLayoutProps = () => {
 };
 
 Home.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <Layout label="Home">{page}</Layout>;
 };
 
 export default Home;

@@ -53,10 +53,8 @@ const SettingPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-4">
-      <h1 className="col-span-full text-4xl font-semibold mb-4">Settings</h1>
-
-      <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded">
+    <div className="grid lg:grid-cols-2 gap-8">
+      <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded-lg">
         <div className="text-3xl font-bold mb-1">Account</div>
         <div className="font-semibold text-zinc-500 mb-4">
           Manage your personal account
@@ -88,25 +86,25 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <div
           onClick={handleSave}
-          className="mt-8 col-span-full w-full p-2 flex items-center border border-blue-300/20 hover:border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/10 hover:bg-blue-300/20 text-blue-300 rounded cursor-pointer transition duration-300"
+          className="mt-8 col-span-full w-full p-2 flex items-center border border-blue-300/20 hover:border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/10 hover:bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer transition duration-300"
         >
           {saving ? 'Saving...' : 'Save'}
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded">
+      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
         <div className="text-3xl font-bold mb-1">Appearance</div>
         <div className="font-semibold text-zinc-500 mb-4">
           Customize the look and feel of Tuturuuu
         </div>
 
         <div className="text-xl font-semibold text-zinc-400 mb-2">General</div>
-        <div className="grid lg:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+        <div className="grid text-center xl:grid-cols-2 gap-4">
+          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Light mode</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded cursor-pointer">
+          <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer">
             Dark mode{' '}
             <span>
               <CheckIcon className="h-6 w-6 ml-2" />
@@ -116,38 +114,38 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <div className="hidden lg:flex flex-col mt-4">
           <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
-          <div className="h-full grid lg:grid-cols-2 gap-4">
-            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default">
+          <div className="h-full text-center grid xl:grid-cols-2 gap-4">
+            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default lg:order-1">
               <div>Left sidebar</div>
             </div>
-            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default">
+            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default lg:order-5 xl:order-2">
               <div>Right sidebar</div>
             </div>
-            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded cursor-pointer">
+            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-2 xl:order-3">
               Expand on hover
               <span>
                 <CheckIcon className="h-6 w-6 ml-2" />
               </span>
             </div>
-            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded cursor-pointer">
+            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-6  xl:order-4">
               Expand on hover
               <span>
                 <CheckIcon className="h-6 w-6 ml-2" />
               </span>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-3 xl:order-5">
               <div>Always expand</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-7 xl:order-6">
               <div>Always expand</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-4 xl:order-7">
               <div>Always collapse</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-8 xl:order-8">
               <div>Always collapse</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
@@ -155,27 +153,27 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded">
+      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
         <div className="text-3xl font-bold mb-1">Security</div>
         <div className="font-semibold text-zinc-500 mb-4">
           Manage your account security
         </div>
 
-        <div className="h-full grid lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+        <div className="h-full text-center grid xl:grid-cols-2 gap-4">
+          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Change password</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Change email</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full 2xl:col-span-1 w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Delete account</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
           <div
-            className="col-span-full w-full p-4 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded cursor-pointer transition duration-300"
+            className="col-span-full w-full p-4 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded-lg cursor-pointer transition duration-300"
             onClick={handleSignOut}
           >
             Sign out
@@ -183,32 +181,34 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded">
+      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
         <div className="text-3xl font-bold mb-1">Notifications</div>
         <div className="font-semibold text-zinc-500 mb-4">
           Manage your notification preferences
         </div>
-        <div className="h-full grid lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+        <div className="h-full text-center grid xl:grid-cols-2 gap-4">
+          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Web notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Push notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full 2xl:col-span-1 w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded cursor-default">
+          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
             <div>Email notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
         </div>
       </div>
+
+      <div className="h-64" />
     </div>
   );
 };
 
 SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <Layout label="Settings">{page}</Layout>;
 };
 
 export default SettingPage;

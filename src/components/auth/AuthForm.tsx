@@ -57,6 +57,7 @@ const AuthForm = () => {
 
       if (method === 'signup') {
         setEmailSent(true);
+        setLoading(false);
         return;
       }
 

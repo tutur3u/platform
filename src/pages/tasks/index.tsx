@@ -8,15 +8,11 @@ export const getServerSideProps = withPageAuth({
 });
 
 const AllTasksPage: PageWithLayoutProps = () => {
-  return (
-    <>
-      <h1 className="text-4xl font-semibold mb-4">Tasks</h1>
-    </>
-  );
+  return <div></div>;
 };
 
 AllTasksPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <Layout label="Tasks">{page}</Layout>;
 };
 
 export default AllTasksPage;

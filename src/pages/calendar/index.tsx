@@ -8,15 +8,11 @@ export const getServerSideProps = withPageAuth({
 });
 
 const CalendarPage: PageWithLayoutProps = () => {
-  return (
-    <>
-      <h1 className="text-4xl font-semibold mb-4">Calendar</h1>
-    </>
-  );
+  return <div></div>;
 };
 
 CalendarPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <Layout label="Calendar">{page}</Layout>;
 };
 
 export default CalendarPage;
