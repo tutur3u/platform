@@ -11,5 +11,5 @@ module.exports = {
   variants: {
     width: ['responsive', 'hover', 'focus'],
   },
-  plugins: [],
+  plugins: [require('tailwind-scrollbar')],
 };

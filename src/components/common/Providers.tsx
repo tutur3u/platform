@@ -6,6 +6,7 @@ import { ModalsProvider } from '@mantine/modals';
 import { NotificationsProvider } from '@mantine/notifications';
 import { useState } from 'react';
 import { UserDataProvider } from '../../hooks/useUserData';
+import { AppearanceProvider } from '../../hooks/useAppearance';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -22,16 +23,15 @@ const Providers = ({ children }: ProvidersProps) => {
         colorScheme: 'dark',
       }}
     >
-      <SessionContextProvider
-        supabaseClient={supabaseClient}
-        // initialSession={pageProps.initialSession}
-      >
+      <SessionContextProvider supabaseClient={supabaseClient}>
         <UserDataProvider>
-          <ModalsProvider>
-            <NotificationsProvider position="bottom-left">
-              {children}
-            </NotificationsProvider>
-          </ModalsProvider>
+          <AppearanceProvider>
+            <ModalsProvider>
+              <NotificationsProvider position="bottom-left">
+                {children}
+              </NotificationsProvider>
+            </ModalsProvider>
+          </AppearanceProvider>
         </UserDataProvider>
       </SessionContextProvider>
     </MantineProvider>

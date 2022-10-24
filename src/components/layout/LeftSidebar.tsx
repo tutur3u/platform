@@ -8,7 +8,6 @@ import SidebarTab from './SidebarTab';
 import { APP_VERSION } from '../../constants/common';
 import { useRouter } from 'next/router';
 import Logo from '../common/Logo';
-import styles from './layout.module.css';
 import { SidebarProps } from '../../types/SidebarProps';
 
 function LeftSidebar({ className }: SidebarProps) {
@@ -22,7 +21,7 @@ function LeftSidebar({ className }: SidebarProps) {
         <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-start overflow-hidden border-b border-zinc-700">
           <Logo showLabel />
         </div>
-        <div className={`${styles.scrollbar} overflow-scroll h-full`}>
+        <div className="overflow-auto h-full">
           <div className="mt-4 p-2 flex flex-col items-start gap-6">
             <SidebarTab
               href="/"

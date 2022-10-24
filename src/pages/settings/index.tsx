@@ -2,11 +2,11 @@ import { ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import Layout from '../../components/layout/Layout';
 import { TextInput } from '@mantine/core';
-import { CheckIcon } from '@heroicons/react/20/solid';
 import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
+import { useAppearance } from '../../hooks/useAppearance';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
@@ -14,10 +14,11 @@ export const getServerSideProps = withPageAuth({
 
 const SettingPage: PageWithLayoutProps = () => {
   const router = useRouter();
-  const { supabaseClient } = useSessionContext();
-
   const user = useUser();
+
+  const { supabaseClient } = useSessionContext();
   const { data, updateData } = useUserData();
+  const { fullWidth, enableFullWidth, enablePaddedWidth } = useAppearance();
 
   const [saving, setSaving] = useState(false);
 
@@ -100,17 +101,44 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <div className="text-xl font-semibold text-zinc-400 mb-2">General</div>
         <div className="grid text-center xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Light mode</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer">
-            Dark mode{' '}
-            <span>
-              <CheckIcon className="h-6 w-6 ml-2" />
-            </span>
+          <div className="w-full p-2 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer">
+            Dark mode
           </div>
         </div>
+
+        {enableFullWidth && enablePaddedWidth && (
+          <>
+            <div className="text-xl font-semibold text-zinc-400 mt-4 mb-2">
+              Content
+            </div>
+            <div className="grid text-center xl:grid-cols-2 gap-4">
+              <div
+                onClick={enableFullWidth}
+                className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
+                  fullWidth
+                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
+                    : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                }`}
+              >
+                Full width
+              </div>
+              <div
+                onClick={enablePaddedWidth}
+                className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
+                  !fullWidth
+                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
+                    : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                }`}
+              >
+                Padded width
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="hidden lg:flex flex-col mt-4">
           <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
@@ -121,31 +149,25 @@ const SettingPage: PageWithLayoutProps = () => {
             <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default lg:order-5 xl:order-2">
               <div>Right sidebar</div>
             </div>
-            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-2 xl:order-3">
+            <div className="w-full p-2 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-2 xl:order-3">
               Expand on hover
-              <span>
-                <CheckIcon className="h-6 w-6 ml-2" />
-              </span>
             </div>
-            <div className="w-full p-4 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-6  xl:order-4">
+            <div className="w-full p-2 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer lg:order-6  xl:order-4">
               Expand on hover
-              <span>
-                <CheckIcon className="h-6 w-6 ml-2" />
-              </span>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-3 xl:order-5">
+            <div className="p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed lg:order-3 xl:order-5">
               <div>Always expand</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-7 xl:order-6">
+            <div className="p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed lg:order-7 xl:order-6">
               <div>Always expand</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-4 xl:order-7">
+            <div className="p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed lg:order-4 xl:order-7">
               <div>Always collapse</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
-            <div className="p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default lg:order-8 xl:order-8">
+            <div className="p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed lg:order-8 xl:order-8">
               <div>Always collapse</div>
               <div className="text-lg text-zinc-400">Coming soon</div>
             </div>
@@ -160,20 +182,20 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
 
         <div className="h-full text-center grid xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Change password</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Change email</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Delete account</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
           <div
-            className="col-span-full w-full p-4 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded-lg cursor-pointer transition duration-300"
+            className="col-span-full w-full p-2 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded-lg cursor-pointer transition duration-300"
             onClick={handleSignOut}
           >
             Sign out
@@ -187,15 +209,15 @@ const SettingPage: PageWithLayoutProps = () => {
           Manage your notification preferences
         </div>
         <div className="h-full text-center grid xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Web notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Push notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center font-semibold text-xl bg-zinc-800/70 text-zinc-700 rounded-lg cursor-default">
+          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
             <div>Email notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
