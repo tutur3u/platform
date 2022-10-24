@@ -54,8 +54,16 @@ const AuthForm = () => {
       const password = form.values.password;
 
       await authenticate({ supabaseClient, method, email, password });
-      if (method === 'signup') setEmailSent(true);
-      else router.push('/');
+
+      if (method === 'signup') {
+        setEmailSent(true);
+        return;
+      }
+
+      // If there is a nextUrl, redirect to it
+      // Otherwise, redirect to the homepage
+      const { nextUrl } = router.query;
+      router.push(nextUrl ? nextUrl.toString() : '/');
     } catch (error) {
       alert(error || 'Something went wrong');
     } finally {

@@ -8,7 +8,9 @@ import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
 
-export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
+export const getServerSideProps = withPageAuth({
+  redirectTo: '/login?nextUrl=/settings',
+});
 
 const SettingPage: PageWithLayoutProps = () => {
   const router = useRouter();
