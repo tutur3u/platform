@@ -1,3 +1,4 @@
+import { Tooltip } from '@mantine/core';
 import Link from 'next/link';
 interface SidebarTabProps {
   href: string;
@@ -6,6 +7,7 @@ interface SidebarTabProps {
   icon: React.ReactNode;
   showIcon?: boolean;
   showLabel?: boolean;
+  showTooltip?: boolean;
 }
 
 export default function SidebarTab({
@@ -15,6 +17,7 @@ export default function SidebarTab({
   icon,
   showIcon = true,
   showLabel = true,
+  showTooltip = false,
 }: SidebarTabProps) {
   const isActive = currentPath === href;
 
@@ -24,16 +27,18 @@ export default function SidebarTab({
 
   return (
     <Link href={href ?? '#'}>
-      <a
-        className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300`}
-      >
-        <div className="flex justify-start items-center gap-2">
-          {showIcon && <div className="w-8 flex-none">{icon}</div>}
-          {showLabel && (
-            <div className="inline-block overflow-hidden">{label}</div>
-          )}
-        </div>
-      </a>
+      <Tooltip label={label} position="right" disabled={!showTooltip}>
+        <a
+          className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer`}
+        >
+          <div className="flex justify-start items-center gap-2">
+            {showIcon && <div className="w-8 flex-none">{icon}</div>}
+            {showLabel && (
+              <div className="inline-block overflow-hidden">{label}</div>
+            )}
+          </div>
+        </a>
+      </Tooltip>
     </Link>
   );
 }

@@ -9,9 +9,11 @@ import { APP_VERSION } from '../../constants/common';
 import { useRouter } from 'next/router';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
+import { useAppearance } from '../../hooks/useAppearance';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
+  const { leftSidebar } = useAppearance();
 
   return (
     <div
@@ -19,7 +21,7 @@ function LeftSidebar({ className }: SidebarProps) {
     >
       <div className="w-full h-full flex flex-col">
         <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-start overflow-hidden border-b border-zinc-700">
-          <Logo showLabel />
+          <Logo alwaysShowLabel={leftSidebar === 'open'} />
         </div>
         <div className="overflow-auto h-full">
           <div className="mt-4 p-2 flex flex-col items-start gap-6">
@@ -28,18 +30,21 @@ function LeftSidebar({ className }: SidebarProps) {
               currentPath={router.pathname}
               icon={<HomeIcon />}
               label="Dashboard"
+              showTooltip={leftSidebar === 'closed'}
             />
             <SidebarTab
               href="/tasks"
               currentPath={router.pathname}
               icon={<ClipboardDocumentListIcon />}
               label="Tasks"
+              showTooltip={leftSidebar === 'closed'}
             />
             <SidebarTab
               href="/calendar"
               currentPath={router.pathname}
               icon={<CalendarIcon />}
               label="Calendar"
+              showTooltip={leftSidebar === 'closed'}
             />
           </div>
         </div>

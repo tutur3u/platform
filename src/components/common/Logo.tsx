@@ -3,17 +3,20 @@ import Link from 'next/link';
 interface LogoProps {
   showLogo?: boolean;
   showLabel?: boolean;
+  alwaysShowLabel?: boolean;
   allowRedirect?: boolean;
   onClick?: () => void;
 }
 export default function Logo({
   showLogo = true,
-  showLabel,
+  showLabel = true,
+  alwaysShowLabel = false,
   allowRedirect,
   onClick,
 }: LogoProps) {
   const label = 'Tuturuuu';
   const css = 'font-bold text-white text-4xl';
+
   return (
     <Link href={allowRedirect ? '/' : '/?no-redirect=true'} onClick={onClick}>
       <a className={`flex items-center gap-2 ${css}`}>
@@ -28,7 +31,12 @@ export default function Logo({
           </div>
         )}
         {showLabel && (
-          <div className="text-2xl absolute left-[2.71rem] md:opacity-0 md:-translate-x-2 group-hover:static group-hover:translate-x-0 group-hover:opacity-100 transition duration-200 text-white font-semibold">
+          <div
+            className={`text-2xl absolute left-[2.71rem] transition duration-200 text-white font-semibold ${
+              alwaysShowLabel ||
+              'md:opacity-0 md:-translate-x-2 group-hover:static group-hover:translate-x-0 group-hover:opacity-100'
+            }`}
+          >
             {label}
           </div>
         )}
