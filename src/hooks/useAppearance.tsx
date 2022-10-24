@@ -63,10 +63,10 @@ export const AppearanceProvider = ({
     const rightSidebar = localStorage.getItem(rightSidebarPrefs);
     const contentWidth = localStorage.getItem(contentWidthPrefs);
 
-    if (theme) changeTheme(theme as Theme);
-    if (leftSidebar) changeLeftSidebar(leftSidebar as SidebarPreference);
-    if (rightSidebar) changeRightSidebar(rightSidebar as SidebarPreference);
-    if (contentWidth) changeContentWidth(contentWidth as ContentWidth);
+    if (theme) setTheme(theme as Theme);
+    if (leftSidebar) setLeftSidebar(leftSidebar as SidebarPreference);
+    if (rightSidebar) setRightSidebar(rightSidebar as SidebarPreference);
+    if (contentWidth) setContentWidth(contentWidth as ContentWidth);
   }, []);
 
   const values = {
