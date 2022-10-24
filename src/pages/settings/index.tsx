@@ -158,23 +158,23 @@ const SettingPage: PageWithLayoutProps = () => {
             </div>
             <div
               className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-2 xl:order-3 ${
-                leftSidebar === 'auto'
+                leftSidebar === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('auto')}
+              onClick={() => changeLeftSidebar('closed')}
             >
-              Expand on hover
+              Always collapsed
             </div>
             <div
               className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-6 xl:order-4 ${
-                rightSidebar === 'auto'
+                rightSidebar === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('auto')}
+              onClick={() => changeRightSidebar('closed')}
             >
-              Expand on hover
+              Always collapsed
             </div>
             <div
               className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-3 xl:order-5 ${
@@ -198,23 +198,23 @@ const SettingPage: PageWithLayoutProps = () => {
             </div>
             <div
               className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-4 xl:order-7 ${
-                leftSidebar === 'closed'
+                leftSidebar === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('closed')}
+              onClick={() => changeLeftSidebar('auto')}
             >
-              Always collapsed
+              Expand on hover
             </div>
             <div
               className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-8 ${
-                rightSidebar === 'closed'
+                rightSidebar === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('closed')}
+              onClick={() => changeRightSidebar('auto')}
             >
-              Always collapsed
+              Expand on hover
             </div>
           </div>
         </div>
