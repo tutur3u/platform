@@ -1,18 +1,30 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  contentWidthPrefs,
+  leftSidebarPrefs,
+  rightSidebarPrefs,
+  themePrefs,
+} from '../constants/prefs';
 
 type Theme = 'light' | 'dark';
+type ContentWidth = 'full' | 'padded';
+type SidebarPreference = 'auto' | 'open' | 'closed';
 
 const AppearanceContext = createContext({
   theme: 'dark',
-  setTheme: null as ((theme: Theme) => void) | null,
+  changeTheme: (theme: Theme) => localStorage.setItem(themePrefs, theme),
 
-  darkmode: true,
-  enableDarkmode: null as (() => void) | null,
-  enableLightmode: null as (() => void) | null,
+  leftSidebar: 'auto',
+  changeLeftSidebar: (pref: SidebarPreference) =>
+    localStorage.setItem(leftSidebarPrefs, pref),
 
-  fullWidth: false,
-  enableFullWidth: null as (() => void) | null,
-  enablePaddedWidth: null as (() => void) | null,
+  rightSidebar: 'auto',
+  changeRightSidebar: (pref: SidebarPreference) =>
+    localStorage.setItem(rightSidebarPrefs, pref),
+
+  contentWidth: 'full',
+  changeContentWidth: (width: ContentWidth) =>
+    localStorage.setItem(contentWidthPrefs, width),
 });
 
 export const AppearanceProvider = ({
@@ -21,52 +33,61 @@ export const AppearanceProvider = ({
   children: React.ReactNode;
 }) => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [fullWidth, setFullWidth] = useState<boolean>(false);
+  const [leftSidebar, setLeftSidebar] = useState<SidebarPreference>('closed');
+  const [rightSidebar, setRightSidebar] = useState<SidebarPreference>('closed');
+  const [contentWidth, setContentWidth] = useState<ContentWidth>('full');
 
-  const darkmode = theme === 'dark';
-
-  const enableLightmode = () => {
-    const theme = 'light';
-    localStorage.setItem('theme', theme);
-    setTheme(theme);
-  };
-  const enableDarkmode = () => {
-    const theme = 'dark';
-    localStorage.setItem('theme', theme);
+  const changeTheme = (theme: Theme) => {
+    localStorage.setItem(themePrefs, theme);
     setTheme(theme);
   };
 
-  const enableFullWidth = () => {
-    localStorage.setItem('fullWidth', 'true');
-    setFullWidth(true);
+  const changeLeftSidebar = (pref: SidebarPreference) => {
+    localStorage.setItem(leftSidebarPrefs, pref);
+    setLeftSidebar(pref);
   };
-  const enablePaddedWidth = () => {
-    localStorage.setItem('fullWidth', 'false');
-    setFullWidth(false);
+
+  const changeRightSidebar = (pref: SidebarPreference) => {
+    localStorage.setItem(rightSidebarPrefs, pref);
+    setRightSidebar(pref);
+  };
+
+  const changeContentWidth = (width: ContentWidth) => {
+    localStorage.setItem(contentWidthPrefs, width);
+    setContentWidth(width);
   };
 
   useEffect(() => {
-    const theme = localStorage.getItem('theme');
-    const fullWidth = localStorage.getItem('fullWidth');
+    const theme = localStorage.getItem(themePrefs);
+    const leftSidebar = localStorage.getItem(leftSidebarPrefs);
+    const rightSidebar = localStorage.getItem(rightSidebarPrefs);
+    const contentWidth = localStorage.getItem(contentWidthPrefs);
 
-    if (theme) setTheme(theme as Theme);
-    else setTheme('dark');
+    if (theme) changeTheme(theme as Theme);
+    else changeTheme('dark');
 
-    if (fullWidth) setFullWidth(fullWidth === 'true');
-    else setFullWidth(false);
+    if (leftSidebar) changeLeftSidebar(leftSidebar as SidebarPreference);
+    else changeLeftSidebar('closed');
+
+    if (rightSidebar) changeRightSidebar(rightSidebar as SidebarPreference);
+    else changeRightSidebar('closed');
+
+    if (contentWidth) changeContentWidth(contentWidth as ContentWidth);
+    else changeContentWidth('full');
   }, []);
 
   const values = {
     theme,
-    setTheme,
+    changeTheme,
 
-    darkmode,
-    enableDarkmode,
-    enableLightmode,
+    leftSidebar,
+    changeLeftSidebar,
 
-    fullWidth,
-    enableFullWidth,
-    enablePaddedWidth,
+    rightSidebar,
+    changeRightSidebar,
+
+    contentWidth,
+    changeContentWidth,
   };
 
   return (

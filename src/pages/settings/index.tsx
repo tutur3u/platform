@@ -18,7 +18,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { supabaseClient } = useSessionContext();
   const { data, updateData } = useUserData();
-  const { fullWidth, enableFullWidth, enablePaddedWidth } = useAppearance();
+  const { contentWidth, changeContentWidth } = useAppearance();
 
   const [saving, setSaving] = useState(false);
 
@@ -110,16 +110,16 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
         </div>
 
-        {enableFullWidth && enablePaddedWidth && (
+        {changeContentWidth && (
           <>
             <div className="text-xl font-semibold text-zinc-400 mt-4 mb-2">
               Content
             </div>
             <div className="grid text-center xl:grid-cols-2 gap-4">
               <div
-                onClick={enableFullWidth}
+                onClick={() => changeContentWidth('full')}
                 className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
-                  fullWidth
+                  contentWidth === 'full'
                     ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                     : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
                 }`}
@@ -127,9 +127,9 @@ const SettingPage: PageWithLayoutProps = () => {
                 Full width
               </div>
               <div
-                onClick={enablePaddedWidth}
+                onClick={() => changeContentWidth('padded')}
                 className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
-                  !fullWidth
+                  contentWidth === 'padded'
                     ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                     : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
                 }`}
