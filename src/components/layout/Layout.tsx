@@ -29,7 +29,7 @@ const Layout: FC<LayoutProps> = ({ label, children }) => {
   };
 
   return (
-    <div className="flex w-full h-screen min-h-screen">
+    <div className="bg-[#111113] flex w-full h-screen min-h-screen">
       <LeftSidebar
         className={`transition-all duration-300 ${generateSidebarWidth(
           leftSidebar
