@@ -1,6 +1,6 @@
 {
   "name": "web-app",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
@@ -35,7 +35,7 @@
     "@types/cookie": "^0.5.1",
     "@types/jest": "^29.2.0",
     "@types/js-cookie": "^3.0.2",
-    "@types/node": "18.11.3",
+    "@types/node": "18.11.4",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
     "@types/testing-library__jest-dom": "^5.14.5",
