@@ -64,16 +64,9 @@ export const AppearanceProvider = ({
     const contentWidth = localStorage.getItem(contentWidthPrefs);
 
     if (theme) changeTheme(theme as Theme);
-    else changeTheme('dark');
-
     if (leftSidebar) changeLeftSidebar(leftSidebar as SidebarPreference);
-    else changeLeftSidebar('closed');
-
     if (rightSidebar) changeRightSidebar(rightSidebar as SidebarPreference);
-    else changeRightSidebar('closed');
-
     if (contentWidth) changeContentWidth(contentWidth as ContentWidth);
-    else changeContentWidth('full');
   }, []);
 
   const values = {
