@@ -6,10 +6,13 @@ import styles from './layout.module.css';
 import { Avatar } from '@mantine/core';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useUser } from '@supabase/auth-helpers-react';
+import { useUserData } from '../../hooks/useUserData';
 
 function RightSidebar({ className }: SidebarProps) {
   const router = useRouter();
+
   const user = useUser();
+  const { data } = useUserData();
 
   return (
     <div
@@ -20,8 +23,18 @@ function RightSidebar({ className }: SidebarProps) {
           <button className="pt-1 pl-[0.15rem]">
             <Avatar size={35} color="cyan" radius="xl" />
           </button>
-          <div className="text-md pt-1 font-semibold">
-            {user ? user?.email || user?.phone : 'Not logged in'}
+          <div className="mt-1">
+            <div className="text-md font-bold min-w-max">
+              {data?.displayName ||
+                user?.email ||
+                user?.phone ||
+                'Not logged in'}
+            </div>
+            {data?.username && (
+              <div className="text-sm font-semibold min-w-max text-purple-300">
+                @{data?.username}
+              </div>
+            )}
           </div>
         </div>
         <div className={`${styles.scrollbar} overflow-scroll h-full`}>

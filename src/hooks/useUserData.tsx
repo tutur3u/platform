@@ -5,6 +5,7 @@ import { UserData } from '../types/primitives/UserData';
 const UserDataContext = createContext({
   isLoading: true,
   data: null as UserData | null,
+  updateData: null as ((data: Partial<UserData>) => Promise<void>) | null,
 });
 
 export const UserDataProvider = ({
@@ -30,9 +31,22 @@ export const UserDataProvider = ({
     if (user) fetchUserData();
   }, [user]);
 
+  const updateData = async (data: Partial<UserData>) => {
+    await fetch('/api/user', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    fetchUserData();
+  };
+
   const values = {
     isLoading: !data,
     data,
+    updateData,
   };
 
   return (

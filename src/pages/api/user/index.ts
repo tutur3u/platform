@@ -24,11 +24,40 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
   return res.status(200).json(data);
 };
 
+const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  console.log(user, userError);
+  if (userError) return res.status(401).json({ error: userError.message });
+
+  const { displayName: display_name, username } = req.body;
+
+  const { data, error } = await supabase
+    .from('users')
+    .update({ display_name, username })
+    .eq('id', user?.id);
+
+  console.log(data, error);
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json(data);
+};
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     switch (req.method) {
       case 'GET':
         return await fetchUser(req, res);
+
+      case 'PUT':
+        return await updateUser(req, res);
 
       default:
         throw new Error(
