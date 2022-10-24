@@ -41,7 +41,7 @@ const Layout: FC<LayoutProps> = ({ label, children }) => {
           contentWidth === 'padded' && 'md:px-56'
         } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
           rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
-        }`}
+        } transition-all duration-300`}
       >
         <Header label={label} />
         <div>{children}</div>
