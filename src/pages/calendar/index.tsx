@@ -7,9 +7,9 @@ export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const CalendarPage: PageWithLayoutProps = () => {
   return (
-    <div className="flex justify-center items-center">
-      <div className="text-3xl font-semibold">Calendar</div>
-    </div>
+    <>
+      <h1 className="text-4xl font-semibold mb-4">Calendar</h1>
+    </>
   );
 };
 

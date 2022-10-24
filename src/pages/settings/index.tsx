@@ -52,6 +52,8 @@ const SettingPage: PageWithLayoutProps = () => {
 
   return (
     <div className="grid md:grid-cols-2 gap-4">
+      <h1 className="col-span-full text-4xl font-semibold mb-4">Settings</h1>
+
       <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded">
         <div className="text-3xl font-bold mb-1">Account</div>
         <div className="font-semibold text-zinc-500 mb-4">
