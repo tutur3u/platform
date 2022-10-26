@@ -18,6 +18,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { supabaseClient } = useSessionContext();
   const { data, updateData } = useUserData();
+
   const {
     contentWidth,
     changeContentWidth,

@@ -35,15 +35,15 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
     error: userError,
   } = await supabase.auth.getUser();
 
-  console.log(user, userError);
   if (userError) return res.status(401).json({ error: userError.message });
+  if (!user?.id) return res.status(401).json({ error: 'User not found' });
 
-  const { displayName: display_name, username } = req.body;
+  const { displayName, username } = req.body;
 
   const { data, error } = await supabase
     .from('users')
-    .update({ display_name, username })
-    .eq('id', user?.id);
+    .update({ display_name: displayName, username })
+    .eq('id', user.id);
 
   console.log(data, error);
   if (error) return res.status(401).json({ error: error.message });
