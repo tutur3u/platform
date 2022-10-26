@@ -1,5 +1,6 @@
 import { Tooltip } from '@mantine/core';
 import Link from 'next/link';
+
 interface SidebarTabProps {
   href: string;
   currentPath: string;
@@ -26,18 +27,17 @@ export default function SidebarTab({
     : 'text-zinc-200/50 hover:text-zinc-200';
 
   return (
-    <Link href={href ?? '#'}>
+    <Link
+      href={href ?? '#'}
+      className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer`}
+    >
       <Tooltip label={label} position="right" disabled={!showTooltip}>
-        <a
-          className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer`}
-        >
-          <div className="flex justify-start items-center gap-2">
-            {showIcon && <div className="w-8 flex-none">{icon}</div>}
-            {showLabel && (
-              <div className="inline-block overflow-hidden">{label}</div>
-            )}
-          </div>
-        </a>
+        <div className="flex justify-start items-center gap-2">
+          {showIcon && <div className="w-8 flex-none">{icon}</div>}
+          {showLabel && (
+            <div className="inline-block overflow-hidden">{label}</div>
+          )}
+        </div>
       </Tooltip>
     </Link>
   );
