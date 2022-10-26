@@ -35,9 +35,9 @@ const Layout: FC<LayoutProps> = ({ label, children }) => {
           leftSidebar
         )}`}
       />
-      {/* left-0 right-0 md:left-16 md:right-16 */}
+
       <main
-        className={`bg-[#111113] left-0 right-0 scrollbar-thin scrollbar-track-zinc-800 scrollbar-thumb-zinc-700 flex flex-col p-7 gap-5 h-screen fixed top-0 min-h-full overflow-auto ${
+        className={`bg-[#111113] left-0 right-0 scrollbar-none flex flex-col p-7 gap-5 h-screen fixed top-0 min-h-full overflow-auto ${
           contentWidth === 'padded' && 'md:px-56'
         } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
           rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
