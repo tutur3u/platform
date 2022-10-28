@@ -9,6 +9,7 @@ interface SidebarTabProps {
   showIcon?: boolean;
   showLabel?: boolean;
   showTooltip?: boolean;
+  className?: string;
 }
 
 export default function SidebarTab({
@@ -19,17 +20,16 @@ export default function SidebarTab({
   showIcon = true,
   showLabel = true,
   showTooltip = false,
+  className,
 }: SidebarTabProps) {
   const isActive = currentPath === href;
-
-  const extraCss = isActive
-    ? 'text-zinc-200'
-    : 'text-zinc-200/50 hover:text-zinc-200';
 
   return (
     <Link
       href={href ?? '#'}
-      className={`${extraCss} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer`}
+      className={`${className} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer ${
+        isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
+      }`}
     >
       <Tooltip label={label} position="right" disabled={!showTooltip}>
         <div className="flex justify-start items-center gap-2">

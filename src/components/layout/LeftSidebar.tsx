@@ -19,9 +19,11 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`${className} ${
-          leftSidebar === 'open' ? 'block' : 'hidden'
-        } md:block group z-20 h-full fixed flex-col justify-center items-center top-0 left-0 border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg`}
+        className={`${className} group z-20 block h-full fixed flex-col justify-center items-center top-0 left-0 border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg ${
+          leftSidebar === 'open'
+            ? 'opacity-100'
+            : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
+        } transition-all duration-300`}
       >
         <div className="w-full h-full flex flex-col">
           <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-start overflow-hidden border-b border-zinc-700">
@@ -43,11 +45,12 @@ function LeftSidebar({ className }: SidebarProps) {
                   icon={<Cog6ToothIcon />}
                   label="Settings"
                   showTooltip={rightSidebar === 'closed'}
+                  className="md:hidden"
                 />
               </>
             </div>
           </div>
-          <div className="m-3 mt-4 relative flex justify-start items-center gap-2 overflow-hidden rounded transition duration-300">
+          <div className="m-3 mt-4 relative flex md:hidden justify-start items-center gap-2 overflow-hidden rounded transition duration-300">
             <div className="pl-[0.07rem]">
               <Avatar size={36} color="blue" radius="xl" />
             </div>
@@ -71,7 +74,7 @@ function LeftSidebar({ className }: SidebarProps) {
         </div>
       </div>
       <div
-        className={`w-screen md:hidden h-screen z-10 bg-zinc-900/90 ${
+        className={`w-screen md:hidden h-screen z-10 bg-zinc-900/50 backdrop-blur ${
           leftSidebar === 'open' ? 'block' : 'hidden'
         }`}
         onClick={() => changeLeftSidebar('closed')}
