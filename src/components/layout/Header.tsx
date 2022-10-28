@@ -1,4 +1,6 @@
 import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Avatar } from '@mantine/core';
+import { useAppearance } from '../../hooks/useAppearance';
 
 interface HeaderProps {
   label?: string;
@@ -6,10 +8,18 @@ interface HeaderProps {
 }
 
 export default function Header({ label, className }: HeaderProps) {
+  const { changeLeftSidebar } = useAppearance();
   return (
     <div
       className={`${className} mb-4 w-full flex justify-between items-center`}
     >
+      <Avatar
+        className="block md:hidden hover:cursor-pointer"
+        size={37}
+        color="blue"
+        radius="xl"
+        onClick={() => changeLeftSidebar('open')}
+      />
       {label ? (
         <div className="px-6 py-2 text-3xl font-bold bg-purple-300/20 text-purple-300 rounded-full cursor-default">
           {label}
