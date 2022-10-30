@@ -5,7 +5,6 @@ import {
   TextInput,
   PasswordInput,
   Text,
-  Paper,
   Group,
   Button,
   Checkbox,
@@ -18,6 +17,7 @@ import { ChangeEvent, useState } from 'react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
+import AuthWrapper from './AuthWrapper';
 
 const AuthForm = () => {
   const router = useRouter();
@@ -85,90 +85,86 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="grid place-content-center min-h-screen">
-      <div className="md:max-w-md w-screen p-4">
-        <Paper radius="md" p="xl" withBorder>
-          <Text size="xl" weight={500} align="center">
-            {emailSent ? 'One more step...' : upperFirst(method)}
+    <AuthWrapper>
+      <Text size="xl" weight={500} align="center">
+        {emailSent ? 'One more step...' : upperFirst(method)}
+      </Text>
+
+      {emailSent ? (
+        <Stack>
+          <Text size="lg" mt="md" color="muted" align="center">
+            A confirmation email has been sent to your email{' '}
+            <span className="font-semibold">{form.values.email}</span>. Click
+            the link inside to finish your signup.
           </Text>
+          <CheckCircleIcon className="h-20 text-green-500" />
+        </Stack>
+      ) : (
+        <form>
+          <Stack>
+            <TextInput
+              required
+              label="Email"
+              placeholder="example@tuturuuu.com"
+              id="email"
+              value={form.values.email}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('email', event.currentTarget.value)
+              }
+              error={form.errors.email && 'Invalid email'}
+            />
 
-          {emailSent ? (
-            <Stack>
-              <Text size="lg" mt="md" color="muted" align="center">
-                A confirmation email has been sent to your email{' '}
-                <span className="font-semibold">{form.values.email}</span>.
-                Click the link inside to finish your signup.
-              </Text>
-              <CheckCircleIcon className="h-20 text-green-500" />
-            </Stack>
-          ) : (
-            <form>
-              <Stack>
-                <TextInput
-                  required
-                  label="Email"
-                  placeholder="example@tuturuuu.com"
-                  id="email"
-                  value={form.values.email}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    form.setFieldValue('email', event.currentTarget.value)
-                  }
-                  error={form.errors.email && 'Invalid email'}
-                />
+            <PasswordInput
+              required
+              label="Password"
+              placeholder="Your password"
+              id="password"
+              value={form.values.password}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('password', event.currentTarget.value)
+              }
+              error={
+                form.errors.password &&
+                'Password should include at least 6 characters'
+              }
+            />
 
-                <PasswordInput
-                  required
-                  label="Password"
-                  placeholder="Your password"
-                  id="password"
-                  value={form.values.password}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    form.setFieldValue('password', event.currentTarget.value)
-                  }
-                  error={
-                    form.errors.password &&
-                    'Password should include at least 6 characters'
-                  }
-                />
+            {method === 'signup' && (
+              <Checkbox
+                label="I accept terms and conditions"
+                checked={form.values.terms}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  form.setFieldValue('terms', event.currentTarget.checked)
+                }
+              />
+            )}
+          </Stack>
 
-                {method === 'signup' && (
-                  <Checkbox
-                    label="I accept terms and conditions"
-                    checked={form.values.terms}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      form.setFieldValue('terms', event.currentTarget.checked)
-                    }
-                  />
-                )}
-              </Stack>
+          <Group position="apart" mt="xl">
+            <Anchor
+              component="button"
+              type="button"
+              color="dimmed"
+              onClick={() => toggle()}
+              size="xs"
+            >
+              {method === 'signup'
+                ? 'Already have an account? Login'
+                : "Don't have an account? Sign up"}
+            </Anchor>
 
-              <Group position="apart" mt="xl">
-                <Anchor
-                  component="button"
-                  type="button"
-                  color="dimmed"
-                  onClick={() => toggle()}
-                  size="xs"
-                >
-                  {method === 'signup'
-                    ? 'Already have an account? Login'
-                    : "Don't have an account? Sign up"}
-                </Anchor>
-
-                <Button
-                  variant="light"
-                  type="submit"
-                  onClick={handleAuth}
-                  disabled={isFormInvalid}
-                >
-                  {getCTAText(method, loading)}
-                </Button>
-              </Group>
-            </form>
-          )}
-        </Paper>
-      </div>
-    </div>
+            <Button
+              variant="light"
+              type="submit"
+              onClick={handleAuth}
+              disabled={isFormInvalid}
+            >
+              {getCTAText(method, loading)}
+            </Button>
+          </Group>
+        </form>
+      )}
+    </AuthWrapper>
   );
 };
 
