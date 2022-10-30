@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
-import { useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
@@ -108,7 +108,7 @@ const AuthForm = () => {
               placeholder="example@tuturuuu.com"
               id="email"
               value={form.values.email}
-              onChange={(event) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 form.setFieldValue('email', event.currentTarget.value)
               }
               error={form.errors.email && 'Invalid email'}
@@ -120,7 +120,7 @@ const AuthForm = () => {
               placeholder="Your password"
               id="password"
               value={form.values.password}
-              onChange={(event) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 form.setFieldValue('password', event.currentTarget.value)
               }
               error={
@@ -133,7 +133,7 @@ const AuthForm = () => {
               <Checkbox
                 label="I accept terms and conditions"
                 checked={form.values.terms}
-                onChange={(event) =>
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
                   form.setFieldValue('terms', event.currentTarget.checked)
                 }
               />
