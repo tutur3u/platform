@@ -1,6 +1,7 @@
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
+import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Organization } from '../../types/primitives/Organization';
 
@@ -27,7 +28,9 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
         label="Organization name"
         placeholder="Enter organization name"
         value={name}
-        onChange={(event) => setName(event.currentTarget.value)}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setName(event.currentTarget.value)
+        }
         data-autofocus
       />
       <div className="flex gap-2">

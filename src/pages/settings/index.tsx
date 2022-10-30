@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import Layout from '../../components/layout/Layout';
 import { TextInput } from '@mantine/core';
@@ -74,13 +74,17 @@ const SettingPage: PageWithLayoutProps = () => {
             label="Display name"
             placeholder="John Doe"
             value={displayName}
-            onChange={(event) => setDisplayName(event.currentTarget.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setDisplayName(event.currentTarget.value)
+            }
           />
           <TextInput
             label="Username"
             placeholder="@tuturuuu"
             value={username}
-            onChange={(event) => setUsername(event.currentTarget.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setUsername(event.currentTarget.value)
+            }
           />
           <TextInput
             label="Email"

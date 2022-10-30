@@ -1,6 +1,7 @@
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
+import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from '../../types/primitives/Project';
 
@@ -33,7 +34,9 @@ const ProjectEditForm = ({
         label="Project name"
         placeholder="Enter project name"
         value={name}
-        onChange={(event) => setName(event.currentTarget.value)}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setName(event.currentTarget.value)
+        }
         data-autofocus
       />
       <div className="flex gap-2">

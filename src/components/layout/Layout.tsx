@@ -9,7 +9,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: FC<LayoutProps> = ({ label, children }) => {
+const Layout: FC<LayoutProps> = ({ label, children }: LayoutProps) => {
   const { contentWidth, leftSidebar, rightSidebar } = useAppearance();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
