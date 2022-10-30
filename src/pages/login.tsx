@@ -1,8 +1,8 @@
 import React from 'react';
-import AuthForm from '../components/auth/AuthForm';
+import AuthWrapper from '../components/auth/AuthWrapper';
 
 const LoginPage = () => {
-  return <AuthForm />;
+  return <AuthWrapper />;
 };
 
 export default LoginPage;

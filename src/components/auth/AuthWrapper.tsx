@@ -1,18 +1,33 @@
-import { Paper } from '@mantine/core';
-import React from 'react';
+import { upperFirst, useToggle } from '@mantine/hooks';
+import React, { useState } from 'react';
+import { AuthMethod } from '../../utils/auth-handler';
+import AuthContainer from './AuthContainer';
+import AuthForm from './AuthForm';
+import AuthQR from './AuthQR';
+import AuthTitle from './AuthTitle';
 
-interface AuthWrapperProps {
-  children: React.ReactNode;
-}
+export default function AuthWrapper() {
+  const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
+  const [emailSent, setEmailSent] = useState<boolean>(false);
 
-export default function AuthWrapper({ children }: AuthWrapperProps) {
+  const label = emailSent ? 'One last step...' : upperFirst(method);
+
+  const toggleMethod = () => toggle();
+  const onSignup = () => setEmailSent(true);
+
   return (
-    <div className="grid place-content-center min-h-screen">
-      <div className="md:max-w-md w-screen p-4">
-        <Paper radius="md" p="xl" withBorder>
-          {children}
-        </Paper>
+    <AuthContainer>
+        <AuthTitle label={label} />
+
+      <div className='flex'>
+      <AuthForm
+        method={method}
+        emailSent={emailSent}
+        onMethodToggle={toggleMethod}
+        onSignup={onSignup}
+      />
+      {method === 'login' && <AuthQR />}
       </div>
-    </div>
+    </AuthContainer>
   );
 }
