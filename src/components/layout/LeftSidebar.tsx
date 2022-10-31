@@ -35,7 +35,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 href="/"
                 currentPath={router.pathname}
                 icon={<HomeIcon />}
-                label="Dashboard"
+                label="Home"
                 showTooltip={leftSidebar === 'closed'}
               />
               <>

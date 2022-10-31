@@ -25,6 +25,10 @@ const AppearanceContext = createContext({
   contentWidth: 'full' as ContentWidth,
   changeContentWidth: (width: ContentWidth) =>
     localStorage.setItem(contentWidthPrefs, width),
+
+  segments: [] as string[],
+  setRootSegment: (segment: string | string[]) => console.log(segment),
+  setSegment: (segment: string) => console.log(segment),
 });
 
 export const AppearanceProvider = ({
@@ -69,6 +73,14 @@ export const AppearanceProvider = ({
     if (contentWidth) setContentWidth(contentWidth as ContentWidth);
   }, []);
 
+  const [segments, setSegments] = useState<string[]>([]);
+
+  const setRootSegment = (segment: string | string[]) =>
+    typeof segment === 'string' ? setSegments([segment]) : setSegments(segment);
+
+  const setSegment = (segment: string) =>
+    setSegments((prev) => [...prev, segment]);
+
   const values = {
     theme,
     changeTheme,
@@ -81,6 +93,10 @@ export const AppearanceProvider = ({
 
     contentWidth,
     changeContentWidth,
+
+    segments,
+    setRootSegment,
+    setSegment,
   };
 
   return (

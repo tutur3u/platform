@@ -13,6 +13,13 @@ export const getServerSideProps = withPageAuth({
 });
 
 const SettingPage: PageWithLayoutProps = () => {
+  const { setRootSegment } = useAppearance();
+
+  useEffect(() => {
+    setRootSegment(['Settings']);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const router = useRouter();
   const user = useUser();
 
@@ -280,7 +287,7 @@ const SettingPage: PageWithLayoutProps = () => {
 };
 
 SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout label="Settings">{page}</Layout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default SettingPage;

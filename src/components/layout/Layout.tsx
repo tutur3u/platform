@@ -5,11 +5,10 @@ import RightSidebar from './RightSidebar';
 import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
 
 interface LayoutProps {
-  label?: string;
   children: React.ReactNode;
 }
 
-const Layout: FC<LayoutProps> = ({ label, children }: LayoutProps) => {
+const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
   const { contentWidth, leftSidebar, rightSidebar } = useAppearance();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
@@ -43,7 +42,7 @@ const Layout: FC<LayoutProps> = ({ label, children }: LayoutProps) => {
           rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
         } transition-all duration-300`}
       >
-        <Header label={label} />
+        <Header />
         <div>{children}</div>
       </main>
 

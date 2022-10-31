@@ -11,10 +11,19 @@ import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useOrgs } from '../hooks/useOrganizations';
 import { mutate } from 'swr';
 import LoadingIndicator from '../components/common/LoadingIndicator';
+import Link from 'next/link';
+import { useAppearance } from '../hooks/useAppearance';
 
 export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const Home: PageWithLayoutProps = () => {
+  const { setRootSegment } = useAppearance();
+
+  useEffect(() => {
+    setRootSegment(['Home']);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { isLoading, orgs, createOrg, updateOrg, deleteOrg } = useOrgs();
 
   const maxOrgs = 3;
@@ -96,12 +105,15 @@ const Home: PageWithLayoutProps = () => {
           {orgs.map((org) => (
             <div key={org.id}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold cursor-pointer transition duration-150">
+                <Link
+                  href={`/orgs/${org.id}`}
+                  className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold transition duration-150"
+                >
                   {org?.name || `Unnamed organization`}{' '}
                   {org?.id === '00000000-0000-0000-0000-000000000000' && (
                     <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
                   )}
-                </div>
+                </Link>
                 {/* {org?.id === '00000000-0000-0000-0000-000000000000' || (
                   <button
                     className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
@@ -155,7 +167,7 @@ const Home: PageWithLayoutProps = () => {
 };
 
 Home.getLayout = function getLayout(page: ReactElement) {
-  return <Layout label="Home">{page}</Layout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default Home;
