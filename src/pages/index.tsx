@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
@@ -9,18 +9,22 @@ import { Project } from '../types/primitives/Project';
 import ProjectEditForm from '../components/forms/ProjectEditForm';
 import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useOrgs } from '../hooks/useOrganizations';
+import { mutate } from 'swr';
+import LoadingIndicator from '../components/common/LoadingIndicator';
 
 export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const Home: PageWithLayoutProps = () => {
-  const { orgs, createOrg, updateOrg, deleteOrg } = useOrgs();
+  const { isLoading, orgs, createOrg, updateOrg, deleteOrg } = useOrgs();
 
   const maxOrgs = 3;
 
+  useEffect(() => {
+    mutate('/api/orgs');
+  }, []);
+
   const addOrg = (org: Organization) => createOrg(org);
-
   const editOrg = (org: Organization) => updateOrg(org);
-
   const removeOrg = (id: string) => deleteOrg(id);
 
   const showDeleteOrgConfirmation = (orgId: string) => {
@@ -81,7 +85,11 @@ const Home: PageWithLayoutProps = () => {
     });
   };
 
-  return (
+  return isLoading ? (
+    <div className="flex items-center justify-center">
+      <LoadingIndicator className="h-8" />
+    </div>
+  ) : (
     <>
       {orgs.length > 0 ? (
         <div className="grid gap-4">
@@ -130,7 +138,6 @@ const Home: PageWithLayoutProps = () => {
           </div>
         </div>
       )}
-
       <button
         className={`mt-8 font-semibold px-6 py-4 rounded ${
           orgs.length < maxOrgs
