@@ -11,7 +11,7 @@ export default function AuthWrapper() {
   const [emailSent, setEmailSent] = useState<boolean>(false);
 
   const showQR =
-    method === 'login' && process.env.NEXT_PUBLIC_QR_ENABLED === 'true';
+    method === 'login' && process?.env?.NEXT_PUBLIC_QR_ENABLED === 'true';
 
   const label = emailSent ? 'One last step...' : upperFirst(method);
 
