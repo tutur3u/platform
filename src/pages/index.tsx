@@ -1,92 +1,27 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
-import { PencilIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, SparklesIcon } from '@heroicons/react/24/solid';
 import { closeAllModals, openConfirmModal, openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
-import { showNotification } from '@mantine/notifications';
 import { Project } from '../types/primitives/Project';
 import ProjectEditForm from '../components/forms/ProjectEditForm';
 import { withPageAuth } from '@supabase/auth-helpers-nextjs';
+import { useOrgs } from '../hooks/useOrganizations';
 
 export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
 const Home: PageWithLayoutProps = () => {
-  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const { orgs, createOrg, updateOrg, deleteOrg } = useOrgs();
 
   const maxOrgs = 3;
-  const maxProjects = 3;
 
-  const addOrg = (org: Organization) =>
-    setOrgs((prevOrgs) => [...prevOrgs, org]);
+  const addOrg = (org: Organization) => createOrg(org);
 
-  const editOrg = (org: Organization) =>
-    setOrgs((prevOrgs) =>
-      prevOrgs.map((prevOrg) =>
-        prevOrg.id === org.id ? { ...prevOrg, ...org } : prevOrg
-      )
-    );
+  const editOrg = (org: Organization) => updateOrg(org);
 
-  const removeOrg = (id: string) =>
-    setOrgs((prevOrgs) => prevOrgs.filter((org) => org.id !== id));
-
-  const addProject = (orgId: string, project: Project) =>
-    setOrgs((prevOrgs) =>
-      prevOrgs.map((prevOrg) =>
-        prevOrg.id === orgId
-          ? { ...prevOrg, projects: [...(prevOrg.projects || []), project] }
-          : prevOrg
-      )
-    );
-
-  const editProject = (orgId: string, project: Project) =>
-    setOrgs((prevOrgs) =>
-      prevOrgs.map((prevOrg) =>
-        prevOrg.id === orgId
-          ? {
-              ...prevOrg,
-              projects: (prevOrg.projects || []).map((prevProject) =>
-                prevProject.id === project.id
-                  ? { ...prevProject, ...project }
-                  : prevProject
-              ),
-            }
-          : prevOrg
-      )
-    );
-
-  const removeProject = (orgId: string, projectId: string) =>
-    setOrgs((prevOrgs) =>
-      prevOrgs.map((prevOrg) =>
-        prevOrg.id === orgId
-          ? {
-              ...prevOrg,
-              projects: (prevOrg.projects || []).filter(
-                (project) => project.id !== projectId
-              ),
-            }
-          : prevOrg
-      )
-    );
-
-  const showMaxOrgsReached = () => {
-    showNotification({
-      title: 'Maximum organizations reached',
-      message: `You can only have ${maxOrgs} organizations at a time.`,
-      color: 'red',
-    });
-  };
-
-  const showMaxProjectsReached = () => {
-    showNotification({
-      title: 'Maximum projects reached',
-      message: `You can only have ${maxProjects} projects per organization.`,
-      color: 'red',
-    });
-  };
-
-  const getOrg = (id: string) => orgs.find((org) => org.id === id);
+  const removeOrg = (id: string) => deleteOrg(id);
 
   const showDeleteOrgConfirmation = (orgId: string) => {
     openConfirmModal({
@@ -110,26 +45,6 @@ const Home: PageWithLayoutProps = () => {
     });
   };
 
-  const showDeleteProjectConfirmation = (orgId: string, projectId: string) => {
-    openConfirmModal({
-      title: 'Delete project',
-      centered: true,
-      children: (
-        <div className="text-center">
-          <p className="mb-4">Are you sure you want to delete this project?</p>
-        </div>
-      ),
-      labels: {
-        cancel: 'Cancel',
-        confirm: 'Delete',
-      },
-      onConfirm: () => {
-        removeProject(orgId, projectId);
-        closeAllModals();
-      },
-    });
-  };
-
   const showEditOrgModal = (org?: Organization) => {
     openModal({
       title: org?.id ? 'Edit organization' : 'New organization',
@@ -137,13 +52,7 @@ const Home: PageWithLayoutProps = () => {
       children: (
         <OrgEditForm
           org={org}
-          onSubmit={
-            org?.id
-              ? editOrg
-              : orgs.length < maxOrgs
-              ? addOrg
-              : showMaxOrgsReached
-          }
+          onSubmit={org?.id ? editOrg : addOrg}
           onDelete={
             org?.id ? () => showDeleteOrgConfirmation(org.id) : undefined
           }
@@ -160,18 +69,13 @@ const Home: PageWithLayoutProps = () => {
         <ProjectEditForm
           orgId={orgId}
           project={project}
-          onSubmit={
-            project?.id
-              ? editProject
-              : (getOrg(orgId)?.projects?.length || 0) < maxProjects
-              ? addProject
-              : showMaxProjectsReached
-          }
-          onDelete={
-            project?.id
-              ? () => showDeleteProjectConfirmation(orgId, project.id)
-              : undefined
-          }
+          // onSubmit={
+          //   project?.id
+          //     ? editProject
+          //     : (getOrg(orgId)?.projects?.length || 0) < maxProjects
+          //     ? addProject
+          //     : showMaxProjectsReached
+          // }
         />
       ),
     });
@@ -185,17 +89,22 @@ const Home: PageWithLayoutProps = () => {
             <div key={org.id}>
               <div className="flex items-center gap-2 mb-2">
                 <div className="text-blue-200 text-2xl font-semibold">
-                  {org?.name || `Unnamed organization`}
+                  {org?.name || `Unnamed organization`}{' '}
+                  {org?.id === '00000000-0000-0000-0000-000000000000' && (
+                    <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+                  )}
                 </div>
-                <button
-                  className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
-                  onClick={() => showEditOrgModal(org)}
-                >
-                  <PencilIcon className="w-4 h-4" />
-                </button>
+                {org?.id === '00000000-0000-0000-0000-000000000000' || (
+                  <button
+                    className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
+                    onClick={() => showEditOrgModal(org)}
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {org?.projects?.map((project) => (
+                {/* {org?.projects?.map((project) => (
                   <div
                     key={project.id}
                     className="p-4 h-32 flex bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
@@ -203,22 +112,12 @@ const Home: PageWithLayoutProps = () => {
                   >
                     {project?.name || `Unnamed project`}
                   </div>
-                ))}
+                ))} */}
                 <div
-                  className={`p-2 h-32 flex justify-center items-center font-semibold text-xl rounded ${
-                    (org?.projects?.length || 0) < maxProjects
-                      ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 cursor-pointer'
-                      : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
-                  } transition duration-300`}
-                  onClick={() =>
-                    (org?.projects?.length || 0) < maxProjects
-                      ? showEditProjectModal(org.id)
-                      : undefined
-                  }
+                  className="p-2 h-32 flex justify-center items-center font-semibold text-xl rounded bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 cursor-pointer transition duration-300"
+                  onClick={() => showEditProjectModal(org.id)}
                 >
-                  {(org?.projects?.length || 0) < maxProjects
-                    ? 'New project'
-                    : 'Maximum projects reached'}
+                  New project
                 </div>
               </div>
             </div>

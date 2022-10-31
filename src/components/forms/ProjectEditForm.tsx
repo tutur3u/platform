@@ -8,7 +8,7 @@ import { Project } from '../../types/primitives/Project';
 interface ProjectEditFormProps {
   orgId: string;
   project?: Project;
-  onSubmit: (orgId: string, project: Project) => void;
+  onSubmit?: (orgId: string, project: Project) => void;
   onDelete?: () => void;
 }
 
@@ -57,7 +57,7 @@ const ProjectEditForm = ({
           onClick={() => {
             const newProject = { id: project?.id || uuidv4(), name };
 
-            onSubmit(orgId, newProject);
+            if (onSubmit) onSubmit(orgId, newProject);
             closeAllModals();
           }}
           mt="md"

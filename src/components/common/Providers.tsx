@@ -7,6 +7,8 @@ import { NotificationsProvider } from '@mantine/notifications';
 import { useState } from 'react';
 import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
+import { OrganizationProvider } from '../../hooks/useOrganizations';
+import { SWRConfig } from 'swr';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -16,25 +18,32 @@ const Providers = ({ children }: ProvidersProps) => {
   const [supabaseClient] = useState(() => createBrowserSupabaseClient());
 
   return (
-    <MantineProvider
-      withGlobalStyles
-      withNormalizeCSS
-      theme={{
-        colorScheme: 'dark',
+    <SWRConfig
+      value={{
+        fetcher: (resource, init) =>
+          fetch(resource, init).then((res) => res.json()),
       }}
     >
-      <SessionContextProvider supabaseClient={supabaseClient}>
-        <UserDataProvider>
-          <AppearanceProvider>
-            <ModalsProvider>
-              <NotificationsProvider position="bottom-left">
-                {children}
-              </NotificationsProvider>
-            </ModalsProvider>
-          </AppearanceProvider>
-        </UserDataProvider>
-      </SessionContextProvider>
-    </MantineProvider>
+      <MantineProvider
+        withGlobalStyles
+        withNormalizeCSS
+        theme={{
+          colorScheme: 'dark',
+        }}
+      >
+        <SessionContextProvider supabaseClient={supabaseClient}>
+          <UserDataProvider>
+            <AppearanceProvider>
+              <ModalsProvider>
+                <NotificationsProvider position="bottom-left">
+                  <OrganizationProvider>{children}</OrganizationProvider>
+                </NotificationsProvider>
+              </ModalsProvider>
+            </AppearanceProvider>
+          </UserDataProvider>
+        </SessionContextProvider>
+      </MantineProvider>
+    </SWRConfig>
   );
 };
 

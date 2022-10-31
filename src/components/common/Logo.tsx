@@ -5,7 +5,6 @@ interface LogoProps {
   showLogo?: boolean;
   showLabel?: boolean;
   alwaysShowLabel?: boolean;
-  allowRedirect?: boolean;
   onClick?: () => void;
 }
 
@@ -13,7 +12,6 @@ export default function Logo({
   showLogo = true,
   showLabel = true,
   alwaysShowLabel = false,
-  allowRedirect,
   onClick,
 }: LogoProps) {
   const label = 'Tuturuuu';
@@ -21,7 +19,7 @@ export default function Logo({
 
   return (
     <Link
-      href={allowRedirect ? '/' : '/?no-redirect=true'}
+      href="/"
       onClick={onClick}
       className={`flex items-center gap-2 ${css}`}
     >
