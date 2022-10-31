@@ -10,7 +10,8 @@ export default function AuthWrapper() {
   const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
   const [emailSent, setEmailSent] = useState<boolean>(false);
 
-  const enableQR = method === 'login';
+  const showQR =
+    method === 'login' && process.env.NEXT_PUBLIC_QR_ENABLED === 'true';
 
   const label = emailSent ? 'One last step...' : upperFirst(method);
 
@@ -18,12 +19,12 @@ export default function AuthWrapper() {
   const onSignup = () => setEmailSent(true);
 
   return (
-    <AuthContainer enableQR={enableQR}>
+    <AuthContainer showQR={showQR}>
       <AuthTitle label={label} />
 
       <div
         className={`${
-          enableQR ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
+          showQR ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
         } grid gap-7 md:gap-3 transition duration-300`}
       >
         <AuthForm
@@ -32,7 +33,7 @@ export default function AuthWrapper() {
           onMethodToggle={toggleMethod}
           onSignup={onSignup}
         />
-        <AuthQR className={`${enableQR ? 'md:block' : ''} hidden`} />
+        <AuthQR disabled={!showQR} />
       </div>
     </AuthContainer>
   );

@@ -4,14 +4,14 @@ import React from 'react';
 
 interface AuthContainerProps {
   children: ReactNode;
-  enableQR: boolean;
+  showQR: boolean;
 }
 
-const AuthContainer = ({ children, enableQR }: AuthContainerProps) => (
+const AuthContainer = ({ children, showQR }: AuthContainerProps) => (
   <div className="grid place-content-center min-h-screen">
     <div
       className={`${
-        enableQR ? 'md:w-[40rem]' : 'md:w-[30rem]'
+        showQR ? 'md:w-[40rem]' : 'md:w-[30rem]'
       } w-screen p-4 transition duration-300`}
     >
       <Paper radius="md" p="xl" withBorder>

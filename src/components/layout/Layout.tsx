@@ -38,7 +38,7 @@ const Layout: FC<LayoutProps> = ({ label, children }: LayoutProps) => {
 
       <main
         className={`bg-[#111113] left-0 right-0 scrollbar-none flex flex-col p-7 gap-5 h-screen fixed top-0 min-h-full overflow-auto ${
-          contentWidth === 'padded' && 'md:px-56'
+          contentWidth === 'padded' && 'lg:px-56'
         } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
           rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
         } transition-all duration-300`}

@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
-import { PencilIcon, SparklesIcon } from '@heroicons/react/24/solid';
+import { SparklesIcon } from '@heroicons/react/24/solid';
 import { closeAllModals, openConfirmModal, openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
 import { Project } from '../types/primitives/Project';
@@ -88,20 +88,20 @@ const Home: PageWithLayoutProps = () => {
           {orgs.map((org) => (
             <div key={org.id}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="text-blue-200 text-2xl font-semibold">
+                <div className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold cursor-pointer transition duration-150">
                   {org?.name || `Unnamed organization`}{' '}
                   {org?.id === '00000000-0000-0000-0000-000000000000' && (
                     <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
                   )}
                 </div>
-                {org?.id === '00000000-0000-0000-0000-000000000000' || (
+                {/* {org?.id === '00000000-0000-0000-0000-000000000000' || (
                   <button
                     className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
                     onClick={() => showEditOrgModal(org)}
                   >
                     <PencilIcon className="w-4 h-4" />
                   </button>
-                )}
+                )} */}
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {/* {org?.projects?.map((project) => (
@@ -114,7 +114,7 @@ const Home: PageWithLayoutProps = () => {
                   </div>
                 ))} */}
                 <div
-                  className="p-2 h-32 flex justify-center items-center font-semibold text-xl rounded bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 cursor-pointer transition duration-300"
+                  className="p-2 h-32 flex justify-center items-center font-semibold text-xl rounded bg-zinc-300/10 hover:bg-blue-300/30 text-zinc-300 hover:text-blue-300 cursor-pointer transition duration-300"
                   onClick={() => showEditProjectModal(org.id)}
                 >
                   New project

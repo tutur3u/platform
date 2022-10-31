@@ -1,14 +1,7 @@
 import { upperFirst } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 
-import {
-  TextInput,
-  PasswordInput,
-  Button,
-  Checkbox,
-  Anchor,
-  Stack,
-} from '@mantine/core';
+import { TextInput, PasswordInput, Button, Anchor, Stack } from '@mantine/core';
 
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
 import { ChangeEvent, useState } from 'react';
@@ -131,16 +124,6 @@ const AuthForm = ({
           }
           icon={<LockClosedIcon className="w-5" />}
         />
-
-        {method === 'signup' && (
-          <Checkbox
-            label="I accept terms and conditions"
-            checked={form.values.terms}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              form.setFieldValue('terms', event.currentTarget.checked)
-            }
-          />
-        )}
       </Stack>
 
       <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mt-4">

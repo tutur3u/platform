@@ -2,15 +2,15 @@ import { Image } from '@mantine/core';
 import React from 'react';
 
 interface AuthQRProps {
-  className?: string;
+  disabled?: boolean;
 }
 
-const AuthQR = ({ className }: AuthQRProps) => {
+const AuthQR = ({ disabled = false }: AuthQRProps) => {
+  if (disabled) return null;
+
   return (
-    <div
-      className={`${className} flex justify-center gap-3 items-center w-full md:max-w-md`}
-    >
-      <div className="flex justify-center items-center h-full flex-col">
+    <div className="hidden md:block w-full md:max-w-md">
+      <div className="flex justify-center items-center gap-2 h-full flex-col">
         <Image
           width={150}
           height={150}
