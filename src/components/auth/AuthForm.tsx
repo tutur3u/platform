@@ -4,7 +4,6 @@ import { useForm } from '@mantine/form';
 import {
   TextInput,
   PasswordInput,
-  Group,
   Button,
   Checkbox,
   Anchor,
@@ -16,11 +15,11 @@ import { ChangeEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import AuthEmailSent from './AuthEmailSent';
 import { useSessionContext } from '@supabase/auth-helpers-react';
+import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 
 interface AuthFormProps {
   method: AuthMethod;
   emailSent: boolean;
-
   onMethodToggle?: () => void;
   onSignup?: () => void;
   onSignin?: () => void;
@@ -102,7 +101,7 @@ const AuthForm = ({
   };
 
   return (
-    <form>
+    <form className="min-w-lg p-2">
       <Stack>
         <TextInput
           required
@@ -114,6 +113,7 @@ const AuthForm = ({
             form.setFieldValue('email', event.currentTarget.value)
           }
           error={form.errors.email && 'Invalid email'}
+          icon={<EnvelopeIcon className="w-5" />}
         />
 
         <PasswordInput
@@ -129,6 +129,7 @@ const AuthForm = ({
             form.errors.password &&
             'Password should include at least 6 characters'
           }
+          icon={<LockClosedIcon className="w-5" />}
         />
 
         {method === 'signup' && (
@@ -142,7 +143,7 @@ const AuthForm = ({
         )}
       </Stack>
 
-      <Group position="apart" mt="xl">
+      <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mt-4">
         <Anchor
           component="button"
           type="button"
@@ -156,6 +157,7 @@ const AuthForm = ({
         </Anchor>
 
         <Button
+          className="p-2 w-full md:w-fit mt-2 md:mt-0"
           variant="light"
           type="submit"
           onClick={handleAuth}
@@ -163,7 +165,7 @@ const AuthForm = ({
         >
           {getCTAText(method, loading)}
         </Button>
-      </Group>
+      </div>
     </form>
   );
 };
