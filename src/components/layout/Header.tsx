@@ -34,29 +34,31 @@ export default function Header({ className }: HeaderProps) {
         radius="xl"
         onClick={() => changeLeftSidebar('open')}
       />
-      {segments.length > 0 ? (
-        <div className="flex items-center gap-2">
-          {segments.map((segment, index) => (
-            <>
-              {index > 0 && (
-                <span key={`/${index}`} className="text-zinc-500 text-xl">
-                  /
-                </span>
-              )}
-              <div
-                key={index}
-                className={`px-6 py-2 text-xl font-bold rounded-full cursor-default ${getSegmentColor(
-                  index
-                )}`}
-              >
-                {segment}
-              </div>
-            </>
-          ))}
-        </div>
-      ) : (
-        <div />
-      )}
+      <div className="hidden md:block">
+        {segments.length > 0 ? (
+          <div className="flex items-center gap-2">
+            {segments.map((segment, index) => (
+              <>
+                {index > 0 && (
+                  <span key={`/${index}`} className="text-zinc-500 text-xl">
+                    /
+                  </span>
+                )}
+                <div
+                  key={index}
+                  className={`px-6 py-2 text-xl font-bold rounded-full cursor-default ${getSegmentColor(
+                    index
+                  )}`}
+                >
+                  {segment}
+                </div>
+              </>
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
         <button className="p-2 hover:bg-zinc-300/10 hover:text-zinc-300 hover:border-zinc-600 rounded hover:cursor-pointer transition duration-150">

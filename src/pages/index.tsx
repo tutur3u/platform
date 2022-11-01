@@ -141,7 +141,7 @@ const Home: PageWithLayoutProps = () => {
         </div>
       )}
       <button
-        className={`mt-8 font-semibold px-6 py-4 rounded ${
+        className={`w-full md:w-fit mt-8 font-semibold px-8 py-4 rounded ${
           orgs.length < maxOrgs
             ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
             : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
