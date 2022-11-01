@@ -1,5 +1,5 @@
 import LeftSidebar from './LeftSidebar';
-import React, { FC } from 'react';
+import { FC } from 'react';
 import Header from './Header';
 import RightSidebar from './RightSidebar';
 import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';

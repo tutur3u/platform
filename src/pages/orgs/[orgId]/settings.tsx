@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 
-const OrganizationOverviewPage = () => {
+const OrganizationSettingsPage = () => {
   const router = useRouter();
   const { orgId } = router.query;
 
@@ -14,7 +14,7 @@ const OrganizationOverviewPage = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Overview'] : []);
+    setRootSegment(data?.name ? [data.name, 'Settings'] : []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
@@ -23,28 +23,17 @@ const OrganizationOverviewPage = () => {
   return (
     <div className="grid gap-4">
       <div className="p-4 bg-zinc-900 rounded-lg">
-        <h1 className="font-bold">Overview</h1>
+        <h1 className="font-bold">Settings</h1>
         <p className="text-zinc-400">
-          This is the overview page for the {data?.name} organization.
+          This is the settings page for the {data?.name} organization.
         </p>
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 bg-zinc-900 rounded-lg h-72">
-          <h1 className="font-bold">Revenue</h1>
-        </div>
-        <div className="p-4 bg-zinc-900 rounded-lg">
-          <h1 className="font-bold">Expenses</h1>
-        </div>
-        <div className="p-4 bg-zinc-900 rounded-lg">
-          <h1 className="font-bold">Recent Activity</h1>
-        </div>
       </div>
     </div>
   );
 };
 
-OrganizationOverviewPage.getLayout = function getLayout(page: ReactElement) {
+OrganizationSettingsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default OrganizationOverviewPage;
+export default OrganizationSettingsPage;

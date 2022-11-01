@@ -101,29 +101,19 @@ const Home: PageWithLayoutProps = () => {
   ) : (
     <>
       {orgs.length > 0 ? (
-        <div className="grid gap-4">
+        <div className="grid gap-8">
           {orgs.map((org) => (
             <div key={org.id}>
-              <div className="flex items-center gap-2 mb-2">
-                <Link
-                  href={`/orgs/${org.id}`}
-                  className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold transition duration-150"
-                >
-                  {org?.name || `Unnamed organization`}{' '}
-                  {org?.id === '00000000-0000-0000-0000-000000000000' && (
-                    <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
-                  )}
-                </Link>
-                {/* {org?.id === '00000000-0000-0000-0000-000000000000' || (
-                  <button
-                    className="p-2 hover:bg-zinc-700/80 rounded transition duration-150"
-                    onClick={() => showEditOrgModal(org)}
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                )} */}
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              <Link
+                href={`/orgs/${org.id}`}
+                className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold transition duration-150"
+              >
+                {org?.name || `Unnamed organization`}{' '}
+                {org?.id === '00000000-0000-0000-0000-000000000000' && (
+                  <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+                )}
+              </Link>
+              <div className="mt-2 grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {/* {org?.projects?.map((project) => (
                   <div
                     key={project.id}
