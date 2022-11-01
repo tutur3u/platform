@@ -5,7 +5,7 @@ interface AuthTitleProps {
 }
 
 const AuthTitle = ({ label }: AuthTitleProps) => (
-  <Text size="xl" weight={500} align="center">
+  <Text className="text-3xl" weight={700} align="center">
     {label}
   </Text>
 );

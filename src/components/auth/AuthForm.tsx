@@ -140,7 +140,7 @@ const AuthForm = ({
         </Anchor>
 
         <Button
-          className="p-2 w-full md:w-fit mt-2 md:mt-0"
+          className="p-2 w-full md:w-fit mt-2 md:mt-0 rounded-lg"
           variant="light"
           type="submit"
           onClick={handleAuth}
