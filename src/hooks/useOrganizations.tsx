@@ -8,13 +8,13 @@ const OrganizationContext = createContext({
   isLoading: true,
   isError: false,
 
-  createOrg: (org: Organization) => {
+  createOrg: async (org: Organization) => {
     console.log('createOrg', org);
   },
-  updateOrg: (org: Organization) => {
+  updateOrg: async (org: Organization) => {
     console.log('updateOrg', org);
   },
-  deleteOrg: (id: string) => {
+  deleteOrg: async (id: string) => {
     console.log('deleteOrg', id);
   },
 });
