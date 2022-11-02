@@ -22,6 +22,10 @@ const tabs = [
     href: '/members',
   },
   {
+    name: 'Teams',
+    href: '/teams',
+  },
+  {
     name: 'Settings',
     href: '/settings',
   },
