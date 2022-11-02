@@ -1,7 +1,7 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 
@@ -9,11 +9,14 @@ const OrganizationMembersPage = () => {
   const router = useRouter();
   const { orgId } = router.query;
 
-  const { data: orgData, error: orgError } = useSWR(`/api/orgs/${orgId}`);
+  const { data: orgData, error: orgError } = useSWR(
+    orgId ? `/api/orgs/${orgId}` : null
+  );
+
   const {
     data: membersData,
     error: membersError,
-    mutate,
+    mutate: mutateMembers,
   } = useSWR(orgId ? `/api/orgs/${orgId}/members` : null);
 
   const isLoadingOrg = !orgData && !orgError;
@@ -42,13 +45,17 @@ const OrganizationMembersPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgData?.name]);
 
+  useEffect(() => {
+    if (orgData?.error || orgError) router.push('/');
+  }, [orgData, orgError, router]);
+
   if (isLoading) return <div>Loading...</div>;
 
   const deleteMember = async (memberId: string) => {
     await fetch(`/api/orgs/${orgId}/members/${memberId}`, {
       method: 'DELETE',
     });
-    mutate(
+    mutateMembers(
       (
         members: [
           {
@@ -59,6 +66,7 @@ const OrganizationMembersPage = () => {
         return members.filter((member) => member.users.id !== memberId);
       }
     );
+    mutate(`/api/orgs/${orgId}`);
   };
 
   return (
