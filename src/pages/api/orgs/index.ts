@@ -7,9 +7,17 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) return res.status(401).json({ error: userError.message });
+
   const { data, error } = await supabase
     .from('org_members')
-    .select('orgs(id, name)');
+    .select('orgs(id, name)')
+    .eq('user_id', user?.id);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data?.map((org) => org.orgs));
