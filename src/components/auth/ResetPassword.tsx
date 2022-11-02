@@ -29,13 +29,13 @@ export default function ResetPasswordPage() {
       <AuthContainer showQR={false}>
         <AuthTitle label="Forgot password?" />
         <div className="grid grid-cols-1 gap-3 mt-6 transition duration-300">
-          <div>
-            Please enter your email address. You will receive a link to create a
-            new password via email.
+          <div className="max-md:text-lg">
+            Please enter your email address to reset your password.
           </div>
           <form>
             <TextInput
               required
+              label="Email"
               placeholder="example@tuturuuu.com"
               id="email"
               value={form.values.email}

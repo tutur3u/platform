@@ -12,12 +12,12 @@ export default function Header({ className }: HeaderProps) {
   const getSegmentColor = (index: number) => {
     const colors = [
       'bg-blue-300/20 text-blue-300',
-      'bg-green-300/20 text-green-300',
+      'bg-indigo-300/20 text-indigo-300',
       'bg-purple-300/20 text-purple-300',
       'bg-pink-300/20 text-pink-300',
+      'bg-green-300/20 text-green-300',
       'bg-red-300/20 text-red-300',
       'bg-yellow-300/20 text-yellow-300',
-      'bg-indigo-300/20 text-indigo-300',
     ];
 
     return colors[index % colors.length];
