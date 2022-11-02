@@ -1,6 +1,6 @@
 {
   "name": "web-app",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
@@ -22,7 +22,7 @@
     "@mantine/nprogress": "^5.6.3",
     "@supabase/auth-helpers-nextjs": "^0.4.4",
     "@supabase/auth-helpers-react": "^0.3.1",
-    "@supabase/supabase-js": "^2.0.4",
+    "@supabase/supabase-js": "^2.0.5",
     "js-cookie": "^3.0.1",
     "next": "13.0.1",
     "react": "18.2.0",
