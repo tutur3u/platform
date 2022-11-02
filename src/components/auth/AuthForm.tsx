@@ -1,22 +1,33 @@
-import { useToggle, upperFirst } from '@mantine/hooks';
+import { upperFirst } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 
-import {
-  TextInput,
-  PasswordInput,
-  Text,
-  Paper,
-  Group,
-  Button,
-  Checkbox,
-  Anchor,
-  Stack,
-} from '@mantine/core';
+import { TextInput, PasswordInput, Button, Anchor, Stack } from '@mantine/core';
 
 import { authenticate, AuthMethod } from '../../utils/auth-handler';
+import { ChangeEvent, useState } from 'react';
+import { useRouter } from 'next/router';
+import AuthEmailSent from './AuthEmailSent';
+import { useSessionContext } from '@supabase/auth-helpers-react';
+import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 
-const AuthForm = () => {
-  const [type, toggle] = useToggle<AuthMethod>(['login', 'register']);
+interface AuthFormProps {
+  method: AuthMethod;
+  emailSent: boolean;
+  onMethodToggle?: () => void;
+  onSignup?: () => void;
+  onSignin?: () => void;
+}
+
+const AuthForm = ({
+  method,
+  emailSent = false,
+  onMethodToggle,
+  onSignup,
+  onSignin,
+}: AuthFormProps) => {
+  const router = useRouter();
+  const { supabaseClient } = useSessionContext();
+  const [loading, setLoading] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -34,91 +45,111 @@ const AuthForm = () => {
     },
   });
 
+  if (emailSent) return <AuthEmailSent email={form.values.email} />;
+
   const isFormInvalid = !!form.errors.email || !!form.errors.password;
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const email = form.values.email;
       const password = form.values.password;
 
-      await authenticate(type, email, password);
+      await authenticate({
+        supabaseClient,
+        method,
+        email,
+        password,
+      });
+
+      if (method === 'signup') {
+        onSignup?.();
+        setLoading(false);
+        return;
+      } else onSignin?.();
+
+      // If there is a nextUrl, redirect to it
+      // Otherwise, redirect to the homepage
+      const { nextUrl } = router.query;
+      router.push(nextUrl ? nextUrl.toString() : '/');
     } catch (error) {
       alert(error || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const getCTAText = (method: AuthMethod, loading: boolean) => {
+    if (loading)
+      switch (method) {
+        case 'login':
+          return 'Logging in...';
+        case 'signup':
+          return 'Signing up...';
+      }
+
+    return upperFirst(method);
+  };
+
   return (
-    <Paper radius="md" p="xl" withBorder>
-      <Text size="xl" weight={500} align="center">
-        {upperFirst(type)}
-      </Text>
+    <form className="min-w-lg p-2">
+      <Stack>
+        <TextInput
+          required
+          label="Email"
+          placeholder="example@tuturuuu.com"
+          id="email"
+          value={form.values.email}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            form.setFieldValue('email', event.currentTarget.value)
+          }
+          error={form.errors.email && 'Invalid email'}
+          icon={<EnvelopeIcon className="w-5" />}
+        />
 
-      <form>
-        <Stack>
-          <TextInput
-            required
-            label="Email"
-            placeholder="example@tuturuuu.com"
-            id="email"
-            value={form.values.email}
-            onChange={(event) =>
-              form.setFieldValue('email', event.currentTarget.value)
-            }
-            error={form.errors.email && 'Invalid email'}
-          />
+        <PasswordInput
+          required
+          label="Password"
+          placeholder="Your password"
+          id="password"
+          value={form.values.password}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            form.setFieldValue('password', event.currentTarget.value)
+          }
+          error={
+            form.errors.password &&
+            'Password should include at least 6 characters'
+          }
+          icon={<LockClosedIcon className="w-5" />}
+        />
+      </Stack>
 
-          <PasswordInput
-            required
-            label="Password"
-            placeholder="Your password"
-            id="password"
-            value={form.values.password}
-            onChange={(event) =>
-              form.setFieldValue('password', event.currentTarget.value)
-            }
-            error={
-              form.errors.password &&
-              'Password should include at least 6 characters'
-            }
-          />
+      <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mt-4">
+        <Anchor
+          component="button"
+          type="button"
+          color="dimmed"
+          onClick={onMethodToggle}
+          size="xs"
+        >
+          {method === 'signup'
+            ? 'Already have an account? Login'
+            : "Don't have an account? Sign up"}
+        </Anchor>
 
-          {type === 'register' && (
-            <Checkbox
-              label="I accept terms and conditions"
-              checked={form.values.terms}
-              onChange={(event) =>
-                form.setFieldValue('terms', event.currentTarget.checked)
-              }
-            />
-          )}
-        </Stack>
-
-        <Group position="apart" mt="xl">
-          <Anchor
-            component="button"
-            type="button"
-            color="dimmed"
-            onClick={() => toggle()}
-            size="xs"
-          >
-            {type === 'register'
-              ? 'Already have an account? Login'
-              : "Don't have an account? Register"}
-          </Anchor>
-
-          <Button
-            variant="light"
-            type="submit"
-            onClick={handleAuth}
-            disabled={isFormInvalid}
-          >
-            {upperFirst(type)}
-          </Button>
-        </Group>
-      </form>
-    </Paper>
+        <Button
+          className="p-2 w-full md:w-fit mt-2 md:mt-0 rounded-lg"
+          variant="light"
+          type="submit"
+          onClick={handleAuth}
+          disabled={isFormInvalid}
+        >
+          {getCTAText(method, loading)}
+        </Button>
+      </div>
+    </form>
   );
 };
 

@@ -1,10 +1,8 @@
 import React from 'react';
-import Auth from '../components/auth/Auth';
-import { AuthRedirect } from '../hooks/useUser';
+import AuthWrapper from '../components/auth/AuthWrapper';
 
 const LoginPage = () => {
-  AuthRedirect();
-  return <Auth />;
+  return <AuthWrapper />;
 };
 
 export default LoginPage;

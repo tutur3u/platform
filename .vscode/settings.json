@@ -42,5 +42,8 @@
     // "jest.setup.js": true,
     //* Others
     "README.md": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }

@@ -1,51 +1,44 @@
 import { Tooltip } from '@mantine/core';
 import Link from 'next/link';
-import { useSidebar } from '../../hooks/useSidebar';
 
-interface SidebarProps {
-    href: string;
-    currentPath: string;
-    label: string;
-    icon: React.ReactNode;
+interface SidebarTabProps {
+  href: string;
+  currentPath: string;
+  label?: string;
+  icon: React.ReactNode;
+  showIcon?: boolean;
+  showLabel?: boolean;
+  showTooltip?: boolean;
+  className?: string;
 }
 
 export default function SidebarTab({
-    href,
-    currentPath,
-    label,
-    icon,
-}: SidebarProps) {
-    const isActive = currentPath === href;
+  href,
+  currentPath,
+  label,
+  icon,
+  showIcon = true,
+  showLabel = true,
+  showTooltip = false,
+  className,
+}: SidebarTabProps) {
+  const isActive = currentPath === href;
 
-    const { isCollapsed } = useSidebar();
-
-    const extraCss = isActive
-        ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30 hover:text-blue-200'
-        : 'hover:bg-blue-300/10 hover:text-blue-300';
-
-    return (
-        <Link href={href ?? '#'}>
-            <Tooltip
-                label={label}
-                color="gray"
-                position="right"
-                withArrow
-                offset={10}
-                disabled={!isCollapsed}
-            >
-                <div
-                    className={`${extraCss} ${
-                        isCollapsed ? 'w-fit' : 'w-full'
-                    } text-lg m-1 p-2 font-semibold rounded-md hover:cursor-pointer transition duration-300`}
-                >
-                    <div className="flex justify-start items-center gap-2">
-                        <div className="w-6 h-6 inline-block">{icon}</div>
-                        {isCollapsed || (
-                            <div className="inline-block">{label}</div>
-                        )}
-                    </div>
-                </div>
-            </Tooltip>
-        </Link>
-    );
+  return (
+    <Link
+      href={href ?? '#'}
+      className={`${className} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer ${
+        isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
+      }`}
+    >
+      <Tooltip label={label} position="right" disabled={!showTooltip}>
+        <div className="flex justify-start items-center gap-2">
+          {showIcon && <div className="w-8 flex-none">{icon}</div>}
+          {showLabel && (
+            <div className="inline-block overflow-hidden">{label}</div>
+          )}
+        </div>
+      </Tooltip>
+    </Link>
+  );
 }

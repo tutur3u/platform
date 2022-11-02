@@ -1,0 +1,60 @@
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
+
+  const { data, error } = await supabase
+    .from('org_members')
+    .select('orgs(id, name)');
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json(data?.map((org) => org.orgs));
+};
+
+const createOrg = async (req: NextApiRequest, res: NextApiResponse) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
+
+  const { name } = JSON.parse(req.body);
+
+  const data = {
+    name,
+  };
+
+  const { error } = await supabase.from('orgs').insert(data).single();
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json({ message: 'success' });
+};
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  try {
+    switch (req.method) {
+      case 'GET':
+        return await fetchOrgs(req, res);
+
+      case 'POST':
+        return await createOrg(req, res);
+
+      default:
+        throw new Error(
+          `The HTTP ${req.method} method is not supported at this route.`
+        );
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: {
+        message: 'Something went wrong',
+      },
+    });
+  }
+};
+
+export default handler;
