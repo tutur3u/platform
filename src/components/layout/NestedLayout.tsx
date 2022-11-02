@@ -6,6 +6,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
+  orgMode?: boolean;
 }
 
 const tabs = [
@@ -33,23 +34,33 @@ const tabs = [
 
 const NestedLayout: FC<NestedLayoutProps> = ({
   children,
+  orgMode = true,
 }: NestedLayoutProps) => {
   const {
-    query: { orgId },
+    query: { orgId, projectId },
   } = useRouter();
 
   const { segments } = useAppearance();
+  const rootTabs = orgMode
+    ? tabs
+    : tabs.filter((tab) => tab.name !== 'Projects');
+
+  const rootPath = orgMode ? `/orgs/${orgId}` : `/projects/${projectId}`;
 
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
         <div className="px-8 lg:px-0 lg:mx-56 flex gap-4 overflow-x-auto transition-all duration-300">
-          {tabs.map((tab) => (
+          {rootTabs.map((tab) => (
             <Link
               key={tab.name}
-              href={`/orgs/${orgId}${tab.href}`}
+              href={`${rootPath}${tab.href}`}
               className={`pb-2 border-b-2 rounded-t-lg group ${
-                segments.includes(tab.name)
+                (
+                  orgMode
+                    ? segments.includes(tab.name)
+                    : `${segments[2]}` === tab.name
+                )
                   ? 'border-zinc-300 text-zinc-300'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}

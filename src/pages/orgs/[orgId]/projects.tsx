@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
@@ -27,6 +28,15 @@ const OrganizationProjectsPage = () => {
         <p className="text-zinc-400">
           This is the projects page for the {data?.name} organization.
         </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <Link
+          href="/projects/test"
+          className="p-4 bg-zinc-900 hover:bg-zinc-800/80 rounded-lg h-72 transition duration-300"
+        >
+          <h1 className="font-bold">Test project</h1>
+        </Link>
       </div>
     </div>
   );

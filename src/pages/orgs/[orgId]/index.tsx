@@ -28,6 +28,7 @@ const OrganizationOverviewPage = () => {
           This is the overview page for the {data?.name} organization.
         </p>
       </div>
+
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div className="p-4 bg-zinc-900 rounded-lg h-72">
           <h1 className="font-bold">Revenue</h1>
