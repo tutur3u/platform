@@ -20,7 +20,10 @@ const Home: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(['Home']);
+    setRootSegment({
+      content: 'Home',
+      href: '/',
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

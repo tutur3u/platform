@@ -56,11 +56,13 @@ const NestedLayout: FC<NestedLayoutProps> = ({
               key={tab.name}
               href={`${rootPath}${tab.href}`}
               className={`pb-2 border-b-2 rounded-t-lg group ${
-                (
-                  orgMode
-                    ? segments.includes(tab.name)
-                    : `${segments[2]}` === tab.name
-                )
+                segments &&
+                segments.length > 0 &&
+                (orgMode
+                  ? segments
+                      .map((segment) => segment.content)
+                      .includes(tab.name)
+                  : `${segments[2]?.content}` === tab.name)
                   ? 'border-zinc-300 text-zinc-300'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}

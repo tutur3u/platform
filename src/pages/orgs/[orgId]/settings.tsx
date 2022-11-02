@@ -20,7 +20,20 @@ const OrganizationSettingsPage = () => {
   const [name, setName] = useState(data?.name);
 
   useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Settings'] : []);
+    setRootSegment(
+      data?.name
+        ? [
+            {
+              content: data.name,
+              href: `/orgs/${data.id}`,
+            },
+            {
+              content: 'Settings',
+              href: `/orgs/${data.id}/settings`,
+            },
+          ]
+        : []
+    );
     setName(data?.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
@@ -73,7 +86,9 @@ const OrganizationSettingsPage = () => {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
+    <div className="grid lg:grid-cols-2 gap-4">
+      <h1 className="col-span-full font-bold">Settings</h1>
+
       <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded-lg">
         <div className="text-3xl font-bold mb-1">Basic Information</div>
         <div className="font-semibold text-zinc-500 mb-4">

@@ -8,27 +8,45 @@ const OrganizationMembersPage = () => {
   const router = useRouter();
   const { orgId } = router.query;
 
-  const { data, error } = useSWR(`/api/orgs/${orgId}`);
-  const isLoading = !data && !error;
+  const { data: orgData, error: orgError } = useSWR(`/api/orgs/${orgId}`);
+  const { data: membersData, error: membersError } = useSWR(
+    orgData ? `/api/orgs/${orgId}/members` : null
+  );
+
+  const isLoadingOrg = !orgData && !orgError;
+  const isLoadingMembers = !membersData && !membersError;
+
+  const isLoading = isLoadingOrg || isLoadingMembers;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Members'] : []);
+    setRootSegment(
+      orgData?.name
+        ? [
+            {
+              content: orgData.name,
+
+              href: `/orgs/${orgData.id}`,
+            },
+            {
+              content: 'Members',
+              href: `/orgs/${orgData.id}/members`,
+            },
+          ]
+        : []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.name]);
+  }, [orgData?.name]);
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
-        <h1 className="font-bold">Members</h1>
-        <p className="text-zinc-400">
-          This is the members page for the {data?.name} organization.
-        </p>
-      </div>
-    </div>
+    <>
+      <h1 className="font-bold">Members</h1>
+
+      <div></div>
+    </>
   );
 };
 

@@ -13,22 +13,35 @@ const OrganizationTeamsPage = () => {
 
   const { setRootSegment } = useAppearance();
 
-  useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Teams'] : []);
+  useEffect(
+    () => {
+      setRootSegment(
+        data?.name
+          ? [
+              {
+                content: data.name,
+                href: `/orgs/${data.id}`,
+              },
+              {
+                content: 'Teams',
+                href: `/orgs/${data.id}/teams`,
+              },
+            ]
+          : []
+      );
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.name]);
+    [data?.name]
+  );
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
-        <h1 className="font-bold">Teams</h1>
-        <p className="text-zinc-400">
-          This is the teams page for the {data?.name} organization.
-        </p>
-      </div>
-    </div>
+    <>
+      <h1 className="font-bold">Teams</h1>
+
+      <div></div>
+    </>
   );
 };
 
