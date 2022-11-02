@@ -1,36 +1,56 @@
-import Navbar from './Navbar';
-import React, { FC } from 'react';
-import Sidebar from './Sidebar';
-import { useSidebar } from '../../hooks/useSidebar';
+import LeftSidebar from './LeftSidebar';
+import { FC } from 'react';
+import Header from './Header';
+import RightSidebar from './RightSidebar';
+import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: FC<LayoutProps> = ({ children }) => {
-  const { isCollapsed } = useSidebar();
+const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
+  const { contentWidth, leftSidebar, rightSidebar } = useAppearance();
 
-  const mainCSS = `p-10 flex-1 scrollbar-thin scrollbar-track-zinc-800 scrollbar-thumb-zinc-700 overflow-x-hidden ${
-    isCollapsed ? 'md:ml-[4rem]' : 'md:ml-[16rem]'
-  }`;
+  const generateSidebarWidth = (pref: SidebarPreference) => {
+    switch (pref) {
+      case 'closed':
+        return 'w-16';
 
-  const sidebarCSS = isCollapsed
-    ? 'hidden md:block md:w-[4rem]'
-    : 'w-screen md:w-[16rem]';
+      case 'open':
+        return 'w-64';
 
-  const navbarCSS = `overflow-x-hidden ${
-    isCollapsed ? 'md:pl-[4rem]' : 'md:pl-[16rem]'
-  }`;
+      case 'auto':
+        return 'w-16 hover:w-64';
+
+      default:
+        return '';
+    }
+  };
 
   return (
-    <div className="flex w-full h-screen min-h-screen">
-      <Sidebar className={sidebarCSS} />
-      <div className="w-full min-h-full flex flex-col">
-        <Navbar className={navbarCSS} />
-        <div className="bg-[#111113] flex h-full flex-col">
-          <main className={mainCSS}>{children}</main>
-        </div>
-      </div>
+    <div className="bg-[#111113] flex w-full h-screen min-h-screen">
+      <LeftSidebar
+        className={`transition-all duration-300 ${generateSidebarWidth(
+          leftSidebar
+        )}`}
+      />
+
+      <main
+        className={`bg-[#111113] left-0 right-0 scrollbar-none flex flex-col p-7 gap-5 h-screen fixed top-0 min-h-full overflow-auto ${
+          contentWidth === 'padded' && 'lg:px-56'
+        } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
+          rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
+        } transition-all duration-300`}
+      >
+        <Header />
+        <div>{children}</div>
+      </main>
+
+      <RightSidebar
+        className={`transition-all duration-300 ${generateSidebarWidth(
+          rightSidebar
+        )}`}
+      />
     </div>
   );
 };
