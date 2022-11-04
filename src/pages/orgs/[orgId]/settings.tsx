@@ -20,23 +20,24 @@ const OrganizationSettingsPage = () => {
   const [name, setName] = useState(data?.name);
 
   useEffect(() => {
-    setRootSegment(
-      data?.name
-        ? [
-            {
-              content: data.name,
-              href: `/orgs/${data.id}`,
-            },
-            {
-              content: 'Settings',
-              href: `/orgs/${data.id}/settings`,
-            },
-          ]
-        : []
-    );
+    if (data?.id)
+      setRootSegment(
+        data?.name
+          ? [
+              {
+                content: data.name,
+                href: `/orgs/${data.id}`,
+              },
+              {
+                content: 'Settings',
+                href: `/orgs/${data.id}/settings`,
+              },
+            ]
+          : []
+      );
     setName(data?.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.name]);
+  }, [data]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -63,7 +64,16 @@ const OrganizationSettingsPage = () => {
       name,
     });
 
-    setRootSegment([name, 'Settings']);
+    setRootSegment([
+      {
+        content: name,
+        href: `/orgs/${data.id}`,
+      },
+      {
+        content: 'Settings',
+        href: `/orgs/${data.id}/settings`,
+      },
+    ]);
 
     setIsSaving(false);
   };
