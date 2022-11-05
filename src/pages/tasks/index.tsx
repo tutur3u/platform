@@ -8,7 +8,10 @@ const TasksPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(['Tasks']);
+    setRootSegment({
+      content: 'Tasks',
+      href: '/tasks',
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
