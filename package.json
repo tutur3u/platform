@@ -1,6 +1,6 @@
 {
   "name": "web-app",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
