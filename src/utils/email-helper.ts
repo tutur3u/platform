@@ -7,7 +7,7 @@ export const isEmail = (text: string) => {
 export const isIncompleteEmail = (text: string) => {
   // Incomplete email is a string that has a non-leading @ but no domain
   const incompleteEmailRegex = /@[^.]+$/;
-  return incompleteEmailRegex.test(text);
+  return incompleteEmailRegex.test(text) || text.endsWith('@');
 };
 
 export const suggestEmails = (text: string) => {

@@ -4,7 +4,10 @@ import { createContext, useContext, ReactNode } from 'react';
 import { Organization } from '../types/primitives/Organization';
 
 const OrganizationContext = createContext({
-  orgs: [] as Organization[],
+  orgs: {} as {
+    current: Organization[];
+    invited: Organization[];
+  },
   isLoading: true,
   isError: false,
 

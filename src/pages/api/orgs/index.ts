@@ -14,13 +14,29 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (userError) return res.status(401).json({ error: userError.message });
 
-  const { data, error } = await supabase
+  const currentOrgs = supabase
     .from('org_members')
     .select('orgs(id, name)')
     .eq('user_id', user?.id);
 
-  if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data?.map((org) => org.orgs));
+  const invitedOrgs = supabase
+    .from('org_invites')
+    .select('orgs(id, name)')
+    .eq('user_id', user?.id);
+
+  // use Promise.all to run both queries in parallel
+  const [current, invited] = await Promise.all([currentOrgs, invitedOrgs]);
+
+  if (current.error)
+    return res.status(401).json({ error: current.error.message });
+
+  if (invited.error)
+    return res.status(401).json({ error: invited.error.message });
+
+  return res.status(200).json({
+    current: current.data.map((org) => org.orgs),
+    invited: invited.data.map((org) => org.orgs),
+  });
 };
 
 const createOrg = async (req: NextApiRequest, res: NextApiResponse) => {

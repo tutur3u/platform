@@ -3,7 +3,7 @@ import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
 import { SparklesIcon } from '@heroicons/react/24/solid';
-import { closeAllModals, openConfirmModal, openModal } from '@mantine/modals';
+import { openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
 import { Project } from '../types/primitives/Project';
 import ProjectEditForm from '../components/forms/ProjectEditForm';
@@ -13,6 +13,7 @@ import { mutate } from 'swr';
 import LoadingIndicator from '../components/common/LoadingIndicator';
 import Link from 'next/link';
 import { useAppearance } from '../hooks/useAppearance';
+import { showNotification } from '@mantine/notifications';
 
 export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
 
@@ -27,7 +28,7 @@ const Home: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { isLoading, orgs, createOrg, updateOrg, deleteOrg } = useOrgs();
+  const { isLoading, orgs, createOrg } = useOrgs();
 
   const maxOrgs = 3;
 
@@ -36,44 +37,12 @@ const Home: PageWithLayoutProps = () => {
   }, []);
 
   const addOrg = (org: Organization) => createOrg(org);
-  const editOrg = (org: Organization) => updateOrg(org);
-  const removeOrg = (id: string) => deleteOrg(id);
-
-  const showDeleteOrgConfirmation = (orgId: string) => {
-    openConfirmModal({
-      title: 'Delete organization',
-      centered: true,
-      children: (
-        <div className="text-center">
-          <p className="mb-4">
-            Are you sure you want to delete this organization?
-          </p>
-        </div>
-      ),
-      labels: {
-        cancel: 'Cancel',
-        confirm: 'Delete',
-      },
-      onConfirm: () => {
-        removeOrg(orgId);
-        closeAllModals();
-      },
-    });
-  };
 
   const showEditOrgModal = (org?: Organization) => {
     openModal({
-      title: org?.id ? 'Edit organization' : 'New organization',
+      title: 'New organization',
       centered: true,
-      children: (
-        <OrgEditForm
-          org={org}
-          onSubmit={org?.id ? editOrg : addOrg}
-          onDelete={
-            org?.id ? () => showDeleteOrgConfirmation(org.id) : undefined
-          }
-        />
-      ),
+      children: <OrgEditForm org={org} onSubmit={addOrg} />,
     });
   };
 
@@ -81,20 +50,42 @@ const Home: PageWithLayoutProps = () => {
     openModal({
       title: project?.id ? 'Edit project' : 'New project',
       centered: true,
-      children: (
-        <ProjectEditForm
-          orgId={orgId}
-          project={project}
-          // onSubmit={
-          //   project?.id
-          //     ? editProject
-          //     : (getOrg(orgId)?.projects?.length || 0) < maxProjects
-          //     ? addProject
-          //     : showMaxProjectsReached
-          // }
-        />
-      ),
+      children: <ProjectEditForm orgId={orgId} project={project} />,
     });
+  };
+
+  const acceptInvite = async (org: Organization) => {
+    const response = await fetch(`/api/orgs/${org.id}/invites`, {
+      method: 'POST',
+    });
+
+    if (response.ok) {
+      mutate('/api/orgs');
+      showNotification({
+        title: `Accepted invite to ${org.name}`,
+        message: 'You can now access this organization',
+      });
+    } else {
+      showNotification({
+        title: `Failed to accept invite to ${org.name}`,
+        message: 'Please try again later',
+      });
+    }
+  };
+
+  const declineInvite = async (org: Organization) => {
+    const response = await fetch(`/api/orgs/${org.id}/invites`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      mutate('/api/orgs');
+    } else {
+      showNotification({
+        title: `Failed to decline invite to ${org.name}`,
+        message: 'Please try again later',
+      });
+    }
   };
 
   return isLoading ? (
@@ -103,9 +94,41 @@ const Home: PageWithLayoutProps = () => {
     </div>
   ) : (
     <>
-      {orgs.length > 0 ? (
+      {orgs.invited.length > 0 && (
+        <div className="grid gap-8 mb-16">
+          {orgs.invited.map((org) => (
+            <div key={org.id} className="p-8 bg-zinc-900 rounded-lg max-w-xl">
+              <div className="font-semibold transition duration-150 cursor-default">
+                <span className="text-zinc-500">
+                  You have been invited to join{' '}
+                </span>
+                {org?.name || `Unnamed organization`}{' '}
+                {org?.id === '00000000-0000-0000-0000-000000000000' && (
+                  <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+                )}
+              </div>
+              <div className="mt-2 grid md:grid-cols-2 gap-4">
+                <div
+                  className="p-2 flex justify-center items-center font-semibold rounded bg-zinc-300/10 hover:bg-red-300/30 text-zinc-300 hover:text-red-300 cursor-pointer transition duration-300"
+                  onClick={() => declineInvite(org)}
+                >
+                  Decline invitation
+                </div>
+                <div
+                  className="p-2 flex-1 flex justify-center items-center font-semibold rounded bg-zinc-300/10 hover:bg-green-300/30 text-zinc-300 hover:text-green-300 cursor-pointer transition duration-300"
+                  onClick={() => acceptInvite(org)}
+                >
+                  Accept invitation
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {orgs.current.length > 0 ? (
         <div className="grid gap-8">
-          {orgs.map((org) => (
+          {orgs.current.map((org) => (
             <div key={org.id}>
               <Link
                 href={`/orgs/${org.id}`}
@@ -143,15 +166,18 @@ const Home: PageWithLayoutProps = () => {
           </div>
         </div>
       )}
+
       <button
         className={`w-full md:w-fit mt-8 font-semibold px-8 py-4 rounded ${
-          orgs.length < maxOrgs
+          orgs.current.length < maxOrgs
             ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
             : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
         } transition duration-300`}
-        onClick={() => (orgs.length < maxOrgs ? showEditOrgModal() : null)}
+        onClick={() =>
+          orgs.current.length < maxOrgs ? showEditOrgModal() : null
+        }
       >
-        {orgs.length < maxOrgs
+        {orgs.current.length < maxOrgs
           ? 'New organization'
           : 'Maximum organizations reached'}
       </button>

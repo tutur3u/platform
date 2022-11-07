@@ -4,12 +4,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const deleteMember = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  user_id: string
+  user_id: string,
+  invited = false
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { error } = await supabase
-    .from('org_members')
+    .from(invited ? 'org_invites' : 'org_members')
     .delete()
     .eq('user_id', user_id);
 
@@ -19,14 +20,14 @@ const deleteMember = async (
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { memberId } = req.query;
+    const { memberId, invited } = req.query;
 
     if (!memberId || typeof memberId !== 'string')
       throw new Error('Invalid memberId');
 
     switch (req.method) {
       case 'DELETE':
-        return await deleteMember(req, res, memberId);
+        return await deleteMember(req, res, memberId, !!invited);
 
       default:
         throw new Error(

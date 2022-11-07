@@ -18,7 +18,7 @@ const OrganizationOverviewPage = () => {
       data?.name
         ? [
             {
-              content: data.name,
+              content: data?.name,
               href: `/orgs/${data.id}`,
             },
             {

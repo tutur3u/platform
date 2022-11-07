@@ -14,10 +14,10 @@ const tabs = [
     name: 'Overview',
     href: '/',
   },
-  {
-    name: 'Projects',
-    href: '/projects',
-  },
+  // {
+  //   name: 'Projects',
+  //   href: '/projects',
+  // },
   {
     name: 'Members',
     href: '/members',
