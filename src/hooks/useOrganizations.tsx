@@ -1,20 +1,23 @@
 import useSWR from 'swr';
 
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { Organization } from '../types/primitives/Organization';
 
 const OrganizationContext = createContext({
-  orgs: [] as Organization[],
+  orgs: {} as {
+    current: Organization[];
+    invited: Organization[];
+  },
   isLoading: true,
   isError: false,
 
-  createOrg: (org: Organization) => {
+  createOrg: async (org: Organization) => {
     console.log('createOrg', org);
   },
-  updateOrg: (org: Organization) => {
+  updateOrg: async (org: Organization) => {
     console.log('updateOrg', org);
   },
-  deleteOrg: (id: string) => {
+  deleteOrg: async (id: string) => {
     console.log('deleteOrg', id);
   },
 });
@@ -56,11 +59,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     if (!res.ok) throw new Error('Failed to delete org');
     mutate((orgs: Organization[]) => orgs.filter((org) => org.id !== orgId));
   };
-
-  useEffect(() => {
-    if (data) console.log('Fetched organizations', data);
-    if (error) console.error('Error fetching organizations', error);
-  }, [data, error]);
 
   const values = {
     orgs: data || [],

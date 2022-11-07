@@ -14,7 +14,20 @@ const OrganizationOverviewPage = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Overview'] : []);
+    setRootSegment(
+      data?.name
+        ? [
+            {
+              content: data?.name,
+              href: `/orgs/${data.id}`,
+            },
+            {
+              content: 'Overview',
+              href: `/orgs/${data.id}`,
+            },
+          ]
+        : []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
@@ -22,12 +35,7 @@ const OrganizationOverviewPage = () => {
 
   return (
     <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
-        <h1 className="font-bold">Overview</h1>
-        <p className="text-zinc-400">
-          This is the overview page for the {data?.name} organization.
-        </p>
-      </div>
+      <h1 className="font-bold">Overview</h1>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div className="p-4 bg-zinc-900 rounded-lg h-72">
