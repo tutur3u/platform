@@ -14,17 +14,13 @@ const tabs = [
     name: 'Overview',
     href: '/',
   },
-  {
-    name: 'Projects',
-    href: '/projects',
-  },
+  // {
+  //   name: 'Projects',
+  //   href: '/projects',
+  // },
   {
     name: 'Members',
     href: '/members',
-  },
-  {
-    name: 'Teams',
-    href: '/teams',
   },
   {
     name: 'Settings',
@@ -50,17 +46,19 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="px-8 lg:px-0 lg:mx-56 flex gap-4 overflow-x-auto transition-all duration-300">
+        <div className="px-8 lg:px-0 lg:mx-56 flex gap-4 overflow-x-auto scrollbar-none transition-all duration-300">
           {rootTabs.map((tab) => (
             <Link
               key={tab.name}
               href={`${rootPath}${tab.href}`}
               className={`pb-2 border-b-2 rounded-t-lg group ${
-                (
-                  orgMode
-                    ? segments.includes(tab.name)
-                    : `${segments[2]}` === tab.name
-                )
+                segments &&
+                segments.length > 0 &&
+                (orgMode
+                  ? segments
+                      .map((segment) => segment.content)
+                      .includes(tab.name)
+                  : `${segments[2]?.content}` === tab.name)
                   ? 'border-zinc-300 text-zinc-300'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}

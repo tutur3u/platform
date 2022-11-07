@@ -15,7 +15,20 @@ const OrganizationProjectsPage = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(data?.name ? [data.name, 'Projects'] : []);
+    setRootSegment(
+      data?.name
+        ? [
+            {
+              content: data.name,
+              href: `/orgs/${data.id}`,
+            },
+            {
+              content: 'Projects',
+              href: `/orgs/${data.id}/projects`,
+            },
+          ]
+        : []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
@@ -23,12 +36,7 @@ const OrganizationProjectsPage = () => {
 
   return (
     <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
-        <h1 className="font-bold">Projects</h1>
-        <p className="text-zinc-400">
-          This is the projects page for the {data?.name} organization.
-        </p>
-      </div>
+      <h1 className="font-bold">Projects</h1>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         <Link

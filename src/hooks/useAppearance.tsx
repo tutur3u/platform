@@ -5,6 +5,7 @@ import {
   rightSidebarPrefs,
   themePrefs,
 } from '../constants/prefs';
+import { Segment } from '../types/primitives/Segment';
 
 type Theme = 'light' | 'dark';
 type ContentWidth = 'full' | 'padded';
@@ -26,9 +27,9 @@ const AppearanceContext = createContext({
   changeContentWidth: (width: ContentWidth) =>
     localStorage.setItem(contentWidthPrefs, width),
 
-  segments: [] as string[],
-  setRootSegment: (segment: string | string[]) => console.log(segment),
-  setSegment: (segment: string) => console.log(segment),
+  segments: [] as Segment[],
+  setRootSegment: (segment: Segment | Segment[]) => console.log(segment),
+  addSegment: (segment: Segment) => console.log(segment),
 });
 
 export const AppearanceProvider = ({
@@ -73,12 +74,12 @@ export const AppearanceProvider = ({
     if (contentWidth) setContentWidth(contentWidth as ContentWidth);
   }, []);
 
-  const [segments, setSegments] = useState<string[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
 
-  const setRootSegment = (segment: string | string[]) =>
-    typeof segment === 'string' ? setSegments([segment]) : setSegments(segment);
+  const setRootSegment = (segment: Segment | Segment[]) =>
+    setSegments(Array.isArray(segment) ? segment : [segment]);
 
-  const setSegment = (segment: string) =>
+  const addSegment = (segment: Segment) =>
     setSegments((prev) => [...prev, segment]);
 
   const values = {
@@ -96,7 +97,7 @@ export const AppearanceProvider = ({
 
     segments,
     setRootSegment,
-    setSegment,
+    addSegment,
   };
 
   return (
