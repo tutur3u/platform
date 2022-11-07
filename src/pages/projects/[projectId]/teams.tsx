@@ -6,7 +6,11 @@ const ProjectTeamsPage = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(['Tuturuuu', 'Test Project', 'Teams']);
+    setRootSegment([
+      { content: 'Tuturuuu', href: '/' },
+      { content: 'Test Project', href: '/projects/test' },
+      { content: 'Teams', href: '/projects/test/teams' },
+    ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

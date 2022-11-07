@@ -16,7 +16,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment(['Settings']);
+    setRootSegment({
+      content: 'Settings',
+      href: '/settings',
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
