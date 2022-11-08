@@ -77,7 +77,15 @@ export const AppearanceProvider = ({
   const [segments, setSegments] = useState<Segment[]>([]);
 
   const setRootSegment = (segment: Segment | Segment[]) =>
-    setSegments(Array.isArray(segment) ? segment : [segment]);
+    setSegments((oldSegments) =>
+      Array.isArray(segment)
+        ? segment.length > 0
+          ? segment
+          : oldSegments
+        : segment !== null
+        ? [segment]
+        : oldSegments
+    );
 
   const addSegment = (segment: Segment) =>
     setSegments((prev) => [...prev, segment]);

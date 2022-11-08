@@ -1,6 +1,6 @@
 {
   "name": "web-app",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "setup": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts",
@@ -25,6 +25,7 @@
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.0.5",
     "js-cookie": "^3.0.1",
+    "moment": "^2.29.4",
     "next": "13.0.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",

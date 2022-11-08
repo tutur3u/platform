@@ -10,12 +10,12 @@ const fetchMembers = async (
 
   const membersQuery = supabase
     .from('org_members')
-    .select('users(id, username, display_name, avatar_url, email)')
+    .select('created_at, users(id, username, display_name, avatar_url, email)')
     .eq('org_id', orgId);
 
   const invitesQuery = supabase
     .from('org_invites')
-    .select('users(id, username, display_name, avatar_url, email)')
+    .select('created_at, users(id, username, display_name, avatar_url, email)')
     .eq('org_id', orgId);
 
   const [members, invites] = await Promise.all([membersQuery, invitesQuery]);
@@ -25,8 +25,14 @@ const fetchMembers = async (
   if (invites.error)
     return res.status(500).json({ error: invites.error.message });
 
-  const membersData = members.data.map((member) => member.users);
-  const invitesData = invites.data.map((invite) => invite.users);
+  const membersData = members.data.map((member) => ({
+    ...member.users,
+    created_at: member.created_at,
+  }));
+  const invitesData = invites.data.map((invite) => ({
+    ...invite.users,
+    created_at: invite.created_at,
+  }));
 
   return res.status(200).json({ members: membersData, invites: invitesData });
 };

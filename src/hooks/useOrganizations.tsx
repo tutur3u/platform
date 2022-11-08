@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 import { createContext, useContext, ReactNode } from 'react';
 import { Organization } from '../types/primitives/Organization';
@@ -23,7 +23,7 @@ const OrganizationContext = createContext({
 });
 
 export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
-  const { data, error, mutate } = useSWR('/api/orgs');
+  const { data, error } = useSWR('/api/orgs');
 
   const createOrg = async (org: Organization) => {
     const res = await fetch('/api/orgs', {
@@ -34,7 +34,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (!res.ok) throw new Error('Failed to create org');
-    mutate((orgs: Organization[]) => [...orgs, org]);
+    mutate('/api/orgs');
   };
 
   const updateOrg = async (org: Organization) => {
@@ -44,11 +44,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (!res.ok) throw new Error('Failed to update org');
-    mutate((orgs: Organization[]) => {
-      const index = orgs.findIndex((o) => o.id === org.id);
-      orgs[index] = org;
-      return orgs;
-    });
+    mutate('/api/orgs');
   };
 
   const deleteOrg = async (orgId: string) => {
@@ -57,7 +53,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (!res.ok) throw new Error('Failed to delete org');
-    mutate((orgs: Organization[]) => orgs.filter((org) => org.id !== orgId));
+    mutate('/api/orgs');
   };
 
   const values = {

@@ -174,17 +174,7 @@ const SelectUserForm = ({ orgId, onSubmit, onDelete }: SelectUserFormProps) => {
         </Group>
       )}
 
-      <div className="flex gap-2">
-        <Button
-          fullWidth
-          variant="subtle"
-          color="red"
-          onClick={() => closeAllModals()}
-          mt="md"
-        >
-          Cancel
-        </Button>
-
+      <div>
         {isEmail(value) ? (
           <Button
             fullWidth
