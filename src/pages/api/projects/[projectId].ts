@@ -57,15 +57,6 @@ const deleteProject = async (
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
-  const { name } = req.body;
-
-  if (!name)
-    return res.status(400).json({
-      error: {
-        message: 'Invalid request',
-      },
-    });
-
   const { error } = await supabase
     .from('projects')
     .delete()
@@ -92,7 +83,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       case 'GET':
         return await fetchProject(req, res, projectId);
 
-      case 'POST':
+      case 'PUT':
         return await updateProject(req, res, projectId);
 
       case 'DELETE':
