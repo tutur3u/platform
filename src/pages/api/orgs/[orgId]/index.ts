@@ -10,7 +10,7 @@ const fetchOrg = async (
 
   const { data, error } = await supabase
     .from('orgs')
-    .select('id, name')
+    .select('id, name, created_at')
     .eq('id', orgId)
     .single();
 

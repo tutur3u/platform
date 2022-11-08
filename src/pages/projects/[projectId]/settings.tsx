@@ -1,4 +1,5 @@
 import { TextInput } from '@mantine/core';
+import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -111,6 +112,14 @@ const ProjectSettingsPage = () => {
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
           />
+        </div>
+
+        <div className="border-t pt-4 mt-8 border-zinc-700/70 text-zinc-500">
+          This project was created{' '}
+          <span className="text-zinc-300 font-semibold">
+            {moment(project.created_at).fromNow()}
+          </span>
+          .
         </div>
 
         <div className="h-full" />

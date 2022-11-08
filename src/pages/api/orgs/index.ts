@@ -21,7 +21,7 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const invitedOrgs = supabase
     .from('org_invites')
-    .select('orgs(id, name)')
+    .select('created_at, orgs(id, name)')
     .eq('user_id', user?.id);
 
   // use Promise.all to run both queries in parallel
@@ -35,7 +35,10 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
 
   return res.status(200).json({
     current: current.data.map((org) => org.orgs),
-    invited: invited.data.map((org) => org.orgs),
+    invited: invited.data.map((org) => ({
+      ...org.orgs,
+      created_at: org.created_at,
+    })),
   });
 };
 

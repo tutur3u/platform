@@ -1,4 +1,5 @@
 import { TextInput } from '@mantine/core';
+import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -117,6 +118,14 @@ const OrganizationSettingsPage = () => {
             // Which has an ID of '00000000-0000-0000-0000-000000000000'
             disabled={isSystemOrg}
           />
+        </div>
+
+        <div className="border-t pt-4 mt-8 border-zinc-700/70 text-zinc-500">
+          This organization was created{' '}
+          <span className="text-zinc-300 font-semibold">
+            {moment(data.created_at).fromNow()}
+          </span>
+          .
         </div>
 
         {isSystemOrg || (

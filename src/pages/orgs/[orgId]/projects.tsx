@@ -9,6 +9,7 @@ import ProjectEditForm from '../../../components/forms/ProjectEditForm';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { Project } from '../../../types/primitives/Project';
+import moment from 'moment';
 
 const OrganizationProjectsPage = () => {
   const router = useRouter();
@@ -102,15 +103,26 @@ const OrganizationProjectsPage = () => {
       )}
 
       <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-        {projectsData?.map((project: { id: string; name: string }) => (
-          <Link
-            key={project.id}
-            href={`/projects/${project.id}`}
-            className="p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg h-72 transition duration-300"
-          >
-            <h1 className="font-bold">{project.name}</h1>
-          </Link>
-        ))}
+        {projectsData?.map(
+          (project: { id: string; name: string; created_at: string }) => (
+            <Link
+              key={project.id}
+              href={`/projects/${project.id}`}
+              className="relative p-4 group border border-zinc-800/80 bg-[#19191d] hover:bg-[#232327] rounded-lg h-72 transition"
+            >
+              <h1 className="font-bold">{project.name}</h1>
+
+              {project?.created_at ? (
+                <div className="px-4 py-2 bg-blue-300/10 group-hover:border-transparent border border-blue-300/20 rounded-lg absolute bottom-4 right-4 text-blue-300/50 transition">
+                  Started{' '}
+                  <span className="text-blue-300 font-semibold">
+                    {moment(project.created_at).fromNow()}
+                  </span>
+                </div>
+              ) : null}
+            </Link>
+          )
+        )}
       </div>
     </div>
   );
