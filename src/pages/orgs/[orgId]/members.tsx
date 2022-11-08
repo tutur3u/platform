@@ -1,6 +1,13 @@
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
+import {
+  ArrowRightOnRectangleIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/solid';
+import { Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
+import { useUser } from '@supabase/auth-helpers-react';
+import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
@@ -51,13 +58,17 @@ const OrganizationMembersPage = () => {
     if (orgData?.error || orgError) router.push('/');
   }, [orgData, orgError, router]);
 
+  const user = useUser();
+
   if (isLoading) return <div>Loading...</div>;
 
-  const deleteMember = async (user: User, invited: boolean) => {
-    if (!user?.id) return;
+  const deleteMember = async (member: User, invited: boolean) => {
+    if (!member?.id) return;
 
     const response = await fetch(
-      `/api/orgs/${orgId}/members/${user.id}${invited ? '?invited=true' : ''}`,
+      `/api/orgs/${orgId}/members/${member.id}${
+        invited ? '?invited=true' : ''
+      }`,
       {
         method: 'DELETE',
       }
@@ -69,15 +80,17 @@ const OrganizationMembersPage = () => {
         title: invited ? 'Invitation revoked' : 'Member removed',
         message: invited
           ? `Invitation to ${
-              (user?.username && `@${user?.username}`) ||
-              user?.displayName ||
-              user?.email
+              (member?.username && `@${member?.username}`) ||
+              member?.displayName ||
+              member?.email
             } has been revoked`
           : `${
-              user?.displayName || user?.email
+              member?.displayName || member?.email
             } has been removed from the organization`,
         color: 'teal',
       });
+
+      if (member.id === user?.id) router.push('/');
     } else {
       showNotification({
         title: invited
@@ -100,7 +113,7 @@ const OrganizationMembersPage = () => {
   return (
     <>
       {orgId && (
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mt-2 mb-4">
           <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
             Members ({membersData?.members?.length || 0})
           </h1>
@@ -114,26 +127,64 @@ const OrganizationMembersPage = () => {
       )}
 
       <div className="max-w-lg flex flex-col gap-4 mb-16">
-        {membersData?.members?.map(
-          (member: { id: string; display_name: string; email: string }) => (
-            <div
-              key={member.id}
-              className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
-            >
-              <p className="font-semibold lg:text-lg xl:text-xl">
-                {member.display_name}
-              </p>
-              <p className="text-zinc-400">{member.email}</p>
-
-              <button
-                className="absolute top-4 right-4 text-zinc-400 hover:text-red-400 transition duration-150"
-                onClick={() => deleteMember(member, false)}
-              >
-                <TrashIcon className="h-6 w-6" />
-              </button>
-            </div>
+        {membersData?.members
+          ?.sort(
+            (
+              a: {
+                id: string;
+              },
+              b: {
+                id: string;
+              }
+            ) => {
+              if (a.id === user?.id) return -1;
+              if (b.id === user?.id) return 1;
+              return 0;
+            }
           )
-        )}
+          ?.map(
+            (member: {
+              id: string;
+              display_name: string;
+              email: string;
+              created_at?: string;
+            }) => (
+              <div
+                key={member.id}
+                className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
+              >
+                <p className="font-semibold lg:text-lg xl:text-xl">
+                  {member.display_name}
+                </p>
+                <p className="text-zinc-400">{member.email}</p>
+
+                <button
+                  className="absolute top-4 right-4 font-semibold text-zinc-400 hover:text-red-400 transition duration-150"
+                  onClick={() => deleteMember(member, false)}
+                >
+                  {user?.id === member.id ? (
+                    <Tooltip label={`Leave ${orgData?.name}`}>
+                      <ArrowRightOnRectangleIcon className="w-6 h-6" />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip label={`Remove from ${orgData?.name}`}>
+                      <XMarkIcon className="h-6 w-6" />
+                    </Tooltip>
+                  )}
+                </button>
+
+                {member?.created_at ? (
+                  <div className="mt-2 pt-2 border-t border-zinc-800 text-zinc-500">
+                    Member since{' '}
+                    <span className="text-zinc-400 font-semibold">
+                      {moment(member.created_at).fromNow()}
+                    </span>
+                    .
+                  </div>
+                ) : null}
+              </div>
+            )
+          )}
       </div>
 
       <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl mb-4">
@@ -142,7 +193,12 @@ const OrganizationMembersPage = () => {
 
       <div className="max-w-lg flex flex-col gap-4">
         {membersData?.invites?.map(
-          (member: { id: string; display_name: string; email: string }) => (
+          (member: {
+            id: string;
+            display_name: string;
+            email: string;
+            created_at?: string;
+          }) => (
             <div
               key={member.id}
               className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
@@ -156,8 +212,20 @@ const OrganizationMembersPage = () => {
                 className="absolute top-4 right-4 text-zinc-400 hover:text-red-400 transition duration-150"
                 onClick={() => deleteMember(member, true)}
               >
-                <TrashIcon className="h-6 w-6" />
+                <Tooltip label={`Revoke invitation to join ${orgData?.name}`}>
+                  <XMarkIcon className="h-6 w-6" />
+                </Tooltip>
               </button>
+
+              {member?.created_at ? (
+                <div className="mt-2 pt-2 border-t border-zinc-800 text-zinc-500">
+                  Invited{' '}
+                  <span className="text-zinc-400 font-semibold">
+                    {moment(member.created_at).fromNow()}
+                  </span>
+                  .
+                </div>
+              ) : null}
             </div>
           )
         )}
