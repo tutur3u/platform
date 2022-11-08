@@ -99,9 +99,11 @@ const SettingPage: PageWithLayoutProps = () => {
             label="Username"
             placeholder="@tuturuuu"
             value={`@${username}`.replace(/^@+/, '@')}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setUsername(event.currentTarget.value)
-            }
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              // Remove @ from username
+              const username = event.currentTarget.value.replace(/^@+/, '');
+              setUsername(username);
+            }}
             icon={<IdentificationIcon className="w-5 h-5" />}
           />
           <TextInput
