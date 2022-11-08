@@ -1,50 +1,116 @@
+import { PlusIcon } from '@heroicons/react/24/solid';
+import { openModal } from '@mantine/modals';
+import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
+import ProjectEditForm from '../../../components/forms/ProjectEditForm';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
+import { Project } from '../../../types/primitives/Project';
 
 const OrganizationProjectsPage = () => {
   const router = useRouter();
   const { orgId } = router.query;
 
-  const { data, error } = useSWR(`/api/orgs/${orgId}`);
-  const isLoading = !data && !error;
+  const { data: orgData, error: orgError } = useSWR(
+    orgId ? `/api/orgs/${orgId}` : null
+  );
+
+  const { data: projectsData, error: projectsError } = useSWR(
+    orgId ? `/api/orgs/${orgId}/projects` : null
+  );
+
+  const isLoadingOrg = !orgData && !orgError;
+  const isLoadingprojects = !projectsData && !projectsError;
+
+  const isLoading = isLoadingOrg || isLoadingprojects;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
-      data?.name
+      orgData?.name
         ? [
             {
-              content: data.name,
-              href: `/orgs/${data.id}`,
+              content: orgData.name,
+              href: `/orgs/${orgId}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${data.id}/projects`,
+              href: `/orgs/${orgId}/projects`,
             },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.name]);
+  }, [orgId, orgData?.name]);
 
   if (isLoading) return <div>Loading...</div>;
 
+  const createProject = async (orgId: string, project: Project) => {
+    const res = await fetch(`/api/orgs/${orgId}/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(project),
+    });
+
+    if (res.status === 200) {
+      mutate(`/api/orgs/${orgId}/projects`);
+      showNotification({
+        title: 'Project created',
+        color: 'teal',
+        message: `Project ${project.name} created successfully`,
+      });
+    } else {
+      showNotification({
+        title: 'Error',
+        color: 'red',
+        message: `Project ${project.name} could not be created`,
+      });
+    }
+  };
+
+  const showProjectEditForm = () => {
+    if (!orgId) return;
+    openModal({
+      title: <div className="font-semibold">Create new project</div>,
+      centered: true,
+      children: (
+        <ProjectEditForm orgId={orgId as string} onSubmit={createProject} />
+      ),
+    });
+  };
+
   return (
     <div className="grid gap-4">
-      <h1 className="font-bold">Projects</h1>
+      {orgId && (
+        <div className="flex justify-between items-center mt-2 mb-2">
+          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+            Projects ({projectsData?.length || 0})
+          </h1>
+          <button
+            onClick={showProjectEditForm}
+            className="px-4 py-2 font-semibold rounded flex gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+          >
+            New project <PlusIcon className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <Link
-          href="/projects/test"
-          className="p-4 bg-zinc-900 hover:bg-zinc-800/80 rounded-lg h-72 transition duration-300"
-        >
-          <h1 className="font-bold">Test project</h1>
-        </Link>
+      <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {projectsData?.map((project: { id: string; name: string }) => (
+          <Link
+            key={project.id}
+            href={`/projects/${project.id}`}
+            className="p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg h-72 transition duration-300"
+          >
+            <h1 className="font-bold">{project.name}</h1>
+          </Link>
+        ))}
       </div>
     </div>
   );

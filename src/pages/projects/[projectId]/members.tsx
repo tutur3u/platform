@@ -1,18 +1,37 @@
+import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
+import useSWR from 'swr';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 
 const ProjectMembersPage = () => {
+  const router = useRouter();
+  const { projectId } = router.query;
+
+  const { data: project } = useSWR(
+    projectId ? `/api/projects/${projectId}` : null
+  );
+
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    setRootSegment([
-      { content: 'Tuturuuu', href: '/' },
-      { content: 'Test Project', href: '/projects/test' },
-      { content: 'Members', href: '/projects/test/members' },
-    ]);
+    setRootSegment(
+      project
+        ? [
+            {
+              content: project?.orgs?.name || 'Unnamed Organization',
+              href: `/orgs/${project.orgs.id}`,
+            },
+            {
+              content: project?.name || 'Untitled',
+              href: `/projects/${projectId}`,
+            },
+            { content: 'Members', href: `/projects/${projectId}/members` },
+          ]
+        : []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [projectId, project]);
 
   return (
     <div className="grid gap-4">

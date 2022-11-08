@@ -100,7 +100,7 @@ const OrganizationMembersPage = () => {
   return (
     <>
       {orgId && (
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mt-2 mb-4">
           <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
             Members ({membersData?.members?.length || 0})
           </h1>
