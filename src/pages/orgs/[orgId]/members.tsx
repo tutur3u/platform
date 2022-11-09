@@ -163,11 +163,11 @@ const OrganizationMembersPage = () => {
                   onClick={() => deleteMember(member, false)}
                 >
                   {user?.id === member.id ? (
-                    <Tooltip label={`Leave ${orgData?.name}`}>
+                    <Tooltip label="Leave">
                       <ArrowRightOnRectangleIcon className="w-6 h-6" />
                     </Tooltip>
                   ) : (
-                    <Tooltip label={`Remove from ${orgData?.name}`}>
+                    <Tooltip label="Remove member">
                       <XMarkIcon className="h-6 w-6" />
                     </Tooltip>
                   )}
@@ -209,10 +209,10 @@ const OrganizationMembersPage = () => {
               <p className="text-zinc-400">{member.email}</p>
 
               <button
-                className="absolute top-4 right-4 text-zinc-400 hover:text-red-400 transition duration-150"
+                className="absolute top-4 right-4 font-semibold text-zinc-400 hover:text-red-400 transition duration-150"
                 onClick={() => deleteMember(member, true)}
               >
-                <Tooltip label={`Revoke invitation to join ${orgData?.name}`}>
+                <Tooltip label="Revoke invitation">
                   <XMarkIcon className="h-6 w-6" />
                 </Tooltip>
               </button>
