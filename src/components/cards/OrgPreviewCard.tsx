@@ -74,7 +74,7 @@ const OrgPreviewCard = ({ org }: Props) => {
           projects?.map((project: Project) => (
             <Link
               key={project.id}
-              className="p-4 h-32 flex justify-center items-center bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+              className="p-4 h-32 flex justify-center items-center text-center bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
               href={`/projects/${project.id}`}
             >
               {project?.name || `Unnamed project`}
