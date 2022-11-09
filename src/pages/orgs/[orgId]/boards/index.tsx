@@ -5,38 +5,38 @@ import useSWR from 'swr';
 import NestedLayout from '../../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
 
-const ProjectBoardsPage = () => {
+const OrgBoardsPage = () => {
   const router = useRouter();
-  const { projectId } = router.query;
+  const { orgId } = router.query;
 
-  const { data: project } = useSWR(
-    projectId ? `/api/projects/${projectId}` : null
-  );
+  const { data, error } = useSWR(`/api/orgs/${orgId}`);
+  const isLoading = !data && !error;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
-      project
+      data?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Organization',
-              href: `/orgs/${project.orgs.id}`,
+              content: data?.name,
+              href: `/orgs/${data.id}`,
             },
             {
-              content: project?.name || 'Untitled',
-              href: `/projects/${projectId}`,
+              content: 'Boards',
+              href: `/orgs/${data.id}/boards`,
             },
-            { content: 'Boards', href: `/projects/${projectId}/boards` },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project]);
+  }, [data?.name]);
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="grid gap-4">
-      {projectId && (
+      {orgId && (
         <div className="flex justify-between items-center mt-2 mb-2">
           <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
             Boards
@@ -53,8 +53,8 @@ const ProjectBoardsPage = () => {
   );
 };
 
-ProjectBoardsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+OrgBoardsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default ProjectBoardsPage;
+export default OrgBoardsPage;

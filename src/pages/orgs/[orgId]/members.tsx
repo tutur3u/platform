@@ -41,7 +41,6 @@ const OrganizationMembersPage = () => {
         ? [
             {
               content: orgData.name,
-
               href: `/orgs/${orgData.id}`,
             },
             {
