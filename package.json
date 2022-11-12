@@ -23,7 +23,7 @@
     "@mantine/nprogress": "^5.7.1",
     "@supabase/auth-helpers-nextjs": "^0.5.1",
     "@supabase/auth-helpers-react": "^0.3.1",
-    "@supabase/supabase-js": "^2.0.6",
+    "@supabase/supabase-js": "^2.1.0",
     "js-cookie": "^3.0.1",
     "moment": "^2.29.4",
     "next": "13.0.3",
@@ -57,7 +57,7 @@
     "postcss": "^8.4.19",
     "prettier": "^2.7.1",
     "tailwind-scrollbar": "^2.0.1",
-    "tailwindcss": "^3.2.3",
+    "tailwindcss": "^3.2.4",
     "typescript": "4.8.4"
   }
 }
