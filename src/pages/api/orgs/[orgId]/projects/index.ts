@@ -34,9 +34,11 @@ const createProject = async (
       },
     });
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('projects')
-    .insert({ org_id: orgId, name });
+    .insert({ org_id: orgId, name })
+    .select('id')
+    .single();
 
   if (error)
     return res.status(500).json({
@@ -45,7 +47,7 @@ const createProject = async (
       },
     });
 
-  return res.status(200).json({ message: 'Project created' });
+  return res.status(200).json({ message: 'Project created', id: data.id });
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
