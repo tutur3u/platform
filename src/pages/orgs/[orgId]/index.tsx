@@ -14,17 +14,19 @@ const OrganizationOverviewPage = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
-    if (data?.name)
-      setRootSegment([
+    setRootSegment(
+      [
         {
           content: data?.name,
-          href: `/orgs/${data.id}`,
+          href: `/orgs/${data?.id}`,
         },
         {
           content: 'Overview',
-          href: `/orgs/${data.id}`,
+          href: `/orgs/${data?.id}`,
         },
-      ]);
+      ],
+      [data?.id]
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
