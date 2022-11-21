@@ -1,0 +1,72 @@
+import { Button, TextInput } from '@mantine/core';
+import { closeAllModals } from '@mantine/modals';
+import React, { useState } from 'react';
+import { ChangeEvent } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { TaskBoard } from '../../types/primitives/TaskBoard';
+
+interface BoardEditFormProps {
+  orgId: string;
+  board?: TaskBoard;
+  onSubmit?: (orgId: string, board: TaskBoard) => void;
+  onDelete?: () => void;
+}
+
+const BoardEditForm = ({
+  orgId,
+  board,
+  onSubmit,
+  onDelete,
+}: BoardEditFormProps) => {
+  const [name, setName] = useState(board?.name || '');
+
+  return (
+    <>
+      {board?.id && (
+        <TextInput
+          label="Board ID"
+          value={board?.id}
+          disabled={!!board?.id}
+          className="mb-2"
+        />
+      )}
+      <TextInput
+        label="Board name"
+        placeholder="Enter board name"
+        value={name}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setName(event.currentTarget.value)
+        }
+        data-autofocus
+      />
+      <div className="flex gap-2">
+        {board?.id && onDelete && (
+          <Button
+            fullWidth
+            variant="subtle"
+            color="red"
+            onClick={onDelete}
+            mt="md"
+          >
+            Delete
+          </Button>
+        )}
+        <Button
+          fullWidth
+          variant="subtle"
+          onClick={() => {
+            const newBoard = { id: board?.id || uuidv4(), name };
+
+            if (onSubmit) onSubmit(orgId, newBoard);
+            closeAllModals();
+          }}
+          mt="md"
+        >
+          {board?.id ? 'Save' : 'Add'}
+        </Button>
+      </div>
+    </>
+  );
+};
+
+export default BoardEditForm;

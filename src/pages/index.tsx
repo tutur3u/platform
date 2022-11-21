@@ -50,7 +50,7 @@ const Home: PageWithLayoutProps = () => {
 
   const { isLoading, orgs, createOrg } = useOrgs();
 
-  const maxOrgs = 3;
+  const maxOrgs = 5;
 
   useEffect(() => {
     mutate('/api/orgs');

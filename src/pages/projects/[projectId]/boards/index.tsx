@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/24/solid';
+import { LinkIcon } from '@heroicons/react/20/solid';
 import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
@@ -43,9 +43,9 @@ const ProjectBoardsPage = () => {
           </h1>
           <button
             // onClick={showProjectEditForm}
-            className="px-4 py-2 font-semibold rounded flex gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+            className="px-4 py-2 font-semibold rounded flex items-center gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
           >
-            New board <PlusIcon className="w-4 h-4" />
+            Link board <LinkIcon className="w-5 h-5" />
           </button>
         </div>
       )}
