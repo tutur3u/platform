@@ -1,8 +1,4 @@
-import {
-  ClipboardDocumentListIcon,
-  Cog6ToothIcon,
-  HomeIcon,
-} from '@heroicons/react/24/solid';
+import { Cog6ToothIcon, HomeIcon } from '@heroicons/react/24/solid';
 
 import SidebarTab from './SidebarTab';
 import { APP_VERSION } from '../../constants/common';
@@ -42,12 +38,12 @@ function LeftSidebar({ className }: SidebarProps) {
                 label="Home"
                 showTooltip={leftSidebar === 'closed'}
               />
-              <SidebarTab
+              {/* <SidebarTab
                 href="/tasks"
                 currentPath={router.pathname}
                 icon={<ClipboardDocumentListIcon />}
                 label="Tasks"
-              />
+              /> */}
               <>
                 <SidebarTab
                   href="/settings"
