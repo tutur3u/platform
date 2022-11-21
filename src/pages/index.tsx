@@ -121,9 +121,15 @@ const Home: PageWithLayoutProps = () => {
 
       {orgs?.current?.length > 0 ? (
         <div className="grid gap-8">
-          {orgs?.current?.map((org) => (
-            <OrgPreviewCard key={org.id} org={org} />
-          ))}
+          {orgs?.current
+            // sort org with nill uuid first, since it's the root org
+            // and should be displayed first
+            ?.sort((a) =>
+              a.id === '00000000-0000-0000-0000-000000000000' ? -1 : 1
+            )
+            ?.map((org) => (
+              <OrgPreviewCard key={org.id} org={org} />
+            ))}
         </div>
       ) : (
         <div className="flex flex-col">

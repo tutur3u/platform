@@ -1,4 +1,5 @@
-import { SparklesIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon } from '@heroicons/react/20/solid';
+import { Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
@@ -52,15 +53,23 @@ const OrgPreviewCard = ({ org }: Props) => {
     });
   };
 
+  const isRoot = org?.id === '00000000-0000-0000-0000-000000000000';
+
   return (
     <div>
       <Link
         href={`/orgs/${org.id}`}
-        className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold transition duration-150"
+        className={`${
+          isRoot
+            ? 'text-purple-200 hover:text-purple-300'
+            : 'text-zinc-300 hover:text-blue-200'
+        } text-2xl font-semibold transition duration-150`}
       >
-        {org?.name || `Unnamed organization`}{' '}
-        {org?.id === '00000000-0000-0000-0000-000000000000' && (
-          <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+        {org?.name || `Unnamed organization`}
+        {isRoot && (
+          <Tooltip label="Verified organization" withArrow>
+            <CheckBadgeIcon className="ml-1 inline-block w-6 h-6 text-purple-300" />
+          </Tooltip>
         )}
       </Link>
       <div className="mt-2 grid md:grid-cols-2 2xl:grid-cols-4 gap-4">
