@@ -16,19 +16,18 @@ const ProjectOverviewPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project
-        ? [
-            {
-              content: project?.orgs?.name || 'Unnamed Organization',
-              href: `/orgs/${project.orgs.id}`,
-            },
-            {
-              content: project?.name || 'Untitled',
-              href: `/projects/${projectId}`,
-            },
-            { content: 'Overview', href: `/projects/${projectId}` },
-          ]
-        : []
+      [
+        {
+          content: project?.orgs?.name || 'Unnamed Organization',
+          href: `/orgs/${project?.orgs?.id}`,
+        },
+        {
+          content: project?.name || 'Untitled',
+          href: `/projects/${projectId}`,
+        },
+        { content: 'Overview', href: `/projects/${projectId}` },
+      ],
+      [project?.orgs?.id]
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project]);

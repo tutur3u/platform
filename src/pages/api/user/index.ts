@@ -16,7 +16,7 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, username')
+    .select('id, display_name, username, created_at')
     .eq('id', user?.id)
     .single();
 

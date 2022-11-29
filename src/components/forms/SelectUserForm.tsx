@@ -4,7 +4,6 @@ import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { mutate } from 'swr';
-import { Project } from '../../types/primitives/Project';
 import { User } from '../../types/primitives/User';
 import {
   isEmail,
@@ -14,14 +13,12 @@ import {
 
 interface SelectUserFormProps {
   orgId: string;
-  onSubmit?: (orgId: string, project: Project) => void;
-  onDelete?: () => void;
 }
 
 type UserWithValue = User & { value: string };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const SelectUserForm = ({ orgId, onSubmit, onDelete }: SelectUserFormProps) => {
+const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
   const [value, setValue] = useState('');
   const [debounced] = useDebouncedValue(value, 300);
 

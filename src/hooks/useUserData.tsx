@@ -1,3 +1,4 @@
+import { showNotification } from '@mantine/notifications';
 import { useUser } from '@supabase/auth-helpers-react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { UserData } from '../types/primitives/UserData';
@@ -24,6 +25,7 @@ export const UserDataProvider = ({
       id: data.id,
       username: data.username,
       displayName: data.display_name,
+      createdAt: data.created_at,
     });
   };
 
@@ -32,7 +34,7 @@ export const UserDataProvider = ({
   }, [user]);
 
   const updateData = async (data: Partial<UserData>) => {
-    await fetch('/api/user', {
+    const response = await fetch('/api/user', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -40,7 +42,20 @@ export const UserDataProvider = ({
       body: JSON.stringify(data),
     });
 
-    fetchUserData();
+    if (response.ok) {
+      await fetchUserData();
+      showNotification({
+        title: 'Updated profile',
+        message: 'Your profile has been updated',
+        color: 'teal',
+      });
+    } else {
+      showNotification({
+        title: 'Failed to update profile',
+        message: 'Something went wrong, please try again later',
+        color: 'red',
+      });
+    }
   };
 
   const values = {
