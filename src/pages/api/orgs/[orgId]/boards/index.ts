@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const fetchProjects = async (
+const fetchBoards = async (
   req: NextApiRequest,
   res: NextApiResponse,
   orgId: string
@@ -9,7 +9,7 @@ const fetchProjects = async (
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('projects')
+    .from('task_boards')
     .select('id, name, created_at')
     .eq('org_id', orgId);
 
@@ -18,7 +18,7 @@ const fetchProjects = async (
   return res.status(200).json(data);
 };
 
-const createProject = async (
+const createBoard = async (
   req: NextApiRequest,
   res: NextApiResponse,
   orgId: string
@@ -35,7 +35,7 @@ const createProject = async (
     });
 
   const { data, error } = await supabase
-    .from('projects')
+    .from('task_boards')
     .insert({ org_id: orgId, name })
     .select('id')
     .single();
@@ -47,7 +47,7 @@ const createProject = async (
       },
     });
 
-  return res.status(200).json({ message: 'Project created', id: data.id });
+  return res.status(200).json({ message: 'Board created', id: data.id });
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -58,10 +58,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchProjects(req, res, orgId);
+        return await fetchBoards(req, res, orgId);
 
       case 'POST':
-        return await createProject(req, res, orgId);
+        return await createBoard(req, res, orgId);
 
       default:
         throw new Error(

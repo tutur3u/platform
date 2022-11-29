@@ -7,6 +7,12 @@ import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
 import { useAppearance } from '../../hooks/useAppearance';
+import moment from 'moment';
+import {
+  EnvelopeIcon,
+  IdentificationIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/solid';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
@@ -87,23 +93,41 @@ const SettingPage: PageWithLayoutProps = () => {
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setDisplayName(event.currentTarget.value)
             }
+            icon={<UserCircleIcon className="w-5 h-5" />}
           />
           <TextInput
             label="Username"
             placeholder="@tuturuuu"
-            value={username}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setUsername(event.currentTarget.value)
-            }
+            value={`@${username}`.replace(/^@+/, '@')}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              // Remove @ from username
+              const username = event.currentTarget.value.replace(/^@+/, '');
+              setUsername(username);
+            }}
+            icon={<IdentificationIcon className="w-5 h-5" />}
           />
           <TextInput
             label="Email"
             placeholder="example@tuturuuu.com"
             value={user?.email || ''}
+            icon={<EnvelopeIcon className="w-5 h-5" />}
             readOnly
             disabled
           />
         </div>
+
+        {data?.createdAt && (
+          <div className="border-t pt-4 mt-8 border-zinc-700/70 text-zinc-500">
+            You are a member of Tuturuuu since{' '}
+            <span className="text-zinc-300 font-semibold">
+              {moment(data.createdAt).toDate().toLocaleDateString()}
+            </span>{' '}
+            <span className="text-zinc-400 font-semibold">
+              ({moment(data.createdAt).fromNow()})
+            </span>
+            .
+          </div>
+        )}
 
         <div className="h-full" />
 

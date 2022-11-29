@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
 import { openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
-import { withPageAuth } from '@supabase/auth-helpers-nextjs';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { useOrgs } from '../hooks/useOrganizations';
 import { mutate } from 'swr';
 import LoadingIndicator from '../components/common/LoadingIndicator';
@@ -12,8 +12,30 @@ import { useAppearance } from '../hooks/useAppearance';
 import { showNotification } from '@mantine/notifications';
 import OrganizationInviteSnippet from '../components/notifications/OrganizationInviteSnippet';
 import OrgPreviewCard from '../components/cards/OrgPreviewCard';
+import { GetServerSidePropsContext } from 'next';
 
-export const getServerSideProps = withPageAuth({ redirectTo: '/login' });
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const supabase = createServerSupabaseClient(ctx);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session)
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+
+  return {
+    props: {
+      initialSession: session,
+      user: session.user,
+    },
+  };
+};
 
 const Home: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
@@ -28,7 +50,7 @@ const Home: PageWithLayoutProps = () => {
 
   const { isLoading, orgs, createOrg } = useOrgs();
 
-  const maxOrgs = 3;
+  const maxOrgs = 5;
 
   useEffect(() => {
     mutate('/api/orgs');
@@ -84,9 +106,9 @@ const Home: PageWithLayoutProps = () => {
     </div>
   ) : (
     <>
-      {orgs.invited.length > 0 && (
+      {orgs?.invited?.length > 0 && (
         <div className="grid gap-8 mb-16">
-          {orgs.invited.map((org) => (
+          {orgs?.invited?.map((org) => (
             <OrganizationInviteSnippet
               key={org.id}
               org={org}
@@ -97,11 +119,17 @@ const Home: PageWithLayoutProps = () => {
         </div>
       )}
 
-      {orgs.current.length > 0 ? (
+      {orgs?.current?.length > 0 ? (
         <div className="grid gap-8">
-          {orgs.current.map((org) => (
-            <OrgPreviewCard key={org.id} org={org} />
-          ))}
+          {orgs?.current
+            // sort org with nill uuid first, since it's the root org
+            // and should be displayed first
+            ?.sort((a) =>
+              a.id === '00000000-0000-0000-0000-000000000000' ? -1 : 1
+            )
+            ?.map((org) => (
+              <OrgPreviewCard key={org.id} org={org} />
+            ))}
         </div>
       ) : (
         <div className="flex flex-col">
@@ -113,15 +141,15 @@ const Home: PageWithLayoutProps = () => {
 
       <button
         className={`w-full md:w-fit mt-8 font-semibold px-8 py-4 rounded ${
-          orgs.current.length < maxOrgs
+          orgs?.current?.length < maxOrgs
             ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
             : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
         } transition duration-300`}
         onClick={() =>
-          orgs.current.length < maxOrgs ? showEditOrgModal() : null
+          orgs?.current?.length < maxOrgs ? showEditOrgModal() : null
         }
       >
-        {orgs.current.length < maxOrgs
+        {orgs?.current?.length < maxOrgs
           ? 'New organization'
           : 'Maximum organizations reached'}
       </button>

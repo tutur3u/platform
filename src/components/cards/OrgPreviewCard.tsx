@@ -1,4 +1,5 @@
-import { SparklesIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon } from '@heroicons/react/20/solid';
+import { Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
@@ -52,18 +53,26 @@ const OrgPreviewCard = ({ org }: Props) => {
     });
   };
 
+  const isRoot = org?.id === '00000000-0000-0000-0000-000000000000';
+
   return (
     <div>
       <Link
         href={`/orgs/${org.id}`}
-        className="text-zinc-300 hover:text-blue-200 text-2xl font-semibold transition duration-150"
+        className={`${
+          isRoot
+            ? 'text-purple-200 hover:text-purple-300'
+            : 'text-zinc-300 hover:text-blue-200'
+        } text-2xl font-semibold transition duration-150`}
       >
-        {org?.name || `Unnamed organization`}{' '}
-        {org?.id === '00000000-0000-0000-0000-000000000000' && (
-          <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+        {org?.name || `Unnamed organization`}
+        {isRoot && (
+          <Tooltip label="Verified organization" withArrow>
+            <CheckBadgeIcon className="ml-1 inline-block w-6 h-6 text-purple-300" />
+          </Tooltip>
         )}
       </Link>
-      <div className="mt-2 grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div className="mt-2 grid md:grid-cols-2 2xl:grid-cols-4 gap-4">
         <div
           className="p-2 h-32 flex justify-center items-center font-semibold text-xl rounded bg-zinc-500/10 hover:bg-blue-300/10 text-zinc-300 hover:text-blue-300 cursor-pointer transition duration-300"
           onClick={showProjectEditForm}
@@ -71,15 +80,23 @@ const OrgPreviewCard = ({ org }: Props) => {
           New project
         </div>
         {isLoading ||
-          projects?.map((project: Project) => (
+          projects?.slice(0, 3)?.map((project: Project) => (
             <Link
               key={project.id}
-              className="p-4 h-32 flex justify-center items-center bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+              className="p-4 h-32 flex justify-center items-center text-center bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
               href={`/projects/${project.id}`}
             >
               {project?.name || `Unnamed project`}
             </Link>
           ))}
+        {projects?.length > 3 && (
+          <Link
+            className="p-4 col-span-full flex justify-center items-center text-center bg-zinc-500/10 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+            href={`/orgs/${org.id}/projects`}
+          >
+            View all projects
+          </Link>
+        )}
       </div>
     </div>
   );

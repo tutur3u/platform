@@ -66,6 +66,9 @@ const OrganizationProjectsPage = () => {
         color: 'teal',
         message: `Project ${project.name} created successfully`,
       });
+
+      const data = await res.json();
+      router.push(`/projects/${data.id}`);
     } else {
       showNotification({
         title: 'Error',

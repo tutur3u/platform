@@ -20,11 +20,11 @@ const ProjectSettingsPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project
+      project?.orgs?.id
         ? [
             {
               content: project?.orgs?.name || 'Unnamed Organization',
-              href: `/orgs/${project.orgs.id}`,
+              href: `/orgs/${project?.orgs?.id}`,
             },
             {
               content: project?.name || 'Untitled',

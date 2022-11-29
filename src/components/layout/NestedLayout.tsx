@@ -19,6 +19,10 @@ const tabs = [
     href: '/projects',
   },
   {
+    name: 'Boards',
+    href: '/boards',
+  },
+  {
     name: 'Members',
     href: '/members',
   },
@@ -39,7 +43,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const { segments } = useAppearance();
   const rootTabs = orgMode
     ? tabs
-    : tabs.filter((tab) => tab.name !== 'Projects' && tab.name !== 'Members');
+    : tabs.filter((tab) => tab.name !== 'Projects');
 
   const rootPath = orgMode ? `/orgs/${orgId}` : `/projects/${projectId}`;
 
