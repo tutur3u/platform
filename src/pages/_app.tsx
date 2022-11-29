@@ -2,17 +2,26 @@ import '../styles/globals.css';
 
 import { AppWithLayoutProps } from '../types/AppWithLayoutProps';
 import Providers from '../components/common/Providers';
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
+
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 export default function Application({
   Component,
   pageProps,
 }: AppWithLayoutProps) {
+  // Create a new supabase browser client on every first render.
+  const [supabaseClient] = useState(() => createBrowserSupabaseClient());
+
   //* Use the layout defined at the page level, if available
   const getLayout = Component?.getLayout || ((page: ReactElement) => page);
 
-  //* Render page components with the layout, if available
-  // NOTE: it is wrapped in the Providers component to
-  // provide access to necessary context providers
-  return <Providers>{getLayout(<Component {...pageProps} />)}</Providers>;
+  return (
+    <Providers
+      supabaseClient={supabaseClient}
+      initialSession={pageProps.initialSession}
+    >
+      {getLayout(<Component {...pageProps} />)}
+    </Providers>
+  );
 }

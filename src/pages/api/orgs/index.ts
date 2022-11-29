@@ -50,11 +50,12 @@ const createOrg = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { name } = JSON.parse(req.body);
 
-  const data = {
-    name,
-  };
-
-  const { error } = await supabase.from('orgs').insert(data).single();
+  const { error } = await supabase
+    .from('orgs')
+    .insert({
+      name,
+    })
+    .single();
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({ message: 'success' });

@@ -28,8 +28,10 @@ const AppearanceContext = createContext({
     localStorage.setItem(contentWidthPrefs, width),
 
   segments: [] as Segment[],
-  setRootSegment: (segment: Segment | Segment[]) => console.log(segment),
-  addSegment: (segment: Segment) => console.log(segment),
+  setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
+    console.log(segment, conditions),
+  addSegment: (segment: Segment, conditions?: boolean[]) =>
+    console.log(segment, conditions),
 });
 
 export const AppearanceProvider = ({
@@ -76,7 +78,14 @@ export const AppearanceProvider = ({
 
   const [segments, setSegments] = useState<Segment[]>([]);
 
-  const setRootSegment = (segment: Segment | Segment[]) =>
+  const setRootSegment = (
+    segment: Segment | Segment[],
+    conditions?: boolean[]
+  ) => {
+    // If not all conditions are true, don't set the segment
+    if (conditions && conditions.some((condition) => !condition)) return;
+
+    // Update the segments
     setSegments((oldSegments) =>
       Array.isArray(segment)
         ? segment.length > 0
@@ -86,9 +95,15 @@ export const AppearanceProvider = ({
         ? [segment]
         : oldSegments
     );
+  };
 
-  const addSegment = (segment: Segment) =>
+  const addSegment = (segment: Segment, conditions?: boolean[]) => {
+    // If not all conditions are true, don't add the segment
+    if (conditions && conditions.some((condition) => !condition)) return;
+
+    // Update the segments
     setSegments((prev) => [...prev, segment]);
+  };
 
   const values = {
     theme,
