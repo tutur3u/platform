@@ -1,14 +1,15 @@
 {
   "name": "web-app",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "scripts": {
-    "setup": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts",
-    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
-    "build": "pnpm genversion --semi --es6 src/core/version.ts && next build",
-    "start": "next start",
     "lint": "next lint",
-    "test": "jest --collect-coverage"
+    "start": "next start",
+    "format": "prettier --write .",
+    "test": "jest --collect-coverage",
+    "dev": "pnpm i && next dev -p 7803",
+    "setup": "pnpm i && prettier --write .",
+    "build": "pnpm genversion --semi --es6 src/core/version.ts && next build"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
