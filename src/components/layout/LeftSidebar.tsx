@@ -19,18 +19,18 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`${className} group z-20 block h-full fixed flex-col justify-center items-center top-0 left-0 border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg ${
+        className={`${className} group fixed top-0 left-0 z-20 block h-full flex-col items-center justify-center border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg ${
           leftSidebar === 'open'
             ? 'opacity-100'
-            : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
+            : 'pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100'
         } transition-all duration-300`}
       >
-        <div className="w-full h-full flex flex-col">
-          <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-start overflow-hidden border-b border-zinc-700">
+        <div className="flex h-full w-full flex-col">
+          <div className="relative mx-3 mt-4 flex justify-start overflow-hidden border-b border-zinc-700 pl-[0.21rem] pb-4">
             <Logo alwaysShowLabel={leftSidebar === 'open'} />
           </div>
-          <div className="overflow-auto h-full">
-            <div className="mt-4 p-2 flex flex-col items-start gap-6">
+          <div className="h-full overflow-auto">
+            <div className="mt-4 flex flex-col items-start gap-6 p-2">
               <SidebarTab
                 href="/"
                 currentPath={router.pathname}
@@ -56,31 +56,31 @@ function LeftSidebar({ className }: SidebarProps) {
               </>
             </div>
           </div>
-          <div className="m-3 mt-4 relative flex md:hidden justify-start items-center gap-2 overflow-hidden rounded transition duration-300">
+          <div className="relative m-3 mt-4 flex items-center justify-start gap-2 overflow-hidden rounded transition duration-300 md:hidden">
             <div className="pl-[0.07rem]">
               <Avatar size={36} color="blue" radius="xl" />
             </div>
             <div>
-              <div className="text-md font-bold min-w-max">
+              <div className="text-md min-w-max font-bold">
                 {data?.displayName ||
                   user?.email ||
                   user?.phone ||
                   'Not logged in'}
               </div>
               {data?.username && (
-                <div className="text-sm font-semibold min-w-max text-purple-300">
+                <div className="min-w-max text-sm font-semibold text-purple-300">
                   @{data?.username}
                 </div>
               )}
             </div>
           </div>
-          <div className="opacity-0 whitespace-nowrap group-hover:opacity-100 transition group-hover:duration-500 group-hover:delay-200 p-2 text-center text-zinc-500 font-semibold text-sm cursor-default">
+          <div className="cursor-default whitespace-nowrap p-2 text-center text-sm font-semibold text-zinc-500 opacity-0 transition group-hover:opacity-100 group-hover:delay-200 group-hover:duration-500">
             Version {APP_VERSION}
           </div>
         </div>
       </div>
       <div
-        className={`w-screen md:hidden h-screen z-10 bg-zinc-900/50 backdrop-blur ${
+        className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
           leftSidebar === 'open' ? 'block' : 'hidden'
         }`}
         onClick={() => changeLeftSidebar('closed')}

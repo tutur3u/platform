@@ -28,7 +28,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="bg-[#111113] flex w-full h-screen min-h-screen">
+    <div className="flex h-screen min-h-screen w-full bg-[#111113]">
       <LeftSidebar
         className={`transition-all duration-300 ${generateSidebarWidth(
           leftSidebar
@@ -36,7 +36,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       />
 
       <main
-        className={`bg-[#111113] left-0 right-0 scrollbar-none flex flex-col p-7 gap-5 h-screen fixed top-0 min-h-full overflow-auto ${
+        className={`fixed left-0 right-0 top-0 flex h-screen min-h-full flex-col gap-5 overflow-auto bg-[#111113] p-7 scrollbar-none ${
           contentWidth === 'padded' && 'lg:px-56'
         } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
           rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'

@@ -25,7 +25,7 @@ export default function AuthWrapper() {
       <div
         className={`${
           showQR ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
-        } grid gap-7 md:gap-3 mt-6 transition duration-300`}
+        } mt-6 grid gap-7 transition duration-300 md:gap-3`}
       >
         <AuthForm
           method={method}

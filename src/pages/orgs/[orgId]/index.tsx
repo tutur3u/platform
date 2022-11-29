@@ -36,14 +36,14 @@ const OrganizationOverviewPage = () => {
     <div className="grid gap-4">
       <h1 className="font-bold">Overview</h1>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div className="p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg h-72">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <h1 className="font-bold">Revenue</h1>
         </div>
-        <div className="p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg h-72">
+        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <h1 className="font-bold">Expenses</h1>
         </div>
-        <div className="p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg h-72 max-xl:col-span-full">
+        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 max-xl:col-span-full">
           <h1 className="font-bold">Recent Activity</h1>
         </div>
       </div>

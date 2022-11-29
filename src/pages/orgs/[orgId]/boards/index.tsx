@@ -77,15 +77,15 @@ const OrgBoardsPage = () => {
   return (
     <div className="grid gap-4">
       {orgId && (
-        <div className="flex justify-between items-center mt-2 mb-2">
-          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+        <div className="mt-2 mb-2 flex items-center justify-between">
+          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
             Boards
           </h1>
           <button
             onClick={showBoardEditForm}
-            className="px-4 py-2 font-semibold rounded flex gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+            className="flex gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
-            New board <PlusIcon className="w-4 h-4" />
+            New board <PlusIcon className="h-4 w-4" />
           </button>
         </div>
       )}

@@ -107,7 +107,7 @@ const Home: PageWithLayoutProps = () => {
   ) : (
     <>
       {orgs?.invited?.length > 0 && (
-        <div className="grid gap-8 mb-16">
+        <div className="mb-16 grid gap-8">
           {orgs?.invited?.map((org) => (
             <OrganizationInviteSnippet
               key={org.id}
@@ -140,10 +140,10 @@ const Home: PageWithLayoutProps = () => {
       )}
 
       <button
-        className={`w-full md:w-fit mt-8 font-semibold px-8 py-4 rounded ${
+        className={`mt-8 w-full rounded px-8 py-4 font-semibold md:w-fit ${
           orgs?.current?.length < maxOrgs
-            ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
-            : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
+            ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30'
+            : 'cursor-not-allowed bg-gray-500/10 text-gray-500/50'
         } transition duration-300`}
         onClick={() =>
           orgs?.current?.length < maxOrgs ? showEditOrgModal() : null

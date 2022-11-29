@@ -27,12 +27,12 @@ export default function SidebarTab({
   return (
     <Link
       href={href ?? '#'}
-      className={`${className} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer ${
+      className={`${className} w-full cursor-pointer px-2 text-lg font-semibold transition duration-300 ${
         isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
       }`}
     >
       <Tooltip label={label} position="right" disabled={!showTooltip}>
-        <div className="flex justify-start items-center gap-2">
+        <div className="flex items-center justify-start gap-2">
           {showIcon && <div className="w-8 flex-none">{icon}</div>}
           {showLabel && (
             <div className="inline-block overflow-hidden">{label}</div>

@@ -16,8 +16,8 @@ const TasksPage: PageWithLayoutProps = () => {
   }, []);
 
   return (
-    <div className="w-full h-full relative flex">
-      <div className="h-[50rem] w-[15rem] flex flex-col gap-2 top-0 left-0 bg-zinc-900 p-3 overflow-scroll scrollbar-none scroll-smooth">
+    <div className="relative flex h-full w-full">
+      <div className="top-0 left-0 flex h-[50rem] w-[15rem] flex-col gap-2 overflow-scroll scroll-smooth bg-zinc-900 p-3 scrollbar-none">
         <NavLink label="Favourite projects" childrenOffset={28} defaultOpened>
           <NavLink label="Project 1" />
           <NavLink label="Project 2" />
@@ -48,18 +48,18 @@ const TasksPage: PageWithLayoutProps = () => {
           </NavLink>
         </NavLink>
       </div>
-      <div className="px-7 w-full">
-        <div className="text-3xl font-semibold text-center w-full">
+      <div className="w-full px-7">
+        <div className="w-full text-center text-3xl font-semibold">
           Project name
         </div>
-        <div className="flex gap-6 p-2 border-b border-zinc-800/80 ">
-          <div className="hover:bg-zinc-900 p-2 rounded-lg hover:cursor-pointer">
+        <div className="flex gap-6 border-b border-zinc-800/80 p-2 ">
+          <div className="rounded-lg p-2 hover:cursor-pointer hover:bg-zinc-900">
             Board
           </div>
-          <div className="hover:bg-zinc-900 p-2 rounded-lg hover:cursor-pointer">
+          <div className="rounded-lg p-2 hover:cursor-pointer hover:bg-zinc-900">
             Table
           </div>
-          <div className="hover:bg-zinc-900 p-2 rounded-lg hover:cursor-pointer">
+          <div className="rounded-lg p-2 hover:cursor-pointer hover:bg-zinc-900">
             List view
           </div>
         </div>

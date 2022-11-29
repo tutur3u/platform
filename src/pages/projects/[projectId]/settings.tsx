@@ -96,16 +96,16 @@ const ProjectSettingsPage = () => {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-4">
+    <div className="grid gap-4 lg:grid-cols-2">
       <h1 className="col-span-full font-bold">Settings</h1>
 
-      <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Basic Information</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Basic Information</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Manage the basic information of your project.
         </div>
 
-        <div className="grid gap-2 max-w-xs">
+        <div className="grid max-w-xs gap-2">
           <TextInput
             label="Name"
             placeholder={project?.name ?? name ?? 'Untitled'}
@@ -114,9 +114,9 @@ const ProjectSettingsPage = () => {
           />
         </div>
 
-        <div className="border-t pt-4 mt-8 border-zinc-700/70 text-zinc-500">
+        <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
           This project was created{' '}
-          <span className="text-zinc-300 font-semibold">
+          <span className="font-semibold text-zinc-300">
             {moment(project.created_at).fromNow()}
           </span>
           .
@@ -126,21 +126,21 @@ const ProjectSettingsPage = () => {
 
         <div
           onClick={handleSave}
-          className="mt-8 col-span-full w-full p-2 flex items-center border border-blue-300/20 hover:border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/10 hover:bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer transition duration-300"
+          className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
         >
           {isSaving ? 'Saving...' : 'Save'}
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Security</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Security</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Manage the security of your project.
         </div>
 
-        <div className="h-full text-center grid xl:grid-cols-2 items-end gap-4">
+        <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
           <div
-            className="col-span-full w-full h-fit p-2 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded-lg cursor-pointer transition duration-300"
+            className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
             onClick={handleDelete}
           >
             {isDeleting ? 'Deleting...' : 'Delete Project'}

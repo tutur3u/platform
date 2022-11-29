@@ -6,7 +6,7 @@ export default function LoadingIndicator({
   return (
     <div className="inline-flex items-center rounded-md border border-transparent text-base">
       <svg
-        className={`animate-spin text-white dark:text-zinc-200 ${
+        className={`dark:text-zinc-200 animate-spin text-white ${
           className || 'h-4'
         }`}
         xmlns="http://www.w3.org/2000/svg"

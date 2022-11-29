@@ -17,30 +17,30 @@ function RightSidebar({ className }: SidebarProps) {
 
   return (
     <div
-      className={`${className} hidden md:block group z-20 h-full fixed flex-col justify-center items-center top-0 right-0 border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg`}
+      className={`${className} group fixed top-0 right-0 z-20 hidden h-full flex-col items-center justify-center border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:block`}
     >
-      <div className="w-full h-full flex flex-col">
-        <div className="m-3 mt-4 relative flex justify-start items-center gap-2 overflow-hidden rounded transition duration-300">
+      <div className="flex h-full w-full flex-col">
+        <div className="relative m-3 mt-4 flex items-center justify-start gap-2 overflow-hidden rounded transition duration-300">
           <div className="pl-[0.07rem]">
             <Avatar size={36} color="blue" radius="xl" />
           </div>
           <div>
-            <div className="text-md font-bold min-w-max">
+            <div className="text-md min-w-max font-bold">
               {data?.displayName ||
                 user?.email ||
                 user?.phone ||
                 'Not logged in'}
             </div>
             {data?.username && (
-              <div className="text-sm font-semibold min-w-max text-purple-300">
+              <div className="min-w-max text-sm font-semibold text-purple-300">
                 @{data?.username}
               </div>
             )}
           </div>
         </div>
         <div className="mx-3 mb-4 border-t border-zinc-700 transition-all duration-300" />
-        <div className="overflow-auto h-full">
-          <div className="p-2 flex flex-col items-start gap-6">
+        <div className="h-full overflow-auto">
+          <div className="flex flex-col items-start gap-6 p-2">
             <SidebarTab
               href="/settings"
               currentPath={router.pathname}
