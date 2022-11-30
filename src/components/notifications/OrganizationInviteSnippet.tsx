@@ -10,12 +10,12 @@ interface Props {
 
 const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
   return (
-    <div className="p-8 bg-zinc-900 rounded-lg max-w-xl">
-      <div className="font-semibold transition duration-150 cursor-default">
+    <div className="max-w-xl rounded-lg bg-zinc-900 p-8">
+      <div className="cursor-default font-semibold transition duration-150">
         <span className="text-zinc-500">You have been invited to join </span>
         {org?.name || `Unnamed organization`}{' '}
         {org?.id === '00000000-0000-0000-0000-000000000000' && (
-          <SparklesIcon className="inline-block w-5 h-5 text-yellow-300" />
+          <SparklesIcon className="inline-block h-5 w-5 text-yellow-300" />
         )}
         {org?.created_at ? (
           <>
@@ -26,10 +26,10 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
           </>
         ) : null}
       </div>
-      <div className="mt-2 grid md:grid-cols-2 gap-4">
+      <div className="mt-2 grid gap-4 md:grid-cols-2">
         {onDecline ? (
           <div
-            className="p-2 flex justify-center items-center font-semibold rounded bg-zinc-300/10 hover:bg-red-300/30 text-zinc-300 hover:text-red-300 cursor-pointer transition duration-300"
+            className="flex cursor-pointer items-center justify-center rounded bg-zinc-300/10 p-2 font-semibold text-zinc-300 transition duration-300 hover:bg-red-300/30 hover:text-red-300"
             onClick={() => onDecline(org)}
           >
             Decline invitation
@@ -38,7 +38,7 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
 
         {onAccept ? (
           <div
-            className="p-2 flex-1 flex justify-center items-center font-semibold rounded bg-zinc-300/10 hover:bg-green-300/30 text-zinc-300 hover:text-green-300 cursor-pointer transition duration-300"
+            className="flex flex-1 cursor-pointer items-center justify-center rounded bg-zinc-300/10 p-2 font-semibold text-zinc-300 transition duration-300 hover:bg-green-300/30 hover:text-green-300"
             onClick={() => onAccept(org)}
           >
             Accept invitation

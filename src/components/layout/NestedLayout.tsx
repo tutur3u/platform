@@ -50,12 +50,12 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="px-8 lg:px-0 lg:mx-56 flex gap-4 overflow-x-auto scrollbar-none transition-all duration-300">
+        <div className="flex gap-4 overflow-x-auto px-8 transition-all duration-300 scrollbar-none lg:mx-56 lg:px-0">
           {rootTabs.map((tab) => (
             <Link
               key={tab.name}
               href={`${rootPath}${tab.href}`}
-              className={`pb-2 border-b-2 rounded-t-lg group ${
+              className={`group rounded-t-lg border-b-2 pb-2 ${
                 segments &&
                 segments.length > 0 &&
                 (orgMode
@@ -67,7 +67,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <div className="group-hover:bg-zinc-800 px-4 py-1 rounded-lg font-semibold">
+              <div className="rounded-lg px-4 py-1 font-semibold group-hover:bg-zinc-800">
                 {tab.name}
               </div>
             </Link>

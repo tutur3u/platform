@@ -10,7 +10,7 @@ interface AuthContainerProps {
 
 const AuthContainer = ({ children, showQR }: AuthContainerProps) => (
   <div
-    className={`${styles.background} grid place-content-center min-h-screen`}
+    className={`${styles.background} grid min-h-screen place-content-center`}
   >
     <div
       className={`${

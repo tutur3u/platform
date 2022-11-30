@@ -1,14 +1,15 @@
 {
   "name": "web-app",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "scripts": {
-    "setup": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts",
-    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
-    "build": "pnpm genversion --semi --es6 src/core/version.ts && next build",
-    "start": "next start",
     "lint": "next lint",
-    "test": "jest --collect-coverage"
+    "start": "next start",
+    "format": "prettier --write .",
+    "test": "jest --collect-coverage",
+    "dev": "pnpm i && next dev -p 7803",
+    "setup": "pnpm i && prettier --write .",
+    "build": "pnpm genversion --semi --es6 src/core/version.ts && next build"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
@@ -56,6 +57,7 @@
     "lint-staged": "^13.0.4",
     "postcss": "^8.4.19",
     "prettier": "^2.8.0",
+    "prettier-plugin-tailwindcss": "^0.2.0",
     "tailwind-scrollbar": "^2.0.1",
     "tailwindcss": "^3.2.4",
     "typescript": "4.9.3"

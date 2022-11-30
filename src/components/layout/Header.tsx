@@ -26,10 +26,10 @@ export default function Header({ className }: HeaderProps) {
 
   return (
     <div
-      className={`${className} mb-4 w-full flex justify-between items-center`}
+      className={`${className} mb-4 flex w-full items-center justify-between`}
     >
       <Avatar
-        className="block md:hidden hover:cursor-pointer"
+        className="block hover:cursor-pointer md:hidden"
         size={37}
         color="blue"
         radius="xl"
@@ -40,10 +40,10 @@ export default function Header({ className }: HeaderProps) {
           <div className="flex items-center gap-2">
             {segments.map((segment, index) => (
               <div key={index} className="flex items-center gap-2">
-                {index > 0 && <span className="text-zinc-500 text-xl">/</span>}
+                {index > 0 && <span className="text-xl text-zinc-500">/</span>}
                 <Link
                   href={segment.href}
-                  className={`px-6 py-2 text-xl font-bold rounded-full ${getSegmentColor(
+                  className={`rounded-full px-6 py-2 text-xl font-bold ${getSegmentColor(
                     index
                   )} transition duration-300`}
                 >
@@ -58,11 +58,11 @@ export default function Header({ className }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="p-2 hover:bg-zinc-300/10 hover:text-zinc-300 hover:border-zinc-600 rounded hover:cursor-pointer transition duration-150">
-          <MagnifyingGlassIcon className="w-6 h-6" />
+        <button className="rounded p-2 transition duration-150 hover:cursor-pointer hover:border-zinc-600 hover:bg-zinc-300/10 hover:text-zinc-300">
+          <MagnifyingGlassIcon className="h-6 w-6" />
         </button>
-        <button className="p-2 hover:bg-zinc-300/10 hover:text-zinc-300 hover:border-zinc-600 rounded hover:cursor-pointer transition duration-150">
-          <BellIcon className="w-6 h-6" />
+        <button className="rounded p-2 transition duration-150 hover:cursor-pointer hover:border-zinc-600 hover:bg-zinc-300/10 hover:text-zinc-300">
+          <BellIcon className="h-6 w-6" />
         </button>
       </div>
     </div>

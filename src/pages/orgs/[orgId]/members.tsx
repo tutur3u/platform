@@ -112,20 +112,20 @@ const OrganizationMembersPage = () => {
   return (
     <>
       {orgId && (
-        <div className="flex justify-between items-center mt-2 mb-4">
-          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+        <div className="mt-2 mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
             Members ({membersData?.members?.length || 0})
           </h1>
           <button
             onClick={showSelectUserForm}
-            className="px-4 py-2 font-semibold rounded flex gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+            className="flex gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
-            Invite <PlusIcon className="w-4 h-4" />
+            Invite <PlusIcon className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      <div className="max-w-lg flex flex-col gap-4 mb-16">
+      <div className="mb-16 flex max-w-lg flex-col gap-4">
         {membersData?.members
           ?.sort(
             (
@@ -150,7 +150,7 @@ const OrganizationMembersPage = () => {
             }) => (
               <div
                 key={member.id}
-                className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
+                className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
               >
                 <p className="font-semibold lg:text-lg xl:text-xl">
                   {member.display_name}
@@ -158,12 +158,12 @@ const OrganizationMembersPage = () => {
                 <p className="text-zinc-400">{member.email}</p>
 
                 <button
-                  className="absolute top-4 right-4 font-semibold text-zinc-400 hover:text-red-400 transition duration-150"
+                  className="absolute top-4 right-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
                   onClick={() => deleteMember(member, false)}
                 >
                   {user?.id === member.id ? (
                     <Tooltip label="Leave">
-                      <ArrowRightOnRectangleIcon className="w-6 h-6" />
+                      <ArrowRightOnRectangleIcon className="h-6 w-6" />
                     </Tooltip>
                   ) : (
                     <Tooltip label="Remove member">
@@ -173,9 +173,9 @@ const OrganizationMembersPage = () => {
                 </button>
 
                 {member?.created_at ? (
-                  <div className="mt-2 pt-2 border-t border-zinc-800 text-zinc-500">
+                  <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
                     Member since{' '}
-                    <span className="text-zinc-400 font-semibold">
+                    <span className="font-semibold text-zinc-400">
                       {moment(member.created_at).fromNow()}
                     </span>
                     .
@@ -186,11 +186,11 @@ const OrganizationMembersPage = () => {
           )}
       </div>
 
-      <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl mb-4">
+      <h1 className="mb-4 text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
         Pending invitations ({membersData?.invites?.length || 0})
       </h1>
 
-      <div className="max-w-lg flex flex-col gap-4">
+      <div className="flex max-w-lg flex-col gap-4">
         {membersData?.invites?.map(
           (member: {
             id: string;
@@ -200,7 +200,7 @@ const OrganizationMembersPage = () => {
           }) => (
             <div
               key={member.id}
-              className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
+              className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
             >
               <p className="font-semibold lg:text-lg xl:text-xl">
                 {member.display_name}
@@ -208,7 +208,7 @@ const OrganizationMembersPage = () => {
               <p className="text-zinc-400">{member.email}</p>
 
               <button
-                className="absolute top-4 right-4 font-semibold text-zinc-400 hover:text-red-400 transition duration-150"
+                className="absolute top-4 right-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
                 onClick={() => deleteMember(member, true)}
               >
                 <Tooltip label="Revoke invitation">
@@ -217,9 +217,9 @@ const OrganizationMembersPage = () => {
               </button>
 
               {member?.created_at ? (
-                <div className="mt-2 pt-2 border-t border-zinc-800 text-zinc-500">
+                <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
                   Invited{' '}
-                  <span className="text-zinc-400 font-semibold">
+                  <span className="font-semibold text-zinc-400">
                     {moment(member.created_at).fromNow()}
                   </span>
                   .

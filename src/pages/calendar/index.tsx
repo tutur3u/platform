@@ -3,12 +3,12 @@ import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
-const TasksPage: PageWithLayoutProps = () => {
+const CalendarPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment({
-      content: 'Tasks',
+      content: 'Calendar',
       href: '/expenses',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -21,8 +21,8 @@ const TasksPage: PageWithLayoutProps = () => {
   );
 };
 
-TasksPage.getLayout = function getLayout(page: ReactElement) {
+CalendarPage.getLayout = function getLayout(page: ReactElement) {
   return <Layout>{page}</Layout>;
 };
 
-export default TasksPage;
+export default CalendarPage;

@@ -5,7 +5,8 @@ interface SidebarTabProps {
   href: string;
   currentPath: string;
   label?: string;
-  icon: React.ReactNode;
+  activeIcon: React.ReactNode;
+  inactiveIcon?: React.ReactNode;
   showIcon?: boolean;
   showLabel?: boolean;
   showTooltip?: boolean;
@@ -16,7 +17,8 @@ export default function SidebarTab({
   href,
   currentPath,
   label,
-  icon,
+  activeIcon,
+  inactiveIcon,
   showIcon = true,
   showLabel = true,
   showTooltip = false,
@@ -27,14 +29,22 @@ export default function SidebarTab({
   return (
     <Link
       href={href ?? '#'}
-      className={`${className} w-full text-lg px-2 font-semibold transition duration-300 cursor-pointer ${
+      className={`${className} w-full cursor-pointer px-2 text-lg font-semibold transition duration-300 ${
         isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
       }`}
     >
-      <Tooltip label={label} position="right" disabled={!showTooltip}>
-        <div className="flex justify-start items-center gap-2">
-          {showIcon && <div className="w-8 flex-none">{icon}</div>}
-          {showLabel && (
+      <Tooltip label={label} position="right" disabled={!showTooltip} withArrow>
+        <div
+          className={`flex items-center gap-2 ${
+            showLabel && !showTooltip ? 'justify-start' : 'justify-center'
+          }`}
+        >
+          {showIcon && (
+            <div className="w-8 flex-none">
+              {isActive ? activeIcon : inactiveIcon ?? activeIcon}
+            </div>
+          )}
+          {showLabel && !showTooltip && (
             <div className="inline-block overflow-hidden">{label}</div>
           )}
         </div>
