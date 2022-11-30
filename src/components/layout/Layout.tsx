@@ -43,7 +43,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
         } transition-all duration-300`}
       >
         <Header />
-        <div>{children}</div>
+        <div className="h-full">{children}</div>
       </main>
 
       <RightSidebar
