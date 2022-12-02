@@ -29,7 +29,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     const res = await fetch('/api/orgs', {
       method: 'POST',
       body: JSON.stringify({
-        name: org.name,
+        name: org?.name || '',
       }),
     });
 
