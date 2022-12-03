@@ -13,6 +13,7 @@ import {
   IdentificationIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/solid';
+import { useUserList } from '../../hooks/useUserList';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
@@ -20,12 +21,15 @@ export const getServerSideProps = withPageAuth({
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
+  const { clearUsers } = useUserList();
 
   useEffect(() => {
     setRootSegment({
       content: 'Settings',
       href: '/settings',
     });
+
+    clearUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

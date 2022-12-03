@@ -57,13 +57,7 @@ function LeftSidebar({ className }: SidebarProps) {
         } transition-all duration-300`}
       >
         <div className="flex h-full w-full flex-col pt-6 pb-2">
-          <div
-            className={`relative flex pl-[0.21rem] pb-1 ${
-              leftSidebar === 'open' || leftSidebar === 'auto'
-                ? 'mx-3 justify-start'
-                : 'justify-center'
-            }`}
-          >
+          <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
             <Logo
               alwaysShowLabel={leftSidebar === 'open'}
               showLabel={leftSidebar !== 'closed'}
@@ -107,7 +101,7 @@ function LeftSidebar({ className }: SidebarProps) {
             <SidebarDivider />
 
             {isLoading || (
-              <div className="flex flex-col items-start gap-3 p-4">
+              <div className="flex flex-col gap-3 p-4">
                 {orgs?.current?.map((org) => (
                   <SidebarTab
                     key={org.id}
@@ -121,6 +115,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     }
                     label={org.name}
                     showTooltip={leftSidebar === 'closed'}
+                    enableOffset
                   />
                 ))}
 
@@ -133,6 +128,11 @@ function LeftSidebar({ className }: SidebarProps) {
                   }
                   label="New Organization"
                   showTooltip={leftSidebar === 'closed'}
+                  className={
+                    leftSidebar === 'closed'
+                      ? 'translate-x-[-0.03rem]'
+                      : 'translate-x-[-0.22rem]'
+                  }
                 />
               </div>
             )}
@@ -153,23 +153,26 @@ function LeftSidebar({ className }: SidebarProps) {
               href="/settings"
               className={`${
                 leftSidebar !== 'closed'
-                  ? 'justify-start'
+                  ? '-translate-x-1 justify-start'
                   : 'justify-center self-center'
-              } relative flex w-full items-center gap-2 rounded transition duration-300`}
+              } relative flex w-full items-center transition duration-300`}
             >
               <Tooltip
                 label={
-                  <div className="font-semibold text-blue-300">
-                    {data?.displayName}
+                  <div className="font-semibold">
+                    <div>{data?.displayName || 'Unknown'}</div>
+                    {data?.username && (
+                      <div className="text-blue-300">@{data.username}</div>
+                    )}
                   </div>
                 }
-                disabled={!data?.displayName}
+                disabled={!data?.displayName || leftSidebar !== 'closed'}
                 position="right"
                 color="#182a3d"
                 offset={20}
                 withArrow
               >
-                <div>
+                <div className="flex items-end gap-2">
                   <Indicator
                     color="green"
                     position="bottom-end"
@@ -182,7 +185,15 @@ function LeftSidebar({ className }: SidebarProps) {
                     </Avatar>
                   </Indicator>
 
-                  <div className={leftSidebar !== 'open' ? 'md:hidden' : ''}>
+                  <div
+                    className={
+                      leftSidebar === 'closed'
+                        ? 'md:hidden'
+                        : leftSidebar === 'auto'
+                        ? 'opacity-0 transition duration-300 group-hover:opacity-100'
+                        : ''
+                    }
+                  >
                     <div className="text-md min-w-max font-bold">
                       {data?.displayName ||
                         user?.email ||
@@ -190,7 +201,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         'Not logged in'}
                     </div>
                     {data?.username && (
-                      <div className="min-w-max text-sm font-semibold text-purple-300">
+                      <div className="min-w-max text-sm font-semibold text-blue-300">
                         @{data?.username}
                       </div>
                     )}
