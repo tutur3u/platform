@@ -47,7 +47,7 @@ const OrganizationOverviewPage = () => {
 
   const isLoading = !data && !error;
 
-  const { setRootSegment, changeRightSidebar } = useAppearance();
+  const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
@@ -63,8 +63,6 @@ const OrganizationOverviewPage = () => {
       ],
       [data?.id]
     );
-
-    changeRightSidebar('closed');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
