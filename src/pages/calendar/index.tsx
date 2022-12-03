@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { ReactElement, useEffect, useState } from 'react';
-import DayTittle from '../../components/calendar/DayTittle';
+import DayTitle from '../../components/calendar/DayTitle';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserList } from '../../hooks/useUserList';
@@ -67,69 +67,67 @@ const CalendarPage: PageWithLayoutProps = () => {
   const longMonth = shortMonthName(date); // "Jul"
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col rounded-lg bg-purple-300/10 p-5">
-      <div className="mb-8 flex h-10 justify-between">
+    <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+      <div className="mb-8 flex justify-between">
         <div className="text-3xl font-semibold">
           {longMonth} <span>{date.getFullYear()}</span>
         </div>
-        <div className="flex items-center justify-center gap-3">
-          <ChevronLeftIcon
+
+        <div className="flex items-center justify-center gap-2 text-blue-300">
+          <button
             onClick={setPreviousWeek}
-            className="w-9 rounded-xl p-2 text-3xl hover:cursor-pointer hover:bg-zinc-500"
-          ></ChevronLeftIcon>
+            className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl hover:bg-blue-300/20"
+          >
+            <ChevronLeftIcon className="w-4" />
+          </button>
+
           <button
             onClick={setToday}
-            className="cursor-pointer rounded-xl bg-purple-300/20 p-2 text-lg font-semibold"
+            className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20"
           >
             Today
           </button>
-          <ChevronRightIcon
+
+          <button
             onClick={setNextWeek}
-            className="w-9 rounded-xl p-2 text-3xl hover:cursor-pointer hover:bg-zinc-500"
-          ></ChevronRightIcon>
+            className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl hover:bg-blue-300/20"
+          >
+            <ChevronRightIcon className="w-4" />
+          </button>
         </div>
       </div>
-      <div className="grid grid-cols-8">
-        <div className="col-span-1"></div>
+
+      <div className="grid grid-cols-8 border-b border-zinc-800">
+        <div />
         {weekdays.map((weekday, index) => (
-          <div key={index} className="col-span-1">
-            <DayTittle date={getWeekdays()[index]} weekday={weekday} />
-          </div>
-        ))}
-        <div className="col-span-1 flex h-10 items-center justify-center">
-          All day
-        </div>
-        {weekdays.map((weekday, index) => (
-          <div key={index} className="col-span-1">
-            <div
-              key={index}
-              className="flex h-10 items-center justify-center border border-zinc-700"
-            ></div>
+          <div key={index}>
+            <DayTitle date={getWeekdays()[index]} weekday={weekday} />
           </div>
         ))}
       </div>
-      <div className="overflow-y-scroll text-center scrollbar-none">
+
+      <div className="overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
         <div className="grid grid-cols-8">
-          <div className="col-span-1">
+          <div>
             <div className="grid grid-rows-[24]">
               {Array.from(Array(23).keys()).map((hour, index) => (
                 <div
                   key={index}
-                  className="flex h-20 items-center justify-center"
+                  className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
                 >
-                  <span className="translate-y-10">{hour + 1}</span>
+                  <span className="translate-y-10">{hour + 1}:00</span>
                 </div>
               ))}
             </div>
           </div>
-          {weekdays.map((weekday, index) => (
+          {weekdays.map((_, index) => (
             <div key={index}>
               <div className="grid grid-rows-[24]">
                 {Array.from(Array(24).keys()).map((index) => (
                   <div
                     key={index}
-                    className="flex h-20 items-center justify-center border border-zinc-700"
-                  ></div>
+                    className="flex h-20 items-center justify-center border border-zinc-800"
+                  />
                 ))}
               </div>
             </div>
