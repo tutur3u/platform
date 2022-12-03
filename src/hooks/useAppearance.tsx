@@ -9,23 +9,23 @@ import { Segment } from '../types/primitives/Segment';
 
 type Theme = 'light' | 'dark';
 type ContentWidth = 'full' | 'padded';
-export type SidebarPreference = 'auto' | 'open' | 'closed';
+export type SidebarPreference = 'auto' | 'open' | 'closed' | 'hidden';
 
 const AppearanceContext = createContext({
   theme: 'dark' as Theme,
-  changeTheme: (theme: Theme) => localStorage.setItem(themePrefs, theme),
+  changeTheme: (theme: Theme) => console.log('changeTheme', theme),
 
   leftSidebar: 'auto' as SidebarPreference,
   changeLeftSidebar: (pref: SidebarPreference) =>
-    localStorage.setItem(leftSidebarPrefs, pref),
+    console.log('changeLeftSidebar', pref),
 
   rightSidebar: 'auto' as SidebarPreference,
   changeRightSidebar: (pref: SidebarPreference) =>
-    localStorage.setItem(rightSidebarPrefs, pref),
+    console.log('changeRightSidebar', pref),
 
   contentWidth: 'full' as ContentWidth,
   changeContentWidth: (width: ContentWidth) =>
-    localStorage.setItem(contentWidthPrefs, width),
+    console.log('changeContentWidth', width),
 
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
@@ -44,22 +44,26 @@ export const AppearanceProvider = ({
   const [rightSidebar, setRightSidebar] = useState<SidebarPreference>('closed');
   const [contentWidth, setContentWidth] = useState<ContentWidth>('full');
 
-  const changeTheme = (theme: Theme) => {
-    localStorage.setItem(themePrefs, theme);
-    setTheme(theme);
+  const changeTheme = (newTheme: Theme) => {
+    if (newTheme === theme) return;
+    localStorage.setItem(themePrefs, newTheme);
+    setTheme(newTheme);
   };
 
   const changeLeftSidebar = (pref: SidebarPreference) => {
+    if (pref === leftSidebar) return;
     localStorage.setItem(leftSidebarPrefs, pref);
     setLeftSidebar(pref);
   };
 
   const changeRightSidebar = (pref: SidebarPreference) => {
+    if (pref === rightSidebar) return;
     localStorage.setItem(rightSidebarPrefs, pref);
     setRightSidebar(pref);
   };
 
   const changeContentWidth = (width: ContentWidth) => {
+    if (width === contentWidth) return;
     localStorage.setItem(contentWidthPrefs, width);
     setContentWidth(width);
   };

@@ -1,16 +1,20 @@
 import { ReactElement, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
+import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const ExpensesPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
+  const { clearUsers } = useUserList();
 
   useEffect(() => {
     setRootSegment({
       content: 'Expenses',
       href: '/expenses',
     });
+
+    clearUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -11,6 +11,7 @@ interface SidebarTabProps {
   showIcon?: boolean;
   showLabel?: boolean;
   showTooltip?: boolean;
+  enableOffset?: boolean;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export default function SidebarTab({
   showIcon = true,
   showLabel = true,
   showTooltip = false,
+  enableOffset = false,
   className,
 }: SidebarTabProps) {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function SidebarTab({
           onClick();
         }
       }}
-      className={`${className} w-full cursor-pointer text-lg font-semibold transition duration-300 ${
+      className={`w-full cursor-pointer text-lg font-semibold transition duration-300 ${
         isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
       }`}
     >
@@ -50,8 +52,10 @@ export default function SidebarTab({
       >
         <div
           className={`flex items-center gap-2 ${
-            showLabel && !showTooltip ? 'justify-start' : 'justify-center'
-          }`}
+            showTooltip
+              ? 'justify-center'
+              : `justify-start ${enableOffset ? 'translate-x-[-0.265rem]' : ''}`
+          } ${className}`}
         >
           {showIcon && (
             <div className="flex-none">
@@ -61,7 +65,7 @@ export default function SidebarTab({
             </div>
           )}
           {showLabel && !showTooltip && (
-            <div className="inline-block overflow-hidden">{label}</div>
+            <div className="inline-block line-clamp-1">{label}</div>
           )}
         </div>
       </Tooltip>
