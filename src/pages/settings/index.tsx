@@ -97,12 +97,18 @@ const SettingPage: PageWithLayoutProps = () => {
           />
           <TextInput
             label="Username"
-            placeholder="@tuturuuu"
-            value={`@${username}`.replace(/^@+/, '@')}
+            placeholder="tuturuuu"
+            // replace all characters that are not a-z, 0-9, or _
+            value={username.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              // Remove @ from username
-              const username = event.currentTarget.value.replace(/^@+/, '');
-              setUsername(username);
+              const username = event.currentTarget.value.replace(
+                /[^a-z0-9_]/gi,
+                ''
+              );
+
+              // Limit to 20 characters
+              if (username.length > 20) return;
+              setUsername(username.toLowerCase());
             }}
             icon={<IdentificationIcon className="h-5 w-5" />}
           />
