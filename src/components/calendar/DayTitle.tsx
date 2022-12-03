@@ -9,14 +9,14 @@ export default function DayTitle({ date, weekday }: DayTitleProps) {
   return (
     <div
       className={`flex h-20 flex-col items-center justify-center text-xl font-semibold ${
-        isToday ? 'text-purple-500/70' : ''
+        isToday ? 'text-blue-300' : ''
       }`}
     >
       {weekday}
       <span
         className={`${
-          isToday ? 'bg-purple-500/70' : ''
-        } mt-1 flex h-10 w-10 items-center justify-center rounded-full text-2xl text-white`}
+          isToday ? 'bg-blue-300/30 text-blue-300' : 'text-white'
+        } mt-1 flex h-10 w-10 items-center justify-center rounded-full text-2xl`}
       >
         {date.getDate()}
       </span>
