@@ -26,7 +26,7 @@ function RightSidebar({ className }: SidebarProps) {
             </div>
           }
           disabled={!user?.displayName || rightSidebar !== 'closed'}
-          position="right"
+          position="left"
           color="#182a3d"
           offset={20}
           withArrow
