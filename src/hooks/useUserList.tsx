@@ -42,9 +42,11 @@ export const UserListProvider = ({
       (user) => user.id !== currentUser?.id
     );
 
-    console.log('filteredUsers', filteredUsers);
+    // If the user list is empty, delay before updating it
+    const delay = 300;
 
-    setUsers(filteredUsers);
+    if (users.length === 0) setTimeout(() => setUsers(filteredUsers), delay);
+    else setUsers(filteredUsers);
   };
 
   const clearUsers = () => {

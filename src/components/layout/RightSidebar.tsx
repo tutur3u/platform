@@ -6,9 +6,11 @@ import { getInitials } from '../../utils/name-helper';
 function RightSidebar({ className }: SidebarProps) {
   const { users } = useUserList();
 
-  return users.length > 0 ? (
+  return (
     <div
-      className={`group fixed top-0 right-0 z-20 hidden h-full w-full flex-col items-center justify-start gap-3 border-l border-zinc-800/80 bg-zinc-900 px-2 py-4 backdrop-blur-lg md:flex ${className}`}
+      className={`group fixed top-0 right-0 z-20 hidden h-full flex-col items-center justify-start gap-3 border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:flex ${className} ${
+        users.length > 0 ? 'w-full px-2 py-4' : 'w-0'
+      }`}
     >
       {users.map((user) => (
         <Tooltip
@@ -46,7 +48,7 @@ function RightSidebar({ className }: SidebarProps) {
         </Tooltip>
       ))}
     </div>
-  ) : null;
+  );
 }
 
 export default RightSidebar;
