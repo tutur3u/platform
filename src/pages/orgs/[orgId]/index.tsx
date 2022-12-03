@@ -11,7 +11,7 @@ const OrganizationOverviewPage = () => {
   const { data, error } = useSWR(`/api/orgs/${orgId}`);
   const isLoading = !data && !error;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeRightSidebar } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
@@ -27,6 +27,8 @@ const OrganizationOverviewPage = () => {
       ],
       [data?.id]
     );
+
+    changeRightSidebar('closed');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 

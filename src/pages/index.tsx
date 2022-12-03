@@ -38,13 +38,15 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const Home: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeRightSidebar } = useAppearance();
 
   useEffect(() => {
     setRootSegment({
       content: 'Home',
       href: '/',
     });
+
+    changeRightSidebar('hidden');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

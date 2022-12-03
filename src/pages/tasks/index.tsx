@@ -4,13 +4,15 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const TasksPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeRightSidebar } = useAppearance();
 
   useEffect(() => {
     setRootSegment({
       content: 'Tasks',
       href: '/expenses',
     });
+
+    changeRightSidebar('hidden');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

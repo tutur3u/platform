@@ -22,6 +22,9 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       case 'auto':
         return 'w-16 hover:w-64';
 
+      case 'hidden':
+        return 'hidden';
+
       default:
         return '';
     }
@@ -38,8 +41,12 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       <main
         className={`fixed left-0 right-0 top-0 flex h-screen min-h-full flex-col gap-5 overflow-auto bg-[#111113] p-7 scrollbar-none ${
           contentWidth === 'padded' && 'lg:px-56'
-        } ${leftSidebar === 'open' ? 'md:left-64' : 'md:left-16'} ${
-          rightSidebar === 'open' ? 'md:right-64' : 'md:right-16'
+        } ${
+          leftSidebar === 'hidden' ||
+          (leftSidebar === 'open' ? 'md:left-64' : 'md:left-16')
+        } ${
+          rightSidebar === 'hidden' ||
+          (rightSidebar === 'open' ? 'md:right-64' : 'md:right-16')
         } transition-all duration-300`}
       >
         <Header />
