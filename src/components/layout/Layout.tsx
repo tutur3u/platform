@@ -3,6 +3,7 @@ import { FC } from 'react';
 import Header from './Header';
 import RightSidebar from './RightSidebar';
 import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
+import { useUserList } from '../../hooks/useUserList';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface LayoutProps {
 
 const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
   const { contentWidth, leftSidebar, rightSidebar } = useAppearance();
+  const { users } = useUserList();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
     switch (pref) {
@@ -23,7 +25,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
         return 'w-16 hover:w-64';
 
       case 'hidden':
-        return 'hidden';
+        return 'md:hidden';
 
       default:
         return '';
@@ -46,6 +48,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
           (leftSidebar === 'open' ? 'md:left-64' : 'md:left-16')
         } ${
           rightSidebar === 'hidden' ||
+          users.length === 0 ||
           (rightSidebar === 'open' ? 'md:right-64' : 'md:right-16')
         } transition-all duration-300`}
       >

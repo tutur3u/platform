@@ -3,12 +3,48 @@ import { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
+import { useUserList } from '../../../hooks/useUserList';
 
 const OrganizationOverviewPage = () => {
   const router = useRouter();
+  const { updateUsers } = useUserList();
+
   const { orgId } = router.query;
 
   const { data, error } = useSWR(`/api/orgs/${orgId}`);
+
+  const { data: membersData, error: membersError } = useSWR(
+    orgId ? `/api/orgs/${orgId}/members` : null
+  );
+
+  const isLoadingMembers = !membersData && !membersError;
+
+  useEffect(() => {
+    if (isLoadingMembers) {
+      updateUsers([]);
+      return;
+    }
+
+    updateUsers(
+      membersData?.members?.map(
+        (m: {
+          id: string;
+          display_name: string;
+          email: string;
+          username: string;
+          avatar_url: string;
+        }) => ({
+          id: m.id,
+          displayName: m.display_name,
+          email: m.email,
+          username: m.username,
+          avatarUrl: m.avatar_url,
+        })
+      ) || []
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingMembers, membersData]);
+
   const isLoading = !data && !error;
 
   const { setRootSegment, changeRightSidebar } = useAppearance();
