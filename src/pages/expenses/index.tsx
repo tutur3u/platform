@@ -5,10 +5,11 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const ExpensesPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
       content: 'Expenses',
       href: '/expenses',

@@ -1,5 +1,21 @@
-export const themePrefs = 'theme';
-export const languagePrefs = 'language';
-export const leftSidebarPrefs = 'leftSidebar';
-export const rightSidebarPrefs = 'rightSidebar';
-export const contentWidthPrefs = 'contentWidth';
+export const THEME = 'THEME';
+export const CONTENT_WIDTH = 'CONTENT_WIDTH';
+export const LANGUAGE = 'LANGUAGE';
+
+export const LEFT_MAIN_SIDEBAR = 'LEFT_MAIN_SIDEBAR';
+export const LEFT_SECONDARY_SIDEBAR = 'LEFT_SECONDARY_SIDEBAR';
+
+export const RIGHT_MAIN_SIDEBAR = 'RIGHT_MAIN_SIDEBAR';
+export const RIGHT_SECONDARY_SIDEBAR = 'RIGHT_SECONDARY_SIDEBAR';
+
+export const configs = {
+  THEME,
+  CONTENT_WIDTH,
+  LANGUAGE,
+
+  LEFT_MAIN_SIDEBAR,
+  LEFT_SECONDARY_SIDEBAR,
+
+  RIGHT_MAIN_SIDEBAR,
+  RIGHT_SECONDARY_SIDEBAR,
+};

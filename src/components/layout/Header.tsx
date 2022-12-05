@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export default function Header({ className }: HeaderProps) {
-  const { segments, changeLeftSidebar } = useAppearance();
+  const { segments, changeLeftSidebarMainPref } = useAppearance();
 
   const getSegmentColor = (index: number) => {
     const colors = [
@@ -33,7 +33,7 @@ export default function Header({ className }: HeaderProps) {
         size={37}
         color="blue"
         radius="xl"
-        onClick={() => changeLeftSidebar('open')}
+        onClick={() => changeLeftSidebarMainPref('open')}
       />
       <div className="hidden md:block">
         {segments.length > 0 ? (

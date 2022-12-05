@@ -39,10 +39,12 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const Home: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('hidden');
+
     setRootSegment({
       content: 'Home',
       href: '/',

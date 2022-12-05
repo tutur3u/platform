@@ -5,10 +5,11 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const TasksPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
       content: 'Tasks',
       href: '/expenses',

@@ -5,10 +5,12 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const CalendarPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('visible');
+
     setRootSegment({
       content: 'Calendar',
       href: '/expenses',
