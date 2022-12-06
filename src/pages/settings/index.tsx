@@ -20,7 +20,7 @@ export const getServerSideProps = withPageAuth({
 });
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeRightSidebarPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
@@ -29,7 +29,19 @@ const SettingPage: PageWithLayoutProps = () => {
       href: '/settings',
     });
 
+    changeRightSidebarPref({
+      main: 'hidden',
+      secondary: 'hidden',
+    });
+
     clearUsers();
+
+    return () => {
+      changeRightSidebarPref({
+        main: 'closed',
+        secondary: 'hidden',
+      });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -40,12 +52,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const { data, updateData } = useUserData();
 
   const {
-    contentWidth,
-    changeContentWidth,
-    leftSidebar,
-    changeLeftSidebar,
-    rightSidebar,
-    changeRightSidebar,
+    leftSidebarPref,
+    changeLeftSidebarMainPref,
+    rightSidebarPref,
+    changeRightSidebarMainPref,
   } = useAppearance();
 
   const [saving, setSaving] = useState(false);
@@ -166,36 +176,6 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
         </div>
 
-        {changeContentWidth && (
-          <>
-            <div className="mt-4 mb-2 text-xl font-semibold text-zinc-400">
-              Content
-            </div>
-            <div className="grid gap-4 text-center xl:grid-cols-2">
-              <div
-                onClick={() => changeContentWidth('full')}
-                className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 ${
-                  contentWidth === 'full'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-                }`}
-              >
-                Full width
-              </div>
-              <div
-                onClick={() => changeContentWidth('padded')}
-                className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 ${
-                  contentWidth === 'padded'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-                }`}
-              >
-                Padded width
-              </div>
-            </div>
-          </>
-        )}
-
         <div className="mt-4 hidden flex-col lg:flex">
           <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
           <div className="grid h-full gap-4 text-center xl:grid-cols-2">
@@ -207,61 +187,61 @@ const SettingPage: PageWithLayoutProps = () => {
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-2 xl:order-3 ${
-                leftSidebar === 'closed'
+                leftSidebarPref.main === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('closed')}
+              onClick={() => changeLeftSidebarMainPref('closed')}
             >
               Always collapsed
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-6 xl:order-4 ${
-                rightSidebar === 'closed'
+                rightSidebarPref.main === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('closed')}
+              onClick={() => changeRightSidebarMainPref('closed')}
             >
               Always collapsed
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-3 xl:order-5 ${
-                leftSidebar === 'open'
+                leftSidebarPref.main === 'open'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('open')}
+              onClick={() => changeLeftSidebarMainPref('open')}
             >
               Always expanded
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-7 xl:order-6 ${
-                rightSidebar === 'open'
+                rightSidebarPref.main === 'open'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('open')}
+              onClick={() => changeRightSidebarMainPref('open')}
             >
               Always expanded
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-4 xl:order-7 ${
-                leftSidebar === 'auto'
+                leftSidebarPref.main === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('auto')}
+              onClick={() => changeLeftSidebarMainPref('auto')}
             >
               Expand on hover
             </div>
             <div
               className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-8 ${
-                rightSidebar === 'auto'
+                rightSidebarPref.main === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
                   : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('auto')}
+              onClick={() => changeRightSidebarMainPref('auto')}
             >
               Expand on hover
             </div>

@@ -33,20 +33,23 @@ export const UserListProvider = ({
   };
 
   const updateUsers = (newUsers: UserData[]) => {
-    if (!newUsers) {
+    if (!newUsers || newUsers.length === 0) {
       setUsers([]);
       return;
     }
 
-    const filteredUsers = newUsers.filter(
-      (user) => user.id !== currentUser?.id
-    );
+    const isEmpty = users.length === 0;
+    const isDifferent = !newUsers.every((user) => users.includes(user));
 
-    // If the user list is empty, delay before updating it
+    const shouldDelay = isEmpty || isDifferent;
+
     const delay = 300;
 
-    if (users.length === 0) setTimeout(() => setUsers(filteredUsers), delay);
-    else setUsers(filteredUsers);
+    // If the user list is empty, delay before updating it
+    if (shouldDelay) {
+      setUsers([]);
+      setTimeout(() => setUsers(newUsers), delay);
+    } else setUsers(newUsers);
   };
 
   const clearUsers = () => {

@@ -3,22 +3,40 @@ import { ReactElement, useEffect, useState } from 'react';
 import DayTitle from '../../components/calendar/DayTitle';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
+import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const CalendarPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
-  const { clearUsers } = useUserList();
+  const {
+    setRootSegment,
+    changeLeftSidebarSecondaryPref,
+    disablePadding,
+    enablePadding,
+  } = useAppearance();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('visible');
+    disablePadding();
+
     setRootSegment({
       content: 'Calendar',
       href: '/expenses',
     });
 
-    clearUsers();
+    return () => {
+      changeLeftSidebarSecondaryPref('hidden');
+      enablePadding();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const [date, setDate] = useState(new Date());
 
@@ -67,7 +85,7 @@ const CalendarPage: PageWithLayoutProps = () => {
   const longMonth = shortMonthName(date); // "July"
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+    <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
       <div className="mb-8 flex justify-between">
         <div className="text-3xl font-semibold">
           {longMonth} <span>{date.getFullYear()}</span>

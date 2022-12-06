@@ -5,7 +5,7 @@ import { SidebarProps } from '../../types/SidebarProps';
 import { getInitials } from '../../utils/name-helper';
 
 function RightSidebar({ className }: SidebarProps) {
-  const { rightSidebar } = useAppearance();
+  const { rightSidebarPref } = useAppearance();
   const { users } = useUserList();
 
   return (
@@ -25,7 +25,7 @@ function RightSidebar({ className }: SidebarProps) {
               )}
             </div>
           }
-          disabled={!user?.displayName || rightSidebar !== 'closed'}
+          disabled={!user?.displayName || rightSidebarPref.main !== 'closed'}
           position="left"
           color="#182a3d"
           offset={20}
@@ -33,7 +33,7 @@ function RightSidebar({ className }: SidebarProps) {
         >
           <div
             className={`flex w-full items-center justify-center gap-2 ${
-              rightSidebar !== 'closed' ? 'translate-x-1' : ''
+              rightSidebarPref.main !== 'closed' ? 'translate-x-1' : ''
             }`}
           >
             <Indicator
@@ -55,9 +55,9 @@ function RightSidebar({ className }: SidebarProps) {
 
             <div
               className={`w-full overflow-hidden ${
-                rightSidebar === 'closed'
+                rightSidebarPref.main === 'closed'
                   ? 'md:hidden'
-                  : rightSidebar === 'auto'
+                  : rightSidebarPref.main === 'auto'
                   ? 'opacity-0 transition duration-300 group-hover:opacity-100'
                   : ''
               }`}

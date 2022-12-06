@@ -3,12 +3,8 @@ import { Avatar } from '@mantine/core';
 import Link from 'next/link';
 import { useAppearance } from '../../hooks/useAppearance';
 
-interface HeaderProps {
-  className?: string;
-}
-
-export default function Header({ className }: HeaderProps) {
-  const { segments, changeLeftSidebar } = useAppearance();
+export default function Header() {
+  const { segments, changeLeftSidebarMainPref } = useAppearance();
 
   const getSegmentColor = (index: number) => {
     const colors = [
@@ -25,15 +21,13 @@ export default function Header({ className }: HeaderProps) {
   };
 
   return (
-    <div
-      className={`${className} mb-4 flex w-full items-center justify-between`}
-    >
+    <div className="flex h-fit w-full items-center justify-between md:hidden">
       <Avatar
         className="block hover:cursor-pointer md:hidden"
         size={37}
         color="blue"
         radius="xl"
-        onClick={() => changeLeftSidebar('open')}
+        onClick={() => changeLeftSidebarMainPref('open')}
       />
       <div className="hidden md:block">
         {segments.length > 0 ? (

@@ -13,41 +13,35 @@ const OrganizationOverviewPage = () => {
 
   const { data, error } = useSWR(`/api/orgs/${orgId}`);
 
-  const { data: membersData, error: membersError } = useSWR(
+  const { data: membersData } = useSWR(
     orgId ? `/api/orgs/${orgId}/members` : null
   );
 
-  const isLoadingMembers = !membersData && !membersError;
-
   useEffect(() => {
-    if (isLoadingMembers) {
-      updateUsers([]);
-      return;
-    }
-
-    updateUsers(
-      membersData?.members?.map(
-        (m: {
-          id: string;
-          display_name: string;
-          email: string;
-          username: string;
-          avatar_url: string;
-        }) => ({
-          id: m.id,
-          displayName: m.display_name,
-          email: m.email,
-          username: m.username,
-          avatarUrl: m.avatar_url,
-        })
-      ) || []
-    );
+    if (membersData)
+      updateUsers(
+        membersData?.members?.map(
+          (m: {
+            id: string;
+            display_name: string;
+            email: string;
+            username: string;
+            avatar_url: string;
+          }) => ({
+            id: m.id,
+            displayName: m.display_name,
+            email: m.email,
+            username: m.username,
+            avatarUrl: m.avatar_url,
+          })
+        ) || []
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingMembers, membersData]);
+  }, [membersData]);
 
   const isLoading = !data && !error;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
@@ -63,6 +57,8 @@ const OrganizationOverviewPage = () => {
       ],
       [data?.id]
     );
+
+    changeLeftSidebarSecondaryPref('hidden');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 
@@ -71,6 +67,14 @@ const OrganizationOverviewPage = () => {
   return (
     <div className="grid gap-4">
       <h1 className="font-bold">Overview</h1>
+
+      <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <p className="text-zinc-400">
+          This is the overview page for the{' '}
+          <span className="font-semibold text-white">{data?.name}</span>{' '}
+          project.
+        </p>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">

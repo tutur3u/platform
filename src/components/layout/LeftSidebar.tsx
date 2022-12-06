@@ -13,6 +13,7 @@ import {
   ClipboardDocumentListIcon as TaskIconOutline,
   Cog6ToothIcon as SettingsIconOutline,
   HomeIcon as HomeIconOutline,
+  FolderPlusIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
@@ -29,9 +30,12 @@ import { openModal } from '@mantine/modals';
 import { Organization } from '../../types/primitives/Organization';
 import Link from 'next/link';
 import { getInitials } from '../../utils/name-helper';
+import TaskEditForm from '../forms/TaskEditForm';
+import { Task } from '../../types/primitives/Task';
+import { useEffect, useState } from 'react';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const { leftSidebar, changeLeftSidebar } = useAppearance();
+  const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
   const user = useUser();
   const { data } = useUserData();
 
@@ -47,24 +51,52 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    // Populate 30 tasks
+    const tasks: Task[] = [];
+
+    for (let i = 0; i < 30; i++) {
+      tasks.push({
+        id: i.toString(),
+        name: `Task ${i + 1}`,
+      });
+    }
+
+    setTasks(tasks);
+  }, []);
+
+  const addTask = (task: Task) => {
+    setTasks((prev) => [...prev, task]);
+  };
+
+  const showEditTaskModal = () => {
+    openModal({
+      title: 'New task',
+      centered: true,
+      children: <TaskEditForm onSubmit={addTask} />,
+    });
+  };
+
   return (
     <>
       <div
-        className={`${className} group fixed top-0 left-0 z-20 block h-full flex-col items-center justify-center border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg ${
-          leftSidebar === 'open'
+        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-center bg-zinc-900 backdrop-blur-lg ${
+          leftSidebarPref.main === 'open'
             ? 'opacity-100'
             : 'pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100'
         } transition-all duration-300`}
       >
-        <div className="flex h-full w-full flex-col pt-6 pb-2">
+        <div className="flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2">
           <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
             <Logo
-              alwaysShowLabel={leftSidebar === 'open'}
-              showLabel={leftSidebar !== 'closed'}
+              alwaysShowLabel={leftSidebarPref.main === 'open'}
+              showLabel={leftSidebarPref.main !== 'closed'}
             />
           </div>
 
-          <SidebarDivider />
+          <div className="h-8" />
 
           <div className="h-full overflow-auto">
             <div className="flex flex-col items-start gap-6 p-4">
@@ -73,28 +105,28 @@ function LeftSidebar({ className }: SidebarProps) {
                 activeIcon={<HomeIconSolid className="w-8" />}
                 inactiveIcon={<HomeIconOutline className="w-8" />}
                 label="Home"
-                showTooltip={leftSidebar === 'closed'}
+                showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarTab
                 href="/calendar"
                 activeIcon={<CalendarIconSolid className="w-8" />}
                 inactiveIcon={<CalendarIconOutline className="w-8" />}
                 label="Calendar"
-                showTooltip={leftSidebar === 'closed'}
+                showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarTab
                 href="/tasks"
                 activeIcon={<TaskIconSolid className="w-8" />}
                 inactiveIcon={<TaskIconOutline className="w-8" />}
                 label="Tasks"
-                showTooltip={leftSidebar === 'closed'}
+                showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarTab
                 href="/expenses"
                 activeIcon={<MoneyIconSolid className="w-8" />}
                 inactiveIcon={<MoneyIconOutline className="w-8" />}
                 label="Expenses"
-                showTooltip={leftSidebar === 'closed'}
+                showTooltip={leftSidebarPref.main === 'closed'}
               />
             </div>
 
@@ -114,7 +146,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       </div>
                     }
                     label={org.name}
-                    showTooltip={leftSidebar === 'closed'}
+                    showTooltip={leftSidebarPref.main === 'closed'}
                     enableOffset
                   />
                 ))}
@@ -127,9 +159,9 @@ function LeftSidebar({ className }: SidebarProps) {
                     </div>
                   }
                   label="New Organization"
-                  showTooltip={leftSidebar === 'closed'}
+                  showTooltip={leftSidebarPref.main === 'closed'}
                   className={
-                    leftSidebar === 'closed'
+                    leftSidebarPref.main === 'closed'
                       ? 'translate-x-[-0.03rem]'
                       : 'translate-x-[-0.22rem]'
                   }
@@ -146,13 +178,13 @@ function LeftSidebar({ className }: SidebarProps) {
               activeIcon={<SettingsIconSolid className="w-8" />}
               inactiveIcon={<SettingsIconOutline className="w-8" />}
               label="Settings"
-              showTooltip={leftSidebar === 'closed'}
+              showTooltip={leftSidebarPref.main === 'closed'}
             />
 
             <Link
               href="/settings"
               className={`${
-                leftSidebar !== 'closed'
+                leftSidebarPref.main !== 'closed'
                   ? '-translate-x-1 justify-start'
                   : 'justify-center self-center'
               } relative flex w-full items-center transition duration-300`}
@@ -166,7 +198,9 @@ function LeftSidebar({ className }: SidebarProps) {
                     )}
                   </div>
                 }
-                disabled={!data?.displayName || leftSidebar !== 'closed'}
+                disabled={
+                  !data?.displayName || leftSidebarPref.main !== 'closed'
+                }
                 position="right"
                 color="#182a3d"
                 offset={20}
@@ -187,9 +221,9 @@ function LeftSidebar({ className }: SidebarProps) {
 
                   <div
                     className={
-                      leftSidebar === 'closed'
+                      leftSidebarPref.main === 'closed'
                         ? 'md:hidden'
-                        : leftSidebar === 'auto'
+                        : leftSidebarPref.main === 'auto'
                         ? 'opacity-0 transition duration-300 group-hover:opacity-100'
                         : ''
                     }
@@ -211,13 +245,65 @@ function LeftSidebar({ className }: SidebarProps) {
             </Link>
           </div>
         </div>
+
+        {leftSidebarPref.secondary === 'visible' && (
+          <div className="hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
+            <div className="relative mx-3 flex justify-between text-2xl font-semibold">
+              <div>Tasks</div>
+              <div className="flex gap-2">
+                <Tooltip
+                  label={<div className="text-blue-300">New task list</div>}
+                  color="#182a3d"
+                  withArrow
+                >
+                  <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                    <FolderPlusIcon className="w-6" />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  label={<div className="text-blue-300">New task</div>}
+                  color="#182a3d"
+                  withArrow
+                >
+                  <button
+                    className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
+                    onClick={showEditTaskModal}
+                  >
+                    <PlusIconSolid className="w-6" />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            <SidebarDivider padBottom={false} />
+
+            {tasks.length === 0 ? (
+              <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                Create a task to get started
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="rounded bg-zinc-800/80 p-2 transition hover:bg-zinc-800"
+                  >
+                    {task.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div
         className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
-          leftSidebar === 'open' ? 'block' : 'hidden'
+          leftSidebarPref.main === 'open' ? 'block' : 'hidden'
         }`}
-        onClick={() => changeLeftSidebar('closed')}
+        onClick={() =>
+          changeLeftSidebarPref({ main: 'closed', secondary: 'hidden' })
+        }
       />
     </>
   );
