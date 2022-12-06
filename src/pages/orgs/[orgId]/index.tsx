@@ -13,41 +13,35 @@ const OrganizationOverviewPage = () => {
 
   const { data, error } = useSWR(`/api/orgs/${orgId}`);
 
-  const { data: membersData, error: membersError } = useSWR(
+  const { data: membersData } = useSWR(
     orgId ? `/api/orgs/${orgId}/members` : null
   );
 
-  const isLoadingMembers = !membersData && !membersError;
-
   useEffect(() => {
-    if (isLoadingMembers) {
-      updateUsers([]);
-      return;
-    }
-
-    updateUsers(
-      membersData?.members?.map(
-        (m: {
-          id: string;
-          display_name: string;
-          email: string;
-          username: string;
-          avatar_url: string;
-        }) => ({
-          id: m.id,
-          displayName: m.display_name,
-          email: m.email,
-          username: m.username,
-          avatarUrl: m.avatar_url,
-        })
-      ) || []
-    );
+    if (membersData)
+      updateUsers(
+        membersData?.members?.map(
+          (m: {
+            id: string;
+            display_name: string;
+            email: string;
+            username: string;
+            avatar_url: string;
+          }) => ({
+            id: m.id,
+            displayName: m.display_name,
+            email: m.email,
+            username: m.username,
+            avatarUrl: m.avatar_url,
+          })
+        ) || []
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingMembers, membersData]);
+  }, [membersData]);
 
   const isLoading = !data && !error;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
@@ -63,6 +57,8 @@ const OrganizationOverviewPage = () => {
       ],
       [data?.id]
     );
+
+    changeLeftSidebarSecondaryPref('hidden');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.name]);
 

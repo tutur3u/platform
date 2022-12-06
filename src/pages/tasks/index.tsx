@@ -1,12 +1,14 @@
 import { ReactElement, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
+import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const TasksPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { clearUsers } = useUserList();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
@@ -15,7 +17,7 @@ const TasksPage: PageWithLayoutProps = () => {
       href: '/expenses',
     });
 
-    clearUsers();
+    if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
