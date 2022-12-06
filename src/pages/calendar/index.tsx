@@ -10,8 +10,6 @@ const CalendarPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
   const { clearUsers } = useUserList();
 
-  const [date, setDate] = useState(new Date());
-
   useEffect(() => {
     setRootSegment({
       content: 'Calendar',
@@ -21,6 +19,8 @@ const CalendarPage: PageWithLayoutProps = () => {
     clearUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [date, setDate] = useState(new Date());
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -64,7 +64,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const shortMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' })
     .format;
-  const longMonth = shortMonthName(date); // "Jul"
+  const longMonth = shortMonthName(date); // "July"
 
   return (
     <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
@@ -80,7 +80,6 @@ const CalendarPage: PageWithLayoutProps = () => {
           >
             <ChevronLeftIcon className="w-4" />
           </button>
-
           <button
             onClick={setToday}
             className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20"
@@ -106,19 +105,17 @@ const CalendarPage: PageWithLayoutProps = () => {
         ))}
       </div>
 
-      <div className="overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
+      <div className="overflow-y-scroll  border-r border-zinc-800 text-center scrollbar-none">
         <div className="grid grid-cols-8">
-          <div>
-            <div className="grid grid-rows-[24]">
-              {Array.from(Array(23).keys()).map((hour, index) => (
-                <div
-                  key={index}
-                  className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
-                >
-                  <span className="translate-y-10">{hour + 1}:00</span>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-rows-[24]">
+            {Array.from(Array(23).keys()).map((hour, index) => (
+              <div
+                key={index}
+                className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
+              >
+                <span className="translate-y-10">{hour + 1}:00</span>
+              </div>
+            ))}
           </div>
           {weekdays.map((_, index) => (
             <div key={index}>
@@ -126,7 +123,7 @@ const CalendarPage: PageWithLayoutProps = () => {
                 {Array.from(Array(24).keys()).map((index) => (
                   <div
                     key={index}
-                    className="flex h-20 items-center justify-center border border-zinc-800"
+                    className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
                   />
                 ))}
               </div>
