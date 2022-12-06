@@ -3,12 +3,14 @@ import { ReactElement, useEffect, useState } from 'react';
 import DayTitle from '../../components/calendar/DayTitle';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
+import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const CalendarPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { clearUsers } = useUserList();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   const [date, setDate] = useState(new Date());
 
@@ -20,7 +22,7 @@ const CalendarPage: PageWithLayoutProps = () => {
       href: '/expenses',
     });
 
-    clearUsers();
+    if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
