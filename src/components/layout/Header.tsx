@@ -3,11 +3,7 @@ import { Avatar } from '@mantine/core';
 import Link from 'next/link';
 import { useAppearance } from '../../hooks/useAppearance';
 
-interface HeaderProps {
-  className?: string;
-}
-
-export default function Header({ className }: HeaderProps) {
+export default function Header() {
   const { segments, changeLeftSidebarMainPref } = useAppearance();
 
   const getSegmentColor = (index: number) => {
@@ -25,9 +21,7 @@ export default function Header({ className }: HeaderProps) {
   };
 
   return (
-    <div
-      className={`${className} mb-4 flex w-full items-center justify-between`}
-    >
+    <div className="flex h-fit w-full items-center justify-between">
       <Avatar
         className="block hover:cursor-pointer md:hidden"
         size={37}

@@ -1,6 +1,5 @@
 import LeftSidebar from './LeftSidebar';
 import { FC } from 'react';
-import Header from './Header';
 import RightSidebar from './RightSidebar';
 import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
 
@@ -9,7 +8,7 @@ interface LayoutProps {
 }
 
 const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
-  const { contentWidth, leftSidebarPref, rightSidebarPref } = useAppearance();
+  const { padded, leftSidebarPref, rightSidebarPref } = useAppearance();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
     switch (pref.main) {
@@ -98,15 +97,14 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       />
 
       <main
-        className={`fixed left-0 right-0 top-0 flex h-screen min-h-full flex-col gap-5 overflow-auto bg-[#111113] p-7 scrollbar-none ${
-          contentWidth === 'padded' && 'lg:px-56'
+        className={`fixed left-0 right-0 top-0 flex h-full flex-col gap-4 overflow-auto bg-[#111113] scrollbar-none ${
+          padded ? 'p-4 md:p-8' : ''
         } ${generateContentMargin(
           leftSidebarPref,
           rightSidebarPref
         )} transition-all duration-300`}
       >
-        <Header />
-        <div className="h-full">{children}</div>
+        {children}
       </main>
 
       <RightSidebar

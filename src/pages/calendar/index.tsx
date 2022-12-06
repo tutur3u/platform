@@ -8,7 +8,12 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 
 const CalendarPage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const {
+    setRootSegment,
+    changeLeftSidebarSecondaryPref,
+    disablePadding,
+    enablePadding,
+  } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
@@ -16,6 +21,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('visible');
+    disablePadding();
 
     setRootSegment({
       content: 'Calendar',
@@ -23,6 +29,11 @@ const CalendarPage: PageWithLayoutProps = () => {
     });
 
     if (data) updateUsers([data]);
+
+    return () => {
+      changeLeftSidebarSecondaryPref('hidden');
+      enablePadding();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -71,7 +82,7 @@ const CalendarPage: PageWithLayoutProps = () => {
   const longMonth = shortMonthName(date); // "Jul"
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+    <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
       <div className="mb-8 flex justify-between">
         <div className="text-3xl font-semibold">
           {longMonth} <span>{date.getFullYear()}</span>
@@ -112,17 +123,15 @@ const CalendarPage: PageWithLayoutProps = () => {
 
       <div className="overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
         <div className="grid grid-cols-8">
-          <div>
-            <div className="grid grid-rows-[24]">
-              {Array.from(Array(23).keys()).map((hour, index) => (
-                <div
-                  key={index}
-                  className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
-                >
-                  <span className="translate-y-10">{hour + 1}:00</span>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-rows-[24]">
+            {Array.from(Array(23).keys()).map((hour, index) => (
+              <div
+                key={index}
+                className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
+              >
+                <span className="translate-y-10">{hour + 1}:00</span>
+              </div>
+            ))}
           </div>
           {weekdays.map((_, index) => (
             <div key={index}>

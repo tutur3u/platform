@@ -3,7 +3,6 @@ import { configs } from '../constants/prefs';
 import { Segment } from '../types/primitives/Segment';
 
 type Theme = 'light' | 'dark';
-type ContentWidth = 'full' | 'padded';
 
 export type MainSidebarPref = 'auto' | 'open' | 'closed' | 'hidden';
 export type SecondarySidebarPref = 'visible' | 'hidden';
@@ -38,9 +37,9 @@ const AppearanceContext = createContext({
   changeRightSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
     console.log('changeRightSidebarSecondaryPref', pref),
 
-  contentWidth: 'full' as ContentWidth,
-  changeContentWidth: (width: ContentWidth) =>
-    console.log('changeContentWidth', width),
+  padded: true,
+  enablePadding: () => console.log('enablePadding'),
+  disablePadding: () => console.log('disablePadding'),
 
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
@@ -55,7 +54,7 @@ export const AppearanceProvider = ({
   children: React.ReactNode;
 }) => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [contentWidth, setContentWidth] = useState<ContentWidth>('full');
+  const [padded, setPadded] = useState(true);
 
   const [leftSidebarPref, setLeftSidebar] = useState<SidebarPreference>({
     main: 'closed',
@@ -161,30 +160,14 @@ export const AppearanceProvider = ({
     setRightSidebar((prev) => ({ ...prev, secondary: pref }));
   };
 
-  const changeContentWidth = (width: ContentWidth) => {
-    // If the width is the same as the new width, do nothing
-    if (width === contentWidth) return;
-
-    // Otherwise,
-    // Save the new width to local storage
-    localStorage.setItem(configs.CONTENT_WIDTH, width);
-
-    // Update the width state
-    setContentWidth(width);
-  };
+  const enablePadding = () => setPadded(true);
+  const disablePadding = () => setPadded(false);
 
   useEffect(() => {
     // Extract the theme from local storage,
     // and update the theme state if it exists
     const theme = localStorage.getItem(configs.THEME) as Theme;
     if (theme) setTheme(theme);
-
-    // Extract the content width from local storage,
-    // and update the content width state if it exists
-    const contentWidth = localStorage.getItem(
-      configs.CONTENT_WIDTH
-    ) as ContentWidth;
-    if (contentWidth) setContentWidth(contentWidth);
 
     // Extract the left sidebar preference from local storage,
     // and update the left sidebar preference state if it exists
@@ -266,8 +249,9 @@ export const AppearanceProvider = ({
     changeRightSidebarMainPref,
     changeRightSidebarSecondaryPref,
 
-    contentWidth,
-    changeContentWidth,
+    padded,
+    enablePadding,
+    disablePadding,
 
     segments,
     setRootSegment,

@@ -20,7 +20,7 @@ export const getServerSideProps = withPageAuth({
 });
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeRightSidebarPref } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
@@ -29,7 +29,19 @@ const SettingPage: PageWithLayoutProps = () => {
       href: '/settings',
     });
 
+    changeRightSidebarPref({
+      main: 'hidden',
+      secondary: 'hidden',
+    });
+
     clearUsers();
+
+    return () => {
+      changeRightSidebarPref({
+        main: 'closed',
+        secondary: 'hidden',
+      });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -40,8 +52,6 @@ const SettingPage: PageWithLayoutProps = () => {
   const { data, updateData } = useUserData();
 
   const {
-    contentWidth,
-    changeContentWidth,
     leftSidebarPref,
     changeLeftSidebarMainPref,
     rightSidebarPref,
@@ -165,36 +175,6 @@ const SettingPage: PageWithLayoutProps = () => {
             Dark mode
           </div>
         </div>
-
-        {changeContentWidth && (
-          <>
-            <div className="mt-4 mb-2 text-xl font-semibold text-zinc-400">
-              Content
-            </div>
-            <div className="grid gap-4 text-center xl:grid-cols-2">
-              <div
-                onClick={() => changeContentWidth('full')}
-                className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 ${
-                  contentWidth === 'full'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-                }`}
-              >
-                Full width
-              </div>
-              <div
-                onClick={() => changeContentWidth('padded')}
-                className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 ${
-                  contentWidth === 'padded'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-                }`}
-              >
-                Padded width
-              </div>
-            </div>
-          </>
-        )}
 
         <div className="mt-4 hidden flex-col lg:flex">
           <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
