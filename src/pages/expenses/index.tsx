@@ -16,10 +16,13 @@ const ExpensesPage: PageWithLayoutProps = () => {
       content: 'Expenses',
       href: '/expenses',
     });
-
-    if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   return (
     <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">

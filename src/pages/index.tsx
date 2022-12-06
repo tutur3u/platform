@@ -51,10 +51,13 @@ const Home: PageWithLayoutProps = () => {
       content: 'Home',
       href: '/',
     });
-
-    if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const { isLoading, orgs, createOrg } = useOrgs();
 

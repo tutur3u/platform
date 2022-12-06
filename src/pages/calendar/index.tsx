@@ -28,14 +28,17 @@ const CalendarPage: PageWithLayoutProps = () => {
       href: '/expenses',
     });
 
-    if (data) updateUsers([data]);
-
     return () => {
       changeLeftSidebarSecondaryPref('hidden');
       enablePadding();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

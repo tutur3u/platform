@@ -1,3 +1,15 @@
-export default function SidebarDivider({ hidden = false }) {
-  return <div className={`mx-3 my-2 h-[1px] ${hidden || 'bg-zinc-800'}`} />;
+export default function SidebarDivider({
+  hidden = false,
+  padTop = true,
+  padBottom = true,
+  padLeft = true,
+  padRight = true,
+}) {
+  return (
+    <div
+      className={`${hidden || 'bg-zinc-800'} ${padTop ? 'mt-2' : ''} ${
+        padBottom ? 'mb-2' : ''
+      } ${padLeft ? 'ml-3' : ''} ${padRight ? 'mr-3' : ''} h-[1px]`}
+    />
+  );
 }
