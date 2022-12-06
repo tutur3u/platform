@@ -17,8 +17,6 @@ const CalendarPage: PageWithLayoutProps = () => {
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
-  const [date, setDate] = useState(new Date());
-
   useEffect(() => {
     changeLeftSidebarSecondaryPref('visible');
     disablePadding();
@@ -39,6 +37,8 @@ const CalendarPage: PageWithLayoutProps = () => {
     if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  const [date, setDate] = useState(new Date());
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -82,7 +82,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const shortMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' })
     .format;
-  const longMonth = shortMonthName(date); // "Jul"
+  const longMonth = shortMonthName(date); // "July"
 
   return (
     <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
@@ -98,7 +98,6 @@ const CalendarPage: PageWithLayoutProps = () => {
           >
             <ChevronLeftIcon className="w-4" />
           </button>
-
           <button
             onClick={setToday}
             className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20"
@@ -124,7 +123,7 @@ const CalendarPage: PageWithLayoutProps = () => {
         ))}
       </div>
 
-      <div className="overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
+      <div className="overflow-y-scroll  border-r border-zinc-800 text-center scrollbar-none">
         <div className="grid grid-cols-8">
           <div className="grid grid-rows-[24]">
             {Array.from(Array(23).keys()).map((hour, index) => (
@@ -142,7 +141,7 @@ const CalendarPage: PageWithLayoutProps = () => {
                 {Array.from(Array(24).keys()).map((index) => (
                   <div
                     key={index}
-                    className="flex h-20 items-center justify-center border border-zinc-800"
+                    className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
                   />
                 ))}
               </div>
