@@ -13,6 +13,7 @@ import {
   ClipboardDocumentListIcon as TaskIconOutline,
   Cog6ToothIcon as SettingsIconOutline,
   HomeIcon as HomeIconOutline,
+  FolderPlusIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
@@ -29,6 +30,9 @@ import { openModal } from '@mantine/modals';
 import { Organization } from '../../types/primitives/Organization';
 import Link from 'next/link';
 import { getInitials } from '../../utils/name-helper';
+import TaskEditForm from '../forms/TaskEditForm';
+import { Task } from '../../types/primitives/Task';
+import { useEffect, useState } from 'react';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
@@ -44,6 +48,34 @@ function LeftSidebar({ className }: SidebarProps) {
       title: 'New organization',
       centered: true,
       children: <OrgEditForm onSubmit={addOrg} />,
+    });
+  };
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    // Populate 30 tasks
+    const tasks: Task[] = [];
+
+    for (let i = 0; i < 30; i++) {
+      tasks.push({
+        id: i.toString(),
+        name: `Task ${i + 1}`,
+      });
+    }
+
+    setTasks(tasks);
+  }, []);
+
+  const addTask = (task: Task) => {
+    setTasks((prev) => [...prev, task]);
+  };
+
+  const showEditTaskModal = () => {
+    openModal({
+      title: 'New task',
+      centered: true,
+      children: <TaskEditForm onSubmit={addTask} />,
     });
   };
 
@@ -215,16 +247,52 @@ function LeftSidebar({ className }: SidebarProps) {
         </div>
 
         {leftSidebarPref.secondary === 'visible' && (
-          <div className="flex h-full w-full flex-col border-r border-zinc-800/80 pt-6 pb-2">
-            <div className="relative mx-3 flex justify-start pb-1 text-2xl font-semibold">
-              Tasks
+          <div className="hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
+            <div className="relative mx-3 flex justify-between text-2xl font-semibold">
+              <div>Tasks</div>
+              <div className="flex gap-2">
+                <Tooltip
+                  label={<div className="text-blue-300">New task list</div>}
+                  color="#182a3d"
+                  withArrow
+                >
+                  <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                    <FolderPlusIcon className="w-6" />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  label={<div className="text-blue-300">New task</div>}
+                  color="#182a3d"
+                  withArrow
+                >
+                  <button
+                    className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
+                    onClick={showEditTaskModal}
+                  >
+                    <PlusIconSolid className="w-6" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
 
-            <SidebarDivider />
+            <SidebarDivider padBottom={false} />
 
-            <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-              Create a task to get started
-            </div>
+            {tasks.length === 0 ? (
+              <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                Create a task to get started
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="rounded bg-zinc-800/80 p-2 transition hover:bg-zinc-800"
+                  >
+                    {task.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import LeftSidebar from './LeftSidebar';
 import { FC } from 'react';
 import RightSidebar from './RightSidebar';
 import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
+import Header from './Header';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -104,6 +105,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
           rightSidebarPref
         )} transition-all duration-300`}
       >
+        <Header />
         {children}
       </main>
 
