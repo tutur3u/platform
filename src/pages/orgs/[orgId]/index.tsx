@@ -68,6 +68,14 @@ const OrganizationOverviewPage = () => {
     <div className="grid gap-4">
       <h1 className="font-bold">Overview</h1>
 
+      <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <p className="text-zinc-400">
+          This is the overview page for the{' '}
+          <span className="font-semibold text-white">{data?.name}</span>{' '}
+          project.
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <h1 className="font-bold">Revenue</h1>
