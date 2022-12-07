@@ -5,20 +5,38 @@ import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import Layout from '../../../components/layout/Layout';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import MonthCell from '../../../components/calendar/MonthCell';
+import { useUserData } from '../../../hooks/useUserData';
 
 const MonthViewPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
-  const { clearUsers } = useUserList();
+  const {
+    setRootSegment,
+    changeLeftSidebarSecondaryPref,
+    disablePadding,
+    enablePadding,
+  } = useAppearance();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('visible');
+    disablePadding();
+
     setRootSegment({
       content: 'Calendar',
       href: '/expenses',
     });
 
-    clearUsers();
+    return () => {
+      changeLeftSidebarSecondaryPref('hidden');
+      enablePadding();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const [date, setDate] = useState(new Date());
 
@@ -75,7 +93,6 @@ const MonthViewPage: PageWithLayoutProps = () => {
     newDate.setMonth(newDate.getMonth() + 1);
     setDate(newDate);
   };
-
 
   return (
     <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
