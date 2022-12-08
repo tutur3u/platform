@@ -14,13 +14,15 @@ import {
   Cog6ToothIcon as SettingsIconOutline,
   HomeIcon as HomeIconOutline,
   FolderPlusIcon,
+  SquaresPlusIcon,
+  PlusCircleIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
-import { Avatar, Indicator, Tooltip } from '@mantine/core';
+import { Avatar, Checkbox, Indicator, Select, Tooltip } from '@mantine/core';
 import { useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import SidebarDivider from './SidebarDivider';
@@ -32,7 +34,9 @@ import Link from 'next/link';
 import { getInitials } from '../../utils/name-helper';
 import TaskEditForm from '../forms/TaskEditForm';
 import { Task } from '../../types/primitives/Task';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { TaskBoard } from '../../types/primitives/TaskBoard';
+import BoardEditForm from '../forms/BoardEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
@@ -51,32 +55,85 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [boards, setBoards] = useState<TaskBoard[]>([]);
+  const [selectedBoard, setSelectedBoard] = useState<TaskBoard | null>(null);
 
-  useEffect(() => {
-    // Populate 30 tasks
-    const tasks: Task[] = [];
-
-    for (let i = 0; i < 30; i++) {
-      tasks.push({
-        id: i.toString(),
-        name: `Task ${i + 1}`,
-      });
-    }
-
-    setTasks(tasks);
-  }, []);
-
-  const addTask = (task: Task) => {
-    setTasks((prev) => [...prev, task]);
+  const addTask = (task: Task, board: TaskBoard) => {
+    setBoards((prev) => {
+      const newBoards = [...prev];
+      const boardIndex = newBoards.findIndex((b) => b.id === board.id);
+      newBoards[boardIndex].tasks = [
+        ...(newBoards[boardIndex]?.tasks || []),
+        task,
+      ];
+      return newBoards;
+    });
   };
 
-  const showEditTaskModal = () => {
+  const addBoard = (board: TaskBoard) => {
+    if (!selectedBoard) setSelectedBoard(board);
+    setBoards((prev) => [...prev, board]);
+  };
+
+  const showEditTaskModal = (board: TaskBoard) => {
     openModal({
       title: 'New task',
       centered: true,
-      children: <TaskEditForm onSubmit={addTask} />,
+      children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
     });
+  };
+
+  const showEditBoardModal = () => {
+    openModal({
+      title: 'New board',
+      centered: true,
+      children: <BoardEditForm onSubmit={addBoard} />,
+    });
+  };
+
+  const [generated, setGenerated] = useState(false);
+
+  const generateMeetingChecklist = () => {
+    const newBoard = {
+      id: 'meeting',
+      name: 'Meeting Checklist',
+      tasks: [
+        {
+          id: 'meeting-1',
+          name: 'Prepare meeting',
+          completed: true,
+        },
+        {
+          id: 'meeting-2',
+          name: 'Start meeting',
+          completed: true,
+        },
+        {
+          id: 'meeting-3',
+          name: 'Introduce task boards',
+          completed: false,
+        },
+        {
+          id: 'meeting-4',
+          name: 'Showcase boards, lists, and tasks creation buttons',
+          completed: false,
+        },
+        {
+          id: 'meeting-5',
+          name: 'Hand over to Thu',
+          completed: false,
+        },
+        {
+          id: 'meeting-6',
+          name: 'End meeting',
+          completed: false,
+        },
+      ],
+    };
+
+    addBoard(newBoard);
+    setSelectedBoard(newBoard);
+    setGenerated(true);
   };
 
   return (
@@ -246,55 +303,103 @@ function LeftSidebar({ className }: SidebarProps) {
           </div>
         </div>
 
-        {leftSidebarPref.secondary === 'visible' && (
-          <div className="hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
-            <div className="relative mx-3 flex justify-between text-2xl font-semibold">
-              <div>Tasks</div>
-              <div className="flex gap-2">
-                <Tooltip
-                  label={<div className="text-blue-300">New task list</div>}
-                  color="#182a3d"
-                  withArrow
-                >
-                  <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                    <FolderPlusIcon className="w-6" />
-                  </button>
-                </Tooltip>
-                <Tooltip
-                  label={<div className="text-blue-300">New task</div>}
-                  color="#182a3d"
-                  withArrow
-                >
-                  <button
-                    className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
-                    onClick={showEditTaskModal}
-                  >
-                    <PlusIconSolid className="w-6" />
-                  </button>
-                </Tooltip>
+        {leftSidebarPref.secondary === 'visible' &&
+          (boards.length === 0 ? (
+            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+              <div className="text-lg font-semibold">
+                Start organizing your tasks in a miraculous way.
               </div>
+              <button
+                onClick={showEditBoardModal}
+                className="rounded-lg bg-purple-300/20 px-4 py-2 text-lg font-semibold text-purple-300 transition hover:bg-purple-300/30"
+              >
+                Create a board
+              </button>
             </div>
-
-            <SidebarDivider padBottom={false} />
-
-            {tasks.length === 0 ? (
-              <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-                Create a task to get started
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="rounded bg-zinc-800/80 p-2 transition hover:bg-zinc-800"
+          ) : (
+            <div className="relative hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
+              <div className="relative mx-3 flex justify-between gap-1 text-2xl font-semibold">
+                <Select
+                  defaultValue={selectedBoard?.id}
+                  data={boards.map((board) => ({
+                    value: board.id,
+                    label: board.name || 'Untitled',
+                  }))}
+                  onChange={(value) => {
+                    setSelectedBoard(
+                      boards?.find((board) => board.id === value) || null
+                    );
+                  }}
+                  value={selectedBoard?.id}
+                />
+                <div className="flex gap-1">
+                  <Tooltip
+                    label={<div className="text-blue-300">New board</div>}
+                    color="#182a3d"
+                    withArrow
                   >
-                    {task.name}
-                  </div>
-                ))}
+                    <button
+                      className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
+                      onClick={showEditBoardModal}
+                    >
+                      <SquaresPlusIcon className="w-6" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip
+                    label={<div className="text-blue-300">New task list</div>}
+                    color="#182a3d"
+                    withArrow
+                  >
+                    <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                      <FolderPlusIcon className="w-6" />
+                    </button>
+                  </Tooltip>
+                  {selectedBoard && (
+                    <Tooltip
+                      label={<div className="text-blue-300">New task</div>}
+                      color="#182a3d"
+                      withArrow
+                    >
+                      <button
+                        className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
+                        onClick={() => showEditTaskModal(selectedBoard)}
+                      >
+                        <PlusCircleIcon className="w-6" />
+                      </button>
+                    </Tooltip>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        )}
+
+              <SidebarDivider padBottom={false} />
+
+              {selectedBoard?.tasks?.length === 0 ? (
+                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                  Create a task to get started
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
+                  {selectedBoard?.tasks?.map((task) => (
+                    <Checkbox
+                      key={task.id}
+                      label={task.name}
+                      checked={task.completed}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {generated ||
+                (selectedBoard?.tasks && selectedBoard.tasks.length >= 3 && (
+                  <button
+                    onClick={generateMeetingChecklist}
+                    className="absolute bottom-0 w-full bg-purple-300/20 p-4 text-center text-xl font-semibold text-purple-300 transition hover:bg-purple-300/30"
+                  >
+                    Generate meeting checklist
+                  </button>
+                ))}
+            </div>
+          ))}
       </div>
 
       <div
