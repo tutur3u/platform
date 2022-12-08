@@ -20,7 +20,11 @@ export const getServerSideProps = withPageAuth({
 });
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeRightSidebarPref } = useAppearance();
+  const {
+    setRootSegment,
+    changeRightSidebarPref,
+    changeLeftSidebarSecondaryPref,
+  } = useAppearance();
   const { clearUsers } = useUserList();
 
   useEffect(() => {
@@ -33,6 +37,8 @@ const SettingPage: PageWithLayoutProps = () => {
       main: 'hidden',
       secondary: 'hidden',
     });
+
+    changeLeftSidebarSecondaryPref('hidden');
 
     clearUsers();
 
