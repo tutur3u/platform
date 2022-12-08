@@ -60,7 +60,6 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const getMonday = () => {
     const day = date.getDay() || 7;
-
     if (day !== 1) {
       date.setHours(-24 * (day - 1));
     }

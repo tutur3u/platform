@@ -52,32 +52,65 @@ const MonthViewPage: PageWithLayoutProps = () => {
     return firstDay;
   };
 
+  // get monday of the week of the first day of the month
+  const getFirstMonday = () => {
+    const firstDay = getFirstDay();
+    const firstMonday = new Date(
+      firstDay.getFullYear(),
+      firstDay.getMonth(),
+      firstDay.getDate() - firstDay.getDay() + 1
+    );
+    return firstMonday;
+  };
+
   // get last day of the month
   const getLastDay = () => {
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     return lastDay;
   };
 
-  // get the difference between the first and last day of the month
-  const getDayDifference = () => {
-    const firstDay = getFirstDay();
+  // get week of the last day of month
+  const getLastWeek = () => {
     const lastDay = getLastDay();
-    const difference = lastDay.getDate() - firstDay.getDate();
-    return difference;
+    const lastWeek = lastDay.getDay();
+    return lastWeek;
   };
 
-  // get prefixDays
-  const getPrefixDays = () => {
-    const firstDay = getFirstDay();
-    const prefixDays = firstDay.getDay() - 1;
-    return prefixDays == -1 ? 6 : prefixDays;
+  // get sunday of the week of the last day of the month
+  const getLastDayOfLastWeek = () => {
+    const lastDay = getLastDay();
+    const lastWeek = getLastWeek();
+    const lastDayOfLastWeek = new Date(
+      lastDay.getFullYear(),
+      lastDay.getMonth(),
+      lastDay.getDate() + (6 - lastWeek)
+    );
+    return lastDayOfLastWeek;
   };
 
-  // get suffixDays
-  const getSuffixDays = () => {
-    const lastDay = getLastDay();
-    const suffixDays = 7 - lastDay.getDay();
-    return suffixDays == 7 ? 0 : suffixDays;
+  // get other date from first monday to the last day of last week
+  const getMonthDays = () => {
+    const firstMonday = getFirstMonday();
+    const lastDayOfLastWeek = getLastDayOfLastWeek();
+    const days = [];
+    for (
+      let i = firstMonday;
+      i <= lastDayOfLastWeek;
+      i.setDate(i.getDate() + 1)
+    ) {
+      days.push(new Date(i));
+    }
+    return days;
+  };
+
+  // get the difference between the first monday and the last day of last week
+  const getMonthDaysLength = () => {
+    const firstMonday = getFirstMonday();
+    const lastDayOfLastWeek = getLastDayOfLastWeek();
+    const daysLength =
+      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) /
+      (1000 * 3600 * 24);
+    return daysLength;
   };
 
   // prevMonth
@@ -94,6 +127,11 @@ const MonthViewPage: PageWithLayoutProps = () => {
     setDate(newDate);
   };
 
+  // set date to today
+  const setToday = () => {
+    setDate(new Date());
+  };
+
   return (
     <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-8 flex justify-between">
@@ -108,7 +146,10 @@ const MonthViewPage: PageWithLayoutProps = () => {
           >
             <ChevronLeftIcon className="w-4" />
           </button>
-          <button className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20">
+          <button
+            onClick={setToday}
+            className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20"
+          >
             This month
           </button>
           <button
@@ -131,16 +172,8 @@ const MonthViewPage: PageWithLayoutProps = () => {
       </div>
 
       <div className="grid h-full grid-cols-7 border-t border-l border-zinc-800">
-        {Array.from({ length: getPrefixDays() }).map((_, index) => (
-          <MonthCell key={index} />
-        ))}
-
-        {Array.from({ length: getDayDifference() + 1 }).map((_, index) => (
-          <MonthCell key={index} date={index + 1} />
-        ))}
-
-        {Array.from({ length: getSuffixDays() }).map((_, index) => (
-          <MonthCell key={index} />
+        {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (
+          <MonthCell key={index} date={getMonthDays()[index]} />
         ))}
       </div>
     </div>
