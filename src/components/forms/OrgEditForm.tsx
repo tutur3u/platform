@@ -55,6 +55,7 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
             closeAllModals();
           }}
           mt="md"
+          disabled={!name}
         >
           {org?.id ? 'Save' : 'Add'}
         </Button>

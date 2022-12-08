@@ -11,6 +11,7 @@ import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { OrganizationProvider } from '../../hooks/useOrganizations';
 import { SWRConfig } from 'swr';
+import { UserListProvider } from '../../hooks/useUserList';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -42,15 +43,17 @@ const Providers = ({
           }}
         >
           <SessionContextProvider supabaseClient={supabaseClient}>
-            <UserDataProvider>
-              <AppearanceProvider>
-                <ModalsProvider>
-                  <NotificationsProvider position="bottom-left">
-                    <OrganizationProvider>{children}</OrganizationProvider>
-                  </NotificationsProvider>
-                </ModalsProvider>
-              </AppearanceProvider>
-            </UserDataProvider>
+            <UserListProvider>
+              <UserDataProvider>
+                <AppearanceProvider>
+                  <ModalsProvider>
+                    <NotificationsProvider position="bottom-left">
+                      <OrganizationProvider>{children}</OrganizationProvider>
+                    </NotificationsProvider>
+                  </ModalsProvider>
+                </AppearanceProvider>
+              </UserDataProvider>
+            </UserListProvider>
           </SessionContextProvider>
         </MantineProvider>
       </SessionContextProvider>

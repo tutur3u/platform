@@ -13,6 +13,8 @@ import { showNotification } from '@mantine/notifications';
 import OrganizationInviteSnippet from '../components/notifications/OrganizationInviteSnippet';
 import OrgPreviewCard from '../components/cards/OrgPreviewCard';
 import { GetServerSidePropsContext } from 'next';
+import { useUserList } from '../hooks/useUserList';
+import { useUserData } from '../hooks/useUserData';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -38,15 +40,24 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const Home: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('hidden');
+
     setRootSegment({
       content: 'Home',
       href: '/',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const { isLoading, orgs, createOrg } = useOrgs();
 

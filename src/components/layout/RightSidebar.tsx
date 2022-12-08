@@ -1,36 +1,79 @@
-import { Avatar } from '@mantine/core';
+import { Avatar, Indicator, Tooltip } from '@mantine/core';
+import { useAppearance } from '../../hooks/useAppearance';
+import { useUserList } from '../../hooks/useUserList';
 import { SidebarProps } from '../../types/SidebarProps';
-import { useUser } from '@supabase/auth-helpers-react';
-import { useUserData } from '../../hooks/useUserData';
+import { getInitials } from '../../utils/name-helper';
 
 function RightSidebar({ className }: SidebarProps) {
-  const user = useUser();
-  const { data } = useUserData();
+  const { rightSidebarPref } = useAppearance();
+  const { users } = useUserList();
 
   return (
     <div
-      className={`${className} group fixed top-0 right-0 z-20 hidden h-full flex-col items-center justify-center border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:block`}
+      className={`group fixed top-0 right-0 z-20 hidden h-full flex-col items-center justify-start gap-3 border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:flex ${className} ${
+        users.length > 0 ? 'w-full px-2 py-4' : 'w-0'
+      }`}
     >
-      <div className="flex h-full w-full flex-col">
-        <div className="relative m-3 mt-4 flex items-center justify-start gap-2 overflow-hidden rounded transition duration-300">
-          <div className="pl-[0.07rem]">
-            <Avatar size={36} color="blue" radius="xl" />
-          </div>
-          <div>
-            <div className="text-md min-w-max font-bold">
-              {data?.displayName ||
-                user?.email ||
-                user?.phone ||
-                'Not logged in'}
+      {users.map((user) => (
+        <Tooltip
+          key={user.id}
+          label={
+            <div className="font-semibold">
+              <div>{user?.displayName || 'Unknown'}</div>
+              {user?.username && (
+                <div className="text-blue-300">@{user.username}</div>
+              )}
             </div>
-            {data?.username && (
-              <div className="min-w-max text-sm font-semibold text-purple-300">
-                @{data?.username}
+          }
+          disabled={!user?.displayName || rightSidebarPref.main !== 'closed'}
+          position="left"
+          color="#182a3d"
+          offset={20}
+          withArrow
+        >
+          <div
+            className={`flex w-full items-center justify-center gap-2 ${
+              rightSidebarPref.main !== 'closed' ? 'translate-x-1' : ''
+            }`}
+          >
+            <Indicator
+              color="cyan"
+              position="bottom-end"
+              size={12}
+              offset={5}
+              withBorder
+            >
+              <Avatar
+                className="self-center"
+                key={user.id}
+                color="blue"
+                radius="xl"
+              >
+                {getInitials(user?.displayName ?? 'Unknown')}
+              </Avatar>
+            </Indicator>
+
+            <div
+              className={`w-full overflow-hidden ${
+                rightSidebarPref.main === 'closed'
+                  ? 'md:hidden'
+                  : rightSidebarPref.main === 'auto'
+                  ? 'opacity-0 transition duration-300 group-hover:opacity-100'
+                  : ''
+              }`}
+            >
+              <div className="text-md min-w-max font-bold">
+                {user?.displayName || user?.email || 'Not logged in'}
               </div>
-            )}
+              {user?.username && (
+                <div className="min-w-max text-sm font-semibold text-blue-300">
+                  @{user?.username}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </Tooltip>
+      ))}
     </div>
   );
 }

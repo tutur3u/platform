@@ -3,39 +3,39 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskBoard } from '../../types/primitives/TaskBoard';
+import { Task } from '../../types/primitives/Task';
 
-interface BoardEditFormProps {
-  board?: TaskBoard;
-  onSubmit?: (board: TaskBoard) => void;
+interface TaskEditFormProps {
+  task?: Task;
+  onSubmit: (org: Task) => void;
   onDelete?: () => void;
 }
 
-const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
-  const [name, setName] = useState(board?.name || '');
+const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
+  const [name, setName] = useState(task?.name || '');
 
   return (
     <>
-      {board?.id && (
+      {task?.id && (
         <TextInput
-          label="Board ID"
-          value={board?.id}
-          disabled={!!board?.id}
+          label="Task ID"
+          value={task?.id}
+          disabled={!!task?.id}
           className="mb-2"
         />
       )}
       <TextInput
-        label="Board name"
-        placeholder="Enter board name"
+        label="Task name"
+        placeholder="Enter task name"
         value={name}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          setName(event.currentTarget.value)
+          setName(event.target.value)
         }
-        data-autofocus
         autoComplete="off"
+        data-autofocus
       />
       <div className="flex gap-2">
-        {board?.id && onDelete && (
+        {task?.id && onDelete && (
           <Button
             fullWidth
             variant="subtle"
@@ -50,18 +50,18 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newBoard = { id: board?.id || uuidv4(), name };
-
-            if (onSubmit) onSubmit(newBoard);
+            const newTask = { id: task?.id || uuidv4(), name };
+            onSubmit(newTask);
             closeAllModals();
           }}
           mt="md"
+          disabled={!name}
         >
-          {board?.id ? 'Save' : 'Add'}
+          {task?.id ? 'Save' : 'Add'}
         </Button>
       </div>
     </>
   );
 };
 
-export default BoardEditForm;
+export default TaskEditForm;
