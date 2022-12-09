@@ -16,34 +16,42 @@ import {
   FolderPlusIcon,
   SquaresPlusIcon,
   PlusCircleIcon,
+  EllipsisHorizontalIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
-import { Avatar, Checkbox, Indicator, Select, Tooltip } from '@mantine/core';
+import {
+  Avatar,
+  Indicator,
+  Loader,
+  Menu,
+  Select,
+  Tooltip,
+} from '@mantine/core';
 import { useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import SidebarDivider from './SidebarDivider';
 import { useOrgs } from '../../hooks/useOrganizations';
 import OrgEditForm from '../forms/OrgEditForm';
-import { openModal } from '@mantine/modals';
+import { openConfirmModal, openModal } from '@mantine/modals';
 import { Organization } from '../../types/primitives/Organization';
 import Link from 'next/link';
 import { getInitials } from '../../utils/name-helper';
-import TaskEditForm from '../forms/TaskEditForm';
-import { Task } from '../../types/primitives/Task';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TaskBoard } from '../../types/primitives/TaskBoard';
 import BoardEditForm from '../forms/BoardEditForm';
+import useSWR, { mutate } from 'swr';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
   const user = useUser();
   const { data } = useUserData();
 
-  const { isLoading, orgs, createOrg } = useOrgs();
+  const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
 
   const addOrg = (org: Organization) => createOrg(org);
 
@@ -55,86 +63,132 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  const [boards, setBoards] = useState<TaskBoard[]>([]);
-  const [selectedBoard, setSelectedBoard] = useState<TaskBoard | null>(null);
+  const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
+    user?.id ? '/api/tasks/boards' : null
+  );
+  const isBoardsLoading = !boards && !boardsError;
 
-  const addTask = (task: Task, board: TaskBoard) => {
-    setBoards((prev) => {
-      const newBoards = [...prev];
-      const boardIndex = newBoards.findIndex((b) => b.id === board.id);
-      newBoards[boardIndex].tasks = [
-        ...(newBoards[boardIndex]?.tasks || []),
-        task,
-      ];
-      return newBoards;
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedBoardId) return;
+    if (!boards || boards.length === 0) return;
+    setSelectedBoardId(boards[0].id);
+  }, [boards, selectedBoardId]);
+
+  // const addTask = (task: Task, board: TaskBoard) => {
+  // setBoards((prev) => {
+  //   const newBoards = [...prev];
+  //   const boardIndex = newBoards.findIndex((b) => b.id === board.id);
+  //   newBoards[boardIndex].tasks = [
+  //     ...(newBoards[boardIndex]?.tasks || []),
+  //     task,
+  //   ];
+  //   return newBoards;
+  // });
+  //   console.log(task, board);
+  // };
+
+  const addBoard = async (board: TaskBoard) => {
+    const res = await fetch('/api/tasks/boards', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: board.name,
+      }),
     });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+      const newBoard = await res.json();
+      setSelectedBoardId(newBoard.id);
+    }
   };
 
-  const addBoard = (board: TaskBoard) => {
-    if (!selectedBoard) setSelectedBoard(board);
-    setBoards((prev) => [...prev, board]);
+  const updateBoard = async (board: TaskBoard) => {
+    const res = await fetch(`/api/tasks/boards/${board.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: board.name,
+      }),
+    });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+    }
   };
 
-  const showEditTaskModal = (board: TaskBoard) => {
+  const deleteBoard = async (board: TaskBoard) => {
+    const res = await fetch(`/api/tasks/boards/${board.id}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+      setSelectedBoardId(null);
+    }
+  };
+
+  // const showEditTaskModal = (board?: TaskBoard) => {
+  //   if (!board) return;
+  //   openModal({
+  //     title: 'New task',
+  //     centered: true,
+  //     children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
+  //   });
+  // };
+
+  const showEditBoardModal = (board?: TaskBoard) => {
     openModal({
-      title: 'New task',
+      title: board ? 'Edit board' : 'New board',
       centered: true,
-      children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
+      children: (
+        <BoardEditForm
+          board={board}
+          onSubmit={board ? updateBoard : addBoard}
+        />
+      ),
     });
   };
 
-  const showEditBoardModal = () => {
-    openModal({
-      title: 'New board',
+  const showDeleteBoardModal = (board?: TaskBoard) => {
+    if (!board) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{board.name}</span>
+          {'" '}
+          board
+        </div>
+      ),
       centered: true,
-      children: <BoardEditForm onSubmit={addBoard} />,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this board?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteBoard(board),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
     });
   };
 
-  const [generated, setGenerated] = useState(false);
-
-  const generateMeetingChecklist = () => {
-    const newBoard = {
-      id: 'meeting',
-      name: 'Meeting Checklist',
-      tasks: [
-        {
-          id: 'meeting-1',
-          name: 'Prepare meeting',
-          completed: true,
-        },
-        {
-          id: 'meeting-2',
-          name: 'Start meeting',
-          completed: true,
-        },
-        {
-          id: 'meeting-3',
-          name: 'Introduce task boards',
-          completed: false,
-        },
-        {
-          id: 'meeting-4',
-          name: 'Showcase boards, lists, and tasks creation buttons',
-          completed: false,
-        },
-        {
-          id: 'meeting-5',
-          name: 'Hand over to Thu',
-          completed: false,
-        },
-        {
-          id: 'meeting-6',
-          name: 'End meeting',
-          completed: false,
-        },
-      ],
-    };
-
-    addBoard(newBoard);
-    setSelectedBoard(newBoard);
-    setGenerated(true);
-  };
+  const getBoard = (id?: string | null) => boards?.find((b) => b.id === id);
 
   return (
     <>
@@ -189,7 +243,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
             <SidebarDivider />
 
-            {isLoading || (
+            {isOrgsLoading || (
               <div className="flex flex-col gap-3 p-4">
                 {orgs?.current?.map((org) => (
                   <SidebarTab
@@ -304,13 +358,17 @@ function LeftSidebar({ className }: SidebarProps) {
         </div>
 
         {leftSidebarPref.secondary === 'visible' &&
-          (boards.length === 0 ? (
+          (isBoardsLoading ? (
+            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+              <Loader />
+            </div>
+          ) : !boards || boards?.length === 0 ? (
             <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
               <div className="text-lg font-semibold">
                 Start organizing your tasks in a miraculous way.
               </div>
               <button
-                onClick={showEditBoardModal}
+                onClick={() => showEditBoardModal()}
                 className="rounded-lg bg-purple-300/20 px-4 py-2 text-lg font-semibold text-purple-300 transition hover:bg-purple-300/30"
               >
                 Create a board
@@ -318,68 +376,93 @@ function LeftSidebar({ className }: SidebarProps) {
             </div>
           ) : (
             <div className="relative hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
-              <div className="relative mx-3 flex justify-between gap-1 text-2xl font-semibold">
+              <div className="relative mx-3 flex gap-2 text-2xl font-semibold">
                 <Select
-                  defaultValue={selectedBoard?.id}
-                  data={boards.map((board) => ({
-                    value: board.id,
-                    label: board.name || 'Untitled',
-                  }))}
-                  onChange={(value) => {
-                    setSelectedBoard(
-                      boards?.find((board) => board.id === value) || null
-                    );
-                  }}
-                  value={selectedBoard?.id}
+                  defaultValue={selectedBoardId || boards?.[0]?.id}
+                  data={
+                    boards?.map((board: TaskBoard) => ({
+                      value: board.id,
+                      label: board.name || 'Untitled',
+                    })) ?? []
+                  }
+                  value={selectedBoardId}
+                  onChange={setSelectedBoardId}
+                  className="w-full"
                 />
                 <div className="flex gap-1">
-                  <Tooltip
-                    label={<div className="text-blue-300">New board</div>}
-                    color="#182a3d"
-                    withArrow
-                  >
-                    <button
-                      className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
-                      onClick={showEditBoardModal}
-                    >
-                      <SquaresPlusIcon className="w-6" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip
-                    label={<div className="text-blue-300">New task list</div>}
-                    color="#182a3d"
-                    withArrow
-                  >
-                    <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                      <FolderPlusIcon className="w-6" />
-                    </button>
-                  </Tooltip>
-                  {selectedBoard && (
-                    <Tooltip
-                      label={<div className="text-blue-300">New task</div>}
-                      color="#182a3d"
-                      withArrow
-                    >
-                      <button
-                        className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300"
-                        onClick={() => showEditTaskModal(selectedBoard)}
-                      >
-                        <PlusCircleIcon className="w-6" />
-                      </button>
-                    </Tooltip>
+                  {selectedBoardId && (
+                    <Menu openDelay={100} closeDelay={400} withArrow>
+                      <Menu.Target>
+                        <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                          <PlusIconSolid className="w-6" />
+                        </button>
+                      </Menu.Target>
+
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          icon={<SquaresPlusIcon className="w-6" />}
+                          onClick={() => showEditBoardModal()}
+                        >
+                          New board
+                        </Menu.Item>
+
+                        <Menu.Item
+                          icon={<FolderPlusIcon className="w-6" />}
+                          disabled
+                        >
+                          New task list
+                        </Menu.Item>
+
+                        <Menu.Item
+                          icon={<PlusCircleIcon className="w-6" />}
+                          disabled
+                        >
+                          New task
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
                   )}
+
+                  <Menu openDelay={100} closeDelay={400} withArrow>
+                    <Menu.Target>
+                      <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                        <EllipsisHorizontalIcon className="w-6" />
+                      </button>
+                    </Menu.Target>
+
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        icon={<SettingsIconSolid className="w-6" />}
+                        onClick={() =>
+                          showEditBoardModal(getBoard(selectedBoardId))
+                        }
+                      >
+                        Board settings
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        icon={<TrashIcon className="w-6" />}
+                        color="red"
+                        onClick={() =>
+                          showDeleteBoardModal(getBoard(selectedBoardId))
+                        }
+                      >
+                        Delete board
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
                 </div>
               </div>
 
               <SidebarDivider padBottom={false} />
 
-              {selectedBoard?.tasks?.length === 0 ? (
+              {/* {selectedBoardId?.tasks?.length === 0 ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
                   Create a task to get started
                 </div>
               ) : (
                 <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
-                  {selectedBoard?.tasks?.map((task) => (
+                  {selectedBoardId?.tasks?.map((task) => (
                     <Checkbox
                       key={task.id}
                       label={task.name}
@@ -387,17 +470,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     />
                   ))}
                 </div>
-              )}
-
-              {generated ||
-                (selectedBoard?.tasks && selectedBoard.tasks.length >= 3 && (
-                  <button
-                    onClick={generateMeetingChecklist}
-                    className="absolute bottom-0 w-full bg-purple-300/20 p-4 text-center text-xl font-semibold text-purple-300 transition hover:bg-purple-300/30"
-                  >
-                    Generate meeting checklist
-                  </button>
-                ))}
+              )} */}
             </div>
           ))}
       </div>
