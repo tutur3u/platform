@@ -612,6 +612,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 </div>
               ) : (
                 <Accordion
+                  chevronPosition="left"
                   radius="lg"
                   className="flex flex-col overflow-auto p-4 scrollbar-none"
                 >
