@@ -50,8 +50,7 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newBoard = { id: board?.id || uuidv4(), name };
-
+            const newBoard = { id: board?.id || uuidv4(), name, lists: [] };
             if (onSubmit) onSubmit(newBoard);
             closeAllModals();
           }}

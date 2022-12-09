@@ -71,10 +71,16 @@ function LeftSidebar({ className }: SidebarProps) {
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedBoardId) return;
-    if (!boards || boards.length === 0) return;
-    setSelectedBoardId(boards[0].id);
-  }, [boards, selectedBoardId]);
+    const boardsSelected = !!selectedBoardId;
+
+    if (!boards || boards.length === 0) {
+      setSelectedBoardId(null);
+      return;
+    }
+
+    const firstBoardId = boards[0].id;
+    if (!boardsSelected) setSelectedBoardId(firstBoardId);
+  }, [boards, boards?.length, selectedBoardId]);
 
   // const addTask = (task: Task, board: TaskBoard) => {
   // setBoards((prev) => {
@@ -188,7 +194,8 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  const getBoard = (id?: string | null) => boards?.find((b) => b.id === id);
+  const getBoard = (id?: string | null) =>
+    boards?.find((b) => b.id === id) || boards?.[0];
 
   return (
     <>
@@ -385,7 +392,11 @@ function LeftSidebar({ className }: SidebarProps) {
                       label: board.name || 'Untitled',
                     })) ?? []
                   }
-                  value={selectedBoardId}
+                  value={
+                    boards.some((board) => board.id === selectedBoardId)
+                      ? selectedBoardId
+                      : boards?.[0]?.id
+                  }
                   onChange={setSelectedBoardId}
                   className="w-full"
                 />

@@ -55,7 +55,7 @@ const createBoard = async (req: NextApiRequest, res: NextApiResponse) => {
     .insert({
       name,
     })
-    .select('id, name')
+    .select('id')
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
