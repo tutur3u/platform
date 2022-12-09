@@ -25,6 +25,8 @@ import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import {
+  Accordion,
+  AccordionControlProps,
   Avatar,
   Indicator,
   Loader,
@@ -45,6 +47,8 @@ import { useEffect, useState } from 'react';
 import { TaskBoard } from '../../types/primitives/TaskBoard';
 import BoardEditForm from '../forms/BoardEditForm';
 import useSWR, { mutate } from 'swr';
+import { TaskList } from '../../types/primitives/TaskList';
+import TaskListEditForm from '../forms/TaskListEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
@@ -63,18 +67,32 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+
   const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
     user?.id ? '/api/tasks/boards' : null
   );
-  const isBoardsLoading = !boards && !boardsError;
 
-  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
+    user?.id && selectedBoardId
+      ? `/api/tasks/lists?boardId=${selectedBoardId}`
+      : null
+  );
+
+  const isBoardsLoading = !boards && !boardsError;
+  const isListsLoading = !lists && !listsError;
 
   useEffect(() => {
-    if (selectedBoardId) return;
-    if (!boards || boards.length === 0) return;
-    setSelectedBoardId(boards[0].id);
-  }, [boards, selectedBoardId]);
+    const boardsSelected = !!selectedBoardId;
+
+    if (!boards || boards.length === 0) {
+      setSelectedBoardId(null);
+      return;
+    }
+
+    const firstBoardId = boards[0].id;
+    if (!boardsSelected) setSelectedBoardId(firstBoardId);
+  }, [boards, boards?.length, selectedBoardId]);
 
   // const addTask = (task: Task, board: TaskBoard) => {
   // setBoards((prev) => {
@@ -134,15 +152,6 @@ function LeftSidebar({ className }: SidebarProps) {
     }
   };
 
-  // const showEditTaskModal = (board?: TaskBoard) => {
-  //   if (!board) return;
-  //   openModal({
-  //     title: 'New task',
-  //     centered: true,
-  //     children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
-  //   });
-  // };
-
   const showEditBoardModal = (board?: TaskBoard) => {
     openModal({
       title: board ? 'Edit board' : 'New board',
@@ -155,6 +164,72 @@ function LeftSidebar({ className }: SidebarProps) {
       ),
     });
   };
+
+  const addList = async (list: TaskList) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch('/api/tasks/lists', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: list.name,
+        boardId: selectedBoardId,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const updateList = async (list: TaskList) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch(`/api/tasks/lists/${list.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: list.name,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const deleteList = async (listId: string) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch(`/api/tasks/lists/${listId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const showEditListModal = (boardId: string, list?: TaskList) => {
+    openModal({
+      title: list ? 'Edit list' : 'New list',
+      centered: true,
+      children: (
+        <TaskListEditForm
+          list={list}
+          boardId={boardId}
+          onSubmit={list ? updateList : addList}
+        />
+      ),
+    });
+  };
+
+  // const showEditTaskModal = (board?: TaskBoard) => {
+  //   if (!board) return;
+  //   openModal({
+  //     title: 'New task',
+  //     centered: true,
+  //     children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
+  //   });
+  // };
 
   const showDeleteBoardModal = (board?: TaskBoard) => {
     if (!board) return;
@@ -188,7 +263,74 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  const getBoard = (id?: string | null) => boards?.find((b) => b.id === id);
+  const showDeleteListModal = (list: TaskList) => {
+    if (!list) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{list.name}</span>
+          {'" '}
+          list
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this list?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteList(list.id),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+    });
+  };
+
+  const getBoard = (id?: string | null) =>
+    boards?.find((b) => b.id === id) || boards?.[0];
+
+  function AccordionControl(props: AccordionControlProps & { list: TaskList }) {
+    const { list, ...rest } = props;
+
+    return (
+      <div className="flex items-center">
+        <Accordion.Control {...rest} />
+        <Menu openDelay={100} closeDelay={400} withArrow position="right">
+          <Menu.Target>
+            <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+              <EllipsisHorizontalIcon className="w-6" />
+            </button>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Item
+              icon={<SettingsIconSolid className="w-6" />}
+              onClick={() => showEditListModal(list.board_id, list)}
+            >
+              List settings
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              icon={<TrashIcon className="w-6" />}
+              color="red"
+              onClick={() => showDeleteListModal(list)}
+            >
+              Delete list
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -385,7 +527,11 @@ function LeftSidebar({ className }: SidebarProps) {
                       label: board.name || 'Untitled',
                     })) ?? []
                   }
-                  value={selectedBoardId}
+                  value={
+                    boards.some((board) => board.id === selectedBoardId)
+                      ? selectedBoardId
+                      : boards?.[0]?.id
+                  }
                   onChange={setSelectedBoardId}
                   className="w-full"
                 />
@@ -408,7 +554,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
                         <Menu.Item
                           icon={<FolderPlusIcon className="w-6" />}
-                          disabled
+                          onClick={() => showEditListModal(selectedBoardId)}
                         >
                           New task list
                         </Menu.Item>
@@ -456,21 +602,30 @@ function LeftSidebar({ className }: SidebarProps) {
 
               <SidebarDivider padBottom={false} />
 
-              {/* {selectedBoardId?.tasks?.length === 0 ? (
+              {isListsLoading ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-                  Create a task to get started
+                  <Loader />
+                </div>
+              ) : lists?.length === 0 ? (
+                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                  Create a task list to get started
                 </div>
               ) : (
-                <div className="flex flex-col gap-3 overflow-auto p-4 scrollbar-none">
-                  {selectedBoardId?.tasks?.map((task) => (
-                    <Checkbox
-                      key={task.id}
-                      label={task.name}
-                      checked={task.completed}
-                    />
+                <Accordion
+                  chevronPosition="left"
+                  radius="lg"
+                  className="flex flex-col overflow-auto p-4 scrollbar-none"
+                >
+                  {lists?.map((list) => (
+                    <Accordion.Item key={list.id} value={list.id}>
+                      <AccordionControl list={list}>
+                        {list.name || 'Untitled list'}
+                      </AccordionControl>
+                      <Accordion.Panel>No tasks yet.</Accordion.Panel>
+                    </Accordion.Item>
                   ))}
-                </div>
-              )} */}
+                </Accordion>
+              )}
             </div>
           ))}
       </div>

@@ -5,10 +5,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     switch (req.method) {
       case 'GET':
-        return await fetchBoards(req, res);
+        return await fetchLists(req, res);
 
       case 'POST':
-        return await createBoard(req, res);
+        return await createList(req, res);
 
       default:
         throw new Error(
@@ -27,37 +27,41 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchBoards = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchLists = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
+  const { boardId } = req.query;
+  if (!boardId) return res.status(401).json({ error: 'Invalid board ID' });
+
   const { data, error } = await supabase
-    .from('task_board_members')
-    .select('task_boards(id, name)')
+    .from('task_lists')
+    .select('id, name')
+    .eq('board_id', boardId)
     .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data.map((board) => board.task_boards));
+  return res.status(200).json(data);
 };
 
-const createBoard = async (req: NextApiRequest, res: NextApiResponse) => {
+const createList = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name } = req.body;
+  const { name, boardId } = req.body;
 
-  const { data, error } = await supabase
-    .from('task_boards')
+  const { error } = await supabase
+    .from('task_lists')
     .insert({
       name,
+      board_id: boardId,
     })
-    .select('id')
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
