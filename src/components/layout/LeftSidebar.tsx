@@ -4,6 +4,8 @@ import {
   ClipboardDocumentListIcon as TaskIconSolid,
   Cog6ToothIcon as SettingsIconSolid,
   HomeIcon as HomeIconSolid,
+  InboxIcon,
+  PencilIcon,
   PlusIcon as PlusIconSolid,
 } from '@heroicons/react/24/solid';
 
@@ -15,7 +17,6 @@ import {
   HomeIcon as HomeIconOutline,
   FolderPlusIcon,
   SquaresPlusIcon,
-  PlusCircleIcon,
   EllipsisHorizontalIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -28,6 +29,7 @@ import {
   Accordion,
   AccordionControlProps,
   Avatar,
+  Checkbox,
   Indicator,
   Loader,
   Menu,
@@ -49,6 +51,8 @@ import BoardEditForm from '../forms/BoardEditForm';
 import useSWR, { mutate } from 'swr';
 import { TaskList } from '../../types/primitives/TaskList';
 import TaskListEditForm from '../forms/TaskListEditForm';
+import { Task } from '../../types/primitives/Task';
+import TaskEditForm from '../forms/TaskEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
@@ -68,6 +72,7 @@ function LeftSidebar({ className }: SidebarProps) {
   };
 
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
   const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
     user?.id ? '/api/tasks/boards' : null
@@ -79,9 +84,15 @@ function LeftSidebar({ className }: SidebarProps) {
       : null
   );
 
+  const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
+    user?.id && selectedListId ? `/api/tasks?listId=${selectedListId}` : null
+  );
+
   const isBoardsLoading = !boards && !boardsError;
   const isListsLoading = !lists && !listsError;
+  const isTasksLoading = !tasks && !tasksError;
 
+  // Automatically select the first board if none is selected
   useEffect(() => {
     const boardsSelected = !!selectedBoardId;
 
@@ -93,19 +104,6 @@ function LeftSidebar({ className }: SidebarProps) {
     const firstBoardId = boards[0].id;
     if (!boardsSelected) setSelectedBoardId(firstBoardId);
   }, [boards, boards?.length, selectedBoardId]);
-
-  // const addTask = (task: Task, board: TaskBoard) => {
-  // setBoards((prev) => {
-  //   const newBoards = [...prev];
-  //   const boardIndex = newBoards.findIndex((b) => b.id === board.id);
-  //   newBoards[boardIndex].tasks = [
-  //     ...(newBoards[boardIndex]?.tasks || []),
-  //     task,
-  //   ];
-  //   return newBoards;
-  // });
-  //   console.log(task, board);
-  // };
 
   const addBoard = async (board: TaskBoard) => {
     const res = await fetch('/api/tasks/boards', {
@@ -162,6 +160,38 @@ function LeftSidebar({ className }: SidebarProps) {
           onSubmit={board ? updateBoard : addBoard}
         />
       ),
+    });
+  };
+
+  const showDeleteBoardModal = (board?: TaskBoard) => {
+    if (!board) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{board.name}</span>
+          {'" '}
+          board
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this board?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteBoard(board),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
     });
   };
 
@@ -222,47 +252,6 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  // const showEditTaskModal = (board?: TaskBoard) => {
-  //   if (!board) return;
-  //   openModal({
-  //     title: 'New task',
-  //     centered: true,
-  //     children: <TaskEditForm onSubmit={(task) => addTask(task, board)} />,
-  //   });
-  // };
-
-  const showDeleteBoardModal = (board?: TaskBoard) => {
-    if (!board) return;
-    openConfirmModal({
-      title: (
-        <div className="font-semibold">
-          Delete {'"'}
-          <span className="font-bold text-purple-300">{board.name}</span>
-          {'" '}
-          board
-        </div>
-      ),
-      centered: true,
-      children: (
-        <div className="p-4 text-center">
-          <p className="text-lg font-medium text-zinc-300">
-            Are you sure you want to delete this board?
-          </p>
-          <p className="text-sm text-zinc-500">
-            All of your data will be permanently removed. This action cannot be
-            undone.
-          </p>
-        </div>
-      ),
-      onConfirm: () => deleteBoard(board),
-      closeOnConfirm: true,
-      labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
-      },
-    });
-  };
-
   const showDeleteListModal = (list: TaskList) => {
     if (!list) return;
     openConfirmModal({
@@ -295,6 +284,112 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
+  const addTask = async (task: Task) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: task.name,
+        listId: selectedListId,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const updateTask = async (task: Task) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: task.name,
+        completed: task.completed,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const deleteTask = async (taskId: string) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const setTaskCompletion = async (task: Task) => {
+    if (!task.id) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        completed: !task.completed,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const showEditTaskModal = (listId: string, task?: Task) => {
+    openModal({
+      title: task ? 'Edit task' : 'New task',
+      centered: true,
+      children: (
+        <TaskEditForm
+          task={task}
+          listId={listId}
+          onSubmit={task ? updateTask : addTask}
+        />
+      ),
+    });
+  };
+
+  const showDeleteTaskModal = (task: Task) => {
+    if (!task) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{task.name}</span>
+          {'" '}
+          task
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this task?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteTask(task.id),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+    });
+  };
+
   const getBoard = (id?: string | null) =>
     boards?.find((b) => b.id === id) || boards?.[0];
 
@@ -302,16 +397,19 @@ function LeftSidebar({ className }: SidebarProps) {
     const { list, ...rest } = props;
 
     return (
-      <div className="flex items-center">
+      <div className="mr-3.5 flex items-center gap-1">
         <Accordion.Control {...rest} />
         <Menu openDelay={100} closeDelay={400} withArrow position="right">
           <Menu.Target>
-            <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+            <button className="rounded border border-transparent text-zinc-500 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
               <EllipsisHorizontalIcon className="w-6" />
             </button>
           </Menu.Target>
 
-          <Menu.Dropdown>
+          <Menu.Dropdown className="font-semibold">
+            <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
+              Archived tasks
+            </Menu.Item>
             <Menu.Item
               icon={<SettingsIconSolid className="w-6" />}
               onClick={() => showEditListModal(list.board_id, list)}
@@ -559,12 +657,12 @@ function LeftSidebar({ className }: SidebarProps) {
                           New task list
                         </Menu.Item>
 
-                        <Menu.Item
+                        {/* <Menu.Item
                           icon={<PlusCircleIcon className="w-6" />}
                           disabled
                         >
                           New task
-                        </Menu.Item>
+                        </Menu.Item> */}
                       </Menu.Dropdown>
                     </Menu>
                   )}
@@ -577,6 +675,9 @@ function LeftSidebar({ className }: SidebarProps) {
                     </Menu.Target>
 
                     <Menu.Dropdown>
+                      <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
+                        Archived lists
+                      </Menu.Item>
                       <Menu.Item
                         icon={<SettingsIconSolid className="w-6" />}
                         onClick={() =>
@@ -612,16 +713,101 @@ function LeftSidebar({ className }: SidebarProps) {
                 </div>
               ) : (
                 <Accordion
+                  value={selectedListId}
+                  onChange={setSelectedListId}
                   chevronPosition="left"
                   radius="lg"
-                  className="flex flex-col overflow-auto p-4 scrollbar-none"
+                  className="flex flex-col overflow-auto scrollbar-none"
                 >
                   {lists?.map((list) => (
                     <Accordion.Item key={list.id} value={list.id}>
                       <AccordionControl list={list}>
-                        {list.name || 'Untitled list'}
+                        <div className="font-semibold">
+                          {list.name || 'Untitled list'}
+                        </div>
                       </AccordionControl>
-                      <Accordion.Panel>No tasks yet.</Accordion.Panel>
+                      <Accordion.Panel>
+                        {isTasksLoading ? (
+                          <div className="p-2" />
+                        ) : (
+                          <div className="grid">
+                            {tasks &&
+                              tasks
+                                .sort((a, b) => {
+                                  if (a.completed && !b.completed) return 1;
+                                  if (!a.completed && b.completed) return -1;
+                                  return 0;
+                                })
+                                .map((task) => (
+                                  <div
+                                    key={task.id}
+                                    className="relative rounded-lg p-2 hover:bg-zinc-800"
+                                  >
+                                    <Checkbox
+                                      label={
+                                        <div
+                                          className={
+                                            task.completed
+                                              ? 'text-zinc-700 line-through'
+                                              : ''
+                                          }
+                                        >
+                                          {task.name || 'Untitled task'}
+                                        </div>
+                                      }
+                                      checked={task.completed}
+                                      onChange={() => setTaskCompletion(task)}
+                                      className="flex"
+                                    />
+
+                                    <div className="absolute inset-y-1 right-1 flex gap-1 opacity-0 transition duration-300 group-hover:opacity-100">
+                                      <Menu
+                                        openDelay={100}
+                                        closeDelay={400}
+                                        withArrow
+                                        position="left"
+                                      >
+                                        <Menu.Target>
+                                          <button className="rounded border border-transparent text-zinc-500 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                                            <EllipsisHorizontalIcon className="w-6" />
+                                          </button>
+                                        </Menu.Target>
+
+                                        <Menu.Dropdown className="font-semibold">
+                                          <Menu.Item
+                                            icon={
+                                              <PencilIcon className="w-6" />
+                                            }
+                                            onClick={() =>
+                                              showEditTaskModal(list.id, task)
+                                            }
+                                          >
+                                            Edit task
+                                          </Menu.Item>
+                                          <Menu.Item
+                                            icon={<TrashIcon className="w-6" />}
+                                            color="red"
+                                            onClick={() =>
+                                              showDeleteTaskModal(task)
+                                            }
+                                          >
+                                            Delete task
+                                          </Menu.Item>
+                                        </Menu.Dropdown>
+                                      </Menu>
+                                    </div>
+                                  </div>
+                                ))}
+                            <button
+                              className="flex items-center gap-3 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-400"
+                              onClick={() => showEditTaskModal(list.id)}
+                            >
+                              <PlusIconSolid className="w-5" />
+                              <div className="text-sm font-semibold">Task</div>
+                            </button>
+                          </div>
+                        )}
+                      </Accordion.Panel>
                     </Accordion.Item>
                   ))}
                 </Accordion>

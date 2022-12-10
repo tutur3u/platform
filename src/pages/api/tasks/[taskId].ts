@@ -40,10 +40,11 @@ const updateTask = async (
     res,
   });
 
-  const { name } = req.body;
+  const { name, completed } = req.body;
 
   const data = {
     name,
+    completed,
   };
 
   const { error } = await supabase.from('tasks').update(data).eq('id', taskId);
