@@ -397,11 +397,11 @@ function LeftSidebar({ className }: SidebarProps) {
     const { list, ...rest } = props;
 
     return (
-      <div className="mr-3.5 flex items-center gap-1">
+      <div className="mr-2 flex items-center gap-2">
         <Accordion.Control {...rest} />
         <Menu openDelay={100} closeDelay={400} withArrow position="right">
           <Menu.Target>
-            <button className="rounded border border-transparent text-zinc-500 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+            <button className="rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
               <EllipsisHorizontalIcon className="w-6" />
             </button>
           </Menu.Target>
@@ -633,11 +633,11 @@ function LeftSidebar({ className }: SidebarProps) {
                   onChange={setSelectedBoardId}
                   className="w-full"
                 />
-                <div className="flex gap-1">
+                <div className="flex items-center gap-1">
                   {selectedBoardId && (
                     <Menu openDelay={100} closeDelay={400} withArrow>
                       <Menu.Target>
-                        <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                        <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
                           <PlusIconSolid className="w-6" />
                         </button>
                       </Menu.Target>
@@ -669,7 +669,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
                   <Menu openDelay={100} closeDelay={400} withArrow>
                     <Menu.Target>
-                      <button className="rounded border border-transparent p-1 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                      <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
                         <EllipsisHorizontalIcon className="w-6" />
                       </button>
                     </Menu.Target>
@@ -701,7 +701,11 @@ function LeftSidebar({ className }: SidebarProps) {
                 </div>
               </div>
 
-              <SidebarDivider padBottom={false} />
+              <SidebarDivider
+                padBottom={false}
+                padLeft={false}
+                padRight={false}
+              />
 
               {isListsLoading ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
@@ -741,7 +745,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                 .map((task) => (
                                   <div
                                     key={task.id}
-                                    className="relative rounded-lg p-2 hover:bg-zinc-800"
+                                    className="flex justify-between gap-2 rounded-lg p-2 hover:bg-zinc-800"
                                   >
                                     <Checkbox
                                       label={
@@ -760,42 +764,37 @@ function LeftSidebar({ className }: SidebarProps) {
                                       className="flex"
                                     />
 
-                                    <div className="absolute inset-y-1 right-1 flex gap-1 opacity-0 transition duration-300 group-hover:opacity-100">
-                                      <Menu
-                                        openDelay={100}
-                                        closeDelay={400}
-                                        withArrow
-                                        position="left"
-                                      >
-                                        <Menu.Target>
-                                          <button className="rounded border border-transparent text-zinc-500 transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                                            <EllipsisHorizontalIcon className="w-6" />
-                                          </button>
-                                        </Menu.Target>
+                                    <Menu
+                                      withArrow
+                                      position="right"
+                                      trigger="click"
+                                    >
+                                      <Menu.Target>
+                                        <button className="flex h-fit items-start rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                                          <EllipsisHorizontalIcon className="w-6" />
+                                        </button>
+                                      </Menu.Target>
 
-                                        <Menu.Dropdown className="font-semibold">
-                                          <Menu.Item
-                                            icon={
-                                              <PencilIcon className="w-6" />
-                                            }
-                                            onClick={() =>
-                                              showEditTaskModal(list.id, task)
-                                            }
-                                          >
-                                            Edit task
-                                          </Menu.Item>
-                                          <Menu.Item
-                                            icon={<TrashIcon className="w-6" />}
-                                            color="red"
-                                            onClick={() =>
-                                              showDeleteTaskModal(task)
-                                            }
-                                          >
-                                            Delete task
-                                          </Menu.Item>
-                                        </Menu.Dropdown>
-                                      </Menu>
-                                    </div>
+                                      <Menu.Dropdown className="font-semibold">
+                                        <Menu.Item
+                                          icon={<PencilIcon className="w-6" />}
+                                          onClick={() =>
+                                            showEditTaskModal(list.id, task)
+                                          }
+                                        >
+                                          Edit task
+                                        </Menu.Item>
+                                        <Menu.Item
+                                          icon={<TrashIcon className="w-6" />}
+                                          color="red"
+                                          onClick={() =>
+                                            showDeleteTaskModal(task)
+                                          }
+                                        >
+                                          Delete task
+                                        </Menu.Item>
+                                      </Menu.Dropdown>
+                                    </Menu>
                                   </div>
                                 ))}
                             <button
