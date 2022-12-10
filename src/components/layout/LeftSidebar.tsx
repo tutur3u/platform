@@ -19,6 +19,7 @@ import {
   SquaresPlusIcon,
   EllipsisHorizontalIcon,
   TrashIcon,
+  ArrowRightCircleIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
@@ -410,6 +411,9 @@ function LeftSidebar({ className }: SidebarProps) {
             <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
               Archived tasks
             </Menu.Item>
+            <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
+              Move list
+            </Menu.Item>
             <Menu.Item
               icon={<SettingsIconSolid className="w-6" />}
               onClick={() => showEditListModal(list.board_id, list)}
@@ -783,6 +787,14 @@ function LeftSidebar({ className }: SidebarProps) {
                                           }
                                         >
                                           Edit task
+                                        </Menu.Item>
+                                        <Menu.Item
+                                          icon={
+                                            <ArrowRightCircleIcon className="w-6" />
+                                          }
+                                          disabled
+                                        >
+                                          Move task
                                         </Menu.Item>
                                         <Menu.Item
                                           icon={<TrashIcon className="w-6" />}
