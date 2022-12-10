@@ -13,19 +13,41 @@ import {
   IdentificationIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/solid';
+import { useUserList } from '../../hooks/useUserList';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
 });
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const {
+    setRootSegment,
+    changeRightSidebarPref,
+    changeLeftSidebarSecondaryPref,
+  } = useAppearance();
+  const { clearUsers } = useUserList();
 
   useEffect(() => {
     setRootSegment({
       content: 'Settings',
       href: '/settings',
     });
+
+    changeRightSidebarPref({
+      main: 'hidden',
+      secondary: 'hidden',
+    });
+
+    changeLeftSidebarSecondaryPref('hidden');
+
+    clearUsers();
+
+    return () => {
+      changeRightSidebarPref({
+        main: 'closed',
+        secondary: 'hidden',
+      });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -36,12 +58,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const { data, updateData } = useUserData();
 
   const {
-    contentWidth,
-    changeContentWidth,
-    leftSidebar,
-    changeLeftSidebar,
-    rightSidebar,
-    changeRightSidebar,
+    leftSidebarPref,
+    changeLeftSidebarMainPref,
+    rightSidebarPref,
+    changeRightSidebarMainPref,
   } = useAppearance();
 
   const [saving, setSaving] = useState(false);
@@ -78,14 +98,14 @@ const SettingPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      <div className="p-4 flex flex-col border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Account</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+    <div className="grid gap-8 lg:grid-cols-2">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Account</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Manage your personal account
         </div>
 
-        <div className="grid gap-2 max-w-md">
+        <div className="grid max-w-md gap-2">
           <TextInput
             label="Display name"
             placeholder="John Doe"
@@ -93,36 +113,42 @@ const SettingPage: PageWithLayoutProps = () => {
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setDisplayName(event.currentTarget.value)
             }
-            icon={<UserCircleIcon className="w-5 h-5" />}
+            icon={<UserCircleIcon className="h-5 w-5" />}
           />
           <TextInput
             label="Username"
-            placeholder="@tuturuuu"
-            value={`@${username}`.replace(/^@+/, '@')}
+            placeholder="tuturuuu"
+            // replace all characters that are not a-z, 0-9, or _
+            value={username.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              // Remove @ from username
-              const username = event.currentTarget.value.replace(/^@+/, '');
-              setUsername(username);
+              const username = event.currentTarget.value.replace(
+                /[^a-z0-9_]/gi,
+                ''
+              );
+
+              // Limit to 20 characters
+              if (username.length > 20) return;
+              setUsername(username.toLowerCase());
             }}
-            icon={<IdentificationIcon className="w-5 h-5" />}
+            icon={<IdentificationIcon className="h-5 w-5" />}
           />
           <TextInput
             label="Email"
             placeholder="example@tuturuuu.com"
             value={user?.email || ''}
-            icon={<EnvelopeIcon className="w-5 h-5" />}
+            icon={<EnvelopeIcon className="h-5 w-5" />}
             readOnly
             disabled
           />
         </div>
 
         {data?.createdAt && (
-          <div className="border-t pt-4 mt-8 border-zinc-700/70 text-zinc-500">
+          <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
             You are a member of Tuturuuu since{' '}
-            <span className="text-zinc-300 font-semibold">
+            <span className="font-semibold text-zinc-300">
               {moment(data.createdAt).toDate().toLocaleDateString()}
             </span>{' '}
-            <span className="text-zinc-400 font-semibold">
+            <span className="font-semibold text-zinc-400">
               ({moment(data.createdAt).fromNow()})
             </span>
             .
@@ -133,125 +159,95 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <div
           onClick={handleSave}
-          className="mt-8 col-span-full w-full p-2 flex items-center border border-blue-300/20 hover:border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/10 hover:bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer transition duration-300"
+          className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
         >
           {saving ? 'Saving...' : 'Save'}
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Appearance</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Appearance</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Customize the look and feel of Tuturuuu
         </div>
 
-        <div className="text-xl font-semibold text-zinc-400 mb-2">General</div>
-        <div className="grid text-center xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+        <div className="mb-2 text-xl font-semibold text-zinc-400">General</div>
+        <div className="grid gap-4 text-center xl:grid-cols-2">
+          <div className="flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Light mode</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex items-center border border-blue-300/30 justify-center font-semibold text-xl bg-blue-300/20 text-blue-300 rounded-lg cursor-pointer">
+          <div className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/30 bg-blue-300/20 p-2 text-xl font-semibold text-blue-300">
             Dark mode
           </div>
         </div>
 
-        {changeContentWidth && (
-          <>
-            <div className="text-xl font-semibold text-zinc-400 mt-4 mb-2">
-              Content
-            </div>
-            <div className="grid text-center xl:grid-cols-2 gap-4">
-              <div
-                onClick={() => changeContentWidth('full')}
-                className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
-                  contentWidth === 'full'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
-                }`}
-              >
-                Full width
-              </div>
-              <div
-                onClick={() => changeContentWidth('padded')}
-                className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 ${
-                  contentWidth === 'padded'
-                    ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                    : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
-                }`}
-              >
-                Padded width
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="hidden lg:flex flex-col mt-4">
+        <div className="mt-4 hidden flex-col lg:flex">
           <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
-          <div className="h-full text-center grid xl:grid-cols-2 gap-4">
-            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default lg:order-1">
+          <div className="grid h-full gap-4 text-center xl:grid-cols-2">
+            <div className="flex cursor-default justify-center text-xl font-semibold text-zinc-300 lg:order-1">
               <div>Left sidebar</div>
             </div>
-            <div className="flex justify-center font-semibold text-xl text-zinc-300 cursor-default lg:order-5 xl:order-2">
+            <div className="flex cursor-default justify-center text-xl font-semibold text-zinc-300 lg:order-5 xl:order-2">
               <div>Right sidebar</div>
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-2 xl:order-3 ${
-                leftSidebar === 'closed'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-2 xl:order-3 ${
+                leftSidebarPref.main === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('closed')}
+              onClick={() => changeLeftSidebarMainPref('closed')}
             >
               Always collapsed
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-6 xl:order-4 ${
-                rightSidebar === 'closed'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-6 xl:order-4 ${
+                rightSidebarPref.main === 'closed'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('closed')}
+              onClick={() => changeRightSidebarMainPref('closed')}
             >
               Always collapsed
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-3 xl:order-5 ${
-                leftSidebar === 'open'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-3 xl:order-5 ${
+                leftSidebarPref.main === 'open'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('open')}
+              onClick={() => changeLeftSidebarMainPref('open')}
             >
               Always expanded
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-7 xl:order-6 ${
-                rightSidebar === 'open'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-7 xl:order-6 ${
+                rightSidebarPref.main === 'open'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('open')}
+              onClick={() => changeRightSidebarMainPref('open')}
             >
               Always expanded
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-4 xl:order-7 ${
-                leftSidebar === 'auto'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-4 xl:order-7 ${
+                leftSidebarPref.main === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeLeftSidebar('auto')}
+              onClick={() => changeLeftSidebarMainPref('auto')}
             >
               Expand on hover
             </div>
             <div
-              className={`w-full p-2 flex items-center border justify-center font-semibold text-xl rounded-lg cursor-pointer transition duration-150 lg:order-8 ${
-                rightSidebar === 'auto'
+              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-8 ${
+                rightSidebarPref.main === 'auto'
                   ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 hover:border-zinc-300/20 bg-zinc-300/10 hover:bg-zinc-300/20 text-zinc-300/80 hover:text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
               }`}
-              onClick={() => changeRightSidebar('auto')}
+              onClick={() => changeRightSidebarMainPref('auto')}
             >
               Expand on hover
             </div>
@@ -259,27 +255,27 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Security</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Security</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Manage your account security
         </div>
 
-        <div className="h-full text-center grid xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+        <div className="grid h-full gap-4 text-center xl:grid-cols-2">
+          <div className="flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Change password</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+          <div className="flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Change email</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+          <div className="col-span-full flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Delete account</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
           <div
-            className="col-span-full w-full p-2 flex items-center border border-red-300/20 hover:border-red-300/30 justify-center font-semibold text-xl bg-red-300/10 hover:bg-red-300/20 text-red-300 rounded-lg cursor-pointer transition duration-300"
+            className="col-span-full flex w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
             onClick={handleSignOut}
           >
             Sign out
@@ -287,21 +283,21 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="flex flex-col p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg">
-        <div className="text-3xl font-bold mb-1">Notifications</div>
-        <div className="font-semibold text-zinc-500 mb-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="mb-1 text-3xl font-bold">Notifications</div>
+        <div className="mb-4 font-semibold text-zinc-500">
           Manage your notification preferences
         </div>
-        <div className="h-full text-center grid xl:grid-cols-2 gap-4">
-          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+        <div className="grid h-full gap-4 text-center xl:grid-cols-2">
+          <div className="flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Web notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+          <div className="flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Push notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>
-          <div className="col-span-full w-full p-2 flex flex-col items-center justify-center border border-zinc-300/10 font-semibold text-xl bg-zinc-300/5 text-zinc-300/20 rounded-lg cursor-not-allowed">
+          <div className="col-span-full flex w-full cursor-not-allowed flex-col items-center justify-center rounded-lg border border-zinc-300/10 bg-zinc-300/5 p-2 text-xl font-semibold text-zinc-300/20">
             <div>Email notifications</div>
             <div className="text-lg text-zinc-400">Coming soon</div>
           </div>

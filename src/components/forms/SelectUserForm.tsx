@@ -148,7 +148,7 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
           data-autofocus
         />
       ) : (
-        <Group className="p-4 border border-zinc-800/80 bg-blue-300/10 rounded-lg">
+        <Group className="rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4">
           {selectedUser?.id === value ? (
             <Text>{value}</Text>
           ) : (

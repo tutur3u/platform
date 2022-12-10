@@ -37,15 +37,15 @@ const ProjectBoardsPage = () => {
   return (
     <div className="grid gap-4">
       {projectId && (
-        <div className="flex justify-between items-center mt-2 mb-2">
-          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+        <div className="mt-2 mb-2 flex items-center justify-between">
+          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
             Boards
           </h1>
           <button
             // onClick={showProjectEditForm}
-            className="px-4 py-2 font-semibold rounded flex items-center gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
-            Link board <LinkIcon className="w-5 h-5" />
+            Link board <LinkIcon className="h-5 w-5" />
           </button>
         </div>
       )}
