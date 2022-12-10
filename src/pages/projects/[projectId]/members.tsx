@@ -60,14 +60,14 @@ const ProjectMembersPage = () => {
   return (
     <>
       {project.orgs.id && (
-        <div className="flex justify-between items-center mt-2 mb-4">
-          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+        <div className="mt-2 mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
             Members ({membersData?.members?.length || 0})
           </h1>
         </div>
       )}
 
-      <div className="max-w-lg flex flex-col gap-4 mb-16">
+      <div className="mb-16 flex max-w-lg flex-col gap-4">
         {membersData?.members
           ?.sort(
             (
@@ -92,7 +92,7 @@ const ProjectMembersPage = () => {
             }) => (
               <div
                 key={member.id}
-                className="relative p-4 border border-zinc-800/80 bg-[#19191d] rounded-lg"
+                className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
               >
                 <p className="font-semibold lg:text-lg xl:text-xl">
                   {member.display_name}
@@ -100,9 +100,9 @@ const ProjectMembersPage = () => {
                 <p className="text-zinc-400">{member.email}</p>
 
                 {member?.created_at ? (
-                  <div className="mt-2 pt-2 border-t border-zinc-800 text-zinc-500">
+                  <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
                     Member since{' '}
-                    <span className="text-zinc-400 font-semibold">
+                    <span className="font-semibold text-zinc-400">
                       {moment(member.created_at).fromNow()}
                     </span>
                     .

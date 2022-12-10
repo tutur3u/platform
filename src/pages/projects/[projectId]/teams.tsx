@@ -16,7 +16,7 @@ const ProjectTeamsPage = () => {
 
   return (
     <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
+      <div className="rounded-lg bg-zinc-900 p-4">
         <h1 className="font-bold">Teams</h1>
         <p className="text-zinc-400">
           This is the teams page for the Test Project project.

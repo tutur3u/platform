@@ -13,6 +13,8 @@ import { showNotification } from '@mantine/notifications';
 import OrganizationInviteSnippet from '../components/notifications/OrganizationInviteSnippet';
 import OrgPreviewCard from '../components/cards/OrgPreviewCard';
 import { GetServerSidePropsContext } from 'next';
+import { useUserList } from '../hooks/useUserList';
+import { useUserData } from '../hooks/useUserData';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -29,6 +31,16 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       },
     };
 
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (!isDev)
+    return {
+      redirect: {
+        destination: '/calendar',
+        permanent: false,
+      },
+    };
+
   return {
     props: {
       initialSession: session,
@@ -38,15 +50,24 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const Home: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { updateUsers } = useUserList();
+  const { data } = useUserData();
 
   useEffect(() => {
+    changeLeftSidebarSecondaryPref('hidden');
+
     setRootSegment({
       content: 'Home',
       href: '/',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data) updateUsers([data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const { isLoading, orgs, createOrg } = useOrgs();
 
@@ -107,7 +128,7 @@ const Home: PageWithLayoutProps = () => {
   ) : (
     <>
       {orgs?.invited?.length > 0 && (
-        <div className="grid gap-8 mb-16">
+        <div className="mb-16 grid gap-8">
           {orgs?.invited?.map((org) => (
             <OrganizationInviteSnippet
               key={org.id}
@@ -140,10 +161,10 @@ const Home: PageWithLayoutProps = () => {
       )}
 
       <button
-        className={`w-full md:w-fit mt-8 font-semibold px-8 py-4 rounded ${
+        className={`mt-8 w-full rounded px-8 py-4 font-semibold md:w-fit ${
           orgs?.current?.length < maxOrgs
-            ? 'bg-blue-300/20 hover:bg-blue-300/30 text-blue-300'
-            : 'bg-gray-500/10 text-gray-500/50 cursor-not-allowed'
+            ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30'
+            : 'cursor-not-allowed bg-gray-500/10 text-gray-500/50'
         } transition duration-300`}
         onClick={() =>
           orgs?.current?.length < maxOrgs ? showEditOrgModal() : null

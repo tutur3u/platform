@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
     <>
       <AuthContainer showQR={false}>
         <AuthTitle label="Forgot password?" />
-        <div className="grid grid-cols-1 gap-3 mt-6 transition duration-300">
+        <div className="mt-6 grid grid-cols-1 gap-3 transition duration-300">
           <div className="max-md:text-lg">
             Please enter your email address to reset your password.
           </div>
@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
               }
             />
           </form>
-          <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mt-2">
+          <div className="mt-2 flex flex-col items-start md:flex-row md:items-center md:justify-between">
             <Anchor
               component="button"
               type="button"
@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
             </Anchor>
 
             <Button
-              className="p-2 w-full md:w-fit mt-2 md:mt-0 rounded-lg"
+              className="mt-2 w-full rounded-lg p-2 md:mt-0 md:w-fit"
               variant="light"
               type="submit"
             >

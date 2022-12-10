@@ -34,6 +34,26 @@ export const UserDataProvider = ({
   }, [user]);
 
   const updateData = async (data: Partial<UserData>) => {
+    if (data?.username?.length) {
+      if (data.username.length < 3 || data.username.length > 20) {
+        showNotification({
+          title: 'Invalid username',
+          message: 'Username must be between 3 and 20 characters',
+          color: 'red',
+        });
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(data.username)) {
+        showNotification({
+          title: 'Invalid username',
+          message: 'Username can only contain letters, numbers and underscores',
+          color: 'red',
+        });
+        return;
+      }
+    }
+
     const response = await fetch('/api/user', {
       method: 'PUT',
       headers: {
@@ -49,10 +69,16 @@ export const UserDataProvider = ({
         message: 'Your profile has been updated',
         color: 'teal',
       });
+    } else if ((await response.json())?.error?.includes('duplicate key')) {
+      showNotification({
+        title: 'Username already taken',
+        message: 'Please choose another username',
+        color: 'red',
+      });
     } else {
       showNotification({
         title: 'Failed to update profile',
-        message: 'Something went wrong, please try again later',
+        message: 'Please try again later',
         color: 'red',
       });
     }

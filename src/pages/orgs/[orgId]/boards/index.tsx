@@ -1,13 +1,9 @@
 import { PlusIcon } from '@heroicons/react/24/solid';
-import { openModal } from '@mantine/modals';
-import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect } from 'react';
-import useSWR, { mutate } from 'swr';
-import BoardEditForm from '../../../../components/forms/BoardEditForm';
+import useSWR from 'swr';
 import NestedLayout from '../../../../components/layout/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
-import { TaskBoard } from '../../../../types/primitives/TaskBoard';
 
 const OrgBoardsPage = () => {
   const router = useRouter();
@@ -38,54 +34,54 @@ const OrgBoardsPage = () => {
 
   if (isLoading) return <div>Loading...</div>;
 
-  const createBoard = async (orgId: string, board: TaskBoard) => {
-    const res = await fetch(`/api/orgs/${orgId}/boards`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(board),
-    });
+  // const createBoard = async (orgId: string, board: TaskBoard) => {
+  //   const res = await fetch(`/api/orgs/${orgId}/boards`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify(board),
+  //   });
 
-    if (res.status === 200) {
-      mutate(`/api/orgs/${orgId}/boards`);
-      showNotification({
-        title: 'Board created',
-        color: 'teal',
-        message: `Board ${board.name} created successfully`,
-      });
-    } else {
-      showNotification({
-        title: 'Error',
-        color: 'red',
-        message: `Board ${board.name} could not be created`,
-      });
-    }
-  };
+  //   if (res.status === 200) {
+  //     mutate(`/api/orgs/${orgId}/boards`);
+  //     showNotification({
+  //       title: 'Board created',
+  //       color: 'teal',
+  //       message: `Board ${board.name} created successfully`,
+  //     });
+  //   } else {
+  //     showNotification({
+  //       title: 'Error',
+  //       color: 'red',
+  //       message: `Board ${board.name} could not be created`,
+  //     });
+  //   }
+  // };
 
-  const showBoardEditForm = () => {
-    if (!orgId) return;
-    openModal({
-      title: <div className="font-semibold">Create new board</div>,
-      centered: true,
-      children: (
-        <BoardEditForm orgId={orgId as string} onSubmit={createBoard} />
-      ),
-    });
-  };
+  // const showBoardEditForm = () => {
+  //   if (!orgId) return;
+  //   openModal({
+  //     title: <div className="font-semibold">Create new board</div>,
+  //     centered: true,
+  //     children: (
+  //       <BoardEditForm orgId={orgId as string} onSubmit={createBoard} />
+  //     ),
+  //   });
+  // };
 
   return (
     <div className="grid gap-4">
       {orgId && (
-        <div className="flex justify-between items-center mt-2 mb-2">
-          <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
+        <div className="mt-2 mb-2 flex items-center justify-between">
+          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
             Boards
           </h1>
           <button
-            onClick={showBoardEditForm}
-            className="px-4 py-2 font-semibold rounded flex gap-1 bg-blue-300/20 text-blue-300 hover:bg-blue-300/10 transition"
+            // onClick={showBoardEditForm}
+            className="flex gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
-            New board <PlusIcon className="w-4 h-4" />
+            New board <PlusIcon className="h-4 w-4" />
           </button>
         </div>
       )}

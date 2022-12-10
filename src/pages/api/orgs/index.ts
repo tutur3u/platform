@@ -17,7 +17,8 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
   const currentOrgs = supabase
     .from('org_members')
     .select('orgs(id, name)')
-    .eq('user_id', user?.id);
+    .eq('user_id', user?.id)
+    .order('org_id');
 
   const invitedOrgs = supabase
     .from('org_invites')

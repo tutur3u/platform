@@ -1,90 +1,848 @@
-import { Cog6ToothIcon, HomeIcon } from '@heroicons/react/24/solid';
+import {
+  BanknotesIcon as MoneyIconSolid,
+  CalendarDaysIcon as CalendarIconSolid,
+  ClipboardDocumentListIcon as TaskIconSolid,
+  Cog6ToothIcon as SettingsIconSolid,
+  HomeIcon as HomeIconSolid,
+  InboxIcon,
+  PencilIcon,
+  PlusIcon as PlusIconSolid,
+} from '@heroicons/react/24/solid';
+
+import {
+  BanknotesIcon as MoneyIconOutline,
+  CalendarDaysIcon as CalendarIconOutline,
+  ClipboardDocumentListIcon as TaskIconOutline,
+  Cog6ToothIcon as SettingsIconOutline,
+  HomeIcon as HomeIconOutline,
+  FolderPlusIcon,
+  SquaresPlusIcon,
+  EllipsisHorizontalIcon,
+  TrashIcon,
+  ArrowRightCircleIcon,
+} from '@heroicons/react/24/outline';
 
 import SidebarTab from './SidebarTab';
-import { APP_VERSION } from '../../constants/common';
-import { useRouter } from 'next/router';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
-import { Avatar } from '@mantine/core';
+import {
+  Accordion,
+  AccordionControlProps,
+  Avatar,
+  Checkbox,
+  Indicator,
+  Loader,
+  Menu,
+  Select,
+  Tooltip,
+} from '@mantine/core';
 import { useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
+import SidebarDivider from './SidebarDivider';
+import { useOrgs } from '../../hooks/useOrganizations';
+import OrgEditForm from '../forms/OrgEditForm';
+import { openConfirmModal, openModal } from '@mantine/modals';
+import { Organization } from '../../types/primitives/Organization';
+import Link from 'next/link';
+import { getInitials } from '../../utils/name-helper';
+import { useEffect, useState } from 'react';
+import { TaskBoard } from '../../types/primitives/TaskBoard';
+import BoardEditForm from '../forms/BoardEditForm';
+import useSWR, { mutate } from 'swr';
+import { TaskList } from '../../types/primitives/TaskList';
+import TaskListEditForm from '../forms/TaskListEditForm';
+import { Task } from '../../types/primitives/Task';
+import TaskEditForm from '../forms/TaskEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const router = useRouter();
-  const { leftSidebar, changeLeftSidebar, rightSidebar } = useAppearance();
+  const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
   const user = useUser();
   const { data } = useUserData();
+
+  const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
+
+  const addOrg = (org: Organization) => createOrg(org);
+
+  const showEditOrgModal = () => {
+    openModal({
+      title: 'New organization',
+      centered: true,
+      children: <OrgEditForm onSubmit={addOrg} />,
+    });
+  };
+
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+
+  const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
+    user?.id ? '/api/tasks/boards' : null
+  );
+
+  const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
+    user?.id && selectedBoardId
+      ? `/api/tasks/lists?boardId=${selectedBoardId}`
+      : null
+  );
+
+  const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
+    user?.id && selectedListId ? `/api/tasks?listId=${selectedListId}` : null
+  );
+
+  const isBoardsLoading = !boards && !boardsError;
+  const isListsLoading = !lists && !listsError;
+  const isTasksLoading = !tasks && !tasksError;
+
+  // Automatically select the first board if none is selected
+  useEffect(() => {
+    const boardsSelected = !!selectedBoardId;
+
+    if (!boards || boards.length === 0) {
+      setSelectedBoardId(null);
+      return;
+    }
+
+    const firstBoardId = boards[0].id;
+    if (!boardsSelected) setSelectedBoardId(firstBoardId);
+  }, [boards, boards?.length, selectedBoardId]);
+
+  const addBoard = async (board: TaskBoard) => {
+    const res = await fetch('/api/tasks/boards', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: board.name,
+      }),
+    });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+      const newBoard = await res.json();
+      setSelectedBoardId(newBoard.id);
+    }
+  };
+
+  const updateBoard = async (board: TaskBoard) => {
+    const res = await fetch(`/api/tasks/boards/${board.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: board.name,
+      }),
+    });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+    }
+  };
+
+  const deleteBoard = async (board: TaskBoard) => {
+    const res = await fetch(`/api/tasks/boards/${board.id}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      mutate('/api/tasks/boards');
+      setSelectedBoardId(null);
+    }
+  };
+
+  const showEditBoardModal = (board?: TaskBoard) => {
+    openModal({
+      title: board ? 'Edit board' : 'New board',
+      centered: true,
+      children: (
+        <BoardEditForm
+          board={board}
+          onSubmit={board ? updateBoard : addBoard}
+        />
+      ),
+    });
+  };
+
+  const showDeleteBoardModal = (board?: TaskBoard) => {
+    if (!board) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{board.name}</span>
+          {'" '}
+          board
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this board?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteBoard(board),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+    });
+  };
+
+  const addList = async (list: TaskList) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch('/api/tasks/lists', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: list.name,
+        boardId: selectedBoardId,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const updateList = async (list: TaskList) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch(`/api/tasks/lists/${list.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: list.name,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const deleteList = async (listId: string) => {
+    if (!selectedBoardId) return;
+
+    const res = await fetch(`/api/tasks/lists/${listId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
+  };
+
+  const showEditListModal = (boardId: string, list?: TaskList) => {
+    openModal({
+      title: list ? 'Edit list' : 'New list',
+      centered: true,
+      children: (
+        <TaskListEditForm
+          list={list}
+          boardId={boardId}
+          onSubmit={list ? updateList : addList}
+        />
+      ),
+    });
+  };
+
+  const showDeleteListModal = (list: TaskList) => {
+    if (!list) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{list.name}</span>
+          {'" '}
+          list
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this list?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteList(list.id),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+    });
+  };
+
+  const addTask = async (task: Task) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: task.name,
+        listId: selectedListId,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const updateTask = async (task: Task) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: task.name,
+        completed: task.completed,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const deleteTask = async (taskId: string) => {
+    if (!selectedBoardId || !selectedListId) return;
+
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const setTaskCompletion = async (task: Task) => {
+    if (!task.id) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        completed: !task.completed,
+      }),
+    });
+
+    if (res.ok) mutate(`/api/tasks?listId=${selectedListId}`);
+  };
+
+  const showEditTaskModal = (listId: string, task?: Task) => {
+    openModal({
+      title: task ? 'Edit task' : 'New task',
+      centered: true,
+      children: (
+        <TaskEditForm
+          task={task}
+          listId={listId}
+          onSubmit={task ? updateTask : addTask}
+        />
+      ),
+    });
+  };
+
+  const showDeleteTaskModal = (task: Task) => {
+    if (!task) return;
+    openConfirmModal({
+      title: (
+        <div className="font-semibold">
+          Delete {'"'}
+          <span className="font-bold text-purple-300">{task.name}</span>
+          {'" '}
+          task
+        </div>
+      ),
+      centered: true,
+      children: (
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium text-zinc-300">
+            Are you sure you want to delete this task?
+          </p>
+          <p className="text-sm text-zinc-500">
+            All of your data will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+      ),
+      onConfirm: () => deleteTask(task.id),
+      closeOnConfirm: true,
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+    });
+  };
+
+  const getBoard = (id?: string | null) =>
+    boards?.find((b) => b.id === id) || boards?.[0];
+
+  function AccordionControl(props: AccordionControlProps & { list: TaskList }) {
+    const { list, ...rest } = props;
+
+    return (
+      <div className="mr-2 flex items-center gap-2">
+        <Accordion.Control {...rest} />
+        <Menu openDelay={100} closeDelay={400} withArrow position="right">
+          <Menu.Target>
+            <button className="rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+              <EllipsisHorizontalIcon className="w-6" />
+            </button>
+          </Menu.Target>
+
+          <Menu.Dropdown className="font-semibold">
+            <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
+              Archived tasks
+            </Menu.Item>
+            <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
+              Move list
+            </Menu.Item>
+            <Menu.Item
+              icon={<SettingsIconSolid className="w-6" />}
+              onClick={() => showEditListModal(list.board_id, list)}
+            >
+              List settings
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              icon={<TrashIcon className="w-6" />}
+              color="red"
+              onClick={() => showDeleteListModal(list)}
+            >
+              Delete list
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </div>
+    );
+  }
+
+  const isDev = process.env.NODE_ENV === 'development';
 
   return (
     <>
       <div
-        className={`${className} group z-20 block h-full fixed flex-col justify-center items-center top-0 left-0 border-r border-zinc-800/80 bg-zinc-900 backdrop-blur-lg ${
-          leftSidebar === 'open'
+        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-center bg-zinc-900 backdrop-blur-lg ${
+          leftSidebarPref.main === 'open'
             ? 'opacity-100'
-            : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
+            : 'pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100'
         } transition-all duration-300`}
       >
-        <div className="w-full h-full flex flex-col">
-          <div className="pl-[0.21rem] pb-4 mx-3 mt-4 relative flex justify-start overflow-hidden border-b border-zinc-700">
-            <Logo alwaysShowLabel={leftSidebar === 'open'} />
+        <div className="flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2">
+          <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
+            <Logo
+              alwaysShowLabel={leftSidebarPref.main === 'open'}
+              showLabel={leftSidebarPref.main !== 'closed'}
+            />
           </div>
-          <div className="overflow-auto h-full">
-            <div className="mt-4 p-2 flex flex-col items-start gap-6">
-              <SidebarTab
-                href="/"
-                currentPath={router.pathname}
-                icon={<HomeIcon />}
-                label="Home"
-                showTooltip={leftSidebar === 'closed'}
-              />
-              {/* <SidebarTab
-                href="/tasks"
-                currentPath={router.pathname}
-                icon={<ClipboardDocumentListIcon />}
-                label="Tasks"
-              /> */}
-              <>
+
+          <div className="h-8" />
+
+          <div className="h-full overflow-auto">
+            <div className="flex flex-col items-start gap-6 p-4">
+              {isDev && (
                 <SidebarTab
-                  href="/settings"
-                  currentPath={router.pathname}
-                  icon={<Cog6ToothIcon />}
-                  label="Settings"
-                  showTooltip={rightSidebar === 'closed'}
-                  className="md:hidden"
+                  href="/"
+                  activeIcon={<HomeIconSolid className="w-8" />}
+                  inactiveIcon={<HomeIconOutline className="w-8" />}
+                  label="Home"
+                  showTooltip={leftSidebarPref.main === 'closed'}
                 />
-              </>
-            </div>
-          </div>
-          <div className="m-3 mt-4 relative flex md:hidden justify-start items-center gap-2 overflow-hidden rounded transition duration-300">
-            <div className="pl-[0.07rem]">
-              <Avatar size={36} color="blue" radius="xl" />
-            </div>
-            <div>
-              <div className="text-md font-bold min-w-max">
-                {data?.displayName ||
-                  user?.email ||
-                  user?.phone ||
-                  'Not logged in'}
-              </div>
-              {data?.username && (
-                <div className="text-sm font-semibold min-w-max text-purple-300">
-                  @{data?.username}
-                </div>
+              )}
+              <SidebarTab
+                href="/calendar"
+                activeIcon={<CalendarIconSolid className="w-8" />}
+                inactiveIcon={<CalendarIconOutline className="w-8" />}
+                label="Calendar"
+                showTooltip={leftSidebarPref.main === 'closed'}
+              />
+              {isDev && (
+                <SidebarTab
+                  href="/tasks"
+                  activeIcon={<TaskIconSolid className="w-8" />}
+                  inactiveIcon={<TaskIconOutline className="w-8" />}
+                  label="Tasks"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/expenses"
+                  activeIcon={<MoneyIconSolid className="w-8" />}
+                  inactiveIcon={<MoneyIconOutline className="w-8" />}
+                  label="Expenses"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
               )}
             </div>
+
+            {isDev && orgs?.current?.length > 0 && <SidebarDivider />}
+
+            {!isDev || isOrgsLoading || (
+              <div className="flex flex-col gap-3 p-4">
+                {orgs?.current?.map((org) => (
+                  <SidebarTab
+                    key={org.id}
+                    href={`/orgs/${org.id}`}
+                    inactiveIcon={
+                      <div className="rounded border border-blue-300/30 transition hover:border-blue-300/40 hover:bg-zinc-300/10">
+                        <Avatar color="blue" radius="sm">
+                          {getInitials(org?.name ?? 'Unknown')}
+                        </Avatar>
+                      </div>
+                    }
+                    label={org.name}
+                    showTooltip={leftSidebarPref.main === 'closed'}
+                    enableOffset
+                  />
+                ))}
+
+                <SidebarTab
+                  onClick={showEditOrgModal}
+                  activeIcon={
+                    <div className="rounded border border-zinc-700 p-0.5 transition hover:border-purple-300/20 hover:bg-purple-300/20 hover:text-purple-300">
+                      <PlusIconSolid className="w-8" />
+                    </div>
+                  }
+                  label="New Organization"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                  className={
+                    leftSidebarPref.main === 'closed'
+                      ? 'translate-x-[-0.03rem]'
+                      : 'translate-x-[-0.22rem]'
+                  }
+                />
+              </div>
+            )}
+
+            <SidebarDivider />
           </div>
-          <div className="opacity-0 whitespace-nowrap group-hover:opacity-100 transition group-hover:duration-500 group-hover:delay-200 p-2 text-center text-zinc-500 font-semibold text-sm cursor-default">
-            Version {APP_VERSION}
+
+          <div className="flex flex-col items-start gap-3 px-4 pb-2">
+            <SidebarTab
+              href="/settings"
+              activeIcon={<SettingsIconSolid className="w-8" />}
+              inactiveIcon={<SettingsIconOutline className="w-8" />}
+              label="Settings"
+              showTooltip={leftSidebarPref.main === 'closed'}
+            />
+
+            <Link
+              href="/settings"
+              className={`${
+                leftSidebarPref.main !== 'closed'
+                  ? '-translate-x-1 justify-start'
+                  : 'justify-center self-center'
+              } relative flex w-full items-center transition duration-300`}
+            >
+              <Tooltip
+                label={
+                  <div className="font-semibold">
+                    <div>{data?.displayName || 'Unknown'}</div>
+                    {data?.username && (
+                      <div className="text-blue-300">@{data.username}</div>
+                    )}
+                  </div>
+                }
+                disabled={
+                  !data?.displayName || leftSidebarPref.main !== 'closed'
+                }
+                position="right"
+                color="#182a3d"
+                offset={20}
+                withArrow
+              >
+                <div className="flex items-end gap-2">
+                  <Indicator
+                    color="green"
+                    position="bottom-end"
+                    size={12}
+                    offset={5}
+                    withBorder
+                  >
+                    <Avatar color="blue" radius="xl">
+                      {getInitials(data?.displayName ?? 'Unknown')}
+                    </Avatar>
+                  </Indicator>
+
+                  <div
+                    className={
+                      leftSidebarPref.main === 'closed'
+                        ? 'md:hidden'
+                        : leftSidebarPref.main === 'auto'
+                        ? 'opacity-0 transition duration-300 group-hover:opacity-100'
+                        : ''
+                    }
+                  >
+                    <div className="text-md min-w-max font-bold">
+                      {data?.displayName ||
+                        user?.email ||
+                        user?.phone ||
+                        'Not logged in'}
+                    </div>
+                    {data?.username && (
+                      <div className="min-w-max text-sm font-semibold text-blue-300">
+                        @{data?.username}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Tooltip>
+            </Link>
           </div>
         </div>
+
+        {leftSidebarPref.secondary === 'visible' &&
+          (isBoardsLoading ? (
+            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+              <Loader />
+            </div>
+          ) : !boards || boards?.length === 0 ? (
+            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+              <div className="text-lg font-semibold">
+                Start organizing your tasks in a miraculous way.
+              </div>
+              <button
+                onClick={() => showEditBoardModal()}
+                className="rounded-lg bg-purple-300/20 px-4 py-2 text-lg font-semibold text-purple-300 transition hover:bg-purple-300/30"
+              >
+                Create a board
+              </button>
+            </div>
+          ) : (
+            <div className="relative hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
+              <div className="relative mx-3 flex gap-2 text-2xl font-semibold">
+                <Select
+                  defaultValue={selectedBoardId || boards?.[0]?.id}
+                  data={
+                    boards?.map((board: TaskBoard) => ({
+                      value: board.id,
+                      label: board.name || 'Untitled',
+                    })) ?? []
+                  }
+                  value={
+                    boards.some((board) => board.id === selectedBoardId)
+                      ? selectedBoardId
+                      : boards?.[0]?.id
+                  }
+                  onChange={setSelectedBoardId}
+                  className="w-full"
+                />
+                <div className="flex items-center gap-1">
+                  {selectedBoardId && (
+                    <Menu openDelay={100} closeDelay={400} withArrow>
+                      <Menu.Target>
+                        <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                          <PlusIconSolid className="w-6" />
+                        </button>
+                      </Menu.Target>
+
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          icon={<SquaresPlusIcon className="w-6" />}
+                          onClick={() => showEditBoardModal()}
+                        >
+                          New board
+                        </Menu.Item>
+
+                        <Menu.Item
+                          icon={<FolderPlusIcon className="w-6" />}
+                          onClick={() => showEditListModal(selectedBoardId)}
+                        >
+                          New task list
+                        </Menu.Item>
+
+                        {/* <Menu.Item
+                          icon={<PlusCircleIcon className="w-6" />}
+                          disabled
+                        >
+                          New task
+                        </Menu.Item> */}
+                      </Menu.Dropdown>
+                    </Menu>
+                  )}
+
+                  <Menu openDelay={100} closeDelay={400} withArrow>
+                    <Menu.Target>
+                      <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                        <EllipsisHorizontalIcon className="w-6" />
+                      </button>
+                    </Menu.Target>
+
+                    <Menu.Dropdown>
+                      <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
+                        Archived lists
+                      </Menu.Item>
+                      <Menu.Item
+                        icon={<SettingsIconSolid className="w-6" />}
+                        onClick={() =>
+                          showEditBoardModal(getBoard(selectedBoardId))
+                        }
+                      >
+                        Board settings
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        icon={<TrashIcon className="w-6" />}
+                        color="red"
+                        onClick={() =>
+                          showDeleteBoardModal(getBoard(selectedBoardId))
+                        }
+                      >
+                        Delete board
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                </div>
+              </div>
+
+              <SidebarDivider
+                padBottom={false}
+                padLeft={false}
+                padRight={false}
+              />
+
+              {isListsLoading ? (
+                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                  <Loader />
+                </div>
+              ) : lists?.length === 0 ? (
+                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                  Create a task list to get started
+                </div>
+              ) : (
+                <Accordion
+                  value={selectedListId}
+                  onChange={setSelectedListId}
+                  chevronPosition="left"
+                  radius="lg"
+                  className="flex flex-col overflow-auto scrollbar-none"
+                >
+                  {lists?.map((list) => (
+                    <Accordion.Item key={list.id} value={list.id}>
+                      <AccordionControl list={list}>
+                        <div className="font-semibold">
+                          {list.name || 'Untitled list'}
+                        </div>
+                      </AccordionControl>
+                      <Accordion.Panel>
+                        {isTasksLoading ? (
+                          <div className="p-2" />
+                        ) : (
+                          <div className="grid">
+                            {tasks &&
+                              tasks
+                                .sort((a, b) => {
+                                  if (a.completed && !b.completed) return 1;
+                                  if (!a.completed && b.completed) return -1;
+                                  return 0;
+                                })
+                                .map((task) => (
+                                  <div
+                                    key={task.id}
+                                    className="flex justify-between gap-2 rounded-lg p-2 hover:bg-zinc-800"
+                                  >
+                                    <Checkbox
+                                      label={
+                                        <div
+                                          className={
+                                            task.completed
+                                              ? 'text-zinc-700 line-through'
+                                              : ''
+                                          }
+                                        >
+                                          {task.name || 'Untitled task'}
+                                        </div>
+                                      }
+                                      checked={task.completed}
+                                      onChange={() => setTaskCompletion(task)}
+                                      className="flex"
+                                    />
+
+                                    <Menu
+                                      withArrow
+                                      position="right"
+                                      trigger="click"
+                                    >
+                                      <Menu.Target>
+                                        <button className="flex h-fit items-start rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+                                          <EllipsisHorizontalIcon className="w-6" />
+                                        </button>
+                                      </Menu.Target>
+
+                                      <Menu.Dropdown className="font-semibold">
+                                        <Menu.Item
+                                          icon={<PencilIcon className="w-6" />}
+                                          onClick={() =>
+                                            showEditTaskModal(list.id, task)
+                                          }
+                                        >
+                                          Edit task
+                                        </Menu.Item>
+                                        <Menu.Item
+                                          icon={
+                                            <ArrowRightCircleIcon className="w-6" />
+                                          }
+                                          disabled
+                                        >
+                                          Move task
+                                        </Menu.Item>
+                                        <Menu.Item
+                                          icon={<TrashIcon className="w-6" />}
+                                          color="red"
+                                          onClick={() =>
+                                            showDeleteTaskModal(task)
+                                          }
+                                        >
+                                          Delete task
+                                        </Menu.Item>
+                                      </Menu.Dropdown>
+                                    </Menu>
+                                  </div>
+                                ))}
+                            <button
+                              className="flex items-center gap-3 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-400"
+                              onClick={() => showEditTaskModal(list.id)}
+                            >
+                              <PlusIconSolid className="w-5" />
+                              <div className="text-sm font-semibold">Task</div>
+                            </button>
+                          </div>
+                        )}
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              )}
+            </div>
+          ))}
       </div>
+
       <div
-        className={`w-screen md:hidden h-screen z-10 bg-zinc-900/50 backdrop-blur ${
-          leftSidebar === 'open' ? 'block' : 'hidden'
+        className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
+          leftSidebarPref.main === 'open' ? 'block' : 'hidden'
         }`}
-        onClick={() => changeLeftSidebar('closed')}
-      ></div>
+        onClick={() =>
+          changeLeftSidebarPref({ main: 'closed', secondary: 'hidden' })
+        }
+      />
     </>
   );
 }

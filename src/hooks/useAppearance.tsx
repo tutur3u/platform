@@ -1,31 +1,45 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import {
-  contentWidthPrefs,
-  leftSidebarPrefs,
-  rightSidebarPrefs,
-  themePrefs,
-} from '../constants/prefs';
+import { configs } from '../constants/prefs';
 import { Segment } from '../types/primitives/Segment';
 
 type Theme = 'light' | 'dark';
-type ContentWidth = 'full' | 'padded';
-export type SidebarPreference = 'auto' | 'open' | 'closed';
+
+export type MainSidebarPref = 'auto' | 'open' | 'closed' | 'hidden';
+export type SecondarySidebarPref = 'visible' | 'hidden';
+
+export interface SidebarPreference {
+  main: MainSidebarPref;
+  secondary: SecondarySidebarPref;
+}
 
 const AppearanceContext = createContext({
   theme: 'dark' as Theme,
-  changeTheme: (theme: Theme) => localStorage.setItem(themePrefs, theme),
+  changeTheme: (theme: Theme) => console.log('changeTheme', theme),
 
-  leftSidebar: 'auto' as SidebarPreference,
-  changeLeftSidebar: (pref: SidebarPreference) =>
-    localStorage.setItem(leftSidebarPrefs, pref),
+  leftSidebarPref: { main: 'closed', secondary: 'hidden' } as SidebarPreference,
 
-  rightSidebar: 'auto' as SidebarPreference,
-  changeRightSidebar: (pref: SidebarPreference) =>
-    localStorage.setItem(rightSidebarPrefs, pref),
+  changeLeftSidebarPref: (pref: SidebarPreference) =>
+    console.log('changeLeftSidebar', pref),
+  changeLeftSidebarMainPref: (pref: MainSidebarPref) =>
+    console.log('changeLeftSidebarMainPref', pref),
+  changeLeftSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
+    console.log('changeLeftSidebarSecondaryPref', pref),
 
-  contentWidth: 'full' as ContentWidth,
-  changeContentWidth: (width: ContentWidth) =>
-    localStorage.setItem(contentWidthPrefs, width),
+  rightSidebarPref: {
+    main: 'closed',
+    secondary: 'visible',
+  } as SidebarPreference,
+
+  changeRightSidebarPref: (pref: SidebarPreference) =>
+    console.log('changeRightSidebar', pref),
+  changeRightSidebarMainPref: (pref: MainSidebarPref) =>
+    console.log('changeRightSidebarMainPref', pref),
+  changeRightSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
+    console.log('changeRightSidebarSecondaryPref', pref),
+
+  padded: true,
+  enablePadding: () => console.log('enablePadding'),
+  disablePadding: () => console.log('disablePadding'),
 
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
@@ -40,40 +54,154 @@ export const AppearanceProvider = ({
   children: React.ReactNode;
 }) => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [leftSidebar, setLeftSidebar] = useState<SidebarPreference>('closed');
-  const [rightSidebar, setRightSidebar] = useState<SidebarPreference>('closed');
-  const [contentWidth, setContentWidth] = useState<ContentWidth>('full');
+  const [padded, setPadded] = useState(true);
 
-  const changeTheme = (theme: Theme) => {
-    localStorage.setItem(themePrefs, theme);
-    setTheme(theme);
+  const [leftSidebarPref, setLeftSidebar] = useState<SidebarPreference>({
+    main: 'closed',
+    secondary: 'visible',
+  });
+
+  const [rightSidebarPref, setRightSidebar] = useState<SidebarPreference>({
+    main: 'closed',
+    secondary: 'hidden',
+  });
+
+  const changeTheme = (newTheme: Theme) => {
+    // If the theme is the same as the new theme, do nothing
+    if (newTheme === theme) return;
+
+    // Otherwise,
+    // Save the new theme to local storage
+    localStorage.setItem(configs.THEME, newTheme);
+
+    // Update the theme state
+    setTheme(newTheme);
   };
 
-  const changeLeftSidebar = (pref: SidebarPreference) => {
-    localStorage.setItem(leftSidebarPrefs, pref);
+  const changeLeftSidebarPref = (pref: SidebarPreference) => {
+    // If the preference is the same as the new preference, do nothing
+    if (
+      pref.main === leftSidebarPref.main &&
+      pref.secondary === leftSidebarPref.secondary
+    )
+      return;
+
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.LEFT_MAIN_SIDEBAR, pref.main);
+    localStorage.setItem(configs.LEFT_SECONDARY_SIDEBAR, pref.secondary);
+
+    // Update the preference state
     setLeftSidebar(pref);
   };
 
-  const changeRightSidebar = (pref: SidebarPreference) => {
-    localStorage.setItem(rightSidebarPrefs, pref);
+  const changeLeftSidebarMainPref = (pref: MainSidebarPref) => {
+    // If the preference is the same as the new preference, do nothing
+    if (pref === leftSidebarPref.main) return;
+
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.LEFT_MAIN_SIDEBAR, pref);
+
+    // Update the preference state
+    setLeftSidebar((prev) => ({ ...prev, main: pref }));
+  };
+
+  const changeLeftSidebarSecondaryPref = (pref: SecondarySidebarPref) => {
+    // If the preference is the same as the new preference, do nothing
+    if (pref === leftSidebarPref.secondary) return;
+
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.LEFT_SECONDARY_SIDEBAR, pref);
+
+    // Update the preference state
+    setLeftSidebar((prev) => ({ ...prev, secondary: pref }));
+  };
+
+  const changeRightSidebarPref = (pref: SidebarPreference) => {
+    // If the preference is the same as the new preference, do nothing
+    if (
+      pref.main === rightSidebarPref.main &&
+      pref.secondary === rightSidebarPref.secondary
+    )
+      return;
+
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.RIGHT_MAIN_SIDEBAR, pref.main);
+    localStorage.setItem(configs.RIGHT_SECONDARY_SIDEBAR, pref.secondary);
+
+    // Update the preference state
     setRightSidebar(pref);
   };
 
-  const changeContentWidth = (width: ContentWidth) => {
-    localStorage.setItem(contentWidthPrefs, width);
-    setContentWidth(width);
+  const changeRightSidebarMainPref = (pref: MainSidebarPref) => {
+    // If the preference is the same as the new preference, do nothing
+    if (pref === rightSidebarPref.main) return;
+
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.RIGHT_MAIN_SIDEBAR, pref);
+
+    // Update the preference state
+    setRightSidebar((prev) => ({ ...prev, main: pref }));
   };
 
-  useEffect(() => {
-    const theme = localStorage.getItem(themePrefs);
-    const leftSidebar = localStorage.getItem(leftSidebarPrefs);
-    const rightSidebar = localStorage.getItem(rightSidebarPrefs);
-    const contentWidth = localStorage.getItem(contentWidthPrefs);
+  const changeRightSidebarSecondaryPref = (pref: SecondarySidebarPref) => {
+    // If the preference is the same as the new preference, do nothing
+    if (pref === rightSidebarPref.secondary) return;
 
-    if (theme) setTheme(theme as Theme);
-    if (leftSidebar) setLeftSidebar(leftSidebar as SidebarPreference);
-    if (rightSidebar) setRightSidebar(rightSidebar as SidebarPreference);
-    if (contentWidth) setContentWidth(contentWidth as ContentWidth);
+    // Otherwise,
+    // Save the new preference to local storage
+    localStorage.setItem(configs.RIGHT_SECONDARY_SIDEBAR, pref);
+
+    // Update the preference state
+    setRightSidebar((prev) => ({ ...prev, secondary: pref }));
+  };
+
+  const enablePadding = () => setPadded(true);
+  const disablePadding = () => setPadded(false);
+
+  useEffect(() => {
+    // Extract the theme from local storage,
+    // and update the theme state if it exists
+    const theme = localStorage.getItem(configs.THEME) as Theme;
+    if (theme) setTheme(theme);
+
+    // Extract the left sidebar preference from local storage,
+    // and update the left sidebar preference state if it exists
+    const leftMainSidebar = localStorage.getItem(
+      configs.LEFT_MAIN_SIDEBAR
+    ) as MainSidebarPref;
+
+    const leftSecondarySidebar = localStorage.getItem(
+      configs.LEFT_SECONDARY_SIDEBAR
+    ) as SecondarySidebarPref;
+
+    if (leftMainSidebar && leftSecondarySidebar) {
+      setLeftSidebar({
+        main: leftMainSidebar,
+        secondary: leftSecondarySidebar,
+      });
+    }
+
+    // Extract the right sidebar preference from local storage,
+    // and update the right sidebar preference state if it exists
+    const rightMainSidebar = localStorage.getItem(
+      configs.RIGHT_MAIN_SIDEBAR
+    ) as MainSidebarPref;
+
+    const rightSecondarySidebar = localStorage.getItem(
+      configs.RIGHT_SECONDARY_SIDEBAR
+    ) as SecondarySidebarPref;
+
+    if (rightMainSidebar && rightSecondarySidebar) {
+      setRightSidebar({
+        main: rightMainSidebar,
+        secondary: rightSecondarySidebar,
+      });
+    }
   }, []);
 
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -109,14 +237,21 @@ export const AppearanceProvider = ({
     theme,
     changeTheme,
 
-    leftSidebar,
-    changeLeftSidebar,
+    leftSidebarPref,
 
-    rightSidebar,
-    changeRightSidebar,
+    changeLeftSidebarPref,
+    changeLeftSidebarMainPref,
+    changeLeftSidebarSecondaryPref,
 
-    contentWidth,
-    changeContentWidth,
+    rightSidebarPref,
+
+    changeRightSidebarPref,
+    changeRightSidebarMainPref,
+    changeRightSidebarSecondaryPref,
+
+    padded,
+    enablePadding,
+    disablePadding,
 
     segments,
     setRootSegment,

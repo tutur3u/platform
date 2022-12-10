@@ -126,7 +126,7 @@ const AuthForm = ({
         />
       </Stack>
 
-      <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mt-4">
+      <div className="mt-4 flex flex-col items-start md:flex-row md:items-center md:justify-between">
         <Anchor
           component="button"
           type="button"
@@ -140,7 +140,7 @@ const AuthForm = ({
         </Anchor>
 
         <Button
-          className="p-2 w-full md:w-fit mt-2 md:mt-0 rounded-lg"
+          className="mt-2 w-full rounded-lg p-2 md:mt-0 md:w-fit"
           variant="light"
           type="submit"
           onClick={handleAuth}

@@ -68,13 +68,13 @@ const OrgPreviewCard = ({ org }: Props) => {
         {org?.name || `Unnamed organization`}
         {isRoot && (
           <Tooltip label="Verified organization" withArrow>
-            <CheckBadgeIcon className="ml-1 inline-block w-6 h-6 text-purple-300" />
+            <CheckBadgeIcon className="ml-1 inline-block h-6 w-6 text-purple-300" />
           </Tooltip>
         )}
       </Link>
-      <div className="mt-2 grid md:grid-cols-2 2xl:grid-cols-4 gap-4">
+      <div className="mt-2 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <div
-          className="p-2 h-32 flex justify-center items-center font-semibold text-xl rounded bg-zinc-500/10 hover:bg-blue-300/10 text-zinc-300 hover:text-blue-300 cursor-pointer transition duration-300"
+          className="flex h-32 cursor-pointer items-center justify-center rounded bg-zinc-500/10 p-2 text-xl font-semibold text-zinc-300 transition duration-300 hover:bg-blue-300/10 hover:text-blue-300"
           onClick={showProjectEditForm}
         >
           New project
@@ -83,7 +83,7 @@ const OrgPreviewCard = ({ org }: Props) => {
           projects?.slice(0, 3)?.map((project: Project) => (
             <Link
               key={project.id}
-              className="p-4 h-32 flex justify-center items-center text-center bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+              className="flex h-32 cursor-pointer items-center justify-center rounded bg-zinc-800/80 p-4 text-center text-xl font-semibold text-zinc-300 transition duration-150 hover:bg-zinc-800"
               href={`/projects/${project.id}`}
             >
               {project?.name || `Unnamed project`}
@@ -91,7 +91,7 @@ const OrgPreviewCard = ({ org }: Props) => {
           ))}
         {projects?.length > 3 && (
           <Link
-            className="p-4 col-span-full flex justify-center items-center text-center bg-zinc-500/10 hover:bg-zinc-800 text-zinc-300 font-semibold text-xl rounded transition duration-150 cursor-pointer"
+            className="col-span-full flex cursor-pointer items-center justify-center rounded bg-zinc-500/10 p-4 text-center text-xl font-semibold text-zinc-300 transition duration-150 hover:bg-zinc-800"
             href={`/orgs/${org.id}/projects`}
           >
             View all projects

@@ -34,11 +34,11 @@ const ProjectOverviewPage = () => {
 
   return (
     <div className="grid gap-4">
-      <div className="p-4 bg-zinc-900 rounded-lg">
+      <div className="rounded-lg bg-zinc-900 p-4">
         <h1 className="font-bold">Overview</h1>
         <p className="text-zinc-400">
           This is the overview page for the{' '}
-          <span className="text-white font-semibold">{project?.name}</span>{' '}
+          <span className="font-semibold text-white">{project?.name}</span>{' '}
           project.
         </p>
       </div>
