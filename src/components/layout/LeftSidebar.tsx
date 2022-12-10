@@ -434,6 +434,8 @@ function LeftSidebar({ className }: SidebarProps) {
     );
   }
 
+  const isDev = process.env.NODE_ENV === 'development';
+
   return (
     <>
       <div
@@ -455,13 +457,15 @@ function LeftSidebar({ className }: SidebarProps) {
 
           <div className="h-full overflow-auto">
             <div className="flex flex-col items-start gap-6 p-4">
-              <SidebarTab
-                href="/"
-                activeIcon={<HomeIconSolid className="w-8" />}
-                inactiveIcon={<HomeIconOutline className="w-8" />}
-                label="Home"
-                showTooltip={leftSidebarPref.main === 'closed'}
-              />
+              {isDev && (
+                <SidebarTab
+                  href="/"
+                  activeIcon={<HomeIconSolid className="w-8" />}
+                  inactiveIcon={<HomeIconOutline className="w-8" />}
+                  label="Home"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
               <SidebarTab
                 href="/calendar"
                 activeIcon={<CalendarIconSolid className="w-8" />}
@@ -469,25 +473,29 @@ function LeftSidebar({ className }: SidebarProps) {
                 label="Calendar"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
-              <SidebarTab
-                href="/tasks"
-                activeIcon={<TaskIconSolid className="w-8" />}
-                inactiveIcon={<TaskIconOutline className="w-8" />}
-                label="Tasks"
-                showTooltip={leftSidebarPref.main === 'closed'}
-              />
-              <SidebarTab
-                href="/expenses"
-                activeIcon={<MoneyIconSolid className="w-8" />}
-                inactiveIcon={<MoneyIconOutline className="w-8" />}
-                label="Expenses"
-                showTooltip={leftSidebarPref.main === 'closed'}
-              />
+              {isDev && (
+                <SidebarTab
+                  href="/tasks"
+                  activeIcon={<TaskIconSolid className="w-8" />}
+                  inactiveIcon={<TaskIconOutline className="w-8" />}
+                  label="Tasks"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/expenses"
+                  activeIcon={<MoneyIconSolid className="w-8" />}
+                  inactiveIcon={<MoneyIconOutline className="w-8" />}
+                  label="Expenses"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
             </div>
 
-            <SidebarDivider />
+            {isDev && orgs?.current?.length > 0 && <SidebarDivider />}
 
-            {isOrgsLoading || (
+            {!isDev || isOrgsLoading || (
               <div className="flex flex-col gap-3 p-4">
                 {orgs?.current?.map((org) => (
                   <SidebarTab
