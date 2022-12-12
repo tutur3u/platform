@@ -35,27 +35,25 @@ const Providers = ({
         supabaseClient={supabaseClient}
         initialSession={initialSession}
       >
-        <MantineProvider
-          withGlobalStyles
-          withNormalizeCSS
-          theme={{
-            colorScheme: 'dark',
-          }}
-        >
-          <SessionContextProvider supabaseClient={supabaseClient}>
+        <UserDataProvider>
+          <MantineProvider
+            withGlobalStyles
+            withNormalizeCSS
+            theme={{
+              colorScheme: 'dark',
+            }}
+          >
             <UserListProvider>
-              <UserDataProvider>
-                <AppearanceProvider>
-                  <ModalsProvider>
-                    <NotificationsProvider position="bottom-left">
-                      <OrganizationProvider>{children}</OrganizationProvider>
-                    </NotificationsProvider>
-                  </ModalsProvider>
-                </AppearanceProvider>
-              </UserDataProvider>
+              <AppearanceProvider>
+                <ModalsProvider>
+                  <NotificationsProvider position="bottom-left">
+                    <OrganizationProvider>{children}</OrganizationProvider>
+                  </NotificationsProvider>
+                </ModalsProvider>
+              </AppearanceProvider>
             </UserListProvider>
-          </SessionContextProvider>
-        </MantineProvider>
+          </MantineProvider>
+        </UserDataProvider>
       </SessionContextProvider>
     </SWRConfig>
   );

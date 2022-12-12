@@ -39,7 +39,9 @@ export const UserListProvider = ({
     }
 
     const isEmpty = users.length === 0;
-    const isDifferent = !newUsers.every((user) => users.includes(user));
+    const isDifferent =
+      !newUsers.every((user) => users.map((u) => u.id).includes(user.id)) ||
+      !users.every((user) => newUsers.map((u) => u.id).includes(user.id));
 
     const shouldDelay = isEmpty || isDifferent;
 
