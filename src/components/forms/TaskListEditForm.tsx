@@ -7,8 +7,8 @@ import { TaskList } from '../../types/primitives/TaskList';
 
 interface TaskListEditFormProps {
   list?: TaskList;
-  boardId: string;
-  onSubmit?: (list: TaskList, boardId: string) => void;
+  boardId?: string;
+  onSubmit?: (list: TaskList) => void;
   onDelete?: () => void;
 }
 
@@ -71,7 +71,7 @@ const TaskListEditForm = ({
               board_id: boardId,
             };
 
-            if (onSubmit) onSubmit(newList, boardId);
+            if (onSubmit) onSubmit(newList);
             closeAllModals();
           }}
           mt="md"
