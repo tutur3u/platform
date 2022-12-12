@@ -33,14 +33,19 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const { listId } = req.query;
+  const { listId, todos, completed } = req.query;
   if (!listId) return res.status(401).json({ error: 'Invalid list ID' });
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('tasks')
-    .select('id, name, completed')
+    .select('id, name, completed, start_date, end_date')
     .eq('list_id', listId)
     .order('created_at');
+
+  if (todos === 'true') query.eq('completed', false);
+  if (completed === 'true') query.eq('completed', true);
+
+  const { data, error } = await query;
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
@@ -52,13 +57,15 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const { name, listId } = req.body;
+  const { name, listId, startDate, endDate } = req.body;
 
   const { error } = await supabase
     .from('tasks')
     .insert({
       name,
       list_id: listId,
+      start_date: startDate,
+      end_date: endDate,
     })
     .single();
 

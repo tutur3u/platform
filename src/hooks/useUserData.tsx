@@ -1,11 +1,11 @@
 import { showNotification } from '@mantine/notifications';
-import { useUser } from '@supabase/auth-helpers-react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { UserData } from '../types/primitives/UserData';
+import useSWR, { mutate } from 'swr';
 
 const UserDataContext = createContext({
   isLoading: true,
-  data: null as UserData | null,
+  data: null as UserData | null | undefined,
   updateData: null as ((data: Partial<UserData>) => Promise<void>) | null,
 });
 
@@ -14,24 +14,18 @@ export const UserDataProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const user = useUser();
-  const [data, setData] = useState<UserData | null>(null);
-
-  const fetchUserData = async () => {
-    const response = await fetch('/api/user');
-    const data = await response.json();
-
-    setData({
-      id: data.id,
-      username: data.username,
-      displayName: data.display_name,
-      createdAt: data.created_at,
-    });
-  };
+  const { data, error } = useSWR('/api/user');
+  const isLoading = !data && !error;
 
   useEffect(() => {
-    if (user) fetchUserData();
-  }, [user]);
+    if (error) {
+      showNotification({
+        title: 'Failed to fetch user data',
+        message: 'Please try again later',
+        color: 'red',
+      });
+    }
+  }, [error]);
 
   const updateData = async (data: Partial<UserData>) => {
     if (data?.username?.length) {
@@ -63,7 +57,7 @@ export const UserDataProvider = ({
     });
 
     if (response.ok) {
-      await fetchUserData();
+      mutate('/api/user');
       showNotification({
         title: 'Updated profile',
         message: 'Your profile has been updated',
@@ -84,9 +78,26 @@ export const UserDataProvider = ({
     }
   };
 
+  const parseData = (data?: {
+    id: string;
+    email?: string;
+    username?: string;
+    display_name?: string;
+    created_at?: string;
+  }) => {
+    if (!data) return null;
+    return {
+      id: data.id,
+      email: data.email,
+      username: data.username,
+      displayName: data.display_name,
+      createdAt: data.created_at,
+    };
+  };
+
   const values = {
-    isLoading: !data,
-    data,
+    isLoading,
+    data: parseData(data),
     updateData,
   };
 
