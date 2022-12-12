@@ -1,10 +1,10 @@
 import {
+  ArchiveBoxIcon,
   BanknotesIcon as MoneyIconSolid,
   CalendarDaysIcon as CalendarIconSolid,
   ClipboardDocumentListIcon as TaskIconSolid,
   Cog6ToothIcon as SettingsIconSolid,
   HomeIcon as HomeIconSolid,
-  InboxIcon,
   PlusIcon as PlusIconSolid,
 } from '@heroicons/react/24/solid';
 
@@ -473,13 +473,6 @@ function LeftSidebar({ className }: SidebarProps) {
                         >
                           New task list
                         </Menu.Item>
-
-                        {/* <Menu.Item
-                          icon={<PlusCircleIcon className="w-6" />}
-                          disabled
-                        >
-                          New task
-                        </Menu.Item> */}
                       </Menu.Dropdown>
                     </Menu>
                   )}
@@ -492,7 +485,10 @@ function LeftSidebar({ className }: SidebarProps) {
                     </Menu.Target>
 
                     <Menu.Dropdown>
-                      <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
+                      <Menu.Item
+                        icon={<ArchiveBoxIcon className="w-6" />}
+                        disabled
+                      >
                         Archived lists
                       </Menu.Item>
                       <Menu.Item

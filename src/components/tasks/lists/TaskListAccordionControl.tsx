@@ -1,8 +1,8 @@
 import {
+  ArchiveBoxArrowDownIcon,
   ArrowRightCircleIcon,
   Cog6ToothIcon,
   EllipsisHorizontalIcon,
-  InboxIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { Accordion, AccordionControlProps, Menu } from '@mantine/core';
@@ -93,11 +93,14 @@ const TaskListAccordionControl = (
         </Menu.Target>
 
         <Menu.Dropdown className="font-semibold">
-          <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
-            Archived tasks
-          </Menu.Item>
           <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
             Move list
+          </Menu.Item>
+          <Menu.Item
+            icon={<ArchiveBoxArrowDownIcon className="w-6" />}
+            disabled
+          >
+            Archive list
           </Menu.Item>
           <Menu.Item
             icon={<Cog6ToothIcon className="w-6" />}
