@@ -7,11 +7,17 @@ import { Task } from '../../types/primitives/Task';
 
 interface TaskEditFormProps {
   task?: Task;
-  onSubmit: (org: Task) => void;
+  listId: string;
+  onSubmit: (org: Task, listId: string) => void;
   onDelete?: () => void;
 }
 
-const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
+const TaskEditForm = ({
+  task,
+  listId,
+  onSubmit,
+  onDelete,
+}: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
 
   return (
@@ -51,7 +57,7 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
           variant="subtle"
           onClick={() => {
             const newTask = { id: task?.id || uuidv4(), name };
-            onSubmit(newTask);
+            onSubmit(newTask, listId);
             closeAllModals();
           }}
           mt="md"

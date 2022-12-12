@@ -3,12 +3,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    switch (req.method) {
-      case 'GET':
-        return await fetchBoards(req, res);
+    const { taskId } = req.query;
+    if (!taskId || typeof taskId !== 'string') throw new Error('Invalid ID');
 
-      case 'POST':
-        return await createBoard(req, res);
+    switch (req.method) {
+      case 'PUT':
+        return await updateTask(req, res, taskId);
+
+      case 'DELETE':
+        return await deleteTask(req, res, taskId);
 
       default:
         throw new Error(
@@ -27,37 +30,41 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchBoards = async (req: NextApiRequest, res: NextApiResponse) => {
+const updateTask = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  taskId: string
+) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { data, error } = await supabase
-    .from('task_board_members')
-    .select('task_boards(id, name)')
-    .order('created_at');
+  const { name, completed } = req.body;
+
+  const data = {
+    name,
+    completed,
+  };
+
+  const { error } = await supabase.from('tasks').update(data).eq('id', taskId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data.map((board) => board.task_boards));
+  return res.status(200).json({});
 };
 
-const createBoard = async (req: NextApiRequest, res: NextApiResponse) => {
+const deleteTask = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  taskId: string
+) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name } = req.body;
-
-  const { data, error } = await supabase
-    .from('task_boards')
-    .insert({
-      name,
-    })
-    .select('id')
-    .single();
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };

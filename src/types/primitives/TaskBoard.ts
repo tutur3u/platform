@@ -1,8 +1,8 @@
-import { Task } from './Task';
+import { TaskList } from './TaskList';
 
 export interface TaskBoard {
   id: string;
-  name?: string;
-  tasks?: Task[];
+  name: string;
+  lists: TaskList[];
   created_at?: string;
 }

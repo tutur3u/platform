@@ -3,30 +3,44 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskBoard } from '../../types/primitives/TaskBoard';
+import { TaskList } from '../../types/primitives/TaskList';
 
-interface BoardEditFormProps {
-  board?: TaskBoard;
-  onSubmit?: (board: TaskBoard) => void;
+interface TaskListEditFormProps {
+  list?: TaskList;
+  boardId: string;
+  onSubmit?: (list: TaskList, boardId: string) => void;
   onDelete?: () => void;
 }
 
-const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
-  const [name, setName] = useState(board?.name || '');
+const TaskListEditForm = ({
+  list,
+  boardId,
+  onSubmit,
+  onDelete,
+}: TaskListEditFormProps) => {
+  const [name, setName] = useState(list?.name || '');
 
   return (
     <>
-      {board?.id && (
+      {boardId && (
         <TextInput
           label="Board ID"
-          value={board?.id}
-          disabled={!!board?.id}
+          value={boardId}
+          disabled={!!boardId}
+          className="mb-2"
+        />
+      )}
+      {list?.id && (
+        <TextInput
+          label="List ID"
+          value={list?.id}
+          disabled={!!list?.id}
           className="mb-2"
         />
       )}
       <TextInput
-        label="Board name"
-        placeholder="Enter board name"
+        label="List name"
+        placeholder="Enter list name"
         value={name}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setName(event.currentTarget.value)
@@ -35,7 +49,7 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
         autoComplete="off"
       />
       <div className="flex gap-2">
-        {board?.id && onDelete && (
+        {list?.id && onDelete && (
           <Button
             fullWidth
             variant="subtle"
@@ -50,17 +64,23 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newBoard = { id: board?.id || uuidv4(), name, lists: [] };
-            if (onSubmit) onSubmit(newBoard);
+            const newList = {
+              id: list?.id || uuidv4(),
+              name,
+              tasks: [],
+              board_id: boardId,
+            };
+
+            if (onSubmit) onSubmit(newList, boardId);
             closeAllModals();
           }}
           mt="md"
         >
-          {board?.id ? 'Save' : 'Add'}
+          {list?.id ? 'Save' : 'Add'}
         </Button>
       </div>
     </>
   );
 };
 
-export default BoardEditForm;
+export default TaskListEditForm;
