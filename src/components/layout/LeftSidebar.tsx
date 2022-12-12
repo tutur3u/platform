@@ -37,7 +37,6 @@ import {
   Select,
   Tooltip,
 } from '@mantine/core';
-import { useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import SidebarDivider from './SidebarDivider';
 import { useOrgs } from '../../hooks/useOrganizations';
@@ -57,8 +56,7 @@ import TaskEditForm from '../forms/TaskEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
-  const user = useUser();
-  const { data } = useUserData();
+  const { data: user } = useUserData();
 
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
 
@@ -555,14 +553,14 @@ function LeftSidebar({ className }: SidebarProps) {
               <Tooltip
                 label={
                   <div className="font-semibold">
-                    <div>{data?.displayName || 'Unknown'}</div>
-                    {data?.username && (
-                      <div className="text-blue-300">@{data.username}</div>
+                    <div>{user?.displayName || 'Unknown'}</div>
+                    {user?.username && (
+                      <div className="text-blue-300">@{user.username}</div>
                     )}
                   </div>
                 }
                 disabled={
-                  !data?.displayName || leftSidebarPref.main !== 'closed'
+                  !user?.displayName || leftSidebarPref.main !== 'closed'
                 }
                 position="right"
                 color="#182a3d"
@@ -578,7 +576,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     withBorder
                   >
                     <Avatar color="blue" radius="xl">
-                      {getInitials(data?.displayName ?? 'Unknown')}
+                      {getInitials(user?.displayName ?? 'Unknown')}
                     </Avatar>
                   </Indicator>
 
@@ -592,14 +590,14 @@ function LeftSidebar({ className }: SidebarProps) {
                     }
                   >
                     <div className="text-md min-w-max font-bold">
-                      {data?.displayName ||
+                      {user?.displayName ||
                         user?.email ||
                         user?.phone ||
                         'Not logged in'}
                     </div>
-                    {data?.username && (
+                    {user?.username && (
                       <div className="min-w-max text-sm font-semibold text-blue-300">
-                        @{data?.username}
+                        @{user?.username}
                       </div>
                     )}
                   </div>
@@ -635,6 +633,11 @@ function LeftSidebar({ className }: SidebarProps) {
                     boards?.map((board: TaskBoard) => ({
                       value: board.id,
                       label: board.name || 'Untitled',
+                      group:
+                        user?.displayName ||
+                        user?.username ||
+                        user?.email ||
+                        'Unknown',
                     })) ?? []
                   }
                   value={
