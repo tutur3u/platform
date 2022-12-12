@@ -1,12 +1,12 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 
-export const DateContext = createContext({
+const DateContext = createContext({
   date: new Date(),
-  isToday: () => true,
+  isToday: () => true as boolean,
 });
 
 export const DateProvider = ({ children }: { children: ReactNode }) => {
-  const [date, setDate] = useState(new Date());
+  const [date] = useState(new Date());
 
   const isToday = () => {
     const today = new Date();
@@ -18,9 +18,7 @@ export const DateProvider = ({ children }: { children: ReactNode }) => {
     isToday,
   };
 
-  return (
-    <DateContext.Provider values={values}>{children}</DateContext.Provider>
-  );
+  return <DateContext.Provider value={values}>{children}</DateContext.Provider>;
 };
 
 export const useDay = () => {
