@@ -14,9 +14,9 @@ function RightSidebar({ className }: SidebarProps) {
         users.length > 0 ? 'w-full px-2 py-4' : 'w-0'
       }`}
     >
-      {users.map((user) => (
+      {users.map((user, idx) => (
         <Tooltip
-          key={user.id}
+          key={user?.id || idx}
           label={
             <div className="font-semibold">
               <div>{user?.displayName || 'Unknown'}</div>
