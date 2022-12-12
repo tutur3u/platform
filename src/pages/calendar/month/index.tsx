@@ -6,6 +6,8 @@ import Layout from '../../../components/layout/Layout';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import MonthCell from '../../../components/calendar/MonthCell';
 import { useUserData } from '../../../hooks/useUserData';
+import { Center, SegmentedControl } from '@mantine/core';
+import Link from 'next/link';
 
 const MonthViewPage: PageWithLayoutProps = () => {
   const {
@@ -40,9 +42,9 @@ const MonthViewPage: PageWithLayoutProps = () => {
 
   const [date, setDate] = useState(new Date());
 
-  const shortMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' })
+  const longMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' })
     .format;
-  const longMonth = shortMonthName(date); // "July"
+  const longMonth = longMonthName(date); // "July"
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -140,21 +142,52 @@ const MonthViewPage: PageWithLayoutProps = () => {
         </div>
 
         <div className="flex items-center justify-center gap-2 text-blue-300">
+          <SegmentedControl
+            radius="md"
+            className="mr-2"
+            data={[
+              {
+                value: 'week',
+                label: (
+                  <Center>
+                    <Link href="/calendar">Week</Link>
+                  </Center>
+                ),
+              },
+              {
+                value: 'month',
+                label: (
+                  <Center>
+                    <Link href="/calendar/month">Month</Link>
+                  </Center>
+                ),
+              },
+              {
+                value: 'year',
+                label: (
+                  <Center>
+                    <Link href="/calendar/year">Year</Link>
+                  </Center>
+                ),
+              },
+            ]}
+          />
+
           <button
             onClick={prevMonth}
-            className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl hover:bg-blue-300/20"
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
           >
             <ChevronLeftIcon className="w-4" />
           </button>
           <button
             onClick={setToday}
-            className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold hover:bg-blue-300/20"
+            className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
           >
             This month
           </button>
           <button
             onClick={nextMonth}
-            className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl hover:bg-blue-300/20"
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
           >
             <ChevronRightIcon className="w-4" />
           </button>
