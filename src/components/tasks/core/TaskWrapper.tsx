@@ -16,9 +16,15 @@ export interface TaskWrapperProps {
   listId: string;
   task: Task;
   onEdit: () => void;
+  showCompleted?: boolean;
 }
 
-const TaskWrapper = ({ listId, task, onEdit }: TaskWrapperProps) => {
+const TaskWrapper = ({
+  listId,
+  task,
+  onEdit,
+  showCompleted,
+}: TaskWrapperProps) => {
   const addTask = async (task: Task) => {
     if (!listId) return;
 
@@ -48,6 +54,7 @@ const TaskWrapper = ({ listId, task, onEdit }: TaskWrapperProps) => {
       },
       body: JSON.stringify({
         name: task.name,
+        description: task.description,
         completed: task.completed,
         startDate: task.start_date,
         endDate: task.end_date,
@@ -142,25 +149,35 @@ const TaskWrapper = ({ listId, task, onEdit }: TaskWrapperProps) => {
           className="h-full w-full p-2 pl-1 text-start text-sm"
           onClick={() => showEditTaskModal(listId, task)}
         >
-          <div className={task.completed ? 'text-zinc-700 line-through' : ''}>
+          <div
+            className={
+              !showCompleted && task.completed
+                ? 'text-zinc-700 line-through'
+                : ''
+            }
+          >
             {task.name || 'Untitled task'}
           </div>
 
-          {!task.completed && (task.start_date || task.end_date) && (
+          {!task.completed && task.end_date && (
             <>
               <Divider className="my-2" />
               <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
-                {task.start_date && (
-                  <span className="text-blue-300">
-                    {moment(task.start_date).format('MMM D')}
+                {/* > 7 days: green, 3-7 days: yellow, 1-3 days: orange, 0-1 days: red */}
+                <span
+                  className={
+                    moment(task.end_date).isBefore(moment().add(1, 'days'))
+                      ? 'text-red-300'
+                      : moment(task.end_date).isBefore(moment().add(3, 'days'))
+                      ? 'text-orange-300'
+                      : 'text-green-300'
+                  }
+                >
+                  {moment(task.end_date).format('MMM D, HH:mm')}{' '}
+                  <span className="text-zinc-500">
+                    ({moment(task.end_date).fromNow()})
                   </span>
-                )}
-                {task.start_date && task.end_date && <span>—</span>}
-                {task.end_date && (
-                  <span className="text-red-300">
-                    {moment(task.end_date).format('MMM D')}
-                  </span>
-                )}
+                </span>
               </div>
             </>
           )}
