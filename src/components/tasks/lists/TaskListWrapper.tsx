@@ -80,6 +80,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
     openModal({
       title: task ? 'Edit task' : 'New task',
       centered: true,
+      size: 'xl',
       children: (
         <TaskEditForm
           task={task}
@@ -121,6 +122,11 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
           <div className="grid gap-2">
             {tasks &&
               tasks
+                .sort((a, b) => {
+                  if (a.completed && !b.completed) return 1;
+                  if (!a.completed && b.completed) return -1;
+                  return 0;
+                })
                 .sort((a, b) => {
                   if (a.priority && !b.priority) return -1;
                   if (!a.priority && b.priority) return 1;

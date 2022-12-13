@@ -5,12 +5,15 @@ import {
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
-import { Checkbox, Divider, Menu } from '@mantine/core';
+import { Avatar, Checkbox, Divider, Menu, Tooltip } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
 import React from 'react';
 import { Task } from '../../../types/primitives/Task';
+import { UserData } from '../../../types/primitives/UserData';
+import { getInitials } from '../../../utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
+import useSWR from 'swr';
 
 export interface TaskWrapperProps {
   listId: string;
@@ -25,6 +28,31 @@ const TaskWrapper = ({
   onEdit,
   showCompleted,
 }: TaskWrapperProps) => {
+  const { data: rawAssigneesData } = useSWR(
+    task?.id ? `/api/tasks/${task.id}/assignees` : null
+  );
+
+  const assignees: UserData[] | null =
+    rawAssigneesData != null
+      ? rawAssigneesData?.map(
+          (assignee: {
+            id: string;
+            display_name?: string;
+            email?: string;
+            phone?: string;
+            username?: string;
+            created_At?: string;
+          }) => ({
+            id: assignee.id,
+            displayName: assignee.display_name,
+            email: assignee.email,
+            phone: assignee.phone,
+            username: assignee.username,
+            createdAt: assignee.created_At,
+          })
+        )
+      : null;
+
   const addTask = async (task: Task) => {
     if (!listId) return;
 
@@ -79,6 +107,7 @@ const TaskWrapper = ({
     openModal({
       title: task ? 'Edit task' : 'New task',
       centered: true,
+      size: 'xl',
       children: (
         <TaskEditForm
           task={task}
@@ -217,14 +246,39 @@ const TaskWrapper = ({
           {!task.completed && task.priority && (
             <>
               <Divider className="my-2" />
-              <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
-                <span
+              <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
+                <div
                   className={`${getPriorityColor(
                     task.priority
-                  )} rounded-lg px-2 py-0.5`}
+                  )} flex h-fit items-center justify-center rounded-lg px-2 py-0.5`}
                 >
                   {getPriorityText(task.priority)}
-                </span>
+                </div>
+                <Avatar.Group>
+                  {assignees &&
+                    assignees.length > 0 &&
+                    assignees.map((assignee) => (
+                      <Tooltip
+                        key={assignee.id}
+                        label={
+                          <div className="font-semibold">
+                            <div>{assignee?.displayName}</div>
+                            {assignee?.username && (
+                              <div className="text-blue-300">
+                                @{assignee.username}
+                              </div>
+                            )}
+                          </div>
+                        }
+                        color="#182a3d"
+                        withArrow
+                      >
+                        <Avatar color="blue" radius="xl">
+                          {getInitials(assignee?.displayName || 'Unknown')}
+                        </Avatar>
+                      </Tooltip>
+                    ))}
+                </Avatar.Group>
               </div>
             </>
           )}

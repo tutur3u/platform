@@ -1,12 +1,27 @@
-import { Button, Chip, Divider, Textarea } from '@mantine/core';
+import {
+  Autocomplete,
+  Avatar,
+  Button,
+  Chip,
+  Divider,
+  Group,
+  Text,
+  Textarea,
+} from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Task } from '../../types/primitives/Task';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import moment from 'moment';
 import { Priority } from '../../types/primitives/Priority';
+import { useDebouncedValue } from '@mantine/hooks';
+import { UserData } from '../../types/primitives/UserData';
+import { showNotification } from '@mantine/notifications';
+import useSWR, { mutate } from 'swr';
+import { getInitials } from '../../utils/name-helper';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -14,6 +29,8 @@ interface TaskEditFormProps {
   onSubmit: (org: Task, listId: string) => void;
   onDelete?: () => void;
 }
+
+type UserWithValue = UserData & { value: string };
 
 const TaskEditForm = ({
   task,
@@ -35,6 +52,7 @@ const TaskEditForm = ({
   const [delayTask, setDelayTask] = useState(!!task?.start_date);
   const [dueTask, setDueTask] = useState(!!task?.end_date);
   const [priority, setPriority] = useState<Priority>(task?.priority);
+  const [assignees, setAssignees] = useState<UserData[] | null>(null);
 
   useEffect(() => {
     const taskNameElement = document.getElementById(
@@ -58,6 +76,143 @@ const TaskEditForm = ({
     newDate.setHours(timeDate.getHours());
     newDate.setMinutes(timeDate.getMinutes());
     return newDate;
+  };
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debounced] = useDebouncedValue(searchQuery, 300);
+
+  const [suggestions, setSuggestions] = useState<UserWithValue[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async (searchQuery: string) => {
+      if (!searchQuery) return [];
+      const response = await fetch(`/api/users/search?query=${searchQuery}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+
+      return [];
+    };
+
+    const fetchData = async (input: string) => {
+      const users = await fetchUsers(input);
+      const suggestedUsers = users.map((user: UserData) => ({
+        ...user,
+        value: user?.username || user?.email,
+      }));
+
+      setSuggestions(suggestedUsers);
+    };
+
+    if (debounced) fetchData(debounced);
+  }, [debounced]);
+
+  // eslint-disable-next-line react/display-name
+  const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
+    (
+      { id, value, username, avatarUrl, displayName, ...others }: UserWithValue,
+      ref: React.ForwardedRef<HTMLDivElement>
+    ) =>
+      id === value ? (
+        <div {...others} ref={ref}>
+          <Text>{value}</Text>
+        </div>
+      ) : (
+        <div ref={ref} {...others}>
+          <Group noWrap>
+            <Avatar src={avatarUrl} />
+
+            <div>
+              <Text>{displayName}</Text>
+              <Text size="xs" color="dimmed">
+                {username ? `@${username}` : 'No username'}
+              </Text>
+            </div>
+          </Group>
+        </div>
+      )
+  );
+
+  const { data: rawAssigneesData } = useSWR(
+    task?.id ? `/api/tasks/${task.id}/assignees` : null
+  );
+
+  useEffect(() => {
+    if (!rawAssigneesData || rawAssigneesData.length === 0) {
+      setAssignees(null);
+      return;
+    }
+
+    const assignees: UserData[] | null =
+      rawAssigneesData != null
+        ? rawAssigneesData?.map(
+            (assignee: {
+              id: string;
+              display_name?: string;
+              email?: string;
+              phone?: string;
+              username?: string;
+              created_At?: string;
+            }) => ({
+              id: assignee.id,
+              displayName: assignee.display_name,
+              email: assignee.email,
+              phone: assignee.phone,
+              username: assignee.username,
+              createdAt: assignee.created_At,
+            })
+          )
+        : null;
+
+    setAssignees(assignees);
+  }, [rawAssigneesData]);
+
+  const handleAssignUser = async (userId: string) => {
+    if (!task?.id) return;
+
+    const response = await fetch(`/api/tasks/${task.id}/assignees`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: userId,
+      }),
+    });
+
+    if (response.ok) {
+      mutate(`/api/tasks/${task.id}/assignees`);
+      setSearchQuery('');
+      setSuggestions([]);
+    } else {
+      const res = await response.json();
+      showNotification({
+        title: 'Could not invite user',
+        message: res?.error?.message || 'Something went wrong',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleUnassignUser = async (userId: string) => {
+    if (!task?.id) return;
+
+    const response = await fetch(`/api/tasks/${task.id}/assignees/${userId}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      mutate(`/api/tasks/${task.id}/assignees`);
+    } else {
+      const res = await response.json();
+      showNotification({
+        title: 'Could not unassign user',
+        message: res?.error?.message || 'Something went wrong',
+        color: 'red',
+      });
+    }
   };
 
   return (
@@ -90,7 +245,7 @@ const TaskEditForm = ({
         autosize
       />
 
-      {(delayTask || dueTask) && <Divider className="my-4" />}
+      {(delayTask || dueTask || priority) && <Divider className="my-4" />}
 
       {delayTask ? (
         <DatePicker
@@ -160,7 +315,7 @@ const TaskEditForm = ({
               variant="filled"
               color="gray"
             >
-              Low priority
+              Low
             </Chip>
 
             <Chip
@@ -171,7 +326,7 @@ const TaskEditForm = ({
               variant="filled"
               color="blue"
             >
-              Medium priority
+              Medium
             </Chip>
 
             <Chip
@@ -182,7 +337,7 @@ const TaskEditForm = ({
               variant="filled"
               color="grape"
             >
-              High priority
+              High
             </Chip>
 
             <Chip
@@ -207,6 +362,60 @@ const TaskEditForm = ({
               Critical
             </Chip>
           </div>
+        </>
+      )}
+
+      {assignees && (
+        <>
+          <Divider className="my-4" />
+
+          <Autocomplete
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Enter an username"
+            itemComponent={AutoCompleteItem}
+            data={suggestions}
+            onItemSubmit={(item) => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { value, ...user } = item as UserWithValue;
+              handleAssignUser(user.id);
+            }}
+          />
+
+          {assignees && assignees.length > 0 && (
+            <>
+              <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
+                Assigned users ({assignees.length})
+              </h3>
+              <div className="grid gap-2 lg:grid-cols-2">
+                {assignees.map((assignee) => (
+                  <Group
+                    key={assignee.id}
+                    className="relative w-full rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4"
+                  >
+                    <Avatar color="blue" radius="xl">
+                      {getInitials(assignee?.displayName || 'Unknown')}
+                    </Avatar>
+                    <div>
+                      <Text weight="bold" className="text-blue-200">
+                        {assignee.displayName}
+                      </Text>
+                      <Text weight="light" className="text-blue-100">
+                        @{assignee.username}
+                      </Text>
+                    </div>
+
+                    <button
+                      className="absolute right-1 top-1"
+                      onClick={() => handleUnassignUser(assignee.id)}
+                    >
+                      <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                    </button>
+                  </Group>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -244,7 +453,17 @@ const TaskEditForm = ({
         >
           Priority
         </Chip>
-        <Chip disabled>Assignees</Chip>
+        <Chip
+          checked={!!assignees}
+          disabled={assignees && assignees?.length > 0 ? true : false}
+          onChange={(checked) => {
+            if (assignees && assignees?.length > 0) return;
+            setAssignees(checked ? [] : null);
+          }}
+          variant="filled"
+        >
+          Assignees
+        </Chip>
 
         {/* <Chip disabled>Repeat</Chip> */}
         {/* <Chip disabled>Tags</Chip> */}
