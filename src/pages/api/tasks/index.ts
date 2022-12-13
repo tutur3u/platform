@@ -38,8 +38,10 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const query = supabase
     .from('tasks')
-    .select('id, name, description, completed, start_date, end_date')
+    .select('id, name, description, priority, completed, start_date, end_date')
     .eq('list_id', listId)
+    .order('priority', { ascending: false })
+    .order('end_date', { ascending: false })
     .order('created_at');
 
   if (todos === 'true') query.eq('completed', false);
