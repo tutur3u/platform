@@ -16,9 +16,15 @@ export interface TaskWrapperProps {
   listId: string;
   task: Task;
   onEdit: () => void;
+  showCompleted?: boolean;
 }
 
-const TaskWrapper = ({ listId, task, onEdit }: TaskWrapperProps) => {
+const TaskWrapper = ({
+  listId,
+  task,
+  onEdit,
+  showCompleted,
+}: TaskWrapperProps) => {
   const addTask = async (task: Task) => {
     if (!listId) return;
 
@@ -142,7 +148,13 @@ const TaskWrapper = ({ listId, task, onEdit }: TaskWrapperProps) => {
           className="h-full w-full p-2 pl-1 text-start text-sm"
           onClick={() => showEditTaskModal(listId, task)}
         >
-          <div className={task.completed ? 'text-zinc-700 line-through' : ''}>
+          <div
+            className={
+              !showCompleted && task.completed
+                ? 'text-zinc-700 line-through'
+                : ''
+            }
+          >
             {task.name || 'Untitled task'}
           </div>
 

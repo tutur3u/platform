@@ -120,6 +120,17 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
             {tasks &&
               tasks
                 .sort((a, b) => {
+                  if (a.end_date && !b.end_date) return -1;
+                  if (!a.end_date && b.end_date) return 1;
+                  return 0;
+                })
+                .sort((a, b) => {
+                  if (!a.end_date || !b.end_date) return 0;
+                  if (a.end_date > b.end_date) return 1;
+                  if (a.end_date < b.end_date) return -1;
+                  return 0;
+                })
+                .sort((a, b) => {
                   if (a.completed && !b.completed) return 1;
                   if (!a.completed && b.completed) return -1;
                   return 0;
@@ -130,6 +141,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
                     listId={list.id}
                     task={task}
                     onEdit={resync}
+                    showCompleted={option === 'completed'}
                   />
                 ))}
             <button
