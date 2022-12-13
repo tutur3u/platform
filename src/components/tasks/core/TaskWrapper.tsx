@@ -159,18 +159,25 @@ const TaskWrapper = ({
             {task.name || 'Untitled task'}
           </div>
 
-          {!task.completed && (task.start_date || task.end_date) && (
+          {!task.completed && task.end_date && (
             <>
               <Divider className="my-2" />
               <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
-                {task.end_date && (
-                  <span className="text-red-300">
-                    {moment(task.end_date).format('MMM D, HH:mm')}{' '}
-                    <span className="text-zinc-500">
-                      ({moment(task.end_date).fromNow()})
-                    </span>
+                {/* > 7 days: green, 3-7 days: yellow, 1-3 days: orange, 0-1 days: red */}
+                <span
+                  className={
+                    moment(task.end_date).isBefore(moment().add(1, 'days'))
+                      ? 'text-red-300'
+                      : moment(task.end_date).isBefore(moment().add(3, 'days'))
+                      ? 'text-orange-300'
+                      : 'text-green-300'
+                  }
+                >
+                  {moment(task.end_date).format('MMM D, HH:mm')}{' '}
+                  <span className="text-zinc-500">
+                    ({moment(task.end_date).fromNow()})
                   </span>
-                )}
+                </span>
               </div>
             </>
           )}
