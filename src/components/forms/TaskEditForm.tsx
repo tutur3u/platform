@@ -21,6 +21,7 @@ const TaskEditForm = ({
   onDelete,
 }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
+  const [description, setDescription] = useState(task?.description || '');
 
   const [startDate, setStartDate] = useState<Date | null>(
     task?.start_date ? moment(task?.start_date).toDate() : null
@@ -72,6 +73,19 @@ const TaskEditForm = ({
         autosize
         data-autofocus
         className="mb-2"
+      />
+
+      <Textarea
+        label="Description"
+        placeholder="Enter task description"
+        value={description}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+          setDescription(event.target.value)
+        }
+        autoComplete="off"
+        minRows={3}
+        maxRows={7}
+        autosize
       />
 
       {(delayTask || dueTask) && <Divider className="my-4" />}
@@ -182,9 +196,11 @@ const TaskEditForm = ({
             const newTask: Task = {
               id: task?.id || uuidv4(),
               name,
+              description,
               start_date: startDate,
               end_date: endDate,
             };
+
             onSubmit(newTask, listId);
             closeAllModals();
           }}

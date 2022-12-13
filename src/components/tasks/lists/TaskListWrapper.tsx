@@ -65,6 +65,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
       },
       body: JSON.stringify({
         name: task.name,
+        description: task.description,
         completed: task.completed,
         startDate: task.start_date,
         endDate: task.end_date,

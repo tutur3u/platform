@@ -54,6 +54,7 @@ const TaskWrapper = ({
       },
       body: JSON.stringify({
         name: task.name,
+        description: task.description,
         completed: task.completed,
         startDate: task.start_date,
         endDate: task.end_date,
@@ -162,15 +163,12 @@ const TaskWrapper = ({
             <>
               <Divider className="my-2" />
               <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
-                {task.start_date && (
-                  <span className="text-blue-300">
-                    {moment(task.start_date).format('MMM D')}
-                  </span>
-                )}
-                {task.start_date && task.end_date && <span>—</span>}
                 {task.end_date && (
                   <span className="text-red-300">
-                    {moment(task.end_date).format('MMM D')}
+                    {moment(task.end_date).format('MMM D, HH:mm')}{' '}
+                    <span className="text-zinc-500">
+                      ({moment(task.end_date).fromNow()})
+                    </span>
                   </span>
                 )}
               </div>

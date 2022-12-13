@@ -38,7 +38,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const query = supabase
     .from('tasks')
-    .select('id, name, completed, start_date, end_date')
+    .select('id, name, description, completed, start_date, end_date')
     .eq('list_id', listId)
     .order('created_at');
 
@@ -57,15 +57,16 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const { name, listId, startDate, endDate } = req.body;
+  const { name, description, startDate, endDate, listId } = req.body;
 
   const { error } = await supabase
     .from('tasks')
     .insert({
       name,
-      list_id: listId,
+      description,
       start_date: startDate,
       end_date: endDate,
+      list_id: listId,
     })
     .single();
 
