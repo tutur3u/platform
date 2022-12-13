@@ -66,6 +66,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
       body: JSON.stringify({
         name: task.name,
         description: task.description,
+        priority: task.priority,
         completed: task.completed,
         startDate: task.start_date,
         endDate: task.end_date,
@@ -79,6 +80,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
     openModal({
       title: task ? 'Edit task' : 'New task',
       centered: true,
+      size: 'xl',
       children: (
         <TaskEditForm
           task={task}
@@ -121,19 +123,13 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
             {tasks &&
               tasks
                 .sort((a, b) => {
-                  if (a.end_date && !b.end_date) return -1;
-                  if (!a.end_date && b.end_date) return 1;
-                  return 0;
-                })
-                .sort((a, b) => {
-                  if (!a.end_date || !b.end_date) return 0;
-                  if (a.end_date > b.end_date) return 1;
-                  if (a.end_date < b.end_date) return -1;
-                  return 0;
-                })
-                .sort((a, b) => {
                   if (a.completed && !b.completed) return 1;
                   if (!a.completed && b.completed) return -1;
+                  return 0;
+                })
+                .sort((a, b) => {
+                  if (a.priority && !b.priority) return -1;
+                  if (!a.priority && b.priority) return 1;
                   return 0;
                 })
                 .map((task) => (
