@@ -55,6 +55,7 @@ const TaskWrapper = ({
       body: JSON.stringify({
         name: task.name,
         description: task.description,
+        priority: task.priority,
         completed: task.completed,
         startDate: task.start_date,
         endDate: task.end_date,
@@ -136,6 +137,40 @@ const TaskWrapper = ({
     });
   };
 
+  const getPriorityText = (priority: number) => {
+    switch (priority) {
+      case 1:
+        return 'Low priority';
+      case 2:
+        return 'Medium priority';
+      case 3:
+        return 'High priority';
+      case 4:
+        return 'Urgent';
+      case 5:
+        return 'Critical';
+      default:
+        return 'None';
+    }
+  };
+
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 1:
+        return 'bg-zinc-300/10 text-zinc-300';
+      case 2:
+        return 'bg-blue-300/10 text-blue-300';
+      case 3:
+        return 'bg-purple-300/10 text-purple-300';
+      case 4:
+        return 'bg-orange-300/10 text-orange-300';
+      case 5:
+        return 'bg-red-300/10 text-red-300';
+      default:
+        return 'bg-zinc-300/10 text-zinc-300';
+    }
+  };
+
   return (
     <div className="flex items-start justify-between rounded-lg hover:bg-zinc-800">
       <div className="flex h-full w-full items-start justify-start">
@@ -160,23 +195,35 @@ const TaskWrapper = ({
           </div>
 
           {!task.completed && task.end_date && (
+            <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
+              {/* > 7 days: green, 3-7 days: yellow, 1-3 days: orange, 0-1 days: red */}
+              <span
+                className={
+                  moment(task.end_date).isBefore(moment().add(1, 'days'))
+                    ? 'text-red-300'
+                    : moment(task.end_date).isBefore(moment().add(3, 'days'))
+                    ? 'text-orange-300'
+                    : 'text-green-300'
+                }
+              >
+                {moment(task.end_date).format('MMM D, HH:mm')}{' '}
+                <span className="text-zinc-500">
+                  ({moment(task.end_date).fromNow()})
+                </span>
+              </span>
+            </div>
+          )}
+
+          {!task.completed && task.priority && (
             <>
               <Divider className="my-2" />
               <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
-                {/* > 7 days: green, 3-7 days: yellow, 1-3 days: orange, 0-1 days: red */}
                 <span
-                  className={
-                    moment(task.end_date).isBefore(moment().add(1, 'days'))
-                      ? 'text-red-300'
-                      : moment(task.end_date).isBefore(moment().add(3, 'days'))
-                      ? 'text-orange-300'
-                      : 'text-green-300'
-                  }
+                  className={`${getPriorityColor(
+                    task.priority
+                  )} rounded-lg px-2 py-0.5`}
                 >
-                  {moment(task.end_date).format('MMM D, HH:mm')}{' '}
-                  <span className="text-zinc-500">
-                    ({moment(task.end_date).fromNow()})
-                  </span>
+                  {getPriorityText(task.priority)}
                 </span>
               </div>
             </>

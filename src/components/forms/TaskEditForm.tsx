@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Task } from '../../types/primitives/Task';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import moment from 'moment';
+import { Priority } from '../../types/primitives/Priority';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -33,6 +34,7 @@ const TaskEditForm = ({
 
   const [delayTask, setDelayTask] = useState(!!task?.start_date);
   const [dueTask, setDueTask] = useState(!!task?.end_date);
+  const [priority, setPriority] = useState<Priority>(task?.priority);
 
   useEffect(() => {
     const taskNameElement = document.getElementById(
@@ -101,7 +103,7 @@ const TaskEditForm = ({
         />
       ) : null}
 
-      {startDate && (
+      {delayTask && startDate && (
         <TimeInput
           label="Time"
           placeholder="At what time should the task start?"
@@ -128,7 +130,7 @@ const TaskEditForm = ({
         />
       ) : null}
 
-      {endDate && (
+      {dueTask && endDate && (
         <TimeInput
           label="Time"
           placeholder="At what time should the task be completed?"
@@ -140,6 +142,72 @@ const TaskEditForm = ({
           }
           clearable
         />
+      )}
+
+      {(delayTask || dueTask) && priority && <Divider className="my-4" />}
+
+      {priority && (
+        <>
+          <h3 className="mb-2 text-center text-lg font-semibold">
+            Task priority
+          </h3>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Chip
+              checked={priority === 1}
+              onChange={(checked) => {
+                setPriority(checked ? 1 : null);
+              }}
+              variant="filled"
+              color="gray"
+            >
+              Low priority
+            </Chip>
+
+            <Chip
+              checked={priority === 2}
+              onChange={(checked) => {
+                setPriority(checked ? 2 : null);
+              }}
+              variant="filled"
+              color="blue"
+            >
+              Medium priority
+            </Chip>
+
+            <Chip
+              checked={priority === 3}
+              onChange={(checked) => {
+                setPriority(checked ? 3 : null);
+              }}
+              variant="filled"
+              color="grape"
+            >
+              High priority
+            </Chip>
+
+            <Chip
+              checked={priority === 4}
+              onChange={(checked) => {
+                setPriority(checked ? 4 : null);
+              }}
+              variant="filled"
+              color="orange"
+            >
+              Urgent
+            </Chip>
+
+            <Chip
+              checked={priority === 5}
+              onChange={(checked) => {
+                setPriority(checked ? 5 : null);
+              }}
+              variant="filled"
+              color="red"
+            >
+              Critical
+            </Chip>
+          </div>
+        </>
       )}
 
       <Divider className="my-4" />
@@ -167,14 +235,19 @@ const TaskEditForm = ({
           Due date
         </Chip>
 
-        {delayTask || dueTask || (
-          <>
-            <Chip disabled>Repeat</Chip>
-            <Chip disabled>Priority</Chip>
-            <Chip disabled>Tags</Chip>
-            <Chip disabled>Assignees</Chip>
-          </>
-        )}
+        <Chip
+          checked={!!priority}
+          onChange={(checked) => {
+            setPriority(checked ? 1 : null);
+          }}
+          variant="filled"
+        >
+          Priority
+        </Chip>
+        <Chip disabled>Assignees</Chip>
+
+        {/* <Chip disabled>Repeat</Chip> */}
+        {/* <Chip disabled>Tags</Chip> */}
       </div>
 
       <div className="flex gap-2">
@@ -197,6 +270,7 @@ const TaskEditForm = ({
               id: task?.id || uuidv4(),
               name,
               description,
+              priority,
               start_date: startDate,
               end_date: endDate,
             };
