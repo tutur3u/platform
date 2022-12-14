@@ -59,13 +59,14 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const { name, description, startDate, endDate, listId } = req.body;
+  const { name, description, priority, startDate, endDate, listId } = req.body;
 
   const { error } = await supabase
     .from('tasks')
     .insert({
       name,
       description,
+      priority,
       start_date: startDate,
       end_date: endDate,
       list_id: listId,
