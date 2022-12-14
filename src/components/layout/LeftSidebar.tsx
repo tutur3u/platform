@@ -222,11 +222,7 @@ function LeftSidebar({ className }: SidebarProps) {
       title: list ? 'Edit list' : 'New list',
       centered: true,
       children: (
-        <TaskListEditForm
-          list={list}
-          boardId={boardId}
-          onSubmit={list ? updateList : addList}
-        />
+        <TaskListEditForm list={list} onSubmit={list ? updateList : addList} />
       ),
     });
   };

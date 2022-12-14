@@ -17,7 +17,7 @@ const TaskListAccordionControl = (
   const { list, ...rest } = props;
 
   const updateList = async (list: TaskList) => {
-    if (!list?.board_id) return;
+    if (!list?.id) return;
 
     const res = await fetch(`/api/tasks/lists/${list.id}`, {
       method: 'PUT',
@@ -33,9 +33,9 @@ const TaskListAccordionControl = (
   };
 
   const deleteList = async () => {
-    if (!list?.board_id) return;
+    if (!list?.id) return;
 
-    const res = await fetch(`/api/tasks/lists/${list.board_id}`, {
+    const res = await fetch(`/api/tasks/lists/${list.id}`, {
       method: 'DELETE',
     });
 

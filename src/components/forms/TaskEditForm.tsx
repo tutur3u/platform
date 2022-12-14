@@ -5,6 +5,7 @@ import {
   Chip,
   Divider,
   Group,
+  Loader,
   Text,
   Textarea,
 } from '@mantine/core';
@@ -22,6 +23,7 @@ import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { useUserData } from '../../hooks/useUserData';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -189,7 +191,7 @@ const TaskEditForm = ({
     } else {
       const res = await response.json();
       showNotification({
-        title: 'Could not invite user',
+        title: 'Could not assign user',
         message: res?.error?.message || 'Something went wrong',
         color: 'red',
       });
@@ -214,6 +216,8 @@ const TaskEditForm = ({
       });
     }
   };
+
+  const { data: userData, isLoading: isUserLoading } = useUserData();
 
   return (
     <>
@@ -369,18 +373,33 @@ const TaskEditForm = ({
         <>
           <Divider className="my-4" />
 
-          <Autocomplete
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Enter an username"
-            itemComponent={AutoCompleteItem}
-            data={suggestions}
-            onItemSubmit={(item) => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const { value, ...user } = item as UserWithValue;
-              handleAssignUser(user.id);
-            }}
-          />
+          <div className="flex gap-2">
+            <Autocomplete
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Enter an username"
+              itemComponent={AutoCompleteItem}
+              data={suggestions}
+              onItemSubmit={(item) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { value, ...user } = item as UserWithValue;
+                handleAssignUser(user.id);
+              }}
+              className="flex-grow"
+            />
+
+            {isUserLoading ? (
+              <Loader className="h-6 w-6" color="blue" size="sm" />
+            ) : userData &&
+              !assignees.some((assignee) => assignee.id === userData.id) ? (
+              <button
+                className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                onClick={() => handleAssignUser(userData.id)}
+              >
+                Assign me
+              </button>
+            ) : null}
+          </div>
 
           {assignees && assignees.length > 0 && (
             <>
