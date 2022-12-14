@@ -53,25 +53,6 @@ const TaskWrapper = ({
         )
       : null;
 
-  const addTask = async (task: Task) => {
-    if (!listId) return;
-
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        listId: task.id,
-        startDate: task.start_date,
-        endDate: task.end_date,
-      }),
-    });
-
-    if (res.ok) onEdit();
-  };
-
   const updateTask = async (task: Task) => {
     if (!task?.id) return;
 
@@ -109,11 +90,7 @@ const TaskWrapper = ({
       centered: true,
       size: 'xl',
       children: (
-        <TaskEditForm
-          task={task}
-          listId={listId}
-          onSubmit={task ? updateTask : addTask}
-        />
+        <TaskEditForm task={task} listId={listId} onSubmit={updateTask} />
       ),
     });
   };
