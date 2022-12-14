@@ -95,7 +95,9 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
   return (
     <Accordion.Item key={list.id} value={list.id}>
       <TaskListAccordionControl list={list}>
-        <div className="font-semibold">{list.name || 'Untitled list'}</div>
+        <div className="font-semibold line-clamp-1">
+          {list.name || 'Untitled list'}
+        </div>
       </TaskListAccordionControl>
       <Accordion.Panel>
         <Chip.Group

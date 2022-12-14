@@ -50,7 +50,7 @@ import TaskListEditForm from '../forms/TaskListEditForm';
 import TaskListWrapper from '../tasks/lists/TaskListWrapper';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
+  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { data: user } = useUserData();
 
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
@@ -235,17 +235,27 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-center bg-zinc-900 backdrop-blur-lg ${
-          leftSidebarPref.main === 'open'
-            ? 'opacity-100'
-            : 'pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100'
-        } transition-all duration-300`}
+        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 backdrop-blur-lg transition-all duration-300`}
       >
-        <div className="flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2">
+        <div
+          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2 ${
+            leftSidebarPref.main === 'open' &&
+            leftSidebarPref.secondary === 'visible'
+              ? 'opacity-100'
+              : leftSidebarPref.main === 'open'
+              ? 'w-64 opacity-100'
+              : leftSidebarPref.secondary === 'visible'
+              ? 'opacity-100'
+              : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
+          } transition-all`}
+        >
           <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
             <Logo
               alwaysShowLabel={leftSidebarPref.main === 'open'}
-              showLabel={leftSidebarPref.main !== 'closed'}
+              showLabel={
+                leftSidebarPref.main !== 'closed' &&
+                leftSidebarPref.secondary === 'hidden'
+              }
             />
           </div>
 
@@ -380,8 +390,9 @@ function LeftSidebar({ className }: SidebarProps) {
 
                   <div
                     className={
-                      leftSidebarPref.main === 'closed'
-                        ? 'md:hidden'
+                      leftSidebarPref.main === 'closed' ||
+                      leftSidebarPref.secondary === 'visible'
+                        ? 'hidden'
                         : leftSidebarPref.main === 'auto'
                         ? 'opacity-0 transition duration-300 group-hover:opacity-100'
                         : ''
@@ -407,11 +418,11 @@ function LeftSidebar({ className }: SidebarProps) {
 
         {leftSidebarPref.secondary === 'visible' &&
           (isBoardsLoading ? (
-            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
               <Loader />
             </div>
           ) : !boards || boards?.length === 0 ? (
-            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
               <div className="text-lg font-semibold">
                 Start organizing your tasks in a miraculous way.
               </div>
@@ -423,8 +434,8 @@ function LeftSidebar({ className }: SidebarProps) {
               </button>
             </div>
           ) : (
-            <div className="relative hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
-              <div className="relative mx-3 flex gap-2 text-2xl font-semibold">
+            <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-2">
+              <div className="relative mx-2 flex gap-2 text-2xl font-semibold">
                 <Select
                   defaultValue={selectedBoardId || boards?.[0]?.id}
                   data={
@@ -545,9 +556,7 @@ function LeftSidebar({ className }: SidebarProps) {
         className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
           leftSidebarPref.main === 'open' ? 'block' : 'hidden'
         }`}
-        onClick={() =>
-          changeLeftSidebarPref({ main: 'closed', secondary: 'hidden' })
-        }
+        onClick={() => changeLeftSidebarMainPref('closed')}
       />
     </>
   );
