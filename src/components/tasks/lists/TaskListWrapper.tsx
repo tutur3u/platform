@@ -46,10 +46,11 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
       },
       body: JSON.stringify({
         name: task.name,
-        listId: list.id,
+        description: task.description,
         priority: task.priority,
         startDate: task.start_date,
         endDate: task.end_date,
+        listId: list.id,
       }),
     });
 
@@ -95,7 +96,9 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
   return (
     <Accordion.Item key={list.id} value={list.id}>
       <TaskListAccordionControl list={list}>
-        <div className="font-semibold">{list.name || 'Untitled list'}</div>
+        <div className="font-semibold line-clamp-1">
+          {list.name || 'Untitled list'}
+        </div>
       </TaskListAccordionControl>
       <Accordion.Panel>
         <Chip.Group
@@ -124,13 +127,25 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
             {tasks &&
               tasks
                 .sort((a, b) => {
-                  if (a.completed && !b.completed) return 1;
-                  if (!a.completed && b.completed) return -1;
+                  // compare end dates
+                  if (a.end_date && !b.end_date) return -1;
+                  if (!a.end_date && b.end_date) return 1;
+
+                  if (a.end_date && b.end_date) {
+                    if (a.end_date > b.end_date) return 1;
+                    if (a.end_date < b.end_date) return -1;
+                  }
+
                   return 0;
                 })
                 .sort((a, b) => {
                   if (a.priority && !b.priority) return -1;
                   if (!a.priority && b.priority) return 1;
+                  return 0;
+                })
+                .sort((a, b) => {
+                  if (a.completed && !b.completed) return 1;
+                  if (!a.completed && b.completed) return -1;
                   return 0;
                 })
                 .map((task) => (
