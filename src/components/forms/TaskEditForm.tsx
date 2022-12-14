@@ -129,39 +129,35 @@ const TaskEditForm = ({
       const users = await fetchUsers(input);
       const suggestedUsers = users.map((user: UserData) => ({
         ...user,
-        value: user?.username || user?.email,
+        value: `${user.username} ${user.displayName} ${user.email}`,
       }));
 
       setSuggestions(suggestedUsers);
     };
 
     if (debounced) fetchData(debounced);
+    else setSuggestions([]);
   }, [debounced]);
 
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      { id, value, username, avatarUrl, displayName, ...others }: UserWithValue,
+      { username, avatarUrl, displayName, ...others }: UserWithValue,
       ref: React.ForwardedRef<HTMLDivElement>
-    ) =>
-      id === value ? (
-        <div {...others} ref={ref}>
-          <Text>{value}</Text>
-        </div>
-      ) : (
-        <div ref={ref} {...others}>
-          <Group noWrap>
-            <Avatar src={avatarUrl} />
+    ) => (
+      <div ref={ref} {...others}>
+        <Group noWrap>
+          <Avatar src={avatarUrl} />
 
-            <div>
-              <Text>{displayName}</Text>
-              <Text size="xs" color="dimmed">
-                {username ? `@${username}` : 'No username'}
-              </Text>
-            </div>
-          </Group>
-        </div>
-      )
+          <div>
+            <Text>{displayName}</Text>
+            <Text size="xs" color="dimmed">
+              {username ? `@${username}` : 'No username'}
+            </Text>
+          </div>
+        </Group>
+      </div>
+    )
   );
 
   const { data: rawAssigneesData } = useSWR(
