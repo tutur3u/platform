@@ -12,7 +12,6 @@ import {
 import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { ChangeEvent } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Task } from '../../types/primitives/Task';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import moment from 'moment';
@@ -54,7 +53,20 @@ const TaskEditForm = ({
   const [delayTask, setDelayTask] = useState(!!task?.start_date);
   const [dueTask, setDueTask] = useState(!!task?.end_date);
   const [priority, setPriority] = useState<Priority>(task?.priority);
+
   const [assignees, setAssignees] = useState<UserData[] | null>(null);
+  const [candidateAssignees, setCandidateAssignees] = useState<
+    UserData[] | null
+  >(null);
+
+  const isAssigneeAdded = (assigneeId: string) =>
+    assignees?.find((a) => a.id === assigneeId);
+
+  const getAllAssignees = () =>
+    [...(assignees || []), ...(candidateAssignees || [])].filter(
+      (assignee, index, self) =>
+        index === self.findIndex((a) => a.id === assignee.id)
+    );
 
   useEffect(() => {
     const taskNameElement = document.getElementById(
@@ -200,7 +212,6 @@ const TaskEditForm = ({
     });
 
     if (response.ok) {
-      mutate(`/api/tasks/${task.id}/assignees`);
       setSearchQuery('');
       setSuggestions([]);
     } else {
@@ -215,6 +226,12 @@ const TaskEditForm = ({
 
   const handleUnassignUser = async (userId: string) => {
     if (!task?.id) return;
+
+    if (!isAssigneeAdded(userId)) {
+      setCandidateAssignees((prev) =>
+        prev ? prev?.filter((assignee) => assignee.id !== userId) : null
+      );
+    }
 
     const response = await fetch(`/api/tasks/${task.id}/assignees/${userId}`, {
       method: 'DELETE',
@@ -406,7 +423,8 @@ const TaskEditForm = ({
               onItemSubmit={(item) => {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { value, ...user } = item as UserWithValue;
-                handleAssignUser(user.id);
+
+                setCandidateAssignees((prev) => [...(prev || []), user]);
               }}
               className="flex-grow"
             />
@@ -417,23 +435,29 @@ const TaskEditForm = ({
               !assignees.some((assignee) => assignee.id === userData.id) ? (
               <button
                 className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={() => handleAssignUser(userData.id)}
+                onClick={() =>
+                  setCandidateAssignees((prev) => [...(prev || []), userData])
+                }
               >
                 Assign me
               </button>
             ) : null}
           </div>
 
-          {assignees && assignees.length > 0 && (
+          {getAllAssignees().length > 0 && (
             <>
               <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
-                Assigned users ({assignees.length})
+                Assigned users ({getAllAssignees().length})
               </h3>
               <div className="grid gap-2 lg:grid-cols-2">
-                {assignees.map((assignee) => (
+                {getAllAssignees().map((assignee) => (
                   <Group
                     key={assignee.id}
-                    className="relative w-full rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4"
+                    className={`relative w-full rounded-lg border p-4 ${
+                      isAssigneeAdded(assignee.id)
+                        ? 'border-blue-300/20 bg-blue-300/10'
+                        : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                    }`}
                   >
                     <Avatar color="blue" radius="xl">
                       {getInitials(assignee?.displayName || 'Unknown')}
@@ -528,9 +552,22 @@ const TaskEditForm = ({
         <Button
           fullWidth
           variant="subtle"
-          onClick={() => {
+          onClick={async () => {
+            if (
+              task?.id &&
+              candidateAssignees &&
+              candidateAssignees.length > 0
+            ) {
+              const promises = candidateAssignees.map((assignee) =>
+                handleAssignUser(assignee.id)
+              );
+
+              await Promise.all(promises);
+              mutate(`/api/tasks/${task.id}/assignees`);
+            }
+
             const newTask: Task = {
-              id: task?.id || uuidv4(),
+              id: task?.id || '',
               name,
               description,
               priority,
