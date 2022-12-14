@@ -127,13 +127,25 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
             {tasks &&
               tasks
                 .sort((a, b) => {
-                  if (a.completed && !b.completed) return 1;
-                  if (!a.completed && b.completed) return -1;
+                  // compare end dates
+                  if (a.end_date && !b.end_date) return -1;
+                  if (!a.end_date && b.end_date) return 1;
+
+                  if (a.end_date && b.end_date) {
+                    if (a.end_date > b.end_date) return 1;
+                    if (a.end_date < b.end_date) return -1;
+                  }
+
                   return 0;
                 })
                 .sort((a, b) => {
                   if (a.priority && !b.priority) return -1;
                   if (!a.priority && b.priority) return 1;
+                  return 0;
+                })
+                .sort((a, b) => {
+                  if (a.completed && !b.completed) return 1;
+                  if (!a.completed && b.completed) return -1;
                   return 0;
                 })
                 .map((task) => (
