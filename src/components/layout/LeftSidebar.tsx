@@ -434,8 +434,8 @@ function LeftSidebar({ className }: SidebarProps) {
               </button>
             </div>
           ) : (
-            <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-6">
-              <div className="relative mx-3 flex gap-2 text-2xl font-semibold">
+            <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-2">
+              <div className="relative mx-2 flex gap-2 text-2xl font-semibold">
                 <Select
                   defaultValue={selectedBoardId || boards?.[0]?.id}
                   data={
