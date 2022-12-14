@@ -14,13 +14,13 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
   const generateSidebarWidth = (pref: SidebarPreference) => {
     switch (pref.main) {
       case 'closed': {
-        if (pref.secondary === 'hidden') return 'w-16';
-        return 'w-96';
+        if (pref.secondary === 'hidden') return 'w-0 md:w-16';
+        return 'w-full md:w-96';
       }
 
       case 'open': {
         if (pref.secondary === 'hidden') return 'w-64';
-        return 'w-96';
+        return 'w-full md:w-96';
       }
 
       case 'auto': {
