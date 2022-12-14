@@ -238,15 +238,15 @@ function LeftSidebar({ className }: SidebarProps) {
         className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 backdrop-blur-lg transition-all duration-300`}
       >
         <div
-          className={`flex h-full flex-col border-r border-zinc-800/80 pt-6 pb-2 ${
+          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2 ${
             leftSidebarPref.main === 'open' &&
             leftSidebarPref.secondary === 'visible'
-              ? 'w-16 opacity-100'
+              ? 'opacity-100'
               : leftSidebarPref.main === 'open'
               ? 'w-64 opacity-100'
               : leftSidebarPref.secondary === 'visible'
-              ? 'w-16 opacity-100'
-              : 'pointer-events-none w-16 opacity-0 md:pointer-events-auto md:static md:opacity-100'
+              ? 'opacity-100'
+              : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
           <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
