@@ -424,7 +424,12 @@ const TaskEditForm = ({
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { value, ...user } = item as UserWithValue;
 
+                // Update assignees
                 setCandidateAssignees((prev) => [...(prev || []), user]);
+
+                // Clear search query and suggestions
+                setSearchQuery('');
+                setSuggestions([]);
               }}
               className="flex-grow"
             />
