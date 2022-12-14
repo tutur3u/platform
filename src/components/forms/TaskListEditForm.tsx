@@ -7,14 +7,12 @@ import { TaskList } from '../../types/primitives/TaskList';
 
 interface TaskListEditFormProps {
   list?: TaskList;
-  boardId?: string;
   onSubmit?: (list: TaskList) => void;
   onDelete?: () => void;
 }
 
 const TaskListEditForm = ({
   list,
-  boardId,
   onSubmit,
   onDelete,
 }: TaskListEditFormProps) => {
@@ -22,11 +20,11 @@ const TaskListEditForm = ({
 
   return (
     <>
-      {boardId && (
+      {list?.board_id && (
         <TextInput
           label="Board ID"
-          value={boardId}
-          disabled={!!boardId}
+          value={list.board_id}
+          disabled={!!list.board_id}
           className="mb-2"
         />
       )}
@@ -68,7 +66,7 @@ const TaskListEditForm = ({
               id: list?.id || uuidv4(),
               name,
               tasks: [],
-              board_id: boardId,
+              board_id: list?.board_id || '',
             };
 
             if (onSubmit) onSubmit(newList);

@@ -53,25 +53,6 @@ const TaskWrapper = ({
         )
       : null;
 
-  const addTask = async (task: Task) => {
-    if (!listId) return;
-
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        listId: task.id,
-        startDate: task.start_date,
-        endDate: task.end_date,
-      }),
-    });
-
-    if (res.ok) onEdit();
-  };
-
   const updateTask = async (task: Task) => {
     if (!task?.id) return;
 
@@ -109,11 +90,7 @@ const TaskWrapper = ({
       centered: true,
       size: 'xl',
       children: (
-        <TaskEditForm
-          task={task}
-          listId={listId}
-          onSubmit={task ? updateTask : addTask}
-        />
+        <TaskEditForm task={task} listId={listId} onSubmit={updateTask} />
       ),
     });
   };
@@ -243,45 +220,48 @@ const TaskWrapper = ({
             </div>
           )}
 
-          {!task.completed && task.priority && (
-            <>
+          {!task.completed &&
+            (task.priority || (assignees && assignees.length > 0)) && (
               <Divider className="my-2" />
-              <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
-                <div
-                  className={`${getPriorityColor(
-                    task.priority
-                  )} flex h-fit items-center justify-center rounded-lg px-2 py-0.5`}
-                >
-                  {getPriorityText(task.priority)}
-                </div>
-                <Avatar.Group>
-                  {assignees &&
-                    assignees.length > 0 &&
-                    assignees.map((assignee) => (
-                      <Tooltip
-                        key={assignee.id}
-                        label={
-                          <div className="font-semibold">
-                            <div>{assignee?.displayName}</div>
-                            {assignee?.username && (
-                              <div className="text-blue-300">
-                                @{assignee.username}
-                              </div>
-                            )}
-                          </div>
-                        }
-                        color="#182a3d"
-                        withArrow
-                      >
-                        <Avatar color="blue" radius="xl">
-                          {getInitials(assignee?.displayName || 'Unknown')}
-                        </Avatar>
-                      </Tooltip>
-                    ))}
-                </Avatar.Group>
+            )}
+
+          <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
+            {!task.completed && task.priority && (
+              <div
+                className={`${getPriorityColor(
+                  task.priority
+                )} flex h-fit items-center justify-center rounded-lg px-2 py-0.5`}
+              >
+                {getPriorityText(task.priority)}
               </div>
-            </>
-          )}
+            )}
+
+            <Avatar.Group>
+              {assignees &&
+                assignees.length > 0 &&
+                assignees.map((assignee) => (
+                  <Tooltip
+                    key={assignee.id}
+                    label={
+                      <div className="font-semibold">
+                        <div>{assignee?.displayName}</div>
+                        {assignee?.username && (
+                          <div className="text-blue-300">
+                            @{assignee.username}
+                          </div>
+                        )}
+                      </div>
+                    }
+                    color="#182a3d"
+                    withArrow
+                  >
+                    <Avatar color="blue" radius="xl">
+                      {getInitials(assignee?.displayName || 'Unknown')}
+                    </Avatar>
+                  </Tooltip>
+                ))}
+            </Avatar.Group>
+          </div>
         </button>
       </div>
 
