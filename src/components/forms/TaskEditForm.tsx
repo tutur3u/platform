@@ -491,7 +491,7 @@ const TaskEditForm = ({
         <Chip
           checked={delayTask}
           onChange={(checked) => {
-            if (!checked) setStartDate(null);
+            setStartDate(checked ? new Date() : null);
             setDelayTask(checked);
           }}
           variant="filled"
@@ -502,7 +502,7 @@ const TaskEditForm = ({
         <Chip
           checked={dueTask}
           onChange={(checked) => {
-            if (!checked) setEndDate(null);
+            setEndDate(checked ? moment().add(1, 'days').toDate() : null);
             setDueTask(checked);
           }}
           variant="filled"
