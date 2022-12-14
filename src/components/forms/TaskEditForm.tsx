@@ -5,13 +5,13 @@ import {
   Chip,
   Divider,
   Group,
+  Loader,
   Text,
   Textarea,
 } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { ChangeEvent } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Task } from '../../types/primitives/Task';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import moment from 'moment';
@@ -22,6 +22,7 @@ import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { useUserData } from '../../hooks/useUserData';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -52,7 +53,20 @@ const TaskEditForm = ({
   const [delayTask, setDelayTask] = useState(!!task?.start_date);
   const [dueTask, setDueTask] = useState(!!task?.end_date);
   const [priority, setPriority] = useState<Priority>(task?.priority);
+
   const [assignees, setAssignees] = useState<UserData[] | null>(null);
+  const [candidateAssignees, setCandidateAssignees] = useState<
+    UserData[] | null
+  >(null);
+
+  const isAssigneeAdded = (assigneeId: string) =>
+    assignees?.find((a) => a.id === assigneeId);
+
+  const getAllAssignees = () =>
+    [...(assignees || []), ...(candidateAssignees || [])].filter(
+      (assignee, index, self) =>
+        index === self.findIndex((a) => a.id === assignee.id)
+    );
 
   useEffect(() => {
     const taskNameElement = document.getElementById(
@@ -69,12 +83,27 @@ const TaskEditForm = ({
     }
   }, []);
 
-  const handleTimeChange = (timeDate: Date | null, date: Date | null) => {
-    if (!timeDate) return date;
+  const handleTimeChange = (newDate: Date | null, date: Date | null) => {
+    if (!newDate) return date;
 
-    const newDate = date ? new Date(date) : new Date();
-    newDate.setHours(timeDate.getHours());
-    newDate.setMinutes(timeDate.getMinutes());
+    // Copy hours and minutes to old date
+    if (date) {
+      date.setHours(newDate.getHours());
+      date.setMinutes(newDate.getMinutes());
+    }
+
+    return date;
+  };
+
+  const handleDateChange = (newDate: Date | null, date: Date | null) => {
+    if (!newDate) return null;
+
+    // Copy hours and minutes from old date
+    if (date) {
+      newDate.setHours(date.getHours());
+      newDate.setMinutes(date.getMinutes());
+    }
+
     return newDate;
   };
 
@@ -183,13 +212,12 @@ const TaskEditForm = ({
     });
 
     if (response.ok) {
-      mutate(`/api/tasks/${task.id}/assignees`);
       setSearchQuery('');
       setSuggestions([]);
     } else {
       const res = await response.json();
       showNotification({
-        title: 'Could not invite user',
+        title: 'Could not assign user',
         message: res?.error?.message || 'Something went wrong',
         color: 'red',
       });
@@ -198,6 +226,12 @@ const TaskEditForm = ({
 
   const handleUnassignUser = async (userId: string) => {
     if (!task?.id) return;
+
+    if (!isAssigneeAdded(userId)) {
+      setCandidateAssignees((prev) =>
+        prev ? prev?.filter((assignee) => assignee.id !== userId) : null
+      );
+    }
 
     const response = await fetch(`/api/tasks/${task.id}/assignees/${userId}`, {
       method: 'DELETE',
@@ -214,6 +248,8 @@ const TaskEditForm = ({
       });
     }
   };
+
+  const { data: userData, isLoading: isUserLoading } = useUserData();
 
   return (
     <>
@@ -252,7 +288,11 @@ const TaskEditForm = ({
           label="Delays until"
           placeholder="When should the task start?"
           value={startDate}
-          onChange={setStartDate}
+          onChange={(newDate) =>
+            startDate
+              ? setStartDate((date) => handleDateChange(newDate, date))
+              : null
+          }
           maxDate={endDate || undefined}
           className="mb-2"
         />
@@ -263,9 +303,9 @@ const TaskEditForm = ({
           label="Time"
           placeholder="At what time should the task start?"
           value={startDate}
-          onChange={(timeDate) =>
+          onChange={(newDate) =>
             startDate
-              ? setStartDate((date) => handleTimeChange(timeDate, date))
+              ? setStartDate((date) => handleTimeChange(newDate, date))
               : null
           }
           clearable
@@ -279,7 +319,11 @@ const TaskEditForm = ({
           label="Due date"
           placeholder="When should the task be completed?"
           value={endDate}
-          onChange={setEndDate}
+          onChange={(newDate) =>
+            endDate
+              ? setEndDate((date) => handleDateChange(newDate, date))
+              : null
+          }
           minDate={startDate || undefined}
           className="mb-2"
         />
@@ -290,9 +334,9 @@ const TaskEditForm = ({
           label="Time"
           placeholder="At what time should the task be completed?"
           value={endDate}
-          onChange={(timeDate) =>
+          onChange={(newDate) =>
             endDate
-              ? setEndDate((date) => handleTimeChange(timeDate, date))
+              ? setEndDate((date) => handleTimeChange(newDate, date))
               : null
           }
           clearable
@@ -369,29 +413,51 @@ const TaskEditForm = ({
         <>
           <Divider className="my-4" />
 
-          <Autocomplete
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Enter an username"
-            itemComponent={AutoCompleteItem}
-            data={suggestions}
-            onItemSubmit={(item) => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const { value, ...user } = item as UserWithValue;
-              handleAssignUser(user.id);
-            }}
-          />
+          <div className="flex gap-2">
+            <Autocomplete
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Enter an username"
+              itemComponent={AutoCompleteItem}
+              data={suggestions}
+              onItemSubmit={(item) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { value, ...user } = item as UserWithValue;
 
-          {assignees && assignees.length > 0 && (
+                setCandidateAssignees((prev) => [...(prev || []), user]);
+              }}
+              className="flex-grow"
+            />
+
+            {isUserLoading ? (
+              <Loader className="h-6 w-6" color="blue" size="sm" />
+            ) : userData &&
+              !assignees.some((assignee) => assignee.id === userData.id) ? (
+              <button
+                className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                onClick={() =>
+                  setCandidateAssignees((prev) => [...(prev || []), userData])
+                }
+              >
+                Assign me
+              </button>
+            ) : null}
+          </div>
+
+          {getAllAssignees().length > 0 && (
             <>
               <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
-                Assigned users ({assignees.length})
+                Assigned users ({getAllAssignees().length})
               </h3>
               <div className="grid gap-2 lg:grid-cols-2">
-                {assignees.map((assignee) => (
+                {getAllAssignees().map((assignee) => (
                   <Group
                     key={assignee.id}
-                    className="relative w-full rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4"
+                    className={`relative w-full rounded-lg border p-4 ${
+                      isAssigneeAdded(assignee.id)
+                        ? 'border-blue-300/20 bg-blue-300/10'
+                        : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                    }`}
                   >
                     <Avatar color="blue" radius="xl">
                       {getInitials(assignee?.displayName || 'Unknown')}
@@ -425,7 +491,7 @@ const TaskEditForm = ({
         <Chip
           checked={delayTask}
           onChange={(checked) => {
-            if (!checked) setStartDate(null);
+            setStartDate(checked ? new Date() : null);
             setDelayTask(checked);
           }}
           variant="filled"
@@ -436,7 +502,7 @@ const TaskEditForm = ({
         <Chip
           checked={dueTask}
           onChange={(checked) => {
-            if (!checked) setEndDate(null);
+            setEndDate(checked ? moment().add(1, 'days').toDate() : null);
             setDueTask(checked);
           }}
           variant="filled"
@@ -453,17 +519,19 @@ const TaskEditForm = ({
         >
           Priority
         </Chip>
-        <Chip
-          checked={!!assignees}
-          disabled={assignees && assignees?.length > 0 ? true : false}
-          onChange={(checked) => {
-            if (assignees && assignees?.length > 0) return;
-            setAssignees(checked ? [] : null);
-          }}
-          variant="filled"
-        >
-          Assignees
-        </Chip>
+        {task?.id && (
+          <Chip
+            checked={!!assignees}
+            disabled={assignees && assignees?.length > 0 ? true : false}
+            onChange={(checked) => {
+              if (assignees && assignees?.length > 0) return;
+              setAssignees(checked ? [] : null);
+            }}
+            variant="filled"
+          >
+            Assignees
+          </Chip>
+        )}
 
         {/* <Chip disabled>Repeat</Chip> */}
         {/* <Chip disabled>Tags</Chip> */}
@@ -484,9 +552,22 @@ const TaskEditForm = ({
         <Button
           fullWidth
           variant="subtle"
-          onClick={() => {
+          onClick={async () => {
+            if (
+              task?.id &&
+              candidateAssignees &&
+              candidateAssignees.length > 0
+            ) {
+              const promises = candidateAssignees.map((assignee) =>
+                handleAssignUser(assignee.id)
+              );
+
+              await Promise.all(promises);
+              mutate(`/api/tasks/${task.id}/assignees`);
+            }
+
             const newTask: Task = {
-              id: task?.id || uuidv4(),
+              id: task?.id || '',
               name,
               description,
               priority,

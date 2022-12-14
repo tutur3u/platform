@@ -38,7 +38,7 @@ const fetchLists = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('task_lists')
-    .select('id, name')
+    .select('id, name, board_id')
     .eq('board_id', boardId)
     .order('created_at');
 
