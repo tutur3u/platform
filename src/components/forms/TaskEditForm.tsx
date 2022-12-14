@@ -472,17 +472,19 @@ const TaskEditForm = ({
         >
           Priority
         </Chip>
-        <Chip
-          checked={!!assignees}
-          disabled={assignees && assignees?.length > 0 ? true : false}
-          onChange={(checked) => {
-            if (assignees && assignees?.length > 0) return;
-            setAssignees(checked ? [] : null);
-          }}
-          variant="filled"
-        >
-          Assignees
-        </Chip>
+        {task?.id && (
+          <Chip
+            checked={!!assignees}
+            disabled={assignees && assignees?.length > 0 ? true : false}
+            onChange={(checked) => {
+              if (assignees && assignees?.length > 0) return;
+              setAssignees(checked ? [] : null);
+            }}
+            variant="filled"
+          >
+            Assignees
+          </Chip>
+        )}
 
         {/* <Chip disabled>Repeat</Chip> */}
         {/* <Chip disabled>Tags</Chip> */}
