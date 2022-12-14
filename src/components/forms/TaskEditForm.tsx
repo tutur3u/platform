@@ -71,12 +71,27 @@ const TaskEditForm = ({
     }
   }, []);
 
-  const handleTimeChange = (timeDate: Date | null, date: Date | null) => {
-    if (!timeDate) return date;
+  const handleTimeChange = (newDate: Date | null, date: Date | null) => {
+    if (!newDate) return date;
 
-    const newDate = date ? new Date(date) : new Date();
-    newDate.setHours(timeDate.getHours());
-    newDate.setMinutes(timeDate.getMinutes());
+    // Copy hours and minutes to old date
+    if (date) {
+      date.setHours(newDate.getHours());
+      date.setMinutes(newDate.getMinutes());
+    }
+
+    return date;
+  };
+
+  const handleDateChange = (newDate: Date | null, date: Date | null) => {
+    if (!newDate) return null;
+
+    // Copy hours and minutes from old date
+    if (date) {
+      newDate.setHours(date.getHours());
+      newDate.setMinutes(date.getMinutes());
+    }
+
     return newDate;
   };
 
@@ -256,7 +271,11 @@ const TaskEditForm = ({
           label="Delays until"
           placeholder="When should the task start?"
           value={startDate}
-          onChange={setStartDate}
+          onChange={(newDate) =>
+            startDate
+              ? setStartDate((date) => handleDateChange(newDate, date))
+              : null
+          }
           maxDate={endDate || undefined}
           className="mb-2"
         />
@@ -267,9 +286,9 @@ const TaskEditForm = ({
           label="Time"
           placeholder="At what time should the task start?"
           value={startDate}
-          onChange={(timeDate) =>
+          onChange={(newDate) =>
             startDate
-              ? setStartDate((date) => handleTimeChange(timeDate, date))
+              ? setStartDate((date) => handleTimeChange(newDate, date))
               : null
           }
           clearable
@@ -283,7 +302,11 @@ const TaskEditForm = ({
           label="Due date"
           placeholder="When should the task be completed?"
           value={endDate}
-          onChange={setEndDate}
+          onChange={(newDate) =>
+            endDate
+              ? setEndDate((date) => handleDateChange(newDate, date))
+              : null
+          }
           minDate={startDate || undefined}
           className="mb-2"
         />
@@ -294,9 +317,9 @@ const TaskEditForm = ({
           label="Time"
           placeholder="At what time should the task be completed?"
           value={endDate}
-          onChange={(timeDate) =>
+          onChange={(newDate) =>
             endDate
-              ? setEndDate((date) => handleTimeChange(timeDate, date))
+              ? setEndDate((date) => handleTimeChange(newDate, date))
               : null
           }
           clearable
