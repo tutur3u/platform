@@ -17,6 +17,7 @@ import useSWR from 'swr';
 import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
+  boardId: string;
   listId: string;
   task: Task;
   onEdit: () => void;
@@ -24,6 +25,7 @@ export interface TaskWrapperProps {
 }
 
 const TaskWrapper = ({
+  boardId,
   listId,
   task,
   onEdit,
@@ -95,7 +97,12 @@ const TaskWrapper = ({
       centered: true,
       size: 'xl',
       children: (
-        <TaskEditForm task={task} listId={listId} onSubmit={updateTask} />
+        <TaskEditForm
+          task={task}
+          boardId={boardId}
+          listId={listId}
+          onSubmit={updateTask}
+        />
       ),
     });
   };

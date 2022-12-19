@@ -26,6 +26,7 @@ import { useUserData } from '../../hooks/useUserData';
 
 interface TaskEditFormProps {
   task?: Task;
+  boardId: string;
   listId: string;
   onSubmit: (org: Task, listId: string) => void;
   onDelete?: () => void;
@@ -35,6 +36,7 @@ type UserWithValue = UserData & { value: string };
 
 const TaskEditForm = ({
   task,
+  // boardId,
   listId,
   onSubmit,
   onDelete,

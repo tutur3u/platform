@@ -86,6 +86,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
       children: (
         <TaskEditForm
           task={task}
+          boardId={list.board_id}
           listId={listId}
           onSubmit={task ? updateTask : addTask}
         />
@@ -94,7 +95,11 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
   };
 
   return (
-    <Accordion.Item key={list.id} value={list.id}>
+    <Accordion.Item
+      key={list.id}
+      value={list.id}
+      className="border-zinc-800/80"
+    >
       <TaskListAccordionControl list={list}>
         <div className="font-semibold line-clamp-1">
           {list.name || 'Untitled list'}
@@ -151,6 +156,7 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
                 .map((task) => (
                   <TaskWrapper
                     key={task.id}
+                    boardId={list.board_id}
                     listId={list.id}
                     task={task}
                     onEdit={resync}
