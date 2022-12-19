@@ -26,19 +26,13 @@ import { useUserData } from '../../hooks/useUserData';
 
 interface TaskEditFormProps {
   task?: Task;
-  listId: string;
-  onSubmit: (org: Task, listId: string) => void;
+  onSubmit: (task: Task) => void;
   onDelete?: () => void;
 }
 
 type UserWithValue = UserData & { value: string };
 
-const TaskEditForm = ({
-  task,
-  listId,
-  onSubmit,
-  onDelete,
-}: TaskEditFormProps) => {
+const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState(task?.description || '');
 
@@ -129,39 +123,35 @@ const TaskEditForm = ({
       const users = await fetchUsers(input);
       const suggestedUsers = users.map((user: UserData) => ({
         ...user,
-        value: user?.username || user?.email,
+        value: `${user.username} ${user.displayName} ${user.email}`,
       }));
 
       setSuggestions(suggestedUsers);
     };
 
     if (debounced) fetchData(debounced);
+    else setSuggestions([]);
   }, [debounced]);
 
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      { id, value, username, avatarUrl, displayName, ...others }: UserWithValue,
+      { username, avatarUrl, displayName, ...others }: UserWithValue,
       ref: React.ForwardedRef<HTMLDivElement>
-    ) =>
-      id === value ? (
-        <div {...others} ref={ref}>
-          <Text>{value}</Text>
-        </div>
-      ) : (
-        <div ref={ref} {...others}>
-          <Group noWrap>
-            <Avatar src={avatarUrl} />
+    ) => (
+      <div ref={ref} {...others}>
+        <Group noWrap>
+          <Avatar src={avatarUrl} />
 
-            <div>
-              <Text>{displayName}</Text>
-              <Text size="xs" color="dimmed">
-                {username ? `@${username}` : 'No username'}
-              </Text>
-            </div>
-          </Group>
-        </div>
-      )
+          <div>
+            <Text>{displayName}</Text>
+            <Text size="xs" color="dimmed">
+              {username ? `@${username}` : 'No username'}
+            </Text>
+          </div>
+        </Group>
+      </div>
+    )
   );
 
   const { data: rawAssigneesData } = useSWR(
@@ -283,64 +273,68 @@ const TaskEditForm = ({
 
       {(delayTask || dueTask || priority) && <Divider className="my-4" />}
 
-      {delayTask ? (
-        <DatePicker
-          label="Delays until"
-          placeholder="When should the task start?"
-          value={startDate}
-          onChange={(newDate) =>
-            startDate
-              ? setStartDate((date) => handleDateChange(newDate, date))
-              : null
-          }
-          maxDate={endDate || undefined}
-          className="mb-2"
-        />
-      ) : null}
+      {delayTask && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DatePicker
+            label="Delays until"
+            placeholder="When should the task start?"
+            value={startDate}
+            onChange={(newDate) =>
+              startDate
+                ? setStartDate((date) => handleDateChange(newDate, date))
+                : null
+            }
+            maxDate={endDate || undefined}
+            className="mb-2"
+          />
 
-      {delayTask && startDate && (
-        <TimeInput
-          label="Time"
-          placeholder="At what time should the task start?"
-          value={startDate}
-          onChange={(newDate) =>
-            startDate
-              ? setStartDate((date) => handleTimeChange(newDate, date))
-              : null
-          }
-          clearable
-        />
+          {startDate && (
+            <TimeInput
+              label="Time"
+              placeholder="At what time should the task start?"
+              value={startDate}
+              onChange={(newDate) =>
+                startDate
+                  ? setStartDate((date) => handleTimeChange(newDate, date))
+                  : null
+              }
+              clearable
+            />
+          )}
+        </div>
       )}
 
       {delayTask && dueTask && <Divider className="my-4" />}
 
-      {dueTask ? (
-        <DatePicker
-          label="Due date"
-          placeholder="When should the task be completed?"
-          value={endDate}
-          onChange={(newDate) =>
-            endDate
-              ? setEndDate((date) => handleDateChange(newDate, date))
-              : null
-          }
-          minDate={startDate || undefined}
-          className="mb-2"
-        />
-      ) : null}
+      {dueTask && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DatePicker
+            label="Due date"
+            placeholder="When should the task be completed?"
+            value={endDate}
+            onChange={(newDate) =>
+              endDate
+                ? setEndDate((date) => handleDateChange(newDate, date))
+                : null
+            }
+            minDate={startDate || undefined}
+            className="mb-2"
+          />
 
-      {dueTask && endDate && (
-        <TimeInput
-          label="Time"
-          placeholder="At what time should the task be completed?"
-          value={endDate}
-          onChange={(newDate) =>
-            endDate
-              ? setEndDate((date) => handleTimeChange(newDate, date))
-              : null
-          }
-          clearable
-        />
+          {endDate && (
+            <TimeInput
+              label="Time"
+              placeholder="At what time should the task be completed?"
+              value={endDate}
+              onChange={(newDate) =>
+                endDate
+                  ? setEndDate((date) => handleTimeChange(newDate, date))
+                  : null
+              }
+              clearable
+            />
+          )}
+        </div>
       )}
 
       {(delayTask || dueTask) && priority && <Divider className="my-4" />}
@@ -424,7 +418,12 @@ const TaskEditForm = ({
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { value, ...user } = item as UserWithValue;
 
+                // Update assignees
                 setCandidateAssignees((prev) => [...(prev || []), user]);
+
+                // Clear search query and suggestions
+                setSearchQuery('');
+                setSuggestions([]);
               }}
               className="flex-grow"
             />
@@ -573,9 +572,10 @@ const TaskEditForm = ({
               priority,
               start_date: startDate,
               end_date: endDate,
+              list_id: '',
             };
 
-            onSubmit(newTask, listId);
+            onSubmit(newTask);
             closeAllModals();
           }}
           mt="md"
