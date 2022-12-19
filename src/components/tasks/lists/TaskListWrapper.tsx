@@ -78,23 +78,23 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
     if (res.ok) resync();
   };
 
-  const showEditTaskModal = (listId: string, task?: Task) => {
+  const showEditTaskModal = (task?: Task) => {
     openModal({
       title: task ? 'Edit task' : 'New task',
       centered: true,
       size: 'xl',
       children: (
-        <TaskEditForm
-          task={task}
-          listId={listId}
-          onSubmit={task ? updateTask : addTask}
-        />
+        <TaskEditForm task={task} onSubmit={task ? updateTask : addTask} />
       ),
     });
   };
 
   return (
-    <Accordion.Item key={list.id} value={list.id}>
+    <Accordion.Item
+      key={list.id}
+      value={list.id}
+      className="border-zinc-800/80"
+    >
       <TaskListAccordionControl list={list}>
         <div className="font-semibold line-clamp-1">
           {list.name || 'Untitled list'}
@@ -125,41 +125,17 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
         ) : (
           <div className="grid gap-2">
             {tasks &&
-              tasks
-                .sort((a, b) => {
-                  // compare end dates
-                  if (a.end_date && !b.end_date) return -1;
-                  if (!a.end_date && b.end_date) return 1;
-
-                  if (a.end_date && b.end_date) {
-                    if (a.end_date > b.end_date) return 1;
-                    if (a.end_date < b.end_date) return -1;
-                  }
-
-                  return 0;
-                })
-                .sort((a, b) => {
-                  if (a.priority && !b.priority) return -1;
-                  if (!a.priority && b.priority) return 1;
-                  return 0;
-                })
-                .sort((a, b) => {
-                  if (a.completed && !b.completed) return 1;
-                  if (!a.completed && b.completed) return -1;
-                  return 0;
-                })
-                .map((task) => (
-                  <TaskWrapper
-                    key={task.id}
-                    listId={list.id}
-                    task={task}
-                    onEdit={resync}
-                    showCompleted={option === 'completed'}
-                  />
-                ))}
+              tasks.map((task) => (
+                <TaskWrapper
+                  key={task.id}
+                  task={task}
+                  onEdit={resync}
+                  showCompleted={option === 'completed'}
+                />
+              ))}
             <button
               className="flex items-center gap-3 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-400"
-              onClick={() => showEditTaskModal(list.id)}
+              onClick={() => showEditTaskModal()}
             >
               <PlusIcon className="w-5" />
               <div className="text-sm font-semibold">Task</div>

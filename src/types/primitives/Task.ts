@@ -8,5 +8,6 @@ export interface Task {
   priority?: Priority;
   start_date?: Date | null;
   end_date?: Date | null;
+  list_id: string;
   created_at?: string;
 }

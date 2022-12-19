@@ -14,19 +14,20 @@ import { UserData } from '../../../types/primitives/UserData';
 import { getInitials } from '../../../utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
+import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
-  listId: string;
   task: Task;
   onEdit: () => void;
   showCompleted?: boolean;
+  highlight?: boolean;
 }
 
 const TaskWrapper = ({
-  listId,
   task,
   onEdit,
   showCompleted,
+  highlight = true,
 }: TaskWrapperProps) => {
   const { data: rawAssigneesData } = useSWR(
     task?.id ? `/api/tasks/${task.id}/assignees` : null
@@ -53,6 +54,10 @@ const TaskWrapper = ({
         )
       : null;
 
+  const { data } = useUserData();
+
+  const isMyTask = assignees?.some((assignee) => assignee.id === data?.id);
+
   const updateTask = async (task: Task) => {
     if (!task?.id) return;
 
@@ -71,7 +76,7 @@ const TaskWrapper = ({
       }),
     });
 
-    if (res.ok) onEdit();
+    if (res.ok && onEdit) onEdit();
   };
 
   const deleteTask = async (taskId: string) => {
@@ -84,14 +89,12 @@ const TaskWrapper = ({
     if (res.ok) onEdit();
   };
 
-  const showEditTaskModal = (listId: string, task?: Task) => {
+  const showEditTaskModal = (task?: Task) => {
     openModal({
       title: task ? 'Edit task' : 'New task',
       centered: true,
       size: 'xl',
-      children: (
-        <TaskEditForm task={task} listId={listId} onSubmit={updateTask} />
-      ),
+      children: <TaskEditForm task={task} onSubmit={updateTask} />,
     });
   };
 
@@ -178,7 +181,13 @@ const TaskWrapper = ({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-lg hover:bg-zinc-800">
+    <div
+      className={`flex items-start justify-between rounded-lg ${
+        isMyTask && highlight && !task.completed
+          ? 'bg-purple-300/10 text-purple-300 hover:bg-purple-300/20'
+          : 'hover:bg-zinc-800'
+      } transition`}
+    >
       <div className="flex h-full w-full items-start justify-start">
         <Checkbox
           checked={task.completed}
@@ -188,7 +197,7 @@ const TaskWrapper = ({
 
         <button
           className="h-full w-full p-2 pl-1 text-start text-sm"
-          onClick={() => showEditTaskModal(listId, task)}
+          onClick={() => showEditTaskModal(task)}
         >
           <div
             className={
@@ -275,7 +284,7 @@ const TaskWrapper = ({
         <Menu.Dropdown className="font-semibold">
           <Menu.Item
             icon={<PencilIcon className="w-6" />}
-            onClick={() => showEditTaskModal(listId, task)}
+            onClick={() => showEditTaskModal(task)}
           >
             Edit task
           </Menu.Item>
