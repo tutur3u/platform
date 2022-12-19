@@ -4,10 +4,10 @@ import { useUserList } from '../../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import Layout from '../../../components/layout/Layout';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
-import MonthCell from '../../../components/calendar/MonthCell';
 import { useUserData } from '../../../hooks/useUserData';
-import { Center, SegmentedControl } from '@mantine/core';
 import Link from 'next/link';
+import { Center, SegmentedControl } from '@mantine/core';
+import Month from '../../../components/calendar/Month';
 
 const MonthViewPage: PageWithLayoutProps = () => {
   const {
@@ -48,72 +48,72 @@ const MonthViewPage: PageWithLayoutProps = () => {
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  // get first day of the month
-  const getFirstDay = () => {
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-    return firstDay;
-  };
+  // // get first day of the month
+  // const getFirstDay = () => {
+  //   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  //   return firstDay;
+  // };
 
-  // get monday of the week of the first day of the month
-  const getFirstMonday = () => {
-    const firstDay = getFirstDay();
-    const firstMonday = new Date(
-      firstDay.getFullYear(),
-      firstDay.getMonth(),
-      firstDay.getDate() - firstDay.getDay() + 1
-    );
-    return firstMonday;
-  };
+  // // get monday of the week of the first day of the month
+  // const getFirstMonday = () => {
+  //   const firstDay = getFirstDay();
+  //   const firstMonday = new Date(
+  //     firstDay.getFullYear(),
+  //     firstDay.getMonth(),
+  //     firstDay.getDate() - firstDay.getDay() + 1
+  //   );
+  //   return firstMonday;
+  // };
 
-  // get last day of the month
-  const getLastDay = () => {
-    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    return lastDay;
-  };
+  // // get last day of the month
+  // const getLastDay = () => {
+  //   const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  //   return lastDay;
+  // };
 
-  // get week of the last day of month
-  const getLastWeek = () => {
-    const lastDay = getLastDay();
-    const lastWeek = lastDay.getDay();
-    return lastWeek;
-  };
+  // // get week of the last day of month
+  // const getLastWeek = () => {
+  //   const lastDay = getLastDay();
+  //   const lastWeek = lastDay.getDay();
+  //   return lastWeek;
+  // };
 
-  // get sunday of the week of the last day of the month
-  const getLastDayOfLastWeek = () => {
-    const lastDay = getLastDay();
-    const lastWeek = getLastWeek();
-    const lastDayOfLastWeek = new Date(
-      lastDay.getFullYear(),
-      lastDay.getMonth(),
-      lastDay.getDate() + (6 - lastWeek)
-    );
-    return lastDayOfLastWeek;
-  };
+  // // get sunday of the week of the last day of the month
+  // const getLastDayOfLastWeek = () => {
+  //   const lastDay = getLastDay();
+  //   const lastWeek = getLastWeek();
+  //   const lastDayOfLastWeek = new Date(
+  //     lastDay.getFullYear(),
+  //     lastDay.getMonth(),
+  //     lastDay.getDate() + (6 - lastWeek)
+  //   );
+  //   return lastDayOfLastWeek;
+  // };
 
-  // get other date from first monday to the last day of last week
-  const getMonthDays = () => {
-    const firstMonday = getFirstMonday();
-    const lastDayOfLastWeek = getLastDayOfLastWeek();
-    const days = [];
-    for (
-      let i = firstMonday;
-      i <= lastDayOfLastWeek;
-      i.setDate(i.getDate() + 1)
-    ) {
-      days.push(new Date(i));
-    }
-    return days;
-  };
+  // // get other date from first monday to the last day of last week
+  // const getMonthDays = () => {
+  //   const firstMonday = getFirstMonday();
+  //   const lastDayOfLastWeek = getLastDayOfLastWeek();
+  //   const days = [];
+  //   for (
+  //     let i = firstMonday;
+  //     i <= lastDayOfLastWeek;
+  //     i.setDate(i.getDate() + 1)
+  //   ) {
+  //     days.push(new Date(i));
+  //   }
+  //   return days;
+  // };
 
-  // get the difference between the first monday and the last day of last week
-  const getMonthDaysLength = () => {
-    const firstMonday = getFirstMonday();
-    const lastDayOfLastWeek = getLastDayOfLastWeek();
-    const daysLength =
-      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) /
-      (1000 * 3600 * 24);
-    return daysLength;
-  };
+  // // get the difference between the first monday and the last day of last week
+  // const getMonthDaysLength = () => {
+  //   const firstMonday = getFirstMonday();
+  //   const lastDayOfLastWeek = getLastDayOfLastWeek();
+  //   const daysLength =
+  //     (lastDayOfLastWeek.getTime() - firstMonday.getTime()) /
+  //     (1000 * 3600 * 24);
+  //   return daysLength;
+  // };
 
   // prevMonth
   const prevMonth = () => {
@@ -147,6 +147,14 @@ const MonthViewPage: PageWithLayoutProps = () => {
             className="mr-2"
             data={[
               {
+                value: 'day',
+                label: (
+                  <Center>
+                    <Link href="/calendar/day">Day</Link>
+                  </Center>
+                ),
+              },
+              {
                 value: 'week',
                 label: (
                   <Center>
@@ -170,6 +178,14 @@ const MonthViewPage: PageWithLayoutProps = () => {
                   </Center>
                 ),
               },
+              {
+                value: 'schedule',
+                label: (
+                  <Center>
+                    <Link href="/calendar/schedule">Schedule</Link>
+                  </Center>
+                ),
+              },
             ]}
           />
 
@@ -183,7 +199,7 @@ const MonthViewPage: PageWithLayoutProps = () => {
             onClick={setToday}
             className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
           >
-            This month
+            Today
           </button>
           <button
             onClick={nextMonth}
@@ -204,10 +220,18 @@ const MonthViewPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="grid h-full grid-cols-7 border-t border-l border-zinc-800">
+      {/* <div className="grid h-full grid-cols-7 border-t border-l border-zinc-800">
         {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (
-          <MonthCell key={index} date={getMonthDays()[index]} />
+          <MonthCell hasGrid={true} key={index} date={getMonthDays()[index]} />
         ))}
+      </div> */}
+
+      <div className="h-full">
+        <Month
+          hasGrid={true}
+          month={date.getMonth()}
+          year={date.getFullYear()}
+        />
       </div>
     </div>
   );
