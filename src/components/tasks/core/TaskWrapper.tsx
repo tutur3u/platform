@@ -14,6 +14,7 @@ import { UserData } from '../../../types/primitives/UserData';
 import { getInitials } from '../../../utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
+import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
   listId: string;
@@ -52,6 +53,10 @@ const TaskWrapper = ({
           })
         )
       : null;
+
+  const { data } = useUserData();
+
+  const isMyTask = assignees?.some((assignee) => assignee.id === data?.id);
 
   const updateTask = async (task: Task) => {
     if (!task?.id) return;
@@ -178,7 +183,13 @@ const TaskWrapper = ({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-lg hover:bg-zinc-800">
+    <div
+      className={`flex items-start justify-between rounded-lg font-semibold ${
+        isMyTask
+          ? 'bg-purple-300/10 text-purple-300 hover:bg-purple-300/20'
+          : 'hover:bg-zinc-800'
+      } transition`}
+    >
       <div className="flex h-full w-full items-start justify-start">
         <Checkbox
           checked={task.completed}
