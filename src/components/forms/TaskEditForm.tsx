@@ -26,21 +26,13 @@ import { useUserData } from '../../hooks/useUserData';
 
 interface TaskEditFormProps {
   task?: Task;
-  boardId: string;
-  listId: string;
-  onSubmit: (org: Task, listId: string) => void;
+  onSubmit: (task: Task) => void;
   onDelete?: () => void;
 }
 
 type UserWithValue = UserData & { value: string };
 
-const TaskEditForm = ({
-  task,
-  // boardId,
-  listId,
-  onSubmit,
-  onDelete,
-}: TaskEditFormProps) => {
+const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState(task?.description || '');
 
@@ -580,9 +572,10 @@ const TaskEditForm = ({
               priority,
               start_date: startDate,
               end_date: endDate,
+              list_id: '',
             };
 
-            onSubmit(newTask, listId);
+            onSubmit(newTask);
             closeAllModals();
           }}
           mt="md"

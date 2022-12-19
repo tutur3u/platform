@@ -27,6 +27,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import {
   Accordion,
   Avatar,
+  Chip,
   Indicator,
   Loader,
   Menu,
@@ -48,6 +49,8 @@ import useSWR, { mutate } from 'swr';
 import { TaskList } from '../../types/primitives/TaskList';
 import TaskListEditForm from '../forms/TaskListEditForm';
 import TaskListWrapper from '../tasks/lists/TaskListWrapper';
+import { Task } from '../../types/primitives/Task';
+import TaskWrapper from '../tasks/core/TaskWrapper';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
@@ -66,20 +69,33 @@ function LeftSidebar({ className }: SidebarProps) {
   };
 
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
-  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [selectedListId, setSelectedListId] = useState<
+    string | string[] | null
+  >(null);
 
   const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
     user?.id ? '/api/tasks/boards' : null
   );
 
+  const [viewOption, setViewOption] = useState('my-tasks');
+
   const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
-    user?.id && selectedBoardId
+    user?.id && selectedBoardId && viewOption === 'all'
       ? `/api/tasks/lists?boardId=${selectedBoardId}`
       : null
   );
 
+  const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
+    user?.id && selectedBoardId && viewOption !== 'all'
+      ? `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
+      : null
+  );
+
   const isBoardsLoading = !boards && !boardsError;
-  const isListsLoading = !lists && !listsError;
+  const isListsLoading = !lists && !listsError && viewOption === 'all';
+  const isTasksLoading = !tasks && !tasksError && viewOption !== 'all';
+
+  const isContentLoading = isBoardsLoading || isListsLoading || isTasksLoading;
 
   // Automatically select the first board if none is selected
   useEffect(() => {
@@ -527,18 +543,61 @@ function LeftSidebar({ className }: SidebarProps) {
                 padRight={false}
               />
 
-              {isListsLoading ? (
+              <Chip.Group
+                multiple={false}
+                value={viewOption}
+                onChange={setViewOption}
+                className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2"
+              >
+                <Chip variant="filled" value="all">
+                  All
+                </Chip>
+                <Chip color="cyan" variant="filled" value="my-tasks">
+                  My tasks
+                </Chip>
+                <Chip color="teal" variant="filled" value="recently-updated">
+                  Recently added
+                </Chip>
+              </Chip.Group>
+
+              {isContentLoading ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
                   <Loader />
                 </div>
+              ) : viewOption !== 'all' ? (
+                !tasks || tasks.length === 0 ? (
+                  <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                    You have no assigned tasks in this board.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 overflow-auto p-4 scrollbar-none">
+                    {tasks.map((task) => (
+                      <TaskWrapper
+                        key={task.id}
+                        task={task}
+                        highlight={viewOption !== 'my-tasks'}
+                        onEdit={() =>
+                          mutate(
+                            `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                )
               ) : lists?.length === 0 ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
                   Create a task list to get started
                 </div>
               ) : (
                 <Accordion
-                  value={selectedListId}
+                  value={
+                    viewOption === 'all'
+                      ? selectedListId
+                      : lists?.map((list) => list.id)
+                  }
                   onChange={setSelectedListId}
+                  multiple={viewOption !== 'all'}
                   chevronPosition="left"
                   radius="lg"
                   className="flex flex-col overflow-auto scrollbar-none"
