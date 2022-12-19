@@ -281,64 +281,68 @@ const TaskEditForm = ({
 
       {(delayTask || dueTask || priority) && <Divider className="my-4" />}
 
-      {delayTask ? (
-        <DatePicker
-          label="Delays until"
-          placeholder="When should the task start?"
-          value={startDate}
-          onChange={(newDate) =>
-            startDate
-              ? setStartDate((date) => handleDateChange(newDate, date))
-              : null
-          }
-          maxDate={endDate || undefined}
-          className="mb-2"
-        />
-      ) : null}
+      {delayTask && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DatePicker
+            label="Delays until"
+            placeholder="When should the task start?"
+            value={startDate}
+            onChange={(newDate) =>
+              startDate
+                ? setStartDate((date) => handleDateChange(newDate, date))
+                : null
+            }
+            maxDate={endDate || undefined}
+            className="mb-2"
+          />
 
-      {delayTask && startDate && (
-        <TimeInput
-          label="Time"
-          placeholder="At what time should the task start?"
-          value={startDate}
-          onChange={(newDate) =>
-            startDate
-              ? setStartDate((date) => handleTimeChange(newDate, date))
-              : null
-          }
-          clearable
-        />
+          {startDate && (
+            <TimeInput
+              label="Time"
+              placeholder="At what time should the task start?"
+              value={startDate}
+              onChange={(newDate) =>
+                startDate
+                  ? setStartDate((date) => handleTimeChange(newDate, date))
+                  : null
+              }
+              clearable
+            />
+          )}
+        </div>
       )}
 
       {delayTask && dueTask && <Divider className="my-4" />}
 
-      {dueTask ? (
-        <DatePicker
-          label="Due date"
-          placeholder="When should the task be completed?"
-          value={endDate}
-          onChange={(newDate) =>
-            endDate
-              ? setEndDate((date) => handleDateChange(newDate, date))
-              : null
-          }
-          minDate={startDate || undefined}
-          className="mb-2"
-        />
-      ) : null}
+      {dueTask && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DatePicker
+            label="Due date"
+            placeholder="When should the task be completed?"
+            value={endDate}
+            onChange={(newDate) =>
+              endDate
+                ? setEndDate((date) => handleDateChange(newDate, date))
+                : null
+            }
+            minDate={startDate || undefined}
+            className="mb-2"
+          />
 
-      {dueTask && endDate && (
-        <TimeInput
-          label="Time"
-          placeholder="At what time should the task be completed?"
-          value={endDate}
-          onChange={(newDate) =>
-            endDate
-              ? setEndDate((date) => handleTimeChange(newDate, date))
-              : null
-          }
-          clearable
-        />
+          {endDate && (
+            <TimeInput
+              label="Time"
+              placeholder="At what time should the task be completed?"
+              value={endDate}
+              onChange={(newDate) =>
+                endDate
+                  ? setEndDate((date) => handleTimeChange(newDate, date))
+                  : null
+              }
+              clearable
+            />
+          )}
+        </div>
       )}
 
       {(delayTask || dueTask) && priority && <Divider className="my-4" />}
