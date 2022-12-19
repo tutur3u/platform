@@ -2,6 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { Center, SegmentedControl } from '@mantine/core';
 import Link from 'next/link';
 import { ReactElement, useEffect, useState } from 'react';
+import Month from '../../../components/calendar/Month';
 import Layout from '../../../components/layout/Layout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { useUserData } from '../../../hooks/useUserData';
@@ -45,8 +46,25 @@ const YearViewPage: PageWithLayoutProps = () => {
     setDate(new Date());
   };
 
+  const nextYear = () => {
+    setDate(new Date(date.getFullYear() + 1, date.getMonth()));
+  };
+
+  const prevYear = () => {
+    setDate(new Date(date.getFullYear() - 1, date.getMonth()));
+  };
+
+  // array of months as number
+  const months = Array.from({ length: 12 }, (_, i) => i);
+
+  // get current year
+  const getYear = () => {
+    const year = date.getFullYear();
+    return year;
+  };
+
   return (
-    <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+    <div className="flex h-full min-h-full w-full flex-col  border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-8 flex justify-between">
         <div className="text-3xl font-semibold">
           <span>{date.getFullYear()}</span>
@@ -57,6 +75,14 @@ const YearViewPage: PageWithLayoutProps = () => {
             radius="md"
             className="mr-2"
             data={[
+              {
+                value: 'day',
+                label: (
+                  <Center>
+                    <Link href="/calendar/day">Day</Link>
+                  </Center>
+                ),
+              },
               {
                 value: 'week',
                 label: (
@@ -81,22 +107,42 @@ const YearViewPage: PageWithLayoutProps = () => {
                   </Center>
                 ),
               },
+              {
+                value: 'schedule',
+                label: (
+                  <Center>
+                    <Link href="/calendar/schedule">Schedule</Link>
+                  </Center>
+                ),
+              },
             ]}
           />
 
-          <button className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20">
+          <button
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+            onClick={prevYear}
+          >
             <ChevronLeftIcon className="w-4" />
           </button>
           <button
             onClick={setToday}
             className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
           >
-            This year
+            Today
           </button>
-          <button className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20">
+          <button
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+            onClick={nextYear}
+          >
             <ChevronRightIcon className="w-4" />
           </button>
         </div>
+      </div>
+
+      <div className="overflow-scroll-y grid grid-cols-4 gap-7">
+        {months.map((month) => (
+          <Month key={month} month={month} year={getYear()} hasGrid={false} />
+        ))}
       </div>
     </div>
   );
