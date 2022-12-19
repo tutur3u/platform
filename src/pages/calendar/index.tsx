@@ -164,6 +164,14 @@ const CalendarPage: PageWithLayoutProps = () => {
                   </Center>
                 ),
               },
+              {
+                value: 'schedule',
+                label: (
+                  <Center>
+                    <Link href="/calendar/schedule">Schedule</Link>
+                  </Center>
+                ),
+              },
             ]}
           />
 
