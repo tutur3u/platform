@@ -197,8 +197,8 @@ const CalendarPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="relative mb-20 bg-red-200">
-        <div className="absolute right-0 grid w-[93%] grid-cols-7">
+      <div>
+        <div className="float-right grid w-[93%] grid-cols-7">
           {weekdays.map((weekday, index) => (
             <div key={index}>
               <DayTitle date={getWeekdays()[index]} weekday={weekday} />
@@ -207,8 +207,8 @@ const CalendarPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="flex overflow-y-scroll border-zinc-800 bg-red-200 text-center scrollbar-none">
-        <div className="absolute left-0 grid w-[7%] grid-rows-[24] overflow-y-scroll">
+      <div className="overflow-y-scroll border-zinc-800 text-center scrollbar-none">
+        <div className="float-left grid w-[7%] grid-rows-[24]">
           {Array.from(Array(23).keys()).map((hour, index) => (
             <div
               key={index}
@@ -220,7 +220,7 @@ const CalendarPage: PageWithLayoutProps = () => {
             </div>
           ))}
         </div>
-        <div className="absolute right-0 grid w-[93%] grid-cols-7">
+        <div className="float-right grid w-[93%] grid-cols-7">
           {weekdays.map((_, index) => (
             <div key={index}>
               <div className="grid grid-rows-[24]">
