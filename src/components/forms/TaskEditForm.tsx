@@ -1,11 +1,11 @@
 import {
   Autocomplete,
   Avatar,
+  Badge,
   Button,
-  Chip,
-  Divider,
   Group,
   Loader,
+  Tabs,
   Text,
   Textarea,
 } from '@mantine/core';
@@ -44,8 +44,6 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
     task?.end_date ? moment(task?.end_date).toDate() : null
   );
 
-  const [delayTask, setDelayTask] = useState(!!task?.start_date);
-  const [dueTask, setDueTask] = useState(!!task?.end_date);
   const [priority, setPriority] = useState<Priority>(task?.priority);
 
   const [assignees, setAssignees] = useState<UserData[] | null>(null);
@@ -243,298 +241,264 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
 
   return (
     <>
-      <Textarea
-        id="task-name"
-        label="Task name"
-        placeholder="Enter task name"
-        value={name}
-        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-          setName(event.target.value)
-        }
-        autoComplete="off"
-        maxRows={5}
-        autosize
-        data-autofocus
-        className="mb-2"
-      />
+      <Tabs defaultValue="details">
+        <Tabs.List className="mb-2">
+          <Tabs.Tab value="details">Details</Tabs.Tab>
+          <Tabs.Tab value="datetime">Date & Time</Tabs.Tab>
+          <Tabs.Tab value="priority">Priority</Tabs.Tab>
+          {task?.id && (
+            <Tabs.Tab value="assignees">
+              Assignees{' '}
+              {assignees && assignees.length > 0 && (
+                <Badge>{assignees?.length || 0}</Badge>
+              )}
+            </Tabs.Tab>
+          )}
+          {/* <Tabs.Tab value="settings">Settings</Tabs.Tab> */}
+        </Tabs.List>
 
-      <Textarea
-        label="Description"
-        placeholder="Enter task description"
-        value={description}
-        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-          setDescription(event.target.value)
-        }
-        autoComplete="off"
-        minRows={3}
-        maxRows={7}
-        autosize
-      />
-
-      {(delayTask || dueTask || priority) && <Divider className="my-4" />}
-
-      {delayTask && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <DatePicker
-            label="Delays until"
-            placeholder="When should the task start?"
-            value={startDate}
-            onChange={(newDate) =>
-              startDate
-                ? setStartDate((date) => handleDateChange(newDate, date))
-                : null
+        <Tabs.Panel value="details">
+          <Textarea
+            id="task-name"
+            label="Task name"
+            placeholder="Enter task name"
+            value={name}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              setName(event.target.value)
             }
-            maxDate={endDate || undefined}
+            autoComplete="off"
+            maxRows={5}
+            autosize
+            data-autofocus
             className="mb-2"
           />
 
-          {startDate && (
-            <TimeInput
-              label="Time"
-              placeholder="At what time should the task start?"
+          <Textarea
+            label="Description"
+            placeholder="Enter task description"
+            value={description}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              setDescription(event.target.value)
+            }
+            autoComplete="off"
+            minRows={3}
+            maxRows={7}
+            autosize
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="datetime">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <DatePicker
+              label="Start date"
+              placeholder="When should the task start?"
               value={startDate}
               onChange={(newDate) =>
-                startDate
-                  ? setStartDate((date) => handleTimeChange(newDate, date))
-                  : null
+                setStartDate((date) =>
+                  date ? handleDateChange(newDate, date) : newDate
+                )
               }
-              clearable
+              maxDate={endDate || undefined}
+              className="mb-2 lg:col-span-2"
             />
-          )}
-        </div>
-      )}
 
-      {delayTask && dueTask && <Divider className="my-4" />}
+            {startDate && (
+              <TimeInput
+                label="Time"
+                placeholder="At what time should the task start?"
+                value={startDate}
+                onChange={(newDate) =>
+                  setStartDate((date) =>
+                    date ? handleTimeChange(newDate, date) : newDate
+                  )
+                }
+                clearable
+              />
+            )}
+          </div>
 
-      {dueTask && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <DatePicker
-            label="Due date"
-            placeholder="When should the task be completed?"
-            value={endDate}
-            onChange={(newDate) =>
-              endDate
-                ? setEndDate((date) => handleDateChange(newDate, date))
-                : null
-            }
-            minDate={startDate || undefined}
-            className="mb-2"
-          />
-
-          {endDate && (
-            <TimeInput
-              label="Time"
-              placeholder="At what time should the task be completed?"
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <DatePicker
+              label="Due date"
+              placeholder="When should the task be completed?"
               value={endDate}
               onChange={(newDate) =>
-                endDate
-                  ? setEndDate((date) => handleTimeChange(newDate, date))
-                  : null
+                setEndDate((date) =>
+                  date ? handleDateChange(newDate, date) : newDate
+                )
               }
-              clearable
+              minDate={startDate || undefined}
+              className="mb-2 lg:col-span-2"
             />
-          )}
-        </div>
-      )}
 
-      {(delayTask || dueTask) && priority && <Divider className="my-4" />}
+            {endDate && (
+              <TimeInput
+                label="Time"
+                placeholder="At what time should the task be completed?"
+                value={endDate}
+                onChange={(newDate) =>
+                  setEndDate((date) =>
+                    date ? handleTimeChange(newDate, date) : newDate
+                  )
+                }
+                clearable
+              />
+            )}
+          </div>
+        </Tabs.Panel>
 
-      {priority && (
-        <>
-          <h3 className="mb-2 text-center text-lg font-semibold">
-            Task priority
-          </h3>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Chip
-              checked={priority === 1}
-              onChange={(checked) => {
-                setPriority(checked ? 1 : null);
-              }}
-              variant="filled"
-              color="gray"
+        <Tabs.Panel value="priority">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPriority(null)}
+              className={`${
+                priority === null
+                  ? 'border-zinc-300/20 bg-zinc-500/20 text-zinc-300'
+                  : 'border-zinc-300/10 bg-zinc-500/5 text-zinc-300/80 hover:bg-zinc-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
+            >
+              None
+            </button>
+
+            <button
+              onClick={() => setPriority((p) => (p !== 1 ? 1 : null))}
+              className={`${
+                priority === 1
+                  ? 'border-green-300/20 bg-green-500/20 text-green-300'
+                  : 'border-green-300/10 bg-green-500/5 text-green-300/80 hover:bg-green-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
             >
               Low
-            </Chip>
+            </button>
 
-            <Chip
-              checked={priority === 2}
-              onChange={(checked) => {
-                setPriority(checked ? 2 : null);
-              }}
-              variant="filled"
-              color="blue"
+            <button
+              onClick={() => setPriority((p) => (p !== 2 ? 2 : null))}
+              className={`${
+                priority === 2
+                  ? 'border-blue-300/20 bg-blue-500/20 text-blue-300'
+                  : 'border-blue-300/10 bg-blue-500/5 text-blue-300/80 hover:bg-blue-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
             >
               Medium
-            </Chip>
+            </button>
 
-            <Chip
-              checked={priority === 3}
-              onChange={(checked) => {
-                setPriority(checked ? 3 : null);
-              }}
-              variant="filled"
-              color="grape"
+            <button
+              onClick={() => setPriority((p) => (p !== 3 ? 3 : null))}
+              className={`${
+                priority === 3
+                  ? 'border-purple-300/20 bg-purple-500/20 text-purple-300'
+                  : 'border-purple-300/10 bg-purple-500/5 text-purple-300/80 hover:bg-purple-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
             >
               High
-            </Chip>
+            </button>
 
-            <Chip
-              checked={priority === 4}
-              onChange={(checked) => {
-                setPriority(checked ? 4 : null);
-              }}
-              variant="filled"
-              color="orange"
+            <button
+              onClick={() => setPriority((p) => (p !== 4 ? 4 : null))}
+              className={`${
+                priority === 4
+                  ? 'border-orange-300/20 bg-orange-500/20 text-orange-300'
+                  : 'border-orange-300/10 bg-orange-500/5 text-orange-300/80 hover:bg-orange-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
             >
               Urgent
-            </Chip>
+            </button>
 
-            <Chip
-              checked={priority === 5}
-              onChange={(checked) => {
-                setPriority(checked ? 5 : null);
-              }}
-              variant="filled"
-              color="red"
+            <button
+              onClick={() => setPriority((p) => (p !== 5 ? 5 : null))}
+              className={`${
+                priority === 5
+                  ? 'border-red-300/20 bg-red-500/20 text-red-300'
+                  : 'border-red-300/10 bg-red-500/5 text-red-300/80 hover:bg-red-500/10'
+              } rounded-md border p-8 font-semibold shadow-sm transition`}
             >
               Critical
-            </Chip>
+            </button>
           </div>
-        </>
-      )}
+        </Tabs.Panel>
 
-      {assignees && (
-        <>
-          <Divider className="my-4" />
+        <Tabs.Panel value="assignees">
+          <>
+            <div className="flex gap-2">
+              <Autocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Enter an username"
+                itemComponent={AutoCompleteItem}
+                data={suggestions}
+                onItemSubmit={(item) => {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  const { value, ...user } = item as UserWithValue;
 
-          <div className="flex gap-2">
-            <Autocomplete
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Enter an username"
-              itemComponent={AutoCompleteItem}
-              data={suggestions}
-              onItemSubmit={(item) => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { value, ...user } = item as UserWithValue;
+                  // Update assignees
+                  setCandidateAssignees((prev) => [...(prev || []), user]);
 
-                // Update assignees
-                setCandidateAssignees((prev) => [...(prev || []), user]);
+                  // Clear search query and suggestions
+                  setSearchQuery('');
+                  setSuggestions([]);
+                }}
+                className="flex-grow"
+              />
 
-                // Clear search query and suggestions
-                setSearchQuery('');
-                setSuggestions([]);
-              }}
-              className="flex-grow"
-            />
+              {isUserLoading ? (
+                <Loader className="h-6 w-6" color="blue" size="sm" />
+              ) : userData &&
+                (assignees?.length === 0 ||
+                  !assignees?.some(
+                    (assignee) => assignee.id === userData.id
+                  )) ? (
+                <button
+                  className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                  onClick={() =>
+                    setCandidateAssignees((prev) => [...(prev || []), userData])
+                  }
+                >
+                  Assign me
+                </button>
+              ) : null}
+            </div>
 
-            {isUserLoading ? (
-              <Loader className="h-6 w-6" color="blue" size="sm" />
-            ) : userData &&
-              !assignees.some((assignee) => assignee.id === userData.id) ? (
-              <button
-                className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={() =>
-                  setCandidateAssignees((prev) => [...(prev || []), userData])
-                }
-              >
-                Assign me
-              </button>
-            ) : null}
-          </div>
-
-          {getAllAssignees().length > 0 && (
-            <>
-              <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
-                Assigned users ({getAllAssignees().length})
-              </h3>
-              <div className="grid gap-2 lg:grid-cols-2">
-                {getAllAssignees().map((assignee) => (
-                  <Group
-                    key={assignee.id}
-                    className={`relative w-full rounded-lg border p-4 ${
-                      isAssigneeAdded(assignee.id)
-                        ? 'border-blue-300/20 bg-blue-300/10'
-                        : 'border-dashed border-zinc-300/20 bg-zinc-800'
-                    }`}
-                  >
-                    <Avatar color="blue" radius="xl">
-                      {getInitials(assignee?.displayName || 'Unknown')}
-                    </Avatar>
-                    <div>
-                      <Text weight="bold" className="text-blue-200">
-                        {assignee.displayName}
-                      </Text>
-                      <Text weight="light" className="text-blue-100">
-                        @{assignee.username}
-                      </Text>
-                    </div>
-
-                    <button
-                      className="absolute right-1 top-1"
-                      onClick={() => handleUnassignUser(assignee.id)}
+            {getAllAssignees().length > 0 && (
+              <>
+                <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
+                  Assignees
+                </h3>
+                <div className="grid gap-2 lg:grid-cols-2">
+                  {getAllAssignees().map((assignee) => (
+                    <Group
+                      key={assignee.id}
+                      className={`relative w-full rounded-lg border p-4 ${
+                        isAssigneeAdded(assignee.id)
+                          ? 'border-blue-300/20 bg-blue-300/10'
+                          : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                      }`}
                     >
-                      <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
-                    </button>
-                  </Group>
-                ))}
-              </div>
-            </>
-          )}
-        </>
-      )}
+                      <Avatar color="blue" radius="xl">
+                        {getInitials(assignee?.displayName || 'Unknown')}
+                      </Avatar>
+                      <div>
+                        <Text weight="bold" className="text-blue-200">
+                          {assignee.displayName}
+                        </Text>
+                        <Text weight="light" className="text-blue-100">
+                          @{assignee.username}
+                        </Text>
+                      </div>
 
-      <Divider className="my-4" />
-
-      <div className="flex flex-wrap justify-center gap-2">
-        <Chip
-          checked={delayTask}
-          onChange={(checked) => {
-            setStartDate(checked ? new Date() : null);
-            setDelayTask(checked);
-          }}
-          variant="filled"
-        >
-          Delay task
-        </Chip>
-
-        <Chip
-          checked={dueTask}
-          onChange={(checked) => {
-            setEndDate(checked ? moment().add(1, 'days').toDate() : null);
-            setDueTask(checked);
-          }}
-          variant="filled"
-        >
-          Due date
-        </Chip>
-
-        <Chip
-          checked={!!priority}
-          onChange={(checked) => {
-            setPriority(checked ? 1 : null);
-          }}
-          variant="filled"
-        >
-          Priority
-        </Chip>
-        {task?.id && (
-          <Chip
-            checked={!!assignees}
-            disabled={assignees && assignees?.length > 0 ? true : false}
-            onChange={(checked) => {
-              if (assignees && assignees?.length > 0) return;
-              setAssignees(checked ? [] : null);
-            }}
-            variant="filled"
-          >
-            Assignees
-          </Chip>
-        )}
-
-        {/* <Chip disabled>Repeat</Chip> */}
-        {/* <Chip disabled>Tags</Chip> */}
-      </div>
+                      <button
+                        className="absolute right-1 top-1"
+                        onClick={() => handleUnassignUser(assignee.id)}
+                      >
+                        <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                      </button>
+                    </Group>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        </Tabs.Panel>
+      </Tabs>
 
       <div className="flex gap-2">
         {task?.id && onDelete && (

@@ -91,7 +91,9 @@ const TaskWrapper = ({
 
   const showEditTaskModal = (task?: Task) => {
     openModal({
-      title: task ? 'Edit task' : 'New task',
+      title: (
+        <div className="font-semibold">{task ? 'Edit task' : 'New task'}</div>
+      ),
       centered: true,
       size: 'xl',
       children: <TaskEditForm task={task} onSubmit={updateTask} />,
@@ -166,7 +168,7 @@ const TaskWrapper = ({
   const getPriorityColor = (priority: number) => {
     switch (priority) {
       case 1:
-        return 'bg-zinc-300/10 text-zinc-300';
+        return 'bg-green-300/10 text-green-300';
       case 2:
         return 'bg-blue-300/10 text-blue-300';
       case 3:
