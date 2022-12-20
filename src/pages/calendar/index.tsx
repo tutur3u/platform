@@ -1,8 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import { Center, SegmentedControl } from '@mantine/core';
-import Link from 'next/link';
 import { ReactElement, useEffect, useState } from 'react';
 import DayTitle from '../../components/calendar/DayTitle';
 import Layout from '../../components/layout/Layout';
@@ -10,6 +7,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
+import CalendarHeader from '../../components/calendar/CalendarHeader';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -120,82 +118,16 @@ const CalendarPage: PageWithLayoutProps = () => {
       </div>
     );
 
+  const title = `${longMonth} ${date.getFullYear()}`;
+
   return (
     <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
-      <div className="mb-8 flex justify-between">
-        <div className="text-3xl font-semibold">
-          {longMonth} <span>{date.getFullYear()}</span>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 text-blue-300">
-          <SegmentedControl
-            radius="md"
-            className="mr-2"
-            data={[
-              {
-                value: 'day',
-                label: (
-                  <Center>
-                    <Link href="/calendar/day">Day</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'week',
-                label: (
-                  <Center>
-                    <Link href="/calendar">Week</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'month',
-                label: (
-                  <Center>
-                    <Link href="/calendar/month">Month</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'year',
-                label: (
-                  <Center>
-                    <Link href="/calendar/year">Year</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'schedule',
-                label: (
-                  <Center>
-                    <Link href="/calendar/schedule">Schedule</Link>
-                  </Center>
-                ),
-              },
-            ]}
-          />
-
-          <button
-            onClick={setPreviousWeek}
-            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
-          >
-            <ChevronLeftIcon className="w-4" />
-          </button>
-          <button
-            onClick={setToday}
-            className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
-          >
-            Today
-          </button>
-
-          <button
-            onClick={setNextWeek}
-            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
-          >
-            <ChevronRightIcon className="w-4" />
-          </button>
-        </div>
-      </div>
+      <CalendarHeader
+        title={title}
+        prevHandler={setPreviousWeek}
+        nextHandler={setNextWeek}
+        todayHandler={setToday}
+      />
 
       <div>
         <div className="float-right grid w-[93%] grid-cols-7">
@@ -207,7 +139,7 @@ const CalendarPage: PageWithLayoutProps = () => {
         </div>
       </div>
 
-      <div className="overflow-y-scroll border-zinc-800 text-center scrollbar-none">
+      <div className="overflow-y-scroll text-center scrollbar-none">
         <div className="float-left grid w-[7%] grid-rows-[24]">
           {Array.from(Array(23).keys()).map((hour, index) => (
             <div
