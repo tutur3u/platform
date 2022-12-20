@@ -22,7 +22,9 @@ export default function MonthCell({ date, key, hasGrid }: MonthCellProps) {
       <span
         className={`${
           isToday ? 'bg-blue-300/30 text-blue-300' : 'text-white'
-        } mt-1 flex h-10 w-10 items-center justify-center rounded-full`}
+        } ${
+          hasGrid ? 'my-1 h-10 w-10' : 'h-8 w-8'
+        } flex items-center justify-center rounded-full`}
       >
         {date?.getDate()}
       </span>
