@@ -18,16 +18,16 @@ import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
   task: Task;
-  onEdit: () => void;
   showCompleted?: boolean;
   highlight?: boolean;
+  onUpdated: () => void;
 }
 
 const TaskWrapper = ({
   task,
-  onEdit,
   showCompleted,
   highlight = true,
+  onUpdated,
 }: TaskWrapperProps) => {
   const { data: rawAssigneesData } = useSWR(
     task?.id ? `/api/tasks/${task.id}/assignees` : null
@@ -58,27 +58,6 @@ const TaskWrapper = ({
 
   const isMyTask = assignees?.some((assignee) => assignee.id === data?.id);
 
-  const updateTask = async (task: Task) => {
-    if (!task?.id) return;
-
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        startDate: task.start_date,
-        endDate: task.end_date,
-      }),
-    });
-
-    if (res.ok && onEdit) onEdit();
-  };
-
   const deleteTask = async (taskId: string) => {
     if (!task?.id) return;
 
@@ -86,7 +65,7 @@ const TaskWrapper = ({
       method: 'DELETE',
     });
 
-    if (res.ok) onEdit();
+    if (res.ok) onUpdated();
   };
 
   const showEditTaskModal = (task?: Task) => {
@@ -96,7 +75,7 @@ const TaskWrapper = ({
       ),
       centered: true,
       size: 'xl',
-      children: <TaskEditForm task={task} onSubmit={updateTask} />,
+      children: <TaskEditForm task={task} onUpdated={onUpdated} />,
     });
   };
 
@@ -113,7 +92,7 @@ const TaskWrapper = ({
       }),
     });
 
-    if (res.ok) onEdit();
+    if (res.ok) onUpdated();
   };
 
   const showDeleteTaskModal = (task: Task) => {

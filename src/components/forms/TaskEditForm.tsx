@@ -1,10 +1,12 @@
 import {
+  ActionIcon,
   Autocomplete,
   Avatar,
   Badge,
   Button,
   Group,
   Loader,
+  Select,
   Tabs,
   Text,
   Textarea,
@@ -21,18 +23,26 @@ import { UserData } from '../../types/primitives/UserData';
 import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
-import { XMarkIcon } from '@heroicons/react/24/solid';
+import { TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { useUserData } from '../../hooks/useUserData';
+import { TaskBoard } from '../../types/primitives/TaskBoard';
+import { TaskList } from '../../types/primitives/TaskList';
 
 interface TaskEditFormProps {
   task?: Task;
-  onSubmit: (task: Task) => void;
-  onDelete?: () => void;
+  listId?: string;
+  boardId?: string;
+  onUpdated: () => void;
 }
 
 type UserWithValue = UserData & { value: string };
 
-const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
+const TaskEditForm = ({
+  task,
+  listId,
+  boardId,
+  onUpdated,
+}: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState(task?.description || '');
 
@@ -239,9 +249,130 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
 
   const { data: userData, isLoading: isUserLoading } = useUserData();
 
+  const { data: creatorData, error: creatorError } = useSWR(
+    task?.id ? `/api/tasks/${task.id}/activities` : null
+  );
+
+  const loadingCreator = !creatorData && !creatorError;
+
+  const [currentTab, setCurrentTab] = useState<string | null>('details');
+
+  const showSaveButton = () => {
+    switch (currentTab) {
+      case 'details':
+      case 'datetime':
+      case 'priority':
+      case 'assignees':
+        return true;
+
+      default:
+        return false;
+    }
+  };
+
+  const [currentBoardId, setCurrentBoardId] = useState<string | null>(
+    task?.board_id || boardId || null
+  );
+
+  const [currentListId, setCurrentListId] = useState<string | null>(
+    task?.list_id || listId || null
+  );
+
+  const { data: boards } = useSWR<TaskBoard[] | null>(
+    userData?.id ? '/api/tasks/boards' : null
+  );
+
+  const { data: lists } = useSWR<TaskList[] | null>(
+    userData?.id && currentBoardId
+      ? `/api/tasks/lists?boardId=${currentBoardId}`
+      : null
+  );
+
+  const addTask = async () => {
+    if (!listId) return;
+
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        priority,
+        startDate,
+        endDate,
+        listId,
+      }),
+    });
+
+    if (res.ok) onUpdated();
+  };
+
+  const updateTask = async () => {
+    if (!task?.id) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        priority,
+        completed: task.completed,
+        startDate,
+        endDate,
+        listId: currentListId,
+      }),
+    });
+
+    if (res.ok) onUpdated();
+  };
+
+  const handleSave = async () => {
+    if (task?.id && candidateAssignees && candidateAssignees.length > 0) {
+      const promises = candidateAssignees.map((assignee) =>
+        handleAssignUser(assignee.id)
+      );
+
+      await Promise.all(promises);
+      mutate(`/api/tasks/${task.id}/assignees`);
+    }
+
+    if (task?.id) await updateTask();
+    else await addTask();
+    closeAllModals();
+  };
+
+  const handleDelete = async () => {
+    if (!task?.id) return;
+
+    const response = await fetch(`/api/tasks/${task.id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      onUpdated();
+      closeAllModals();
+    } else {
+      const res = await response.json();
+      showNotification({
+        title: 'Could not delete task',
+        message: res?.error?.message || 'Something went wrong',
+        color: 'red',
+      });
+    }
+  };
+
   return (
     <>
-      <Tabs defaultValue="details">
+      <Tabs
+        defaultValue="details"
+        value={currentTab}
+        onTabChange={setCurrentTab}
+      >
         <Tabs.List className="mb-2">
           <Tabs.Tab value="details">Details</Tabs.Tab>
           <Tabs.Tab value="datetime">Date & Time</Tabs.Tab>
@@ -254,7 +385,7 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
               )}
             </Tabs.Tab>
           )}
-          {/* <Tabs.Tab value="settings">Settings</Tabs.Tab> */}
+          {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="details">
@@ -281,10 +412,39 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
               setDescription(event.target.value)
             }
             autoComplete="off"
-            minRows={3}
-            maxRows={7}
+            className="mb-2"
+            minRows={5}
+            maxRows={10}
             autosize
           />
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select
+              label="Current board"
+              value={currentBoardId}
+              onChange={setCurrentBoardId}
+              data={
+                boards?.map((board) => ({
+                  value: board.id,
+                  label: board.name,
+                })) || []
+              }
+              // disabled={!boards || boards?.length <= 1}
+              disabled
+            />
+            <Select
+              label="Current list"
+              value={currentListId}
+              onChange={setCurrentListId}
+              data={
+                lists?.map((list) => ({
+                  value: list.id,
+                  label: list.name,
+                })) || []
+              }
+              disabled={!lists || lists?.length <= 1}
+            />
+          </div>
         </Tabs.Panel>
 
         <Tabs.Panel value="datetime">
@@ -498,56 +658,72 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
             )}
           </>
         </Tabs.Panel>
+
+        <Tabs.Panel value="activities">
+          {loadingCreator ? (
+            <div className="flex flex-col">
+              <Loader className="h-6 w-6 self-center" color="blue" size="sm" />
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center gap-2">
+              <Avatar color="blue" radius="xl">
+                {getInitials(creatorData?.users.display_name || 'Unknown')}
+              </Avatar>
+
+              <div>
+                <span className="font-semibold text-blue-300">
+                  {creatorData?.users.display_name}
+                </span>{' '}
+                created this task{' '}
+                <span className="font-semibold">
+                  {moment(creatorData?.created_at).fromNow()}
+                </span>
+                , at{' '}
+                <span className="font-semibold text-purple-300">
+                  {moment(creatorData?.created_at).format(
+                    'h:mm A, DD MMMM YYYY'
+                  )}
+                </span>
+                .
+              </div>
+            </div>
+          )}
+        </Tabs.Panel>
       </Tabs>
 
-      <div className="flex gap-2">
-        {task?.id && onDelete && (
+      {showSaveButton() && (
+        <div className="mt-4 flex items-center gap-2">
           <Button
             fullWidth
             variant="subtle"
-            color="red"
-            onClick={onDelete}
-            mt="md"
+            onClick={handleSave}
+            className="bg-blue-300/10"
+            disabled={!name}
           >
-            Delete
+            {task?.id ? 'Save' : 'Add'}
           </Button>
-        )}
-        <Button
-          fullWidth
-          variant="subtle"
-          onClick={async () => {
-            if (
-              task?.id &&
-              candidateAssignees &&
-              candidateAssignees.length > 0
-            ) {
-              const promises = candidateAssignees.map((assignee) =>
-                handleAssignUser(assignee.id)
-              );
-
-              await Promise.all(promises);
-              mutate(`/api/tasks/${task.id}/assignees`);
-            }
-
-            const newTask: Task = {
-              id: task?.id || '',
-              name,
-              description,
-              priority,
-              start_date: startDate,
-              end_date: endDate,
-              list_id: '',
-            };
-
-            onSubmit(newTask);
-            closeAllModals();
-          }}
-          mt="md"
-          disabled={!name}
-        >
-          {task?.id ? 'Save' : 'Add'}
-        </Button>
-      </div>
+          {task?.id && (
+            <>
+              {/* <ActionIcon
+                onClick={() => closeAllModals()}
+                color="green"
+                size="lg"
+                className="bg-green-300/10"
+              >
+                <ArchiveBoxArrowDownIcon className="h-6 w-6" />
+              </ActionIcon> */}
+              <ActionIcon
+                onClick={handleDelete}
+                color="red"
+                size="lg"
+                className="bg-red-300/10"
+              >
+                <TrashIcon className="h-6 w-6" />
+              </ActionIcon>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 };

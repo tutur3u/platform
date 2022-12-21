@@ -69,9 +69,7 @@ function LeftSidebar({ className }: SidebarProps) {
   };
 
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
-  const [selectedListId, setSelectedListId] = useState<
-    string | string[] | null
-  >(null);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
   const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
     user?.id ? '/api/tasks/boards' : null
@@ -84,6 +82,41 @@ function LeftSidebar({ className }: SidebarProps) {
       ? `/api/tasks/lists?boardId=${selectedBoardId}`
       : null
   );
+
+  const [listViewOptions, setListViewOption] = useState<
+    {
+      id: string;
+      option: string;
+    }[]
+  >([]);
+
+  const getViewOptionForList = (listId: string) => {
+    const data = listViewOptions.find((o) => o.id === listId);
+    return data?.option || 'todos';
+  };
+
+  const setViewOptionForList = (listId: string, option: string) => {
+    setListViewOption((prev) => {
+      // If the option is already set, update it
+      const existing = prev.find((o) => o.id === listId);
+      if (existing) {
+        existing.option = option;
+        return [...prev];
+      } else {
+        // Otherwise, add a new option
+        return [...prev, { id: listId, option }];
+      }
+    });
+  };
+
+  const buildQuery = (listId: string, option: string) => {
+    let query = `/api/tasks?listId=${listId}`;
+
+    if (option === 'todos') query += '&todos=true';
+    if (option === 'completed') query += '&completed=true';
+
+    return query;
+  };
 
   const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
     user?.id && selectedBoardId && viewOption !== 'all'
@@ -576,7 +609,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         key={task.id}
                         task={task}
                         highlight={viewOption !== 'my-tasks'}
-                        onEdit={() =>
+                        onUpdated={() =>
                           mutate(
                             `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
                           )
@@ -591,19 +624,33 @@ function LeftSidebar({ className }: SidebarProps) {
                 </div>
               ) : (
                 <Accordion
-                  value={
-                    viewOption === 'all'
-                      ? selectedListId
-                      : lists?.map((list) => list.id)
-                  }
-                  onChange={setSelectedListId}
-                  multiple={viewOption !== 'all'}
+                  value={selectedListId}
+                  onChange={(id) => {
+                    setSelectedListId((prevId) => {
+                      if (prevId === id) return null;
+                      return id;
+                    });
+
+                    // If the list is being collapsed, don't mutate
+                    if (!id || selectedListId === id) return;
+
+                    const option = getViewOptionForList(id);
+                    const query = buildQuery(id, option);
+                    mutate(query);
+                  }}
                   chevronPosition="left"
                   radius="lg"
                   className="flex flex-col overflow-auto scrollbar-none"
                 >
                   {lists?.map((list) => (
-                    <TaskListWrapper key={list.id} list={list} />
+                    <TaskListWrapper
+                      key={list.id}
+                      list={list}
+                      option={getViewOptionForList(list.id)}
+                      setOption={(option) =>
+                        setViewOptionForList(list.id, option)
+                      }
+                    />
                   ))}
                 </Accordion>
               )}
