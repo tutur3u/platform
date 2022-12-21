@@ -23,7 +23,11 @@ import { UserData } from '../../types/primitives/UserData';
 import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
-import { TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
+import {
+  ExclamationTriangleIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/solid';
 import { useUserData } from '../../hooks/useUserData';
 import { TaskBoard } from '../../types/primitives/TaskBoard';
 import { TaskList } from '../../types/primitives/TaskList';
@@ -270,6 +274,8 @@ const TaskEditForm = ({
     }
   };
 
+  const showActionIcons = currentTab === 'details';
+
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(
     task?.board_id || boardId || null
   );
@@ -377,6 +383,7 @@ const TaskEditForm = ({
           <Tabs.Tab value="details">Details</Tabs.Tab>
           <Tabs.Tab value="datetime">Date & Time</Tabs.Tab>
           <Tabs.Tab value="priority">Priority</Tabs.Tab>
+          {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
           {task?.id && (
             <Tabs.Tab value="assignees">
               Assignees{' '}
@@ -385,7 +392,6 @@ const TaskEditForm = ({
               )}
             </Tabs.Tab>
           )}
-          {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="details">
@@ -577,6 +583,47 @@ const TaskEditForm = ({
           </div>
         </Tabs.Panel>
 
+        <Tabs.Panel value="activities">
+          {loadingCreator ? (
+            <div className="flex flex-col">
+              <Loader className="h-6 w-6 self-center" color="blue" size="sm" />
+            </div>
+          ) : (
+            <div>
+              <div className="mt-4 flex items-center gap-2">
+                <Avatar color="blue" radius="xl">
+                  {getInitials(creatorData?.users.display_name || 'Unknown')}
+                </Avatar>
+
+                <div>
+                  <span className="font-semibold text-blue-300">
+                    {creatorData?.users.display_name}
+                  </span>{' '}
+                  created this task{' '}
+                  <span className="font-semibold">
+                    {moment(creatorData?.created_at).fromNow()}
+                  </span>
+                  , at{' '}
+                  <span className="font-semibold text-purple-300">
+                    {moment(creatorData?.created_at).format(
+                      'h:mm A, DD MMMM YYYY'
+                    )}
+                  </span>
+                  .
+                </div>
+              </div>
+
+              <div className="mt-8 flex items-center gap-2 rounded-lg bg-red-300/10 p-4 text-lg font-semibold text-red-300">
+                <ExclamationTriangleIcon className="h-6 w-6" />
+                <div className="border-l-2 border-red-300/50 pl-2">
+                  Other activities are not tracked yet. More activities will be
+                  added soon.
+                </div>
+              </div>
+            </div>
+          )}
+        </Tabs.Panel>
+
         <Tabs.Panel value="assignees">
           <>
             <div className="flex gap-2">
@@ -658,37 +705,6 @@ const TaskEditForm = ({
             )}
           </>
         </Tabs.Panel>
-
-        <Tabs.Panel value="activities">
-          {loadingCreator ? (
-            <div className="flex flex-col">
-              <Loader className="h-6 w-6 self-center" color="blue" size="sm" />
-            </div>
-          ) : (
-            <div className="mt-4 flex items-center gap-2">
-              <Avatar color="blue" radius="xl">
-                {getInitials(creatorData?.users.display_name || 'Unknown')}
-              </Avatar>
-
-              <div>
-                <span className="font-semibold text-blue-300">
-                  {creatorData?.users.display_name}
-                </span>{' '}
-                created this task{' '}
-                <span className="font-semibold">
-                  {moment(creatorData?.created_at).fromNow()}
-                </span>
-                , at{' '}
-                <span className="font-semibold text-purple-300">
-                  {moment(creatorData?.created_at).format(
-                    'h:mm A, DD MMMM YYYY'
-                  )}
-                </span>
-                .
-              </div>
-            </div>
-          )}
-        </Tabs.Panel>
       </Tabs>
 
       {showSaveButton() && (
@@ -702,7 +718,7 @@ const TaskEditForm = ({
           >
             {task?.id ? 'Save' : 'Add'}
           </Button>
-          {task?.id && (
+          {task?.id && showActionIcons && (
             <>
               {/* <ActionIcon
                 onClick={() => closeAllModals()}
