@@ -58,21 +58,9 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   if (option === 'my-tasks') {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .select(
-        'id, name, description, priority, completed, start_date, end_date, list_id, ' +
-          'task_lists!inner(board_id), task_assignees!inner(user_id)'
-      )
-      .eq('task_lists.board_id', boardId)
-      .eq('task_assignees.user_id', user?.id)
-      .eq('completed', false)
-      .order('priority', { ascending: false })
-      .order('end_date', { ascending: false });
+    const { data, error } = await supabase.rpc('get_user_tasks', {
+      _board_id: boardId,
+    });
 
     if (error) return res.status(401).json({ error: error.message });
     return res.status(200).json(data);
