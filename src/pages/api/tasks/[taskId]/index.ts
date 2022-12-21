@@ -40,7 +40,7 @@ const updateTask = async (
     res,
   });
 
-  const { name, description, priority, completed, startDate, endDate } =
+  const { name, description, priority, completed, startDate, endDate, listId } =
     req.body;
 
   const { error } = await supabase
@@ -52,6 +52,7 @@ const updateTask = async (
       priority,
       start_date: startDate,
       end_date: endDate,
+      list_id: listId,
     })
     .eq('id', taskId);
 

@@ -11,11 +11,15 @@ import TaskWrapper from '../core/TaskWrapper';
 
 export interface TaskListWrapperProps {
   list: TaskList;
+  option: string;
+  setOption: (option: string) => void;
 }
 
-const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
-  const [option, setOption] = React.useState('todos');
-
+const TaskListWrapper = ({
+  list,
+  option = 'todos',
+  setOption,
+}: TaskListWrapperProps) => {
   const buildQuery = (listId: string) => {
     let query = `/api/tasks?listId=${listId}`;
 
@@ -36,55 +40,17 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
 
   const isLoading = !tasks && !tasksError;
 
-  const addTask = async (task: Task) => {
-    if (!list?.id) return;
-
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        startDate: task.start_date,
-        endDate: task.end_date,
-        listId: list.id,
-      }),
-    });
-
-    if (res.ok) resync();
-  };
-
-  const updateTask = async (task: Task) => {
-    if (!list?.id) return;
-
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        startDate: task.start_date,
-        endDate: task.end_date,
-      }),
-    });
-
-    if (res.ok) resync();
-  };
-
-  const showEditTaskModal = (task?: Task) => {
+  const showAddTaskModal = () => {
     openModal({
-      title: task ? 'Edit task' : 'New task',
+      title: 'Add task',
       centered: true,
       size: 'xl',
       children: (
-        <TaskEditForm task={task} onSubmit={task ? updateTask : addTask} />
+        <TaskEditForm
+          listId={list.id}
+          boardId={list.board_id}
+          onUpdated={resync}
+        />
       ),
     });
   };
@@ -129,13 +95,13 @@ const TaskListWrapper = ({ list }: TaskListWrapperProps) => {
                 <TaskWrapper
                   key={task.id}
                   task={task}
-                  onEdit={resync}
                   showCompleted={option === 'completed'}
+                  onUpdated={resync}
                 />
               ))}
             <button
               className="flex items-center gap-3 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-400"
-              onClick={() => showEditTaskModal()}
+              onClick={() => showAddTaskModal()}
             >
               <PlusIcon className="w-5" />
               <div className="text-sm font-semibold">Task</div>

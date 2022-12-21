@@ -41,7 +41,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
     const query = supabase
       .from('tasks')
       .select(
-        'id, name, description, priority, completed, start_date, end_date, list_id'
+        'id, name, description, priority, completed, start_date, end_date, list_id, task_lists!inner(board_id)'
       )
       .eq('list_id', listId)
       .order('priority', { ascending: false })
@@ -53,8 +53,20 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const { data, error } = await query;
 
+    const resData =
+      data?.map((task) => {
+        const { task_lists, ...rest } = task;
+        const tempList = { board_id: '', ...task_lists };
+        const { board_id } = tempList;
+
+        return {
+          ...rest,
+          board_id,
+        };
+      }) || [];
+
     if (error) return res.status(401).json({ error: error.message });
-    return res.status(200).json(data);
+    return res.status(200).json(resData);
   }
 
   if (option === 'my-tasks') {
