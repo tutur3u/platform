@@ -239,6 +239,12 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
 
   const { data: userData, isLoading: isUserLoading } = useUserData();
 
+  const { data: creatorData, error: creatorError } = useSWR(
+    task?.id ? `/api/tasks/${task.id}/activities` : null
+  );
+
+  const loadingCreator = !creatorData && !creatorError;
+
   return (
     <>
       <Tabs defaultValue="details">
@@ -254,6 +260,7 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
               )}
             </Tabs.Tab>
           )}
+          {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
           {/* <Tabs.Tab value="settings">Settings</Tabs.Tab> */}
         </Tabs.List>
 
@@ -498,6 +505,37 @@ const TaskEditForm = ({ task, onSubmit, onDelete }: TaskEditFormProps) => {
             )}
           </>
         </Tabs.Panel>
+
+        <Tabs.Panel value="activities">
+          {loadingCreator ? (
+            <div className="flex flex-col">
+              <Loader className="h-6 w-6 self-center" color="blue" size="sm" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Avatar color="blue" radius="xl">
+                {getInitials(creatorData?.users.display_name || 'Unknown')}
+              </Avatar>
+
+              <div>
+                <span className="font-semibold text-blue-300">
+                  {creatorData?.users.display_name}
+                </span>{' '}
+                (
+                <span className="text-purple-300">
+                  @{creatorData?.users.username}
+                </span>
+                ) created this task{' '}
+                <span className="font-semibold">
+                  {moment(creatorData?.created_at).fromNow()}
+                </span>
+                .
+              </div>
+            </div>
+          )}
+        </Tabs.Panel>
+
+        {/* <Tabs.Panel value="settings">a</Tabs.Panel> */}
       </Tabs>
 
       <div className="flex gap-2">
