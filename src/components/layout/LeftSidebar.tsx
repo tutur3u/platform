@@ -341,7 +341,7 @@ function LeftSidebar({ className }: SidebarProps) {
             />
 
             <Link
-              href="/settings"
+              href="/profile"
               className={`${
                 leftSidebarPref.main !== 'closed'
                   ? '-translate-x-1 justify-start'
