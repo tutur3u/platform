@@ -27,6 +27,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import {
   Accordion,
   Avatar,
+  Chip,
   Indicator,
   Loader,
   Menu,
@@ -48,9 +49,11 @@ import useSWR, { mutate } from 'swr';
 import { TaskList } from '../../types/primitives/TaskList';
 import TaskListEditForm from '../forms/TaskListEditForm';
 import TaskListWrapper from '../tasks/lists/TaskListWrapper';
+import { Task } from '../../types/primitives/Task';
+import TaskWrapper from '../tasks/core/TaskWrapper';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const { leftSidebarPref, changeLeftSidebarPref } = useAppearance();
+  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { data: user } = useUserData();
 
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
@@ -72,14 +75,60 @@ function LeftSidebar({ className }: SidebarProps) {
     user?.id ? '/api/tasks/boards' : null
   );
 
+  const [viewOption, setViewOption] = useState('my-tasks');
+
   const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
-    user?.id && selectedBoardId
+    user?.id && selectedBoardId && viewOption === 'all'
       ? `/api/tasks/lists?boardId=${selectedBoardId}`
       : null
   );
 
+  const [listViewOptions, setListViewOption] = useState<
+    {
+      id: string;
+      option: string;
+    }[]
+  >([]);
+
+  const getViewOptionForList = (listId: string) => {
+    const data = listViewOptions.find((o) => o.id === listId);
+    return data?.option || 'todos';
+  };
+
+  const setViewOptionForList = (listId: string, option: string) => {
+    setListViewOption((prev) => {
+      // If the option is already set, update it
+      const existing = prev.find((o) => o.id === listId);
+      if (existing) {
+        existing.option = option;
+        return [...prev];
+      } else {
+        // Otherwise, add a new option
+        return [...prev, { id: listId, option }];
+      }
+    });
+  };
+
+  const buildQuery = (listId: string, option: string) => {
+    let query = `/api/tasks?listId=${listId}`;
+
+    if (option === 'todos') query += '&todos=true';
+    if (option === 'completed') query += '&completed=true';
+
+    return query;
+  };
+
+  const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
+    user?.id && selectedBoardId && viewOption !== 'all'
+      ? `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
+      : null
+  );
+
   const isBoardsLoading = !boards && !boardsError;
-  const isListsLoading = !lists && !listsError;
+  const isListsLoading = !lists && !listsError && viewOption === 'all';
+  const isTasksLoading = !tasks && !tasksError && viewOption !== 'all';
+
+  const isContentLoading = isBoardsLoading || isListsLoading || isTasksLoading;
 
   // Automatically select the first board if none is selected
   useEffect(() => {
@@ -235,17 +284,27 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-center bg-zinc-900 backdrop-blur-lg ${
-          leftSidebarPref.main === 'open'
-            ? 'opacity-100'
-            : 'pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100'
-        } transition-all duration-300`}
+        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 backdrop-blur-lg transition-all duration-300`}
       >
-        <div className="flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2">
+        <div
+          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2 ${
+            leftSidebarPref.main === 'open' &&
+            leftSidebarPref.secondary === 'visible'
+              ? 'opacity-100'
+              : leftSidebarPref.main === 'open'
+              ? 'w-64 opacity-100'
+              : leftSidebarPref.secondary === 'visible'
+              ? 'opacity-100'
+              : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
+          } transition-all`}
+        >
           <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
             <Logo
               alwaysShowLabel={leftSidebarPref.main === 'open'}
-              showLabel={leftSidebarPref.main !== 'closed'}
+              showLabel={
+                leftSidebarPref.main !== 'closed' &&
+                leftSidebarPref.secondary === 'hidden'
+              }
             />
           </div>
 
@@ -380,8 +439,9 @@ function LeftSidebar({ className }: SidebarProps) {
 
                   <div
                     className={
-                      leftSidebarPref.main === 'closed'
-                        ? 'md:hidden'
+                      leftSidebarPref.main === 'closed' ||
+                      leftSidebarPref.secondary === 'visible'
+                        ? 'hidden'
                         : leftSidebarPref.main === 'auto'
                         ? 'opacity-0 transition duration-300 group-hover:opacity-100'
                         : ''
@@ -407,11 +467,11 @@ function LeftSidebar({ className }: SidebarProps) {
 
         {leftSidebarPref.secondary === 'visible' &&
           (isBoardsLoading ? (
-            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
               <Loader />
             </div>
           ) : !boards || boards?.length === 0 ? (
-            <div className="hidden h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center md:flex">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
               <div className="text-lg font-semibold">
                 Start organizing your tasks in a miraculous way.
               </div>
@@ -423,8 +483,8 @@ function LeftSidebar({ className }: SidebarProps) {
               </button>
             </div>
           ) : (
-            <div className="relative hidden h-full w-full flex-col border-r border-zinc-800/80 pt-6 md:flex">
-              <div className="relative mx-3 flex gap-2 text-2xl font-semibold">
+            <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-2">
+              <div className="relative mx-2 flex gap-2 text-2xl font-semibold">
                 <Select
                   defaultValue={selectedBoardId || boards?.[0]?.id}
                   data={
@@ -516,10 +576,48 @@ function LeftSidebar({ className }: SidebarProps) {
                 padRight={false}
               />
 
-              {isListsLoading ? (
+              <Chip.Group
+                multiple={false}
+                value={viewOption}
+                onChange={setViewOption}
+                className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2"
+              >
+                <Chip variant="filled" value="all">
+                  All
+                </Chip>
+                <Chip color="cyan" variant="filled" value="my-tasks">
+                  My tasks
+                </Chip>
+                <Chip color="teal" variant="filled" value="recently-updated">
+                  Recently added
+                </Chip>
+              </Chip.Group>
+
+              {isContentLoading ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
                   <Loader />
                 </div>
+              ) : viewOption !== 'all' ? (
+                !tasks || tasks.length === 0 ? (
+                  <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
+                    You have no assigned tasks in this board.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 overflow-auto p-4 scrollbar-none">
+                    {tasks.map((task) => (
+                      <TaskWrapper
+                        key={task.id}
+                        task={task}
+                        highlight={viewOption !== 'my-tasks'}
+                        onUpdated={() =>
+                          mutate(
+                            `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                )
               ) : lists?.length === 0 ? (
                 <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
                   Create a task list to get started
@@ -527,13 +625,32 @@ function LeftSidebar({ className }: SidebarProps) {
               ) : (
                 <Accordion
                   value={selectedListId}
-                  onChange={setSelectedListId}
+                  onChange={(id) => {
+                    setSelectedListId((prevId) => {
+                      if (prevId === id) return null;
+                      return id;
+                    });
+
+                    // If the list is being collapsed, don't mutate
+                    if (!id || selectedListId === id) return;
+
+                    const option = getViewOptionForList(id);
+                    const query = buildQuery(id, option);
+                    mutate(query);
+                  }}
                   chevronPosition="left"
                   radius="lg"
                   className="flex flex-col overflow-auto scrollbar-none"
                 >
                   {lists?.map((list) => (
-                    <TaskListWrapper key={list.id} list={list} />
+                    <TaskListWrapper
+                      key={list.id}
+                      list={list}
+                      option={getViewOptionForList(list.id)}
+                      setOption={(option) =>
+                        setViewOptionForList(list.id, option)
+                      }
+                    />
                   ))}
                 </Accordion>
               )}
@@ -545,9 +662,7 @@ function LeftSidebar({ className }: SidebarProps) {
         className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
           leftSidebarPref.main === 'open' ? 'block' : 'hidden'
         }`}
-        onClick={() =>
-          changeLeftSidebarPref({ main: 'closed', secondary: 'hidden' })
-        }
+        onClick={() => changeLeftSidebarMainPref('closed')}
       />
     </>
   );

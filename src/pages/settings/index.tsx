@@ -303,8 +303,6 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
         </div>
       </div>
-
-      <div className="h-64" />
     </div>
   );
 };
