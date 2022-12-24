@@ -65,30 +65,58 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const [date, setDate] = useState(new Date());
 
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const [days, setDays] = useState([
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ]);
+
+  const onDayMode = () => {
+    const currentDay = new Date(date).toLocaleString('en-US', {
+      weekday: 'long',
+    });
+
+    setDays([currentDay]);
+  };
+
+  const onWeekMode = () => {
+    setDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+  };
 
   const setToday = () => {
     setDate(new Date());
+
+    if (days.length === 1)
+      setDays([new Date().toLocaleString('en-US', { weekday: 'long' })]);
   };
 
-  const setPreviousWeek = () => {
+  const setPrev = () => {
     const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() - 7);
+    newDate.setDate(newDate.getDate() - days.length);
     setDate(newDate);
+
+    if (days.length === 1)
+      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
   };
 
-  const setNextWeek = () => {
+  const setNext = () => {
     const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() + 7);
+    newDate.setDate(newDate.getDate() + days.length);
     setDate(newDate);
+
+    if (days.length === 1)
+      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
   };
 
   const getMonday = () => {
     const day = date.getDay() || 7;
-    if (day !== 1) {
-      date.setHours(-24 * (day - 1));
-    }
-    return date;
+    const newDate = new Date(date);
+    if (day !== 1) newDate.setHours(-24 * (day - 1));
+    return newDate;
   };
 
   // get other date from monday to sunday
@@ -123,109 +151,75 @@ const CalendarPage: PageWithLayoutProps = () => {
   const title = `${longMonth} ${date.getFullYear()}`;
 
   return (
-    <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
+    <>
       <HeaderX label="Calendar" />
-      <div className="mb-8 flex justify-between">
-        <div className="text-3xl font-semibold">
-          {longMonth} <span>{date.getFullYear()}</span>
-        </div>
+      <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
+        <CalendarHeader
+          title={title}
+          prevHandler={setPrev}
+          nextHandler={setNext}
+          todayHandler={setToday}
+          dayModeHandler={onDayMode}
+          weekModeHandler={onWeekMode}
+        />
 
-        <div className="flex items-center justify-center gap-2 text-blue-300">
-          <SegmentedControl
-            radius="md"
-            className="mr-2"
-            data={[
-              {
-                value: 'week',
-                label: (
-                  <Center>
-                    <Link href="/calendar">Week</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'month',
-                label: (
-                  <Center>
-                    <Link href="/calendar/month">Month</Link>
-                  </Center>
-                ),
-              },
-              {
-                value: 'year',
-                label: (
-                  <Center>
-                    <Link href="/calendar/year">Year</Link>
-                  </Center>
-                ),
-              },
-            ]}
-          />
-          <button
-            onClick={setPreviousWeek}
-            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+        <div className="flex">
+          <div className="flex w-16 items-center justify-center border-b border-zinc-800 font-semibold">
+            ICT
+          </div>
+          <div
+            className={`grid flex-1 ${
+              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
+            }`}
           >
-            <ChevronLeftIcon className="w-4" />
-          </button>
-          <button
-            onClick={setToday}
-            className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
-          >
-            Today
-          </button>
-
-          <button
-            onClick={setNextWeek}
-            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
-          >
-            <ChevronRightIcon className="w-4" />
-          </button>
-      <CalendarHeader
-        title={title}
-        prevHandler={setPreviousWeek}
-        nextHandler={setNextWeek}
-        todayHandler={setToday}
-      />
-
-      <div>
-        <div className="float-right grid w-[93%] grid-cols-7">
-          {weekdays.map((weekday, index) => (
-            <div key={index}>
-              <DayTitle date={getWeekdays()[index]} weekday={weekday} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="overflow-y-scroll text-center scrollbar-none">
-        <div className="float-left grid w-[7%] grid-rows-[24]">
-          {Array.from(Array(23).keys()).map((hour, index) => (
-            <div
-              key={index}
-              className="relative flex h-20 w-full min-w-fit items-center justify-end border-b border-zinc-800 text-xl font-semibold"
-            >
-              <span className="absolute right-0 bottom-0 px-2">
-                {hour + 1}:00
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="float-right grid w-[93%] grid-cols-7">
-          {weekdays.map((_, index) => (
-            <div key={index}>
-              <div className="grid grid-rows-[24]">
-                {Array.from(Array(24).keys()).map((index) => (
-                  <div
-                    key={index}
-                    className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
-                  ></div>
-                ))}
+            {days.map((weekday, index) => (
+              <div key={index}>
+                <DayTitle
+                  date={days.length === 1 ? date : getWeekdays()[index]}
+                  weekday={weekday}
+                />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div className="flex overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
+          <div className="grid w-16 grid-rows-[24]">
+            {Array.from(Array(24).keys()).map((hour, index) => (
+              <div
+                key={index}
+                className={`relative flex h-20 w-full min-w-fit items-center justify-end text-xl font-semibold ${
+                  hour === 23 ? 'border-b border-zinc-800' : 'translate-y-3'
+                }`}
+              >
+                <span className="absolute right-0 bottom-0 px-2">
+                  {hour < 23 ? hour + 1 + ':00' : null}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className={`grid flex-1 ${
+              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
+            }`}
+          >
+            {days.map((_, index) => (
+              <div key={index}>
+                <div className="grid grid-rows-[24]">
+                  {Array.from(Array(24).keys()).map((index) => (
+                    <div
+                      key={index}
+                      className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
