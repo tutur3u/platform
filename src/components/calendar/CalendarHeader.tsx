@@ -1,12 +1,13 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
-import { Center, SegmentedControl } from '@mantine/core';
-import Link from 'next/link';
+import { SegmentedControl } from '@mantine/core';
 
 interface CalendarHeaderProps {
   title: string;
   prevHandler: () => void;
   nextHandler: () => void;
   todayHandler: () => void;
+  dayModeHandler?: () => void;
+  weekModeHandler?: () => void;
 }
 
 export default function CalendarHeader({
@@ -14,75 +15,54 @@ export default function CalendarHeader({
   prevHandler,
   nextHandler,
   todayHandler,
+
+  dayModeHandler,
+  weekModeHandler,
 }: CalendarHeaderProps) {
   return (
     <div className="mb-8 flex justify-between">
-      <div className="text-3xl font-semibold">
+      <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{title}</span>
+        <span className="h-fit rounded bg-green-300/20 px-4 py-1 text-lg text-green-300">
+          Coming soon
+        </span>
       </div>
 
       <div className="flex items-center justify-center gap-2 text-blue-300">
         <SegmentedControl
           radius="md"
           className="mr-2"
+          defaultValue="week"
           data={[
             {
               value: 'day',
-              label: (
-                <Center>
-                  <Link href="/calendar/day">Day</Link>
-                </Center>
-              ),
+              label: 'Day',
             },
             {
               value: 'week',
-              label: (
-                <Center>
-                  <Link href="/calendar">Week</Link>
-                </Center>
-              ),
+              label: 'Week',
             },
-            // {
-            //   value: 'month',
-            //   label: (
-            //     <Center>
-            //       <Link href="/calendar/month">Month</Link>
-            //     </Center>
-            //   ),
-            // },
-            // {
-            //   value: 'year',
-            //   label: (
-            //     <Center>
-            //       <Link href="/calendar/year">Year</Link>
-            //     </Center>
-            //   ),
-            // },
-            // {
-            //   value: 'schedule',
-            //   label: (
-            //     <Center>
-            //       <Link href="/calendar/schedule">Schedule</Link>
-            //     </Center>
-            //   ),
-            // },
           ]}
+          onChange={(value) => {
+            if (value === 'day' && dayModeHandler) dayModeHandler();
+            if (value === 'week' && weekModeHandler) weekModeHandler();
+          }}
         />
 
         <button
-          className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
           onClick={prevHandler}
         >
           <ChevronLeftIcon className="w-4" />
         </button>
         <button
           onClick={todayHandler}
-          className="cursor-pointer rounded-lg p-2 text-lg font-semibold hover:bg-blue-300/20"
+          className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold transition hover:bg-blue-300/20"
         >
           Today
         </button>
         <button
-          className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
           onClick={nextHandler}
         >
           <ChevronRightIcon className="w-4" />
