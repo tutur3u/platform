@@ -14,6 +14,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/solid';
 import { useUserList } from '../../hooks/useUserList';
+import HeaderX from '../../components/metadata/HeaderX';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
@@ -99,6 +100,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
+      <HeaderX label="Settings" />
       <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
         <div className="mb-1 text-3xl font-bold">Account</div>
         <div className="mb-4 font-semibold text-zinc-500">
