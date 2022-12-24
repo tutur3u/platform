@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import React from 'react';
 import AuthWrapper from '../components/auth/AuthWrapper';
+import HeaderX from '../components/metadata/HeaderX';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -28,7 +29,12 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const LoginPage = () => {
-  return <AuthWrapper />;
+  return (
+    <>
+      <HeaderX label="Login" />
+      <AuthWrapper />
+    </>
+  );
 };
 
 export default LoginPage;

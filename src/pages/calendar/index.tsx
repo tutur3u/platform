@@ -10,6 +10,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
+import HeaderX from '../../components/metadata/HeaderX';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -114,6 +115,7 @@ const CalendarPage: PageWithLayoutProps = () => {
   if (!isDev)
     return (
       <div className="h-full min-h-full w-full p-8">
+        <HeaderX label="Calendar" />
         <div className="flex h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">
           Under construction 🚧
         </div>
@@ -122,6 +124,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   return (
     <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
+      <HeaderX label="Calendar" />
       <div className="mb-8 flex justify-between">
         <div className="text-3xl font-semibold">
           {longMonth} <span>{date.getFullYear()}</span>
