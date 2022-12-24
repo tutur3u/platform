@@ -1,8 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import { Center, SegmentedControl } from '@mantine/core';
-import Link from 'next/link';
 import { ReactElement, useEffect, useState } from 'react';
 import DayTitle from '../../components/calendar/DayTitle';
 import Layout from '../../components/layout/Layout';
@@ -11,6 +8,7 @@ import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import HeaderX from '../../components/metadata/HeaderX';
+import CalendarHeader from '../../components/calendar/CalendarHeader';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -122,6 +120,8 @@ const CalendarPage: PageWithLayoutProps = () => {
       </div>
     );
 
+  const title = `${longMonth} ${date.getFullYear()}`;
+
   return (
     <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
       <HeaderX label="Calendar" />
@@ -180,30 +180,37 @@ const CalendarPage: PageWithLayoutProps = () => {
           >
             <ChevronRightIcon className="w-4" />
           </button>
+      <CalendarHeader
+        title={title}
+        prevHandler={setPreviousWeek}
+        nextHandler={setNextWeek}
+        todayHandler={setToday}
+      />
+
+      <div>
+        <div className="float-right grid w-[93%] grid-cols-7">
+          {weekdays.map((weekday, index) => (
+            <div key={index}>
+              <DayTitle date={getWeekdays()[index]} weekday={weekday} />
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-8 border-b border-zinc-800">
-        <div />
-        {weekdays.map((weekday, index) => (
-          <div key={index}>
-            <DayTitle date={getWeekdays()[index]} weekday={weekday} />
-          </div>
-        ))}
-      </div>
-
-      <div className="overflow-y-scroll  border-r border-zinc-800 text-center scrollbar-none">
-        <div className="grid grid-cols-8">
-          <div className="grid grid-rows-[24]">
-            {Array.from(Array(23).keys()).map((hour, index) => (
-              <div
-                key={index}
-                className="flex h-20 items-center justify-end p-4 text-2xl font-semibold"
-              >
-                <span className="translate-y-10">{hour + 1}:00</span>
-              </div>
-            ))}
-          </div>
+      <div className="overflow-y-scroll text-center scrollbar-none">
+        <div className="float-left grid w-[7%] grid-rows-[24]">
+          {Array.from(Array(23).keys()).map((hour, index) => (
+            <div
+              key={index}
+              className="relative flex h-20 w-full min-w-fit items-center justify-end border-b border-zinc-800 text-xl font-semibold"
+            >
+              <span className="absolute right-0 bottom-0 px-2">
+                {hour + 1}:00
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="float-right grid w-[93%] grid-cols-7">
           {weekdays.map((_, index) => (
             <div key={index}>
               <div className="grid grid-rows-[24]">
@@ -211,7 +218,7 @@ const CalendarPage: PageWithLayoutProps = () => {
                   <div
                     key={index}
                     className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
-                  />
+                  ></div>
                 ))}
               </div>
             </div>
