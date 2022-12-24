@@ -1,5 +1,7 @@
 import '../styles/globals.css';
 
+import { Analytics } from '@vercel/analytics/react';
+
 import { AppWithLayoutProps } from '../types/AppWithLayoutProps';
 import Providers from '../components/common/Providers';
 import { ReactElement, useState } from 'react';
@@ -22,6 +24,7 @@ export default function Application({
       initialSession={pageProps.initialSession}
     >
       {getLayout(<Component {...pageProps} />)}
+      <Analytics />
     </Providers>
   );
 }

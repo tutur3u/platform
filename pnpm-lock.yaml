@@ -29,6 +29,7 @@ specifiers:
   '@types/uuid': ^9.0.0
   '@typescript-eslint/eslint-plugin': ^5.47.0
   '@typescript-eslint/parser': ^5.47.0
+  '@vercel/analytics': ^0.1.6
   autoprefixer: ^10.4.13
   dayjs: ^1.11.7
   eslint: 8.30.0
@@ -69,6 +70,7 @@ dependencies:
   '@supabase/auth-helpers-nextjs': 0.5.2_x4wcza6jggiv5r5yndlyd26nkq
   '@supabase/auth-helpers-react': 0.3.1_x4wcza6jggiv5r5yndlyd26nkq
   '@supabase/supabase-js': 2.2.2
+  '@vercel/analytics': 0.1.6_react@18.2.0
   dayjs: 1.11.7
   js-cookie: 3.0.1
   moment: 2.29.4
@@ -1789,6 +1791,14 @@ packages:
       '@typescript-eslint/types': 5.47.0
       eslint-visitor-keys: 3.3.0
     dev: true
+
+  /@vercel/analytics/0.1.6_react@18.2.0:
+    resolution: {integrity: sha512-zNd5pj3iDvq8IMBQHa1YRcIteiw6ZiPB8AsONHd8ieFXlNpLqhXfIYnf4WvTfZ7S1NSJ++mIM14aJnNac/VMXQ==}
+    peerDependencies:
+      react: ^16.8||^17||^18
+    dependencies:
+      react: 18.2.0
+    dev: false
 
   /abab/2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
