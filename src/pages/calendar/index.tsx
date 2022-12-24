@@ -7,6 +7,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
+import HeaderX from '../../components/metadata/HeaderX';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
@@ -64,30 +65,58 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const [date, setDate] = useState(new Date());
 
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const [days, setDays] = useState([
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ]);
+
+  const onDayMode = () => {
+    const currentDay = new Date(date).toLocaleString('en-US', {
+      weekday: 'long',
+    });
+
+    setDays([currentDay]);
+  };
+
+  const onWeekMode = () => {
+    setDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+  };
 
   const setToday = () => {
     setDate(new Date());
+
+    if (days.length === 1)
+      setDays([new Date().toLocaleString('en-US', { weekday: 'long' })]);
   };
 
-  const setPreviousWeek = () => {
+  const setPrev = () => {
     const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() - 7);
+    newDate.setDate(newDate.getDate() - days.length);
     setDate(newDate);
+
+    if (days.length === 1)
+      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
   };
 
-  const setNextWeek = () => {
+  const setNext = () => {
     const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() + 7);
+    newDate.setDate(newDate.getDate() + days.length);
     setDate(newDate);
+
+    if (days.length === 1)
+      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
   };
 
   const getMonday = () => {
     const day = date.getDay() || 7;
-    if (day !== 1) {
-      date.setHours(-24 * (day - 1));
-    }
-    return date;
+    const newDate = new Date(date);
+    if (day !== 1) newDate.setHours(-24 * (day - 1));
+    return newDate;
   };
 
   // get other date from monday to sunday
@@ -107,67 +136,78 @@ const CalendarPage: PageWithLayoutProps = () => {
     .format;
   const longMonth = shortMonthName(date); // "July"
 
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (!isDev)
-    return (
-      <div className="h-full min-h-full w-full p-8">
-        <div className="flex h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">
-          Under construction 🚧
-        </div>
-      </div>
-    );
-
   const title = `${longMonth} ${date.getFullYear()}`;
 
   return (
-    <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
-      <CalendarHeader
-        title={title}
-        prevHandler={setPreviousWeek}
-        nextHandler={setNextWeek}
-        todayHandler={setToday}
-      />
+    <>
+      <HeaderX label="Calendar" />
+      <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
+        <CalendarHeader
+          title={title}
+          prevHandler={setPrev}
+          nextHandler={setNext}
+          todayHandler={setToday}
+          dayModeHandler={onDayMode}
+          weekModeHandler={onWeekMode}
+        />
 
-      <div>
-        <div className="float-right grid w-[93%] grid-cols-7">
-          {weekdays.map((weekday, index) => (
-            <div key={index}>
-              <DayTitle date={getWeekdays()[index]} weekday={weekday} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="overflow-y-scroll text-center scrollbar-none">
-        <div className="float-left grid w-[7%] grid-rows-[24]">
-          {Array.from(Array(23).keys()).map((hour, index) => (
-            <div
-              key={index}
-              className="relative flex h-20 w-full min-w-fit items-center justify-end border-b border-zinc-800 text-xl font-semibold"
-            >
-              <span className="absolute right-0 bottom-0 px-2">
-                {hour + 1}:00
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="float-right grid w-[93%] grid-cols-7">
-          {weekdays.map((_, index) => (
-            <div key={index}>
-              <div className="grid grid-rows-[24]">
-                {Array.from(Array(24).keys()).map((index) => (
-                  <div
-                    key={index}
-                    className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
-                  ></div>
-                ))}
+        <div className="flex">
+          <div className="flex w-16 items-center justify-center border-b border-zinc-800 font-semibold">
+            ICT
+          </div>
+          <div
+            className={`grid flex-1 ${
+              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
+            }`}
+          >
+            {days.map((weekday, index) => (
+              <div key={index}>
+                <DayTitle
+                  date={days.length === 1 ? date : getWeekdays()[index]}
+                  weekday={weekday}
+                />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div className="flex overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
+          <div className="grid w-16 grid-rows-[24]">
+            {Array.from(Array(24).keys()).map((hour, index) => (
+              <div
+                key={index}
+                className={`relative flex h-20 w-full min-w-fit items-center justify-end text-xl font-semibold ${
+                  hour === 23 ? 'border-b border-zinc-800' : 'translate-y-3'
+                }`}
+              >
+                <span className="absolute right-0 bottom-0 px-2">
+                  {hour < 23 ? hour + 1 + ':00' : null}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className={`grid flex-1 ${
+              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
+            }`}
+          >
+            {days.map((_, index) => (
+              <div key={index}>
+                <div className="grid grid-rows-[24]">
+                  {Array.from(Array(24).keys()).map((index) => (
+                    <div
+                      key={index}
+                      className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
