@@ -136,18 +136,6 @@ const CalendarPage: PageWithLayoutProps = () => {
     .format;
   const longMonth = shortMonthName(date); // "July"
 
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (!isDev)
-    return (
-      <div className="h-full min-h-full w-full p-8">
-        <HeaderX label="Calendar" />
-        <div className="flex h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">
-          Under construction 🚧
-        </div>
-      </div>
-    );
-
   const title = `${longMonth} ${date.getFullYear()}`;
 
   return (

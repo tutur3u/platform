@@ -21,8 +21,11 @@ export default function CalendarHeader({
 }: CalendarHeaderProps) {
   return (
     <div className="mb-8 flex justify-between">
-      <div className="text-3xl font-semibold">
+      <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{title}</span>
+        <span className="h-fit rounded bg-green-300/20 px-4 py-1 text-lg text-green-300">
+          Coming soon
+        </span>
       </div>
 
       <div className="flex items-center justify-center gap-2 text-blue-300">
