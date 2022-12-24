@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-// By default, use the dark color scheme
 * {
   color-scheme: dark;
 }

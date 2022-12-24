@@ -14,19 +14,20 @@ import { UserData } from '../../../types/primitives/UserData';
 import { getInitials } from '../../../utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
+import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
-  listId: string;
   task: Task;
-  onEdit: () => void;
   showCompleted?: boolean;
+  highlight?: boolean;
+  onUpdated: () => void;
 }
 
 const TaskWrapper = ({
-  listId,
   task,
-  onEdit,
   showCompleted,
+  highlight = true,
+  onUpdated,
 }: TaskWrapperProps) => {
   const { data: rawAssigneesData } = useSWR(
     task?.id ? `/api/tasks/${task.id}/assignees` : null
@@ -53,26 +54,9 @@ const TaskWrapper = ({
         )
       : null;
 
-  const updateTask = async (task: Task) => {
-    if (!task?.id) return;
+  const { data } = useUserData();
 
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        startDate: task.start_date,
-        endDate: task.end_date,
-      }),
-    });
-
-    if (res.ok) onEdit();
-  };
+  const isMyTask = assignees?.some((assignee) => assignee.id === data?.id);
 
   const deleteTask = async (taskId: string) => {
     if (!task?.id) return;
@@ -81,17 +65,17 @@ const TaskWrapper = ({
       method: 'DELETE',
     });
 
-    if (res.ok) onEdit();
+    if (res.ok) onUpdated();
   };
 
-  const showEditTaskModal = (listId: string, task?: Task) => {
+  const showEditTaskModal = (task?: Task) => {
     openModal({
-      title: task ? 'Edit task' : 'New task',
+      title: (
+        <div className="font-semibold">{task ? 'Edit task' : 'New task'}</div>
+      ),
       centered: true,
       size: 'xl',
-      children: (
-        <TaskEditForm task={task} listId={listId} onSubmit={updateTask} />
-      ),
+      children: <TaskEditForm task={task} onUpdated={onUpdated} />,
     });
   };
 
@@ -108,7 +92,7 @@ const TaskWrapper = ({
       }),
     });
 
-    if (res.ok) onEdit();
+    if (res.ok) onUpdated();
   };
 
   const showDeleteTaskModal = (task: Task) => {
@@ -163,7 +147,7 @@ const TaskWrapper = ({
   const getPriorityColor = (priority: number) => {
     switch (priority) {
       case 1:
-        return 'bg-zinc-300/10 text-zinc-300';
+        return 'bg-green-300/10 text-green-300';
       case 2:
         return 'bg-blue-300/10 text-blue-300';
       case 3:
@@ -178,7 +162,13 @@ const TaskWrapper = ({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-lg hover:bg-zinc-800">
+    <div
+      className={`flex items-start justify-between rounded-lg ${
+        isMyTask && highlight && !task.completed
+          ? 'bg-purple-300/10 text-purple-300 hover:bg-purple-300/20'
+          : 'hover:bg-zinc-800'
+      } transition`}
+    >
       <div className="flex h-full w-full items-start justify-start">
         <Checkbox
           checked={task.completed}
@@ -188,7 +178,7 @@ const TaskWrapper = ({
 
         <button
           className="h-full w-full p-2 pl-1 text-start text-sm"
-          onClick={() => showEditTaskModal(listId, task)}
+          onClick={() => showEditTaskModal(task)}
         >
           <div
             className={
@@ -275,7 +265,7 @@ const TaskWrapper = ({
         <Menu.Dropdown className="font-semibold">
           <Menu.Item
             icon={<PencilIcon className="w-6" />}
-            onClick={() => showEditTaskModal(listId, task)}
+            onClick={() => showEditTaskModal(task)}
           >
             Edit task
           </Menu.Item>
