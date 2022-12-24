@@ -9,6 +9,7 @@ import { useRouter } from 'next/router';
 import AuthEmailSent from './AuthEmailSent';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/solid';
+import { mutate } from 'swr';
 
 interface AuthFormProps {
   method: AuthMethod;
@@ -69,6 +70,9 @@ const AuthForm = ({
         setLoading(false);
         return;
       } else onSignin?.();
+
+      // Update the user's profile
+      mutate('/api/user');
 
       // If there is a nextUrl, redirect to it
       // Otherwise, redirect to the homepage
