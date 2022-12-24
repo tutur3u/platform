@@ -5,10 +5,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     switch (req.method) {
       case 'GET':
-        return await fetchAssignees(req, res);
+        return await fetchMembers(req, res);
 
       case 'POST':
-        return await addAssignee(req, res);
+        return await addMember(req, res);
 
       default:
         throw new Error(
@@ -27,41 +27,42 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchAssignees = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchMembers = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { taskId } = req.query;
-  if (!taskId) return res.status(401).json({ error: 'Invalid task ID' });
+  const { boardId } = req.query;
+  if (!boardId) return res.status(401).json({ error: 'Invalid board ID' });
 
   const { data, error } = await supabase
-    .from('task_assignees')
-    .select('users(id, display_name, username)')
-    .eq('task_id', taskId);
+    .from('task_board_members')
+    .select('...users(id, display_name, username)')
+    .eq('board_id', boardId)
+    .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data.map((u) => u.users));
+  console.log(data);
+  return res.status(200).json(data);
 };
 
-const addAssignee = async (req: NextApiRequest, res: NextApiResponse) => {
+const addMember = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { taskId } = req.query;
-  const { userId } = req.body;
+  const { name } = req.body;
 
-  const { error } = await supabase
-    .from('task_assignees')
+  const { data, error } = await supabase
+    .from('task_boards')
     .insert({
-      task_id: taskId,
-      user_id: userId,
+      name,
     })
+    .select('id')
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({});
+  return res.status(200).json(data);
 };
