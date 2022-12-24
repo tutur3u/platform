@@ -15,6 +15,7 @@ import OrgPreviewCard from '../components/cards/OrgPreviewCard';
 import { GetServerSidePropsContext } from 'next';
 import { useUserList } from '../hooks/useUserList';
 import { useUserData } from '../hooks/useUserData';
+import HeaderX from '../components/metadata/HeaderX';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -123,10 +124,13 @@ const Home: PageWithLayoutProps = () => {
 
   return isLoading ? (
     <div className="flex items-center justify-center">
+      <HeaderX label="Home" />
       <LoadingIndicator className="h-8" />
     </div>
   ) : (
     <>
+      <HeaderX label="Home" />
+
       {orgs?.invited?.length > 0 && (
         <div className="mb-16 grid gap-8">
           {orgs?.invited?.map((org) => (
