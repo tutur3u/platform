@@ -56,6 +56,10 @@ function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { data: user } = useUserData();
 
+  useEffect(() => {
+    if (!user) mutate('/api/user');
+  }, [user]);
+
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
 
   const addOrg = (org: Organization) => createOrg(org);
