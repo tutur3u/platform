@@ -52,9 +52,9 @@ const CalendarPage: PageWithLayoutProps = () => {
         </div>
       </div>
       <div className="grid translate-y-36 grid-cols-2 gap-8 p-8 lg:translate-y-36 lg:grid-cols-3 lg:pt-0 xl:grid-cols-4">
-        <ProfileCard title="Info" classname="bg-yellow-200/70">
-          <div>Born on July 2, 1999</div>
-          <div>Born on July 2, 1999</div>
+        <ProfileCard title="Birthday" classname="bg-yellow-200/70 h-36">
+          <div className="mt-8 text-4xl font-bold">July 2</div>
+          <div className="mt-2 text-lg">in 150 days</div>
         </ProfileCard>
         <ProfileCard title="Info" classname="bg-red-200/70">
           <div>Born on July 2, 1999</div>
