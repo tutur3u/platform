@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
-  const { padded, leftSidebarPref, rightSidebarPref } = useAppearance();
+  const { leftSidebarPref, rightSidebarPref } = useAppearance();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
     switch (pref.main) {
@@ -98,9 +98,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       />
 
       <main
-        className={`fixed left-0 right-0 top-0 flex h-full flex-col gap-4 overflow-auto bg-[#111113] scrollbar-none ${
-          padded ? 'p-4 md:p-8' : ''
-        } ${generateContentMargin(
+        className={`fixed left-0 right-0 top-0 flex h-full flex-col overflow-auto bg-[#111113] scrollbar-none ${generateContentMargin(
           leftSidebarPref,
           rightSidebarPref
         )} transition-all duration-300`}

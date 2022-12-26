@@ -122,63 +122,66 @@ const Home: PageWithLayoutProps = () => {
     }
   };
 
-  return isLoading ? (
-    <div className="flex items-center justify-center">
+  return (
+    <div className="p-4 md:p-8">
       <HeaderX label="Home" />
-      <LoadingIndicator className="h-8" />
-    </div>
-  ) : (
-    <>
-      <HeaderX label="Home" />
-
-      {orgs?.invited?.length > 0 && (
-        <div className="mb-16 grid gap-8">
-          {orgs?.invited?.map((org) => (
-            <OrganizationInviteSnippet
-              key={org.id}
-              org={org}
-              onAccept={acceptInvite}
-              onDecline={declineInvite}
-            />
-          ))}
-        </div>
-      )}
-
-      {orgs?.current?.length > 0 ? (
-        <div className="grid gap-8">
-          {orgs?.current
-            // sort org with nill uuid first, since it's the root org
-            // and should be displayed first
-            ?.sort((a) =>
-              a.id === '00000000-0000-0000-0000-000000000000' ? -1 : 1
-            )
-            ?.map((org) => (
-              <OrgPreviewCard key={org.id} org={org} />
-            ))}
+      {isLoading ? (
+        <div className="flex items-center justify-center">
+          <LoadingIndicator className="h-8" />
         </div>
       ) : (
-        <div className="flex flex-col">
-          <div className="flex flex-row">
-            You are not a member of any organizations.
-          </div>
-        </div>
-      )}
+        <>
+          {orgs?.invited?.length > 0 && (
+            <div className="mb-16 grid gap-8">
+              {orgs?.invited?.map((org) => (
+                <OrganizationInviteSnippet
+                  key={org.id}
+                  org={org}
+                  onAccept={acceptInvite}
+                  onDecline={declineInvite}
+                />
+              ))}
+            </div>
+          )}
 
-      <button
-        className={`mt-8 w-full rounded px-8 py-4 font-semibold md:w-fit ${
-          orgs?.current?.length < maxOrgs
-            ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30'
-            : 'cursor-not-allowed bg-gray-500/10 text-gray-500/50'
-        } transition duration-300`}
-        onClick={() =>
-          orgs?.current?.length < maxOrgs ? showEditOrgModal() : null
-        }
-      >
-        {orgs?.current?.length < maxOrgs
-          ? 'New organization'
-          : 'Maximum organizations reached'}
-      </button>
-    </>
+          {orgs?.current?.length > 0 ? (
+            <div className="grid gap-8">
+              {orgs?.current
+                // sort org with nill uuid first, since it's the root org
+                // and should be displayed first
+                ?.sort((a) =>
+                  a.id === '00000000-0000-0000-0000-000000000000' ? -1 : 1
+                )
+                ?.map((org) => (
+                  <OrgPreviewCard key={org.id} org={org} />
+                ))}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              <div className="flex flex-row">
+                You are not a member of any organizations.
+              </div>
+            </div>
+          )}
+
+          <button
+            className={`mt-8 w-full rounded px-8 py-4 font-semibold md:w-fit ${
+              orgs?.current?.length < maxOrgs
+                ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30'
+                : 'cursor-not-allowed bg-gray-500/10 text-gray-500/50'
+            } transition duration-300`}
+            onClick={() =>
+              orgs?.current?.length < maxOrgs ? showEditOrgModal() : null
+            }
+          >
+            {orgs?.current?.length < maxOrgs
+              ? 'New organization'
+              : 'Maximum organizations reached'}
+          </button>
+        </>
+      )}
+      ;
+    </div>
   );
 };
 

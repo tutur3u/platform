@@ -5,7 +5,14 @@ import {
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
-import { Avatar, Checkbox, Divider, Menu, Tooltip } from '@mantine/core';
+import {
+  Avatar,
+  Checkbox,
+  Divider,
+  Menu,
+  Tooltip,
+  useMantineTheme,
+} from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
 import React from 'react';
@@ -68,6 +75,8 @@ const TaskWrapper = ({
     if (res.ok) onUpdated();
   };
 
+  const theme = useMantineTheme();
+
   const showEditTaskModal = (task?: Task) => {
     openModal({
       title: (
@@ -75,6 +84,12 @@ const TaskWrapper = ({
       ),
       centered: true,
       size: 'xl',
+      overlayColor:
+        theme.colorScheme === 'dark'
+          ? theme.colors.dark[9]
+          : theme.colors.gray[2],
+      overlayOpacity: 0.55,
+      overlayBlur: 3,
       children: <TaskEditForm task={task} onUpdated={onUpdated} />,
     });
   };

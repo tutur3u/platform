@@ -37,10 +37,6 @@ const AppearanceContext = createContext({
   changeRightSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
     console.log('changeRightSidebarSecondaryPref', pref),
 
-  padded: true,
-  enablePadding: () => console.log('enablePadding'),
-  disablePadding: () => console.log('disablePadding'),
-
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
     console.log(segment, conditions),
@@ -54,7 +50,6 @@ export const AppearanceProvider = ({
   children: React.ReactNode;
 }) => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [padded, setPadded] = useState(true);
 
   const [leftSidebarPref, setLeftSidebar] = useState<SidebarPreference>({
     main: 'closed',
@@ -160,9 +155,6 @@ export const AppearanceProvider = ({
     setRightSidebar((prev) => ({ ...prev, secondary: pref }));
   };
 
-  const enablePadding = () => setPadded(true);
-  const disablePadding = () => setPadded(false);
-
   useEffect(() => {
     // Extract the theme from local storage,
     // and update the theme state if it exists
@@ -248,10 +240,6 @@ export const AppearanceProvider = ({
     changeRightSidebarPref,
     changeRightSidebarMainPref,
     changeRightSidebarSecondaryPref,
-
-    padded,
-    enablePadding,
-    disablePadding,
 
     segments,
     setRootSegment,

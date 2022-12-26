@@ -1,17 +1,19 @@
 interface ProfileTabProps {
   title: string;
-  classname: string;
+  titleClassname?: string;
+  classname?: string;
   children: React.ReactNode;
 }
 
 export default function ProfileCard({
   title,
+  titleClassname,
   classname,
   children,
 }: ProfileTabProps) {
   return (
-    <div className={`${classname} h-fit rounded-lg p-4 text-black`}>
-      <div className="text-2xl font-semibold">{title}</div>
+    <div className={`rounded-lg p-4 text-black ${classname}`}>
+      <div className={`text-2xl font-bold ${titleClassname}`}>{title}</div>
       <div>{children}</div>
     </div>
   );

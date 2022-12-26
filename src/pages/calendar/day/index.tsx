@@ -7,27 +7,17 @@ import { useUserList } from '../../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 
 const DayViewPage: PageWithLayoutProps = () => {
-  const {
-    setRootSegment,
-    changeLeftSidebarSecondaryPref,
-    disablePadding,
-    enablePadding,
-  } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('visible');
-    disablePadding();
 
     setRootSegment({
       content: 'Calendar',
       href: '/expenses',
     });
-
-    return () => {
-      enablePadding();
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
