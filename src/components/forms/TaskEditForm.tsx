@@ -31,6 +31,7 @@ import {
 import { useUserData } from '../../hooks/useUserData';
 import { TaskBoard } from '../../types/primitives/TaskBoard';
 import { TaskList } from '../../types/primitives/TaskList';
+import Link from 'next/link';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -672,33 +673,38 @@ const TaskEditForm = ({
                 </h3>
                 <div className="grid gap-2 lg:grid-cols-2">
                   {getAllAssignees().map((assignee) => (
-                    <Group
+                    <Link
                       key={assignee.id}
-                      className={`relative w-full rounded-lg border p-4 ${
-                        isAssigneeAdded(assignee.id)
-                          ? 'border-blue-300/20 bg-blue-300/10'
-                          : 'border-dashed border-zinc-300/20 bg-zinc-800'
-                      }`}
+                      href={`/${assignee.username}`}
+                      onClick={() => closeAllModals()}
                     >
-                      <Avatar color="blue" radius="xl">
-                        {getInitials(assignee?.displayName || 'Unknown')}
-                      </Avatar>
-                      <div>
-                        <Text weight="bold" className="text-blue-200">
-                          {assignee.displayName}
-                        </Text>
-                        <Text weight="light" className="text-blue-100">
-                          @{assignee.username}
-                        </Text>
-                      </div>
-
-                      <button
-                        className="absolute right-1 top-1"
-                        onClick={() => handleUnassignUser(assignee.id)}
+                      <Group
+                        className={`relative w-full rounded-lg border p-4 ${
+                          isAssigneeAdded(assignee.id)
+                            ? 'border-blue-300/20 bg-blue-300/10'
+                            : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                        }`}
                       >
-                        <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
-                      </button>
-                    </Group>
+                        <Avatar color="blue" radius="xl">
+                          {getInitials(assignee?.displayName || 'Unknown')}
+                        </Avatar>
+                        <div>
+                          <Text weight="bold" className="text-blue-200">
+                            {assignee.displayName}
+                          </Text>
+                          <Text weight="light" className="text-blue-100">
+                            @{assignee.username}
+                          </Text>
+                        </div>
+
+                        <button
+                          className="absolute right-1 top-1"
+                          onClick={() => handleUnassignUser(assignee.id)}
+                        >
+                          <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                        </button>
+                      </Group>
+                    </Link>
                   ))}
                 </div>
               </>

@@ -404,7 +404,7 @@ function LeftSidebar({ className }: SidebarProps) {
             />
 
             <Link
-              href="/settings"
+              href={user?.username ? `/${user.username}` : '/settings'}
               className={`${
                 leftSidebarPref.main !== 'closed'
                   ? '-translate-x-1 justify-start'

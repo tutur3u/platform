@@ -16,7 +16,7 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, username, created_at')
+    .select('id, display_name, username, birthday, created_at')
     .eq('id', user?.id)
     .single();
 
@@ -38,11 +38,11 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
   if (userError) return res.status(401).json({ error: userError.message });
   if (!user?.id) return res.status(401).json({ error: 'User not found' });
 
-  const { displayName, username } = req.body;
+  const { displayName, username, birthday } = req.body;
 
   const { data, error } = await supabase
     .from('users')
-    .update({ display_name: displayName, username })
+    .update({ display_name: displayName, username, birthday })
     .eq('id', user.id);
 
   console.log(data, error);
