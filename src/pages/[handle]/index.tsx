@@ -2,21 +2,21 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
-} from '@heroicons/react/24/solid';
-import { Avatar, Textarea } from '@mantine/core';
-import { showNotification } from '@mantine/notifications';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { GetServerSidePropsContext } from 'next';
-import Image from 'next/image';
-import { KeyboardEvent, ReactElement, useEffect, useState } from 'react';
-import Layout from '../../components/layout/Layout';
-import ProfileCard from '../../components/profile/ProfileCard';
-import { useAppearance } from '../../hooks/useAppearance';
-import { useUserData } from '../../hooks/useUserData';
-import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { getInitials } from '../../utils/name-helper';
-import useSWR, { mutate } from 'swr';
-import { useDebouncedValue } from '@mantine/hooks';
+} from "@heroicons/react/24/solid";
+import { Avatar, Textarea } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { GetServerSidePropsContext } from "next";
+import Image from "next/image";
+import { KeyboardEvent, ReactElement, useEffect, useState } from "react";
+import Layout from "../../components/layout/Layout";
+import ProfileCard from "../../components/profile/ProfileCard";
+import { useAppearance } from "../../hooks/useAppearance";
+import { useUserData } from "../../hooks/useUserData";
+import { PageWithLayoutProps } from "../../types/PageWithLayoutProps";
+import { getInitials } from "../../utils/name-helper";
+import useSWR, { mutate } from "swr";
+import { useDebouncedValue } from "@mantine/hooks";
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // Create authenticated Supabase Client
@@ -30,7 +30,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   if (!session)
     return {
       redirect: {
-        destination: '/login',
+        destination: "/login",
         permanent: false,
       },
     };
@@ -38,9 +38,9 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const { handle } = ctx?.params as { handle: string };
 
   const { data: user, error } = await supabase
-    .from('users')
-    .select('id, username, display_name, birthday, created_at')
-    .eq('username', handle)
+    .from("users")
+    .select("id, username, display_name, birthday, created_at")
+    .eq("username", handle)
     .single();
 
   if (error) {
@@ -77,15 +77,15 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   } = useAppearance();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
+    changeLeftSidebarSecondaryPref("hidden");
     changeRightSidebarPref({
-      main: 'hidden',
-      secondary: 'hidden',
+      main: "hidden",
+      secondary: "hidden",
     });
 
     setRootSegment({
-      content: 'Calendar',
-      href: '/expenses',
+      content: "Calendar",
+      href: "/expenses",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -121,18 +121,18 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
   const noteLoading = !personalNote && !personalNoteError;
 
-  const [note, setNote] = useState<string>('');
-  const [debouncedNote] = useDebouncedValue(note, 300);
+  const [note, setNote] = useState<string>("");
+  const [debouncedNote] = useDebouncedValue(note, 3000);
 
-  const [lastSavedNote, setLastSavedNote] = useState<string>('');
+  const [lastSavedNote, setLastSavedNote] = useState<string>("");
 
   const [loadedNote, setLoadedNote] = useState<boolean>(false);
   const [saved, setSaved] = useState<boolean>(false);
 
   useEffect(() => {
     if (!noteLoading && !loadedNote) {
-      setNote(personalNote?.content || '');
-      setLastSavedNote(personalNote?.content || '');
+      setNote(personalNote?.content || "");
+      setLastSavedNote(personalNote?.content || "");
       setLoadedNote(true);
       setSaved(true);
     }
@@ -143,8 +143,8 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     mutate(`/api/users/${userData?.id}/notes/people/${user.id}`);
 
     return () => {
-      setNote('');
-      setLastSavedNote('');
+      setNote("");
+      setLastSavedNote("");
       setLoadedNote(false);
       setSaved(false);
     };
@@ -159,9 +159,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     const response = await fetch(
       `/api/users/${userData.id}/notes/people/${user.id}`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           content: note,
@@ -173,9 +173,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
     if (!response.ok) {
       showNotification({
-        title: 'Error',
-        message: 'Failed to save note',
-        color: 'red',
+        title: "Error",
+        message: "Failed to save note",
+        color: "red",
       });
 
       return;
@@ -198,7 +198,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     event: KeyboardEvent<HTMLTextAreaElement>
   ) => {
     // On "Shift + Enter" add a new line, otherwise submit the form
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       const note = event.currentTarget.value;
       await handleNoteSave(note);
@@ -244,9 +244,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
             classname="bg-green-300/20"
           >
             <div className="mt-4 text-4xl font-bold text-green-300">
-              {birthday.toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
+              {birthday.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
               })}
             </div>
             <div className="mt-2 text-lg font-semibold text-green-200/80">
@@ -261,25 +261,25 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
             <div
               className={`flex items-center gap-1 rounded-lg px-2 py-0.5 font-semibold ${
                 saved
-                  ? 'bg-yellow-300/20 text-yellow-300'
+                  ? "bg-yellow-300/20 text-yellow-300"
                   : saving
-                  ? 'bg-purple-300/20 text-purple-300'
-                  : 'bg-zinc-300/20 text-zinc-300'
+                  ? "bg-purple-300/20 text-purple-300"
+                  : "bg-zinc-300/20 text-zinc-300"
               }`}
             >
               <div>
                 {noteLoading
-                  ? 'Loading'
+                  ? "Loading"
                   : saving
-                  ? 'Saving'
+                  ? "Saving"
                   : saved
-                  ? 'Saved'
-                  : 'Unsaved'}
+                  ? "Saved"
+                  : "Unsaved"}
               </div>
               {noteLoading || saving ? (
                 <ArrowPathIcon
                   className={`inline-block h-5 w-5 animate-spin ${
-                    saving ? 'text-purple-300' : 'text-zinc-300'
+                    saving ? "text-purple-300" : "text-zinc-300"
                   }`}
                 />
               ) : saved ? (
@@ -297,7 +297,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
             variant="unstyled"
             placeholder="Add a personal note about this person..."
             classNames={{
-              input: 'text-yellow-300 placeholder-yellow-300/50 font-semibold',
+              input: "text-yellow-300 placeholder-yellow-300/50 font-semibold",
             }}
             value={note}
             onChange={(event) => setNote(event.target.value)}
