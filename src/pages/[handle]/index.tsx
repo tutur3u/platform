@@ -205,8 +205,6 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       await handleNoteSave(note);
-    } else {
-      setSaved(false);
     }
   };
 
@@ -302,7 +300,12 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
               input: 'text-yellow-300 placeholder-yellow-300/50 font-semibold',
             }}
             value={note}
-            onChange={(event) => setNote(event.currentTarget.value)}
+            onChange={(event) => {
+              const newNote = event.currentTarget.value;
+
+              setNote(newNote);
+              setSaved(lastSavedNote === newNote);
+            }}
             onKeyUp={handleKeyUp}
             onKeyDown={handleKeyDown}
             disabled={!user || !userData || !loadedNote}
