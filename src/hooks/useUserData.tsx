@@ -82,6 +82,7 @@ export const UserDataProvider = ({
     id: string;
     email?: string;
     username?: string;
+    birthday?: string;
     display_name?: string;
     created_at?: string;
   }) => {
@@ -90,6 +91,7 @@ export const UserDataProvider = ({
       id: data.id,
       email: data.email,
       username: data.username,
+      birthday: data.birthday,
       displayName: data.display_name,
       createdAt: data.created_at,
     };

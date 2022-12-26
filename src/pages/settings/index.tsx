@@ -9,12 +9,13 @@ import { useRouter } from 'next/router';
 import { useAppearance } from '../../hooks/useAppearance';
 import moment from 'moment';
 import {
+  CakeIcon,
   EnvelopeIcon,
   IdentificationIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/solid';
-import { useUserList } from '../../hooks/useUserList';
 import HeaderX from '../../components/metadata/HeaderX';
+import { DatePicker } from '@mantine/dates';
 
 export const getServerSideProps = withPageAuth({
   redirectTo: '/login?nextUrl=/settings',
@@ -26,7 +27,6 @@ const SettingPage: PageWithLayoutProps = () => {
     changeRightSidebarPref,
     changeLeftSidebarSecondaryPref,
   } = useAppearance();
-  const { clearUsers } = useUserList();
 
   useEffect(() => {
     setRootSegment({
@@ -40,15 +40,6 @@ const SettingPage: PageWithLayoutProps = () => {
     });
 
     changeLeftSidebarSecondaryPref('hidden');
-
-    clearUsers();
-
-    return () => {
-      changeRightSidebarPref({
-        main: 'closed',
-        secondary: 'hidden',
-      });
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -69,11 +60,13 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
+  const [birthday, setBirthday] = useState<Date | null>(null);
 
   useEffect(() => {
     if (data) {
       setDisplayName(data?.displayName || '');
       setUsername(data?.username || '');
+      setBirthday(data?.birthday ? moment(data?.birthday).toDate() : null);
     }
   }, [data]);
 
@@ -88,6 +81,7 @@ const SettingPage: PageWithLayoutProps = () => {
     await updateData({
       displayName,
       username,
+      birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : undefined,
     });
 
     setSaving(false);
@@ -99,7 +93,7 @@ const SettingPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-8 p-4 md:p-8 lg:grid-cols-2">
       <HeaderX label="Settings" />
       <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
         <div className="mb-1 text-3xl font-bold">Account</div>
@@ -117,6 +111,7 @@ const SettingPage: PageWithLayoutProps = () => {
             }
             icon={<UserCircleIcon className="h-5 w-5" />}
           />
+
           <TextInput
             label="Username"
             placeholder="tuturuuu"
@@ -134,6 +129,15 @@ const SettingPage: PageWithLayoutProps = () => {
             }}
             icon={<IdentificationIcon className="h-5 w-5" />}
           />
+
+          <DatePicker
+            placeholder="Your birthday"
+            label="Birthday"
+            icon={<CakeIcon className="h-5 w-5" />}
+            value={birthday}
+            onChange={setBirthday}
+          />
+
           <TextInput
             label="Email"
             placeholder="example@tuturuuu.com"

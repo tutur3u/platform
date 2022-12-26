@@ -21,7 +21,7 @@ export default function Header() {
   };
 
   return (
-    <div className="flex h-fit w-full items-center justify-between md:hidden">
+    <div className="flex h-fit w-full items-center justify-between p-4 md:hidden">
       <Avatar
         className="block hover:cursor-pointer md:hidden"
         size={37}
