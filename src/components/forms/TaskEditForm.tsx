@@ -24,6 +24,7 @@ import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
 import {
+  CheckCircleIcon,
   ExclamationTriangleIcon,
   TrashIcon,
   XMarkIcon,
@@ -373,6 +374,25 @@ const TaskEditForm = ({
     }
   };
 
+  const handleComplete = async () => {
+    if (!task?.id) return;
+
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        completed: true,
+      }),
+    });
+
+    if (res.ok) {
+      onUpdated();
+      closeAllModals();
+    }
+  };
+
   return (
     <>
       <Tabs
@@ -715,6 +735,18 @@ const TaskEditForm = ({
 
       {showSaveButton() && (
         <div className="mt-4 flex items-center gap-2">
+          {task?.id && showActionIcons && (
+            <>
+              <ActionIcon
+                onClick={handleComplete}
+                color="green"
+                size="lg"
+                className="bg-green-300/10"
+              >
+                <CheckCircleIcon className="h-6 w-6" />
+              </ActionIcon>
+            </>
+          )}
           <Button
             fullWidth
             variant="subtle"
