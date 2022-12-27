@@ -3,7 +3,7 @@ interface EventCardProps {
     id: number;
     title: string;
     duration: number;
-    startAt: number;
+    startAt: Date;
   };
 }
 
@@ -15,14 +15,32 @@ export default function EventCard({ task }: EventCardProps) {
     return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
   };
 
-  const startTime = convertTime(task.startAt);
-  const endTime = convertTime(task.startAt + task.duration);
+  const startHour = task.startAt.getHours() + task.startAt.getMinutes() / 60;
+
+  const startTime = convertTime(startHour);
+  const endTime = convertTime(startHour + task.duration);
+
+  const isPast = () => {
+    const endAt = new Date(task.startAt);
+
+    const extraHours = Math.floor(task.duration);
+    const extraMinutes = Math.round((task.duration - extraHours) * 60);
+
+    endAt.setHours(endAt.getHours() + extraHours);
+    endAt.setMinutes(endAt.getMinutes() + extraMinutes);
+
+    return endAt < new Date();
+  };
 
   return (
     <div
-      className="absolute flex w-full flex-col items-start overflow-hidden rounded border-l-4 border-blue-300 bg-[#3d4c5f] p-1 text-left text-sm text-blue-300 transition hover:bg-[#44566d]"
+      className={`absolute flex w-full flex-col items-start overflow-hidden rounded border-l-4 border-blue-300 p-1 text-left text-sm text-blue-300 transition ${
+        isPast()
+          ? 'border-opacity-30 bg-[#232830] text-opacity-50'
+          : 'bg-[#3d4c5f] hover:bg-[#44566d]'
+      }`}
       style={{
-        top: task.startAt * 80,
+        top: startHour * 80,
         height: task.duration * 80 - 4,
         minHeight: 25,
         width: 'calc(100% - 4px)',

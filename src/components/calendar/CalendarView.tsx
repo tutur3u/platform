@@ -18,7 +18,7 @@ const CalendarView = () => {
           id: number;
           title: string;
           duration: number;
-          startAt: number;
+          startAt: Date;
         }[] = [];
 
       tasksOnDay.forEach((task) => {
@@ -31,7 +31,7 @@ const CalendarView = () => {
           id: task.id,
           title: task.title,
           duration: taskDuration,
-          startAt: taskStart,
+          startAt: task.start,
         };
 
         tasksOnDayPlaced.push(taskPlaced);
