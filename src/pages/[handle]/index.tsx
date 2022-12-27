@@ -122,7 +122,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   const noteLoading = !personalNote && !personalNoteError;
 
   const [note, setNote] = useState<string>('');
-  const [debouncedNote] = useDebouncedValue(note, 300);
+  const [debouncedNote] = useDebouncedValue(note, 1000);
 
   const [lastSavedNote, setLastSavedNote] = useState<string>('');
 
@@ -153,7 +153,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   const [saving, setSaving] = useState<boolean>(false);
 
   const handleNoteSave = async (note: string) => {
-    if (saving || !userData) return;
+    if (!loadedNote || noteLoading || saving || !userData) return;
     setSaving(true);
 
     const response = await fetch(
@@ -194,17 +194,17 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedNote, lastSavedNote]);
 
-  const handleNoteChange = async (
-    event: KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    // On "Shift + Enter" add a new line, otherwise submit the form
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      const note = event.currentTarget.value;
-      await handleNoteSave(note);
-    } else {
+  const handleKeyUp = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && event.shiftKey) {
       setSaved(lastSavedNote === note);
       setNote(event.currentTarget.value);
+    }
+  };
+
+  const handleKeyDown = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      await handleNoteSave(note);
     }
   };
 
@@ -300,8 +300,14 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
               input: 'text-yellow-300 placeholder-yellow-300/50 font-semibold',
             }}
             value={note}
-            onChange={(event) => setNote(event.target.value)}
-            onKeyUp={handleNoteChange}
+            onChange={(event) => {
+              const newNote = event.currentTarget.value;
+
+              setNote(newNote);
+              setSaved(lastSavedNote === newNote);
+            }}
+            onKeyUp={handleKeyUp}
+            onKeyDown={handleKeyDown}
             disabled={!user || !userData || !loadedNote}
           />
         </div>
