@@ -673,38 +673,38 @@ const TaskEditForm = ({
                 </h3>
                 <div className="grid gap-2 lg:grid-cols-2">
                   {getAllAssignees().map((assignee) => (
-                    <Link
+                    <Group
                       key={assignee.id}
-                      href={`/${assignee.username}`}
-                      onClick={() => closeAllModals()}
+                      className={`relative w-full rounded-lg border p-4 ${
+                        isAssigneeAdded(assignee.id)
+                          ? 'border-blue-300/20 bg-blue-300/10'
+                          : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                      }`}
                     >
-                      <Group
-                        className={`relative w-full rounded-lg border p-4 ${
-                          isAssigneeAdded(assignee.id)
-                            ? 'border-blue-300/20 bg-blue-300/10'
-                            : 'border-dashed border-zinc-300/20 bg-zinc-800'
-                        }`}
+                      <Link
+                        href={`/${assignee.username}`}
+                        onClick={() => closeAllModals()}
                       >
                         <Avatar color="blue" radius="xl">
                           {getInitials(assignee?.displayName || 'Unknown')}
                         </Avatar>
-                        <div>
-                          <Text weight="bold" className="text-blue-200">
-                            {assignee.displayName}
-                          </Text>
-                          <Text weight="light" className="text-blue-100">
-                            @{assignee.username}
-                          </Text>
-                        </div>
+                      </Link>
+                      <div>
+                        <Text weight="bold" className="text-blue-200">
+                          {assignee.displayName}
+                        </Text>
+                        <Text weight="light" className="text-blue-100">
+                          @{assignee.username}
+                        </Text>
+                      </div>
 
-                        <button
-                          className="absolute right-1 top-1"
-                          onClick={() => handleUnassignUser(assignee.id)}
-                        >
-                          <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
-                        </button>
-                      </Group>
-                    </Link>
+                      <button
+                        className="absolute right-1 top-1"
+                        onClick={() => handleUnassignUser(assignee.id)}
+                      >
+                        <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                      </button>
+                    </Group>
                   ))}
                 </div>
               </>
