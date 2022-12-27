@@ -9,6 +9,8 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import HeaderX from '../../components/metadata/HeaderX';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
+import EventCard from '../../components/calendar/EventCard';
+import tasks from '../../data/tasks';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -122,11 +124,53 @@ const CalendarPage: PageWithLayoutProps = () => {
     return days;
   };
 
-  const shortMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' })
-    .format;
-  const longMonth = shortMonthName(date); // "July"
+  const title = date.toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
 
-  const title = `${longMonth} ${date.getFullYear()}`;
+  // Place the tasks on the calendar
+  const placeTasks = () => {
+    const weekdays = getWeekdays();
+
+    const tasksOnCalendar = weekdays.map((day) => {
+      const tasksOnDay = tasks.filter((task) => {
+          if (task.start.getDate() === day.getDate()) return true;
+          return false;
+        }),
+        tasksOnDayPlaced: {
+          id: number;
+          title: string;
+          duration: number;
+          startAt: number;
+        }[] = [];
+
+      tasksOnDay.forEach((task) => {
+        const taskStart = task.start.getHours() + task.start.getMinutes() / 60;
+        const taskEnd = task.end.getHours() + task.end.getMinutes() / 60;
+
+        const taskDuration = taskEnd - taskStart;
+
+        const taskPlaced = {
+          id: task.id,
+          title: task.title,
+          duration: taskDuration,
+          startAt: taskStart,
+        };
+
+        tasksOnDayPlaced.push(taskPlaced);
+      });
+
+      return {
+        day,
+        tasks: tasksOnDayPlaced,
+      };
+    });
+
+    console.log(tasksOnCalendar);
+
+    return tasksOnCalendar;
+  };
 
   return (
     <>
@@ -178,22 +222,39 @@ const CalendarPage: PageWithLayoutProps = () => {
           </div>
 
           <div
-            className={`grid flex-1 ${
+            className={`relative grid flex-1 ${
               days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
             }`}
           >
             {days.map((_, index) => (
-              <div key={index}>
-                <div className="grid grid-rows-[24]">
-                  {Array.from(Array(24).keys()).map((index) => (
-                    <div
-                      key={index}
-                      className="flex h-20 items-center justify-center border-l border-b border-zinc-800"
-                    />
-                  ))}
-                </div>
+              <div key={index} className="grid grid-rows-[24]">
+                {Array.from(Array(24).keys()).map((index) => (
+                  <div
+                    key={index}
+                    className="grid h-20 border-l border-b border-zinc-800"
+                  />
+                ))}
               </div>
             ))}
+
+            <div
+              className={`absolute inset-0 grid ${
+                days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
+              }`}
+            >
+              {(days.length === 1
+                ? placeTasks().filter(
+                    (day) => day.day.getDate() === date.getDate()
+                  )
+                : placeTasks()
+              ).map((day, index) => (
+                <div key={index} className="relative grid grid-rows-[24]">
+                  {day.tasks.map((task, index) => (
+                    <EventCard key={index} task={task} />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
