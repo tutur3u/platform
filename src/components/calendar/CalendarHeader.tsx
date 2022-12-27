@@ -17,8 +17,8 @@ export default function CalendarHeader() {
     <div className="mb-8 flex justify-between">
       <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{getTitle()}</span>
-        <span className="h-fit rounded bg-green-300/20 px-4 py-1 text-lg text-green-300">
-          Coming soon
+        <span className="h-fit rounded bg-red-300/20 px-4 py-1 text-lg text-red-300">
+          Private preview
         </span>
       </div>
 
