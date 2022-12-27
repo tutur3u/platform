@@ -1,7 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import { ReactElement, useEffect, useState } from 'react';
-import DayTitle from '../../components/calendar/DayTitle';
+import { ReactElement, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
@@ -9,8 +8,8 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import HeaderX from '../../components/metadata/HeaderX';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
-import EventCard from '../../components/calendar/EventCard';
-import tasks from '../../data/tasks';
+import WeekdayBar from '../../components/calendar/WeekdayBar';
+import CalendarView from '../../components/calendar/CalendarView';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -36,12 +35,20 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const CalendarPage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const {
+    setRootSegment,
+    changeLeftSidebarSecondaryPref,
+    changeRightSidebarPref,
+  } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('visible');
+    changeRightSidebarPref({
+      main: 'closed',
+      secondary: 'hidden',
+    });
 
     setRootSegment({
       content: 'Calendar',
@@ -55,271 +62,14 @@ const CalendarPage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const [date, setDate] = useState(new Date());
-
-  // Update the date's hour and minute, every minute
-  useEffect(() => {
-    // calculate seconds to next minute
-    const secondsToNextMinute = 60 - new Date().getSeconds();
-
-    // set a timeout to update the date after the secondsToNextMinute,
-    // and then update the date every minute
-    const timeout = setTimeout(() => {
-      setDate((date) => {
-        const newDate = new Date(date);
-
-        newDate.setHours(new Date().getHours());
-        newDate.setMinutes(new Date().getMinutes());
-
-        return newDate;
-      });
-
-      const interval = setInterval(() => {
-        setDate((date) => {
-          const newDate = new Date(date);
-
-          newDate.setHours(new Date().getHours());
-          newDate.setMinutes(new Date().getMinutes());
-
-          return newDate;
-        });
-      }, 60000);
-
-      return () => clearInterval(interval);
-    }, secondsToNextMinute * 1000);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  const [days, setDays] = useState([
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ]);
-
-  const onDayMode = () => {
-    const currentDay = new Date(date).toLocaleString('en-US', {
-      weekday: 'long',
-    });
-
-    setDays([currentDay]);
-  };
-
-  const onWeekMode = () => {
-    setDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
-  };
-
-  const setToday = () => {
-    setDate(new Date());
-
-    if (days.length === 1)
-      setDays([new Date().toLocaleString('en-US', { weekday: 'long' })]);
-  };
-
-  const setPrev = () => {
-    const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() - days.length);
-    setDate(newDate);
-
-    if (days.length === 1)
-      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
-  };
-
-  const setNext = () => {
-    const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() + days.length);
-    setDate(newDate);
-
-    if (days.length === 1)
-      setDays([newDate.toLocaleString('en-US', { weekday: 'long' })]);
-  };
-
-  const getMonday = () => {
-    const day = date.getDay() || 7;
-    const newDate = new Date(date);
-    if (day !== 1) newDate.setHours(-24 * (day - 1));
-    return newDate;
-  };
-
-  // get other date from monday to sunday
-  const getWeekdays = () => {
-    const monday = getMonday();
-    const days = [];
-
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(monday);
-      day.setDate(day.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const title = date.toLocaleString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-
-  // Place the tasks on the calendar
-  const placeTasks = () => {
-    const weekdays = getWeekdays();
-
-    const tasksOnCalendar = weekdays.map((day) => {
-      const tasksOnDay = tasks.filter((task) => {
-          if (task.start.getDate() === day.getDate()) return true;
-          return false;
-        }),
-        tasksOnDayPlaced: {
-          id: number;
-          title: string;
-          duration: number;
-          startAt: number;
-        }[] = [];
-
-      tasksOnDay.forEach((task) => {
-        const taskStart = task.start.getHours() + task.start.getMinutes() / 60;
-        const taskEnd = task.end.getHours() + task.end.getMinutes() / 60;
-
-        const taskDuration = taskEnd - taskStart;
-
-        const taskPlaced = {
-          id: task.id,
-          title: task.title,
-          duration: taskDuration,
-          startAt: taskStart,
-        };
-
-        tasksOnDayPlaced.push(taskPlaced);
-      });
-
-      return {
-        day,
-        tasks: tasksOnDayPlaced,
-      };
-    });
-
-    console.log(tasksOnCalendar);
-
-    return tasksOnCalendar;
-  };
-
   return (
     <>
       <HeaderX label="Calendar" />
+
       <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
-        <CalendarHeader
-          title={title}
-          prevHandler={setPrev}
-          nextHandler={setNext}
-          todayHandler={setToday}
-          dayModeHandler={onDayMode}
-          weekModeHandler={onWeekMode}
-        />
-
-        <div className="flex">
-          <div className="flex w-16 items-center justify-center border-b border-zinc-800 font-semibold">
-            ICT
-          </div>
-          <div
-            className={`grid flex-1 ${
-              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
-            }`}
-          >
-            {days.map((weekday, index) => (
-              <div key={index}>
-                <DayTitle
-                  date={days.length === 1 ? date : getWeekdays()[index]}
-                  weekday={weekday}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
-          <div className="grid w-16 grid-rows-[24]">
-            {Array.from(Array(24).keys()).map((hour, index) => (
-              <div
-                key={index}
-                className={`relative flex h-20 w-full min-w-fit items-center justify-end text-xl font-semibold ${
-                  hour === 23 ? 'border-b border-zinc-800' : 'translate-y-3'
-                }`}
-              >
-                <span className="absolute right-0 bottom-0 px-2">
-                  {hour < 23 ? hour + 1 + ':00' : null}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div
-            className={`relative grid flex-1 ${
-              days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
-            }`}
-          >
-            {days.map((_, index) => (
-              <div key={index} className="grid grid-rows-[24]">
-                {Array.from(Array(24).keys()).map((index) => (
-                  <div
-                    key={index}
-                    className="grid h-20 border-l border-b border-zinc-800"
-                  />
-                ))}
-              </div>
-            ))}
-
-            <div
-              className={`absolute inset-0 grid ${
-                days.length === 1 ? 'grid-cols-1' : 'grid-cols-7'
-              }`}
-            >
-              {(days.length === 1
-                ? placeTasks().filter(
-                    (day) => day.day.getDate() === date.getDate()
-                  )
-                : placeTasks()
-              ).map((day, index) => (
-                <div key={index} className="relative grid grid-rows-[24]">
-                  {day.tasks.map((task, index) => (
-                    <EventCard key={index} task={task} />
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Current time in day indicator line */}
-            <div
-              className="pointer-events-none] absolute inset-x-0 top-0 h-[1px] bg-purple-300"
-              style={{
-                transform: `translateY(${
-                  (new Date().getHours() + new Date().getMinutes() / 60) * 80
-                }px)`,
-              }}
-            >
-              <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-purple-200" />
-              <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-purple-200" />
-            </div>
-
-            {/* Current time (e.g. 12:00), on the left of the indicator line */}
-            {new Date().getMinutes() > 10 && new Date().getMinutes() < 48 && (
-              <div
-                className="pointer-events-none absolute top-0 -left-9 text-xs font-semibold text-purple-300"
-                style={{
-                  transform: `translateY(${
-                    (new Date().getHours() + new Date().getMinutes() / 60) *
-                      80 -
-                    8
-                  }px)`,
-                }}
-              >
-                {new Date().getHours() + ':' + new Date().getMinutes()}
-              </div>
-            )}
-          </div>
-        </div>
+        <CalendarHeader />
+        <WeekdayBar />
+        <CalendarView />
       </div>
     </>
   );
