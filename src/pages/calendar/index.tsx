@@ -57,6 +57,40 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const [date, setDate] = useState(new Date());
 
+  // Update the date's hour and minute, every minute
+  useEffect(() => {
+    // calculate seconds to next minute
+    const secondsToNextMinute = 60 - new Date().getSeconds();
+
+    // set a timeout to update the date after the secondsToNextMinute,
+    // and then update the date every minute
+    const timeout = setTimeout(() => {
+      setDate((date) => {
+        const newDate = new Date(date);
+
+        newDate.setHours(new Date().getHours());
+        newDate.setMinutes(new Date().getMinutes());
+
+        return newDate;
+      });
+
+      const interval = setInterval(() => {
+        setDate((date) => {
+          const newDate = new Date(date);
+
+          newDate.setHours(new Date().getHours());
+          newDate.setMinutes(new Date().getMinutes());
+
+          return newDate;
+        });
+      }, 60000);
+
+      return () => clearInterval(interval);
+    }, secondsToNextMinute * 1000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
   const [days, setDays] = useState([
     'Mon',
     'Tue',
@@ -255,6 +289,35 @@ const CalendarPage: PageWithLayoutProps = () => {
                 </div>
               ))}
             </div>
+
+            {/* Current time in day indicator line */}
+            <div
+              className="pointer-events-none] absolute inset-x-0 top-0 h-[1px] bg-purple-300"
+              style={{
+                transform: `translateY(${
+                  (new Date().getHours() + new Date().getMinutes() / 60) * 80
+                }px)`,
+              }}
+            >
+              <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-purple-200" />
+              <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-purple-200" />
+            </div>
+
+            {/* Current time (e.g. 12:00), on the left of the indicator line */}
+            {new Date().getMinutes() > 10 && new Date().getMinutes() < 48 && (
+              <div
+                className="pointer-events-none absolute top-0 -left-9 text-xs font-semibold text-purple-300"
+                style={{
+                  transform: `translateY(${
+                    (new Date().getHours() + new Date().getMinutes() / 60) *
+                      80 -
+                    8
+                  }px)`,
+                }}
+              >
+                {new Date().getHours() + ':' + new Date().getMinutes()}
+              </div>
+            )}
           </div>
         </div>
       </div>
