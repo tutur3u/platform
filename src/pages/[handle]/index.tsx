@@ -241,7 +241,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
           <ProfileCard
             title="Birthday"
             titleClassname="text-green-200"
-            classname="bg-green-300/20"
+            classname="bg-green-300/20 hover:bg-green-300/30 transition duration-500"
           >
             <div className="mt-4 text-4xl font-bold text-green-300">
               {birthday.toLocaleDateString('en-US', {
@@ -255,7 +255,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
           </ProfileCard>
         )}
 
-        <div className="rounded-lg bg-yellow-300/20 p-4 text-black">
+        <div className="rounded-lg bg-yellow-300/20 p-4 text-black transition duration-500 hover:bg-yellow-300/30">
           <div className="flex justify-between">
             <div className="text-2xl font-bold text-yellow-200">Note</div>
             <div
