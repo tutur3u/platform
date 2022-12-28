@@ -87,19 +87,22 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const getDatesInView = () => datesInView;
 
   const enableDayView = useCallback(() => {
-    setDatesInView([date]);
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    setDatesInView([newDate]);
   }, [date]);
 
   const enable4DayView = useCallback(() => {
-    const days = [];
+    const dates = [];
 
     for (let i = 0; i < 4; i++) {
-      const day = new Date(date);
-      day.setDate(day.getDate() + i);
-      days.push(day);
+      const newDate = new Date(date);
+      newDate.setHours(0, 0, 0, 0);
+      newDate.setDate(newDate.getDate() + i);
+      dates.push(newDate);
     }
 
-    setDatesInView(days);
+    setDatesInView(dates);
   }, [date]);
 
   const enableWeekView = useCallback(() => {
@@ -112,14 +115,15 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
     const getWeekdays = () => {
       const monday = getMonday();
-      const days = [];
+      const dates = [];
 
       for (let i = 0; i < 7; i++) {
-        const day = new Date(monday);
-        day.setDate(day.getDate() + i);
-        days.push(day);
+        const newDate = new Date(monday);
+        newDate.setHours(0, 0, 0, 0);
+        newDate.setDate(newDate.getDate() + i);
+        dates.push(newDate);
       }
-      return days;
+      return dates;
     };
 
     setDatesInView(getWeekdays());
