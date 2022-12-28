@@ -7,9 +7,7 @@ import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import HeaderX from '../../components/metadata/HeaderX';
-import CalendarHeader from '../../components/calendar/CalendarHeader';
-import WeekdayBar from '../../components/calendar/WeekdayBar';
-import CalendarView from '../../components/calendar/CalendarView';
+import Calendar from '../../components/calendar/Calendar';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -65,12 +63,7 @@ const CalendarPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Calendar" />
-
-      <div className="flex h-full w-full flex-col border-zinc-800 bg-zinc-900 p-6">
-        <CalendarHeader />
-        <WeekdayBar />
-        <CalendarView />
-      </div>
+      <Calendar />
     </>
   );
 };
