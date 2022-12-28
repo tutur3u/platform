@@ -4,22 +4,23 @@ import EventCard from './EventCard';
 import TimeIndicator from './TimeIndicator';
 
 const CalendarView = () => {
-  const { getDate, getDatesInView } = useCalendar();
+  const { getDatesInView } = useCalendar();
+
+  const days = getDatesInView();
 
   const placeTasks = () => {
-    const days = getDatesInView();
-
     const tasksOnCalendar = days.map((day) => {
       const tasksOnDay = tasks.filter((task) => {
-          if (task.start.getDate() === day.getDate()) return true;
-          return false;
-        }),
-        tasksOnDayPlaced: {
-          id: number;
-          title: string;
-          duration: number;
-          startAt: Date;
-        }[] = [];
+        if (task.start.getDate() === day.getDate()) return true;
+        return false;
+      });
+
+      const tasksOnDayPlaced: {
+        id: number;
+        title: string;
+        duration: number;
+        startAt: Date;
+      }[] = [];
 
       tasksOnDay.forEach((task) => {
         const taskStart = task.start.getHours() + task.start.getMinutes() / 60;
@@ -38,7 +39,7 @@ const CalendarView = () => {
       });
 
       return {
-        day,
+        date: day,
         tasks: tasksOnDayPlaced,
       };
     });
@@ -46,8 +47,7 @@ const CalendarView = () => {
     return tasksOnCalendar;
   };
 
-  const date = getDate();
-  const days = getDatesInView();
+  const placedTasks = placeTasks();
 
   return (
     <div className="flex overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
@@ -79,16 +79,17 @@ const CalendarView = () => {
         ))}
 
         <div className={`absolute inset-0 grid grid-cols-${days.length}`}>
-          {(days.length === 1
-            ? placeTasks().filter((day) => day.day.getDate() === date.getDate())
-            : placeTasks()
-          ).map((day, index) => (
-            <div key={index} className="relative grid grid-rows-[24]">
-              {day.tasks.map((task, index) => (
-                <EventCard key={index} task={task} />
-              ))}
-            </div>
-          ))}
+          {placedTasks &&
+            placedTasks.map((day) => (
+              <div
+                key={day.date.getDate()}
+                className="relative grid grid-rows-[24]"
+              >
+                {day.tasks.map((task) => (
+                  <EventCard key={task.id} data={task} />
+                ))}
+              </div>
+            ))}
         </div>
 
         <TimeIndicator />
