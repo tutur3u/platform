@@ -1,8 +1,10 @@
-import tasks from '../../data/tasks';
+import { useState } from 'react';
+import mockTasks from '../../data/tasks';
 import { useCalendar } from '../../hooks/useCalendar';
 import CalendarEventColumn from './CalendarEventColumn';
 
 const CalendarEventMatrix = () => {
+  const [tasks] = useState(mockTasks);
   const { getDatesInView } = useCalendar();
 
   const dates = getDatesInView();
@@ -51,7 +53,7 @@ const CalendarEventMatrix = () => {
 
   const placedColumns = placedTasks
     ? placedTasks.map((date) => (
-        <CalendarEventColumn key={date.date.toString()} tasks={date.tasks} />
+        <CalendarEventColumn key={date.date.toString()} data={date.tasks} />
       ))
     : null;
 

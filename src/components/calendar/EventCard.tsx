@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface EventCardProps {
   data: {
@@ -7,16 +7,25 @@ interface EventCardProps {
     duration: number;
     startAt: Date;
   };
-}
-
-export default function EventCard({ data }: EventCardProps) {
-  const [task, setTask] = useState<{
+  getLevel: (task: {
     id: number;
     title: string;
     duration: number;
     startAt: Date;
-  }>(data);
+  }) => number;
+  onUpdated: (task: {
+    id: number;
+    title: string;
+    duration: number;
+    startAt: Date;
+  }) => void;
+}
 
+export default function EventCard({
+  data,
+  getLevel,
+  onUpdated,
+}: EventCardProps) {
   const convertTime = (time: number) => {
     // 9.5 => 9:30
     const hours = Math.floor(time);
@@ -24,16 +33,28 @@ export default function EventCard({ data }: EventCardProps) {
     return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
   };
 
-  const startHour = task.startAt.getHours() + task.startAt.getMinutes() / 60;
+  const startHour = data.startAt.getHours() + data.startAt.getMinutes() / 60;
 
   const startTime = convertTime(startHour);
-  const endTime = convertTime(startHour + task.duration);
+  const endTime = convertTime(startHour + data.duration);
+
+  const level = getLevel ? getLevel(data) : 0;
+
+  const cardStyle = {
+    top: startHour * 80,
+    left: level * 16,
+    height: data.duration * 80 - 4,
+    minHeight: 25,
+    width: `calc(100% - ${level * 16 + 4}px)`,
+    transition:
+      'width 150ms ease-in-out, left 150ms ease-in-out, background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out',
+  };
 
   const isPast = () => {
-    const endAt = new Date(task.startAt);
+    const endAt = new Date(data.startAt);
 
-    const extraHours = Math.floor(task.duration);
-    const extraMinutes = Math.round((task.duration - extraHours) * 60);
+    const extraHours = Math.floor(data.duration);
+    const extraMinutes = Math.round((data.duration - extraHours) * 60);
 
     endAt.setHours(endAt.getHours() + extraHours);
     endAt.setMinutes(endAt.getMinutes() + extraMinutes);
@@ -54,6 +75,8 @@ export default function EventCard({ data }: EventCardProps) {
     if (!handleEl) return;
 
     const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+
       const startY = e.clientY;
       const startHeight = rootEl.offsetHeight;
 
@@ -68,25 +91,28 @@ export default function EventCard({ data }: EventCardProps) {
           Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4
         );
 
-        const width = 'calc(100% - 16px)';
+        const width = `calc(100% - ${level * 16 + 4}px)`;
+        const left = `${level * 16}px`;
 
         rootEl.style.height = height + 'px';
         rootEl.style.width = width;
+        rootEl.style.left = left;
 
         // calculate new duration
         const newDuration = Math.round(rootEl.offsetHeight / 20) / 4;
 
-        // update duration
-        if (newDuration !== task.duration) {
-          setTask((prev) => ({ ...prev, duration: newDuration }));
-        }
-
         if (newDuration <= 0.5)
           rootEl.querySelector('#time')?.classList.add('hidden');
         else rootEl.querySelector('#time')?.classList.remove('hidden');
+
+        // update duration
+        if (newDuration !== data.duration)
+          onUpdated({ ...data, duration: newDuration });
       };
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (e: MouseEvent) => {
+        e.preventDefault();
+
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
 
@@ -94,11 +120,16 @@ export default function EventCard({ data }: EventCardProps) {
         rootEl.classList.add('hover:bg-[#44566d]');
 
         // revert to original width
-        rootEl.style.width = 'calc(100% - 4px)';
+        rootEl.style.width = `calc(100% - ${level * 16 + 4}px)`;
       };
 
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
     };
 
     handleEl.addEventListener('mousedown', handleMouseDown);
@@ -106,7 +137,7 @@ export default function EventCard({ data }: EventCardProps) {
     return () => {
       handleEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [task]);
+  }, [data, level, onUpdated]);
 
   return (
     <div
@@ -116,23 +147,16 @@ export default function EventCard({ data }: EventCardProps) {
           ? 'border-opacity-30 bg-[#232830] text-opacity-50'
           : 'bg-[#3d4c5f] hover:bg-[#44566d]'
       }`}
-      style={{
-        top: startHour * 80,
-        height: task.duration * 80 - 4,
-        minHeight: 25,
-        width: 'calc(100% - 4px)',
-        transition:
-          'width 150ms ease-in-out, background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out',
-      }}
+      style={cardStyle}
     >
       <div
         className={`font-semibold ${
-          task.duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
+          data.duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
         }`}
       >
-        {task.title}
+        {data.title}
       </div>
-      {task.duration > 0.5 && (
+      {data.duration > 0.5 && (
         <div id="time" className="text-blue-200">
           {startTime} - {endTime}
         </div>
