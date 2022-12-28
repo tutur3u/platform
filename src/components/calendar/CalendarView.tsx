@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import tasks from '../../data/tasks';
 import { useCalendar } from '../../hooks/useCalendar';
 import EventCard from './EventCard';
@@ -49,8 +50,24 @@ const CalendarView = () => {
 
   const placedTasks = placeTasks();
 
+  // On mount, scroll to current time
+  useEffect(() => {
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView) return;
+
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    const scrollPosition = hour * 80 + minute * 1.33;
+    calendarView.scrollTo(0, scrollPosition);
+  }, []);
+
   return (
-    <div className="flex overflow-y-scroll border-b border-zinc-800 text-center scrollbar-none">
+    <div
+      id="calendar-view"
+      className="flex overflow-y-scroll scroll-smooth border-b border-zinc-800 text-center scrollbar-none"
+    >
       <div className="grid w-16 grid-rows-[24]">
         {Array.from(Array(24).keys()).map((hour, index) => (
           <div
