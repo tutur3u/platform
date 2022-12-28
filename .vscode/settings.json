@@ -48,5 +48,8 @@
   "typescript.tsdk": "node_modules\\typescript\\lib",
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "mtxr.sqltools"
   }
 }
