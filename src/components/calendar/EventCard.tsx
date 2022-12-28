@@ -125,7 +125,13 @@ export default function EventCard({ data }: EventCardProps) {
           'width 150ms ease-in-out, background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out',
       }}
     >
-      <div className="font-semibold line-clamp-1">{task.title}</div>
+      <div
+        className={`font-semibold ${
+          task.duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
+        }`}
+      >
+        {task.title}
+      </div>
       {task.duration > 0.5 && (
         <div id="time" className="text-blue-200">
           {startTime} - {endTime}

@@ -95,7 +95,11 @@ const CalendarView = () => {
           </div>
         ))}
 
-        <div className={`absolute inset-0 grid grid-cols-${days.length}`}>
+        <div
+          className={`absolute inset-0 grid grid-cols-${days.length} ${
+            days.length === 1 && 'max-w-lg'
+          }`}
+        >
           {placedTasks &&
             placedTasks.map((day) => (
               <div
