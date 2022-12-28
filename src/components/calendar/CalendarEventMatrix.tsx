@@ -2,7 +2,7 @@ import tasks from '../../data/tasks';
 import { useCalendar } from '../../hooks/useCalendar';
 import CalendarEventColumn from './CalendarEventColumn';
 
-const CalendarEventPlanner = () => {
+const CalendarEventMatrix = () => {
   const { getDatesInView } = useCalendar();
 
   const dates = getDatesInView();
@@ -66,4 +66,4 @@ const CalendarEventPlanner = () => {
   );
 };
 
-export default CalendarEventPlanner;
+export default CalendarEventMatrix;

@@ -1,4 +1,4 @@
-const HourTrail = () => {
+const TimeTrail = () => {
   const hours = Array.from(Array(24).keys());
 
   return (
@@ -19,4 +19,4 @@ const HourTrail = () => {
   );
 };
 
-export default HourTrail;
+export default TimeTrail;

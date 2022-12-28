@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import CalendarView from './CalendarView';
-import HourTrail from './HourTrail';
+import TimeTrail from './TimeTrail';
 
 const CalendarViewWithTrail = () => {
   // On mount, scroll to current time
@@ -21,7 +21,7 @@ const CalendarViewWithTrail = () => {
       id="calendar-view"
       className="flex overflow-y-scroll scroll-smooth border-b border-zinc-800 text-center scrollbar-none"
     >
-      <HourTrail />
+      <TimeTrail />
       <CalendarView />
     </div>
   );

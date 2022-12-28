@@ -11,7 +11,7 @@ interface CalendarEventColumnProps {
 
 const CalendarEventColumn = ({ tasks }: CalendarEventColumnProps) => {
   return (
-    <div className="relative grid grid-rows-[24]">
+    <div className="relative">
       {tasks.map((task) => (
         <EventCard key={task.id} data={task} />
       ))}

@@ -1,6 +1,6 @@
 import { useCalendar } from '../../hooks/useCalendar';
 import CalendarMatrix from './CalendarMatrix';
-import CalendarEventPlanner from './CalendarEventPlanner';
+import CalendarEventMatrix from './CalendarEventMatrix';
 import TimeIndicator from './TimeIndicator';
 
 const CalendarView = () => {
@@ -12,7 +12,7 @@ const CalendarView = () => {
   return (
     <div className={`relative grid flex-1 grid-cols-${columns}`}>
       <CalendarMatrix />
-      <CalendarEventPlanner />
+      <CalendarEventMatrix />
       <TimeIndicator />
     </div>
   );
