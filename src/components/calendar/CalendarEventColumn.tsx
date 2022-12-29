@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import EventCard from './EventCard';
 
 interface CalendarEventColumnProps {
@@ -29,8 +29,15 @@ const CalendarEventColumn = ({ data }: CalendarEventColumnProps) => {
   }) => {
     setTasks((prev) => {
       const newTasks = [...prev];
-      const taskIndex = newTasks.findIndex((t) => t.id === task.id);
-      newTasks[taskIndex] = { ...task, level: getTaskLevel(task) };
+      newTasks.forEach((t) => {
+        if (t.id === task.id) {
+          t.title = task.title;
+          t.duration = task.duration;
+          t.startAt = task.startAt;
+        }
+
+        t.level = getTaskLevel(t);
+      });
       return newTasks;
     });
   };
@@ -59,17 +66,6 @@ const CalendarEventColumn = ({ data }: CalendarEventColumnProps) => {
     },
     [tasks]
   );
-
-  useEffect(() => {
-    // refresh tasks levels
-    setTasks((prev) => {
-      const newTasks = [...prev];
-      newTasks.forEach((task) => {
-        task.level = getTaskLevel(task);
-      });
-      return newTasks;
-    });
-  }, [data, getTaskLevel]);
 
   return (
     <div className="relative">
