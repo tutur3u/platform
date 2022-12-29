@@ -83,9 +83,6 @@ export default function EventCard({
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
 
-        // remove "hover" class
-        rootEl.classList.remove('hover:bg-[#44566d]');
-
         const height = Math.max(
           25,
           Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4
@@ -116,9 +113,6 @@ export default function EventCard({
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
 
-        // add "hover" class
-        rootEl.classList.add('hover:bg-[#44566d]');
-
         // revert to original width
         rootEl.style.width = `calc(100% - ${level * 16 + 4}px)`;
       };
@@ -146,7 +140,7 @@ export default function EventCard({
         isPast()
           ? 'border-opacity-30 bg-[#232830] text-opacity-50'
           : 'bg-[#3d4c5f]'
-      } ${level ? 'border' : 'hover:bg-[#44566d]'}`}
+      } ${level && 'border'}`}
       style={cardStyle}
     >
       <div
