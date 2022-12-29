@@ -35,19 +35,9 @@ const CalendarEventMatrix = () => {
   const handleEventUpdate = (event: CalendarEvent) => {
     setEvents((prev) => {
       // sort by start date and duration
-      const newEvents = prev.sort((a, b) => {
-        const aStart = a.start_at.getTime();
-        const bStart = b.start_at.getTime();
-
-        const aEnd = a.end_at.getTime();
-        const bEnd = b.end_at.getTime();
-
-        if (aStart === bStart) {
-          if (aEnd === bEnd) return 0;
-          return aEnd < bEnd ? 1 : -1;
-        }
-        return aStart < bStart ? -1 : 1;
-      });
+      const newEvents = [...prev].sort(
+        (a, b) => a.start_at.getTime() - b.start_at.getTime()
+      );
 
       newEvents.forEach((t) => {
         if (t.id === event.id) {
