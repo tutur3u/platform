@@ -32,10 +32,10 @@ export default function EventCard({
 
   const cardStyle = {
     top: startHour * 80,
-    left: level * 16,
+    left: level * 12,
     height: duration * 80 - 4,
     minHeight: 16,
-    width: `calc(100% - ${level * 16 + 4}px)`,
+    width: `calc(100% - ${level * 12 + 4}px)`,
     transition:
       'width 150ms ease-in-out, left 150ms ease-in-out, background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out',
   };
@@ -81,8 +81,8 @@ export default function EventCard({
           Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4
         );
 
-        const width = `calc(100% - ${level * 16 + 20}px)`;
-        const left = `${level * 16}px`;
+        const width = `calc(100% - ${(level + 1) * 12}px)`;
+        const left = `${level * 12}px`;
 
         cardEl.style.height = height + 'px';
         cardEl.style.width = width;
@@ -115,7 +115,8 @@ export default function EventCard({
         window.removeEventListener('mouseup', handleMouseUp);
 
         // revert to original width
-        cardEl.style.width = `calc(100% - ${level * 16 + 4}px)`;
+        const newLevel = Math.round(cardEl.offsetLeft / 12);
+        cardEl.style.width = `calc(100% - ${newLevel * 12 + 4}px)`;
       };
 
       window.addEventListener('mousemove', handleMouseMove);
@@ -160,8 +161,8 @@ export default function EventCard({
           Math.round((startTop + e.clientY - startY) / 20) * 20
         );
 
-        const newLevel = Math.round(cardEl.offsetLeft / 16);
-        const width = `calc(100% - ${newLevel * 16 + 20}px)`;
+        const newLevel = Math.round(cardEl.offsetLeft / 12);
+        const width = `calc(100% - ${(newLevel + 1) * 12}px)`;
 
         cardEl.style.top = top + 'px';
         cardEl.style.width = width;
@@ -199,8 +200,8 @@ export default function EventCard({
         window.removeEventListener('mouseup', handleMouseUp);
 
         // revert to original width
-        const newLevel = Math.round(cardEl.offsetLeft / 16);
-        cardEl.style.width = `calc(100% - ${newLevel * 16 + 4}px)`;
+        const newLevel = Math.round(cardEl.offsetLeft / 12);
+        cardEl.style.width = `calc(100% - ${newLevel * 12 + 4}px)`;
       };
 
       window.addEventListener('mousemove', handleMouseMove);

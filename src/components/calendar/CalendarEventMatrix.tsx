@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import mockTasks from '../../data/tasks';
+import mockEvents from '../../data/events';
 import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEvent } from '../../types/primitives/CalendarEvent';
 import CalendarEventColumn from './CalendarEventColumn';
 
 const CalendarEventMatrix = () => {
-  const [events, setTasks] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    setTasks(mockTasks);
+    setEvents(mockEvents);
   }, []);
 
   const { getDatesInView } = useCalendar();
@@ -18,8 +18,8 @@ const CalendarEventMatrix = () => {
 
   const convertToColumns = () => {
     const eventsOnCalendar = dates.map((day) => {
-      const eventsOnDay = events.filter((task) => {
-        if (task.start_at.getDate() === day.getDate()) return true;
+      const eventsOnDay = events.filter((event) => {
+        if (event.start_at.getDate() === day.getDate()) return true;
         return false;
       });
 
@@ -32,43 +32,56 @@ const CalendarEventMatrix = () => {
     return eventsOnCalendar;
   };
 
-  const handleTaskUpdate = (task: CalendarEvent) => {
-    setTasks((prev) => {
-      const newTasks = [...prev];
-      newTasks
-        .sort((a, b) => a.start_at.getTime() - b.start_at.getTime())
-        .forEach((t) => {
-          if (t.id === task.id) {
-            t.title = task.title;
-            t.start_at = task.start_at;
-            t.end_at = task.end_at;
-          }
+  const handleEventUpdate = (event: CalendarEvent) => {
+    setEvents((prev) => {
+      // sort by start date and duration
+      const newEvents = prev.sort((a, b) => {
+        const aStart = a.start_at.getTime();
+        const bStart = b.start_at.getTime();
 
-          t.level = getTaskLevel(t);
-        });
-      return newTasks;
+        const aEnd = a.end_at.getTime();
+        const bEnd = b.end_at.getTime();
+
+        if (aStart === bStart) {
+          if (aEnd === bEnd) return 0;
+          return aEnd < bEnd ? 1 : -1;
+        }
+        return aStart < bStart ? -1 : 1;
+      });
+
+      newEvents.forEach((t) => {
+        if (t.id === event.id) {
+          t.title = event.title;
+          t.start_at = event.start_at;
+          t.end_at = event.end_at;
+        }
+
+        t.level = getEventLevel(t);
+      });
+      return newEvents;
     });
   };
 
-  const getTaskLevel = useCallback(
-    (task: CalendarEvent) => {
-      // Find index of task in events array
-      const taskIndex = events.findIndex((t) => t.id === task.id);
+  const getEventLevel = useCallback(
+    (event: CalendarEvent) => {
+      // Find index of event in events array
+      const eventIndex = events.findIndex((t) => t.id === event.id);
 
-      // If task is first in the list, it has no level
-      if (taskIndex === 0) return 0;
+      // If event is first in the list, it has no level
+      if (eventIndex === 0) return 0;
 
-      const eventsBefore = events.slice(0, taskIndex);
+      const eventsBefore = events.slice(0, eventIndex);
       const eventsBeforeChained = eventsBefore.filter((t) => {
-        const taskStart = task.start_at.getTime();
-        const taskEnd = task.end_at.getTime();
+        const eventStart = event.start_at.getTime();
+        const eventEnd = event.end_at.getTime();
 
         const tStart = t.start_at.getTime();
         const tEnd = t.end_at.getTime();
 
-        if (tStart >= taskStart && tStart < taskEnd) return true;
-        if (tEnd > taskStart && tEnd <= taskEnd) return true;
-        if (tStart <= taskStart && tEnd >= taskEnd) return true;
+        if (tStart >= eventStart && tStart < eventEnd) return true;
+        if (tEnd > eventStart && tEnd <= eventEnd) return true;
+        if (tStart <= eventStart && tEnd >= eventEnd) return true;
+
         return false;
       });
 
@@ -90,8 +103,8 @@ const CalendarEventMatrix = () => {
         <CalendarEventColumn
           key={col.date.toString()}
           events={col.events}
-          getTaskLevel={getTaskLevel}
-          onUpdated={handleTaskUpdate}
+          getEventLevel={getEventLevel}
+          onUpdated={handleEventUpdate}
         />
       ))
     : null;

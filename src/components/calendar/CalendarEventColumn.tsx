@@ -3,13 +3,13 @@ import EventCard from './EventCard';
 
 interface CalendarEventColumnProps {
   events: CalendarEvent[];
-  getTaskLevel: (task: CalendarEvent) => number;
-  onUpdated: (task: CalendarEvent) => void;
+  getEventLevel: (event: CalendarEvent) => number;
+  onUpdated: (event: CalendarEvent) => void;
 }
 
 const CalendarEventColumn = ({
   events,
-  getTaskLevel,
+  getEventLevel,
   onUpdated,
 }: CalendarEventColumnProps) => {
   return (
@@ -18,7 +18,7 @@ const CalendarEventColumn = ({
         <EventCard
           key={event.id}
           event={event}
-          getLevel={getTaskLevel}
+          getLevel={getEventLevel}
           onUpdated={onUpdated}
         />
       ))}

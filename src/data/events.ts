@@ -1,4 +1,4 @@
-const tasks = [
+const events = [
   {
     title: '📨 Morning Catch Up',
     start_at: new Date(2022, 11, 26, 9, 0),
@@ -310,9 +310,9 @@ const tasks = [
     start_at: new Date(2023, 0, 1, 18, 45),
     end_at: new Date(2023, 0, 1, 23, 45),
   },
-].map((task, idx) => ({
+].map((event, idx) => ({
   id: idx.toString(),
-  ...task,
+  ...event,
 }));
 
-export default tasks;
+export default events;
