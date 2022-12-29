@@ -1,28 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { CalendarEvent } from '../../types/primitives/CalendarEvent';
 
 interface EventCardProps {
-  data: {
-    id: number;
-    title: string;
-    duration: number;
-    startAt: Date;
-  };
-  getLevel: (task: {
-    id: number;
-    title: string;
-    duration: number;
-    startAt: Date;
-  }) => number;
-  onUpdated: (task: {
-    id: number;
-    title: string;
-    duration: number;
-    startAt: Date;
-  }) => void;
+  event: CalendarEvent;
+  getLevel: (event: CalendarEvent) => number;
+  onUpdated: (event: CalendarEvent) => void;
 }
 
 export default function EventCard({
-  data,
+  event,
   getLevel,
   onUpdated,
 }: EventCardProps) {
@@ -33,28 +19,32 @@ export default function EventCard({
     return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
   };
 
-  const startHour = data.startAt.getHours() + data.startAt.getMinutes() / 60;
+  const startHour =
+    event.start_at.getHours() + event.start_at.getMinutes() / 60;
+  const endHour = event.end_at.getHours() + event.end_at.getMinutes() / 60;
 
   const startTime = convertTime(startHour);
-  const endTime = convertTime(startHour + data.duration);
+  const endTime = convertTime(endHour);
 
-  const level = getLevel ? getLevel(data) : 0;
+  const duration = endHour - startHour;
+
+  const level = getLevel ? getLevel(event) : 0;
 
   const cardStyle = {
     top: startHour * 80,
     left: level * 16,
-    height: data.duration * 80 - 4,
-    minHeight: 25,
+    height: duration * 80 - 4,
+    minHeight: 16,
     width: `calc(100% - ${level * 16 + 4}px)`,
     transition:
       'width 150ms ease-in-out, left 150ms ease-in-out, background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out',
   };
 
   const isPast = () => {
-    const endAt = new Date(data.startAt);
+    const endAt = new Date(event.start_at);
 
-    const extraHours = Math.floor(data.duration);
-    const extraMinutes = Math.round((data.duration - extraHours) * 60);
+    const extraHours = Math.floor(duration);
+    const extraMinutes = Math.round((duration - extraHours) * 60);
 
     endAt.setHours(endAt.getHours() + extraHours);
     endAt.setMinutes(endAt.getMinutes() + extraMinutes);
@@ -62,59 +52,70 @@ export default function EventCard({
     return endAt < new Date();
   };
 
-  const ref = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Event resizing
   useEffect(() => {
-    const rootEl = ref.current;
+    const rootEl = handleRef.current;
     if (!rootEl) return;
 
-    const handleEl = rootEl?.querySelector(
-      '.cursor-s-resize'
-    ) as HTMLDivElement;
-
-    if (!handleEl) return;
+    const cardEl = rootEl.parentElement;
+    if (!cardEl) return;
 
     const handleMouseDown = (e: MouseEvent) => {
       e.preventDefault();
 
+      setIsResizing(true);
+
       const startY = e.clientY;
-      const startHeight = rootEl.offsetHeight;
+      const startHeight = cardEl.offsetHeight;
 
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
 
         const height = Math.max(
-          25,
+          20 - 4,
           Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4
         );
 
         const width = `calc(100% - ${level * 16 + 20}px)`;
         const left = `${level * 16}px`;
 
-        rootEl.style.height = height + 'px';
-        rootEl.style.width = width;
-        rootEl.style.left = left;
+        cardEl.style.height = height + 'px';
+        cardEl.style.width = width;
+        cardEl.style.left = left;
 
-        // calculate new duration
-        const newDuration = Math.round(rootEl.offsetHeight / 20) / 4;
+        // calculate new end time
+        const newDuration = Math.round(cardEl.offsetHeight / 20) / 4;
+        const newEndAt = new Date(event.start_at);
+
+        const extraHours = Math.floor(newDuration);
+        const extraMinutes = Math.round((newDuration - extraHours) * 60);
+
+        newEndAt.setHours(newEndAt.getHours() + extraHours);
+        newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
 
         if (newDuration <= 0.5)
-          rootEl.querySelector('#time')?.classList.add('hidden');
-        else rootEl.querySelector('#time')?.classList.remove('hidden');
+          cardEl.querySelector('#time')?.classList.add('hidden');
+        else cardEl.querySelector('#time')?.classList.remove('hidden');
 
-        // update duration
-        if (newDuration !== data.duration)
-          onUpdated({ ...data, duration: newDuration });
+        // update event
+        onUpdated({ ...event, end_at: newEndAt });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
         e.preventDefault();
 
+        setIsResizing(false);
+
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
 
         // revert to original width
-        rootEl.style.width = `calc(100% - ${level * 16 + 4}px)`;
+        cardEl.style.width = `calc(100% - ${level * 16 + 4}px)`;
       };
 
       window.addEventListener('mousemove', handleMouseMove);
@@ -126,17 +127,102 @@ export default function EventCard({
       };
     };
 
-    handleEl.addEventListener('mousedown', handleMouseDown);
+    rootEl.addEventListener('mousedown', handleMouseDown);
 
     return () => {
-      handleEl.removeEventListener('mousedown', handleMouseDown);
+      rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [data, level, onUpdated]);
+  }, [event, level, onUpdated]);
+
+  // Event dragging
+  useEffect(() => {
+    const rootEl = contentRef.current;
+    if (!rootEl) return;
+
+    const cardEl = rootEl.parentElement;
+    if (!cardEl) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+
+      if (isResizing) return;
+
+      const startY = e.clientY;
+      const startTop = cardEl.offsetTop;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        e.preventDefault();
+
+        if (isResizing) return;
+
+        const top = Math.max(
+          0,
+          Math.round((startTop + e.clientY - startY) / 20) * 20
+        );
+
+        const newLevel = Math.round(cardEl.offsetLeft / 16);
+        const width = `calc(100% - ${newLevel * 16 + 20}px)`;
+
+        cardEl.style.top = top + 'px';
+        cardEl.style.width = width;
+
+        // calculate new start time
+        const newStartAt = new Date(event.start_at);
+
+        const newStartHour = Math.round(top / 20) / 4;
+        const leftoverHour = newStartHour - Math.floor(newStartHour);
+
+        const newStartMinute = Math.round(leftoverHour * 60);
+
+        newStartAt.setHours(Math.floor(newStartHour));
+        newStartAt.setMinutes(newStartMinute);
+
+        // calculate new end time (duration)
+        const newEndAt = new Date(event.end_at);
+
+        const extraHours = Math.floor(duration);
+        const extraMinutes = Math.round((duration - extraHours) * 60);
+
+        newEndAt.setHours(newStartAt.getHours() + extraHours);
+        newEndAt.setMinutes(newStartAt.getMinutes() + extraMinutes);
+
+        // update event
+        onUpdated({ ...event, start_at: newStartAt, end_at: newEndAt });
+      };
+
+      const handleMouseUp = (e: MouseEvent) => {
+        e.preventDefault();
+
+        if (isResizing) return;
+
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+
+        // revert to original width
+        const newLevel = Math.round(cardEl.offsetLeft / 16);
+        cardEl.style.width = `calc(100% - ${newLevel * 16 + 4}px)`;
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    };
+
+    cardEl.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      cardEl.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, [event, level, onUpdated, startHour, isResizing, duration]);
 
   return (
     <div
-      ref={ref}
-      className={`absolute flex w-full flex-col items-start overflow-hidden rounded border-l-4 border-blue-300 p-1 text-left text-sm text-blue-300 duration-500 ${
+      id="card"
+      className={`absolute w-full overflow-hidden rounded border-l-4 border-blue-300 text-blue-300 duration-500 ${
         isPast()
           ? 'border-opacity-30 bg-[#232830] text-opacity-50'
           : 'bg-[#3d4c5f]'
@@ -144,18 +230,34 @@ export default function EventCard({
       style={cardStyle}
     >
       <div
-        className={`font-semibold ${
-          data.duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
+        id="content"
+        ref={contentRef}
+        className={`flex cursor-pointer flex-col items-start text-left ${
+          duration <= 0.25
+            ? 'h-[calc(100%-0.25rem)] px-1 text-xs'
+            : 'h-[calc(100%-0.5rem)] p-1 text-sm'
         }`}
       >
-        {data.title}
-      </div>
-      {data.duration > 0.5 && (
-        <div id="time" className="text-blue-200">
-          {startTime} - {endTime}
+        <div
+          className={`flex-none font-semibold ${
+            duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
+          }`}
+        >
+          {event.title}
         </div>
-      )}
-      <div className="absolute inset-x-0 bottom-0 h-2 cursor-s-resize"></div>
+        {duration > 0.5 && (
+          <div id="time" className="text-blue-200">
+            {startTime} - {endTime}
+          </div>
+        )}
+      </div>
+      <div
+        id="handle"
+        ref={handleRef}
+        className={`absolute inset-x-0 bottom-0 cursor-s-resize ${
+          duration <= 0.25 ? 'h-1' : 'h-2'
+        }`}
+      />
     </div>
   );
 }

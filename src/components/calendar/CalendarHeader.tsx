@@ -22,9 +22,9 @@ export default function CalendarHeader() {
     <div className="mb-8 flex justify-between">
       <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{getTitle()}</span>
-        <span className="flex h-fit flex-wrap items-center justify-center gap-2 rounded bg-red-300/20 px-4 py-1 text-center text-lg text-red-300">
+        <span className="flex h-fit flex-wrap items-center justify-center gap-2 rounded bg-red-300/20 px-4 py-1 text-center text-sm text-red-300">
           <span>Confidental</span>
-          <ExclamationTriangleIcon className="h-6 w-6" />
+          <ExclamationTriangleIcon className="h-5" />
           <span>Do not screenshoot or discuss with others.</span>
         </span>
       </div>
