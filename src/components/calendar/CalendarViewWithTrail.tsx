@@ -9,10 +9,12 @@ const CalendarViewWithTrail = () => {
     if (!component) return;
 
     const now = new Date();
-    const hour = now.getHours();
-    const minute = now.getMinutes();
+    const minutes = now.getMinutes();
+    const hours = now.getHours() + minutes / 60;
 
-    const scrollPosition = hour * 80 + minute * 1.33;
+    const height = component.clientHeight;
+    const scrollPosition = hours * 80 - height / 2;
+
     component.scrollTo(0, scrollPosition);
   }, []);
 

@@ -1,15 +1,11 @@
-import { useCalendar } from '../../hooks/useCalendar';
-import CalendarColumn from './CalendarColumn';
+import CalendarBaseMatrix from './CalendarBaseMatrix';
+import CalendarEventMatrix from './CalendarEventMatrix';
 
 const CalendarMatrix = () => {
-  const { getDatesInView } = useCalendar();
-  const dates = getDatesInView();
-
   return (
     <>
-      {dates.map((_, index) => (
-        <CalendarColumn key={index} />
-      ))}
+      <CalendarBaseMatrix />
+      <CalendarEventMatrix />
     </>
   );
 };
