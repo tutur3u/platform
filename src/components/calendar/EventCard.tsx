@@ -91,7 +91,7 @@ export default function EventCard({
           Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4
         );
 
-        const width = `calc(100% - ${level * 16 + 4}px)`;
+        const width = `calc(100% - ${level * 16 + 20}px)`;
         const left = `${level * 16}px`;
 
         rootEl.style.height = height + 'px';
@@ -145,8 +145,8 @@ export default function EventCard({
       className={`absolute flex w-full flex-col items-start overflow-hidden rounded border-l-4 border-blue-300 p-1 text-left text-sm text-blue-300 duration-500 ${
         isPast()
           ? 'border-opacity-30 bg-[#232830] text-opacity-50'
-          : 'bg-[#3d4c5f] hover:bg-[#44566d]'
-      }`}
+          : 'bg-[#3d4c5f]'
+      } ${level ? 'border' : 'hover:bg-[#44566d]'}`}
       style={cardStyle}
     >
       <div
