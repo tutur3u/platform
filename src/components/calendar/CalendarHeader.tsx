@@ -1,9 +1,14 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
 import { useCalendar } from '../../hooks/useCalendar';
 
 export default function CalendarHeader() {
   const {
+    isToday,
     getTitle,
     handlePrev,
     handleNext,
@@ -17,8 +22,10 @@ export default function CalendarHeader() {
     <div className="mb-8 flex justify-between">
       <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{getTitle()}</span>
-        <span className="h-fit rounded bg-red-300/20 px-4 py-1 text-lg text-red-300">
-          Private preview
+        <span className="flex h-fit flex-wrap items-center justify-center gap-2 rounded bg-red-300/20 px-4 py-1 text-center text-lg text-red-300">
+          <span>Confidental</span>
+          <ExclamationTriangleIcon className="h-6 w-6" />
+          <span>Do not screenshoot or discuss with others.</span>
         </span>
       </div>
 
@@ -49,19 +56,23 @@ export default function CalendarHeader() {
         />
 
         <button
-          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
+          className="h-fit rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
           onClick={handlePrev}
         >
           <ChevronLeftIcon className="w-4" />
         </button>
         <button
           onClick={selectToday}
-          className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold transition hover:bg-blue-300/20"
+          className={`rounded-lg p-2 text-lg font-semibold transition ${
+            isToday()
+              ? 'cursor-not-allowed bg-zinc-300/10 text-zinc-300 opacity-50'
+              : 'cursor-pointer bg-blue-300/10 hover:bg-blue-300/20'
+          }`}
         >
           Today
         </button>
         <button
-          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
+          className="h-fit rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
           onClick={handleNext}
         >
           <ChevronRightIcon className="w-4" />
