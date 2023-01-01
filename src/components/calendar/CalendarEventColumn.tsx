@@ -3,8 +3,8 @@ import EventCard from './EventCard';
 
 interface CalendarEventColumnProps {
   events: CalendarEvent[];
-  getEventLevel: (event: CalendarEvent) => number;
-  onUpdated: (event: CalendarEvent) => void;
+  getEventLevel: (eventId: string) => number;
+  onUpdated: (id: string, data: Partial<CalendarEvent>) => void;
 }
 
 const CalendarEventColumn = ({

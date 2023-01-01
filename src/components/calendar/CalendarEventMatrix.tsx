@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import mockEvents from '../../data/events';
 import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEvent } from '../../types/primitives/CalendarEvent';
@@ -32,59 +32,45 @@ const CalendarEventMatrix = () => {
     return eventsOnCalendar;
   };
 
-  const handleEventUpdate = (event: CalendarEvent) => {
-    setEvents((prev) => {
-      // sort by start date and duration
-      const newEvents = [...prev].sort(
-        (a, b) => a.start_at.getTime() - b.start_at.getTime()
-      );
+  const handleEventUpdate = (eventId: string, data: Partial<CalendarEvent>) =>
+    setEvents((prev) =>
+      prev
+        .map((e) => (e.id === eventId ? { ...e, ...data } : e))
+        .sort((a, b) => {
+          if (a.start_at < b.start_at) return -1;
+          if (a.start_at > b.start_at) return 1;
+          if (a.end_at < b.end_at) return 1;
+          if (a.end_at > b.end_at) return -1;
+          return 0;
+        })
+    );
 
-      newEvents.forEach((t) => {
-        if (t.id === event.id) {
-          t.title = event.title;
-          t.start_at = event.start_at;
-          t.end_at = event.end_at;
-        }
+  const getEventLevel = (events: CalendarEvent[], eventId: string): number => {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return 0;
 
-        t.level = getEventLevel(t);
-      });
-      return newEvents;
-    });
-  };
+    const eventIndex = events.findIndex((e) => e.id === eventId);
 
-  const getEventLevel = useCallback(
-    (event: CalendarEvent) => {
-      // Find index of event in events array
-      const eventIndex = events.findIndex((t) => t.id === event.id);
+    const prevEvents = events.slice(0, eventIndex).filter((e) => {
+      // If the event is the same
+      if (e.id === eventId) return false;
 
-      // If event is first in the list, it has no level
-      if (eventIndex === 0) return 0;
+      // If the event is not on the same day
+      if (e.start_at.getDate() !== event.start_at.getDate()) return false;
 
-      const eventsBefore = events.slice(0, eventIndex);
-      const eventsBeforeChained = eventsBefore.filter((t) => {
-        const eventStart = event.start_at.getTime();
-        const eventEnd = event.end_at.getTime();
-
-        const tStart = t.start_at.getTime();
-        const tEnd = t.end_at.getTime();
-
-        if (tStart >= eventStart && tStart < eventEnd) return true;
-        if (tEnd > eventStart && tEnd <= eventEnd) return true;
-        if (tStart <= eventStart && tEnd >= eventEnd) return true;
-
+      // If the event ends before the current event starts,
+      // or if the event starts after the current event ends
+      if (e.end_at <= event.start_at || e.start_at >= event.end_at)
         return false;
-      });
 
-      if (eventsBeforeChained.length === 0) return 0;
+      return true;
+    });
 
-      const eventsBeforeChainedLevels = eventsBeforeChained.map(
-        (t) => t?.level ?? 0
-      );
-      const maxLevel = Math.max(...eventsBeforeChainedLevels);
-      return maxLevel + 1;
-    },
-    [events]
-  );
+    if (prevEvents.length === 0) return 0;
+
+    const prevEventLevels = prevEvents.map((e) => getEventLevel(events, e.id));
+    return Math.max(...prevEventLevels) + 1;
+  };
 
   const eventColumns = convertToColumns();
 
@@ -93,7 +79,7 @@ const CalendarEventMatrix = () => {
         <CalendarEventColumn
           key={col.date.toString()}
           events={col.events}
-          getEventLevel={getEventLevel}
+          getEventLevel={(id) => getEventLevel(events, id)}
           onUpdated={handleEventUpdate}
         />
       ))
