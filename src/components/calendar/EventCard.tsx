@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
-import { CalendarEvent } from '../../types/primitives/CalendarEvent';
+import { CalendarEventBase } from '../../types/primitives/CalendarEventBase';
 
 interface EventCardProps {
-  event: CalendarEvent;
-  getLevel: (eventId: string) => number;
-  onUpdated: (id: string, data: Partial<CalendarEvent>) => void;
+  event: CalendarEventBase;
 }
 
-export default function EventCard({
-  event,
-  getLevel,
-  onUpdated,
-}: EventCardProps) {
+export default function EventCard({ event }: EventCardProps) {
   const { id, title, start_at, end_at } = event;
-  const { getDatesInView } = useCalendar();
+  const {
+    getEventLevel: getLevel,
+    updateEvent,
+    getDatesInView,
+  } = useCalendar();
 
   const convertTime = (time: number) => {
     // 9.5 => 9:30
@@ -52,7 +50,11 @@ export default function EventCard({
   useEffect(() => {
     // Every time the event is updated, update the card style
     const cardEl = document.getElementById(`event-${id}`);
-    const cellEl = document.getElementById('calendar-cell');
+
+    const cellEl = document.querySelector(
+      `.calendar-cell`
+    ) as HTMLDivElement | null;
+
     if (!cardEl || !cellEl) return;
 
     const startHours = start_at.getHours() + start_at.getMinutes() / 60;
@@ -90,7 +92,8 @@ export default function EventCard({
 
     // Update event position
     cardEl.style.top = `${startHours * 80}px`;
-    cardEl.style.left = `${dateIdx * cellEl.offsetWidth + level * 12}px`;
+    const left = dateIdx * cellEl.offsetWidth + level * 12;
+    cardEl.style.left = `${left}px`;
 
     // Update event time visibility
     const timeEl = cardEl.querySelector('#time');
@@ -121,7 +124,9 @@ export default function EventCard({
     const cardEl = document.getElementById(`event-${id}`);
     if (!cardEl) return;
 
-    const cellEl = document.getElementById('calendar-cell');
+    const cellEl = document.querySelector(
+      `.calendar-cell`
+    ) as HTMLDivElement | null;
     if (!cellEl) return;
 
     const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
@@ -174,7 +179,7 @@ export default function EventCard({
         newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
 
         // update event
-        onUpdated(id, { end_at: newEndAt });
+        updateEvent(id, { end_at: newEndAt });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -202,7 +207,7 @@ export default function EventCard({
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, onUpdated, isResizing, start_at, isDragging]);
+  }, [id, updateEvent, isResizing, start_at, isDragging]);
 
   // Event dragging
   useEffect(() => {
@@ -212,7 +217,9 @@ export default function EventCard({
     const cardEl = rootEl.parentElement;
     if (!cardEl) return;
 
-    const cellEl = document.getElementById('calendar-cell');
+    const cellEl = document.querySelector(
+      `.calendar-cell`
+    ) as HTMLDivElement | null;
     if (!cellEl) return;
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -292,7 +299,7 @@ export default function EventCard({
         }
 
         // update event
-        onUpdated(id, { start_at: newStartAt, end_at: newEndAt });
+        updateEvent(id, { start_at: newStartAt, end_at: newEndAt });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -328,17 +335,39 @@ export default function EventCard({
     level,
     startHours,
     isResizing,
-    onUpdated,
+    updateEvent,
     getDatesInView,
   ]);
+
+  const generateColor = () => {
+    // const eventColor = event?.color || 'blue';
+
+    const colors = [
+      'border-red-300/80 bg-[#302729] text-red-200',
+      'border-blue-300/80 bg-[#252a32] text-blue-200',
+      'border-green-300/80 bg-[#242e2a] text-green-200',
+      'border-yellow-300/80 bg-[#302d1f] text-yellow-200',
+      'border-orange-300/80 bg-[#302924] text-orange-200',
+      'border-purple-300/80 bg-[#2c2832] text-purple-200',
+      'border-pink-300/80 bg-[#2f272e] text-pink-200',
+      'border-teal-300/80 bg-[#202e2e] text-teal-200',
+      'border-indigo-300/80 bg-[#272832] text-indigo-200',
+      'border-cyan-300/80 bg-[#212e31] text-cyan-200',
+      'border-gray-300/80 bg-[#2b2c2e] text-gray-200',
+    ];
+
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    return color;
+  };
 
   return (
     <div
       id={`event-${id}`}
-      className={`absolute overflow-hidden rounded border-l-4 ${
+      className={`pointer-events-auto absolute overflow-hidden rounded border-l-4 ${
         isPast()
           ? 'border-zinc-500 border-opacity-30 bg-[#202022] text-zinc-400'
-          : 'border-blue-300/80 bg-[#242831] text-blue-200'
+          : generateColor()
       } ${level && 'border'}`}
       style={cardStyle}
     >
@@ -361,7 +390,7 @@ export default function EventCard({
         {duration > 0.5 && (
           <div
             id="time"
-            className={isPast() ? 'text-zinc-400' : 'text-blue-300/80'}
+            className={isPast() ? 'text-zinc-400' : 'text-zinc-200/50'}
           >
             {startTime} - {endTime}
           </div>

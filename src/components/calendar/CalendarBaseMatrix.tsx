@@ -8,7 +8,10 @@ const CalendarBaseMatrix = () => {
   return (
     <>
       {dates.map((_, index) => (
-        <CalendarColumn key={index} />
+        <CalendarColumn
+          key={`cal-col-${index}`}
+          date={dates[index].toISOString().split('T')[0]}
+        />
       ))}
     </>
   );

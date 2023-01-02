@@ -28,7 +28,11 @@ const WeekdayBar = () => {
       </div>
       <div className={`grid flex-1 ${getGridCols()}`}>
         {days.map((weekday, index) => (
-          <div key={index}>
+          <div
+            key={`date-${weekday.toLocaleString('en-us', {
+              weekday: 'short',
+            })}`}
+          >
             <DayTitle
               date={days[index]}
               weekday={weekday.toLocaleString('en-us', { weekday: 'short' })}

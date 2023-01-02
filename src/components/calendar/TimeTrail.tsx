@@ -5,7 +5,7 @@ const TimeTrail = () => {
     <div className="grid w-16 grid-rows-[24]">
       {hours.map((hour, index) => (
         <div
-          key={index}
+          key={`trail-hour-${index}`}
           className={`relative flex h-20 w-full min-w-fit items-center justify-end text-xl font-semibold ${
             hour === 23 ? 'border-b border-zinc-800' : 'translate-y-3'
           }`}

@@ -6,11 +6,14 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { CalendarEventBase } from '../types/primitives/CalendarEventBase';
+import mockEvents from '../data/events';
 
 const CalendarContext = createContext({
   getDate: () => new Date(),
   getDatesInView: () => [new Date()] as Date[],
   getTitle: () => 'Title' as string,
+  getView: () => 'day' as 'day' | '4-day' | 'week',
 
   isToday: () => true as boolean,
   selectToday: () => console.log('selectToday'),
@@ -22,10 +25,139 @@ const CalendarContext = createContext({
   enableDayView: () => console.log('enableDayView'),
   enable4DayView: () => console.log('enable4DayView'),
   enableWeekView: () => console.log('enableWeekView'),
+
+  getEvent: (eventId: string) => {
+    console.log('getEvent', eventId);
+    return undefined as CalendarEventBase | undefined;
+  },
+
+  getEvents: () => [] as CalendarEventBase[],
+
+  getEventLevel: (eventId: string) => {
+    console.log('getEventLevel', eventId);
+    return 0 as number;
+  },
+
+  addEvent: (event: CalendarEventBase) => console.log('addEvent', event),
+  addEmptyEvent: (date: Date) => {
+    console.log('addEmptyEvent', date);
+    return {} as CalendarEventBase;
+  },
+  updateEvent: (eventId: string, data: Partial<CalendarEventBase>) =>
+    console.log('updateEvent', eventId, data),
+  deleteEvent: (eventId: string) => console.log('deleteEvent', eventId),
+
+  getModalStatus: (id: string) => {
+    console.log('getModalStatus', id);
+    return false as boolean;
+  },
+  isModalActive: () => false as boolean,
+  openModal: (id: string) => console.log('openModal', id),
+  closeModal: () => console.log('closeModal'),
 });
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [date, setDate] = useState(new Date());
+  const [events, setEvents] = useState<CalendarEventBase[]>([]);
+
+  useEffect(() => {
+    // wait 300ms to simulate a network request
+    setTimeout(() => {
+      setEvents(mockEvents);
+    }, 300);
+  }, []);
+
+  const getEvent = useCallback(
+    (eventId: string) => events.find((e) => e.id === eventId),
+    [events]
+  );
+
+  const getEvents = useCallback(() => events, [events]);
+
+  const getLevel = useCallback(
+    (events: CalendarEventBase[], eventId: string): number => {
+      const event = events.find((e) => e.id === eventId);
+      if (!event) return 0;
+
+      const eventIndex = events.findIndex((e) => e.id === eventId);
+
+      const prevEvents = events.slice(0, eventIndex).filter((e) => {
+        // If the event is the same
+        if (e.id === eventId) return false;
+
+        // If the event is not on the same day
+        if (e.start_at.getDate() !== event.start_at.getDate()) return false;
+
+        // If the event ends before the current event starts,
+        // or if the event starts after the current event ends
+        if (e.end_at <= event.start_at || e.start_at >= event.end_at)
+          return false;
+
+        return true;
+      });
+
+      if (prevEvents.length === 0) return 0;
+
+      const prevEventLevels = prevEvents.map((e) => getLevel(events, e.id));
+      return Math.max(...prevEventLevels) + 1;
+    },
+    []
+  );
+
+  const getEventLevel = useCallback(
+    (eventId: string) => getLevel(events, eventId),
+    [events, getLevel]
+  );
+
+  const addEvent = useCallback(
+    (event: CalendarEventBase) => {
+      setEvents((prev) => [...prev, event]);
+    },
+    [setEvents]
+  );
+
+  const addEmptyEvent = useCallback(
+    (date: Date) => {
+      // The event will be 1 hour long
+      const start_at = new Date(date);
+      const end_at = new Date(date);
+      end_at.setHours(end_at.getHours() + 1);
+
+      const event: CalendarEventBase = {
+        id: crypto.randomUUID(),
+        title: '',
+        start_at,
+        end_at,
+      };
+
+      addEvent(event);
+      return event;
+    },
+    [addEvent]
+  );
+
+  const updateEvent = useCallback(
+    (eventId: string, data: Partial<CalendarEventBase>) =>
+      setEvents((prev) =>
+        prev
+          .map((e) => (e.id === eventId ? { ...e, ...data } : e))
+          .sort((a, b) => {
+            if (a.start_at < b.start_at) return -1;
+            if (a.start_at > b.start_at) return 1;
+            if (a.end_at < b.end_at) return 1;
+            if (a.end_at > b.end_at) return -1;
+            return 0;
+          })
+      ),
+    [setEvents]
+  );
+
+  const deleteEvent = useCallback(
+    (eventId: string) => {
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    },
+    [setEvents]
+  );
 
   const getDate = () => date;
 
@@ -34,6 +166,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       month: 'long',
       year: 'numeric',
     });
+
+  const getView = () => {
+    if (datesInView.length === 1) return 'day';
+    else if (datesInView.length === 4) return '4-day';
+    return 'week';
+  };
 
   // Update the date's hour and minute, every minute
   useEffect(() => {
@@ -158,10 +296,18 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     if (datesInView.length === 0) enableWeekView();
   }, [datesInView.length, enableWeekView]);
 
+  const [openedModalId, setOpenedModalId] = useState<string | null>(null);
+  const getModalStatus = (id: string) => openedModalId === id;
+  const isModalActive = () => openedModalId !== null;
+
+  const openModal = (id: string) => setOpenedModalId(id);
+  const closeModal = () => setOpenedModalId(null);
+
   const values = {
     getDate,
     getDatesInView,
     getTitle,
+    getView,
 
     isToday,
     selectToday,
@@ -173,6 +319,22 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     enableDayView,
     enable4DayView,
     enableWeekView,
+
+    getEvent,
+
+    getEvents,
+
+    getEventLevel,
+
+    addEvent,
+    addEmptyEvent,
+    updateEvent,
+    deleteEvent,
+
+    getModalStatus,
+    isModalActive,
+    openModal,
+    closeModal,
   };
 
   return (

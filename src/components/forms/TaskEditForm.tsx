@@ -10,6 +10,7 @@ import {
   Tabs,
   Text,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
@@ -416,18 +417,15 @@ const TaskEditForm = ({
         </Tabs.List>
 
         <Tabs.Panel value="details">
-          <Textarea
+          <TextInput
             id="task-name"
             label="Task name"
             placeholder="Enter task name"
             value={name}
-            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setName(event.target.value)
             }
             autoComplete="off"
-            maxRows={5}
-            autosize
-            data-autofocus
             className="mb-2"
           />
 

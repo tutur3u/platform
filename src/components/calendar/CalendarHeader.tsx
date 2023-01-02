@@ -6,6 +6,7 @@ export default function CalendarHeader() {
   const {
     isToday,
     getTitle,
+    getView,
     handlePrev,
     handleNext,
     selectToday,
@@ -24,7 +25,7 @@ export default function CalendarHeader() {
         <SegmentedControl
           radius="md"
           className="mr-2"
-          defaultValue="week"
+          defaultValue={getView()}
           data={[
             {
               value: 'day',
@@ -56,7 +57,7 @@ export default function CalendarHeader() {
           onClick={selectToday}
           className={`rounded-lg p-2 text-lg font-semibold transition ${
             isToday()
-              ? 'cursor-not-allowed bg-zinc-300/10 text-zinc-300 opacity-50'
+              ? 'cursor-default bg-zinc-300/10 text-zinc-300 opacity-50'
               : 'cursor-pointer bg-blue-300/10 hover:bg-blue-300/20'
           }`}
         >
