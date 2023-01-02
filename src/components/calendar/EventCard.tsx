@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEvent } from '../../types/primitives/CalendarEvent';
 
 interface EventCardProps {
@@ -13,12 +14,16 @@ export default function EventCard({
   onUpdated,
 }: EventCardProps) {
   const { id, title, start_at, end_at } = event;
+  const { getDatesInView } = useCalendar();
 
   const convertTime = (time: number) => {
     // 9.5 => 9:30
     const hours = Math.floor(time);
     const minutes = Math.round((time - hours) * 60);
-    return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+
+    // pad with 0
+    const pad = (n: number) => (n < 10 ? '0' + n : n);
+    return `${pad(hours)}:${pad(minutes)}`;
   };
 
   const startHours = start_at.getHours() + start_at.getMinutes() / 60;
@@ -27,15 +32,18 @@ export default function EventCard({
   const startTime = convertTime(startHours);
   const endTime = convertTime(endHours);
 
-  const duration = endHours - startHours;
+  const duration =
+    startHours > endHours ? 24 - startHours : endHours - startHours;
 
   const level = getLevel ? getLevel(id) : 0;
 
   const cardStyle = {
     minHeight: 16,
+    opacity: 0,
     transition:
       'width 150ms ease-in-out,' +
       'left 150ms ease-in-out,' +
+      'opacity 0.3s ease-in-out,' +
       'background-color 0.5s ease-in-out,' +
       'border-color 0.5s ease-in-out,' +
       'color 0.5s ease-in-out',
@@ -44,23 +52,51 @@ export default function EventCard({
   useEffect(() => {
     // Every time the event is updated, update the card style
     const cardEl = document.getElementById(`event-${id}`);
-    if (!cardEl) return;
+    const cellEl = document.getElementById('calendar-cell');
+    if (!cardEl || !cellEl) return;
+
+    const startHours = start_at.getHours() + start_at.getMinutes() / 60;
+    const endHours = end_at.getHours() + end_at.getMinutes() / 60;
+
+    const duration =
+      startHours > endHours ? 24 - startHours : endHours - startHours;
 
     // Calculate event height
     const height = Math.max(20 - 4, duration * 80 - 4);
+
+    // Get dates
+    const dates = getDatesInView();
+
+    // Calculate the index of the day the event is in
+    const dateIdx = dates.findIndex((date) => {
+      return (
+        date.getFullYear() === start_at.getFullYear() &&
+        date.getMonth() === start_at.getMonth() &&
+        date.getDate() === start_at.getDate()
+      );
+    });
+
+    if (dateIdx === -1) {
+      cardEl.style.transitionDelay = '0ms, 0ms, 0ms, 0ms, 0ms, 0ms';
+      cardEl.style.opacity = '0';
+      return;
+    } else {
+      cardEl.style.transitionDelay = '0ms, 0ms, 300ms, 0ms, 0ms, 0ms';
+      cardEl.style.opacity = '1';
+    }
 
     // Update event dimensions
     cardEl.style.height = `${height}px`;
 
     // Update event position
     cardEl.style.top = `${startHours * 80}px`;
-    cardEl.style.left = `${level * 12}px`;
+    cardEl.style.left = `${dateIdx * cellEl.offsetWidth + level * 12}px`;
 
     // Update event time visibility
     const timeEl = cardEl.querySelector('#time');
     if (duration <= 0.5) timeEl?.classList.add('hidden');
     else timeEl?.classList.remove('hidden');
-  }, [id, duration, level, startHours]);
+  }, [id, start_at, end_at, level, getDatesInView]);
 
   const isPast = () => {
     const endAt = new Date(start_at);
@@ -85,14 +121,17 @@ export default function EventCard({
     const cardEl = document.getElementById(`event-${id}`);
     if (!cardEl) return;
 
-    const paddedWidth = (level + 1) * 12;
-    const normalWidth = level * 12 + 4;
+    const cellEl = document.getElementById('calendar-cell');
+    if (!cellEl) return;
+
+    const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
+    const normalWidth = cellEl.offsetWidth - level * 12 - 4;
 
     const isEditing = isDragging || isResizing;
     const padding = isEditing ? paddedWidth : normalWidth;
 
-    cardEl.style.width = `calc(100% - ${padding}px)`;
-  }, [id, level, isDragging, isResizing]);
+    cardEl.style.width = `${padding}px`;
+  }, [id, level, isDragging, isResizing, getDatesInView]);
 
   // Event resizing
   useEffect(() => {
@@ -105,7 +144,7 @@ export default function EventCard({
     const handleMouseDown = (e: MouseEvent) => {
       e.preventDefault();
 
-      if (isDragging) return;
+      if (isDragging || isResizing) return;
       setIsResizing(true);
 
       const startY = e.clientY;
@@ -134,9 +173,6 @@ export default function EventCard({
         newEndAt.setHours(newEndAt.getHours() + extraHours);
         newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
 
-        // If the end time is before the start time, don't update
-        if (newEndAt < start_at) return;
-
         // update event
         onUpdated(id, { end_at: newEndAt });
       };
@@ -145,7 +181,6 @@ export default function EventCard({
         e.preventDefault();
 
         if (isDragging) return;
-        console.log('mouseup resize');
         setIsResizing(false);
 
         window.removeEventListener('mousemove', handleMouseMove);
@@ -161,12 +196,13 @@ export default function EventCard({
       };
     };
 
+    if (isDragging) return;
     rootEl.addEventListener('mousedown', handleMouseDown);
 
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, onUpdated, start_at, isDragging]);
+  }, [id, onUpdated, isResizing, start_at, isDragging]);
 
   // Event dragging
   useEffect(() => {
@@ -176,13 +212,19 @@ export default function EventCard({
     const cardEl = rootEl.parentElement;
     if (!cardEl) return;
 
+    const cellEl = document.getElementById('calendar-cell');
+    if (!cellEl) return;
+
     const handleMouseDown = (e: MouseEvent) => {
       e.preventDefault();
 
       if (isResizing) return;
       setIsDragging(true);
 
+      const startX = e.clientX;
       const startY = e.clientY;
+
+      const startLeft = cardEl.offsetLeft;
       const startTop = cardEl.offsetTop;
 
       const handleMouseMove = (e: MouseEvent) => {
@@ -192,9 +234,28 @@ export default function EventCard({
 
         const top = Math.round((startTop + e.clientY - startY) / 20) * 20;
 
-        // If the top doesn't change, don't update
-        if (top === cardEl.offsetTop) return;
-        cardEl.style.top = top + 'px';
+        const cellWidth = cellEl.offsetWidth;
+        const halfCellWidth = cellWidth / 2;
+
+        const left =
+          Math.round((startLeft + e.clientX - startX) / halfCellWidth) *
+          halfCellWidth;
+
+        // If the top or left doesn't change, don't update
+        if (top === cardEl.offsetTop && left === cardEl.offsetLeft) return;
+
+        const dates = getDatesInView();
+
+        const dateIdx = dates.findIndex((date) => {
+          return (
+            date.getFullYear() === start_at.getFullYear() &&
+            date.getMonth() === start_at.getMonth() &&
+            date.getDate() === start_at.getDate()
+          );
+        });
+
+        if (dateIdx === -1) return;
+        const newDateIdx = Math.round(left / halfCellWidth / 2);
 
         // calculate new start time
         const newStartAt = new Date(start_at);
@@ -216,8 +277,19 @@ export default function EventCard({
         newEndAt.setHours(newStartAt.getHours() + extraHours);
         newEndAt.setMinutes(newStartAt.getMinutes() + extraMinutes);
 
-        // If the end time is before the start time, don't update
-        if (newEndAt < newStartAt) return;
+        // Update start_at and end_at if the date changes
+        if (dateIdx !== newDateIdx) {
+          const newDate = dates[newDateIdx];
+          if (!newDate) return;
+
+          newStartAt.setFullYear(newDate.getFullYear());
+          newStartAt.setMonth(newDate.getMonth());
+          newStartAt.setDate(newDate.getDate());
+
+          newEndAt.setFullYear(newDate.getFullYear());
+          newEndAt.setMonth(newDate.getMonth());
+          newEndAt.setDate(newDate.getDate());
+        }
 
         // update event
         onUpdated(id, { start_at: newStartAt, end_at: newEndAt });
@@ -227,7 +299,6 @@ export default function EventCard({
         e.preventDefault();
 
         if (isResizing) return;
-        console.log('mouseup drag');
         setIsDragging(false);
 
         window.removeEventListener('mousemove', handleMouseMove);
@@ -243,6 +314,7 @@ export default function EventCard({
       };
     };
 
+    if (isResizing) return;
     cardEl.addEventListener('mousedown', handleMouseDown);
 
     return () => {
@@ -257,12 +329,13 @@ export default function EventCard({
     startHours,
     isResizing,
     onUpdated,
+    getDatesInView,
   ]);
 
   return (
     <div
       id={`event-${id}`}
-      className={`absolute w-full overflow-hidden rounded border-l-4 border-blue-300 text-blue-300 duration-500 ${
+      className={`absolute overflow-hidden rounded border-l-4 border-blue-300 text-blue-300 ${
         isPast()
           ? 'border-opacity-30 bg-[#232830] text-opacity-50'
           : 'bg-[#3d4c5f]'

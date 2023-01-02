@@ -2,35 +2,22 @@ import { useEffect, useState } from 'react';
 import mockEvents from '../../data/events';
 import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEvent } from '../../types/primitives/CalendarEvent';
-import CalendarEventColumn from './CalendarEventColumn';
+import EventCard from './EventCard';
 
 const CalendarEventMatrix = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    setEvents(mockEvents);
+    // wait 300ms to simulate a network request
+    setTimeout(() => {
+      setEvents(mockEvents);
+    }, 300);
   }, []);
 
   const { getDatesInView } = useCalendar();
 
   const dates = getDatesInView();
   const columns = dates.length;
-
-  const convertToColumns = () => {
-    const eventsOnCalendar = dates.map((day) => {
-      const eventsOnDay = events.filter((event) => {
-        if (event.start_at.getDate() === day.getDate()) return true;
-        return false;
-      });
-
-      return {
-        date: day,
-        events: eventsOnDay,
-      };
-    });
-
-    return eventsOnCalendar;
-  };
 
   const handleEventUpdate = (eventId: string, data: Partial<CalendarEvent>) =>
     setEvents((prev) =>
@@ -72,26 +59,20 @@ const CalendarEventMatrix = () => {
     return Math.max(...prevEventLevels) + 1;
   };
 
-  const eventColumns = convertToColumns();
-
-  const placedColumns = eventColumns
-    ? eventColumns.map((col) => (
-        <CalendarEventColumn
-          key={col.date.toString()}
-          events={col.events}
-          getEventLevel={(id) => getEventLevel(events, id)}
-          onUpdated={handleEventUpdate}
-        />
-      ))
-    : null;
-
   return (
     <div
       className={`absolute inset-0 grid grid-cols-${columns} ${
         dates.length === 1 && 'max-w-lg'
       }`}
     >
-      {placedColumns}
+      {events.map((event) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          getLevel={(id) => getEventLevel(events, id)}
+          onUpdated={handleEventUpdate}
+        />
+      ))}
     </div>
   );
 };

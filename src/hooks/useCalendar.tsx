@@ -84,7 +84,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const [datesInView, setDatesInView] = useState<Date[]>([]);
 
-  const getDatesInView = () => datesInView;
+  const getDatesInView = useCallback(() => datesInView, [datesInView]);
 
   const enableDayView = useCallback(() => {
     const newDate = new Date(date);

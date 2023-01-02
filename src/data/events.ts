@@ -17,8 +17,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day, 16, 40),
-    end_at: new Date(year, month, day, 17, 50),
+    start_at: new Date(year, month, day, 16, 45),
+    end_at: new Date(year, month, day, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -38,8 +38,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 1, 16, 40),
-    end_at: new Date(year, month, day + 1, 17, 50),
+    start_at: new Date(year, month, day + 1, 16, 45),
+    end_at: new Date(year, month, day + 1, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -59,8 +59,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 2, 16, 40),
-    end_at: new Date(year, month, day + 2, 17, 50),
+    start_at: new Date(year, month, day + 2, 16, 45),
+    end_at: new Date(year, month, day + 2, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -80,8 +80,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 3, 16, 40),
-    end_at: new Date(year, month, day + 3, 17, 50),
+    start_at: new Date(year, month, day + 3, 16, 45),
+    end_at: new Date(year, month, day + 3, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -101,8 +101,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 4, 16, 40),
-    end_at: new Date(year, month, day + 4, 17, 50),
+    start_at: new Date(year, month, day + 4, 16, 45),
+    end_at: new Date(year, month, day + 4, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -122,8 +122,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 5, 16, 40),
-    end_at: new Date(year, month, day + 5, 17, 50),
+    start_at: new Date(year, month, day + 5, 16, 45),
+    end_at: new Date(year, month, day + 5, 17, 45),
   },
   {
     title: '🎮 Entertainment',
@@ -143,8 +143,8 @@ const events = [
   },
   {
     title: '🚲 Riding',
-    start_at: new Date(year, month, day + 6, 16, 40),
-    end_at: new Date(year, month, day + 6, 17, 50),
+    start_at: new Date(year, month, day + 6, 16, 45),
+    end_at: new Date(year, month, day + 6, 17, 45),
   },
   {
     title: '🎮 Entertainment',
