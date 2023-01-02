@@ -335,10 +335,10 @@ export default function EventCard({
   return (
     <div
       id={`event-${id}`}
-      className={`absolute overflow-hidden rounded border-l-4 border-blue-300 text-blue-300 ${
+      className={`absolute overflow-hidden rounded border-l-4 ${
         isPast()
-          ? 'border-opacity-30 bg-[#232830] text-opacity-50'
-          : 'bg-[#3d4c5f]'
+          ? 'border-zinc-500 border-opacity-30 bg-[#202022] text-zinc-400'
+          : 'border-blue-300/80 bg-[#242831] text-blue-200'
       } ${level && 'border'}`}
       style={cardStyle}
     >
@@ -356,10 +356,13 @@ export default function EventCard({
             duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
           }`}
         >
-          {title}
+          {isPast() ? '✅'.concat(title) : title}
         </div>
         {duration > 0.5 && (
-          <div id="time" className="text-blue-200">
+          <div
+            id="time"
+            className={isPast() ? 'text-zinc-400' : 'text-blue-300/80'}
+          >
             {startTime} - {endTime}
           </div>
         )}
