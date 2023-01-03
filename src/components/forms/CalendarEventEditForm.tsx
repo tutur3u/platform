@@ -29,7 +29,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   }, [id, startDate, endDate, updateEvent]);
 
   const getInputColor = () => {
-    switch (event?.color) {
+    switch (event?.color || 'blue') {
       case 'red':
         return 'focus:border-red-300/10 border-red-300/10 bg-red-300/5 text-red-200';
       case 'blue':
@@ -54,7 +54,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   };
 
   const getLabelColor = () => {
-    switch (event?.color) {
+    switch (event?.color || 'blue') {
       case 'red':
         return 'text-red-100';
       case 'blue':
