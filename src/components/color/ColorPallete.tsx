@@ -15,15 +15,13 @@ const ColorPallete = ({ value, onChange }: ColorPalleteProps) => {
     'purple',
     'indigo',
     'blue',
-    'sky',
     'cyan',
-    'teal',
     'green',
     'gray',
   ];
 
   return (
-    <div className="grid grid-cols-6 gap-2">
+    <div className="grid grid-cols-5 gap-2">
       {colors.map((color) => (
         <ColorOption
           key={color}

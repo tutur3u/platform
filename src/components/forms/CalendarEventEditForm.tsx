@@ -13,33 +13,27 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   const { getEvent, updateEvent, deleteEvent } = useCalendar();
   const event = getEvent(id);
 
-  const [eventTitle, setEventTitle] = useState(event?.title || '');
-  const [eventColor, setEventColor] = useState(event?.color || 'blue');
-
-  const [eventStartDate, setEventStartDate] = useState<Date | null | undefined>(
+  const [startDate, setStartDate] = useState<Date | null | undefined>(
     event?.start_at || undefined
   );
 
-  const [eventEndDate, setEventEndDate] = useState<Date | null | undefined>(
+  const [endDate, setEndDate] = useState<Date | null | undefined>(
     event?.end_at || undefined
   );
 
   useEffect(() => {
     updateEvent(id, {
-      start_at: eventStartDate || undefined,
-      end_at: eventEndDate || undefined,
-      color: eventColor,
+      start_at: startDate || undefined,
+      end_at: endDate || undefined,
     });
-  }, [id, eventStartDate, eventEndDate, eventColor, updateEvent]);
+  }, [id, startDate, endDate, updateEvent]);
 
   const getInputColor = () => {
-    switch (eventColor) {
+    switch (event?.color) {
       case 'red':
         return 'focus:border-red-300/10 border-red-300/10 bg-red-300/5 text-red-200';
       case 'blue':
         return 'focus:border-blue-300/10 border-blue-300/10 bg-blue-300/5 text-blue-200';
-      case 'sky':
-        return 'focus:border-sky-300/10 border-sky-300/10 bg-sky-300/5 text-sky-200';
       case 'green':
         return 'focus:border-green-300/10 border-green-300/10 bg-green-300/5 text-green-200';
       case 'yellow':
@@ -50,8 +44,6 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
         return 'focus:border-pink-300/10 border-pink-300/10 bg-pink-300/5 text-pink-200';
       case 'purple':
         return 'focus:border-purple-300/10 border-purple-300/10 bg-purple-300/5 text-purple-200';
-      case 'teal':
-        return 'focus:border-teal-300/10 border-teal-300/10 bg-teal-300/5 text-teal-200';
       case 'indigo':
         return 'focus:border-indigo-300/10 border-indigo-300/10 bg-indigo-300/5 text-indigo-200';
       case 'cyan':
@@ -62,13 +54,11 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   };
 
   const getLabelColor = () => {
-    switch (eventColor) {
+    switch (event?.color) {
       case 'red':
         return 'text-red-100';
       case 'blue':
         return 'text-blue-100';
-      case 'sky':
-        return 'text-sky-100';
       case 'green':
         return 'text-green-100';
       case 'yellow':
@@ -79,8 +69,6 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
         return 'text-pink-100';
       case 'purple':
         return 'text-purple-100';
-      case 'teal':
-        return 'text-teal-100';
       case 'indigo':
         return 'text-indigo-100';
       case 'cyan':
@@ -95,13 +83,12 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
       <TextInput
         label="Event name"
         placeholder="Name"
-        value={eventTitle}
-        onChange={(e) => {
-          setEventTitle(e.target.value);
+        value={event?.title}
+        onChange={(e) =>
           updateEvent(id, {
             title: e.target.value,
-          });
-        }}
+          })
+        }
         autoComplete="off"
         variant="filled"
         classNames={{
@@ -114,16 +101,12 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
 
       <DatePicker
         label="Date"
-        value={eventStartDate}
+        value={startDate}
         onChange={(date) => {
-          setEventStartDate((prev) => {
+          setStartDate((prev) => {
             if (!date) return null;
             if (!prev) return date;
             return new Date(date.setHours(prev.getHours(), prev.getMinutes()));
-          });
-
-          updateEvent(id, {
-            start_at: date || undefined,
           });
         }}
         clearable={false}
@@ -144,9 +127,9 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
       <div className="mt-2 grid grid-cols-2 gap-2">
         <TimeInput
           label="Start at"
-          value={eventStartDate}
+          value={startDate}
           onChange={(date) => {
-            setEventStartDate((prev) => {
+            setStartDate((prev) => {
               if (!date) return null;
               if (!prev) return date;
               return new Date(
@@ -164,9 +147,9 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
 
         <TimeInput
           label="End at"
-          value={eventEndDate}
+          value={endDate}
           onChange={(date) => {
-            setEventEndDate((prev) => {
+            setEndDate((prev) => {
               if (!date) return null;
               if (!prev) return date;
               return new Date(
@@ -184,7 +167,10 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
       </div>
 
       <Divider mt="sm" mb="xs" />
-      <ColorPallete value={eventColor} onChange={setEventColor} />
+      <ColorPallete
+        value={event?.color || 'blue'}
+        onChange={(color) => updateEvent(id, { color })}
+      />
       <Divider mt="sm" mb="xs" />
 
       <Button

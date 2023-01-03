@@ -26,12 +26,8 @@ const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
         return 'border-indigo-300';
       case 'blue':
         return 'border-blue-300';
-      case 'sky':
-        return 'border-sky-300';
       case 'cyan':
         return 'border-cyan-300';
-      case 'teal':
-        return 'border-teal-300';
       case 'green':
         return 'border-green-300';
       case 'gray':
@@ -58,12 +54,8 @@ const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
         return 'bg-indigo-300';
       case 'blue':
         return 'bg-blue-300';
-      case 'sky':
-        return 'bg-sky-300';
       case 'cyan':
         return 'bg-cyan-300';
-      case 'teal':
-        return 'bg-teal-300';
       case 'green':
         return 'bg-green-300';
       case 'gray':

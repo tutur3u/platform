@@ -378,9 +378,6 @@ export default function EventCard({ event }: EventCardProps) {
       blue: `border-blue-300/80 text-blue-200 ${
         isNotFocused ? 'bg-[#1e2127]' : 'bg-[#252a32]'
       }`,
-      sky: `border-sky-300/80 text-sky-200 ${
-        isNotFocused ? 'bg-[#1d2227]' : 'bg-[#232c32]'
-      }`,
       green: `border-green-300/80 text-green-200 ${
         isNotFocused ? 'bg-[#1e2323]' : 'bg-[#242e2a]'
       }`,
@@ -395,9 +392,6 @@ export default function EventCard({ event }: EventCardProps) {
       }`,
       pink: `border-pink-300/80 text-pink-200 ${
         isNotFocused ? 'bg-[#242025]' : 'bg-[#2f272e]'
-      }`,
-      teal: `border-teal-300/80 text-teal-200 ${
-        isNotFocused ? 'bg-[#1c2325]' : 'bg-[#202e2e]'
       }`,
       indigo: `border-indigo-300/80 text-indigo-200 ${
         isNotFocused ? 'bg-[#1f2027]' : 'bg-[#272832]'
@@ -423,7 +417,7 @@ export default function EventCard({ event }: EventCardProps) {
       }}
       trapFocus
     >
-      <Popover.Dropdown className={`${generateColor()} min-w-[20rem] border-4`}>
+      <Popover.Dropdown className={`${generateColor()} border-4`}>
         <CalendarEventEditForm id={event.id} />
       </Popover.Dropdown>
       <div
