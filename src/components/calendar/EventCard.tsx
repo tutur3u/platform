@@ -8,6 +8,7 @@ interface EventCardProps {
 
 export default function EventCard({ event }: EventCardProps) {
   const { id, title, start_at, end_at } = event;
+
   const {
     getEventLevel: getLevel,
     updateEvent,
