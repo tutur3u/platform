@@ -2,6 +2,7 @@ import { Divider, Popover, TextInput } from '@mantine/core';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import { useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
+import ColorPallete from '../color/ColorPallete';
 
 interface CalendarCellProps {
   date: string;
@@ -46,6 +47,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const [eventTitle, setEventTitle] = useState<string>('');
   const [eventStartDate, setEventStartDate] = useState<Date | null>(null);
   const [eventEndDate, setEventEndDate] = useState<Date | null>(null);
+  const [eventColor, setEventColor] = useState<string>('blue');
 
   const hasData = eventTitle;
 
@@ -59,10 +61,13 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         });
       } else deleteEvent(recentEventId);
 
+    closeModal();
+
     setEventTitle('');
+    setEventColor('blue');
+    setRecentEventId(null);
     setEventStartDate(null);
     setEventEndDate(null);
-    setRecentEventId(null);
   };
 
   return (
@@ -117,6 +122,10 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
               value={eventEndDate}
               onChange={setEventEndDate}
             />
+
+            <Divider mt="sm" mb="xs" />
+
+            <ColorPallete value={eventColor} onChange={setEventColor} />
           </div>
         </Popover.Dropdown>
       </Popover>

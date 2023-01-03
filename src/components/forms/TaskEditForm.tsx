@@ -611,12 +611,12 @@ const TaskEditForm = ({
             <div>
               <div className="mt-4 flex items-center gap-2">
                 <Avatar color="blue" radius="xl">
-                  {getInitials(creatorData?.users.display_name || 'Unknown')}
+                  {getInitials(creatorData?.users?.display_name || 'Unknown')}
                 </Avatar>
 
                 <div>
                   <span className="font-semibold text-blue-300">
-                    {creatorData?.users.display_name}
+                    {creatorData?.users?.display_name}
                   </span>{' '}
                   created this task{' '}
                   <span className="font-semibold">

@@ -81,10 +81,12 @@ export default function EventCard({ event }: EventCardProps) {
     if (dateIdx === -1) {
       cardEl.style.transitionDelay = '0ms, 0ms, 0ms, 0ms, 0ms, 0ms';
       cardEl.style.opacity = '0';
+      cardEl.style.pointerEvents = 'none';
       return;
     } else {
       cardEl.style.transitionDelay = '0ms, 0ms, 300ms, 0ms, 0ms, 0ms';
       cardEl.style.opacity = '1';
+      cardEl.style.pointerEvents = 'all';
     }
 
     // Update event dimensions
@@ -340,25 +342,24 @@ export default function EventCard({ event }: EventCardProps) {
   ]);
 
   const generateColor = () => {
-    // const eventColor = event?.color || 'blue';
+    const eventColor = event?.color;
+    const defaultColor = 'blue';
 
-    const colors = [
-      'border-red-300/80 bg-[#302729] text-red-200',
-      'border-blue-300/80 bg-[#252a32] text-blue-200',
-      'border-green-300/80 bg-[#242e2a] text-green-200',
-      'border-yellow-300/80 bg-[#302d1f] text-yellow-200',
-      'border-orange-300/80 bg-[#302924] text-orange-200',
-      'border-purple-300/80 bg-[#2c2832] text-purple-200',
-      'border-pink-300/80 bg-[#2f272e] text-pink-200',
-      'border-teal-300/80 bg-[#202e2e] text-teal-200',
-      'border-indigo-300/80 bg-[#272832] text-indigo-200',
-      'border-cyan-300/80 bg-[#212e31] text-cyan-200',
-      'border-gray-300/80 bg-[#2b2c2e] text-gray-200',
-    ];
+    const colors = {
+      red: 'border-red-300/80 bg-[#302729] text-red-200',
+      blue: 'border-blue-300/80 bg-[#252a32] text-blue-200',
+      green: 'border-green-300/80 bg-[#242e2a] text-green-200',
+      yellow: 'border-yellow-300/80 bg-[#302d1f] text-yellow-200',
+      orange: 'border-orange-300/80 bg-[#302924] text-orange-200',
+      purple: 'border-purple-300/80 bg-[#2c2832] text-purple-200',
+      pink: 'border-pink-300/80 bg-[#2f272e] text-pink-200',
+      teal: 'border-teal-300/80 bg-[#202e2e] text-teal-200',
+      indigo: 'border-indigo-300/80 bg-[#272832] text-indigo-200',
+      cyan: 'border-cyan-300/80 bg-[#212e31] text-cyan-200',
+      gray: 'border-gray-300/80 bg-[#2b2c2e] text-gray-200',
+    };
 
-    const color = colors[Math.floor(Math.random() * colors.length)];
-
-    return color;
+    return colors[eventColor || defaultColor];
   };
 
   return (
