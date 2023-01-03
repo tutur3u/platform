@@ -1,12 +1,13 @@
+import { SupportedColor } from '../../types/primitives/SupportedColors';
 import ColorOption from './ColorOption';
 
 interface ColorPalleteProps {
-  value: string;
-  onChange: (color: string) => void;
+  value: SupportedColor;
+  onChange: (color: SupportedColor) => void;
 }
 
 const ColorPallete = ({ value, onChange }: ColorPalleteProps) => {
-  const colors = [
+  const colors: SupportedColor[] = [
     'yellow',
     'orange',
     'red',

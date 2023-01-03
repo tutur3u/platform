@@ -752,7 +752,7 @@ const TaskEditForm = ({
             className="bg-blue-300/10"
             disabled={!name}
           >
-            {task?.id ? 'Save' : 'Add'}
+            {task?.id ? 'Save changes' : 'Add task'}
           </Button>
           {task?.id && showActionIcons && (
             <>

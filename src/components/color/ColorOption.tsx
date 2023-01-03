@@ -1,7 +1,10 @@
+import { Tooltip } from '@mantine/core';
+import { SupportedColor } from '../../types/primitives/SupportedColors';
+
 interface ColorOptionProps {
-  color: string;
-  selectedColor: string;
-  onSelect: (color: string) => void;
+  color: SupportedColor;
+  selectedColor: SupportedColor;
+  onSelect: (color: SupportedColor) => void;
 }
 
 const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
@@ -71,15 +74,41 @@ const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
     }
   };
 
+  const getLabelColor = () => {
+    const colors = {
+      red: `border-red-300/80 text-red-200 bg-[#302729]`,
+      blue: `border-blue-300/80 text-blue-200 bg-[#252a32]`,
+      sky: `border-sky-300/80 text-sky-200 bg-[#232c32]`,
+      green: `border-green-300/80 text-green-200 bg-[#242e2a]`,
+      yellow: `border-yellow-300/80 text-yellow-200 bg-[#302d1f]`,
+      orange: `border-orange-300/80 text-orange-200 bg-[#302924]`,
+      purple: `border-purple-300/80 text-purple-200 bg-[#2c2832]`,
+      pink: `border-pink-300/80 text-pink-200 bg-[#2f272e]`,
+      teal: `border-teal-300/80 text-teal-200 bg-[#202e2e]`,
+      indigo: `border-indigo-300/80 text-indigo-200 bg-[#272832]`,
+      cyan: `border-cyan-300/80 text-cyan-200 bg-[#212e31]`,
+      gray: `border-gray-300/80 text-gray-200 bg-[#2b2c2e]`,
+    };
+
+    return colors[color];
+  };
+
   return (
-    <button
-      className={`h-fit w-fit rounded-full border-2 ${getBorderColor()} p-0.5 ${
-        isSelected || 'border-opacity-30'
-      } transition`}
-      onClick={() => onSelect(color)}
+    <Tooltip
+      label={color}
+      classNames={{
+        tooltip: `font-semibold border-2 py-0.5 px-2 capitalize ${getLabelColor()}`,
+      }}
     >
-      <div className={`h-4 w-4 rounded-full ${getBackgroundColor()}`} />
-    </button>
+      <button
+        className={`h-fit w-fit justify-self-center rounded-full border-2 ${getBorderColor()} p-0.5 ${
+          isSelected || 'border-opacity-30'
+        } transition`}
+        onClick={() => onSelect(color)}
+      >
+        <div className={`h-4 w-4 rounded-full ${getBackgroundColor()}`} />
+      </button>
+    </Tooltip>
   );
 };
 

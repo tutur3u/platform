@@ -41,7 +41,7 @@ const CalendarContext = createContext({
   addEvent: (event: CalendarEventBase) => console.log('addEvent', event),
   addEmptyEvent: (date: Date) => {
     console.log('addEmptyEvent', date);
-    return {} as CalendarEventBase;
+    return {} as CalendarEventBase | undefined;
   },
   updateEvent: (eventId: string, data: Partial<CalendarEventBase>) =>
     console.log('updateEvent', eventId, data),
@@ -51,6 +51,10 @@ const CalendarContext = createContext({
     console.log('getModalStatus', id);
     return false as boolean;
   },
+  getActiveEvent: () => {
+    console.log('getActiveEvent');
+    return undefined as CalendarEventBase | undefined;
+  },
   isModalActive: () => false as boolean,
   openModal: (id: string) => console.log('openModal', id),
   closeModal: () => console.log('closeModal'),
@@ -59,6 +63,10 @@ const CalendarContext = createContext({
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEventBase[]>([]);
+  const [openedModalId, setOpenedModalId] = useState<string | null>(null);
+  const [lastCreatedEventId, setLastCreatedEventId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setEvents(mockEvents);
@@ -115,6 +123,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const addEmptyEvent = useCallback(
     (date: Date) => {
+      if (lastCreatedEventId) {
+        setLastCreatedEventId(null);
+        setOpenedModalId(null);
+        return;
+      }
+
       // The event will be 1 hour long
       const start_at = new Date(date);
       const end_at = new Date(date);
@@ -128,16 +142,21 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       };
 
       addEvent(event);
+      setOpenedModalId(event.id);
+      setLastCreatedEventId(event.id);
       return event;
     },
-    [addEvent]
+    [addEvent, lastCreatedEventId]
   );
 
   const updateEvent = useCallback(
     (eventId: string, data: Partial<CalendarEventBase>) =>
       setEvents((prev) =>
         prev
-          .map((e) => (e.id === eventId ? { ...e, ...data } : e))
+          .map((e) => {
+            if (e.id !== eventId) return e;
+            return { ...e, ...data };
+          })
           .sort((a, b) => {
             if (a.start_at < b.start_at) return -1;
             if (a.start_at > b.start_at) return 1;
@@ -152,6 +171,8 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const deleteEvent = useCallback(
     (eventId: string) => {
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setLastCreatedEventId(null);
+      setOpenedModalId(null);
     },
     [setEvents]
   );
@@ -295,11 +316,20 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     else enableDayView();
   }, [datesInView.length, enableWeekView, enableDayView]);
 
-  const [openedModalId, setOpenedModalId] = useState<string | null>(null);
   const getModalStatus = (id: string) => openedModalId === id;
+  const getActiveEvent = () => events.find((e) => e.id === openedModalId);
   const isModalActive = () => openedModalId !== null;
 
-  const openModal = (id: string) => setOpenedModalId(id);
+  const openModal = (id: string) => {
+    if (lastCreatedEventId === null) {
+      setOpenedModalId(null);
+      setLastCreatedEventId(id);
+      return;
+    }
+
+    setOpenedModalId(id);
+  };
+
   const closeModal = () => setOpenedModalId(null);
 
   const values = {
@@ -331,6 +361,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     deleteEvent,
 
     getModalStatus,
+    getActiveEvent,
     isModalActive,
     openModal,
     closeModal,

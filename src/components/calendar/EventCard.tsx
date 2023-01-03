@@ -1,6 +1,8 @@
+import { Popover } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEventBase } from '../../types/primitives/CalendarEventBase';
+import CalendarEventEditForm from '../forms/CalendarEventEditForm';
 
 interface EventCardProps {
   event: CalendarEventBase;
@@ -13,6 +15,9 @@ export default function EventCard({ event }: EventCardProps) {
     getEventLevel: getLevel,
     updateEvent,
     getDatesInView,
+    openModal,
+    getActiveEvent,
+    closeModal,
   } = useCalendar();
 
   const convertTime = (time: number) => {
@@ -141,6 +146,9 @@ export default function EventCard({ event }: EventCardProps) {
     cardEl.style.width = `${padding}px`;
   }, [id, level, isDragging, isResizing, getDatesInView]);
 
+  const activeEvent = getActiveEvent();
+  const isOpened = activeEvent?.id === id;
+
   // Event resizing
   useEffect(() => {
     const rootEl = handleRef.current;
@@ -154,6 +162,7 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isDragging || isResizing) return;
       setIsResizing(true);
+      closeModal();
 
       const startY = e.clientY;
       const startHeight = cardEl.offsetHeight;
@@ -190,6 +199,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         if (isDragging) return;
         setIsResizing(false);
+        openModal(id);
 
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
@@ -210,7 +220,15 @@ export default function EventCard({ event }: EventCardProps) {
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, updateEvent, isResizing, start_at, isDragging]);
+  }, [
+    id,
+    updateEvent,
+    isResizing,
+    start_at,
+    isDragging,
+    closeModal,
+    openModal,
+  ]);
 
   // Event dragging
   useEffect(() => {
@@ -230,6 +248,7 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isResizing) return;
       setIsDragging(true);
+      closeModal();
 
       const startX = e.clientX;
       const startY = e.clientY;
@@ -310,6 +329,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         if (isResizing) return;
         setIsDragging(false);
+        openModal(id);
 
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
@@ -340,71 +360,120 @@ export default function EventCard({ event }: EventCardProps) {
     isResizing,
     updateEvent,
     getDatesInView,
+    closeModal,
+    openModal,
   ]);
 
-  const generateColor = () => {
-    const eventColor = event?.color;
-    const defaultColor = 'blue';
+  const isNotFocused = activeEvent != null && !isOpened;
 
-    const colors = {
-      red: 'border-red-300/80 bg-[#302729] text-red-200',
-      blue: 'border-blue-300/80 bg-[#252a32] text-blue-200',
-      green: 'border-green-300/80 bg-[#242e2a] text-green-200',
-      yellow: 'border-yellow-300/80 bg-[#302d1f] text-yellow-200',
-      orange: 'border-orange-300/80 bg-[#302924] text-orange-200',
-      purple: 'border-purple-300/80 bg-[#2c2832] text-purple-200',
-      pink: 'border-pink-300/80 bg-[#2f272e] text-pink-200',
-      teal: 'border-teal-300/80 bg-[#202e2e] text-teal-200',
-      indigo: 'border-indigo-300/80 bg-[#272832] text-indigo-200',
-      cyan: 'border-cyan-300/80 bg-[#212e31] text-cyan-200',
-      gray: 'border-gray-300/80 bg-[#2b2c2e] text-gray-200',
+  const generateColor = () => {
+    const eventColor = event?.color || 'blue';
+
+    const colors: {
+      [key: string]: string;
+    } = {
+      red: `border-red-300/80 text-red-200 ${
+        isNotFocused ? 'bg-[#241f22]' : 'bg-[#302729]'
+      }`,
+      blue: `border-blue-300/80 text-blue-200 ${
+        isNotFocused ? 'bg-[#1e2127]' : 'bg-[#252a32]'
+      }`,
+      sky: `border-sky-300/80 text-sky-200 ${
+        isNotFocused ? 'bg-[#1d2227]' : 'bg-[#232c32]'
+      }`,
+      green: `border-green-300/80 text-green-200 ${
+        isNotFocused ? 'bg-[#1e2323]' : 'bg-[#242e2a]'
+      }`,
+      yellow: `border-yellow-300/80 text-yellow-200 ${
+        isNotFocused ? 'bg-[#24221e]' : 'bg-[#302d1f]'
+      }`,
+      orange: `border-orange-300/80 text-orange-200 ${
+        isNotFocused ? 'bg-[#242020]' : 'bg-[#302924]'
+      }`,
+      purple: `border-purple-300/80 text-purple-200 ${
+        isNotFocused ? 'bg-[#222027]' : 'bg-[#2c2832]'
+      }`,
+      pink: `border-pink-300/80 text-pink-200 ${
+        isNotFocused ? 'bg-[#242025]' : 'bg-[#2f272e]'
+      }`,
+      teal: `border-teal-300/80 text-teal-200 ${
+        isNotFocused ? 'bg-[#1c2325]' : 'bg-[#202e2e]'
+      }`,
+      indigo: `border-indigo-300/80 text-indigo-200 ${
+        isNotFocused ? 'bg-[#1f2027]' : 'bg-[#272832]'
+      }`,
+      cyan: `border-cyan-300/80 text-cyan-200 ${
+        isNotFocused ? 'bg-[#1c2327]' : 'bg-[#212e31]'
+      }`,
+      gray: `border-gray-300/80 text-gray-200 ${
+        isNotFocused ? 'bg-[#222225]' : 'bg-[#2b2c2e]'
+      }`,
     };
 
-    return colors[eventColor || defaultColor];
+    return colors[eventColor];
   };
 
   return (
-    <div
-      id={`event-${id}`}
-      className={`pointer-events-auto absolute overflow-hidden rounded border-l-4 ${
-        isPast()
-          ? 'border-zinc-500 border-opacity-30 bg-[#202022] text-zinc-400'
-          : generateColor()
-      } ${level && 'border'}`}
-      style={cardStyle}
+    <Popover
+      opened={isOpened}
+      position="right"
+      onClose={closeModal}
+      classNames={{
+        arrow: `${generateColor()} border-4`,
+      }}
+      trapFocus
     >
+      <Popover.Dropdown className={`${generateColor()} min-w-[20rem] border-4`}>
+        <CalendarEventEditForm id={event.id} />
+      </Popover.Dropdown>
       <div
-        id="content"
-        ref={contentRef}
-        className={`flex cursor-pointer flex-col items-start text-left ${
-          duration <= 0.25
-            ? 'h-[calc(100%-0.25rem)] px-1 text-xs'
-            : 'h-[calc(100%-0.5rem)] p-1 text-sm'
+        id={`event-${id}`}
+        className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${
+          isPast() && !isOpened
+            ? 'border-zinc-500 border-opacity-30 bg-[#1c1c1e] text-zinc-400'
+            : generateColor()
+        } ${isNotFocused && 'border-transparent text-opacity-10'} ${
+          level && 'border'
         }`}
+        style={cardStyle}
+        onClick={() => openModal(id)}
       >
-        <div
-          className={`flex-none font-semibold ${
-            duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
-          }`}
-        >
-          {isPast() ? '✅'.concat(title) : title}
-        </div>
-        {duration > 0.5 && (
+        <Popover.Target>
           <div
-            id="time"
-            className={isPast() ? 'text-zinc-400' : 'text-zinc-200/50'}
+            id="content"
+            ref={contentRef}
+            className={`flex cursor-pointer flex-col items-start text-left ${
+              duration <= 0.25
+                ? 'h-[calc(100%-0.25rem)] px-1 text-xs'
+                : 'h-[calc(100%-0.5rem)] p-1 text-sm'
+            }`}
           >
-            {startTime} - {endTime}
+            <div
+              className={`flex-none font-semibold ${
+                duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
+              }`}
+            >
+              {isPast() ? '✅'.concat(title) : title}
+            </div>
+            {duration > 0.5 && (
+              <div
+                id="time"
+                className={isPast() ? 'text-zinc-400/50' : 'text-zinc-200/50'}
+              >
+                {startTime} - {endTime}
+              </div>
+            )}
           </div>
-        )}
+        </Popover.Target>
+
+        <div
+          id="handle"
+          ref={handleRef}
+          className={`absolute inset-x-0 bottom-0 cursor-s-resize ${
+            duration <= 0.25 ? 'h-1' : 'h-2'
+          }`}
+        />
       </div>
-      <div
-        id="handle"
-        ref={handleRef}
-        className={`absolute inset-x-0 bottom-0 cursor-s-resize ${
-          duration <= 0.25 ? 'h-1' : 'h-2'
-        }`}
-      />
-    </div>
+    </Popover>
   );
 }
