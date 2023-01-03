@@ -42,11 +42,19 @@ const CalendarPage: PageWithLayoutProps = () => {
   const { data } = useUserData();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('visible');
-    changeRightSidebarPref({
-      main: 'closed',
-      secondary: 'hidden',
-    });
+    if (window.innerWidth > 768) {
+      changeLeftSidebarSecondaryPref('visible');
+      changeRightSidebarPref({
+        main: 'closed',
+        secondary: 'hidden',
+      });
+    } else {
+      changeLeftSidebarSecondaryPref('hidden');
+      changeRightSidebarPref({
+        main: 'hidden',
+        secondary: 'hidden',
+      });
+    }
 
     setRootSegment({
       content: 'Calendar',

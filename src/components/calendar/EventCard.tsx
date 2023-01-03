@@ -94,7 +94,7 @@ export default function EventCard({ event }: EventCardProps) {
 
     // Update event position
     cardEl.style.top = `${startHours * 80}px`;
-    const left = dateIdx * cellEl.offsetWidth + level * 12;
+    const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
     cardEl.style.left = `${left}px`;
 
     // Update event time visibility

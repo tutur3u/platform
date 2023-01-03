@@ -61,10 +61,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<CalendarEventBase[]>([]);
 
   useEffect(() => {
-    // wait 300ms to simulate a network request
-    setTimeout(() => {
-      setEvents(mockEvents);
-    }, 300);
+    setEvents(mockEvents);
   }, []);
 
   const getEvent = useCallback(
@@ -293,8 +290,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   // Set the initial view to week view
   useEffect(() => {
-    if (datesInView.length === 0) enableWeekView();
-  }, [datesInView.length, enableWeekView]);
+    if (datesInView.length !== 0) return;
+    if (window.innerWidth > 768) enableWeekView();
+    else enableDayView();
+  }, [datesInView.length, enableWeekView, enableDayView]);
 
   const [openedModalId, setOpenedModalId] = useState<string | null>(null);
   const getModalStatus = (id: string) => openedModalId === id;
