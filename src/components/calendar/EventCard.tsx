@@ -15,9 +15,11 @@ export default function EventCard({ event }: EventCardProps) {
     getEventLevel: getLevel,
     updateEvent,
     getDatesInView,
-    openModal,
     getActiveEvent,
+    openModal,
     closeModal,
+    hideModal,
+    showModal,
   } = useCalendar();
 
   const convertTime = (time: number) => {
@@ -162,7 +164,7 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isDragging || isResizing) return;
       setIsResizing(true);
-      closeModal();
+      hideModal();
 
       const startY = e.clientY;
       const startHeight = cardEl.offsetHeight;
@@ -199,7 +201,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         if (isDragging) return;
         setIsResizing(false);
-        openModal(id);
+        showModal();
 
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
@@ -220,15 +222,7 @@ export default function EventCard({ event }: EventCardProps) {
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [
-    id,
-    updateEvent,
-    isResizing,
-    start_at,
-    isDragging,
-    closeModal,
-    openModal,
-  ]);
+  }, [id, updateEvent, isResizing, start_at, isDragging, hideModal, showModal]);
 
   // Event dragging
   useEffect(() => {
@@ -248,7 +242,7 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isResizing) return;
       setIsDragging(true);
-      closeModal();
+      hideModal();
 
       const startX = e.clientX;
       const startY = e.clientY;
@@ -329,7 +323,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         if (isResizing) return;
         setIsDragging(false);
-        openModal(id);
+        showModal();
 
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
@@ -360,8 +354,8 @@ export default function EventCard({ event }: EventCardProps) {
     isResizing,
     updateEvent,
     getDatesInView,
-    closeModal,
-    openModal,
+    hideModal,
+    showModal,
   ]);
 
   const isNotFocused = activeEvent != null && !isOpened;
@@ -413,11 +407,11 @@ export default function EventCard({ event }: EventCardProps) {
       position="right"
       onClose={closeModal}
       classNames={{
-        arrow: `${generateColor()} border-4`,
+        arrow: `${generateColor()} border-2`,
       }}
       trapFocus
     >
-      <Popover.Dropdown className={`${generateColor()} border-4`}>
+      <Popover.Dropdown className={`${generateColor()} border-2`}>
         <CalendarEventEditForm id={event.id} />
       </Popover.Dropdown>
       <div
@@ -430,7 +424,14 @@ export default function EventCard({ event }: EventCardProps) {
           level && 'border'
         }`}
         style={cardStyle}
-        onClick={() => openModal(id)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          openModal(id);
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          openModal(id);
+        }}
       >
         <Popover.Target>
           <div

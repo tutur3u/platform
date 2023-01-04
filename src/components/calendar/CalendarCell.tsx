@@ -23,6 +23,9 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     <div
       id={id}
       className="calendar-cell grid h-20 border-l border-b border-zinc-800"
+      onContextMenu={(e) => {
+        e.preventDefault();
+      }}
     >
       <button
         className="row-span-2 cursor-default"

@@ -97,7 +97,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
         }}
       />
 
-      <Divider mt="sm" mb="xs" />
+      <Divider mt="sm" mb="xs" className={getInputColor()} />
 
       <DatePicker
         label="Date"
@@ -166,12 +166,12 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
         />
       </div>
 
-      <Divider mt="sm" mb="xs" />
+      <Divider mt="sm" mb="xs" className={getInputColor()} />
       <ColorPallete
         value={event?.color || 'blue'}
         onChange={(color) => updateEvent(id, { color })}
       />
-      <Divider mt="sm" mb="xs" />
+      <Divider mt="sm" mb="xs" className={getInputColor()} />
 
       <Button
         className="w-full border border-red-300/10 bg-[#582c30]/50 transition"

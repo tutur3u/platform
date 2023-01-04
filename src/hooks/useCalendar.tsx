@@ -58,11 +58,15 @@ const CalendarContext = createContext({
   isModalActive: () => false as boolean,
   openModal: (id: string) => console.log('openModal', id),
   closeModal: () => console.log('closeModal'),
+
+  hideModal: () => console.log('hideModal'),
+  showModal: () => console.log('showModal'),
 });
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEventBase[]>([]);
+
   const [openedModalId, setOpenedModalId] = useState<string | null>(null);
   const [lastCreatedEventId, setLastCreatedEventId] = useState<string | null>(
     null
@@ -316,21 +320,33 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     else enableDayView();
   }, [datesInView.length, enableWeekView, enableDayView]);
 
-  const getModalStatus = (id: string) => openedModalId === id;
-  const getActiveEvent = () => events.find((e) => e.id === openedModalId);
-  const isModalActive = () => openedModalId !== null;
+  const [isModalHidden, setModalHidden] = useState(false);
 
-  const openModal = (id: string) => {
-    if (lastCreatedEventId === null) {
-      setOpenedModalId(null);
-      setLastCreatedEventId(id);
-      return;
-    }
+  const getModalStatus = useCallback(
+    (id: string) => (isModalHidden ? false : openedModalId === id),
+    [isModalHidden, openedModalId]
+  );
 
+  const getActiveEvent = useCallback(
+    () =>
+      isModalHidden ? undefined : events.find((e) => e.id === openedModalId),
+    [isModalHidden, events, openedModalId]
+  );
+
+  const isModalActive = useCallback(
+    () => (isModalHidden ? false : openedModalId !== null),
+    [isModalHidden, openedModalId]
+  );
+
+  const openModal = useCallback((id: string) => {
     setOpenedModalId(id);
-  };
+    setLastCreatedEventId(id);
+  }, []);
 
-  const closeModal = () => setOpenedModalId(null);
+  const closeModal = useCallback(() => setOpenedModalId(null), []);
+
+  const hideModal = useCallback(() => setModalHidden(true), []);
+  const showModal = useCallback(() => setModalHidden(false), []);
 
   const values = {
     getDate,
@@ -365,6 +381,9 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     isModalActive,
     openModal,
     closeModal,
+
+    hideModal,
+    showModal,
   };
 
   return (
