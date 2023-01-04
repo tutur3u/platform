@@ -51,5 +51,8 @@
   },
   "[sql]": {
     "editor.defaultFormatter": "mtxr.sqltools"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
   }
 }
