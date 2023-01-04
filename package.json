@@ -9,7 +9,9 @@
     "format": "prettier --write .",
     "test": "jest --collect-coverage",
     "setup": "pnpm i && prettier --write .",
-    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803"
+    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
+    "sb": "pnpm supabase start",
+    "sbs": "pnpm supabase stop && cls"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
