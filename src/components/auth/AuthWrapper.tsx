@@ -1,4 +1,5 @@
 import { upperFirst, useToggle } from '@mantine/hooks';
+import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { AuthMethod } from '../../utils/auth-handler';
 import AuthContainer from './AuthContainer';
@@ -7,6 +8,8 @@ import AuthQR from './AuthQR';
 import AuthTitle from './AuthTitle';
 
 export default function AuthWrapper() {
+  const router = useRouter();
+
   const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
   const [emailSent, setEmailSent] = useState<boolean>(false);
 
@@ -14,9 +17,11 @@ export default function AuthWrapper() {
     method === 'login' && process?.env?.NEXT_PUBLIC_QR_ENABLED === 'true';
 
   const label = emailSent ? 'One last step...' : upperFirst(method);
+  const isDev = process.env.NODE_ENV === 'development';
 
   const toggleMethod = () => toggle();
-  const onSignup = () => setEmailSent(true);
+  const onSignup = () =>
+    isDev ? router.push('/calendar') : setEmailSent(true);
 
   return (
     <AuthContainer showQR={showQR}>
