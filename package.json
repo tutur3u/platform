@@ -9,7 +9,9 @@
     "format": "prettier --write .",
     "test": "jest --collect-coverage",
     "setup": "pnpm i && prettier --write .",
-    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803"
+    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
+    "sb": "pnpm supabase start",
+    "sbs": "pnpm supabase stop"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
@@ -66,7 +68,7 @@
     "postcss": "^8.4.20",
     "prettier": "^2.8.1",
     "prettier-plugin-tailwindcss": "^0.2.1",
-    "supabase": "^1.28.0",
+    "supabase": "^1.29.1",
     "tailwind-scrollbar": "^2.1.0",
     "tailwindcss": "^3.2.4",
     "typescript": "4.9.4"

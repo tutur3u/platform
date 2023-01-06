@@ -1,4 +1,5 @@
 import { Popover } from '@mantine/core';
+import { useDebouncedState } from '@mantine/hooks';
 import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
 import { CalendarEventBase } from '../../types/primitives/CalendarEventBase';
@@ -126,7 +127,7 @@ export default function EventCard({ event }: EventCardProps) {
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useDebouncedState(false, 200);
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
@@ -146,7 +147,9 @@ export default function EventCard({ event }: EventCardProps) {
     const padding = isEditing ? paddedWidth : normalWidth;
 
     cardEl.style.width = `${padding}px`;
-  }, [id, level, isDragging, isResizing, getDatesInView]);
+
+    if (isEditing) hideModal();
+  }, [id, level, isDragging, isResizing, getDatesInView, hideModal]);
 
   const activeEvent = getActiveEvent();
   const isOpened = activeEvent?.id === id;
@@ -164,7 +167,6 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isDragging || isResizing) return;
       setIsResizing(true);
-      hideModal();
 
       const startY = e.clientY;
       const startHeight = cardEl.offsetHeight;
@@ -242,7 +244,6 @@ export default function EventCard({ event }: EventCardProps) {
 
       if (isResizing) return;
       setIsDragging(true);
-      hideModal();
 
       const startX = e.clientX;
       const startY = e.clientY;
@@ -354,8 +355,8 @@ export default function EventCard({ event }: EventCardProps) {
     isResizing,
     updateEvent,
     getDatesInView,
-    hideModal,
     showModal,
+    setIsDragging,
   ]);
 
   const isNotFocused = activeEvent != null && !isOpened;

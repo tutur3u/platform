@@ -1,5 +1,6 @@
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
+import DynamicIsland from './DynamicIsland';
 import WeekdayBar from './WeekdayBar';
 
 const Calendar = () => {
@@ -8,6 +9,7 @@ const Calendar = () => {
       <CalendarHeader />
       <WeekdayBar />
       <CalendarViewWithTrail />
+      <DynamicIsland />
     </div>
   );
 };
