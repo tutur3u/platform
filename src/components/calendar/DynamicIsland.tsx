@@ -4,33 +4,13 @@ import { showNotification } from '@mantine/notifications';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
+import { getCardColor } from '../../utils/color-helper';
 
 const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();
 
   const events = getCurrentEvents();
   const upcomingEvent = getUpcomingEvent();
-
-  const generateColor = () => {
-    const eventColor = events?.[0]?.color || 'blue';
-
-    const colors: {
-      [key: string]: string;
-    } = {
-      red: `shadow-red-300/20 border-red-300 text-red-200 bg-red-300/20`,
-      blue: `shadow-blue-300/20 border-blue-300 text-blue-200 bg-blue-300/20`,
-      green: `shadow-green-300/20 border-green-300 text-green-200 bg-green-300/20`,
-      yellow: `shadow-yellow-300/20 border-yellow-300 text-yellow-200 bg-yellow-300/20`,
-      orange: `shadow-orange-300/20 border-orange-300 text-orange-200 bg-orange-300/20`,
-      purple: `shadow-purple-300/20 border-purple-300 text-purple-200 bg-purple-300/20`,
-      pink: `shadow-pink-300/20 border-pink-300 text-pink-200 bg-pink-300/20`,
-      indigo: `shadow-indigo-300/20 border-indigo-300 text-indigo-200 bg-indigo-300/20`,
-      cyan: `shadow-cyan-300/20 border-cyan-300 text-cyan-200 bg-cyan-300/20`,
-      gray: `shadow-gray-300/20 border-gray-300 text-gray-200 bg-gray-300/20`,
-    };
-
-    return colors[eventColor];
-  };
 
   const title =
     events.length >= 1
@@ -170,7 +150,13 @@ const DynamicIsland = () => {
     totalMinutes,
   ]);
 
-  const hidden = isEditing() || (!events?.length && !upcomingEvent);
+  const isRunning = startAt && endAt;
+  const isUpcoming = events?.length === 0 && !!upcomingEvent;
+
+  const hasEvents = events?.length > 0 || !!upcomingEvent;
+  const hidden = isEditing() || !hasEvents;
+
+  const color = isUpcoming ? upcomingEvent?.color : events?.[0]?.color;
 
   return (
     <div
@@ -179,12 +165,12 @@ const DynamicIsland = () => {
       }`}
     >
       <div
-        className={`flex max-w-4xl items-center gap-4 rounded-lg border border-opacity-30 px-8 py-2 shadow-xl backdrop-blur-xl ${generateColor()} ${
-          hidden ? 'opacity-0' : 'opacity-100'
-        } ${
-          !events?.length && !!upcomingEvent
+        className={`flex max-w-4xl items-center gap-4 rounded-lg border border-opacity-30 px-8 py-2 shadow-xl backdrop-blur-xl ${getCardColor(
+          color
+        )} ${hidden ? 'opacity-0' : 'opacity-100'} ${
+          isUpcoming
             ? 'w-[calc(min(20rem,100%))] justify-center text-center'
-            : startAt && endAt
+            : isRunning
             ? 'w-[calc(min(30rem,100%))] justify-between'
             : 'w-full justify-between'
         } duration-300`}
@@ -195,7 +181,7 @@ const DynamicIsland = () => {
         <div className="flex gap-4">
           <div
             className={`${
-              startAt && endAt ? 'absolute opacity-0' : 'block opacity-100'
+              isRunning ? 'absolute opacity-0' : 'block opacity-100'
             }`}
             style={{
               transition: 'opacity 500ms',
@@ -215,10 +201,10 @@ const DynamicIsland = () => {
 
           {pomodoroCycles > 0 && (
             <>
-              {!(startAt && endAt) && (
+              {!isRunning && (
                 <Divider
                   orientation="vertical"
-                  className={`border-opacity-30 ${generateColor()}`}
+                  className={`border-opacity-30 ${getCardColor(color)}`}
                 />
               )}
 
@@ -228,7 +214,7 @@ const DynamicIsland = () => {
                     ? `Cycle #${currentCycle} — out of ${pomodoroCycles}`
                     : 'Focused work'}
                 </div>
-                {startAt && endAt ? (
+                {isRunning ? (
                   <div>{formatDuration(time, true)}</div>
                 ) : (
                   <div className="line-clamp-1">
@@ -246,7 +232,9 @@ const DynamicIsland = () => {
         {pomodoroCycles > 0 && (
           <button
             onClick={startTimer}
-            className={`aspect-square h-fit justify-self-end rounded-lg border border-opacity-10 p-1 ${generateColor()} transition hover:border-opacity-30 `}
+            className={`aspect-square h-fit justify-self-end rounded-lg border border-opacity-10 p-1 ${getCardColor(
+              color
+            )} transition hover:border-opacity-30 `}
           >
             {startAt ? (
               <StopIcon className="h-6 w-6" />
