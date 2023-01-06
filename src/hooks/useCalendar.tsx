@@ -31,6 +31,9 @@ const CalendarContext = createContext({
     return undefined as CalendarEventBase | undefined;
   },
 
+  getCurrentEvents: () => [] as CalendarEventBase[],
+  getUpcomingEvent: () => undefined as CalendarEventBase | undefined,
+
   getEvents: () => [] as CalendarEventBase[],
 
   getEventLevel: (eventId: string) => {
@@ -56,6 +59,7 @@ const CalendarContext = createContext({
     return undefined as CalendarEventBase | undefined;
   },
   isModalActive: () => false as boolean,
+  isEditing: () => false as boolean,
   openModal: (id: string) => console.log('openModal', id),
   closeModal: () => console.log('closeModal'),
 
@@ -80,6 +84,40 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     (eventId: string) => events.find((e) => e.id === eventId),
     [events]
   );
+
+  const getCurrentEvents = useCallback(() => {
+    const now = new Date();
+
+    // Get events that is happening right now
+    return events.filter((e) => {
+      const start = e.start_at;
+      const end = e.end_at;
+
+      const isSameDay =
+        start.getDate() === now.getDate() &&
+        start.getMonth() === now.getMonth() &&
+        start.getFullYear() === now.getFullYear();
+
+      return isSameDay && start <= now && end >= now;
+    });
+  }, [events]);
+
+  const getUpcomingEvent = useCallback(() => {
+    const now = new Date();
+
+    // Get the next event that is happening
+    return events.find((e) => {
+      const start = e.start_at;
+      const end = e.end_at;
+
+      const isSameDay =
+        start.getDate() === now.getDate() &&
+        start.getMonth() === now.getMonth() &&
+        start.getFullYear() === now.getFullYear();
+
+      return isSameDay && start > now && end > now;
+    });
+  }, [events]);
 
   const getEvents = useCallback(() => events, [events]);
 
@@ -338,6 +376,11 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     [isModalHidden, openedModalId]
   );
 
+  const isEditing = useCallback(
+    () => isModalHidden || !!openedModalId,
+    [isModalHidden, openedModalId]
+  );
+
   const openModal = useCallback((id: string) => {
     setOpenedModalId(id);
     setLastCreatedEventId(id);
@@ -366,6 +409,8 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     enableWeekView,
 
     getEvent,
+    getCurrentEvents,
+    getUpcomingEvent,
 
     getEvents,
 
@@ -379,6 +424,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     getModalStatus,
     getActiveEvent,
     isModalActive,
+    isEditing,
     openModal,
     closeModal,
 
