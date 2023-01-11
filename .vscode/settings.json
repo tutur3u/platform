@@ -20,10 +20,11 @@
     // "yarn.lock": true,
     //* Build
     "target": true,
+    ".turbo": true,
     ".next": true,
     ".swc": true,
     //* TypeScript
-    "tsconfig.json": true,
+    // "tsconfig.json": true,
     "tsconfig.tsbuildinfo": true,
     //* Tailwind
     // "tailwind.config.js": true,
@@ -32,11 +33,11 @@
     "next-env.d.ts": true,
     // "next.config.js": true,
     //* Vercel
-    "vercel.json": true,
+    // "vercel.json": true,
     //* Git
-    ".gitignore": true,
+    // ".gitignore": true,
     //* Jest
-    "jest.config.js": true,
+    // "jest.config.js": true,
     "jest.setup.js": true,
     "coverage": true,
     //* Others
