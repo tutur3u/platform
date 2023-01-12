@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "test": "jest --collect-coverage",
     "vergen": "pnpm genversion --semi --es6 src/core/version.ts",
-    "dev": "turbo next-dev",
+    "dev": "pnpm i && turbo next-dev",
     "next-dev": "next dev -p 7803",
     "sb:start": "pnpm supabase start",
     "sb:sync": "pnpm supabase db remote commit",
@@ -71,7 +71,7 @@
     "postcss": "^8.4.21",
     "prettier": "^2.8.2",
     "prettier-plugin-tailwindcss": "^0.2.1",
-    "supabase": "^1.30.1",
+    "supabase": "^1.31.1",
     "tailwind-scrollbar": "^2.1.0",
     "tailwindcss": "^3.2.4",
     "typescript": "4.9.4"
