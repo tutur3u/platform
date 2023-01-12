@@ -51,7 +51,7 @@ specifiers:
   react-beautiful-dnd: ^13.1.1
   react-dom: 18.2.0
   react-resizable: ^3.0.4
-  supabase: ^1.30.0
+  supabase: ^1.30.1
   swr: ^2.0.0
   tailwind-scrollbar: ^2.1.0
   tailwindcss: ^3.2.4
@@ -113,7 +113,7 @@ devDependencies:
   postcss: 8.4.21
   prettier: 2.8.2
   prettier-plugin-tailwindcss: 0.2.1_prettier@2.8.2
-  supabase: 1.30.0
+  supabase: 1.30.1
   tailwind-scrollbar: 2.1.0_tailwindcss@3.2.4
   tailwindcss: 3.2.4_postcss@8.4.21
   typescript: 4.9.4
@@ -5929,8 +5929,8 @@ packages:
     resolution: {integrity: sha512-GP6WDNWf+o403jrEp9c5jibKavrtLW+/qYGhFxFrG8maXhwTBI7gLLhiBb0o7uFccWN+EOS9aMO6cGHWAO07OA==}
     dev: false
 
-  /supabase/1.30.0:
-    resolution: {integrity: sha512-tevcVpcOym3LNinXG97H+qOQj1UJMd98/Ht6zgWZZ+P/kFmrD2W40jpwvjl7fqDNofmQ5WGcfdmeQY4VBS4Dew==}
+  /supabase/1.30.1:
+    resolution: {integrity: sha512-7cwpxcdcugw/ZAUty3SkME691XxsGEkomkdCiXLgjMkBcmoHDV1gWVsU1JK8xvDyezdMgpEXJmPv2kDE/Q3FVw==}
     hasBin: true
     requiresBuild: true
     dependencies:
