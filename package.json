@@ -8,9 +8,10 @@
     "build": "next build",
     "format": "prettier --write .",
     "test": "jest --collect-coverage",
-    "setup": "pnpm i && prettier --write .",
-    "dev": "pnpm i && pnpm genversion --semi --es6 src/core/version.ts && next dev -p 7803",
-    "sb": "pnpm i && pnpm supabase start",
+    "vergen": "pnpm genversion --semi --es6 src/core/version.ts",
+    "dev": "turbo next-dev",
+    "next-dev": "next dev -p 7803",
+    "sb:start": "pnpm supabase start",
     "sb:sync": "pnpm supabase db remote commit",
     "sb:reset": "pnpm supabase db reset",
     "sb:stop": "pnpm supabase stop"

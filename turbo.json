@@ -1,9 +1,21 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
+    "install": {},
+    "vergen": {
+      "dependsOn": ["install"]
+    },
+    "lint": {
+      "dependsOn": ["vergen"]
+    },
+    "dev": {
+      "dependsOn": ["install"]
+    },
+    "sb": {
+      "dependsOn": ["install"]
+    },
     "build": {
       "outputs": [".next/**"]
-    },
-    "lint": {}
+    }
   }
 }
