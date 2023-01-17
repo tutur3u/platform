@@ -183,6 +183,9 @@ const TaskWrapper = ({
           ? 'bg-purple-300/10 text-purple-300 hover:bg-purple-300/20'
           : 'hover:bg-zinc-800'
       } transition`}
+      onContextMenu={(e) => {
+        e.preventDefault();
+      }}
     >
       <div className="flex h-full w-full items-start justify-start">
         <Checkbox
