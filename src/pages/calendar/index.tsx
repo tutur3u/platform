@@ -8,6 +8,7 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import HeaderX from '../../components/metadata/HeaderX';
 import Calendar from '../../components/calendar/Calendar';
+import { DEV_MODE } from '../../constants/common';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -67,6 +68,18 @@ const CalendarPage: PageWithLayoutProps = () => {
     if (data) updateUsers([data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  if (!DEV_MODE)
+    return (
+      <>
+        <HeaderX label="Expenses" />
+        <div className="h-full p-4 md:p-8">
+          <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">
+            Under construction 🚧
+          </div>
+        </div>
+      </>
+    );
 
   return (
     <>
