@@ -1,69 +1,91 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { useCalendar } from '../../hooks/useCalendar';
 
-interface CalendarHeaderProps {
-  title: string;
-  prevHandler: () => void;
-  nextHandler: () => void;
-  todayHandler: () => void;
-  dayModeHandler?: () => void;
-  weekModeHandler?: () => void;
-}
+export default function CalendarHeader() {
+  const {
+    isToday,
+    getTitle,
+    getView,
+    handlePrev,
+    handleNext,
+    selectToday,
+    enableDayView,
+    enable4DayView,
+    enableWeekView,
+  } = useCalendar();
 
-export default function CalendarHeader({
-  title,
-  prevHandler,
-  nextHandler,
-  todayHandler,
+  const [availableOptions, setAvailableOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
 
-  dayModeHandler,
-  weekModeHandler,
-}: CalendarHeaderProps) {
+  useEffect(() => {
+    if (window.innerWidth > 768) {
+      setAvailableOptions([
+        {
+          value: 'day',
+          label: 'Day',
+        },
+        {
+          value: '4-day',
+          label: '4 Days',
+        },
+        {
+          value: 'week',
+          label: 'Week',
+        },
+      ]);
+    } else {
+      setAvailableOptions([
+        {
+          value: 'day',
+          label: 'Day',
+        },
+      ]);
+    }
+  }, []);
+
   return (
-    <div className="mb-8 flex justify-between">
+    <div className="mb-8 flex flex-col justify-between gap-2 md:flex-row">
       <div className="flex items-center gap-4 text-3xl font-semibold">
-        <span>{title}</span>
-        <span className="h-fit rounded bg-green-300/20 px-4 py-1 text-lg text-green-300">
-          Coming soon
-        </span>
+        <span>{getTitle()}</span>
       </div>
 
       <div className="flex items-center justify-center gap-2 text-blue-300">
-        <SegmentedControl
-          radius="md"
-          className="mr-2"
-          defaultValue="week"
-          data={[
-            {
-              value: 'day',
-              label: 'Day',
-            },
-            {
-              value: 'week',
-              label: 'Week',
-            },
-          ]}
-          onChange={(value) => {
-            if (value === 'day' && dayModeHandler) dayModeHandler();
-            if (value === 'week' && weekModeHandler) weekModeHandler();
-          }}
-        />
+        <div>
+          <SegmentedControl
+            radius="md"
+            className="mr-2"
+            defaultValue={getView()}
+            data={availableOptions}
+            onChange={(value) => {
+              if (value === 'day') enableDayView();
+              if (value === '4-day') enable4DayView();
+              if (value === 'week') enableWeekView();
+            }}
+          />
+        </div>
 
         <button
-          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
-          onClick={prevHandler}
+          className="h-fit rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
+          onClick={handlePrev}
         >
           <ChevronLeftIcon className="w-4" />
         </button>
         <button
-          onClick={todayHandler}
-          className="cursor-pointer rounded-lg bg-blue-300/10 p-2 text-lg font-semibold transition hover:bg-blue-300/20"
+          onClick={selectToday}
+          className={`rounded-lg p-2 text-lg font-semibold transition ${
+            isToday()
+              ? 'cursor-default bg-zinc-300/10 text-zinc-300 opacity-50'
+              : 'cursor-pointer bg-blue-300/10 hover:bg-blue-300/20'
+          }`}
         >
           Today
         </button>
         <button
-          className="h-full rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
-          onClick={nextHandler}
+          className="h-fit rounded-lg bg-blue-300/10 p-2 text-3xl transition hover:bg-blue-300/20"
+          onClick={handleNext}
         >
           <ChevronRightIcon className="w-4" />
         </button>

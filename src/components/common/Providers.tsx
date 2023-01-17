@@ -12,6 +12,7 @@ import { AppearanceProvider } from '../../hooks/useAppearance';
 import { OrganizationProvider } from '../../hooks/useOrganizations';
 import { SWRConfig } from 'swr';
 import { UserListProvider } from '../../hooks/useUserList';
+import { CalendarProvider } from '../../hooks/useCalendar';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -25,37 +26,39 @@ const Providers = ({
   children,
 }: ProvidersProps) => {
   return (
-    <SWRConfig
-      value={{
-        fetcher: (resource, init) =>
-          fetch(resource, init).then((res) => res.json()),
-      }}
+    <SessionContextProvider
+      supabaseClient={supabaseClient}
+      initialSession={initialSession}
     >
-      <SessionContextProvider
-        supabaseClient={supabaseClient}
-        initialSession={initialSession}
+      <SWRConfig
+        value={{
+          fetcher: (resource, init) =>
+            fetch(resource, init).then((res) => res.json()),
+        }}
       >
-        <UserDataProvider>
-          <MantineProvider
-            withGlobalStyles
-            withNormalizeCSS
-            theme={{
-              colorScheme: 'dark',
-            }}
-          >
-            <UserListProvider>
-              <AppearanceProvider>
-                <ModalsProvider>
-                  <NotificationsProvider position="bottom-left">
-                    <OrganizationProvider>{children}</OrganizationProvider>
-                  </NotificationsProvider>
-                </ModalsProvider>
-              </AppearanceProvider>
-            </UserListProvider>
-          </MantineProvider>
-        </UserDataProvider>
-      </SessionContextProvider>
-    </SWRConfig>
+        <CalendarProvider>
+          <UserDataProvider>
+            <MantineProvider
+              withGlobalStyles
+              withNormalizeCSS
+              theme={{
+                colorScheme: 'dark',
+              }}
+            >
+              <UserListProvider>
+                <AppearanceProvider>
+                  <ModalsProvider>
+                    <NotificationsProvider position="bottom-left">
+                      <OrganizationProvider>{children}</OrganizationProvider>
+                    </NotificationsProvider>
+                  </ModalsProvider>
+                </AppearanceProvider>
+              </UserListProvider>
+            </MantineProvider>
+          </UserDataProvider>
+        </CalendarProvider>
+      </SWRConfig>
+    </SessionContextProvider>
   );
 };
 
