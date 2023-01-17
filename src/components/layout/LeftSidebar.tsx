@@ -492,15 +492,17 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Select
                   defaultValue={selectedBoardId || boards?.[0]?.id}
                   data={
-                    boards?.map((board: TaskBoard) => ({
-                      value: board.id,
-                      label: board.name || 'Untitled',
-                      group:
-                        user?.displayName ||
-                        user?.username ||
-                        user?.email ||
-                        'Unknown',
-                    })) ?? []
+                    boards
+                      ? boards.map((board: TaskBoard) => ({
+                          value: board.id,
+                          label: board.name || 'Untitled',
+                          group:
+                            user?.displayName ||
+                            user?.username ||
+                            user?.email ||
+                            'Unknown',
+                        }))
+                      : []
                   }
                   value={
                     boards.some((board) => board.id === selectedBoardId)

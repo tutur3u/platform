@@ -33,7 +33,7 @@ export default function Header() {
         {segments.length > 0 ? (
           <div className="flex items-center gap-2">
             {segments.map((segment, index) => (
-              <div key={index} className="flex items-center gap-2">
+              <div key={`segment-${index}`} className="flex items-center gap-2">
                 {index > 0 && <span className="text-xl text-zinc-500">/</span>}
                 <Link
                   href={segment.href}

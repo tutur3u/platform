@@ -10,6 +10,7 @@ import {
   Tabs,
   Text,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
@@ -416,18 +417,15 @@ const TaskEditForm = ({
         </Tabs.List>
 
         <Tabs.Panel value="details">
-          <Textarea
+          <TextInput
             id="task-name"
             label="Task name"
             placeholder="Enter task name"
             value={name}
-            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setName(event.target.value)
             }
             autoComplete="off"
-            maxRows={5}
-            autosize
-            data-autofocus
             className="mb-2"
           />
 
@@ -613,12 +611,12 @@ const TaskEditForm = ({
             <div>
               <div className="mt-4 flex items-center gap-2">
                 <Avatar color="blue" radius="xl">
-                  {getInitials(creatorData?.users.display_name || 'Unknown')}
+                  {getInitials(creatorData?.users?.display_name || 'Unknown')}
                 </Avatar>
 
                 <div>
                   <span className="font-semibold text-blue-300">
-                    {creatorData?.users.display_name}
+                    {creatorData?.users?.display_name}
                   </span>{' '}
                   created this task{' '}
                   <span className="font-semibold">
@@ -754,7 +752,7 @@ const TaskEditForm = ({
             className="bg-blue-300/10"
             disabled={!name}
           >
-            {task?.id ? 'Save' : 'Add'}
+            {task?.id ? 'Save changes' : 'Add task'}
           </Button>
           {task?.id && showActionIcons && (
             <>

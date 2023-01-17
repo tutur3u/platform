@@ -7,6 +7,7 @@ import Providers from '../components/common/Providers';
 import { ReactElement, useState } from 'react';
 
 import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { RouterTransition } from '../components/router/RouterTransition';
 
 export default function Application({
   Component,
@@ -23,8 +24,9 @@ export default function Application({
       supabaseClient={supabaseClient}
       initialSession={pageProps.initialSession}
     >
-      {getLayout(<Component {...pageProps} />)}
+      <RouterTransition />
       <Analytics />
+      {getLayout(<Component {...pageProps} />)}
     </Providers>
   );
 }
