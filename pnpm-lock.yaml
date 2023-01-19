@@ -12,7 +12,7 @@ specifiers:
   '@mantine/next': ^5.10.1
   '@mantine/notifications': ^5.10.1
   '@mantine/nprogress': ^5.10.1
-  '@supabase/auth-helpers-nextjs': ^0.5.2
+  '@supabase/auth-helpers-nextjs': ^0.5.3
   '@supabase/auth-helpers-react': ^0.3.1
   '@supabase/supabase-js': ^2.4.0
   '@tailwindcss/line-clamp': ^0.4.2
@@ -70,7 +70,7 @@ dependencies:
   '@mantine/next': 5.10.1_knfl6ps6qqqwpiywkokbtml6se
   '@mantine/notifications': 5.10.1_ynz4r3bmi75slbqnmaycv7w7wa
   '@mantine/nprogress': 5.10.1_ynz4r3bmi75slbqnmaycv7w7wa
-  '@supabase/auth-helpers-nextjs': 0.5.2_fjsejuhspb6db5pg2h5ujso754
+  '@supabase/auth-helpers-nextjs': 0.5.3_fjsejuhspb6db5pg2h5ujso754
   '@supabase/auth-helpers-react': 0.3.1_fjsejuhspb6db5pg2h5ujso754
   '@supabase/supabase-js': 2.4.0
   '@vercel/analytics': 0.1.8_react@18.2.0
@@ -1353,12 +1353,12 @@ packages:
       '@sinonjs/commons': 1.8.6
     dev: true
 
-  /@supabase/auth-helpers-nextjs/0.5.2_fjsejuhspb6db5pg2h5ujso754:
-    resolution: {integrity: sha512-B+sQFVEImAYOJKyyNX1DWqTF2qVf9SocOM1GD4eGHon6ulvLOo2a8V+v1jZAuLOBF6yzVIYnZucuYKZCiNP/Eg==}
+  /@supabase/auth-helpers-nextjs/0.5.3_fjsejuhspb6db5pg2h5ujso754:
+    resolution: {integrity: sha512-imfHiTtV73AgMY/hvfDMHLARRC3ep0Hf+pq5l1zxWakIPQPvWXoad3fqpIE3kl7XJ05vnZMKZP0aMp9RtXAESg==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:
-      '@supabase/auth-helpers-shared': 0.2.3_fjsejuhspb6db5pg2h5ujso754
+      '@supabase/auth-helpers-shared': 0.2.4_fjsejuhspb6db5pg2h5ujso754
       '@supabase/supabase-js': 2.4.0
     dev: false
 
@@ -1370,8 +1370,8 @@ packages:
       '@supabase/supabase-js': 2.4.0
     dev: false
 
-  /@supabase/auth-helpers-shared/0.2.3_fjsejuhspb6db5pg2h5ujso754:
-    resolution: {integrity: sha512-Xwnd2UQ/VTjTKIuVg1Xl/ryrElbSccOJhC11jbVPHOs7Y6yxzy9APxQs//jj4IpbDH4uOEDCdpMIJ0tzRxj9DQ==}
+  /@supabase/auth-helpers-shared/0.2.4_fjsejuhspb6db5pg2h5ujso754:
+    resolution: {integrity: sha512-c+hi3N6DhjPTzjXGOokre4gmMZOqt0f1ORrwZwi2s07pk3cbkmn77DwwVtlYMNi3oZNYRQqAfxJu83UzpJrrmg==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:

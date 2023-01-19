@@ -27,7 +27,7 @@
     "@mantine/next": "^5.10.1",
     "@mantine/notifications": "^5.10.1",
     "@mantine/nprogress": "^5.10.1",
-    "@supabase/auth-helpers-nextjs": "^0.5.2",
+    "@supabase/auth-helpers-nextjs": "^0.5.3",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.4.0",
     "@vercel/analytics": "^0.1.8",
