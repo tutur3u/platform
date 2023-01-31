@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import DefaultHead from "../components/headers/DefaultHead";
-import DefaultLayout from "../components/layouts/DefaultLayout";
+import Layout from "../components/layouts";
 import { PageWithLayoutProps } from "../types/PageWithLayoutProps";
 
 const HomePage: PageWithLayoutProps = () => {
@@ -16,7 +16,7 @@ const HomePage: PageWithLayoutProps = () => {
 };
 
 HomePage.getLayout = function getLayout(page: ReactElement) {
-  return <DefaultLayout>{page}</DefaultLayout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default HomePage;
