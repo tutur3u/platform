@@ -40,9 +40,13 @@
     "react-dom": "18.2.0",
     "react-resizable": "^3.0.4",
     "swr": "^2.0.3",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "ui": "workspace:*"
   },
   "devDependencies": {
+    "@babel/core": "^7.20.12",
+    "eslint-config-custom": "workspace:*",
+    "tsconfig": "workspace:*",
     "@tailwindcss/line-clamp": "^0.4.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",

@@ -14,6 +14,7 @@ importers:
 
   apps/app:
     specifiers:
+      '@babel/core': ^7.20.12
       '@emotion/react': ^11.10.5
       '@emotion/server': ^11.10.0
       '@heroicons/react': ^2.0.14
@@ -47,6 +48,7 @@ importers:
       autoprefixer: ^10.4.13
       dayjs: ^1.11.7
       eslint: 8.33.0
+      eslint-config-custom: workspace:*
       eslint-config-next: 13.1.6
       eslint-config-prettier: ^8.6.0
       genversion: ^3.1.1
@@ -68,7 +70,9 @@ importers:
       swr: ^2.0.3
       tailwind-scrollbar: ^2.1.0
       tailwindcss: ^3.2.4
+      tsconfig: workspace:*
       typescript: 4.9.5
+      ui: workspace:*
       uuid: ^9.0.0
     dependencies:
       '@emotion/react': 11.10.5_yxdp3dl3eazy3vwpbmv4fq727a
@@ -95,8 +99,10 @@ importers:
       react-dom: 18.2.0_react@18.2.0
       react-resizable: 3.0.4_biqbaboplfbrettd7655fr4n2y
       swr: 2.0.3_react@18.2.0
+      ui: link:../../packages/ui
       uuid: 9.0.0
     devDependencies:
+      '@babel/core': 7.20.12
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.4
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
@@ -114,6 +120,7 @@ importers:
       '@typescript-eslint/parser': 5.49.0_4vsywjlpuriuw3tl5oq6zy5a64
       autoprefixer: 10.4.13_postcss@8.4.21
       eslint: 8.33.0
+      eslint-config-custom: link:../../packages/eslint-config-custom
       eslint-config-next: 13.1.6_4vsywjlpuriuw3tl5oq6zy5a64
       eslint-config-prettier: 8.6.0_eslint@8.33.0
       genversion: 3.1.1
@@ -127,6 +134,7 @@ importers:
       supabase: 1.35.3
       tailwind-scrollbar: 2.1.0_tailwindcss@3.2.4
       tailwindcss: 3.2.4_postcss@8.4.21
+      tsconfig: link:../../packages/tsconfig
       typescript: 4.9.5
 
   apps/docs:
@@ -2162,6 +2170,16 @@ packages:
       es-abstract: 1.21.1
       es-shim-unscopables: 1.0.0
 
+  /array.prototype.tosorted/1.1.1:
+    resolution: {integrity: sha512-pZYPXPRl2PqWcsUs6LOMn+1f1532nEoPTYowBtqLwAW+W8vSVhkIGnmOX1t/UQjD6YGI0vcD2B1U7ZFGQH9jnQ==}
+    dependencies:
+      call-bind: 1.0.2
+      define-properties: 1.1.4
+      es-abstract: 1.21.1
+      es-shim-unscopables: 1.0.0
+      get-intrinsic: 1.2.0
+    dev: true
+
   /ast-types-flow/0.0.7:
     resolution: {integrity: sha512-eBvWn1lvIApYMhzQMsu9ciLfkBY499mFZlNqG+/9WR7PVlroQw0vG30cOQQbaKz3sCEc44TAOu2ykzqXSNnwag==}
 
@@ -3047,7 +3065,7 @@ packages:
       eslint-import-resolver-typescript: 3.5.3_ohdts44xlqyeyrlje4qnefqeay
       eslint-plugin-import: 2.27.5_kf2q37rsxgsj6p2nz45hjttose
       eslint-plugin-jsx-a11y: 6.7.1_eslint@8.33.0
-      eslint-plugin-react: 7.31.8_eslint@8.33.0
+      eslint-plugin-react: 7.32.2_eslint@8.33.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.33.0
       typescript: 4.9.5
     transitivePeerDependencies:
@@ -3342,14 +3360,15 @@ packages:
       string.prototype.matchall: 4.0.8
     dev: false
 
-  /eslint-plugin-react/7.31.8_eslint@8.33.0:
-    resolution: {integrity: sha512-5lBTZmgQmARLLSYiwI71tiGVTLUuqXantZM6vlSY39OaDSV0M7+32K5DnLkmFrwTe+Ksz0ffuLUC91RUviVZfw==}
+  /eslint-plugin-react/7.32.2_eslint@8.33.0:
+    resolution: {integrity: sha512-t2fBMa+XzonrrNkyVirzKlvn5RXzzPwRHtMvLAtVZrt8oxgnTQaYbU6SXTOO1mwQgp1y5+toMSKInnzGr0Knqg==}
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
       array-includes: 3.1.6
       array.prototype.flatmap: 1.3.1
+      array.prototype.tosorted: 1.1.1
       doctrine: 2.1.0
       eslint: 8.33.0
       estraverse: 5.3.0
