@@ -5,8 +5,8 @@ importers:
   .:
     specifiers:
       eslint-config-custom: workspace:*
-      prettier: latest
-      turbo: latest
+      prettier: ^2.8.3
+      turbo: ^1.7.0
     devDependencies:
       eslint-config-custom: link:packages/eslint-config-custom
       prettier: 2.8.3
