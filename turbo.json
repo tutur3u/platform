@@ -1,5 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_KEY",
+    "NEXT_PUBLIC_QR_ENABLED",
+    "BASE_URL",
+    "AUTH_URL",
+    "API_URL",
+    "NODE_ENV"
+  ],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
