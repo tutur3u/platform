@@ -1,9 +1,0 @@
-{
-  "version": "0.1.0",
-  "name": "web-app",
-  "dependencies": {
-    "next": { "version": "12.3.0" },
-    "react-dom": { "version": "18.2.0" },
-    "react": { "version": "18.2.0" }
-  }
-}
