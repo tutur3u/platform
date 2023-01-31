@@ -1,0 +1,27 @@
+{
+  "name": "docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^13.1.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.12",
+    "eslint-config-custom": "workspace:*",
+    "eslint": "8.33.0",
+    "tsconfig": "workspace:*",
+    "@types/node": "^18.11.18",
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "typescript": "^4.9.5"
+  }
+}
