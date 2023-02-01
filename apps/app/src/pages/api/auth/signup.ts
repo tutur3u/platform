@@ -68,7 +68,7 @@ const signup = async (
   });
 
   // Check if there is an error
-  if (error) throw error?.message;
+  if (error) throw error;
 
   // Check if the session is valid
   if (!session) throw 'Something went wrong';

@@ -1,45 +1,24 @@
-import { upperFirst, useToggle } from '@mantine/hooks';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { AuthMethod } from '../../utils/auth-handler';
-import AuthContainer from './AuthContainer';
+import { DEV_MODE } from '../../constants/common';
 import AuthForm from './AuthForm';
-import AuthQR from './AuthQR';
-import AuthTitle from './AuthTitle';
 
 export default function AuthWrapper() {
   const router = useRouter();
 
-  const [method, toggle] = useToggle<AuthMethod>(['login', 'signup']);
+  const [method, setMethod] = useState<AuthMethod>('login');
   const [emailSent, setEmailSent] = useState<boolean>(false);
 
-  const showQR =
-    method === 'login' && process?.env?.NEXT_PUBLIC_QR_ENABLED === 'true';
-
-  const label = emailSent ? 'One last step...' : upperFirst(method);
-  const isDev = process.env.NODE_ENV === 'development';
-
-  const toggleMethod = () => toggle();
   const onSignup = () =>
-    isDev ? router.push('/calendar') : setEmailSent(true);
+    DEV_MODE ? router.push('/calendar') : setEmailSent(true);
 
   return (
-    <AuthContainer showQR={showQR}>
-      <AuthTitle label={label} />
-
-      <div
-        className={`${
-          showQR ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
-        } mt-6 grid gap-7 transition duration-300 md:gap-3`}
-      >
-        <AuthForm
-          method={method}
-          emailSent={emailSent}
-          onMethodToggle={toggleMethod}
-          onSignup={onSignup}
-        />
-        <AuthQR disabled={!showQR} />
-      </div>
-    </AuthContainer>
+    <AuthForm
+      method={method}
+      emailSent={emailSent}
+      setMethod={setMethod}
+      onSignup={onSignup}
+    />
   );
 }
