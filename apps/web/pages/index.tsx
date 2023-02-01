@@ -1,10 +1,22 @@
-import { Button } from "ui";
+import { ReactElement } from "react";
+import DefaultHead from "../components/headers/DefaultHead";
+import Layout from "../components/layouts";
+import { PageWithLayoutProps } from "../types/PageWithLayoutProps";
 
-export default function Web() {
+const HomePage: PageWithLayoutProps = () => {
   return (
-    <div>
-      <h1>Web</h1>
-      <Button />
-    </div>
+    <>
+      <DefaultHead />
+
+      <div className="w-full text-center text-9xl font-bold mt-64 text-blue-300">
+        Coming soon
+      </div>
+    </>
   );
-}
+};
+
+HomePage.getLayout = function getLayout(page: ReactElement) {
+  return <Layout>{page}</Layout>;
+};
+
+export default HomePage;
