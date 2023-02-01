@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/auth-helpers-react';
 
-export type AuthMethod = 'login' | 'signup';
+export type AuthMethod = 'login' | 'signup' | 'logout' | 'recover' | 'reset';
 
 interface AuthProps {
   supabaseClient: SupabaseClient;
