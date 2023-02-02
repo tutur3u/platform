@@ -22,6 +22,9 @@ jobs:
       - name: Navigate to app directory
         run: cd apps/app
 
+      - name: Print current directory
+        run: pwd
+
       - name: Link to staging project
         run: supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
 
