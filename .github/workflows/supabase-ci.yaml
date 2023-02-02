@@ -1,4 +1,4 @@
-name: Verify Supabase Types (apps/app)
+name: Supabase CI
 
 on:
   pull_request:

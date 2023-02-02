@@ -1,4 +1,4 @@
-name: Deploy Migrations to Production Database (apps/app)
+name: Deploy Migrations to Production Database
 
 on:
   push:
@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
 
-      - name: Deploy migrations to staging
+      - name: Deploy migrations to production
         run: |
           cd apps/app
-          supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
+          supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
           supabase db push
