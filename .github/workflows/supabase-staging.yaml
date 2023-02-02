@@ -19,11 +19,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
 
-      - name: Navigate to app directory
-        run: cd apps/app
-
       - name: Print current directory
         run: pwd
+
+      - name: Print current directory
+        run: ls -la
 
       - name: Link to staging project
         run: supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
