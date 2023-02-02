@@ -74,7 +74,7 @@ const CalendarPage: PageWithLayoutProps = () => {
       <>
         <HeaderX label="Calendar" />
         <div className="h-full p-4 md:p-8">
-          <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-6xl font-semibold text-purple-300">
+          <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 text-center text-6xl font-semibold text-purple-300">
             Under construction 🚧
           </div>
         </div>
