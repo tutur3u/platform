@@ -19,17 +19,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
 
-      - name: Navigate to app directory
-        run: cd apps/app
-
-      - name: Print working directory
-        run: pwd
-
-      - name: Print files in directory
-        run: ls
-
-      - name: Link to staging project
-        run: supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
-
       - name: Deploy migrations to staging
-        run: supabase db push
+        run: |
+          cd apps/app
+          supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
+          supabase db push
