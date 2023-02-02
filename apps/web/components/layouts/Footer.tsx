@@ -2,32 +2,40 @@ import { Divider } from "@mantine/core";
 import Image from "next/image";
 import Link from "next/link";
 
-const Footer = () => {
+interface FooterProps {
+  hideSlogan?: boolean;
+}
+
+const Footer = ({ hideSlogan = false }) => {
   return (
     <div className="w-full text-center">
       <Divider className="border-zinc-500/10 mb-16" />
 
-      <div className="p-8 flex flex-col items-center">
-        <div className="text-2xl md:text-4xl font-semibold text-zinc-500">
-          <span className="text-green-300">Maximize</span>{" "}
-          <span className="text-blue-300">productivity</span>,{" "}
-          <span className="text-orange-300">minimize</span>{" "}
-          <span className="text-red-300">stress</span>.
-        </div>
+      {hideSlogan || (
+        <>
+          <div className="p-8 flex flex-col items-center">
+            <div className="text-2xl md:text-4xl font-semibold text-zinc-500">
+              <span className="text-green-300">Maximize</span>{" "}
+              <span className="text-blue-300">productivity</span>,{" "}
+              <span className="text-orange-300">minimize</span>{" "}
+              <span className="text-red-300">stress</span>.
+            </div>
 
-        <div className="mt-2 md:text-xl text-zinc-300">
-          Start your journey to a more productive life today.
-        </div>
+            <div className="mt-2 md:text-xl text-zinc-300">
+              Start your journey to a more productive life today.
+            </div>
 
-        <Link
-          href="https://app.tuturuuu.com/login"
-          className="block w-fit mt-4 bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 hover:text-blue-200 rounded-lg px-8 py-2 font-semibold transition duration-300"
-        >
-          Get Started
-        </Link>
-      </div>
+            <Link
+              href="https://app.tuturuuu.com/login"
+              className="block w-fit mt-4 bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 hover:text-blue-200 rounded-lg px-8 py-2 font-semibold transition duration-300"
+            >
+              Get Started
+            </Link>
+          </div>
 
-      <Divider className="w-full border-zinc-300/10 my-16" />
+          <Divider className="w-full border-zinc-300/10 my-16" />
+        </>
+      )}
 
       <div className="px-4 pb-8 md:px-32 lg:px-64 flex items-center justify-center flex-col gap-4">
         <a href="/" className="flex gap-2 hover:text-blue-200 transition">
