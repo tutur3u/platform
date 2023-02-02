@@ -1,4 +1,4 @@
-name: Deploy Migrations to Staging Database
+name: Supabase CI
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
 
 jobs:
   deploy:
+    name: Migrate staging database
+    timeout-minutes: 15
     runs-on: ubuntu-22.04
 
     env:
