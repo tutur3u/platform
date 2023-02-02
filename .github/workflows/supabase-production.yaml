@@ -1,0 +1,29 @@
+name: Deploy Migrations to Production Database (apps/app)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+      PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: supabase/setup-cli@v1
+
+      - name: Navigate to app directory
+        run: cd apps/app
+
+      - name: Link to staging project
+        run: supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
+
+      - name: Deploy migrations to staging
+        run: supabase db push
