@@ -98,7 +98,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
       />
 
       <main
-        className={`fixed left-0 right-0 top-0 flex h-full flex-col overflow-auto bg-[#111113] scrollbar-none ${generateContentMargin(
+        className={`scrollbar-none fixed left-0 right-0 top-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateContentMargin(
           leftSidebarPref,
           rightSidebarPref
         )} transition-all duration-300`}

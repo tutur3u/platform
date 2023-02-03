@@ -1,6 +1,6 @@
-import { Divider } from "@mantine/core";
-import Image from "next/image";
-import Link from "next/link";
+import { Divider } from '@mantine/core';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface FooterProps {
   hideSlogan?: boolean;
@@ -9,36 +9,36 @@ interface FooterProps {
 const Footer = ({ hideSlogan = false }) => {
   return (
     <div className="w-full text-center">
-      <Divider className="border-zinc-500/10 mb-16" />
+      <Divider className="mb-16 border-zinc-500/10" />
 
       {hideSlogan || (
         <>
-          <div className="p-8 flex flex-col items-center">
-            <div className="text-2xl md:text-4xl font-semibold text-zinc-500">
-              <span className="text-green-300">Maximize</span>{" "}
-              <span className="text-blue-300">productivity</span>,{" "}
-              <span className="text-orange-300">minimize</span>{" "}
+          <div className="flex flex-col items-center p-8">
+            <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
+              <span className="text-green-300">Maximize</span>{' '}
+              <span className="text-blue-300">productivity</span>,{' '}
+              <span className="text-orange-300">minimize</span>{' '}
               <span className="text-red-300">stress</span>.
             </div>
 
-            <div className="mt-2 md:text-xl text-zinc-300">
+            <div className="mt-2 text-zinc-300 md:text-xl">
               Start your journey to a more productive life today.
             </div>
 
             <Link
               href="https://app.tuturuuu.com/login"
-              className="block w-fit mt-4 bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 hover:text-blue-200 rounded-lg px-8 py-2 font-semibold transition duration-300"
+              className="mt-4 block w-fit rounded-lg bg-blue-300/20 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
             >
               Get Started
             </Link>
           </div>
 
-          <Divider className="w-full border-zinc-300/10 my-16" />
+          <Divider className="my-16 w-full border-zinc-300/10" />
         </>
       )}
 
-      <div className="px-4 pb-8 md:px-32 lg:px-64 flex items-center justify-center flex-col gap-4">
-        <a href="/" className="flex gap-2 hover:text-blue-200 transition">
+      <div className="flex flex-col items-center justify-center gap-4 px-4 pb-8 md:px-32 lg:px-64">
+        <a href="/" className="flex gap-2 transition hover:text-blue-200">
           <Image
             src="/media/logos/transparent.png"
             width={320}
@@ -52,7 +52,7 @@ const Footer = ({ hideSlogan = false }) => {
         <div className="flex gap-8">
           <Link
             href="https://www.facebook.com/Tuturuuu"
-            className="fill-zinc-200/40 hover:fill-zinc-200 transition duration-300"
+            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -65,7 +65,7 @@ const Footer = ({ hideSlogan = false }) => {
 
           <Link
             href="https://twitter.com/tutur3u"
-            className="fill-zinc-200/40 hover:fill-zinc-200 transition duration-300"
+            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -78,7 +78,7 @@ const Footer = ({ hideSlogan = false }) => {
 
           <Link
             href="https://github.com/Tutur3u"
-            className="fill-zinc-200/40 hover:fill-zinc-200 transition duration-300"
+            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +91,7 @@ const Footer = ({ hideSlogan = false }) => {
 
           <Link
             href="https://www.linkedin.com/company/Tuturuuu/"
-            className="fill-zinc-200/40 hover:fill-zinc-200 transition duration-300"
+            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -104,9 +104,9 @@ const Footer = ({ hideSlogan = false }) => {
         </div>
       </div>
 
-      <Divider className="border-zinc-500/10 my-8" />
+      <Divider className="my-8 border-zinc-500/10" />
 
-      <div className="text-center px-4 pb-8 md:px-32 lg:px-64 text-zinc-400">
+      <div className="px-4 pb-8 text-center text-zinc-400 md:px-32 lg:px-64">
         <div>Copyright © 2023 Tuturuuu LLC. All rights reserved.</div>
       </div>
     </div>

@@ -187,7 +187,7 @@ const DynamicIsland = () => {
               transition: 'opacity 500ms',
             }}
           >
-            <div className="max-w-[12rem] font-semibold line-clamp-1">
+            <div className="line-clamp-1 max-w-[12rem] font-semibold">
               {title}
             </div>
             {events && events.length > 0 ? (
@@ -209,7 +209,7 @@ const DynamicIsland = () => {
               )}
 
               <div>
-                <div className="w-full font-semibold line-clamp-1">
+                <div className="line-clamp-1 w-full font-semibold">
                   {startAt
                     ? `Cycle #${currentCycle} — out of ${pomodoroCycles}`
                     : 'Focused work'}

@@ -609,7 +609,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     You have no assigned tasks in this board.
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 overflow-auto p-4 scrollbar-none">
+                  <div className="scrollbar-none flex flex-col gap-2 overflow-auto p-4">
                     {tasks.map((task) => (
                       <TaskWrapper
                         key={task.id}
@@ -646,7 +646,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   }}
                   chevronPosition="left"
                   radius="lg"
-                  className="flex flex-col overflow-auto scrollbar-none"
+                  className="scrollbar-none flex flex-col overflow-auto"
                 >
                   {lists?.map((list) => (
                     <TaskListWrapper

@@ -1,6 +1,6 @@
-import { FC } from "react";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
+import { FC } from 'react';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 interface LayoutProps {
   hideSlogan?: boolean;

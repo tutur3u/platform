@@ -50,7 +50,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="flex gap-4 overflow-x-auto px-8 transition-all duration-300 scrollbar-none lg:mx-56 lg:px-0">
+        <div className="scrollbar-none flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
           {rootTabs.map((tab) => (
             <Link
               key={tab.name}

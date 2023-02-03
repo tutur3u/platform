@@ -1,10 +1,10 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
 const Navbar = () => {
   return (
-    <nav className="fixed z-10 top-0 inset-x-0 backdrop-blur-lg bg-zinc-800/50 flex items-center justify-between p-4 md:px-32 lg:px-64 text-white font-semibold border-b border-zinc-700">
-      <a href="/" className="flex gap-2 hover:text-blue-200 transition">
+    <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-4 font-semibold text-white backdrop-blur-lg md:px-32 lg:px-64">
+      <a href="/" className="flex gap-2 transition hover:text-blue-200">
         <Image
           src="/media/logos/transparent.png"
           width={320}
@@ -27,7 +27,7 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         <Link
           href="https://app.tuturuuu.com/login"
-          className="bg-blue-300/20 hover:bg-blue-300/30 text-blue-300 hover:text-blue-200 rounded-full px-8 py-1 transition duration-300"
+          className="rounded-full bg-blue-300/20 px-8 py-1 text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
         >
           Login
         </Link>

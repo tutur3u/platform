@@ -275,7 +275,7 @@ const TaskWrapper = ({
 
       <Menu withArrow position="right" trigger="click">
         <Menu.Target>
-          <button className="m-1 flex h-fit items-start rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+          <button className="m-1 flex h-fit items-start rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
             <EllipsisHorizontalIcon className="w-6" />
           </button>
         </Menu.Target>
