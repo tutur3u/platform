@@ -425,15 +425,13 @@ function LeftSidebar({ className }: SidebarProps) {
               <Tooltip
                 label={
                   <div className="font-semibold">
-                    <div>{user?.displayName || 'Unknown'}</div>
+                    <div>{user?.displayName || user?.email}</div>
                     {user?.username && (
                       <div className="text-blue-300">@{user.username}</div>
                     )}
                   </div>
                 }
-                disabled={
-                  !user?.displayName || leftSidebarPref.main !== 'closed'
-                }
+                disabled={leftSidebarPref.main !== 'closed'}
                 position="right"
                 color="#182a3d"
                 offset={20}
@@ -448,7 +446,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     withBorder
                   >
                     <Avatar color="blue" radius="xl">
-                      {getInitials(user?.displayName ?? 'Unknown')}
+                      {getInitials(user?.displayName || user?.email)}
                     </Avatar>
                   </Indicator>
 
