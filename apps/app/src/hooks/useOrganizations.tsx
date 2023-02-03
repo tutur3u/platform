@@ -2,6 +2,7 @@ import useSWR, { mutate } from 'swr';
 
 import { createContext, useContext, ReactNode } from 'react';
 import { Organization } from '../types/primitives/Organization';
+import { useUser } from '@supabase/auth-helpers-react';
 
 const OrganizationContext = createContext({
   orgs: {} as {
@@ -23,7 +24,8 @@ const OrganizationContext = createContext({
 });
 
 export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
-  const { data, error } = useSWR('/api/orgs');
+  const user = useUser();
+  const { data, error } = useSWR(user ? '/api/orgs' : null);
 
   const createOrg = async (org: Organization) => {
     const res = await fetch('/api/orgs', {
