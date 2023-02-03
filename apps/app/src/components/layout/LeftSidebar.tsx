@@ -1,21 +1,23 @@
 import {
-  ArchiveBoxIcon,
-  BanknotesIcon as MoneyIconSolid,
+  HomeIcon as HomeIconSolid,
   CalendarDaysIcon as CalendarIconSolid,
   CheckCircleIcon as TasksIconSolid,
   ClipboardDocumentListIcon as NotesIconSolid,
+  BanknotesIcon as MoneyIconSolid,
+  UserGroupIcon as UsersIconSolid,
   Cog6ToothIcon as SettingsIconSolid,
-  HomeIcon as HomeIconSolid,
   PlusIcon as PlusIconSolid,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/solid';
 
 import {
-  BanknotesIcon as MoneyIconOutline,
+  HomeIcon as HomeIconOutline,
   CalendarDaysIcon as CalendarIconOutline,
   CheckCircleIcon as TasksIconOutline,
   ClipboardDocumentListIcon as NotesIconOutline,
+  BanknotesIcon as MoneyIconOutline,
+  UserGroupIcon as UsersIconOutline,
   Cog6ToothIcon as SettingsIconOutline,
-  HomeIcon as HomeIconOutline,
   FolderPlusIcon,
   SquaresPlusIcon,
   EllipsisHorizontalIcon,
@@ -358,6 +360,15 @@ function LeftSidebar({ className }: SidebarProps) {
                   activeIcon={<MoneyIconSolid className="w-8" />}
                   inactiveIcon={<MoneyIconOutline className="w-8" />}
                   label="Expenses"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/friends"
+                  activeIcon={<UsersIconSolid className="w-8" />}
+                  inactiveIcon={<UsersIconOutline className="w-8" />}
+                  label="Friends"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
