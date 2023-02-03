@@ -10,8 +10,7 @@ export default function AuthWrapper() {
   const [method, setMethod] = useState<AuthMethod>('login');
   const [emailSent, setEmailSent] = useState<boolean>(false);
 
-  const onSignup = () =>
-    DEV_MODE ? router.push('/calendar') : setEmailSent(true);
+  const onSignup = () => (DEV_MODE ? router.push('/') : setEmailSent(true));
 
   return (
     <AuthForm

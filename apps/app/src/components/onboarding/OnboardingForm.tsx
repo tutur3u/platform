@@ -73,9 +73,14 @@ const OnboardingForm = () => {
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
 
   useEffect(() => {
-    if (!orgs) return;
-    if (orgs.current.length > 0) router.push('/');
-  }, [router, orgs]);
+    if (!orgs || !orgs?.current?.length) return;
+    if (!profileCompleted) return;
+
+    // If there is a redirectedFrom URL, redirect to it
+    // Otherwise, redirect to the homepage
+    const { redirectedFrom: nextUrl } = router.query;
+    router.push(nextUrl ? nextUrl.toString() : '/');
+  }, [router, orgs, profileCompleted]);
 
   return (
     <>
@@ -84,7 +89,7 @@ const OnboardingForm = () => {
           {!user ||
           isUserLoading ||
           isOrgsLoading ||
-          (orgs && orgs?.current?.length > 0) ? (
+          (orgs && orgs?.current?.length > 0 && profileCompleted) ? (
             <LoadingIndicator className="h-8 w-8" />
           ) : (
             <>
@@ -191,7 +196,6 @@ const OnboardingForm = () => {
                               id: 'new-org',
                               name: workspaceName,
                             });
-                            router.push('/');
                           } catch (error) {
                             showNotification({
                               title: 'Oops!',
