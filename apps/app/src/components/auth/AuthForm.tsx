@@ -18,6 +18,8 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 import AuthEmailSent from './AuthEmailSent';
 import { useForm } from '@mantine/form';
 import { mutate } from 'swr';
+import Link from 'next/link';
+import { showNotification } from '@mantine/notifications';
 
 interface AuthFormProps {
   method: AuthMethod;
@@ -87,8 +89,12 @@ const AuthForm = ({
       // Otherwise, redirect to the homepage
       const { nextUrl } = router.query;
       router.push(nextUrl ? nextUrl.toString() : '/');
-    } catch (error) {
-      alert(error || 'Something went wrong');
+    } catch (error: any) {
+      showNotification({
+        title: 'Error',
+        message: error?.message || error || 'Something went wrong',
+        color: 'red',
+      });
       setSubmitting(false);
     }
   };
@@ -96,15 +102,28 @@ const AuthForm = ({
   const title =
     language === 'vi'
       ? method === 'login'
-        ? 'Đăng nhập'
+        ? 'Chào mừng trở lại'
         : method === 'signup'
-        ? 'Đăng ký'
+        ? 'Hãy bắt đầu'
         : 'Khôi phục mật khẩu'
       : method === 'login'
-      ? 'Login'
+      ? 'Welcome back'
       : method === 'signup'
-      ? 'Sign up'
+      ? 'Get started'
       : 'Recover password';
+
+  const description =
+    language === 'vi'
+      ? method === 'login'
+        ? 'Đăng nhập vào tài khoản của bạn'
+        : method === 'signup'
+        ? 'Tạo tài khoản mới'
+        : 'Nhập địa chỉ email của bạn để khôi phục mật khẩu'
+      : method === 'login'
+      ? 'Login to your account'
+      : method === 'signup'
+      ? 'Create a new account'
+      : 'Enter your email address to recover your password';
 
   const ctaTextDefault =
     language === 'vi'
@@ -112,64 +131,68 @@ const AuthForm = ({
         ? 'Đăng nhập'
         : method === 'signup'
         ? 'Đăng ký'
-        : 'Coming soon'
+        : 'Khôi phục'
       : method === 'login'
       ? 'Login'
       : method === 'signup'
-      ? 'Coming soon'
-      : 'Coming soon';
+      ? 'Sign up'
+      : 'Recover';
 
   const ctaTextSubmitting =
     language === 'vi'
       ? method === 'login'
         ? 'Đang đăng nhập'
         : method === 'signup'
-        ? 'Coming soon'
-        : 'Coming soon'
+        ? 'Đang đăng ký'
+        : 'Đang khôi phục'
       : method === 'login'
       ? 'Logging in'
       : method === 'signup'
-      ? 'Coming soon'
-      : 'Coming soon';
+      ? 'Signing up'
+      : 'Recovering';
 
   const ctaText = submitting ? ctaTextSubmitting : ctaTextDefault;
 
   return (
     <>
-      <Image
-        src="/media/background/auth.jpg"
-        alt="Featured background"
-        width={1920}
-        height={1080}
-        className="fixed inset-0 h-screen w-screen object-cover"
-      />
-
       <div className="absolute inset-0 z-10 mx-2 my-16 flex items-start justify-center md:mx-4 md:items-center lg:m-32">
-        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-800/50 p-4 backdrop-blur-2xl md:p-8">
-          <div className="w-fit bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text text-4xl font-semibold text-transparent md:text-6xl">
-            Tuturuuu
-          </div>
+        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+          <Link href="/" className="flex gap-2 transition hover:text-blue-200">
+            <Image
+              src="/media/logos/transparent.png"
+              width={320}
+              height={320}
+              alt="logo"
+              className="w-12"
+            />
+            <div className="text-4xl font-semibold">Tuturuuu</div>
+          </Link>
 
           <Divider className="w-full border-zinc-300/10" />
-          <div className="text-4xl font-semibold">{title}</div>
+
+          <div className="text-center">
+            <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
+              {title}
+            </div>
+
+            <div className="text-xl font-semibold text-zinc-400">
+              {description}
+            </div>
+          </div>
 
           <div className="grid w-full gap-2">
             <TextInput
-              id="username"
+              id="email"
               icon={<UserCircleIcon className="h-5" />}
-              label={language === 'vi' ? 'Tên đăng nhập' : 'Username'}
-              placeholder={
-                language === 'vi'
-                  ? 'Tên đăng nhập hoặc email'
-                  : 'Username or email'
-              }
+              label="Email"
+              placeholder="username@example.com"
               value={form.values.email}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 form.setFieldValue('email', event.currentTarget.value)
               }
               error={form.errors.email && 'Invalid email'}
               classNames={{
-                label: 'text-zinc-200/80',
+                label: 'text-zinc-200/80 mb-1',
                 input:
                   'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
               }}
@@ -193,9 +216,11 @@ const AuthForm = ({
                   'Password should include at least 6 characters'
                 }
                 classNames={{
-                  label: 'text-zinc-200/80',
+                  label: 'text-zinc-200/80 mb-1',
                   innerInput: 'placeholder-zinc-200/30',
-                  input: !submitting ? 'bg-zinc-300/10 border-zinc-300/10' : '',
+                  input: !submitting
+                    ? 'bg-zinc-300/10 border-zinc-300/10'
+                    : 'font-semibold',
                   visibilityToggle: 'text-zinc-200/30 hover:text-zinc-200/50',
                 }}
                 disabled={submitting}
@@ -212,7 +237,7 @@ const AuthForm = ({
                   submitting
                     ? 'cursor-not-allowed text-zinc-200/30'
                     : 'text-zinc-200/50 hover:text-zinc-200'
-                } w-fit place-self-end transition duration-300`}
+                } w-fit place-self-end transition`}
                 onClick={() => setMethod('recover')}
               >
                 {language === 'vi' ? 'Quên mật khẩu?' : 'Forgot password?'}
@@ -226,7 +251,7 @@ const AuthForm = ({
               variant="light"
               loading={submitting}
               onClick={handleAuth}
-              disabled={isFormInvalid || method !== 'login'}
+              disabled={isFormInvalid || method === 'recover'}
             >
               {ctaText}
             </Button>
@@ -242,7 +267,7 @@ const AuthForm = ({
                   : 'Already have an account?'}
               </span>{' '}
               <button
-                className="font-semibold text-zinc-200/50 transition duration-300 hover:text-zinc-200"
+                className="font-semibold text-zinc-200/50 transition hover:text-zinc-200"
                 onClick={() =>
                   setMethod(method === 'login' ? 'signup' : 'login')
                 }
@@ -253,9 +278,28 @@ const AuthForm = ({
                     : 'Đăng nhập'
                   : method === 'login'
                   ? 'Sign up'
-                  : 'Sign in'}
+                  : 'Login'}
               </button>
             </div>
+          </div>
+
+          <Divider className="w-full border-zinc-300/10" variant="dashed" />
+          <div className="text-center text-sm font-semibold text-zinc-500">
+            By continuing, you agree to Tuturuuu&apos;s{' '}
+            <Link
+              href="https://tuturuuu.com/terms"
+              className="text-zinc-400 underline decoration-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:decoration-zinc-200"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="https://tuturuuu.com/privacy"
+              className="text-zinc-400 underline decoration-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:decoration-zinc-200"
+            >
+              Privacy Policy
+            </Link>
+            , and to receive periodic emails with updates.
           </div>
 
           <Divider className="w-full border-zinc-300/10" />
@@ -267,7 +311,7 @@ const AuthForm = ({
             }
             className="w-full"
             classNames={{
-              label: 'text-zinc-200/80',
+              label: 'text-zinc-200/80 mb-1',
               input: 'bg-zinc-300/10 border-zinc-300/10',
             }}
             value={language}
