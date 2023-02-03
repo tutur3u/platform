@@ -85,9 +85,9 @@ const AuthForm = ({
       // Update the user's profile
       mutate('/api/user');
 
-      // If there is a nextUrl, redirect to it
+      // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
-      const { nextUrl } = router.query;
+      const { redirectedFrom: nextUrl } = router.query;
       router.push(nextUrl ? nextUrl.toString() : '/');
     } catch (error: any) {
       showNotification({
