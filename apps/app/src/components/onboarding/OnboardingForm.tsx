@@ -8,6 +8,7 @@ import { useOrgs } from '../../hooks/useOrganizations';
 import { useRouter } from 'next/router';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
+import { showNotification } from '@mantine/notifications';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -71,30 +72,30 @@ const OnboardingForm = () => {
   const [workspaceName, setWorkspaceName] = useState('');
   const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
 
-  const hasWorkspaces = orgs?.current?.length > 0;
+  useEffect(() => {
+    if (!orgs) return;
+    if (orgs.current.length > 0) router.push('/');
+  }, [router, orgs]);
 
   return (
     <>
       <div className="absolute inset-0 z-10 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
         <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
-          {!user || isUserLoading || isOrgsLoading ? (
+          {!user ||
+          isUserLoading ||
+          isOrgsLoading ||
+          (orgs && orgs?.current?.length > 0) ? (
             <LoadingIndicator className="h-8 w-8" />
           ) : (
             <>
               <div className="text-center">
                 <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
-                  {profileCompleted
-                    ? hasWorkspaces
-                      ? 'Looks good!'
-                      : 'One more step'
-                    : 'Welcome to Tuturuuu!'}
+                  {profileCompleted ? 'One more step' : 'Welcome to Tuturuuu!'}
                 </div>
 
                 <div className="text-xl font-semibold text-zinc-400">
                   {profileCompleted
-                    ? hasWorkspaces
-                      ? "You're all set up!"
-                      : "Let's set up your workspace"
+                    ? "Let's set up your workspace"
                     : "Let's take a few minutes to set up your account"}
                 </div>
               </div>
@@ -117,7 +118,7 @@ const OnboardingForm = () => {
 
               <Divider className="w-full" />
 
-              {hasWorkspaces ? null : profileCompleted ? (
+              {profileCompleted ? (
                 <TextInput
                   id="workspace-name"
                   icon={<UserCircleIcon className="h-5" />}
@@ -183,18 +184,27 @@ const OnboardingForm = () => {
                   loading={saving}
                   onClick={
                     profileCompleted
-                      ? hasWorkspaces
-                        ? () => router.push('/')
-                        : () =>
-                            createOrg({ id: 'new-org', name: workspaceName })
+                      ? async () => {
+                          try {
+                            setSaving(true);
+                            await createOrg({
+                              id: 'new-org',
+                              name: workspaceName,
+                            });
+                            router.push('/');
+                          } catch (error) {
+                            showNotification({
+                              title: 'Oops!',
+                              message: 'Failed to create workspace',
+                              color: 'red',
+                            });
+                            setSaving(false);
+                          }
+                        }
                       : updateProfile
                   }
                 >
-                  {profileCompleted
-                    ? hasWorkspaces
-                      ? 'Continue'
-                      : 'Create workspace'
-                    : 'Save'}
+                  {profileCompleted ? 'Create workspace' : 'Save'}
                 </Button>
               </div>
             </>
