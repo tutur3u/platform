@@ -320,15 +320,13 @@ function LeftSidebar({ className }: SidebarProps) {
 
           <div className="h-full overflow-auto">
             <div className="flex flex-col items-start gap-6 p-4">
-              {isDev && (
-                <SidebarTab
-                  href="/"
-                  activeIcon={<HomeIconSolid className="w-8" />}
-                  inactiveIcon={<HomeIconOutline className="w-8" />}
-                  label="Home"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                />
-              )}
+              <SidebarTab
+                href="/"
+                activeIcon={<HomeIconSolid className="w-8" />}
+                inactiveIcon={<HomeIconOutline className="w-8" />}
+                label="Home"
+                showTooltip={leftSidebarPref.main === 'closed'}
+              />
               <SidebarTab
                 href="/calendar"
                 activeIcon={<CalendarIconSolid className="w-8" />}
@@ -336,15 +334,13 @@ function LeftSidebar({ className }: SidebarProps) {
                 label="Calendar"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
-              {isDev && (
-                <SidebarTab
-                  href="/tasks"
-                  activeIcon={<TasksIconSolid className="w-8" />}
-                  inactiveIcon={<TasksIconOutline className="w-8" />}
-                  label="Tasks"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                />
-              )}
+              <SidebarTab
+                href="/tasks"
+                activeIcon={<TasksIconSolid className="w-8" />}
+                inactiveIcon={<TasksIconOutline className="w-8" />}
+                label="Tasks"
+                showTooltip={leftSidebarPref.main === 'closed'}
+              />
               {isDev && (
                 <SidebarTab
                   href="/notes"
@@ -374,9 +370,9 @@ function LeftSidebar({ className }: SidebarProps) {
               )}
             </div>
 
-            {isDev && orgs?.current?.length > 0 && <SidebarDivider />}
+            {orgs?.current?.length > 0 && <SidebarDivider />}
 
-            {!isDev || isOrgsLoading || (
+            {isOrgsLoading || (
               <div className="flex flex-col gap-3 p-4">
                 {orgs?.current?.map((org) => (
                   <SidebarTab

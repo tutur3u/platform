@@ -32,16 +32,6 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       },
     };
 
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (!isDev)
-    return {
-      redirect: {
-        destination: '/calendar',
-        permanent: false,
-      },
-    };
-
   return {
     props: {
       initialSession: session,
