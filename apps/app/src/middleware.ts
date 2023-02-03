@@ -16,7 +16,12 @@ export async function middleware(req: NextRequest) {
   if (!session) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set(`redirectedFrom`, req.nextUrl.pathname);
+
+    // if we are not on the root page, we need to redirect
+    // back to the page we were on after login.
+    if (req.nextUrl.pathname !== '/')
+      redirectUrl.searchParams.set(`redirectedFrom`, req.nextUrl.pathname);
+
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -46,7 +51,14 @@ export async function middleware(req: NextRequest) {
   // Auth condition not met, redirect to onboarding page.
   const redirectUrl = req.nextUrl.clone();
   redirectUrl.pathname = '/onboarding';
-  redirectUrl.searchParams.set(`redirectedFrom`, req.nextUrl.pathname);
+
+  const redirectedFrom = req.nextUrl.searchParams.get('redirectedFrom');
+
+  redirectUrl.searchParams.set(
+    `redirectedFrom`,
+    redirectedFrom ?? req.nextUrl.pathname
+  );
+
   return NextResponse.redirect(redirectUrl);
 }
 
@@ -55,6 +67,7 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)
+     * - media (media files)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
@@ -63,6 +76,6 @@ export const config = {
      * - login (login page)
      * - onboarding (onboarding page)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|login|onboarding).*)',
+    '/((?!api|media|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|login|onboarding).*)',
   ],
 };
