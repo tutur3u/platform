@@ -5,10 +5,32 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { useUserData } from '../../hooks/useUserData';
 import LoadingIndicator from '../common/LoadingIndicator';
 import { useOrgs } from '../../hooks/useOrganizations';
-import { Organization } from '../../types/primitives/Organization';
-import { openModal } from '@mantine/modals';
-import OrgEditForm from '../forms/OrgEditForm';
 import { useRouter } from 'next/router';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { GetServerSidePropsContext } from 'next';
+
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const supabase = createServerSupabaseClient(ctx);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session)
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+
+  return {
+    props: {
+      initialSession: session,
+      user: session.user,
+    },
+  };
+};
 
 const OnboardingForm = () => {
   const router = useRouter();
