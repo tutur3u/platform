@@ -2,6 +2,7 @@ import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
 import { UserData } from '../types/primitives/UserData';
 import useSWR, { mutate } from 'swr';
+import { useUser } from '@supabase/auth-helpers-react';
 
 const UserDataContext = createContext({
   isLoading: true,
@@ -14,7 +15,9 @@ export const UserDataProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { data, error } = useSWR('/api/user');
+  const user = useUser();
+  const { data, error } = useSWR(user ? '/api/user' : null);
+
   const isLoading = !data && !error;
 
   useEffect(() => {
