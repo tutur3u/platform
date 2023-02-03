@@ -2,7 +2,8 @@ import {
   ArchiveBoxIcon,
   BanknotesIcon as MoneyIconSolid,
   CalendarDaysIcon as CalendarIconSolid,
-  ClipboardDocumentListIcon as TaskIconSolid,
+  CheckCircleIcon as TasksIconSolid,
+  ClipboardDocumentListIcon as NotesIconSolid,
   Cog6ToothIcon as SettingsIconSolid,
   HomeIcon as HomeIconSolid,
   PlusIcon as PlusIconSolid,
@@ -11,7 +12,8 @@ import {
 import {
   BanknotesIcon as MoneyIconOutline,
   CalendarDaysIcon as CalendarIconOutline,
-  ClipboardDocumentListIcon as TaskIconOutline,
+  CheckCircleIcon as TasksIconOutline,
+  ClipboardDocumentListIcon as NotesIconOutline,
   Cog6ToothIcon as SettingsIconOutline,
   HomeIcon as HomeIconOutline,
   FolderPlusIcon,
@@ -335,9 +337,18 @@ function LeftSidebar({ className }: SidebarProps) {
               {isDev && (
                 <SidebarTab
                   href="/tasks"
-                  activeIcon={<TaskIconSolid className="w-8" />}
-                  inactiveIcon={<TaskIconOutline className="w-8" />}
+                  activeIcon={<TasksIconSolid className="w-8" />}
+                  inactiveIcon={<TasksIconOutline className="w-8" />}
                   label="Tasks"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/notes"
+                  activeIcon={<NotesIconSolid className="w-8" />}
+                  inactiveIcon={<NotesIconOutline className="w-8" />}
+                  label="Notes"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
