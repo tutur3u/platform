@@ -4,7 +4,7 @@ import Link from 'next/link';
 const Navbar = () => {
   return (
     <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-4 font-semibold text-white backdrop-blur-lg md:px-32 lg:px-64">
-      <a href="/" className="flex gap-2 transition hover:text-blue-200">
+      <Link href="/" className="flex gap-2 transition hover:text-blue-200">
         <Image
           src="/media/logos/transparent.png"
           width={320}
@@ -13,7 +13,7 @@ const Navbar = () => {
           className="w-8"
         />
         <div className="text-2xl">Tuturuuu</div>
-      </a>
+      </Link>
 
       {/* <div className="flex items-center gap-4">
     <a href="/features" className="hover:text-blue-200 transition">

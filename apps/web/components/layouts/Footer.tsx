@@ -38,7 +38,7 @@ const Footer = ({ hideSlogan = false }) => {
       )}
 
       <div className="flex flex-col items-center justify-center gap-4 px-4 pb-8 md:px-32 lg:px-64">
-        <a href="/" className="flex gap-2 transition hover:text-blue-200">
+        <Link href="/" className="flex gap-2 transition hover:text-blue-200">
           <Image
             src="/media/logos/transparent.png"
             width={320}
@@ -47,7 +47,7 @@ const Footer = ({ hideSlogan = false }) => {
             className="w-12"
           />
           <div className="text-4xl font-semibold">Tuturuuu</div>
-        </a>
+        </Link>
 
         <div className="flex gap-8">
           <Link
