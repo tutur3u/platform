@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-[#111113] text-zinc-100;
+  }
+}
+
 * {
   color-scheme: dark;
 }

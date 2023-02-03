@@ -1,19 +1,23 @@
 import {
-  ArchiveBoxIcon,
-  BanknotesIcon as MoneyIconSolid,
-  CalendarDaysIcon as CalendarIconSolid,
-  ClipboardDocumentListIcon as TaskIconSolid,
-  Cog6ToothIcon as SettingsIconSolid,
   HomeIcon as HomeIconSolid,
+  CalendarDaysIcon as CalendarIconSolid,
+  CheckCircleIcon as TasksIconSolid,
+  ClipboardDocumentListIcon as NotesIconSolid,
+  BanknotesIcon as MoneyIconSolid,
+  UserGroupIcon as UsersIconSolid,
+  Cog6ToothIcon as SettingsIconSolid,
   PlusIcon as PlusIconSolid,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/solid';
 
 import {
-  BanknotesIcon as MoneyIconOutline,
-  CalendarDaysIcon as CalendarIconOutline,
-  ClipboardDocumentListIcon as TaskIconOutline,
-  Cog6ToothIcon as SettingsIconOutline,
   HomeIcon as HomeIconOutline,
+  CalendarDaysIcon as CalendarIconOutline,
+  CheckCircleIcon as TasksIconOutline,
+  ClipboardDocumentListIcon as NotesIconOutline,
+  BanknotesIcon as MoneyIconOutline,
+  UserGroupIcon as UsersIconOutline,
+  Cog6ToothIcon as SettingsIconOutline,
   FolderPlusIcon,
   SquaresPlusIcon,
   EllipsisHorizontalIcon,
@@ -335,9 +339,18 @@ function LeftSidebar({ className }: SidebarProps) {
               {isDev && (
                 <SidebarTab
                   href="/tasks"
-                  activeIcon={<TaskIconSolid className="w-8" />}
-                  inactiveIcon={<TaskIconOutline className="w-8" />}
+                  activeIcon={<TasksIconSolid className="w-8" />}
+                  inactiveIcon={<TasksIconOutline className="w-8" />}
                   label="Tasks"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/notes"
+                  activeIcon={<NotesIconSolid className="w-8" />}
+                  inactiveIcon={<NotesIconOutline className="w-8" />}
+                  label="Notes"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
@@ -347,6 +360,15 @@ function LeftSidebar({ className }: SidebarProps) {
                   activeIcon={<MoneyIconSolid className="w-8" />}
                   inactiveIcon={<MoneyIconOutline className="w-8" />}
                   label="Expenses"
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                />
+              )}
+              {isDev && (
+                <SidebarTab
+                  href="/friends"
+                  activeIcon={<UsersIconSolid className="w-8" />}
+                  inactiveIcon={<UsersIconOutline className="w-8" />}
+                  label="Friends"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
@@ -414,15 +436,13 @@ function LeftSidebar({ className }: SidebarProps) {
               <Tooltip
                 label={
                   <div className="font-semibold">
-                    <div>{user?.displayName || 'Unknown'}</div>
+                    <div>{user?.displayName || user?.email}</div>
                     {user?.username && (
                       <div className="text-blue-300">@{user.username}</div>
                     )}
                   </div>
                 }
-                disabled={
-                  !user?.displayName || leftSidebarPref.main !== 'closed'
-                }
+                disabled={leftSidebarPref.main !== 'closed'}
                 position="right"
                 color="#182a3d"
                 offset={20}
@@ -437,7 +457,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     withBorder
                   >
                     <Avatar color="blue" radius="xl">
-                      {getInitials(user?.displayName ?? 'Unknown')}
+                      {getInitials(user?.displayName || user?.email)}
                     </Avatar>
                   </Indicator>
 

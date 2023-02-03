@@ -39,8 +39,6 @@ const Providers = ({
         <CalendarProvider>
           <UserDataProvider>
             <MantineProvider
-              withGlobalStyles
-              withNormalizeCSS
               theme={{
                 colorScheme: 'dark',
               }}

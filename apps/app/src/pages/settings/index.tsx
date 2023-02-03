@@ -73,15 +73,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const handleSave = async () => {
     setSaving(true);
 
-    if (!updateData) {
-      setSaving(false);
-      throw new Error('No updateData function');
-    }
-
-    await updateData({
+    await updateData?.({
       displayName,
       username,
-      birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : undefined,
+      birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
     setSaving(false);

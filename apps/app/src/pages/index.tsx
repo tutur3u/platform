@@ -180,7 +180,6 @@ const Home: PageWithLayoutProps = () => {
           </button>
         </>
       )}
-      ;
     </div>
   );
 };
