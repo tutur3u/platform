@@ -62,7 +62,7 @@ const TaskListWrapper = ({
       className="border-zinc-800/80"
     >
       <TaskListAccordionControl list={list}>
-        <div className="font-semibold line-clamp-1">
+        <div className="line-clamp-1 font-semibold">
           {list.name || 'Untitled list'}
         </div>
       </TaskListAccordionControl>

@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
-import Layout from '../components/layouts';
 import Link from 'next/link';
+import DefaultLayout from '../components/layout/DefaultLayout';
 
 const Error500Page: PageWithLayoutProps = () => {
   return (
@@ -26,7 +26,7 @@ const Error500Page: PageWithLayoutProps = () => {
 };
 
 Error500Page.getLayout = function getLayout(page: ReactElement) {
-  return <Layout hideSlogan>{page}</Layout>;
+  return <DefaultLayout hideSlogan>{page}</DefaultLayout>;
 };
 
 export default Error500Page;

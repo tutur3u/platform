@@ -2,12 +2,15 @@ import { FC } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
-interface LayoutProps {
+interface DefaultLayoutProps {
   hideSlogan?: boolean;
   children: React.ReactNode;
 }
 
-const Layout: FC<LayoutProps> = ({ hideSlogan, children }: LayoutProps) => {
+const DefaultLayout: FC<DefaultLayoutProps> = ({
+  hideSlogan,
+  children,
+}: DefaultLayoutProps) => {
   return (
     <div className="relative">
       <Navbar />
@@ -17,4 +20,4 @@ const Layout: FC<LayoutProps> = ({ hideSlogan, children }: LayoutProps) => {
   );
 };
 
-export default Layout;
+export default DefaultLayout;

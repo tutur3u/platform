@@ -87,7 +87,7 @@ const TaskListAccordionControl = (
       <Accordion.Control {...rest} />
       <Menu openDelay={100} closeDelay={400} withArrow position="right">
         <Menu.Target>
-          <button className="rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 group-hover:opacity-100 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+          <button className="rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
             <EllipsisHorizontalIcon className="w-6" />
           </button>
         </Menu.Target>

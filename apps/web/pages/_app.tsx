@@ -1,7 +1,7 @@
-import "../styles/globals.css";
+import '../styles/globals.css';
 
-import { ReactElement } from "react";
-import { AppWithLayoutProps } from "../types/AppWithLayoutProps";
+import { ReactElement } from 'react';
+import { AppWithLayoutProps } from '../types/AppWithLayoutProps';
 
 export default function Application({
   Component,

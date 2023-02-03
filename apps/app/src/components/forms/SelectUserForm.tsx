@@ -17,7 +17,6 @@ interface SelectUserFormProps {
 
 type UserWithValue = User & { value: string };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
   const [value, setValue] = useState('');
   const [debounced] = useDebouncedValue(value, 300);

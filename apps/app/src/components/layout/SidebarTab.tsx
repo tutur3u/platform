@@ -65,7 +65,7 @@ export default function SidebarTab({
             </div>
           )}
           {showLabel && !showTooltip && (
-            <div className="inline-block line-clamp-1">{label}</div>
+            <div className="line-clamp-1 inline-block">{label}</div>
           )}
         </div>
       </Tooltip>
