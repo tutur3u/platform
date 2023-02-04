@@ -27,7 +27,11 @@ const ProjectSettingsPage = () => {
               href: `/orgs/${project?.orgs?.id}`,
             },
             {
-              content: project?.name || 'Untitled',
+              content: 'Projects',
+              href: `/orgs/${project?.orgs?.id}/projects`,
+            },
+            {
+              content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
             { content: 'Settings', href: `/projects/${projectId}/settings` },
@@ -35,7 +39,7 @@ const ProjectSettingsPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project]);
+  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
   const [name, setName] = useState<string>(project?.name || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -62,17 +66,25 @@ const ProjectSettingsPage = () => {
     });
 
     if (res.status === 200) {
-      setRootSegment([
-        {
-          content: project?.orgs?.name || 'Unnamed Organization',
-          href: `/orgs/${project.orgs.id}`,
-        },
-        {
-          content: name || 'Untitled',
-          href: `/projects/${projectId}`,
-        },
-        { content: 'Settings', href: `/projects/${projectId}/settings` },
-      ]);
+      setRootSegment(
+        project?.orgs?.id
+          ? [
+              {
+                content: project?.orgs?.name || 'Unnamed Organization',
+                href: `/orgs/${project.orgs.id}`,
+              },
+              {
+                content: 'Projects',
+                href: `/orgs/${project.orgs.id}/projects`,
+              },
+              {
+                content: name || 'Untitled Project',
+                href: `/projects/${projectId}`,
+              },
+              { content: 'Settings', href: `/projects/${projectId}/settings` },
+            ]
+          : []
+      );
     }
 
     setIsSaving(false);
@@ -108,7 +120,7 @@ const ProjectSettingsPage = () => {
         <div className="grid max-w-xs gap-2">
           <TextInput
             label="Name"
-            placeholder={project?.name ?? name ?? 'Untitled'}
+            placeholder={project?.name || name || 'Untitled Project'}
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
           />

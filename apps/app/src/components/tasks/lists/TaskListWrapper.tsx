@@ -63,7 +63,7 @@ const TaskListWrapper = ({
     >
       <TaskListAccordionControl list={list}>
         <div className="line-clamp-1 font-semibold">
-          {list.name || 'Untitled list'}
+          {list.name || 'Untitled List'}
         </div>
       </TaskListAccordionControl>
       <Accordion.Panel>

@@ -104,7 +104,7 @@ const Layout: FC<LayoutProps> = ({ children }: LayoutProps) => {
         )} transition-all duration-300`}
       >
         <Header />
-        {children}
+        <div className="mt-20 md:mt-0">{children}</div>
       </main>
 
       <RightSidebar

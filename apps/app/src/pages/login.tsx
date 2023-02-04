@@ -15,7 +15,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (session)
     return {
       redirect: {
-        destination: '/calendar',
+        destination: '/',
         permanent: false,
       },
       props: {

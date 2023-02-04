@@ -32,14 +32,18 @@ const ProjectMembersPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      orgData?.name
+      project?.orgs?.id
         ? [
             {
               content: project?.orgs?.name || 'Unnamed Organization',
               href: `/orgs/${project.orgs.id}`,
             },
             {
-              content: project?.name || 'Untitled',
+              content: 'Projects',
+              href: `/orgs/${project?.orgs?.id}/projects`,
+            },
+            {
+              content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
             { content: 'Members', href: `/projects/${projectId}/members` },
@@ -47,7 +51,7 @@ const ProjectMembersPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgData?.name]);
+  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
   useEffect(() => {
     if (orgData?.error || orgError) router.push('/');

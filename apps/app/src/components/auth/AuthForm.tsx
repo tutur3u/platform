@@ -17,7 +17,6 @@ import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import AuthEmailSent from './AuthEmailSent';
 import { useForm } from '@mantine/form';
-import { mutate } from 'swr';
 import Link from 'next/link';
 import { showNotification } from '@mantine/notifications';
 
@@ -81,9 +80,6 @@ const AuthForm = ({
         setSubmitting(false);
         return;
       } else onSignin?.();
-
-      // Update the user's profile
-      mutate('/api/user');
 
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
@@ -155,7 +151,7 @@ const AuthForm = ({
 
   return (
     <>
-      <div className="absolute inset-0 z-10 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
+      <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
         <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           <div className="text-center">
             <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
