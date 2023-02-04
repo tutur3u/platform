@@ -14,6 +14,7 @@ import {
   ChevronLeftIcon,
   BuildingOffice2Icon,
   Squares2X2Icon,
+  UserPlusIcon,
 } from '@heroicons/react/24/solid';
 
 import {
@@ -379,12 +380,19 @@ function LeftSidebar({ className }: SidebarProps) {
                 label="New transaction"
                 left
               />
+              <Divider className="my-1" />
+              <SidebarButton
+                onClick={() => setNewPopover(false)}
+                activeIcon={<UserPlusIcon className="w-5" />}
+                label="Invite people"
+                left
+              />
             </Popover.Dropdown>
           </Popover>
-          <Divider className="my-2" />
+          <Divider className="mt-2" />
 
-          <div className="h-full overflow-auto">
-            <div className="mx-2 flex flex-col gap-1">
+          <div className="scrollbar-none h-full overflow-auto">
+            <div className="m-2 flex flex-col gap-1">
               <SidebarLink
                 href="/"
                 onClick={() => setUserPopover(false)}
@@ -430,7 +438,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
             {isOrgsLoading || (
               <div
-                className={`flex flex-col ${
+                className={`mb-2 flex flex-col ${
                   leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
                 }`}
               >
@@ -446,7 +454,11 @@ function LeftSidebar({ className }: SidebarProps) {
                         className="bg-blue-500/20"
                         size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
                       >
-                        {getInitials(org?.name ?? 'Unknown')}
+                        {org?.name ? (
+                          getInitials(org.name)
+                        ) : (
+                          <BuildingOffice2Icon className="w-5" />
+                        )}
                       </Avatar>
                     }
                     inactiveIcon={
@@ -456,7 +468,11 @@ function LeftSidebar({ className }: SidebarProps) {
                         className="hover:bg-blue-500/10"
                         size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
                       >
-                        {getInitials(org?.name ?? 'Unknown')}
+                        {org?.name ? (
+                          getInitials(org.name)
+                        ) : (
+                          <BuildingOffice2Icon className="w-5" />
+                        )}
                       </Avatar>
                     }
                     label={org?.name || 'Unnamed Organization'}
@@ -468,8 +484,7 @@ function LeftSidebar({ className }: SidebarProps) {
             )}
           </div>
 
-          <Divider className="my-2" />
-
+          <Divider className="mb-2" />
           <div className="mx-2">
             <SidebarButton
               onClick={() =>
@@ -536,7 +551,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 >
                   <Avatar
                     color="blue"
-                    className={`my-2 cursor-pointer hover:bg-blue-500/10 ${
+                    className={`cursor-pointer hover:bg-blue-500/10 ${
                       userPopover ? 'bg-blue-500/10' : ''
                     }`}
                     onClick={() => setUserPopover((o) => !o)}

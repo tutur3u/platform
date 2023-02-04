@@ -21,24 +21,23 @@ const OrganizationSettingsPage = () => {
   const [name, setName] = useState(data?.name);
 
   useEffect(() => {
-    if (data?.id)
-      setRootSegment(
-        data?.name
-          ? [
-              {
-                content: data.name,
-                href: `/orgs/${data.id}`,
-              },
-              {
-                content: 'Settings',
-                href: `/orgs/${data.id}/settings`,
-              },
-            ]
-          : []
-      );
     setName(data?.name);
+    setRootSegment(
+      orgId
+        ? [
+            {
+              content: data?.name,
+              href: `/orgs/${orgId}`,
+            },
+            {
+              content: 'Settings',
+              href: `/orgs/${orgId}/settings`,
+            },
+          ]
+        : []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [orgId, data?.name]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -65,16 +64,20 @@ const OrganizationSettingsPage = () => {
       name,
     });
 
-    setRootSegment([
-      {
-        content: name,
-        href: `/orgs/${data.id}`,
-      },
-      {
-        content: 'Settings',
-        href: `/orgs/${data.id}/settings`,
-      },
-    ]);
+    setRootSegment(
+      orgId
+        ? [
+            {
+              content: name,
+              href: `/orgs/${orgId}`,
+            },
+            {
+              content: 'Settings',
+              href: `/orgs/${orgId}/settings`,
+            },
+          ]
+        : []
+    );
 
     setIsSaving(false);
   };
@@ -92,8 +95,10 @@ const OrganizationSettingsPage = () => {
       throw new Error('Failed to delete org');
     }
 
-    await deleteOrg(data.id);
-    router.push('/');
+    await deleteOrg(data.id, {
+      onSuccess: () => router.push('/'),
+      onCompleted: () => setIsDeleting(false),
+    });
   };
 
   return (

@@ -39,7 +39,7 @@ const ProjectSettingsPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project]);
+  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
   const [name, setName] = useState<string>(project?.name || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -66,21 +66,25 @@ const ProjectSettingsPage = () => {
     });
 
     if (res.status === 200) {
-      setRootSegment([
-        {
-          content: project?.orgs?.name || 'Unnamed Organization',
-          href: `/orgs/${project.orgs.id}`,
-        },
-        {
-          content: 'Projects',
-          href: `/orgs/${project.orgs.id}/projects`,
-        },
-        {
-          content: name || 'Untitled Project',
-          href: `/projects/${projectId}`,
-        },
-        { content: 'Settings', href: `/projects/${projectId}/settings` },
-      ]);
+      setRootSegment(
+        project?.orgs?.id
+          ? [
+              {
+                content: project?.orgs?.name || 'Unnamed Organization',
+                href: `/orgs/${project.orgs.id}`,
+              },
+              {
+                content: 'Projects',
+                href: `/orgs/${project.orgs.id}/projects`,
+              },
+              {
+                content: name || 'Untitled Project',
+                href: `/projects/${projectId}`,
+              },
+              { content: 'Settings', href: `/projects/${projectId}/settings` },
+            ]
+          : []
+      );
     }
 
     setIsSaving(false);

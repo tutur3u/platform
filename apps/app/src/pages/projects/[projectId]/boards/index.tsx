@@ -17,7 +17,7 @@ const ProjectBoardsPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project
+      project?.orgs?.id
         ? [
             {
               content: project?.orgs?.name || 'Unnamed Organization',
@@ -36,7 +36,7 @@ const ProjectBoardsPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project]);
+  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
   return (
     <div className="grid gap-4">

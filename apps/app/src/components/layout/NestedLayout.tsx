@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { FC } from 'react';
+import { FC, Fragment } from 'react';
 import Layout from './Layout';
 import { useAppearance } from '../../hooks/useAppearance';
-import { ActionIcon, Select } from '@mantine/core';
+import { ActionIcon } from '@mantine/core';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { useOrgs } from '../../hooks/useOrganizations';
+import LoadingIndicator from '../common/LoadingIndicator';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -69,13 +70,12 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             <StarIcon className="h-6 w-6" />
           </ActionIcon>
 
-          {segments &&
-            segments.length > 0 &&
+          {segments && segments.length > 0 ? (
             segments
               // remove last segment
               .slice(0, segments.length - 1)
               .map((s, index) => (
-                <>
+                <Fragment key={`segment-${s.href}`}>
                   <Link
                     href={s.href}
                     className="rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
@@ -85,13 +85,16 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   {index < segments.length - 2 && (
                     <span className="text-zinc-500">/</span>
                   )}
-                </>
-              ))}
+                </Fragment>
+              ))
+          ) : (
+            <LoadingIndicator className="h-4 w-4" />
+          )}
         </div>
         <div className="scrollbar-none flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
           {rootTabs.map((tab) => (
             <Link
-              key={tab.name}
+              key={`tab-${tab.href}`}
               href={`${rootPath}${tab.href}`}
               className={`group rounded-t-lg border-b-2 pb-2 ${
                 segments &&
@@ -100,7 +103,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   ? segments
                       .map((segment) => segment.content)
                       .includes(tab.name)
-                  : `${segments[3]?.content}` === tab.name)
+                  : segments[3]?.content === tab.name)
                   ? 'border-zinc-300 text-zinc-300'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}

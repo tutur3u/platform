@@ -32,7 +32,7 @@ const OrganizationProjectsPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      orgData?.name
+      orgId
         ? [
             {
               content: orgData.name,
@@ -98,7 +98,7 @@ const OrganizationProjectsPage = () => {
           </h1>
           <button
             onClick={showProjectEditForm}
-            className="flex gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
             New project <PlusIcon className="h-4 w-4" />
           </button>
