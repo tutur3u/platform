@@ -5,7 +5,7 @@ interface SidebarButtonProps {
   onClick?: () => void;
   label?: string;
   activeIcon?: React.ReactNode;
-  inactiveIcon?: React.ReactNode;
+  isActive?: boolean;
   showIcon?: boolean;
   showLabel?: boolean;
   showTooltip?: boolean;
@@ -18,7 +18,7 @@ export default function SidebarButton({
   onClick,
   label,
   activeIcon,
-  inactiveIcon,
+  isActive = false,
   showIcon = true,
   showLabel = true,
   showTooltip = false,
@@ -40,11 +40,9 @@ export default function SidebarButton({
         onClick={onClick}
         className={`flex items-center gap-2 rounded p-2 font-semibold text-zinc-300 hover:bg-zinc-300/10 hover:text-zinc-200 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
-        } ${className}`}
+        } ${isActive && 'bg-zinc-300/10'} ${className}`}
       >
-        {showIcon && (
-          <div className="flex-none">{activeIcon ?? inactiveIcon}</div>
-        )}
+        {showIcon && <div className="flex-none">{activeIcon}</div>}
         {showLabel && !showTooltip && (
           <div className="line-clamp-1 inline-block">{label}</div>
         )}

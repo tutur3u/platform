@@ -333,7 +333,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   orgs?.current
                     ? orgs.current.map((o) => ({
                         value: o.id,
-                        label: o?.name || 'Unnamed organization',
+                        label: o?.name || 'Unnamed Organization',
                       }))
                     : []
                 }
@@ -404,14 +404,16 @@ function LeftSidebar({ className }: SidebarProps) {
                     <Divider className="my-1" variant="dashed" />
                     <Select
                       label="Current organization"
-                      value=""
-                      data={[
-                        {
-                          value: '',
-                          label: 'Personal',
-                        },
-                      ]}
-                      icon={<MapPinIcon className="w-6" />}
+                      value={orgs?.current ? orgs.current[0]?.id : undefined}
+                      data={
+                        orgs?.current
+                          ? orgs.current.map((o) => ({
+                              value: o.id,
+                              label: o?.name || 'Unnamed Organization',
+                            }))
+                          : []
+                      }
+                      icon={<MapPinIcon className="w-4" />}
                       className="mx-2 mb-2"
                       classNames={{
                         label: 'mb-1',
@@ -436,6 +438,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <SidebarButton
                   label="New"
                   onClick={() => setNewPopover((o) => !o)}
+                  isActive={newPopover}
                   activeIcon={<PlusIcon className="w-6" />}
                   showTooltip={leftSidebarPref.main === 'closed'}
                   className="w-full"
@@ -616,7 +619,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     boards
                       ? boards.map((board: TaskBoard) => ({
                           value: board.id,
-                          label: board.name || 'Untitled',
+                          label: board.name || 'Untitled Board',
                           group:
                             user?.displayName ||
                             user?.username ||

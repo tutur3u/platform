@@ -39,7 +39,11 @@ const ProjectMembersPage = () => {
               href: `/orgs/${project.orgs.id}`,
             },
             {
-              content: project?.name || 'Untitled',
+              content: 'Projects',
+              href: `/orgs/${project?.orgs?.id}/projects`,
+            },
+            {
+              content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
             { content: 'Members', href: `/projects/${projectId}/members` },

@@ -109,7 +109,7 @@ const OrganizationSettingsPage = () => {
         <div className="grid max-w-xs gap-2">
           <TextInput
             label="Organization Name"
-            placeholder={data?.name ?? name ?? 'Organization Name'}
+            placeholder={data?.name || name || 'Organization Name'}
             value={name}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setName(e.currentTarget.value)

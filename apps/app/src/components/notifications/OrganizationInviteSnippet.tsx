@@ -13,7 +13,7 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
     <div className="max-w-xl rounded-lg bg-zinc-900 p-8">
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-zinc-500">You have been invited to join </span>
-        {org?.name || `Unnamed organization`}{' '}
+        {org?.name || `Unnamed Organization`}{' '}
         {org?.id === '00000000-0000-0000-0000-000000000000' && (
           <SparklesIcon className="inline-block h-5 w-5 text-yellow-300" />
         )}

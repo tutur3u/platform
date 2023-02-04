@@ -64,24 +64,29 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="flex items-center gap-4 py-4 px-8 lg:mx-48">
-          <Select
-            placeholder="Select workspace"
-            value={(orgId || '') as string}
-            onChange={(id) => router.push(generateRoute(id))}
-            data={
-              orgs?.current
-                ? orgs.current.map((org) => ({
-                    label: org.name,
-                    value: org.id,
-                  }))
-                : []
-            }
-          />
-
+        <div className="flex items-center gap-2 py-4 px-8 lg:mx-48">
           <ActionIcon color="yellow">
             <StarIcon className="h-6 w-6" />
           </ActionIcon>
+
+          {segments &&
+            segments.length > 0 &&
+            segments
+              // remove last segment
+              .slice(0, segments.length - 1)
+              .map((s, index) => (
+                <>
+                  <Link
+                    href={s.href}
+                    className="rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
+                  >
+                    {s?.content || 'Unnamed Organization'}
+                  </Link>
+                  {index < segments.length - 2 && (
+                    <span className="text-zinc-500">/</span>
+                  )}
+                </>
+              ))}
         </div>
         <div className="scrollbar-none flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
           {rootTabs.map((tab) => (
@@ -95,7 +100,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   ? segments
                       .map((segment) => segment.content)
                       .includes(tab.name)
-                  : `${segments[2]?.content}` === tab.name)
+                  : `${segments[3]?.content}` === tab.name)
                   ? 'border-zinc-300 text-zinc-300'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
