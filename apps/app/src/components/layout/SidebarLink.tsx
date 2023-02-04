@@ -36,7 +36,7 @@ export default function SidebarLink({
   const router = useRouter();
   const { orgId } = router.query;
 
-  const { leftSidebarPref } = useAppearance();
+  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
 
   const isExpanded = leftSidebarPref.main === 'open';
   const isActive = href
@@ -46,7 +46,15 @@ export default function SidebarLink({
     : false;
 
   return (
-    <Link href={href || '#'} onClick={onClick} className="font-semibold">
+    <Link
+      href={href || '#'}
+      onClick={() => {
+        if (onClick) onClick();
+        if (window && window.innerWidth <= 768)
+          changeLeftSidebarMainPref('closed');
+      }}
+      className="font-semibold"
+    >
       <Tooltip
         label={label}
         position="right"

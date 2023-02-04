@@ -65,7 +65,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="flex items-center gap-2 py-4 px-8 lg:mx-48">
+        <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
           <ActionIcon color="yellow">
             <StarIcon className="h-6 w-6" />
           </ActionIcon>
@@ -91,7 +91,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             <LoadingIndicator className="h-4 w-4" />
           )}
         </div>
-        <div className="scrollbar-none flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
+        <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
           {rootTabs.map((tab) => (
             <Link
               key={`tab-${tab.href}`}

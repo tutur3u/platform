@@ -297,6 +297,19 @@ function LeftSidebar({ className }: SidebarProps) {
   const [userPopover, setUserPopover] = useState(false);
   const [newPopover, setNewPopover] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      window.addEventListener('resize', handleResize);
+      handleResize();
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+
   return (
     <>
       <div
@@ -330,7 +343,8 @@ function LeftSidebar({ className }: SidebarProps) {
             onChange={setNewPopover}
             width={200}
             offset={16}
-            position="right"
+            position={isMobile ? 'bottom-start' : 'right'}
+            positionDependencies={[isMobile]}
           >
             <Popover.Target>
               <div className="mx-2">
@@ -484,8 +498,8 @@ function LeftSidebar({ className }: SidebarProps) {
             )}
           </div>
 
-          <Divider className="mb-2" />
-          <div className="mx-2">
+          <Divider className="mb-2 hidden md:block" />
+          <div className="mx-2 hidden md:block">
             <SidebarButton
               onClick={() =>
                 changeLeftSidebarMainPref(
@@ -532,7 +546,8 @@ function LeftSidebar({ className }: SidebarProps) {
               onChange={setUserPopover}
               width={200}
               offset={leftSidebarPref.main === 'closed' ? 20 : 16}
-              position="right"
+              position={isMobile ? 'top-end' : 'right'}
+              positionDependencies={[isMobile]}
             >
               <Popover.Target>
                 <Tooltip
