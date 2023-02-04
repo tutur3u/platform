@@ -72,7 +72,7 @@ const OrganizationOverviewPage = () => {
         <p className="text-zinc-400">
           This is the overview page for the{' '}
           <span className="font-semibold text-white">{data?.name}</span>{' '}
-          project.
+          workspace.
         </p>
       </div>
 

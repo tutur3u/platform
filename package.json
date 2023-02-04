@@ -11,7 +11,8 @@
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "sb:start": "cd apps/app && pnpm sb:start"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",

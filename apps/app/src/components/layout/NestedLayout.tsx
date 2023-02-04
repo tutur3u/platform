@@ -3,6 +3,9 @@ import { useRouter } from 'next/router';
 import { FC } from 'react';
 import Layout from './Layout';
 import { useAppearance } from '../../hooks/useAppearance';
+import { ActionIcon, Select } from '@mantine/core';
+import { StarIcon } from '@heroicons/react/24/outline';
+import { useOrgs } from '../../hooks/useOrganizations';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -36,9 +39,11 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   children,
   orgMode = true,
 }: NestedLayoutProps) => {
+  const router = useRouter();
+
   const {
     query: { orgId, projectId },
-  } = useRouter();
+  } = router;
 
   const { segments } = useAppearance();
   const rootTabs = orgMode
@@ -46,11 +51,39 @@ const NestedLayout: FC<NestedLayoutProps> = ({
     : tabs.filter((tab) => tab.name !== 'Projects');
 
   const rootPath = orgMode ? `/orgs/${orgId}` : `/projects/${projectId}`;
+  const { orgs } = useOrgs();
+
+  const generateRoute = (orgId: string | null) => {
+    if (!orgId) return '/';
+    const segments = router.asPath.split('/');
+    return segments.length > 2
+      ? `/${segments[1]}/${orgId}/${segments?.[3] || ''}`
+      : `/${segments[1]}/${orgId}`;
+  };
 
   return (
     <Layout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
-        <div className="scrollbar-none mt-8 flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
+        <div className="flex items-center gap-4 py-4 px-8 lg:mx-48">
+          <Select
+            placeholder="Select workspace"
+            value={(orgId || '') as string}
+            onChange={(id) => router.push(generateRoute(id))}
+            data={
+              orgs?.current
+                ? orgs.current.map((org) => ({
+                    label: org.name,
+                    value: org.id,
+                  }))
+                : []
+            }
+          />
+
+          <ActionIcon color="yellow">
+            <StarIcon className="h-6 w-6" />
+          </ActionIcon>
+        </div>
+        <div className="scrollbar-none flex gap-4 overflow-x-auto px-8 transition-all duration-300 lg:mx-56 lg:px-0">
           {rootTabs.map((tab) => (
             <Link
               key={tab.name}
@@ -67,7 +100,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <div className="rounded-lg px-4 py-1 font-semibold group-hover:bg-zinc-800">
+              <div className="rounded px-4 py-1 font-semibold group-hover:bg-zinc-800">
                 {tab.name}
               </div>
             </Link>

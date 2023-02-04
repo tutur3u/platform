@@ -1,8 +1,9 @@
 import { Tooltip } from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useAppearance } from '../../hooks/useAppearance';
 
-interface SidebarTabProps {
+interface SidebarLinkProps {
   href?: string;
   onClick?: () => void;
   label?: string;
@@ -12,10 +13,12 @@ interface SidebarTabProps {
   showLabel?: boolean;
   showTooltip?: boolean;
   enableOffset?: boolean;
+  defaultActive?: boolean;
+  left?: boolean;
   className?: string;
 }
 
-export default function SidebarTab({
+export default function SidebarLink({
   href,
   onClick,
   label,
@@ -24,37 +27,33 @@ export default function SidebarTab({
   showIcon = true,
   showLabel = true,
   showTooltip = false,
-  enableOffset = false,
+  defaultActive = true,
+  left = false,
   className,
-}: SidebarTabProps) {
+}: SidebarLinkProps) {
   const router = useRouter();
-  const isActive = router.pathname === href;
+  const { orgId } = router.query;
+
+  const { leftSidebarPref } = useAppearance();
+
+  const isExpanded = leftSidebarPref.main === 'open';
+  const isActive = router.pathname.replace('/[orgId]', `/${orgId}`) === href;
 
   return (
-    <Link
-      href={onClick ? '' : href || '#'}
-      onClick={(e) => {
-        if (onClick) {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      className={`w-full cursor-pointer text-lg font-semibold transition duration-300 ${
-        isActive ? 'text-zinc-200' : 'text-zinc-200/50 hover:text-zinc-200'
-      }`}
-    >
+    <Link href={href || '#'} onClick={onClick} className="w-full font-semibold">
       <Tooltip
         label={label}
         position="right"
-        offset={20}
+        offset={4}
         disabled={!showTooltip}
-        withArrow
       >
         <div
-          className={`flex items-center gap-2 ${
-            showTooltip
-              ? 'justify-center'
-              : `justify-start ${enableOffset ? 'translate-x-[-0.265rem]' : ''}`
+          className={`flex items-center gap-2 rounded p-2 ${
+            defaultActive && isActive
+              ? 'bg-zinc-300/10 text-zinc-300'
+              : 'text-zinc-300 hover:bg-zinc-300/10 hover:text-zinc-200'
+          } ${
+            left || isExpanded ? 'justify-start' : 'justify-center'
           } ${className}`}
         >
           {showIcon && (

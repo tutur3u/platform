@@ -6,8 +6,12 @@ import {
   BanknotesIcon as MoneyIconSolid,
   UserGroupIcon as UsersIconSolid,
   Cog6ToothIcon as SettingsIconSolid,
+  UserCircleIcon as ProfileIconSolid,
   PlusIcon as PlusIconSolid,
   ArchiveBoxIcon,
+  MapPinIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/solid';
 
 import {
@@ -18,24 +22,29 @@ import {
   BanknotesIcon as MoneyIconOutline,
   UserGroupIcon as UsersIconOutline,
   Cog6ToothIcon as SettingsIconOutline,
+  UserCircleIcon as ProfileIconOutline,
   FolderPlusIcon,
   SquaresPlusIcon,
   EllipsisHorizontalIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 
-import SidebarTab from './SidebarTab';
+import SidebarLink from './SidebarLink';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import {
   Accordion,
   Avatar,
+  Button,
   Chip,
+  Divider,
   Indicator,
   Loader,
   Menu,
+  Popover,
   Select,
+  Text,
   Tooltip,
 } from '@mantine/core';
 import { useUserData } from '../../hooks/useUserData';
@@ -55,6 +64,7 @@ import TaskListEditForm from '../forms/TaskListEditForm';
 import TaskListWrapper from '../tasks/lists/TaskListWrapper';
 import { Task } from '../../types/primitives/Task';
 import TaskWrapper from '../tasks/core/TaskWrapper';
+import SidebarButton from './SidebarButton';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
@@ -288,6 +298,7 @@ function LeftSidebar({ className }: SidebarProps) {
     boards?.find((b) => b.id === id) || boards?.[0];
 
   const isDev = process.env.NODE_ENV === 'development';
+  const [opened, setOpened] = useState(false);
 
   return (
     <>
@@ -295,7 +306,7 @@ function LeftSidebar({ className }: SidebarProps) {
         className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 backdrop-blur-lg transition-all duration-300`}
       >
         <div
-          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-6 pb-2 ${
+          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-4 pb-2 ${
             leftSidebarPref.main === 'open' &&
             leftSidebarPref.secondary === 'visible'
               ? 'opacity-100'
@@ -306,7 +317,7 @@ function LeftSidebar({ className }: SidebarProps) {
               : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
-          <div className="relative mx-3 flex justify-start pl-[0.2rem] pb-1">
+          <div className="relative mx-4 mb-2 flex justify-start pb-1">
             <Logo
               alwaysShowLabel={leftSidebarPref.main === 'open'}
               showLabel={
@@ -316,172 +327,186 @@ function LeftSidebar({ className }: SidebarProps) {
             />
           </div>
 
-          <div className="h-8" />
+          <Divider className="my-2" />
+
+          <div className="m-2 flex items-center justify-center gap-2">
+            {leftSidebarPref.main === 'open' && (
+              <Select
+                value=""
+                data={[
+                  {
+                    value: '',
+                    label: 'Personal',
+                  },
+                ]}
+                icon={<MapPinIcon className="w-4" />}
+              />
+            )}
+
+            <Popover
+              opened={opened}
+              onChange={setOpened}
+              width={200}
+              offset={16}
+              position="right"
+            >
+              <Popover.Target>
+                <Tooltip
+                  label={
+                    <div className="font-semibold">
+                      <div>{user?.displayName || user?.email}</div>
+                      {user?.username && (
+                        <div className="text-blue-300">@{user.username}</div>
+                      )}
+                    </div>
+                  }
+                  disabled={opened}
+                  offset={16}
+                  position="right"
+                  color="#182a3d"
+                >
+                  <Avatar
+                    color="blue"
+                    className="cursor-pointer"
+                    onClick={() => setOpened((o) => !o)}
+                  >
+                    {getInitials(user?.displayName || user?.email)}
+                  </Avatar>
+                </Tooltip>
+              </Popover.Target>
+
+              <Popover.Dropdown className="grid gap-1 p-1">
+                <SidebarLink
+                  href={user?.username ? `/${user.username}` : '/settings'}
+                  onClick={() => setOpened(false)}
+                  activeIcon={<ProfileIconSolid className="w-6" />}
+                  label="Profile"
+                  defaultActive={false}
+                  left
+                />
+                <SidebarLink
+                  href="/friends"
+                  onClick={() => setOpened(false)}
+                  activeIcon={<UsersIconSolid className="w-6" />}
+                  label="Friends"
+                  defaultActive={false}
+                  left
+                />
+                <SidebarLink
+                  href="/settings"
+                  onClick={() => setOpened(false)}
+                  activeIcon={<SettingsIconSolid className="w-6" />}
+                  label="Settings"
+                  defaultActive={false}
+                  left
+                />
+              </Popover.Dropdown>
+            </Popover>
+          </div>
+
+          <Divider className="my-2" />
 
           <div className="h-full overflow-auto">
-            <div className="flex flex-col items-start gap-6 p-4">
-              <SidebarTab
+            <div className="mx-2 flex flex-col gap-1">
+              <SidebarLink
                 href="/"
-                activeIcon={<HomeIconSolid className="w-8" />}
-                inactiveIcon={<HomeIconOutline className="w-8" />}
+                onClick={() => setOpened(false)}
+                activeIcon={<HomeIconSolid className="w-6" />}
+                inactiveIcon={<HomeIconOutline className="w-6" />}
                 label="Home"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
-              <SidebarTab
+              <SidebarLink
                 href="/calendar"
-                activeIcon={<CalendarIconSolid className="w-8" />}
-                inactiveIcon={<CalendarIconOutline className="w-8" />}
+                onClick={() => setOpened(false)}
+                activeIcon={<CalendarIconSolid className="w-6" />}
+                inactiveIcon={<CalendarIconOutline className="w-6" />}
                 label="Calendar"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
-              <SidebarTab
+              <SidebarLink
                 href="/tasks"
-                activeIcon={<TasksIconSolid className="w-8" />}
-                inactiveIcon={<TasksIconOutline className="w-8" />}
+                onClick={() => setOpened(false)}
+                activeIcon={<TasksIconSolid className="w-6" />}
+                inactiveIcon={<TasksIconOutline className="w-6" />}
                 label="Tasks"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               {isDev && (
-                <SidebarTab
+                <SidebarLink
                   href="/notes"
-                  activeIcon={<NotesIconSolid className="w-8" />}
-                  inactiveIcon={<NotesIconOutline className="w-8" />}
+                  onClick={() => setOpened(false)}
+                  activeIcon={<NotesIconSolid className="w-6" />}
+                  inactiveIcon={<NotesIconOutline className="w-6" />}
                   label="Notes"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
               {isDev && (
-                <SidebarTab
+                <SidebarLink
                   href="/expenses"
-                  activeIcon={<MoneyIconSolid className="w-8" />}
-                  inactiveIcon={<MoneyIconOutline className="w-8" />}
+                  onClick={() => setOpened(false)}
+                  activeIcon={<MoneyIconSolid className="w-6" />}
+                  inactiveIcon={<MoneyIconOutline className="w-6" />}
                   label="Expenses"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                />
-              )}
-              {isDev && (
-                <SidebarTab
-                  href="/friends"
-                  activeIcon={<UsersIconSolid className="w-8" />}
-                  inactiveIcon={<UsersIconOutline className="w-8" />}
-                  label="Friends"
                   showTooltip={leftSidebarPref.main === 'closed'}
                 />
               )}
             </div>
 
-            {orgs?.current?.length > 0 && <SidebarDivider />}
+            {orgs?.current?.length > 0 && <Divider className="my-2" />}
 
             {isOrgsLoading || (
-              <div className="flex flex-col gap-3 p-4">
+              <div className="flex flex-col gap-1">
+                <SidebarLink
+                  onClick={showEditOrgModal}
+                  label="New Organization"
+                  activeIcon={<PlusIconSolid className="w-6" />}
+                  showTooltip={leftSidebarPref.main === 'closed'}
+                  className="mx-2"
+                />
+                <Divider className="my-2" />
+
                 {orgs?.current?.map((org) => (
-                  <SidebarTab
+                  <SidebarLink
                     key={org.id}
                     href={`/orgs/${org.id}`}
-                    inactiveIcon={
-                      <div className="rounded border border-blue-300/30 transition hover:border-blue-300/40 hover:bg-zinc-300/10">
-                        <Avatar color="blue" radius="sm">
-                          {getInitials(org?.name ?? 'Unknown')}
-                        </Avatar>
-                      </div>
+                    activeIcon={
+                      <Avatar color="blue" radius="sm">
+                        {getInitials(org?.name ?? 'Unknown')}
+                      </Avatar>
                     }
                     label={org.name}
                     showTooltip={leftSidebarPref.main === 'closed'}
-                    enableOffset
+                    className="mx-2"
                   />
                 ))}
-
-                <SidebarTab
-                  onClick={showEditOrgModal}
-                  activeIcon={
-                    <div className="rounded border border-zinc-700 p-0.5 transition hover:border-purple-300/20 hover:bg-purple-300/20 hover:text-purple-300">
-                      <PlusIconSolid className="w-8" />
-                    </div>
-                  }
-                  label="New Organization"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                  className={
-                    leftSidebarPref.main === 'closed'
-                      ? 'translate-x-[-0.03rem]'
-                      : 'translate-x-[-0.22rem]'
-                  }
-                />
               </div>
             )}
-
-            <SidebarDivider />
           </div>
 
-          <div className="flex flex-col items-start gap-3 px-4 pb-2">
-            <SidebarTab
-              href="/settings"
-              activeIcon={<SettingsIconSolid className="w-8" />}
-              inactiveIcon={<SettingsIconOutline className="w-8" />}
-              label="Settings"
+          <div>
+            <SidebarButton
+              onClick={() =>
+                changeLeftSidebarMainPref(
+                  leftSidebarPref.main === 'closed' ? 'open' : 'closed'
+                )
+              }
+              label={
+                leftSidebarPref.main === 'closed'
+                  ? 'Expand sidebar'
+                  : 'Collapse sidebar'
+              }
+              activeIcon={
+                leftSidebarPref.main === 'closed' ? (
+                  <ChevronRightIcon className="w-6" />
+                ) : (
+                  <ChevronLeftIcon className="w-6" />
+                )
+              }
               showTooltip={leftSidebarPref.main === 'closed'}
+              className="mx-2"
             />
-
-            <Link
-              href={user?.username ? `/${user.username}` : '/settings'}
-              className={`${
-                leftSidebarPref.main !== 'closed'
-                  ? '-translate-x-1 justify-start'
-                  : 'justify-center self-center'
-              } relative flex w-full items-center transition duration-300`}
-            >
-              <Tooltip
-                label={
-                  <div className="font-semibold">
-                    <div>{user?.displayName || user?.email}</div>
-                    {user?.username && (
-                      <div className="text-blue-300">@{user.username}</div>
-                    )}
-                  </div>
-                }
-                disabled={leftSidebarPref.main !== 'closed'}
-                position="right"
-                color="#182a3d"
-                offset={20}
-                withArrow
-              >
-                <div className="flex items-end gap-2">
-                  <Indicator
-                    color="green"
-                    position="bottom-end"
-                    size={12}
-                    offset={5}
-                    withBorder
-                  >
-                    <Avatar color="blue" radius="xl">
-                      {getInitials(user?.displayName || user?.email)}
-                    </Avatar>
-                  </Indicator>
-
-                  <div
-                    className={
-                      leftSidebarPref.main === 'closed' ||
-                      leftSidebarPref.secondary === 'visible'
-                        ? 'hidden'
-                        : leftSidebarPref.main === 'auto'
-                        ? 'opacity-0 transition duration-300 group-hover:opacity-100'
-                        : ''
-                    }
-                  >
-                    <div className="text-md min-w-max font-bold">
-                      {user?.displayName ||
-                        user?.email ||
-                        user?.phone ||
-                        'Not logged in'}
-                    </div>
-                    {user?.username && (
-                      <div className="min-w-max text-sm font-semibold text-blue-300">
-                        @{user?.username}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Tooltip>
-            </Link>
           </div>
         </div>
 
