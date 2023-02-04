@@ -54,10 +54,10 @@ export default function SidebarLink({
         disabled={!showTooltip}
       >
         <div
-          className={`flex items-center gap-2 rounded text-zinc-300 ${
+          className={`flex items-center gap-2 rounded text-zinc-400 ${
             defaultHighlight
               ? defaultActive && isActive
-                ? 'bg-zinc-300/10 p-2'
+                ? 'bg-zinc-300/10 p-2 text-zinc-200'
                 : 'p-2 hover:bg-zinc-300/10 hover:text-zinc-200'
               : ''
           } ${
@@ -72,7 +72,7 @@ export default function SidebarLink({
             </div>
           )}
           {showLabel && !showTooltip && (
-            <div className="line-clamp-1 inline-block">{label}</div>
+            <div className="line-clamp-1 inline-block text-sm">{label}</div>
           )}
         </div>
       </Tooltip>

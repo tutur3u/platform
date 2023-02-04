@@ -38,13 +38,13 @@ export default function SidebarButton({
     >
       <button
         onClick={onClick}
-        className={`flex items-center gap-2 rounded p-2 font-semibold text-zinc-300 hover:bg-zinc-300/10 hover:text-zinc-200 ${
+        className={`flex items-center gap-2 rounded p-2 font-semibold text-zinc-400 hover:bg-zinc-300/10 hover:text-zinc-200 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
-        } ${isActive && 'bg-zinc-300/10'} ${className}`}
+        } ${isActive && 'bg-zinc-300/10 text-zinc-200'} ${className}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
-        {showLabel && !showTooltip && (
-          <div className="line-clamp-1 inline-block">{label}</div>
+        {showLabel && (
+          <div className="line-clamp-1 inline-block text-sm">{label}</div>
         )}
       </button>
     </Tooltip>
