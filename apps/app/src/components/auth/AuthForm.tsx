@@ -17,7 +17,6 @@ import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import AuthEmailSent from './AuthEmailSent';
 import { useForm } from '@mantine/form';
-import { mutate } from 'swr';
 import Link from 'next/link';
 import { showNotification } from '@mantine/notifications';
 
@@ -81,9 +80,6 @@ const AuthForm = ({
         setSubmitting(false);
         return;
       } else onSignin?.();
-
-      // Update the user's profile
-      mutate('/api/user');
 
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
