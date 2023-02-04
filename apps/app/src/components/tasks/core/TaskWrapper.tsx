@@ -205,7 +205,7 @@ const TaskWrapper = ({
                 : ''
             }
           >
-            {task.name || 'Untitled task'}
+            {task.name || 'Untitled Task'}
           </div>
 
           {!task.completed && task.end_date && (

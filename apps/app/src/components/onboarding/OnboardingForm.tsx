@@ -84,7 +84,7 @@ const OnboardingForm = () => {
 
   return (
     <>
-      <div className="absolute inset-0 z-10 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
+      <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
         <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {!user ||
           isUserLoading ||

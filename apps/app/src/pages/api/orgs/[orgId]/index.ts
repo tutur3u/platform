@@ -32,14 +32,15 @@ const updateOrg = async (
 
   const { name } = JSON.parse(req.body);
 
-  const data = {
-    name,
-  };
-
-  const { error } = await supabase.from('orgs').update(data).eq('id', orgId);
+  const { error } = await supabase
+    .from('orgs')
+    .update({
+      name,
+    })
+    .eq('id', orgId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ message: 'success' });
+  return res.status(200).json({});
 };
 
 const deleteOrg = async (
@@ -52,10 +53,10 @@ const deleteOrg = async (
     res,
   });
 
-  const { data, error } = await supabase.from('orgs').delete().eq('id', orgId);
+  const { error } = await supabase.from('orgs').delete().eq('id', orgId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {

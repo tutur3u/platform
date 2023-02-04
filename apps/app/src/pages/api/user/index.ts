@@ -45,7 +45,6 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
     .update({ display_name: displayName, username, birthday })
     .eq('id', user.id);
 
-  console.log(data, error);
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
 };

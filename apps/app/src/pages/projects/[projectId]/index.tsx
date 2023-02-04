@@ -16,21 +16,26 @@ const ProjectOverviewPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      [
-        {
-          content: project?.orgs?.name || 'Unnamed Organization',
-          href: `/orgs/${project?.orgs?.id}`,
-        },
-        {
-          content: project?.name || 'Untitled',
-          href: `/projects/${projectId}`,
-        },
-        { content: 'Overview', href: `/projects/${projectId}` },
-      ],
-      [project?.orgs?.id]
+      project?.orgs?.id
+        ? [
+            {
+              content: project?.orgs?.name || 'Unnamed Organization',
+              href: `/orgs/${project?.orgs?.id}`,
+            },
+            {
+              content: 'Projects',
+              href: `/orgs/${project?.orgs?.id}/projects`,
+            },
+            {
+              content: project?.name || 'Untitled Project',
+              href: `/projects/${projectId}`,
+            },
+            { content: 'Overview', href: `/projects/${projectId}` },
+          ]
+        : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project]);
+  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
   return (
     <div className="grid gap-4">

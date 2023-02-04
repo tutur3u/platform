@@ -37,21 +37,21 @@ const OrganizationMembersPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      orgData?.name
+      orgId
         ? [
             {
-              content: orgData.name,
-              href: `/orgs/${orgData.id}`,
+              content: orgData?.name,
+              href: `/orgs/${orgId}`,
             },
             {
               content: 'Members',
-              href: `/orgs/${orgData.id}/members`,
+              href: `/orgs/${orgId}/members`,
             },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgData?.name]);
+  }, [orgId, orgData?.name]);
 
   useEffect(() => {
     if (orgData?.error || orgError) router.push('/');
@@ -118,7 +118,7 @@ const OrganizationMembersPage = () => {
           </h1>
           <button
             onClick={showSelectUserForm}
-            className="flex gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
           >
             Invite <PlusIcon className="h-4 w-4" />
           </button>

@@ -28,13 +28,6 @@ const updateProject = async (
 
   const { name } = req.body;
 
-  if (!name)
-    return res.status(400).json({
-      error: {
-        message: 'Invalid request',
-      },
-    });
-
   const { error } = await supabase
     .from('projects')
     .update({ name })
@@ -47,7 +40,7 @@ const updateProject = async (
       },
     });
 
-  return res.status(200).json({ message: 'Project created' });
+  return res.status(200).json({});
 };
 
 const deleteProject = async (
@@ -69,7 +62,7 @@ const deleteProject = async (
       },
     });
 
-  return res.status(200).json({ message: 'Project created' });
+  return res.status(200).json({});
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
