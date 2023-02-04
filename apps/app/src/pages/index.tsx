@@ -4,7 +4,6 @@ import Layout from '../components/layout/Layout';
 import { Organization } from '../types/primitives/Organization';
 import { openModal } from '@mantine/modals';
 import OrgEditForm from '../components/forms/OrgEditForm';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { useOrgs } from '../hooks/useOrganizations';
 import { mutate } from 'swr';
 import LoadingIndicator from '../components/common/LoadingIndicator';
@@ -12,43 +11,9 @@ import { useAppearance } from '../hooks/useAppearance';
 import { showNotification } from '@mantine/notifications';
 import OrganizationInviteSnippet from '../components/notifications/OrganizationInviteSnippet';
 import OrgPreviewCard from '../components/cards/OrgPreviewCard';
-import { GetServerSidePropsContext } from 'next';
 import { useUserList } from '../hooks/useUserList';
 import { useUserData } from '../hooks/useUserData';
 import HeaderX from '../components/metadata/HeaderX';
-
-export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createServerSupabaseClient(ctx);
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session)
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
-    };
-
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (!isDev)
-    return {
-      redirect: {
-        destination: '/calendar',
-        permanent: false,
-      },
-    };
-
-  return {
-    props: {
-      initialSession: session,
-      user: session.user,
-    },
-  };
-};
 
 const Home: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -71,13 +36,6 @@ const Home: PageWithLayoutProps = () => {
   }, [data]);
 
   const { isLoading, orgs, createOrg } = useOrgs();
-
-  const maxOrgs = 5;
-
-  useEffect(() => {
-    mutate('/api/orgs');
-  }, []);
-
   const addOrg = (org: Organization) => createOrg(org);
 
   const showEditOrgModal = (org?: Organization) => {
@@ -165,18 +123,10 @@ const Home: PageWithLayoutProps = () => {
           )}
 
           <button
-            className={`mt-8 w-full rounded px-8 py-4 font-semibold md:w-fit ${
-              orgs?.current?.length < maxOrgs
-                ? 'bg-blue-300/20 text-blue-300 hover:bg-blue-300/30'
-                : 'cursor-not-allowed bg-gray-500/10 text-gray-500/50'
-            } transition duration-300`}
-            onClick={() =>
-              orgs?.current?.length < maxOrgs ? showEditOrgModal() : null
-            }
+            className="mt-8 w-full rounded bg-blue-300/20 px-8 py-4 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 md:w-fit"
+            onClick={() => showEditOrgModal()}
           >
-            {orgs?.current?.length < maxOrgs
-              ? 'New organization'
-              : 'Maximum organizations reached'}
+            New organization
           </button>
         </>
       )}

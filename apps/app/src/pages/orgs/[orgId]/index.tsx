@@ -11,7 +11,7 @@ const OrganizationOverviewPage = () => {
 
   const { orgId } = router.query;
 
-  const { data, error } = useSWR(`/api/orgs/${orgId}`);
+  const { data, error } = useSWR(orgId ? `/api/orgs/${orgId}` : null);
 
   const { data: membersData } = useSWR(
     orgId ? `/api/orgs/${orgId}/members` : null
@@ -72,7 +72,7 @@ const OrganizationOverviewPage = () => {
         <p className="text-zinc-400">
           This is the overview page for the{' '}
           <span className="font-semibold text-white">{data?.name}</span>{' '}
-          project.
+          workspace.
         </p>
       </div>
 

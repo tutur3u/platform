@@ -15,10 +15,10 @@ const DynamicIsland = () => {
   const title =
     events.length >= 1
       ? events.length === 1
-        ? events[0].title || 'Unnamed event'
+        ? events[0].title || 'Unnamed Event'
         : `${events.length} events`
       : upcomingEvent
-      ? upcomingEvent.title || 'Unnamed event'
+      ? upcomingEvent.title || 'Unnamed Event'
       : 'No events';
 
   const getTimeDuration = (start: Date, end: Date) => {

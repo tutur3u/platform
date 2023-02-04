@@ -65,7 +65,7 @@ const OrgPreviewCard = ({ org }: Props) => {
             : 'text-zinc-300 hover:text-blue-200'
         } text-2xl font-semibold transition duration-150`}
       >
-        {org?.name || `Unnamed organization`}
+        {org?.name || `Unnamed Organization`}
         {isRoot && (
           <Tooltip label="Verified organization" withArrow>
             <CheckBadgeIcon className="ml-1 inline-block h-6 w-6 text-purple-300" />
@@ -86,7 +86,7 @@ const OrgPreviewCard = ({ org }: Props) => {
               className="flex h-32 cursor-pointer items-center justify-center rounded bg-zinc-800/80 p-4 text-center text-xl font-semibold text-zinc-300 transition duration-150 hover:bg-zinc-800"
               href={`/projects/${project.id}`}
             >
-              {project?.name || `Unnamed project`}
+              {project?.name || `Untitled Project`}
             </Link>
           ))}
         {projects?.length > 3 && (

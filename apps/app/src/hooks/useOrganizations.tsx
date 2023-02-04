@@ -3,6 +3,7 @@ import useSWR, { mutate } from 'swr';
 import { createContext, useContext, ReactNode } from 'react';
 import { Organization } from '../types/primitives/Organization';
 import { useUser } from '@supabase/auth-helpers-react';
+import { showNotification } from '@mantine/notifications';
 
 const OrganizationContext = createContext({
   orgs: {} as {
@@ -12,14 +13,35 @@ const OrganizationContext = createContext({
   isLoading: true,
   isError: false,
 
-  createOrg: async (org: Organization) => {
-    console.log('createOrg', org);
+  createOrg: async (
+    org: Organization,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    console.log('createOrg', org, options);
   },
-  updateOrg: async (org: Organization) => {
-    console.log('updateOrg', org);
+  updateOrg: async (
+    org: Organization,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    console.log('updateOrg', org, options);
   },
-  deleteOrg: async (id: string) => {
-    console.log('deleteOrg', id);
+  deleteOrg: async (
+    id: string,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    console.log('deleteOrg', id, options);
   },
 });
 
@@ -27,35 +49,92 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   const user = useUser();
   const { data, error } = useSWR(user ? '/api/orgs' : null);
 
-  const createOrg = async (org: Organization) => {
-    const res = await fetch('/api/orgs', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: org?.name || '',
-      }),
-    });
+  const createOrg = async (
+    org: Organization,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    try {
+      const res = await fetch('/api/orgs', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: org?.name || '',
+        }),
+      });
 
-    if (!res.ok) throw new Error('Failed to create org');
-    mutate('/api/orgs');
+      if (!res.ok) throw new Error('Failed to create organization');
+      if (options?.onSuccess) options.onSuccess();
+      mutate('/api/orgs');
+    } catch (e: any) {
+      if (options?.onError) options.onError();
+      showNotification({
+        title: 'Failed to create organization',
+        message: 'Make sure you have permission to create new organizations',
+        color: 'red',
+      });
+    } finally {
+      if (options?.onCompleted) options.onCompleted();
+    }
   };
 
-  const updateOrg = async (org: Organization) => {
-    const res = await fetch(`/api/orgs/${org.id}`, {
-      method: 'PUT',
-      body: JSON.stringify(org),
-    });
+  const updateOrg = async (
+    org: Organization,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    try {
+      const res = await fetch(`/api/orgs/${org.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(org),
+      });
 
-    if (!res.ok) throw new Error('Failed to update org');
-    mutate('/api/orgs');
+      if (!res.ok) throw new Error('Failed to update organization');
+      if (options?.onSuccess) options.onSuccess();
+      mutate('/api/orgs');
+    } catch (e: any) {
+      if (options?.onError) options.onError();
+      showNotification({
+        title: 'Failed to update organization',
+        message: 'Make sure you have permission to update this organization',
+        color: 'red',
+      });
+    } finally {
+      if (options?.onCompleted) options.onCompleted();
+    }
   };
 
-  const deleteOrg = async (orgId: string) => {
-    const res = await fetch(`/api/orgs/${orgId}`, {
-      method: 'DELETE',
-    });
+  const deleteOrg = async (
+    orgId: string,
+    options?: {
+      onSuccess?: () => void;
+      onError?: () => void;
+      onCompleted?: () => void;
+    }
+  ) => {
+    try {
+      const res = await fetch(`/api/orgs/${orgId}`, {
+        method: 'DELETE',
+      });
 
-    if (!res.ok) throw new Error('Failed to delete org');
-    mutate('/api/orgs');
+      if (!res.ok) throw new Error('Failed to delete organization');
+      if (options?.onSuccess) options.onSuccess();
+      mutate('/api/orgs');
+    } catch (e: any) {
+      if (options?.onError) options.onError();
+      showNotification({
+        title: 'Failed to delete organization',
+        message: 'Make sure there are no projects in this organization',
+        color: 'red',
+      });
+    } finally {
+      if (options?.onCompleted) options.onCompleted();
+    }
   };
 
   const values = {
