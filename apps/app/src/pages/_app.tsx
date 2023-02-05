@@ -1,5 +1,6 @@
 import '../styles/globals.css';
 
+import GoogleTag from 'scripts/next/GoogleTag';
 import { Analytics } from '@vercel/analytics/react';
 
 import { AppWithLayoutProps } from '../types/AppWithLayoutProps';
@@ -8,6 +9,7 @@ import { ReactElement, useState } from 'react';
 
 import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { RouterTransition } from '../components/router/RouterTransition';
+import { GOOGLE_TAG_ID } from '../constants/common';
 
 export default function Application({
   Component,
@@ -20,13 +22,16 @@ export default function Application({
   const getLayout = Component?.getLayout || ((page: ReactElement) => page);
 
   return (
-    <Providers
-      supabaseClient={supabaseClient}
-      initialSession={pageProps.initialSession}
-    >
-      <RouterTransition />
-      <Analytics />
-      {getLayout(<Component {...pageProps} />)}
-    </Providers>
+    <>
+      <GoogleTag id={GOOGLE_TAG_ID} />
+      <Providers
+        supabaseClient={supabaseClient}
+        initialSession={pageProps.initialSession}
+      >
+        <RouterTransition />
+        <Analytics />
+        {getLayout(<Component {...pageProps} />)}
+      </Providers>
+    </>
   );
 }

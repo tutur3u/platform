@@ -1,10 +1,15 @@
 {
-  "name": "ui",
+  "name": "scripts",
   "version": "0.0.0",
   "main": "./index.tsx",
   "types": "./index.tsx",
   "scripts": {
     "lint": "eslint *.ts*"
+  },
+  "dependencies": {
+    "next": "^13.1.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.27",
