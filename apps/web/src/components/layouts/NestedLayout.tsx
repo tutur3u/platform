@@ -86,22 +86,24 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           </ActionIcon>
 
           {segments && segments.length > 0 ? (
-            segments
-              // remove last segment
-              .slice(0, segments.length - 1)
-              .map((s, index) => (
-                <Fragment key={`segment-${s.href}`}>
-                  <Link
-                    href={s.href}
-                    className="rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
-                  >
-                    {s?.content || 'Unnamed Organization'}
-                  </Link>
-                  {index < segments.length - 2 && (
-                    <span className="text-zinc-500">/</span>
-                  )}
-                </Fragment>
-              ))
+            <div className="flex flex-wrap gap-x-2">
+              {segments
+                // remove last segment
+                .slice(0, segments.length - 1)
+                .map((s, index) => (
+                  <Fragment key={`segment-${s.href}`}>
+                    <Link
+                      href={s.href}
+                      className="min-w-max rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
+                    >
+                      {s?.content || 'Unnamed Organization'}
+                    </Link>
+                    {index < segments.length - 2 && (
+                      <span className="text-zinc-500">/</span>
+                    )}
+                  </Fragment>
+                ))}
+            </div>
           ) : (
             <LoadingIndicator className="h-4 w-4" />
           )}
