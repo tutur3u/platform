@@ -19,7 +19,7 @@ const OrgBoardsPage = () => {
       orgId
         ? [
             {
-              content: data?.name,
+              content: data?.name ?? 'Loading...',
               href: `/orgs/${orgId}`,
             },
             {

@@ -6,14 +6,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { Project } from '../../types/primitives/Project';
 
 interface ProjectEditFormProps {
-  orgId: string;
   project?: Project;
-  onSubmit?: (orgId: string, project: Project) => void;
+  onSubmit?: (project: Project) => void;
   onDelete?: () => void;
 }
 
 const ProjectEditForm = ({
-  orgId,
   project,
   onSubmit,
   onDelete,
@@ -57,7 +55,7 @@ const ProjectEditForm = ({
           onClick={() => {
             const newProject = { id: project?.id || uuidv4(), name };
 
-            if (onSubmit) onSubmit(orgId, newProject);
+            if (onSubmit) onSubmit(newProject);
             closeAllModals();
           }}
           mt="md"

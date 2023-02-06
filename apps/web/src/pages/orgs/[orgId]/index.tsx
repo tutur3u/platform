@@ -47,7 +47,7 @@ const OrganizationOverviewPage = () => {
     setRootSegment(
       [
         {
-          content: data?.name,
+          content: data?.name ?? 'Loading...',
           href: `/orgs/${data?.id}`,
         },
         {

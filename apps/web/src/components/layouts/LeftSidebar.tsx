@@ -44,7 +44,6 @@ import SidebarDivider from './SidebarDivider';
 import { useOrgs } from '../../hooks/useOrganizations';
 import OrgEditForm from '../forms/OrgEditForm';
 import { openConfirmModal, openModal } from '@mantine/modals';
-import { Organization } from '../../types/primitives/Organization';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
 import { TaskBoard } from '../../types/primitives/TaskBoard';
@@ -56,7 +55,9 @@ import TaskListWrapper from '../tasks/lists/TaskListWrapper';
 import { Task } from '../../types/primitives/Task';
 import TaskWrapper from '../tasks/core/TaskWrapper';
 import SidebarButton from './SidebarButton';
-import { DEV_MODE } from '../../constants/common';
+import OrganizationSelector from '../selectors/OrganizationSelector';
+import { useProjects } from '../../hooks/useProjects';
+import ProjectEditForm from '../forms/ProjectEditForm';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
@@ -66,15 +67,27 @@ function LeftSidebar({ className }: SidebarProps) {
     if (!user) mutate('/api/user');
   }, [user]);
 
-  const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
-
-  const addOrg = (org: Organization) => createOrg(org);
+  const { createOrg } = useOrgs();
+  const {
+    orgId,
+    isLoading: isProjectsLoading,
+    createProject,
+    projects,
+  } = useProjects();
 
   const showEditOrgModal = () => {
     openModal({
-      title: 'New organization',
+      title: <div className="font-semibold">New organization</div>,
       centered: true,
-      children: <OrgEditForm onSubmit={addOrg} />,
+      children: <OrgEditForm onSubmit={createOrg} />,
+    });
+  };
+
+  const showProjectEditForm = () => {
+    openModal({
+      title: <div className="font-semibold">Create new project</div>,
+      centered: true,
+      children: <ProjectEditForm onSubmit={createProject} />,
     });
   };
 
@@ -366,7 +379,10 @@ function LeftSidebar({ className }: SidebarProps) {
                 left
               />
               <SidebarButton
-                onClick={() => setNewPopover(false)}
+                onClick={() => {
+                  setNewPopover(false);
+                  showProjectEditForm();
+                }}
                 activeIcon={<Squares2X2Icon className="w-5" />}
                 label="New project"
                 left
@@ -441,50 +457,63 @@ function LeftSidebar({ className }: SidebarProps) {
 
             <Divider className="my-2" />
 
-            {isOrgsLoading || (
+            {isProjectsLoading || (
               <div
                 className={`mb-2 flex flex-col ${
                   leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
                 }`}
               >
-                {orgs?.current?.map((org) => (
-                  <SidebarLink
-                    key={org.id}
-                    href={`/orgs/${org.id}`}
-                    defaultHighlight={leftSidebarPref.main !== 'closed'}
-                    activeIcon={
-                      <Avatar
-                        radius="sm"
-                        color="blue"
-                        className="bg-blue-500/20"
-                        size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                      >
-                        {org?.name ? (
-                          getInitials(org.name)
-                        ) : (
-                          <BuildingOffice2Icon className="w-5" />
-                        )}
-                      </Avatar>
+                {projects.length > 0 ? (
+                  projects.map((project) => (
+                    <SidebarLink
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      defaultHighlight={leftSidebarPref.main !== 'closed'}
+                      activeIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="bg-blue-500/20"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
+                      }
+                      inactiveIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="hover:bg-blue-500/10"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
+                      }
+                      label={project?.name || 'Untitled Project'}
+                      showTooltip={leftSidebarPref.main === 'closed'}
+                      className="mx-2"
+                    />
+                  ))
+                ) : (
+                  <SidebarButton
+                    label="New project"
+                    activeIcon={<SquaresPlusIcon className="w-5" />}
+                    showLabel={leftSidebarPref.main === 'open'}
+                    showTooltip={
+                      leftSidebarPref.main === 'closed' && !newPopover
                     }
-                    inactiveIcon={
-                      <Avatar
-                        radius="sm"
-                        color="blue"
-                        className="hover:bg-blue-500/10"
-                        size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                      >
-                        {org?.name ? (
-                          getInitials(org.name)
-                        ) : (
-                          <BuildingOffice2Icon className="w-5" />
-                        )}
-                      </Avatar>
-                    }
-                    label={org?.name || 'Unnamed Organization'}
-                    showTooltip={leftSidebarPref.main === 'closed'}
                     className="mx-2"
+                    onClick={showProjectEditForm}
                   />
-                ))}
+                )}
               </div>
             )}
           </div>
@@ -517,28 +546,14 @@ function LeftSidebar({ className }: SidebarProps) {
           <Divider className="my-2" variant="dashed" />
 
           <div className="mx-2 flex items-center justify-center gap-2">
-            {leftSidebarPref.main === 'open' && (
-              <Select
-                value={orgs?.current ? orgs.current[0]?.id : undefined}
-                data={
-                  orgs?.current
-                    ? orgs.current.map((o) => ({
-                        value: o.id,
-                        label: o?.name || 'Unnamed Organization',
-                      }))
-                    : []
-                }
-                icon={<MapPinIcon className="w-4" />}
-              />
-            )}
+            {leftSidebarPref.main === 'open' && <OrganizationSelector />}
 
             <Popover
               opened={userPopover}
               onChange={setUserPopover}
               width={200}
-              offset={leftSidebarPref.main === 'closed' ? 20 : 16}
-              position={isMobile ? 'top-end' : 'right'}
-              positionDependencies={[isMobile]}
+              offset={8}
+              position="top-start"
             >
               <Popover.Target>
                 <Tooltip
@@ -596,23 +611,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 {leftSidebarPref.main !== 'open' && (
                   <>
                     <Divider className="my-1" variant="dashed" />
-                    <Select
-                      label="Current organization"
-                      value={orgs?.current ? orgs.current[0]?.id : undefined}
-                      data={
-                        orgs?.current
-                          ? orgs.current.map((o) => ({
-                              value: o.id,
-                              label: o?.name || 'Unnamed Organization',
-                            }))
-                          : []
-                      }
-                      icon={<MapPinIcon className="w-4" />}
-                      className="mx-2 mb-2"
-                      classNames={{
-                        label: 'mb-1',
-                      }}
-                    />
+                    <OrganizationSelector showLabel className="mx-2 mb-2" />
                   </>
                 )}
               </Popover.Dropdown>

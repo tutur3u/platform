@@ -102,9 +102,7 @@ const ProjectSettingsPage = () => {
       method: 'DELETE',
     });
 
-    if (res.status === 200) {
-      router.push(`/orgs/${project.orgs.id}/projects`);
-    }
+    if (res.ok) router.push(`/`);
   };
 
   return (
