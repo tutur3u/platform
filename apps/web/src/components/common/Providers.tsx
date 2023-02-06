@@ -13,6 +13,7 @@ import { OrganizationProvider } from '../../hooks/useOrganizations';
 import { SWRConfig } from 'swr';
 import { UserListProvider } from '../../hooks/useUserList';
 import { CalendarProvider } from '../../hooks/useCalendar';
+import { ProjectProvider } from '../../hooks/useProjects';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -47,7 +48,9 @@ const Providers = ({
                 <AppearanceProvider>
                   <ModalsProvider>
                     <NotificationsProvider position="bottom-left">
-                      <OrganizationProvider>{children}</OrganizationProvider>
+                      <OrganizationProvider>
+                        <ProjectProvider>{children}</ProjectProvider>
+                      </OrganizationProvider>
                     </NotificationsProvider>
                   </ModalsProvider>
                 </AppearanceProvider>

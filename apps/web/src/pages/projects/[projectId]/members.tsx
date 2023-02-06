@@ -5,6 +5,7 @@ import { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const ProjectMembersPage = () => {
   const router = useRouter();
@@ -63,6 +64,11 @@ const ProjectMembersPage = () => {
 
   return (
     <>
+      <HeaderX
+        label={`Members – ${project?.name || 'Untitled Project'}`}
+        disableBranding
+      />
+
       {project.orgs.id && (
         <div className="mt-2 mb-4 flex items-center justify-between">
           <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">

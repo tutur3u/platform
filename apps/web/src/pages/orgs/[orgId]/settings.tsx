@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { useOrgs } from '../../../hooks/useOrganizations';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const OrganizationSettingsPage = () => {
   const router = useRouter();
@@ -26,7 +27,7 @@ const OrganizationSettingsPage = () => {
       orgId
         ? [
             {
-              content: data?.name,
+              content: data?.name ?? 'Loading...',
               href: `/orgs/${orgId}`,
             },
             {
@@ -102,69 +103,76 @@ const OrganizationSettingsPage = () => {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <h1 className="col-span-full font-bold">Settings</h1>
+    <>
+      <HeaderX
+        label={`Settings – ${data?.name || 'Unnamed Organization'}`}
+        disableBranding
+      />
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-3xl font-bold">Basic Information</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Manage the basic information of your organization.
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <h1 className="col-span-full font-bold">Settings</h1>
 
-        <div className="grid max-w-xs gap-2">
-          <TextInput
-            label="Organization Name"
-            placeholder={data?.name || name || 'Organization Name'}
-            value={name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setName(e.currentTarget.value)
-            }
-            // Disable this form if the current org is the root org (Tuturuuu)
-            // Which has an ID of '00000000-0000-0000-0000-000000000000'
-            disabled={isSystemOrg}
-          />
-        </div>
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+          <div className="mb-1 text-3xl font-bold">Basic Information</div>
+          <div className="mb-4 font-semibold text-zinc-500">
+            Manage the basic information of your organization.
+          </div>
 
-        <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
-          This organization was created{' '}
-          <span className="font-semibold text-zinc-300">
-            {moment(data.created_at).fromNow()}
-          </span>
-          .
+          <div className="grid max-w-xs gap-2">
+            <TextInput
+              label="Organization Name"
+              placeholder={data?.name || name || 'Organization Name'}
+              value={name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setName(e.currentTarget.value)
+              }
+              // Disable this form if the current org is the root org (Tuturuuu)
+              // Which has an ID of '00000000-0000-0000-0000-000000000000'
+              disabled={isSystemOrg}
+            />
+          </div>
+
+          <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
+            This organization was created{' '}
+            <span className="font-semibold text-zinc-300">
+              {moment(data.created_at).fromNow()}
+            </span>
+            .
+          </div>
+
+          {isSystemOrg || (
+            <>
+              <div className="h-full" />
+
+              <div
+                onClick={handleSave}
+                className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </div>
+            </>
+          )}
         </div>
 
         {isSystemOrg || (
-          <>
-            <div className="h-full" />
-
-            <div
-              onClick={handleSave}
-              className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-            >
-              {isSaving ? 'Saving...' : 'Save'}
+          <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+            <div className="mb-1 text-3xl font-bold">Security</div>
+            <div className="mb-4 font-semibold text-zinc-500">
+              Manage the security of your organization.
             </div>
-          </>
+
+            <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
+              <div
+                className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+                onClick={handleDelete}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Organization'}
+              </div>
+            </div>
+          </div>
         )}
       </div>
-
-      {isSystemOrg || (
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <div className="mb-1 text-3xl font-bold">Security</div>
-          <div className="mb-4 font-semibold text-zinc-500">
-            Manage the security of your organization.
-          </div>
-
-          <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
-            <div
-              className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-              onClick={handleDelete}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete Organization'}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

@@ -34,14 +34,16 @@ export default function SidebarLink({
   className,
 }: SidebarLinkProps) {
   const router = useRouter();
-  const { orgId } = router.query;
+  const { projectId } = router.query;
 
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
 
   const isExpanded = leftSidebarPref.main === 'open';
   const isActive = href
     ? href != '/'
-      ? router.pathname.replace('/[orgId]', `/${orgId}`).startsWith(href)
+      ? router.pathname
+          .replace('/[projectId]', `/${projectId}`)
+          .startsWith(href)
       : router.pathname === href
     : false;
 

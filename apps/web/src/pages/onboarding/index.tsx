@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import DefaultLayout from '../../components/layouts';
+import DefaultLayout from '../../components/layouts/DefaultLayout';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import OnboardingForm from '../../components/onboarding/OnboardingForm';

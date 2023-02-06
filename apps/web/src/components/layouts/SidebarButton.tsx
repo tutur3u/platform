@@ -12,6 +12,7 @@ interface SidebarButtonProps {
   enableOffset?: boolean;
   left?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 export default function SidebarButton({
@@ -24,6 +25,7 @@ export default function SidebarButton({
   showTooltip = false,
   left = false,
   className,
+  disabled = false,
 }: SidebarButtonProps) {
   const { leftSidebarPref } = useAppearance();
 
@@ -38,9 +40,15 @@ export default function SidebarButton({
     >
       <button
         onClick={onClick}
-        className={`flex items-center gap-2 rounded p-2 font-semibold text-zinc-400 hover:bg-zinc-300/10 hover:text-zinc-200 ${
+        className={`flex items-center gap-2 rounded p-2 font-semibold ${
           left || isExpanded ? 'justify-start' : 'justify-center'
-        } ${isActive && 'bg-zinc-300/10 text-zinc-200'} ${className}`}
+        } ${
+          disabled
+            ? 'cursor-not-allowed text-zinc-600'
+            : isActive
+            ? 'bg-zinc-300/10 text-zinc-200'
+            : 'text-zinc-400 hover:bg-zinc-300/10 hover:text-zinc-200'
+        } ${className}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
         {showLabel && (

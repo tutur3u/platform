@@ -49,7 +49,11 @@ const OrgPreviewCard = ({ org }: Props) => {
     openModal({
       title: <div className="font-semibold">Create new project</div>,
       centered: true,
-      children: <ProjectEditForm orgId={org.id} onSubmit={createProject} />,
+      children: (
+        <ProjectEditForm
+          onSubmit={(project) => createProject(org.id, project)}
+        />
+      ),
     });
   };
 

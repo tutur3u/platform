@@ -17,6 +17,7 @@ import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { getInitials } from '../../utils/name-helper';
 import useSWR, { mutate } from 'swr';
 import { useDebouncedValue } from '@mantine/hooks';
+import HeaderX from '../../components/metadata/HeaderX';
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // Create authenticated Supabase Client
@@ -209,110 +210,117 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   };
 
   return (
-    <div className="absolute inset-0 top-[4.5rem] flex h-full w-full flex-col border-zinc-800 md:static">
-      <div className="relative flex h-64 items-center justify-center">
-        <div className="m-4 max-h-64 w-full overflow-hidden rounded-lg md:mt-14">
-          <Image
-            src="/media/background/placeholder.jpg"
-            alt="Profile background"
-            width={1640}
-            height={924}
-            className="w-full object-cover"
-          />
-        </div>
-
-        <div className="absolute top-32 flex flex-col items-center justify-center gap-1 md:top-40 lg:top-48">
-          <Avatar radius="xl" className="h-40 w-40 bg-[#182a3d]">
-            <div className="text-6xl text-[#a5d8ff]">
-              {getInitials(user.display_name)}
-            </div>
-          </Avatar>
-          <div className="text-3xl font-bold text-zinc-300">
-            {user.display_name}
+    <>
+      <HeaderX
+        label={`${user?.username} (${user?.display_name})`}
+        disableBranding
+      />
+      <div className="absolute inset-0 top-[4.5rem] flex h-full w-full flex-col border-zinc-800 md:static">
+        <div className="relative flex h-64 items-center justify-center">
+          <div className="m-4 max-h-64 w-full overflow-hidden rounded-lg md:mt-14">
+            <Image
+              src="/media/background/placeholder.jpg"
+              alt="Profile background"
+              width={1640}
+              height={924}
+              className="w-full object-cover"
+            />
           </div>
-          <div className="text-lg font-semibold text-purple-300">
-            @{user.username}
-          </div>
-        </div>
-      </div>
 
-      <div className="grid translate-y-28 grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-8 lg:translate-y-48 lg:grid-cols-3 lg:pt-0 2xl:grid-cols-4">
-        {user?.birthday && (
-          <ProfileCard
-            title="Birthday"
-            titleClassname="text-green-200"
-            classname="bg-green-300/20 transition duration-500"
-          >
-            <div className="mt-4 text-4xl font-bold text-green-300">
-              {birthday.toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-              })}
-            </div>
-            <div className="mt-2 text-lg font-semibold text-green-200/80">
-              in {getDaysUntilBirthday(birthday)} days
-            </div>
-          </ProfileCard>
-        )}
-
-        <div className="rounded-lg bg-yellow-300/20 p-4 text-black transition duration-500">
-          <div className="flex justify-between">
-            <div className="text-2xl font-bold text-yellow-200">Note</div>
-            <div
-              className={`flex items-center gap-1 rounded-lg px-2 py-0.5 font-semibold ${
-                saved
-                  ? 'bg-yellow-300/20 text-yellow-300'
-                  : saving
-                  ? 'bg-purple-300/20 text-purple-300'
-                  : 'bg-zinc-300/20 text-zinc-300'
-              }`}
-            >
-              <div>
-                {noteLoading
-                  ? 'Loading'
-                  : saving
-                  ? 'Saving'
-                  : saved
-                  ? 'Saved'
-                  : 'Unsaved'}
+          <div className="absolute top-32 flex flex-col items-center justify-center gap-1 md:top-40 lg:top-48">
+            <Avatar radius="xl" className="h-40 w-40 bg-[#182a3d]">
+              <div className="text-6xl text-[#a5d8ff]">
+                {getInitials(user.display_name)}
               </div>
-              {noteLoading || saving ? (
-                <ArrowPathIcon
-                  className={`inline-block h-5 w-5 animate-spin ${
-                    saving ? 'text-purple-300' : 'text-zinc-300'
-                  }`}
-                />
-              ) : saved ? (
-                <CheckCircleIcon className="inline-block h-5 w-5" />
-              ) : (
-                <XCircleIcon className="inline-block h-5 w-5" />
-              )}
+            </Avatar>
+            <div className="text-3xl font-bold text-zinc-300">
+              {user.display_name}
+            </div>
+            <div className="text-lg font-semibold text-purple-300">
+              @{user.username}
             </div>
           </div>
-          <Textarea
-            size="md"
-            autosize
-            minRows={3}
-            maxRows={10}
-            variant="unstyled"
-            placeholder="Add a personal note about this person..."
-            classNames={{
-              input: 'text-yellow-300 placeholder-yellow-300/50 font-semibold',
-            }}
-            value={note}
-            onChange={(event) => {
-              const newNote = event.currentTarget.value;
+        </div>
 
-              setNote(newNote);
-              setSaved(lastSavedNote === newNote);
-            }}
-            onKeyUp={handleKeyUp}
-            onKeyDown={handleKeyDown}
-            disabled={!user || !userData || !loadedNote}
-          />
+        <div className="grid translate-y-28 grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-8 lg:translate-y-48 lg:grid-cols-3 lg:pt-0 2xl:grid-cols-4">
+          {user?.birthday && (
+            <ProfileCard
+              title="Birthday"
+              titleClassname="text-green-200"
+              classname="bg-green-300/20 transition duration-500"
+            >
+              <div className="mt-4 text-4xl font-bold text-green-300">
+                {birthday.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </div>
+              <div className="mt-2 text-lg font-semibold text-green-200/80">
+                in {getDaysUntilBirthday(birthday)} days
+              </div>
+            </ProfileCard>
+          )}
+
+          <div className="rounded-lg bg-yellow-300/20 p-4 text-black transition duration-500">
+            <div className="flex justify-between">
+              <div className="text-2xl font-bold text-yellow-200">Note</div>
+              <div
+                className={`flex items-center gap-1 rounded-lg px-2 py-0.5 font-semibold ${
+                  saved
+                    ? 'bg-yellow-300/20 text-yellow-300'
+                    : saving
+                    ? 'bg-purple-300/20 text-purple-300'
+                    : 'bg-zinc-300/20 text-zinc-300'
+                }`}
+              >
+                <div>
+                  {noteLoading
+                    ? 'Loading'
+                    : saving
+                    ? 'Saving'
+                    : saved
+                    ? 'Saved'
+                    : 'Unsaved'}
+                </div>
+                {noteLoading || saving ? (
+                  <ArrowPathIcon
+                    className={`inline-block h-5 w-5 animate-spin ${
+                      saving ? 'text-purple-300' : 'text-zinc-300'
+                    }`}
+                  />
+                ) : saved ? (
+                  <CheckCircleIcon className="inline-block h-5 w-5" />
+                ) : (
+                  <XCircleIcon className="inline-block h-5 w-5" />
+                )}
+              </div>
+            </div>
+            <Textarea
+              size="md"
+              autosize
+              minRows={3}
+              maxRows={10}
+              variant="unstyled"
+              placeholder="Add a personal note about this person..."
+              classNames={{
+                input:
+                  'text-yellow-300 placeholder-yellow-300/50 font-semibold',
+              }}
+              value={note}
+              onChange={(event) => {
+                const newNote = event.currentTarget.value;
+
+                setNote(newNote);
+                setSaved(lastSavedNote === newNote);
+              }}
+              onKeyUp={handleKeyUp}
+              onKeyDown={handleKeyDown}
+              disabled={!user || !userData || !loadedNote}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
