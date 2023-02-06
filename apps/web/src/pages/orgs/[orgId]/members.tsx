@@ -81,11 +81,11 @@ const OrganizationMembersPage = () => {
         message: invited
           ? `Invitation to ${
               (member?.username && `@${member?.username}`) ||
-              member?.displayName ||
+              member?.display_name ||
               member?.email
             } has been revoked`
           : `${
-              member?.displayName || member?.email
+              member?.display_name || member?.email
             } has been removed from the organization`,
         color: 'teal',
       });

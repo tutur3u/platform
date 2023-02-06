@@ -64,7 +64,14 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      { id, value, username, avatarUrl, displayName, ...others }: UserWithValue,
+      {
+        id,
+        value,
+        username,
+        avatar_url,
+        display_name,
+        ...others
+      }: UserWithValue,
       ref
     ) =>
       id === value ? (
@@ -74,10 +81,10 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
       ) : (
         <div ref={ref} {...others}>
           <Group noWrap>
-            <Avatar src={avatarUrl} />
+            <Avatar src={avatar_url} />
 
             <div>
-              <Text>{displayName}</Text>
+              <Text>{display_name}</Text>
               <Text size="xs" color="dimmed">
                 {username ? `@${username}` : 'No username'}
               </Text>
@@ -113,7 +120,7 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
         title: 'Invitation sent',
         message: `Invitation to ${
           (selectedUser?.username && `@${selectedUser?.username}`) ||
-          selectedUser?.displayName ||
+          selectedUser?.display_name ||
           value
         } has been sent`,
         color: 'teal',
@@ -153,13 +160,13 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
           ) : (
             <>
               <Avatar
-                src={selectedUser.avatarUrl}
+                src={selectedUser.avatar_url}
                 radius="md"
                 className="bg-blue-300/20"
               />
               <div>
                 <Text weight="bold" className="text-blue-200">
-                  {selectedUser.displayName}
+                  {selectedUser.display_name}
                 </Text>
                 <Text weight="light" className="text-blue-100">
                   @{selectedUser.username}

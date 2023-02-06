@@ -4,10 +4,11 @@ import { useProjects } from '../../hooks/useProjects';
 
 interface Props {
   showLabel?: boolean;
+  onChange?: () => void;
   className?: string;
 }
 
-const OrganizationSelector = ({ showLabel, className }: Props) => {
+const OrganizationSelector = ({ showLabel, onChange, className }: Props) => {
   const { isLoading, orgs } = useOrgs();
   const { orgId, setOrgId } = useProjects();
 
@@ -30,7 +31,10 @@ const OrganizationSelector = ({ showLabel, className }: Props) => {
       label={showLabel ? 'Organization' : undefined}
       data={orgOptions}
       value={orgId}
-      onChange={setOrgId}
+      onChange={(orgId) => {
+        setOrgId(orgId || '');
+        if (onChange) onChange();
+      }}
       disabled={isLoading || !hasOrgs}
       classNames={{
         label: 'mb-1',
