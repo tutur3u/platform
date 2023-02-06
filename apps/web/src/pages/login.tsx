@@ -3,7 +3,7 @@ import { GetServerSidePropsContext } from 'next';
 import React, { ReactElement } from 'react';
 import AuthWrapper from '../components/auth/AuthWrapper';
 import HeaderX from '../components/metadata/HeaderX';
-import DefaultLayout from '../components/layouts';
+import DefaultLayout from '../components/layouts/DefaultLayout';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
