@@ -10,6 +10,7 @@ import {
 import { Project } from '../types/primitives/Project';
 import { showNotification } from '@mantine/notifications';
 import { useOrgs } from './useOrganizations';
+import { useRouter } from 'next/router';
 
 const ProjectContext = createContext({
   orgId: '',
@@ -54,6 +55,8 @@ const ProjectContext = createContext({
 });
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
+  const router = useRouter();
+
   const { orgs } = useOrgs();
   const [orgId, setOrgId] = useState<string>('');
 
@@ -84,6 +87,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create project');
       if (options?.onSuccess) options.onSuccess();
       mutate(`/api/orgs/${orgId}/projects`);
+
+      const data = await res.json();
+      router.push(`/projects/${data.id}`);
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({

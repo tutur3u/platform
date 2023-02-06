@@ -15,6 +15,7 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { User } from '../../../types/primitives/User';
 import SelectUserForm from '../../../components/forms/SelectUserForm';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const OrganizationMembersPage = () => {
   const router = useRouter();
@@ -111,6 +112,11 @@ const OrganizationMembersPage = () => {
 
   return (
     <>
+      <HeaderX
+        label={`Members – ${orgData?.name || 'Unnamed Organization'}`}
+        disableBranding
+      />
+
       {orgId && (
         <div className="mt-2 mb-4 flex items-center justify-between">
           <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
