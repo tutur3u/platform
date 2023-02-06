@@ -10,12 +10,20 @@ import {
 import { Project } from '../types/primitives/Project';
 import { showNotification } from '@mantine/notifications';
 import { useOrgs } from './useOrganizations';
+import { useRouter } from 'next/router';
+import { Organization } from '../types/primitives/Organization';
+import { User } from '../types/primitives/User';
 
 const ProjectContext = createContext({
   orgId: '',
+  org: {} as Organization,
+  isOrgLoading: true,
+
+  members: [] as User[],
+  isMembersLoading: true,
+
   projects: [] as Project[],
-  isLoading: true,
-  isError: false,
+  isProjectsLoading: true,
 
   setOrgId: (orgId: string) => {
     console.log('setOrgId', orgId);
@@ -54,6 +62,8 @@ const ProjectContext = createContext({
 });
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
+  const router = useRouter();
+
   const { orgs } = useOrgs();
   const [orgId, setOrgId] = useState<string>('');
 
@@ -62,7 +72,23 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setOrgId(orgs.current[0].id);
   }, [orgs]);
 
-  const { data, error } = useSWR(orgId ? `/api/orgs/${orgId}/projects` : null);
+  const { data: org, error: orgError } = useSWR(
+    orgId ? `/api/orgs/${orgId}` : null
+  );
+
+  const isOrgLoading = !org && !orgError;
+
+  const { data: projects, error: projectsError } = useSWR(
+    orgId ? `/api/orgs/${orgId}/projects` : null
+  );
+
+  const isProjectsLoading = !projects && !projectsError;
+
+  const { data: membersData, error: membersError } = useSWR(
+    orgId ? `/api/orgs/${orgId}/members` : null
+  );
+
+  const isMembersLoading = !membersData && !membersError;
 
   const createProject = async (
     project: Project,
@@ -84,6 +110,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create project');
       if (options?.onSuccess) options.onSuccess();
       mutate(`/api/orgs/${orgId}/projects`);
+
+      const data = await res.json();
+      router.push(`/projects/${data.id}`);
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -155,9 +184,14 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   const values = {
     orgId,
-    projects: data || [],
-    isLoading: !error && !data,
-    isError: error,
+    org: org || {},
+    isOrgLoading,
+
+    members: membersData?.members || [],
+    isMembersLoading,
+
+    projects: projects || [],
+    isProjectsLoading,
 
     setOrgId,
     createProject,

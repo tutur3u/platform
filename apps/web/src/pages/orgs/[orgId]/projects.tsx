@@ -10,6 +10,7 @@ import { useAppearance } from '../../../hooks/useAppearance';
 import { Project } from '../../../types/primitives/Project';
 import moment from 'moment';
 import ProjectEditForm from '../../../components/forms/ProjectEditForm';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const OrganizationProjectsPage = () => {
   const router = useRouter();
@@ -92,44 +93,51 @@ const OrganizationProjectsPage = () => {
   };
 
   return (
-    <div className="grid gap-4">
-      {orgId && (
-        <div className="mt-2 mb-2 flex items-center justify-between">
-          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-            Projects ({projectsData?.length || 0})
-          </h1>
-          <button
-            onClick={showProjectEditForm}
-            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-          >
-            New project <PlusIcon className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+    <>
+      <HeaderX
+        label={`Projects – ${orgData?.name || 'Unnamed Organization'}`}
+        disableBranding
+      />
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {projectsData?.map(
-          (project: { id: string; name: string; created_at: string }) => (
-            <Link
-              key={project.id}
-              href={`/projects/${project.id}`}
-              className="group relative h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
+      <div className="grid gap-4">
+        {orgId && (
+          <div className="mt-2 mb-2 flex items-center justify-between">
+            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
+              Projects ({projectsData?.length || 0})
+            </h1>
+            <button
+              onClick={showProjectEditForm}
+              className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
             >
-              <h1 className="font-bold">{project.name}</h1>
-
-              {project?.created_at ? (
-                <div className="absolute bottom-4 right-4 rounded-lg border border-blue-300/20 bg-blue-300/10 px-4 py-2 text-blue-300/50 transition group-hover:border-transparent">
-                  Started{' '}
-                  <span className="font-semibold text-blue-300">
-                    {moment(project.created_at).fromNow()}
-                  </span>
-                </div>
-              ) : null}
-            </Link>
-          )
+              New project <PlusIcon className="h-4 w-4" />
+            </button>
+          </div>
         )}
+
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {projectsData?.map(
+            (project: { id: string; name: string; created_at: string }) => (
+              <Link
+                key={project.id}
+                href={`/projects/${project.id}`}
+                className="group relative h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
+              >
+                <h1 className="font-bold">{project.name}</h1>
+
+                {project?.created_at ? (
+                  <div className="absolute bottom-4 right-4 rounded-lg border border-blue-300/20 bg-blue-300/10 px-4 py-2 text-blue-300/50 transition group-hover:border-transparent">
+                    Started{' '}
+                    <span className="font-semibold text-blue-300">
+                      {moment(project.created_at).fromNow()}
+                    </span>
+                  </div>
+                ) : null}
+              </Link>
+            )
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

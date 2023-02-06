@@ -4,12 +4,10 @@ import {
   CheckCircleIcon,
   ClipboardDocumentListIcon,
   BanknotesIcon,
-  UserGroupIcon,
   Cog6ToothIcon,
   UserCircleIcon,
   PlusIcon,
   ArchiveBoxIcon,
-  MapPinIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   BuildingOffice2Icon,
@@ -58,6 +56,7 @@ import SidebarButton from './SidebarButton';
 import OrganizationSelector from '../selectors/OrganizationSelector';
 import { useProjects } from '../../hooks/useProjects';
 import ProjectEditForm from '../forms/ProjectEditForm';
+import Link from 'next/link';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
@@ -70,7 +69,11 @@ function LeftSidebar({ className }: SidebarProps) {
   const { createOrg } = useOrgs();
   const {
     orgId,
-    isLoading: isProjectsLoading,
+    org,
+    members,
+    isOrgLoading,
+    isMembersLoading,
+    isProjectsLoading,
     createProject,
     projects,
   } = useProjects();
@@ -392,18 +395,21 @@ function LeftSidebar({ className }: SidebarProps) {
                 activeIcon={<CheckCircleIcon className="w-5" />}
                 label="New task"
                 left
+                disabled
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
                 activeIcon={<ClipboardDocumentListIcon className="w-5" />}
                 label="New note"
                 left
+                disabled
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
                 activeIcon={<BanknotesIcon className="w-5" />}
                 label="New transaction"
                 left
+                disabled
               />
               <Divider className="my-1" />
               <SidebarButton
@@ -411,12 +417,14 @@ function LeftSidebar({ className }: SidebarProps) {
                 activeIcon={<UserPlusIcon className="w-5" />}
                 label="Invite people"
                 left
+                disabled
               />
             </Popover.Dropdown>
           </Popover>
-          <Divider className="mt-2" />
 
-          <div className="scrollbar-none h-full overflow-auto">
+          <Divider />
+
+          <div className="scrollbar-none my-2 h-full overflow-auto">
             <div className="m-2 flex flex-col gap-1">
               <SidebarLink
                 href="/"
@@ -455,67 +463,159 @@ function LeftSidebar({ className }: SidebarProps) {
               />
             </div>
 
-            <Divider className="my-2" />
+            <Divider />
 
-            {isProjectsLoading || (
-              <div
-                className={`mb-2 flex flex-col ${
-                  leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
-                }`}
-              >
-                {projects.length > 0 ? (
-                  projects.map((project) => (
-                    <SidebarLink
-                      key={project.id}
-                      href={`/projects/${project.id}`}
-                      defaultHighlight={leftSidebarPref.main !== 'closed'}
-                      activeIcon={
-                        <Avatar
-                          radius="sm"
-                          color="blue"
-                          className="bg-blue-500/20"
-                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                        >
-                          {project?.name ? (
-                            getInitials(project.name)
-                          ) : (
+            <div className="m-2">
+              <Link href={`/orgs/${orgId}`}>
+                <Tooltip
+                  label={
+                    <div>
+                      <div className="font-semibold">
+                        {org.name || 'Unnamed Organization'}
+                      </div>
+                      <div className="text-xs font-semibold">
+                        {members.length}{' '}
+                        {members.length === 1 ? 'member' : 'members'}
+                      </div>
+                    </div>
+                  }
+                  position="right"
+                  offset={16}
+                  disabled={leftSidebarPref.main === 'open'}
+                >
+                  <div className="rounded border border-zinc-700/50 bg-zinc-800 p-2 transition hover:bg-zinc-700/60">
+                    <div className="">
+                      <div
+                        className={`mb-1 flex ${
+                          leftSidebarPref.main === 'closed'
+                            ? 'items-center justify-center'
+                            : 'justify-between gap-2 font-semibold'
+                        }`}
+                      >
+                        <div className="line-clamp-1">
+                          {leftSidebarPref.main === 'closed' ? (
                             <BuildingOffice2Icon className="w-5" />
-                          )}
-                        </Avatar>
-                      }
-                      inactiveIcon={
-                        <Avatar
-                          radius="sm"
-                          color="blue"
-                          className="hover:bg-blue-500/10"
-                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                        >
-                          {project?.name ? (
-                            getInitials(project.name)
                           ) : (
-                            <BuildingOffice2Icon className="w-5" />
+                            org?.name || 'Unnamed Organization'
                           )}
-                        </Avatar>
+                        </div>
+
+                        {leftSidebarPref.main === 'closed' || (
+                          <div className="flex items-center rounded bg-blue-500/20 px-4 py-1 text-sm font-bold text-blue-300">
+                            Free
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Tooltip.Group>
+                      <Avatar.Group
+                        spacing="sm"
+                        color="blue"
+                        className={
+                          leftSidebarPref.main === 'closed' ? 'hidden' : ''
+                        }
+                      >
+                        {members &&
+                          members.slice(0, 3).map((member) => (
+                            <Tooltip
+                              key={member.id}
+                              label={
+                                <div className="font-semibold">
+                                  <div>
+                                    {member?.display_name || member?.email}
+                                  </div>
+                                  {member?.username && (
+                                    <div className="text-blue-300">
+                                      @{member.username}
+                                    </div>
+                                  )}
+                                </div>
+                              }
+                              color="#182a3d"
+                            >
+                              <Avatar color="blue" radius="xl">
+                                {getInitials(
+                                  member?.display_name || member?.email
+                                )}
+                              </Avatar>
+                            </Tooltip>
+                          ))}
+                        <Tooltip
+                          label={
+                            <div className="font-semibold">Invite people</div>
+                          }
+                        >
+                          <Avatar color="blue" radius="xl">
+                            <UserPlusIcon className="w-5" />
+                          </Avatar>
+                        </Tooltip>
+                      </Avatar.Group>
+                    </Tooltip.Group>
+                  </div>
+                </Tooltip>
+              </Link>
+
+              <Divider variant="dashed" className="my-2" />
+
+              {isProjectsLoading || (
+                <div
+                  className={`flex flex-col ${
+                    leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
+                  }`}
+                >
+                  {projects.length > 0 ? (
+                    projects.map((project) => (
+                      <SidebarLink
+                        key={project.id}
+                        href={`/projects/${project.id}`}
+                        defaultHighlight={leftSidebarPref.main !== 'closed'}
+                        activeIcon={
+                          <Avatar
+                            radius="sm"
+                            color="blue"
+                            className="bg-blue-500/20"
+                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                          >
+                            {project?.name ? (
+                              getInitials(project.name)
+                            ) : (
+                              <BuildingOffice2Icon className="w-5" />
+                            )}
+                          </Avatar>
+                        }
+                        inactiveIcon={
+                          <Avatar
+                            radius="sm"
+                            color="blue"
+                            className="hover:bg-blue-500/10"
+                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                          >
+                            {project?.name ? (
+                              getInitials(project.name)
+                            ) : (
+                              <BuildingOffice2Icon className="w-5" />
+                            )}
+                          </Avatar>
+                        }
+                        label={project?.name || 'Untitled Project'}
+                        showTooltip={leftSidebarPref.main === 'closed'}
+                      />
+                    ))
+                  ) : (
+                    <SidebarButton
+                      label="New project"
+                      activeIcon={<SquaresPlusIcon className="w-5" />}
+                      showLabel={leftSidebarPref.main === 'open'}
+                      showTooltip={
+                        leftSidebarPref.main === 'closed' && !newPopover
                       }
-                      label={project?.name || 'Untitled Project'}
-                      showTooltip={leftSidebarPref.main === 'closed'}
-                      className="mx-2"
+                      onClick={showProjectEditForm}
                     />
-                  ))
-                ) : (
-                  <SidebarButton
-                    label="New project"
-                    activeIcon={<SquaresPlusIcon className="w-5" />}
-                    showLabel={leftSidebarPref.main === 'open'}
-                    showTooltip={
-                      leftSidebarPref.main === 'closed' && !newPopover
-                    }
-                    className="mx-2"
-                    onClick={showProjectEditForm}
-                  />
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <Divider className="mb-2 hidden md:block" />
@@ -592,14 +692,6 @@ function LeftSidebar({ className }: SidebarProps) {
                   left
                 />
                 <SidebarLink
-                  href="/friends"
-                  onClick={() => setUserPopover(false)}
-                  activeIcon={<UserGroupIcon className="w-5" />}
-                  label="Friends"
-                  defaultActive={false}
-                  left
-                />
-                <SidebarLink
                   href="/settings"
                   onClick={() => setUserPopover(false)}
                   activeIcon={<Cog6ToothIcon className="w-5" />}
@@ -611,7 +703,11 @@ function LeftSidebar({ className }: SidebarProps) {
                 {leftSidebarPref.main !== 'open' && (
                   <>
                     <Divider className="my-1" variant="dashed" />
-                    <OrganizationSelector showLabel className="mx-2 mb-2" />
+                    <OrganizationSelector
+                      showLabel
+                      className="mx-2 mb-2"
+                      onChange={() => setUserPopover(false)}
+                    />
                   </>
                 )}
               </Popover.Dropdown>

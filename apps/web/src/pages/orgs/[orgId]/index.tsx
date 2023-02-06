@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { useUserList } from '../../../hooks/useUserList';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const OrganizationOverviewPage = () => {
   const router = useRouter();
@@ -65,29 +66,36 @@ const OrganizationOverviewPage = () => {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="grid gap-4">
-      <h1 className="font-bold">Overview</h1>
+    <>
+      <HeaderX
+        label={`Overview – ${data?.name || 'Unnamed Organization'}`}
+        disableBranding
+      />
 
-      <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <p className="text-zinc-400">
-          This is the overview page for the{' '}
-          <span className="font-semibold text-white">{data?.name}</span>{' '}
-          workspace.
-        </p>
-      </div>
+      <div className="grid gap-4">
+        <h1 className="font-bold">Overview</h1>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <h1 className="font-bold">Revenue</h1>
+        <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+          <p className="text-zinc-400">
+            This is the overview page for the{' '}
+            <span className="font-semibold text-white">{data?.name}</span>{' '}
+            workspace.
+          </p>
         </div>
-        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <h1 className="font-bold">Expenses</h1>
-        </div>
-        <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 max-xl:col-span-full">
-          <h1 className="font-bold">Recent Activity</h1>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+            <h1 className="font-bold">Revenue</h1>
+          </div>
+          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+            <h1 className="font-bold">Expenses</h1>
+          </div>
+          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 max-xl:col-span-full">
+            <h1 className="font-bold">Recent Activity</h1>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

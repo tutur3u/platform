@@ -2,9 +2,10 @@ import { TextInput } from '@mantine/core';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
+import HeaderX from '../../../components/metadata/HeaderX';
 
 const ProjectSettingsPage = () => {
   const router = useRouter();
@@ -65,7 +66,7 @@ const ProjectSettingsPage = () => {
       }),
     });
 
-    if (res.status === 200) {
+    if (res.ok) {
       setRootSegment(
         project?.orgs?.id
           ? [
@@ -85,6 +86,8 @@ const ProjectSettingsPage = () => {
             ]
           : []
       );
+
+      mutate(`/api/orgs/${project.orgs.id}/projects`);
     }
 
     setIsSaving(false);
@@ -102,62 +105,72 @@ const ProjectSettingsPage = () => {
       method: 'DELETE',
     });
 
-    if (res.ok) router.push(`/`);
+    if (res.ok) {
+      router.push(`/`);
+      mutate(`/api/orgs/${project.orgs.id}/projects`);
+    }
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <h1 className="col-span-full font-bold">Settings</h1>
+    <>
+      <HeaderX
+        label={`Settings – ${project?.name || 'Untitled Project'}`}
+        disableBranding
+      />
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-3xl font-bold">Basic Information</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Manage the basic information of your project.
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <h1 className="col-span-full font-bold">Settings</h1>
 
-        <div className="grid max-w-xs gap-2">
-          <TextInput
-            label="Name"
-            placeholder={project?.name || name || 'Untitled Project'}
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-          />
-        </div>
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+          <div className="mb-1 text-3xl font-bold">Basic Information</div>
+          <div className="mb-4 font-semibold text-zinc-500">
+            Manage the basic information of your project.
+          </div>
 
-        <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
-          This project was created{' '}
-          <span className="font-semibold text-zinc-300">
-            {moment(project.created_at).fromNow()}
-          </span>
-          .
-        </div>
+          <div className="grid max-w-xs gap-2">
+            <TextInput
+              label="Name"
+              placeholder={project?.name || name || 'Untitled Project'}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+            />
+          </div>
 
-        <div className="h-full" />
+          <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
+            This project was created{' '}
+            <span className="font-semibold text-zinc-300">
+              {moment(project.created_at).fromNow()}
+            </span>
+            .
+          </div>
 
-        <div
-          onClick={handleSave}
-          className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-        >
-          {isSaving ? 'Saving...' : 'Save'}
-        </div>
-      </div>
+          <div className="h-full" />
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-3xl font-bold">Security</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Manage the security of your project.
-        </div>
-
-        <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
           <div
-            className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-            onClick={handleDelete}
+            onClick={handleSave}
+            className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
           >
-            {isDeleting ? 'Deleting...' : 'Delete Project'}
+            {isSaving ? 'Saving...' : 'Save'}
+          </div>
+        </div>
+
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+          <div className="mb-1 text-3xl font-bold">Security</div>
+          <div className="mb-4 font-semibold text-zinc-500">
+            Manage the security of your project.
+          </div>
+
+          <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
+            <div
+              className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+              onClick={handleDelete}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Project'}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

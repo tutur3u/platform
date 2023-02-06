@@ -1,9 +1,17 @@
 import Head from 'next/head';
 
-const HeaderX = ({ label }: { label: string }) => {
+const HeaderX = ({
+  label,
+  disableBranding,
+}: {
+  label: string;
+  disableBranding?: boolean;
+}) => {
+  const trailing = disableBranding ? '' : ` – Tuturuuu`;
+
   return (
     <Head>
-      <title>{`${label} – Tuturuuu`}</title>
+      <title>{`${label}${trailing}`}</title>
     </Head>
   );
 };
