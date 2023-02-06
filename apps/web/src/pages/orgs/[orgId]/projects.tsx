@@ -84,7 +84,9 @@ const OrganizationProjectsPage = () => {
       title: <div className="font-semibold">Create new project</div>,
       centered: true,
       children: (
-        <ProjectEditForm orgId={orgId as string} onSubmit={createProject} />
+        <ProjectEditForm
+          onSubmit={(project) => createProject(orgId as string, project)}
+        />
       ),
     });
   };
