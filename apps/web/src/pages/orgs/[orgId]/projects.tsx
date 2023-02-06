@@ -11,6 +11,7 @@ import { Project } from '../../../types/primitives/Project';
 import moment from 'moment';
 import ProjectEditForm from '../../../components/forms/ProjectEditForm';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const OrganizationProjectsPage = () => {
   const router = useRouter();
@@ -114,23 +115,26 @@ const OrganizationProjectsPage = () => {
           </div>
         )}
 
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {projectsData?.map(
             (project: { id: string; name: string; created_at: string }) => (
               <Link
                 key={project.id}
                 href={`/projects/${project.id}`}
-                className="group relative h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
+                className="group rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
               >
                 <h1 className="font-bold">{project.name}</h1>
 
                 {project?.created_at ? (
-                  <div className="absolute bottom-4 right-4 rounded-lg border border-blue-300/20 bg-blue-300/10 px-4 py-2 text-blue-300/50 transition group-hover:border-transparent">
-                    Started{' '}
-                    <span className="font-semibold text-blue-300">
-                      {moment(project.created_at).fromNow()}
-                    </span>
-                  </div>
+                  <>
+                    <Divider className="mt-8 mb-2" variant="dashed" />
+                    <div className="w-fit rounded-lg border border-blue-300/20 bg-blue-300/10 px-4 py-2 text-blue-300/50 transition group-hover:border-transparent">
+                      Started{' '}
+                      <span className="font-semibold text-blue-300">
+                        {moment(project.created_at).fromNow()}
+                      </span>
+                    </div>
+                  </>
                 ) : null}
               </Link>
             )
