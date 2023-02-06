@@ -1,4 +1,7 @@
 import { Select, Textarea, TextInput } from '@mantine/core';
+import AdjustmentInput from './AdjustmentInput';
+import Input from './Input';
+import TransferInput from './TransferInput';
 
 export default function InputForm() {
   return (
@@ -15,19 +18,18 @@ export default function InputForm() {
             'Adjustment',
           ]}
         />
-        <TextInput placeholder="Amount" />
-        <Select
-          placeholder="Category"
-          searchable
-          nothingFound="No options"
-          data={['Food', 'Shopping', 'Food', 'Tuition fee']}
-        />
-        <Textarea placeholder="Description" autosize minRows={2} maxRows={4} />
-        <div className="flex justify-end">
-          <div className="h-fit w-fit rounded-md bg-yellow-300/30 p-2 text-black">
-            Add transaction
-          </div>
-        </div>
+        <div>Expense</div>
+        <Input type="Expense" />
+        <div>Lennd</div>
+        <Input type="Lend" />
+        <div>Borrow</div>
+        <Input type="Borrow" />
+        <div>Income</div>
+        <Input type="Income" />
+        <div>Transfer</div>
+        <TransferInput />
+        <div>Adjustment</div>
+        <AdjustmentInput />
       </div>
     </>
   );
