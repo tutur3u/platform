@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
-import Layout from '../components/layouts';
+import Layout from '../components/layouts/DefaultLayout';
 import Link from 'next/link';
 
 const Error404Page: PageWithLayoutProps = () => {

@@ -1,12 +1,12 @@
 import {
-  HomeIcon as HomeIconSolid,
-  CalendarDaysIcon as CalendarIconSolid,
-  CheckCircleIcon as TasksIconSolid,
-  ClipboardDocumentListIcon as NotesIconSolid,
-  BanknotesIcon as MoneyIconSolid,
-  UserGroupIcon as UsersIconSolid,
-  Cog6ToothIcon as SettingsIconSolid,
-  UserCircleIcon as ProfileIconSolid,
+  HomeIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ClipboardDocumentListIcon,
+  BanknotesIcon,
+  UserGroupIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
   PlusIcon,
   ArchiveBoxIcon,
   MapPinIcon,
@@ -18,11 +18,6 @@ import {
 } from '@heroicons/react/24/solid';
 
 import {
-  HomeIcon as HomeIconOutline,
-  CalendarDaysIcon as CalendarIconOutline,
-  CheckCircleIcon as TasksIconOutline,
-  ClipboardDocumentListIcon as NotesIconOutline,
-  BanknotesIcon as MoneyIconOutline,
   FolderPlusIcon,
   SquaresPlusIcon,
   EllipsisHorizontalIcon,
@@ -378,19 +373,19 @@ function LeftSidebar({ className }: SidebarProps) {
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
-                activeIcon={<TasksIconSolid className="w-5" />}
+                activeIcon={<CheckCircleIcon className="w-5" />}
                 label="New task"
                 left
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
-                activeIcon={<NotesIconSolid className="w-5" />}
+                activeIcon={<ClipboardDocumentListIcon className="w-5" />}
                 label="New note"
                 left
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
-                activeIcon={<MoneyIconSolid className="w-5" />}
+                activeIcon={<BanknotesIcon className="w-5" />}
                 label="New transaction"
                 left
               />
@@ -410,42 +405,38 @@ function LeftSidebar({ className }: SidebarProps) {
               <SidebarLink
                 href="/"
                 onClick={() => setUserPopover(false)}
-                activeIcon={<HomeIconSolid className="w-5" />}
+                activeIcon={<HomeIcon className="w-5" />}
                 label="Home"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
                 href="/calendar"
                 onClick={() => setUserPopover(false)}
-                activeIcon={<CalendarIconSolid className="w-5" />}
+                activeIcon={<CalendarDaysIcon className="w-5" />}
                 label="Calendar"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
                 href="/tasks"
                 onClick={() => setUserPopover(false)}
-                activeIcon={<TasksIconSolid className="w-5" />}
+                activeIcon={<CheckCircleIcon className="w-5" />}
                 label="Tasks"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
-              {DEV_MODE && (
-                <SidebarLink
-                  href="/notes"
-                  onClick={() => setUserPopover(false)}
-                  activeIcon={<NotesIconSolid className="w-5" />}
-                  label="Notes"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                />
-              )}
-              {DEV_MODE && (
-                <SidebarLink
-                  href="/expenses"
-                  onClick={() => setUserPopover(false)}
-                  activeIcon={<MoneyIconSolid className="w-5" />}
-                  label="Expenses"
-                  showTooltip={leftSidebarPref.main === 'closed'}
-                />
-              )}
+              <SidebarLink
+                href="/notes"
+                onClick={() => setUserPopover(false)}
+                activeIcon={<ClipboardDocumentListIcon className="w-5" />}
+                label="Notes"
+                showTooltip={leftSidebarPref.main === 'closed'}
+              />
+              <SidebarLink
+                href="/expenses"
+                onClick={() => setUserPopover(false)}
+                activeIcon={<BanknotesIcon className="w-5" />}
+                label="Expenses"
+                showTooltip={leftSidebarPref.main === 'closed'}
+              />
             </div>
 
             <Divider className="my-2" />
@@ -580,7 +571,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <SidebarLink
                   href={user?.username ? `/${user.username}` : '/settings'}
                   onClick={() => setUserPopover(false)}
-                  activeIcon={<ProfileIconSolid className="w-5" />}
+                  activeIcon={<UserCircleIcon className="w-5" />}
                   label="Profile"
                   defaultActive={false}
                   left
@@ -588,7 +579,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <SidebarLink
                   href="/friends"
                   onClick={() => setUserPopover(false)}
-                  activeIcon={<UsersIconSolid className="w-5" />}
+                  activeIcon={<UserGroupIcon className="w-5" />}
                   label="Friends"
                   defaultActive={false}
                   left
@@ -596,7 +587,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <SidebarLink
                   href="/settings"
                   onClick={() => setUserPopover(false)}
-                  activeIcon={<SettingsIconSolid className="w-5" />}
+                  activeIcon={<Cog6ToothIcon className="w-5" />}
                   label="Settings"
                   defaultActive={false}
                   left
@@ -714,7 +705,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         Archived lists
                       </Menu.Item>
                       <Menu.Item
-                        icon={<SettingsIconSolid className="w-5" />}
+                        icon={<Cog6ToothIcon className="w-5" />}
                         onClick={() =>
                           showEditBoardModal(getBoard(selectedBoardId))
                         }

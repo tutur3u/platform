@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import { User } from '@supabase/auth-helpers-nextjs';
 import dynamic from 'next/dynamic';
+import { ReactElement } from 'react';
+import Layout from '../components/layouts/Layout';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -19,32 +21,21 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const AppLayout = dynamic(() => import('../components/layouts/Layout'), {
-  loading: () => <div />,
+const HomePage = dynamic(() => import('../components/home/HomePage'), {
   ssr: false,
 });
 
-const Layout = dynamic(() => import('../components/layouts'), {
-  loading: () => <div />,
+const LandingPage = dynamic(() => import('../components/home/LandingPage'), {
   ssr: false,
 });
-
-const HomePage = dynamic(() => import('../components/home/HomePage'));
-const LandingPage = dynamic(() => import('../components/home/LandingPage'));
 
 const RootPage: PageWithLayoutProps = ({ user }: { user: User | null }) => {
-  if (user)
-    return (
-      <AppLayout>
-        <HomePage />
-      </AppLayout>
-    );
+  if (user) return <HomePage />;
+  return <LandingPage />;
+};
 
-  return (
-    <Layout>
-      <LandingPage />
-    </Layout>
-  );
+RootPage.getLayout = function getLayout(page: ReactElement) {
+  return <Layout>{page}</Layout>;
 };
 
 export default RootPage;
