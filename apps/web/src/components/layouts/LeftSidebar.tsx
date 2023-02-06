@@ -4,12 +4,10 @@ import {
   CheckCircleIcon,
   ClipboardDocumentListIcon,
   BanknotesIcon,
-  UserGroupIcon,
   Cog6ToothIcon,
   UserCircleIcon,
   PlusIcon,
   ArchiveBoxIcon,
-  MapPinIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   BuildingOffice2Icon,
@@ -392,18 +390,21 @@ function LeftSidebar({ className }: SidebarProps) {
                 activeIcon={<CheckCircleIcon className="w-5" />}
                 label="New task"
                 left
+                disabled
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
                 activeIcon={<ClipboardDocumentListIcon className="w-5" />}
                 label="New note"
                 left
+                disabled
               />
               <SidebarButton
                 onClick={() => setNewPopover(false)}
                 activeIcon={<BanknotesIcon className="w-5" />}
                 label="New transaction"
                 left
+                disabled
               />
               <Divider className="my-1" />
               <SidebarButton
@@ -411,6 +412,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 activeIcon={<UserPlusIcon className="w-5" />}
                 label="Invite people"
                 left
+                disabled
               />
             </Popover.Dropdown>
           </Popover>
@@ -588,14 +590,6 @@ function LeftSidebar({ className }: SidebarProps) {
                   onClick={() => setUserPopover(false)}
                   activeIcon={<UserCircleIcon className="w-5" />}
                   label="Profile"
-                  defaultActive={false}
-                  left
-                />
-                <SidebarLink
-                  href="/friends"
-                  onClick={() => setUserPopover(false)}
-                  activeIcon={<UserGroupIcon className="w-5" />}
-                  label="Friends"
                   defaultActive={false}
                   left
                 />
