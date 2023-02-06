@@ -1,6 +1,6 @@
 {
   "name": "tutur3u",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -12,8 +12,10 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "sb:start": "cd apps/app && pnpm sb:start",
-    "sb:stop": "cd apps/app && pnpm sb:stop"
+    "sb:start": "cd apps/web && pnpm sb:start",
+    "sb:stop": "cd apps/web && pnpm sb:stop",
+    "sb:sync": "cd apps/web && pnpm sb:sync",
+    "sb:reset": "cd apps/web && pnpm sb:reset"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",
