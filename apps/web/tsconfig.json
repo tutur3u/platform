@@ -4,7 +4,6 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../packages/scripts/next/GoogleTag.tsx"
   ],
   "exclude": [
     "node_modules"
