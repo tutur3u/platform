@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write .",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "jest",
     "genver": "pnpm genversion --semi --es6 src/core/version.ts",
     "sb:start": "pnpm supabase start",

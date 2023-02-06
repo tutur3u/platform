@@ -1,4 +1,4 @@
-import { Select, Textarea, TextInput } from "@mantine/core";
+import { Select, Textarea, TextInput } from '@mantine/core';
 
 export default function InputForm() {
   return (
