@@ -1,6 +1,12 @@
-import { Modal, Textarea, TextInput, useMantineTheme } from '@mantine/core';
+import {
+  Avatar,
+  Modal,
+  Textarea,
+  TextInput,
+  useMantineTheme,
+} from '@mantine/core';
 import { ReactElement, useEffect, useState } from 'react';
-// import InputForm from '../../components/expenses/InputForm';
+import InputForm from '../../components/expenses/InputForm';
 import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
@@ -8,13 +14,15 @@ import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { DEV_MODE } from '../../constants/common';
+import RecurringTab from '../../components/expenses/RecurringTab';
+import TrannsactionRow from '../../components/expenses/TransactionRow';
 
 const ExpensesPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
-  const [opened, setOpened] = useState(false);
+  const [modalOpened, setModalOpened] = useState(false);
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
@@ -72,8 +80,8 @@ const ExpensesPage: PageWithLayoutProps = () => {
               </div>
 
               <Modal
-                opened={opened}
-                onClose={() => setOpened(false)}
+                opened={modalOpened}
+                onClose={() => setModalOpened(false)}
                 title="Add Wallet"
                 overlayColor={
                   theme.colorScheme === 'dark'
@@ -100,67 +108,74 @@ const ExpensesPage: PageWithLayoutProps = () => {
                 </div>
               </Modal>
 
-              {/* <InputForm /> */}
+              <InputForm />
+
               <div
-                onClick={() => setOpened(true)}
+                onClick={() => setModalOpened(true)}
                 className="my-5 rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
               >
                 Create your first wallet
               </div>
+
+
             </div>
 
             <div className="w-full lg:w-[50rem]">
-              {/* <div className="flex gap-8">
-                <div className="flex h-14 w-44 items-center justify-start gap-1 rounded-md bg-zinc-600/70 p-2">
-                  <Avatar />
-                  <div className="flex flex-col ">
-                    <span className="text-base font-semibold">iCloud 50GB</span>
-                    <span className="text-sm text-zinc-400">1000 VND</span>
-                  </div>
-                </div>
-                <div className="flex h-14 w-44 items-center justify-start gap-1 rounded-md bg-zinc-600/70 p-2">
-                  <Avatar />
-                  <div className="flex flex-col ">
-                    <span className="text-base font-semibold">iCloud 50GB</span>
-                    <span className="text-sm text-zinc-400">1000 VND</span>
-                  </div>
-                </div>
-                <div className="flex h-14 w-44 items-center justify-start gap-1 rounded-md bg-zinc-600/70 p-2">
-                  <Avatar />
-                  <div className="flex flex-col ">
-                    <span className="text-base font-semibold">iCloud 50GB</span>
-                    <span className="text-sm text-zinc-400">1000 VND</span>
-                  </div>
-                </div>
-              </div> */}
-              <div className="py-5">
+              <div className="flex w-full gap-8 overflow-x-scroll">
+                <RecurringTab name="iCloud 50GB" amount={1000} />
+                <RecurringTab name="Netflix" amount={1000} />
+                {/* <RecurringTab name="Netflix" amount={1000} /> */}
+                <RecurringTab name="Dribbble" amount={1000} />
+                <RecurringTab name="iCloud 50GB" amount={1000} />
+              </div>
+              <div className="w-full py-5">
                 <div className="text-xl font-semibold">Latest transactions</div>
                 <div>
                   You did not have any record. Create a wallet to add
                   transaction.
                 </div>
-                {/* <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <Avatar />
-                    <div>Momo</div>
-                    <div>
-                      <div>Foods</div>
-                      <div>Breakfast Breakfast Breakfast Breakfast</div>
-                    </div>
-                    <div>1000 VND</div>
-                    <div>Today</div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <Avatar />
-                    <div>Momo</div>
-                    <div>
-                      <div>Foods</div>
-                      <div>Breakfast Breakfast Breakfast Breakfast</div>
-                    </div>
-                    <div>1000 VND</div>
-                    <div>2021-10-10</div>
-                  </div>
-                </div> */}
+                <div>
+                  <TrannsactionRow
+                    wallet="Momo"
+                    category="Meal"
+                    title="Breakfast"
+                    time="Today"
+                    amount={1000}
+                    type="Expense"
+                  />
+                  <TrannsactionRow
+                    wallet="Cake"
+                    category="Meal"
+                    title="Lunch"
+                    time="06/02/2023"
+                    amount={100}
+                    type="Expense"
+                  />
+                  <TrannsactionRow
+                    wallet="BIDV"
+                    category="Salary"
+                    title="Salary 1/2023"
+                    time="20/01/2023"
+                    amount={10000}
+                    type="Income"
+                  />
+                  <TrannsactionRow
+                    wallet="Momo"
+                    category="Meal"
+                    title="Breakfast"
+                    time="Today"
+                    amount={1000}
+                    type="Expense"
+                  />
+                  <TrannsactionRow
+                    wallet="Momo"
+                    category="Meal"
+                    title="Breakfast"
+                    time="Today"
+                    amount={1000}
+                    type="Expense"
+                  />
+                </div>
               </div>
             </div>
           </div>
