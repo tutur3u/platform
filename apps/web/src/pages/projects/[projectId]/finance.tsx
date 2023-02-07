@@ -5,7 +5,7 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
 
-const ProjectExpensesPage = () => {
+const ProjectFinancePage = () => {
   const router = useRouter();
   const { projectId } = router.query;
 
@@ -31,7 +31,7 @@ const ProjectExpensesPage = () => {
               content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
-            { content: 'Expenses', href: `/projects/${projectId}/expenses` },
+            { content: 'Finance', href: `/projects/${projectId}/finance` },
           ]
         : []
     );
@@ -41,7 +41,7 @@ const ProjectExpensesPage = () => {
   return (
     <>
       <HeaderX
-        label={`Expenses – ${project?.name || 'Untitled Project'}`}
+        label={`Finance – ${project?.name || 'Untitled Project'}`}
         disableBranding
       />
 
@@ -49,7 +49,7 @@ const ProjectExpensesPage = () => {
         {projectId && (
           <div className="mt-2 mb-2 flex items-center justify-between">
             <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-              Expenses
+              Finance
             </h1>
           </div>
         )}
@@ -58,8 +58,8 @@ const ProjectExpensesPage = () => {
   );
 };
 
-ProjectExpensesPage.getLayout = function getLayout(page: ReactElement) {
+ProjectFinancePage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout orgMode={false}>{page}</NestedLayout>;
 };
 
-export default ProjectExpensesPage;
+export default ProjectFinancePage;

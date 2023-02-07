@@ -19,7 +19,7 @@ const OrgPreviewCard = ({ org }: Props) => {
 
   const isLoading = !projects && !error;
 
-  const createProject = async (orgId: string, project: Project) => {
+  const createProject = async (orgId: string, project: Partial<Project>) => {
     const res = await fetch(`/api/orgs/${orgId}/projects`, {
       method: 'POST',
       headers: {

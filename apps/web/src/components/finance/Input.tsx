@@ -1,6 +1,5 @@
 import { Select, Textarea, TextInput } from '@mantine/core';
 import { DatePicker, TimeInput } from '@mantine/dates';
-import { useState } from 'react';
 
 interface InputProps {
   type: string;

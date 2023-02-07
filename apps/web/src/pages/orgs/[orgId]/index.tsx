@@ -30,10 +30,10 @@ const OrganizationOverviewPage = () => {
             avatar_url: string;
           }) => ({
             id: m.id,
-            displayName: m.display_name,
+            display_name: m.display_name,
             email: m.email,
             username: m.username,
-            avatarUrl: m.avatar_url,
+            avatar_url: m.avatar_url,
           })
         ) || []
       );
@@ -78,21 +78,11 @@ const OrganizationOverviewPage = () => {
         <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <p className="text-zinc-400">
             This is the overview page for the{' '}
-            <span className="font-semibold text-white">{data?.name}</span>{' '}
+            <span className="font-semibold text-white">
+              {data?.name || 'Unnamed Organization'}
+            </span>{' '}
             workspace.
           </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-            <h1 className="font-bold">Revenue</h1>
-          </div>
-          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-            <h1 className="font-bold">Expenses</h1>
-          </div>
-          <div className="h-72 rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 max-xl:col-span-full">
-            <h1 className="font-bold">Recent Activity</h1>
-          </div>
         </div>
       </div>
     </>

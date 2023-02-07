@@ -38,11 +38,11 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
   if (userError) return res.status(401).json({ error: userError.message });
   if (!user?.id) return res.status(401).json({ error: 'User not found' });
 
-  const { displayName, username, birthday } = req.body;
+  const { display_name, username, birthday } = req.body;
 
   const { data, error } = await supabase
     .from('users')
-    .update({ display_name: displayName, username, birthday })
+    .update({ display_name, username, birthday })
     .eq('id', user.id);
 
   if (error) return res.status(401).json({ error: error.message });

@@ -2,7 +2,7 @@ import { TextInput } from '@mantine/core';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { useOrgs } from '../../../hooks/useOrganizations';
@@ -60,27 +60,33 @@ const OrganizationSettingsPage = () => {
       throw new Error('Failed to update org');
     }
 
-    await updateOrg({
-      id: data.id,
-      name,
-    });
+    await updateOrg(
+      {
+        id: data.id,
+        name,
+      },
+      {
+        onSuccess: () => {
+          setRootSegment(
+            orgId
+              ? [
+                  {
+                    content: name,
+                    href: `/orgs/${orgId}`,
+                  },
+                  {
+                    content: 'Settings',
+                    href: `/orgs/${orgId}/settings`,
+                  },
+                ]
+              : []
+          );
 
-    setRootSegment(
-      orgId
-        ? [
-            {
-              content: name,
-              href: `/orgs/${orgId}`,
-            },
-            {
-              content: 'Settings',
-              href: `/orgs/${orgId}/settings`,
-            },
-          ]
-        : []
+          mutate('/api/orgs');
+        },
+        onCompleted: () => setIsSaving(false),
+      }
     );
-
-    setIsSaving(false);
   };
 
   const handleDelete = async () => {
@@ -97,7 +103,10 @@ const OrganizationSettingsPage = () => {
     }
 
     await deleteOrg(data.id, {
-      onSuccess: () => router.push('/'),
+      onSuccess: () => {
+        mutate('/api/orgs');
+        router.push('/');
+      },
       onCompleted: () => setIsDeleting(false),
     });
   };

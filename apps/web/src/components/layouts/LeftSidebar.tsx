@@ -67,16 +67,8 @@ function LeftSidebar({ className }: SidebarProps) {
   }, [user]);
 
   const { createOrg } = useOrgs();
-  const {
-    orgId,
-    org,
-    members,
-    isOrgLoading,
-    isMembersLoading,
-    isProjectsLoading,
-    createProject,
-    projects,
-  } = useProjects();
+  const { orgId, org, members, isProjectsLoading, createProject, projects } =
+    useProjects();
 
   const showEditOrgModal = () => {
     openModal({
@@ -381,15 +373,20 @@ function LeftSidebar({ className }: SidebarProps) {
                 label="New organization"
                 left
               />
-              <SidebarButton
-                onClick={() => {
-                  setNewPopover(false);
-                  showProjectEditForm();
-                }}
-                activeIcon={<Squares2X2Icon className="w-5" />}
-                label="New project"
-                left
-              />
+
+              <Divider className="my-1" />
+
+              {orgId && (
+                <SidebarButton
+                  onClick={() => {
+                    setNewPopover(false);
+                    showProjectEditForm();
+                  }}
+                  activeIcon={<Squares2X2Icon className="w-5" />}
+                  label="New project"
+                  left
+                />
+              )}
               <SidebarButton
                 onClick={() => setNewPopover(false)}
                 activeIcon={<CheckCircleIcon className="w-5" />}
@@ -411,14 +408,19 @@ function LeftSidebar({ className }: SidebarProps) {
                 left
                 disabled
               />
-              <Divider className="my-1" />
-              <SidebarButton
-                onClick={() => setNewPopover(false)}
-                activeIcon={<UserPlusIcon className="w-5" />}
-                label="Invite people"
-                left
-                disabled
-              />
+
+              {orgId && (
+                <>
+                  <Divider className="my-1" />
+                  <SidebarButton
+                    onClick={() => setNewPopover(false)}
+                    activeIcon={<UserPlusIcon className="w-5" />}
+                    label="Invite people"
+                    left
+                    disabled
+                  />
+                </>
+              )}
             </Popover.Dropdown>
           </Popover>
 
@@ -455,10 +457,10 @@ function LeftSidebar({ className }: SidebarProps) {
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
-                href="/expenses"
+                href="/finance"
                 onClick={() => setUserPopover(false)}
                 activeIcon={<BanknotesIcon className="w-5" />}
-                label="Expenses"
+                label="Finance"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
             </div>
@@ -681,7 +683,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Tooltip
                   label={
                     <div className="font-semibold">
-                      <div>{user?.displayName || user?.email}</div>
+                      <div>{user?.display_name || user?.email}</div>
                       {user?.username && (
                         <div className="text-blue-300">@{user.username}</div>
                       )}
@@ -699,7 +701,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     }`}
                     onClick={() => setUserPopover((o) => !o)}
                   >
-                    {getInitials(user?.displayName || user?.email)}
+                    {getInitials(user?.display_name || user?.email)}
                   </Avatar>
                 </Tooltip>
               </Popover.Target>
@@ -765,7 +767,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           value: board.id,
                           label: board.name || 'Untitled Board',
                           group:
-                            user?.displayName ||
+                            user?.display_name ||
                             user?.username ||
                             user?.email ||
                             'Unknown',

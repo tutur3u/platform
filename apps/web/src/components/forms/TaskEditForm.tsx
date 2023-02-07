@@ -138,7 +138,7 @@ const TaskEditForm = ({
       const users = await fetchUsers(input);
       const suggestedUsers = users.map((user: UserData) => ({
         ...user,
-        value: `${user.username} ${user.displayName} ${user.email}`,
+        value: `${user.username} ${user.display_name} ${user.email}`,
       }));
 
       setSuggestions(suggestedUsers);
@@ -151,15 +151,15 @@ const TaskEditForm = ({
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      { username, avatarUrl, displayName, ...others }: UserWithValue,
+      { username, avatar_url, display_name, ...others }: UserWithValue,
       ref: React.ForwardedRef<HTMLDivElement>
     ) => (
       <div ref={ref} {...others}>
         <Group noWrap>
-          <Avatar src={avatarUrl} />
+          <Avatar src={avatar_url} />
 
           <div>
-            <Text>{displayName}</Text>
+            <Text>{display_name}</Text>
             <Text size="xs" color="dimmed">
               {username ? `@${username}` : 'No username'}
             </Text>
@@ -188,14 +188,14 @@ const TaskEditForm = ({
               email?: string;
               phone?: string;
               username?: string;
-              created_At?: string;
+              created_at?: string;
             }) => ({
               id: assignee.id,
-              displayName: assignee.display_name,
+              display_name: assignee.display_name,
               email: assignee.email,
               phone: assignee.phone,
               username: assignee.username,
-              createdAt: assignee.created_At,
+              created_at: assignee.created_at,
             })
           )
         : null;
@@ -703,12 +703,12 @@ const TaskEditForm = ({
                         onClick={() => closeAllModals()}
                       >
                         <Avatar color="blue" radius="xl">
-                          {getInitials(assignee?.displayName || 'Unknown')}
+                          {getInitials(assignee?.display_name || 'Unknown')}
                         </Avatar>
                       </Link>
                       <div>
                         <Text weight="bold" className="text-blue-200">
-                          {assignee.displayName}
+                          {assignee.display_name}
                         </Text>
                         <Text weight="light" className="text-blue-100">
                           @{assignee.username}

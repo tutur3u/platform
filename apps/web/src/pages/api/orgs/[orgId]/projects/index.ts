@@ -28,13 +28,6 @@ const createProject = async (
 
   const { name } = req.body;
 
-  if (!name)
-    return res.status(400).json({
-      error: {
-        message: 'Invalid request',
-      },
-    });
-
   const { data, error } = await supabase
     .from('projects')
     .insert({ org_id: orgId, name })

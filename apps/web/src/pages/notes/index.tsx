@@ -16,7 +16,7 @@ const NotesPage: PageWithLayoutProps = () => {
     changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
       content: 'Notes',
-      href: '/expenses',
+      href: '/finance',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

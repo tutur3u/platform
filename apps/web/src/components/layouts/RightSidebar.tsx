@@ -19,13 +19,13 @@ function RightSidebar({ className }: SidebarProps) {
           key={user?.id || idx}
           label={
             <div className="font-semibold">
-              <div>{user?.displayName || 'Unknown'}</div>
+              <div>{user?.display_name || 'Unknown'}</div>
               {user?.username && (
                 <div className="text-blue-300">@{user.username}</div>
               )}
             </div>
           }
-          disabled={!user?.displayName || rightSidebarPref.main !== 'closed'}
+          disabled={!user?.display_name || rightSidebarPref.main !== 'closed'}
           position="left"
           color="#182a3d"
           offset={20}
@@ -49,7 +49,7 @@ function RightSidebar({ className }: SidebarProps) {
                 color="blue"
                 radius="xl"
               >
-                {getInitials(user?.displayName ?? 'Unknown')}
+                {getInitials(user?.display_name ?? 'Unknown')}
               </Avatar>
             </Indicator>
 
@@ -63,7 +63,7 @@ function RightSidebar({ className }: SidebarProps) {
               }`}
             >
               <div className="text-md min-w-max font-bold">
-                {user?.displayName || user?.email || 'Not logged in'}
+                {user?.display_name || user?.email || 'Not logged in'}
               </div>
               {user?.username && (
                 <div className="min-w-max text-sm font-semibold text-blue-300">

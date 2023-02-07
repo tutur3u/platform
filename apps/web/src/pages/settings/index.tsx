@@ -2,7 +2,6 @@ import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import Layout from '../../components/layouts/Layout';
 import { TextInput } from '@mantine/core';
-import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
@@ -16,10 +15,6 @@ import {
 } from '@heroicons/react/24/solid';
 import HeaderX from '../../components/metadata/HeaderX';
 import { DatePicker } from '@mantine/dates';
-
-export const getServerSideProps = withPageAuth({
-  redirectTo: '/login?nextUrl=/settings',
-});
 
 const SettingPage: PageWithLayoutProps = () => {
   const {
@@ -64,7 +59,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (data) {
-      setDisplayName(data?.displayName || '');
+      setDisplayName(data?.display_name || '');
       setUsername(data?.username || '');
       setBirthday(data?.birthday ? moment(data?.birthday).toDate() : null);
     }
@@ -74,7 +69,7 @@ const SettingPage: PageWithLayoutProps = () => {
     setSaving(true);
 
     await updateData?.({
-      displayName,
+      display_name: displayName,
       username,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
@@ -143,14 +138,14 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </div>
 
-        {data?.createdAt && (
+        {data?.created_at && (
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
             You are a member of Tuturuuu since{' '}
             <span className="font-semibold text-zinc-300">
-              {moment(data.createdAt).toDate().toLocaleDateString()}
+              {moment(data.created_at).toDate().toLocaleDateString()}
             </span>{' '}
             <span className="font-semibold text-zinc-400">
-              ({moment(data.createdAt).fromNow()})
+              ({moment(data.created_at).fromNow()})
             </span>
             .
           </div>

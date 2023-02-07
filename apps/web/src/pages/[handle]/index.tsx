@@ -86,7 +86,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
     setRootSegment({
       content: 'Calendar',
-      href: '/expenses',
+      href: '/finance',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

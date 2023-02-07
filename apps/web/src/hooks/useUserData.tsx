@@ -95,8 +95,8 @@ export const UserDataProvider = ({
       email: data.email,
       username: data.username,
       birthday: data.birthday,
-      displayName: data.display_name,
-      createdAt: data.created_at,
+      display_name: data.display_name,
+      created_at: data.created_at,
     };
   };
 

@@ -6,6 +6,7 @@ interface TransactionRowProps {
   amount: number;
   type: string;
   desWallet?: string;
+  desAccount?: string;
 }
 
 export default function TransactionRow({
@@ -16,6 +17,7 @@ export default function TransactionRow({
   amount,
   type,
   desWallet,
+  desAccount,
 }: TransactionRowProps) {
   let sign;
   switch (type) {
@@ -31,10 +33,23 @@ export default function TransactionRow({
       sign = '';
   }
 
-  category = category || 'Uncategorized';
+  category = category || '';
 
-  if (type === 'Transfer') {
-    title = `Transfer to ${desWallet}`;
+  switch (type) {
+    case 'Transfer':
+      title = `Transfer to ${desWallet}`;
+      break;
+    case 'Adjustment':
+      title = `Adjust ${wallet}`;
+      break;
+    case 'Lend':
+      title = `Lend to ${desAccount}`;
+      break;
+    case 'Borrow':
+      title = `Borrow from ${desAccount}`;
+      break;
+    default:
+      break;
   }
 
   return (
