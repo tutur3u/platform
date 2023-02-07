@@ -1,4 +1,3 @@
-import { Modal, Textarea, TextInput, useMantineTheme } from '@mantine/core';
 import { ReactElement, useEffect, useState } from 'react';
 import WalletTab from '../../../components/finance/wallets/WalletTab';
 import Layout from '../../../components/layouts/Layout';
@@ -8,29 +7,31 @@ import { useAppearance } from '../../../hooks/useAppearance';
 import { useUserData } from '../../../hooks/useUserData';
 import { useUserList } from '../../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
+import { Wallet } from '../../../types/primitives/Wallet';
+import WalletEditForm from '../../../components/forms/WalletEditForm';
+import { openModal } from '@mantine/modals';
 
-// create interface Wallet
-interface Wallet {
-  name: string;
-  balance: number;
-  description: string;
-}
-
-const dummyData = [
+const dummyData: Wallet[] = [
   {
+    id: 'DUMMY_1',
     name: 'MB Bank',
     balance: 1000000,
     description: 'My first wallet',
+    currency: 'VND',
   },
   {
+    id: 'DUMMY_2',
     name: 'Vietcombank',
     balance: 2000000,
     description: 'My second wallet',
+    currency: 'VND',
   },
   {
+    id: 'DUMMY_3',
     name: 'Techcombank',
     balance: 3000000,
     description: 'My third wallet',
+    currency: 'VND',
   },
 ];
 
@@ -38,8 +39,6 @@ const WalletsPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
-
-  const [modalWalletOpened, setModalWalletOpened] = useState(false);
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
@@ -55,24 +54,36 @@ const WalletsPage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const theme = useMantineTheme();
-
   const [wallets, setWallets] = useState<Wallet[]>(dummyData);
 
-  const [balance, setBalance] = useState('');
-  const [walletName, setWalletName] = useState('');
-  const [description, setDescription] = useState('');
+  const createWallet = (wallet: Wallet) => {
+    setWallets((prev) => [...prev, wallet]);
+  };
 
-  const handleAddWallet = () => {
-    const newWallet = {
-      name: walletName,
-      balance: Number(balance),
-      description: description,
-    };
-    setWallets([...wallets, newWallet]);
-    setBalance('');
-    setWalletName('');
-    setDescription('');
+  const editWallet = (wallet: Wallet) => {
+    setWallets((prev) => prev.map((w) => (w.id === wallet.id ? wallet : w)));
+  };
+
+  const deleteWallet = (wallet: Wallet) => {
+    setWallets((prev) => prev.filter((w) => w.id !== wallet.id));
+  };
+
+  const showEditOrgModal = (wallet?: Wallet) => {
+    openModal({
+      title: (
+        <div className="font-semibold">
+          {wallet ? 'Edit wallet' : 'Create wallet'}
+        </div>
+      ),
+      centered: true,
+      children: (
+        <WalletEditForm
+          wallet={wallet}
+          onSubmit={wallet ? editWallet : createWallet}
+          onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+        />
+      ),
+    });
   };
 
   if (!DEV_MODE)
@@ -89,56 +100,14 @@ const WalletsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <div className="flex w-full ">
-        <div className="flex h-screen w-72 flex-col gap-8 border p-5">
-          <Modal
-            opened={modalWalletOpened}
-            onClose={() => setModalWalletOpened(false)}
-            title="Add Wallet"
-            overlayColor={
-              theme.colorScheme === 'dark'
-                ? theme.colors.dark[9]
-                : theme.colors.gray[2]
-            }
-            overlayOpacity={0.55}
-            overlayBlur={3}
+      <div className="flex w-full">
+        <div className="flex h-screen w-72 flex-col gap-8 border-r border-zinc-800 p-5">
+          <button
+            onClick={() => showEditOrgModal()}
+            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
-            <div className="flex flex-col gap-4">
-              <TextInput
-                value={balance}
-                onChange={(event) => setBalance(event.currentTarget.value)}
-                placeholder="Balance"
-              />
-              <TextInput
-                value={walletName}
-                onChange={(event) => setWalletName(event.currentTarget.value)}
-                placeholder="Wallet name"
-              />
-              <Textarea
-                value={description}
-                onChange={(event) => setDescription(event.currentTarget.value)}
-                placeholder="Description"
-                autosize
-                minRows={2}
-                maxRows={4}
-              />
-            </div>
-            <div className="mt-3 text-right">
-              <button
-                onClick={() => handleAddWallet()}
-                className="rounded-md bg-zinc-800 px-3 py-1 hover:bg-blue-300/30 hover:text-blue-300"
-              >
-                Save
-              </button>
-            </div>
-          </Modal>
-
-          <div
-            onClick={() => setModalWalletOpened(true)}
-            className="rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
-          >
-            Create your first wallet
-          </div>
+            Create wallet
+          </button>
 
           <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
             {wallets.map((wallet, index) => (
@@ -146,6 +115,7 @@ const WalletsPage: PageWithLayoutProps = () => {
                 key={index}
                 name={wallet.name}
                 balance={wallet.balance}
+                onClick={() => showEditOrgModal(wallet)}
               />
             ))}
           </div>
