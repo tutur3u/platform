@@ -123,7 +123,9 @@ const OrganizationProjectsPage = () => {
                 href={`/projects/${project.id}`}
                 className="group rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
               >
-                <h1 className="font-bold">{project.name}</h1>
+                <h1 className="font-bold">
+                  {project?.name || 'Untitled Project'}
+                </h1>
 
                 {project?.created_at ? (
                   <>

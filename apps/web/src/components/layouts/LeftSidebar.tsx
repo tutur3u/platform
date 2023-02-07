@@ -457,10 +457,10 @@ function LeftSidebar({ className }: SidebarProps) {
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
-                href="/expenses"
+                href="/finance"
                 onClick={() => setUserPopover(false)}
                 activeIcon={<BanknotesIcon className="w-5" />}
-                label="Expenses"
+                label="Finance"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
             </div>

@@ -50,8 +50,8 @@ const projectTabs = [
     href: '/notes',
   },
   {
-    name: 'Expenses',
-    href: '/expenses',
+    name: 'Finance',
+    href: '/finance',
   },
   {
     name: 'Members',
