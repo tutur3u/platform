@@ -52,7 +52,7 @@ const OrganizationProjectsPage = () => {
 
   if (isLoading) return <div>Loading...</div>;
 
-  const createProject = async (orgId: string, project: Project) => {
+  const createProject = async (orgId: string, project: Partial<Project>) => {
     const res = await fetch(`/api/orgs/${orgId}/projects`, {
       method: 'POST',
       headers: {

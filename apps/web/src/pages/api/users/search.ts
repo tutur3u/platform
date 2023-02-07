@@ -18,16 +18,8 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
     search_query: searchQuery,
   });
 
-  const normalizedData = data?.map((user) => ({
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    displayName: user.display_name,
-    avatarUrl: user.avatar_url,
-  }));
-
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(normalizedData);
+  return res.status(200).json(data);
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {

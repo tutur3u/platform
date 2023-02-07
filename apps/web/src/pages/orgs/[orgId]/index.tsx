@@ -30,10 +30,10 @@ const OrganizationOverviewPage = () => {
             avatar_url: string;
           }) => ({
             id: m.id,
-            displayName: m.display_name,
+            display_name: m.display_name,
             email: m.email,
             username: m.username,
-            avatarUrl: m.avatar_url,
+            avatar_url: m.avatar_url,
           })
         ) || []
       );

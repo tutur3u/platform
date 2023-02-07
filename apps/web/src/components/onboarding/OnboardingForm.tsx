@@ -48,13 +48,13 @@ const OnboardingForm = () => {
   useEffect(() => {
     if (!data) return;
 
-    const hasDisplayName = (data?.displayName || '')?.length > 0;
+    const hasDisplayName = (data?.display_name || '')?.length > 0;
     const hasUsername = (data?.username || '')?.length > 0;
 
     setProfileCompleted(hasDisplayName && hasUsername);
     if (hasDisplayName && hasUsername) return;
 
-    setDisplayName(data?.displayName || '');
+    setDisplayName(data?.display_name || '');
     setUsername(data?.username || '');
   }, [data]);
 
@@ -62,7 +62,7 @@ const OnboardingForm = () => {
     setSaving(true);
 
     await updateData?.({
-      displayName,
+      display_name: displayName,
       username,
     });
 
