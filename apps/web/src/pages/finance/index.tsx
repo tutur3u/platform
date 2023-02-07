@@ -104,7 +104,7 @@ const FinancePage: PageWithLayoutProps = () => {
                 </div>
               </Modal>
 
-              <InputForm />
+              {/* <InputForm /> */}
 
               <div
                 onClick={() => setModalWalletOpened(true)}
