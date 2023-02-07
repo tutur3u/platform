@@ -2,7 +2,6 @@ import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import Layout from '../../components/layouts/Layout';
 import { TextInput } from '@mantine/core';
-import { withPageAuth } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
@@ -16,10 +15,6 @@ import {
 } from '@heroicons/react/24/solid';
 import HeaderX from '../../components/metadata/HeaderX';
 import { DatePicker } from '@mantine/dates';
-
-export const getServerSideProps = withPageAuth({
-  redirectTo: '/login?nextUrl=/settings',
-});
 
 const SettingPage: PageWithLayoutProps = () => {
   const {

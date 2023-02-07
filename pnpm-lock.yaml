@@ -16,7 +16,6 @@ importers:
 
   apps/web:
     specifiers:
-      '@babel/core': ^7.20.12
       '@emotion/react': ^11.10.5
       '@emotion/server': ^11.10.0
       '@heroicons/react': ^2.0.14
@@ -114,7 +113,6 @@ importers:
       ui: link:../../packages/ui
       uuid: 9.0.0
     devDependencies:
-      '@babel/core': 7.20.12
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.4
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
