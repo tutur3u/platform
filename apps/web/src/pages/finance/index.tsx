@@ -1,12 +1,6 @@
-import {
-  Avatar,
-  Modal,
-  Textarea,
-  TextInput,
-  useMantineTheme,
-} from '@mantine/core';
+import { Modal, Textarea, TextInput, useMantineTheme } from '@mantine/core';
 import { ReactElement, useEffect, useState } from 'react';
-import InputForm from '../../components/expenses/InputForm';
+import InputForm from '../../components/finance/InputForm';
 import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
@@ -14,21 +8,23 @@ import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { DEV_MODE } from '../../constants/common';
-import RecurringTab from '../../components/expenses/RecurringTab';
-import TrannsactionRow from '../../components/expenses/TransactionRow';
+import RecurringTab from '../../components/finance/RecurringTab';
+import TrannsactionRow from '../../components/finance/TransactionRow';
+import Link from 'next/link';
 
-const ExpensesPage: PageWithLayoutProps = () => {
+const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
-  const [modalOpened, setModalOpened] = useState(false);
+  const [modalWalletOpened, setModalWalletOpened] = useState(false);
+  // const [modalTransactionOpened, setModalTransactionOpened] = useState(false);
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
-      content: 'Expenses',
-      href: '/expenses',
+      content: 'Finance',
+      href: '/finance',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -43,7 +39,7 @@ const ExpensesPage: PageWithLayoutProps = () => {
   if (!DEV_MODE)
     return (
       <>
-        <HeaderX label="Expenses" />
+        <HeaderX label="Finance" />
         <div className="p-4 md:h-screen md:p-8">
           <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-8 text-center text-2xl font-semibold text-purple-300 md:text-6xl">
             Under construction 🚧
@@ -54,7 +50,7 @@ const ExpensesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Expenses" />
+      <HeaderX label="Finance" />
       <div className="h-full p-4 md:p-8">
         <div className="flex h-full min-h-full w-full flex-col gap-8">
           <div className="flex h-fit w-full items-center justify-center gap-8 text-xl font-semibold">
@@ -65,7 +61,7 @@ const ExpensesPage: PageWithLayoutProps = () => {
               Transaction
             </div>
             <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
-              Wallet
+              <Link href="/finance/wallets">Wallet</Link>
             </div>
             <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
               Report
@@ -80,8 +76,8 @@ const ExpensesPage: PageWithLayoutProps = () => {
               </div>
 
               <Modal
-                opened={modalOpened}
-                onClose={() => setModalOpened(false)}
+                opened={modalWalletOpened}
+                onClose={() => setModalWalletOpened(false)}
                 title="Add Wallet"
                 overlayColor={
                   theme.colorScheme === 'dark'
@@ -92,7 +88,7 @@ const ExpensesPage: PageWithLayoutProps = () => {
                 overlayBlur={3}
               >
                 <div className="flex flex-col gap-4">
-                  <TextInput placeholder="Initial balance" />
+                  <TextInput placeholder="Balance" />
                   <TextInput placeholder="Wallet name" />
                   <Textarea
                     placeholder="Description"
@@ -111,13 +107,18 @@ const ExpensesPage: PageWithLayoutProps = () => {
               <InputForm />
 
               <div
-                onClick={() => setModalOpened(true)}
+                onClick={() => setModalWalletOpened(true)}
                 className="my-5 rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
               >
                 Create your first wallet
               </div>
 
-
+              {/* <div
+                onClick={() => setModalTransactionOpened(true)}
+                className="my-5 rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
+              >
+                Add transaction
+              </div> */}
             </div>
 
             <div className="w-full lg:w-[50rem]">
@@ -185,8 +186,8 @@ const ExpensesPage: PageWithLayoutProps = () => {
   );
 };
 
-ExpensesPage.getLayout = function getLayout(page: ReactElement) {
+FinancePage.getLayout = function getLayout(page: ReactElement) {
   return <Layout>{page}</Layout>;
 };
 
-export default ExpensesPage;
+export default FinancePage;
