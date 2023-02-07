@@ -49,14 +49,14 @@ const TaskWrapper = ({
             email?: string;
             phone?: string;
             username?: string;
-            created_At?: string;
+            created_at?: string;
           }) => ({
             id: assignee.id,
-            displayName: assignee.display_name,
+            display_name: assignee.display_name,
             email: assignee.email,
             phone: assignee.phone,
             username: assignee.username,
-            createdAt: assignee.created_At,
+            created_at: assignee.created_at,
           })
         )
       : null;
@@ -252,7 +252,7 @@ const TaskWrapper = ({
                     key={assignee.id}
                     label={
                       <div className="font-semibold">
-                        <div>{assignee?.displayName}</div>
+                        <div>{assignee?.display_name}</div>
                         {assignee?.username && (
                           <div className="text-blue-300">
                             @{assignee.username}
@@ -264,7 +264,7 @@ const TaskWrapper = ({
                     withArrow
                   >
                     <Avatar color="blue" radius="xl">
-                      {getInitials(assignee?.displayName || 'Unknown')}
+                      {getInitials(assignee?.display_name || 'Unknown')}
                     </Avatar>
                   </Tooltip>
                 ))}

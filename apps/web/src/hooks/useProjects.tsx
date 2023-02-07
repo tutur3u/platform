@@ -30,7 +30,7 @@ const ProjectContext = createContext({
   },
 
   createProject: async (
-    project: Project,
+    project: Partial<Project>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -40,7 +40,7 @@ const ProjectContext = createContext({
     console.log('createProject', project, options);
   },
   updateProject: async (
-    project: Project,
+    project: Partial<Project>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -68,8 +68,13 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [orgId, setOrgId] = useState<string>('');
 
   useEffect(() => {
-    if (!orgs?.current || orgs.current.length === 0) return;
-    setOrgId(orgs.current[0].id);
+    if (!orgs?.current || orgs.current.length === 0) {
+      setOrgId('');
+      return;
+    }
+
+    const orgId = orgs.current[0].id;
+    setOrgId((prevId) => (prevId === orgId ? prevId : orgId));
   }, [orgs]);
 
   const { data: org, error: orgError } = useSWR(
@@ -91,7 +96,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const isMembersLoading = !membersData && !membersError;
 
   const createProject = async (
-    project: Project,
+    project: Partial<Project>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -126,7 +131,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProject = async (
-    project: Project,
+    project: Partial<Project>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;

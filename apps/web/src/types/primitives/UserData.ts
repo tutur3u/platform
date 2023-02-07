@@ -2,9 +2,9 @@ export interface UserData {
   id: string;
   email?: string;
   phone?: string;
-  displayName?: string;
+  display_name?: string;
   birthday?: string | null;
   username?: string;
-  avatarUrl?: string;
-  createdAt?: string;
+  avatar_url?: string;
+  created_at?: string;
 }

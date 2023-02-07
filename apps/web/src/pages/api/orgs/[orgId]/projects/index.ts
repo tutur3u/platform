@@ -11,7 +11,8 @@ const fetchProjects = async (
   const { data, error } = await supabase
     .from('projects')
     .select('id, name, created_at')
-    .eq('org_id', orgId);
+    .eq('org_id', orgId)
+    .order('id');
 
   if (error) return res.status(500).json({ error: error.message });
 
@@ -26,13 +27,6 @@ const createProject = async (
   const supabase = createServerSupabaseClient({ req, res });
 
   const { name } = req.body;
-
-  if (!name)
-    return res.status(400).json({
-      error: {
-        message: 'Invalid request',
-      },
-    });
 
   const { data, error } = await supabase
     .from('projects')

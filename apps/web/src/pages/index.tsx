@@ -6,6 +6,9 @@ import dynamic from 'next/dynamic';
 import { ReactElement } from 'react';
 import Layout from '../components/layouts/Layout';
 
+const HomePage = dynamic(() => import('../components/home/HomePage'));
+const LandingPage = dynamic(() => import('../components/home/LandingPage'));
+
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
 
@@ -21,17 +24,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const HomePage = dynamic(() => import('../components/home/HomePage'), {
-  ssr: false,
-});
-
-const LandingPage = dynamic(() => import('../components/home/LandingPage'), {
-  ssr: false,
-});
-
 const RootPage: PageWithLayoutProps = ({ user }: { user: User | null }) => {
-  if (user) return <HomePage />;
-  return <LandingPage />;
+  return user ? <HomePage /> : <LandingPage />;
 };
 
 RootPage.getLayout = function getLayout(page: ReactElement) {
