@@ -1,6 +1,5 @@
 import { Modal, Textarea, TextInput, useMantineTheme } from '@mantine/core';
 import { ReactElement, useEffect, useState } from 'react';
-import InputForm from '../../components/finance/InputForm';
 import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
@@ -122,10 +121,10 @@ const FinancePage: PageWithLayoutProps = () => {
             </div>
 
             <div className="w-full lg:w-[50rem]">
-              <div className="flex w-full gap-8 overflow-x-scroll">
+              <div className="flex w-full gap-4 overflow-x-scroll">
                 <RecurringTab name="iCloud 50GB" amount={1000} />
                 <RecurringTab name="Netflix" amount={1000} />
-                {/* <RecurringTab name="Netflix" amount={1000} /> */}
+                <RecurringTab name="Netflix" amount={1000} />
                 <RecurringTab name="Dribbble" amount={1000} />
                 <RecurringTab name="iCloud 50GB" amount={1000} />
               </div>
