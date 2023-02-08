@@ -10,6 +10,7 @@ import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import { Wallet } from '../../../types/primitives/Wallet';
 import WalletEditForm from '../../../components/forms/WalletEditForm';
 import { openModal } from '@mantine/modals';
+import { Transaction } from '../../../types/primitives/Transaction';
 
 const dummyData: Wallet[] = [
   {
@@ -54,8 +55,11 @@ const WalletsPage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const [wallets, setWallets] = useState<Wallet[]>(dummyData);
-
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
   const createWallet = (wallet: Wallet) => {
     setWallets((prev) => [...prev, wallet]);
   };
