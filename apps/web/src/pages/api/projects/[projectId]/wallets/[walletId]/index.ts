@@ -3,17 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { projectId } = req.query;
-
-    if (!projectId || typeof projectId !== 'string')
-      throw new Error('Invalid projectId');
+    const { walletId } = req.query;
+    if (!walletId || typeof walletId !== 'string')
+      throw new Error('Invalid ID');
 
     switch (req.method) {
-      case 'GET':
-        return await fetchWallets(req, res, projectId);
+      case 'PUT':
+        return await updateWallet(req, res, walletId);
 
-      case 'POST':
-        return await createWallet(req, res, projectId);
+      case 'DELETE':
+        return await deleteWallet(req, res, walletId);
 
       default:
         throw new Error(
@@ -32,45 +31,44 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchWallets = async (
+const updateWallet = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  projectId: string
+  walletId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { data, error } = await supabase
+  const { name, description, balance, currency } = req.body;
+
+  const { error } = await supabase
     .from('project_wallets')
-    .select('id, name, balance, currency, created_at, project_id')
-    .eq('project_id', projectId);
+    .update({
+      name,
+      description,
+      balance,
+      currency,
+    })
+    .eq('id', walletId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
 
-const createWallet = async (
+const deleteWallet = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  projectId: string
+  walletId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name, description, balance, currency } = JSON.parse(req.body);
-
-  const { error } = await supabase.from('project_wallets').insert({
-    name,
-    description,
-    balance,
-    currency,
-    project_id: projectId,
-  });
+  const { error } = await supabase.from('project_wallets').delete().eq('id', walletId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ message: 'Wallet created' });
+  return res.status(200).json({});
 };

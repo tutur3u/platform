@@ -11,30 +11,9 @@ import { Wallet } from '../../types/primitives/Wallet';
 import WalletEditForm from '../../components/forms/WalletEditForm';
 import { openModal } from '@mantine/modals';
 import { Transaction } from '../../types/primitives/Transaction';
-
-const dummyData: Wallet[] = [
-  {
-    id: 'DUMMY_1',
-    name: 'MB Bank',
-    balance: 1000000,
-    description: 'My first wallet',
-    currency: 'VND',
-  },
-  {
-    id: 'DUMMY_2',
-    name: 'Vietcombank',
-    balance: 2000000,
-    description: 'My second wallet',
-    currency: 'VND',
-  },
-  {
-    id: 'DUMMY_3',
-    name: 'Techcombank',
-    balance: 3000000,
-    description: 'My third wallet',
-    currency: 'VND',
-  },
-];
+import { useWallets } from '../../hooks/useWallets';
+import { useProjects } from '../../hooks/useProjects';
+import { Select } from '@mantine/core';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -55,22 +34,15 @@ const FinancePage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
-
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  const createWallet = (wallet: Wallet) => {
-    setWallets((prev) => [...prev, wallet]);
-  };
-
-  const editWallet = (wallet: Wallet) => {
-    setWallets((prev) => prev.map((w) => (w.id === wallet.id ? wallet : w)));
-  };
-
-  const deleteWallet = (wallet: Wallet) => {
-    setWallets((prev) => prev.filter((w) => w.id !== wallet.id));
-  };
+  const {
+    wallets,
+    createWallet,
+    updateWallet,
+    deleteWallet,
+    projectId,
+    setProjectId,
+  } = useWallets();
+  const { projects, isProjectsLoading } = useProjects();
 
   const showEditOrgModal = (wallet?: Wallet) => {
     openModal({
@@ -82,8 +54,10 @@ const FinancePage: PageWithLayoutProps = () => {
       centered: true,
       children: (
         <WalletEditForm
+          projects={projects}
+          isProjectsLoading={isProjectsLoading}
           wallet={wallet}
-          onSubmit={wallet ? editWallet : createWallet}
+          onSubmit={wallet ? updateWallet : createWallet}
           onDelete={wallet ? () => deleteWallet(wallet) : undefined}
         />
       ),
@@ -106,6 +80,17 @@ const FinancePage: PageWithLayoutProps = () => {
     <>
       <div className="flex w-full">
         <div className="flex h-screen w-72 flex-col gap-8 border-r border-zinc-800 p-5">
+          <Select
+            label="Select project"
+            placeholder="Select project"
+            data={projects.map((project) => ({
+              label: project.name,
+              value: project.id,
+            }))}
+            value={projectId}
+            onChange={setProjectId}
+          />
+
           <button
             onClick={() => showEditOrgModal()}
             className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
@@ -114,14 +99,15 @@ const FinancePage: PageWithLayoutProps = () => {
           </button>
 
           <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
-            {wallets.map((wallet, index) => (
-              <WalletTab
-                key={index}
-                name={wallet.name}
-                balance={wallet.balance}
-                onClick={() => showEditOrgModal(wallet)}
-              />
-            ))}
+            {wallets &&
+              wallets.map((wallet, index) => (
+                <WalletTab
+                  key={index}
+                  name={wallet.name}
+                  balance={wallet.balance}
+                  onClick={() => showEditOrgModal(wallet)}
+                />
+              ))}
           </div>
         </div>
       </div>

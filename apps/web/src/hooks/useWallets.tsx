@@ -20,7 +20,13 @@ const WalletContext = createContext({
 
   walletId: null as string | null,
   setWalletId: (id: string | null) => console.log(id),
+
+  projectId: null as string | null,
   setProjectId: (id: string | null) => console.log(id),
+
+  createWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
+  updateWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
+  deleteWallet: (wallet: Wallet) => console.log(wallet),
 });
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
@@ -41,7 +47,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const isTransactionsLoading = !transactions && !transactionsError;
 
-  const createWallet = async (wallet: Wallet) => {
+  const createWallet = async (projectId: string, wallet: Wallet) => {
     try {
       const res = await fetch(`/api/projects/${projectId}/wallets`, {
         method: 'POST',
@@ -54,11 +60,57 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!res.ok) throw new Error('Failed to create wallet');
-      mutate('/api/orgs');
+      mutate(`/api/projects/${projectId}/wallets`);
     } catch (e: any) {
       showNotification({
-        title: 'Failed to create organization',
-        message: 'Make sure you have permission to create new organizations',
+        title: 'Failed to create wallet',
+        message: 'Make sure you have permission to create new wallets',
+        color: 'red',
+      });
+    }
+  };
+
+  const updateWallet = async (projectId: string, wallet: Wallet) => {
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/wallets/${wallet.id}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: wallet?.name || '',
+            description: wallet?.description || '',
+            currency: wallet?.currency || '',
+            balance: wallet?.balance || 0,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error('Failed to update wallet');
+      mutate(`/api/projects/${projectId}/wallets`);
+    } catch (e: any) {
+      showNotification({
+        title: 'Failed to update wallet',
+        message: 'Make sure you have permission to update wallets',
+        color: 'red',
+      });
+    }
+  };
+
+  const deleteWallet = async (wallet: Wallet) => {
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/wallets/${wallet.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!res.ok) throw new Error('Failed to delete wallet');
+      mutate(`/api/projects/${projectId}/wallets`);
+    } catch (e: any) {
+      showNotification({
+        title: 'Failed to delete wallet',
+        message: 'Make sure you have permission to delete wallets',
         color: 'red',
       });
     }
@@ -73,7 +125,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     walletId,
     setWalletId,
+
+    projectId,
     setProjectId,
+
+    createWallet,
+    updateWallet,
+    deleteWallet,
   };
 
   return (

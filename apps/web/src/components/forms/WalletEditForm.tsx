@@ -3,15 +3,28 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Project } from '../../types/primitives/Project';
 import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {
   wallet?: Wallet;
-  onSubmit: (wallet: Wallet) => void;
+  onSubmit: (projectId: string, wallet: Wallet) => void;
   onDelete?: () => void;
+  projects: Project[];
+  isProjectsLoading: boolean;
 }
 
-const WalletEditForm = ({ wallet, onSubmit, onDelete }: Props) => {
+const WalletEditForm = ({
+  wallet,
+  onSubmit,
+  onDelete,
+  projects,
+  isProjectsLoading,
+}: Props) => {
+  const [projectId, setProjectId] = useState<string | null>(
+    wallet?.project_id || projects[0]?.id
+  );
+
   const [name, setName] = useState(wallet?.name || '');
   const [balance, setBalance] = useState<number | undefined>(wallet?.balance);
   const [currency, setCurrency] = useState<string | null>(
@@ -27,6 +40,19 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete }: Props) => {
           value={wallet?.id}
           className="mb-2"
           disabled
+        />
+      )}
+
+      {isProjectsLoading || (
+        <Select
+          label="Project"
+          placeholder="Select project"
+          value={projectId}
+          onChange={setProjectId}
+          data={projects.map((project) => ({
+            value: project.id,
+            label: project.name,
+          }))}
         />
       )}
 
@@ -103,7 +129,7 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete }: Props) => {
               description,
             };
 
-            onSubmit(newWallet);
+            onSubmit(projectId || '', newWallet);
             closeAllModals();
           }}
           mt="md"
