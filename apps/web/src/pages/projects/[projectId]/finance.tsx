@@ -42,7 +42,6 @@ const ProjectFinancePage = () => {
     <>
       <HeaderX
         label={`Finance – ${project?.name || 'Untitled Project'}`}
-        disableBranding
       />
 
       <div className="grid gap-4">

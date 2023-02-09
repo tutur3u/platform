@@ -115,7 +115,6 @@ const OrganizationSettingsPage = () => {
     <>
       <HeaderX
         label={`Settings – ${data?.name || 'Unnamed Organization'}`}
-        disableBranding
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

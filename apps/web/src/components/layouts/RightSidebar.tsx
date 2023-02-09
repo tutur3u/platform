@@ -55,11 +55,7 @@ function RightSidebar({ className }: SidebarProps) {
 
             <div
               className={`w-full overflow-hidden ${
-                rightSidebarPref.main === 'closed'
-                  ? 'md:hidden'
-                  : rightSidebarPref.main === 'auto'
-                  ? 'opacity-0 transition duration-300 group-hover:opacity-100'
-                  : ''
+                rightSidebarPref.main === 'closed' ? 'md:hidden' : ''
               }`}
             >
               <div className="text-md min-w-max font-bold">

@@ -40,10 +40,7 @@ const ProjectTasksPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Tasks – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
+      <HeaderX label={`Tasks – ${project?.name || 'Untitled Project'}`} />
 
       <div className="grid gap-4">
         {projectId && (
