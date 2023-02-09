@@ -1,8 +1,10 @@
 import { FC } from 'react';
-import { useUser } from '@supabase/auth-helpers-react';
 import dynamic from 'next/dynamic';
+import { User } from '../../types/primitives/User';
+import { useUser } from '@supabase/auth-helpers-react';
 
 interface LayoutProps {
+  user?: User;
   hideNavbar?: boolean;
   hideNavLinks?: boolean;
   hideFooter?: boolean;
@@ -10,26 +12,22 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const DefaultLayout = dynamic(() => import('./DefaultLayout'), {
-  ssr: false,
-});
-
-const SidebarLayout = dynamic(() => import('./SidebarLayout'), {
-  ssr: false,
-});
+const DefaultLayout = dynamic(() => import('./DefaultLayout'), { ssr: false });
+const SidebarLayout = dynamic(() => import('./SidebarLayout'), { ssr: false });
 
 const Layout: FC<LayoutProps> = ({
+  user,
   hideNavbar,
   hideNavLinks,
   hideFooter,
   hideSlogan,
   children,
 }: LayoutProps) => {
-  const user = useUser();
+  const clientUser = useUser();
 
-  if (user) return <SidebarLayout>{children}</SidebarLayout>;
-
-  return (
+  return user ?? clientUser ? (
+    <SidebarLayout>{children}</SidebarLayout>
+  ) : (
     <DefaultLayout
       hideNavbar={hideNavbar}
       hideNavLinks={hideNavLinks}

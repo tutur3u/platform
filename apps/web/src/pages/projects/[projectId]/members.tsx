@@ -66,7 +66,6 @@ const ProjectMembersPage = () => {
     <>
       <HeaderX
         label={`Members – ${project?.name || 'Untitled Project'}`}
-        disableBranding
       />
 
       {project.orgs.id && (

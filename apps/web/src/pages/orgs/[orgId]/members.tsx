@@ -114,7 +114,6 @@ const OrganizationMembersPage = () => {
     <>
       <HeaderX
         label={`Members – ${orgData?.name || 'Unnamed Organization'}`}
-        disableBranding
       />
 
       {orgId && (

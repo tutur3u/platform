@@ -1,10 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { configs } from '../constants/prefs';
 import { Segment } from '../types/primitives/Segment';
 
 type Theme = 'light' | 'dark';
 
-export type MainSidebarPref = 'auto' | 'open' | 'closed' | 'hidden';
+export type MainSidebarPref = 'open' | 'closed';
 export type SecondarySidebarPref = 'visible' | 'hidden';
 
 export interface SidebarPreference {
@@ -198,24 +204,24 @@ export const AppearanceProvider = ({
 
   const [segments, setSegments] = useState<Segment[]>([]);
 
-  const setRootSegment = (
-    segment: Segment | Segment[],
-    conditions?: boolean[]
-  ) => {
-    // If not all conditions are true, don't set the segment
-    if (conditions && conditions.some((condition) => !condition)) return;
+  const setRootSegment = useCallback(
+    (segment: Segment | Segment[], conditions?: boolean[]) => {
+      // If not all conditions are true, don't set the segment
+      if (conditions && conditions.some((condition) => !condition)) return;
 
-    // Update the segments
-    setSegments((oldSegments) =>
-      Array.isArray(segment)
-        ? segment.length > 0
-          ? segment
+      // Update the segments
+      setSegments((oldSegments) =>
+        Array.isArray(segment)
+          ? segment.length > 0
+            ? segment
+            : oldSegments
+          : segment !== null
+          ? [segment]
           : oldSegments
-        : segment !== null
-        ? [segment]
-        : oldSegments
-    );
-  };
+      );
+    },
+    []
+  );
 
   const addSegment = (segment: Segment, conditions?: boolean[]) => {
     // If not all conditions are true, don't add the segment

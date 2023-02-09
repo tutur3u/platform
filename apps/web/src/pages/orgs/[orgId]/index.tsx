@@ -69,7 +69,6 @@ const OrganizationOverviewPage = () => {
     <>
       <HeaderX
         label={`Overview – ${data?.name || 'Unnamed Organization'}`}
-        disableBranding
       />
 
       <div className="grid gap-4">

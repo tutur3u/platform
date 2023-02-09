@@ -42,7 +42,6 @@ const ProjectOverviewPage = () => {
     <>
       <HeaderX
         label={`Overview – ${project?.name || 'Untitled Project'}`}
-        disableBranding
       />
       <div className="grid gap-4">
         <div className="rounded-lg bg-zinc-900 p-4">

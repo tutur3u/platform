@@ -40,10 +40,7 @@ const ProjectCalendarPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Calendar – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
+      <HeaderX label={`Calendar – ${project?.name || 'Untitled Project'}`} />
 
       <div className="grid gap-4">
         {projectId && (

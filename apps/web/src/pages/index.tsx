@@ -29,7 +29,7 @@ const RootPage: PageWithLayoutProps = ({ user }: { user: User | null }) => {
 };
 
 RootPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <Layout user={page.props.user}>{page}</Layout>;
 };
 
 export default RootPage;
