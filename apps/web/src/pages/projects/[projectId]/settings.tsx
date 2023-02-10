@@ -87,6 +87,7 @@ const ProjectSettingsPage = () => {
           : []
       );
 
+      mutate(`/api/projects/${projectId}`);
       mutate(`/api/orgs/${project.orgs.id}/projects`);
     }
 
@@ -154,12 +155,18 @@ const ProjectSettingsPage = () => {
 
           <div className="h-full" />
 
-          <div
-            onClick={handleSave}
-            className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+          <button
+            onClick={
+              isSaving || name === project?.name ? undefined : handleSave
+            }
+            className={`${
+              isSaving || name === project?.name
+                ? 'cursor-not-allowed opacity-50'
+                : 'hover:border-blue-300/30 hover:bg-blue-300/20'
+            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
           >
             {isSaving ? 'Saving...' : 'Save'}
-          </div>
+          </button>
         </div>
 
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">

@@ -65,7 +65,7 @@ const SettingPage: PageWithLayoutProps = () => {
     setSaving(false);
   };
 
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     await supabaseClient.auth.signOut();
     router.push('/login');
   };
@@ -240,9 +240,9 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
           <div
             className="col-span-full flex w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-            onClick={handleSignOut}
+            onClick={handleLogout}
           >
-            Sign out
+            Log out
           </div>
         </div>
       </div>

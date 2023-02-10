@@ -13,6 +13,7 @@ import {
   Squares2X2Icon,
   UserPlusIcon,
   SquaresPlusIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/solid';
 
 import SidebarLink from './SidebarLink';
@@ -31,10 +32,20 @@ import OrganizationSelector from '../selectors/OrganizationSelector';
 import { useProjects } from '../../hooks/useProjects';
 import ProjectEditForm from '../forms/ProjectEditForm';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { data: user } = useUserData();
+
+  const router = useRouter();
+  const { supabaseClient } = useSessionContext();
+
+  const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    router.push('/');
+  };
 
   const { createOrg } = useOrgs();
   const { orgId, org, members, isProjectsLoading, createProject, projects } =
@@ -242,7 +253,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 left
               />
 
-              <Divider className="my-1" />
+              <Divider />
 
               {orgId && (
                 <SidebarButton
@@ -279,7 +290,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
               {orgId && (
                 <>
-                  <Divider className="my-1" />
+                  <Divider />
                   <SidebarButton
                     onClick={() => setNewPopover(false)}
                     activeIcon={<UserPlusIcon className="w-5" />}
@@ -480,7 +491,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
                 {leftSidebarPref.main !== 'open' && (
                   <>
-                    <Divider className="my-1" variant="dashed" />
+                    <Divider variant="dashed" />
                     <OrganizationSelector
                       showLabel
                       className="mx-2 mb-2"
@@ -488,6 +499,17 @@ function LeftSidebar({ className }: SidebarProps) {
                     />
                   </>
                 )}
+
+                <Divider variant="dashed" />
+                <SidebarButton
+                  onClick={() => {
+                    setUserPopover(false);
+                    handleLogout();
+                  }}
+                  activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
+                  label="Log out"
+                  left
+                />
               </Popover.Dropdown>
             </Popover>
           </div>

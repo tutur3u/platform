@@ -14,20 +14,20 @@ const OrganizationSettingsPage = () => {
 
   const { updateOrg, deleteOrg } = useOrgs();
 
-  const { data, error } = useSWR(`/api/orgs/${orgId}`);
-  const isLoading = !data && !error;
+  const { data: org, error } = useSWR(`/api/orgs/${orgId}`);
+  const isLoading = !org && !error;
 
   const { setRootSegment } = useAppearance();
 
-  const [name, setName] = useState(data?.name);
+  const [name, setName] = useState(org?.name);
 
   useEffect(() => {
-    setName(data?.name);
+    setName(org?.name);
     setRootSegment(
       orgId
         ? [
             {
-              content: data?.name ?? 'Loading...',
+              content: org?.name ?? 'Loading...',
               href: `/orgs/${orgId}`,
             },
             {
@@ -38,7 +38,7 @@ const OrganizationSettingsPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, data?.name]);
+  }, [orgId, org?.name]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -55,14 +55,14 @@ const OrganizationSettingsPage = () => {
       return;
     }
 
-    if (!updateOrg || !data) {
+    if (!updateOrg || !org) {
       setIsSaving(false);
       throw new Error('Failed to update org');
     }
 
     await updateOrg(
       {
-        id: data.id,
+        id: org.id,
         name,
       },
       {
@@ -98,12 +98,12 @@ const OrganizationSettingsPage = () => {
       return;
     }
 
-    if (!deleteOrg || !data) {
+    if (!deleteOrg || !org) {
       setIsDeleting(false);
       throw new Error('Failed to delete org');
     }
 
-    await deleteOrg(data.id, {
+    await deleteOrg(org.id, {
       onSuccess: () => {
         mutate('/api/orgs');
         router.push('/');
@@ -114,7 +114,7 @@ const OrganizationSettingsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Settings – ${data?.name || 'Unnamed Organization'}`} />
+      <HeaderX label={`Settings – ${org?.name || 'Unnamed Organization'}`} />
 
       {orgId && (
         <>
@@ -139,7 +139,7 @@ const OrganizationSettingsPage = () => {
           <div className="grid max-w-xs gap-2">
             <TextInput
               label="Organization Name"
-              placeholder={data?.name || name || 'Organization Name'}
+              placeholder={org?.name || name || 'Organization Name'}
               value={name}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setName(e.currentTarget.value)
@@ -153,7 +153,7 @@ const OrganizationSettingsPage = () => {
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
             This organization was created{' '}
             <span className="font-semibold text-zinc-300">
-              {moment(data.created_at).fromNow()}
+              {moment(org.created_at).fromNow()}
             </span>
             .
           </div>
@@ -162,12 +162,18 @@ const OrganizationSettingsPage = () => {
             <>
               <div className="h-full" />
 
-              <div
-                onClick={handleSave}
-                className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+              <button
+                onClick={
+                  isSaving || name === org?.name ? undefined : handleSave
+                }
+                className={`${
+                  isSaving || name === org?.name
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'hover:border-blue-300/30 hover:bg-blue-300/20'
+                } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
               >
                 {isSaving ? 'Saving...' : 'Save'}
-              </div>
+              </button>
             </>
           )}
         </div>
