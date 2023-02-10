@@ -5,7 +5,7 @@ import HeaderX from '../components/metadata/HeaderX';
 import DefaultLayout from '../components/layouts/DefaultLayout';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
-import { AuthFormFields, authenticate } from '../utils/auth-handler';
+import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 
@@ -41,12 +41,19 @@ const SignupPage = () => {
     try {
       if (!password || !email) throw new Error('Please fill in all fields');
 
+      const { authenticate } = await import('../utils/auth-handler');
+
       await authenticate({
         supabaseClient,
         method: 'signup',
         email,
         password,
       });
+
+      const { mutate } = await import('swr');
+
+      mutate('/api/user');
+      mutate('/api/orgs');
 
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage

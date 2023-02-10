@@ -81,7 +81,6 @@ const OrganizationProjectsPage = () => {
   };
 
   const showProjectEditForm = () => {
-    if (!orgId) return;
     openModal({
       title: <div className="font-semibold">Create new project</div>,
       centered: true,
@@ -115,14 +114,12 @@ const OrganizationProjectsPage = () => {
       <Divider className="my-4" />
 
       {orgId && (
-        <div className="flex items-center justify-between">
-          <button
-            onClick={showProjectEditForm}
-            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-          >
-            New project <SquaresPlusIcon className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          onClick={showProjectEditForm}
+          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+        >
+          New project <SquaresPlusIcon className="h-4 w-4" />
+        </button>
       )}
 
       <div className="mt-4 grid gap-4">

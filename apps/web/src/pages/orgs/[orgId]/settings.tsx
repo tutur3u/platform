@@ -158,43 +158,43 @@ const OrganizationSettingsPage = () => {
             .
           </div>
 
-          {isSystemOrg || (
-            <>
-              <div className="h-full" />
+          <div className="h-full" />
 
-              <button
-                onClick={
-                  isSaving || name === org?.name ? undefined : handleSave
-                }
-                className={`${
-                  isSaving || name === org?.name
-                    ? 'cursor-not-allowed opacity-50'
-                    : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-                } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-            </>
-          )}
+          <button
+            onClick={
+              isSystemOrg || isSaving || name === org?.name
+                ? undefined
+                : handleSave
+            }
+            className={`${
+              isSystemOrg || isSaving || name === org?.name
+                ? 'cursor-not-allowed opacity-50'
+                : 'hover:border-blue-300/30 hover:bg-blue-300/20'
+            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
         </div>
 
-        {isSystemOrg || (
-          <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-            <div className="mb-1 text-3xl font-bold">Security</div>
-            <div className="mb-4 font-semibold text-zinc-500">
-              Manage the security of your organization.
-            </div>
-
-            <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
-              <div
-                className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-                onClick={handleDelete}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Organization'}
-              </div>
-            </div>
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+          <div className="mb-1 text-3xl font-bold">Security</div>
+          <div className="mb-4 font-semibold text-zinc-500">
+            Manage the security of your organization.
           </div>
-        )}
+
+          <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
+            <button
+              onClick={isSystemOrg ? undefined : handleDelete}
+              className={`${
+                isSystemOrg
+                  ? 'cursor-not-allowed opacity-50'
+                  : 'hover:border-red-300/30 hover:bg-red-300/20'
+              } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition`}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Organization'}
+            </button>
+          </div>
+        </div>
       </div>
     </>
   );

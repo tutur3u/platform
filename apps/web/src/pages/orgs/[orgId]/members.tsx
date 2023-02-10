@@ -102,7 +102,6 @@ const OrganizationMembersPage = () => {
   };
 
   const showSelectUserForm = () => {
-    if (!orgId) return;
     openModal({
       title: <div className="font-semibold">Invite a member</div>,
       centered: true,
@@ -130,15 +129,13 @@ const OrganizationMembersPage = () => {
       <Divider className="my-4" />
 
       {orgId && (
-        <div className="flex items-center justify-between">
-          <button
-            onClick={showSelectUserForm}
-            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-          >
-            Invite member
-            <UserPlusIcon className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          onClick={showSelectUserForm}
+          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+        >
+          Invite member
+          <UserPlusIcon className="h-4 w-4" />
+        </button>
       )}
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
