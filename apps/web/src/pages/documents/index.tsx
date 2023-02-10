@@ -7,7 +7,7 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { DEV_MODE } from '../../constants/common';
 
-const NotesPage: PageWithLayoutProps = () => {
+const DocumentsPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
@@ -15,8 +15,8 @@ const NotesPage: PageWithLayoutProps = () => {
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
-      content: 'Notes',
-      href: '/finance',
+      content: 'Documents',
+      href: '/documents',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -29,7 +29,7 @@ const NotesPage: PageWithLayoutProps = () => {
   if (!DEV_MODE)
     return (
       <>
-        <HeaderX label="Notes" />
+        <HeaderX label="Documents" />
         <div className="p-4 md:h-screen md:p-8">
           <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-8 text-center text-2xl font-semibold text-purple-300 md:text-6xl">
             Under construction 🚧
@@ -40,14 +40,14 @@ const NotesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Notes" />
+      <HeaderX label="Documents" />
       <div className="flex-colp-6 flex h-full w-full"></div>
     </>
   );
 };
 
-NotesPage.getLayout = function getLayout(page: ReactElement) {
+DocumentsPage.getLayout = function getLayout(page: ReactElement) {
   return <Layout>{page}</Layout>;
 };
 
-export default NotesPage;
+export default DocumentsPage;

@@ -1,45 +1,46 @@
-import Image from 'next/image';
-import {
-  TextInput,
-  Divider,
-  Button,
-  PasswordInput,
-  Select,
-} from '@mantine/core';
+import { TextInput, Divider, Button, PasswordInput } from '@mantine/core';
 import { ChangeEvent, useState } from 'react';
-import {
-  GlobeAltIcon,
-  LockClosedIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/solid';
-import { AuthMethod, authenticate } from '../../utils/auth-handler';
-import { useRouter } from 'next/router';
-import { useSessionContext } from '@supabase/auth-helpers-react';
-import AuthEmailSent from './AuthEmailSent';
+import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import { AuthFormFields, AuthMethod } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
-import { showNotification } from '@mantine/notifications';
 
 interface AuthFormProps {
-  method: AuthMethod;
-  emailSent: boolean;
-  setMethod: (method: AuthMethod) => void;
-  onSignup?: () => void;
-  onSignin?: () => void;
+  title: string;
+  description: string;
+  submitLabel: string;
+  submittingLabel: string;
+
+  secondaryAction?: {
+    description?: string;
+    label: string;
+    href: string;
+  };
+
+  disableForgotPassword?: boolean;
+  hideForgotPassword?: boolean;
+  recoveryMode?: boolean;
+  disabled?: boolean;
+
+  onSubmit?: ({ email, password }: AuthFormFields) => Promise<void>;
 }
 
 const AuthForm = ({
-  method,
-  emailSent = false,
-  setMethod,
-  onSignup,
-  onSignin,
-}: AuthFormProps) => {
-  const router = useRouter();
-  const { supabaseClient } = useSessionContext();
+  title,
+  description,
+  submitLabel,
+  submittingLabel,
 
+  secondaryAction,
+
+  disableForgotPassword = true,
+  hideForgotPassword = true,
+  recoveryMode = false,
+  disabled = false,
+
+  onSubmit,
+}: AuthFormProps) => {
   const [submitting, setSubmitting] = useState(false);
-  const [language, setLanguage] = useState('en');
 
   const form = useForm({
     initialValues: {
@@ -57,97 +58,18 @@ const AuthForm = ({
     },
   });
 
-  if (emailSent) return <AuthEmailSent email={form.values.email} />;
   const isFormInvalid = !!form.errors.email || !!form.errors.password;
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (isFormInvalid) return;
+
+    const { email, password } = form.values;
     setSubmitting(true);
-
-    try {
-      const email = form.values.email;
-      const password = form.values.password;
-
-      await authenticate({
-        supabaseClient,
-        method,
-        email,
-        password,
-      });
-
-      if (method === 'signup') {
-        onSignup?.();
-        setSubmitting(false);
-        return;
-      } else onSignin?.();
-
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { redirectedFrom: nextUrl } = router.query;
-      router.push(nextUrl ? nextUrl.toString() : '/');
-    } catch (error: any) {
-      showNotification({
-        title: 'Error',
-        message: error?.message || error || 'Something went wrong',
-        color: 'red',
-      });
-      setSubmitting(false);
-    }
+    if (onSubmit) await onSubmit({ email, password });
+    setSubmitting(false);
   };
 
-  const title =
-    language === 'vi'
-      ? method === 'login'
-        ? 'Chào mừng trở lại'
-        : method === 'signup'
-        ? 'Hãy bắt đầu'
-        : 'Khôi phục mật khẩu'
-      : method === 'login'
-      ? 'Welcome back'
-      : method === 'signup'
-      ? 'Get started'
-      : 'Recover password';
-
-  const description =
-    language === 'vi'
-      ? method === 'login'
-        ? 'Đăng nhập vào tài khoản của bạn'
-        : method === 'signup'
-        ? 'Tạo tài khoản mới'
-        : 'Nhập địa chỉ email của bạn để khôi phục mật khẩu'
-      : method === 'login'
-      ? 'Login to your account'
-      : method === 'signup'
-      ? 'Create a new account'
-      : 'Enter your email address to recover your password';
-
-  const ctaTextDefault =
-    language === 'vi'
-      ? method === 'login'
-        ? 'Đăng nhập'
-        : method === 'signup'
-        ? 'Đăng ký'
-        : 'Khôi phục'
-      : method === 'login'
-      ? 'Login'
-      : method === 'signup'
-      ? 'Sign up'
-      : 'Recover';
-
-  const ctaTextSubmitting =
-    language === 'vi'
-      ? method === 'login'
-        ? 'Đang đăng nhập'
-        : method === 'signup'
-        ? 'Đang đăng ký'
-        : 'Đang khôi phục'
-      : method === 'login'
-      ? 'Logging in'
-      : method === 'signup'
-      ? 'Signing up'
-      : 'Recovering';
-
-  const ctaText = submitting ? ctaTextSubmitting : ctaTextDefault;
+  const ctaText = submitting ? submittingLabel : submitLabel;
 
   return (
     <>
@@ -184,11 +106,11 @@ const AuthForm = ({
               required
             />
 
-            {method === 'recover' || (
+            {recoveryMode || (
               <PasswordInput
                 id="password"
                 icon={<LockClosedIcon className="h-5" />}
-                label={language === 'vi' ? 'Mật khẩu' : 'Password'}
+                label="Password"
                 placeholder="••••••••"
                 value={form.values.password}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -212,19 +134,19 @@ const AuthForm = ({
               />
             )}
 
-            {method === 'recover' || (
-              <button
+            {disableForgotPassword || (
+              <Link
+                href="/recover"
                 className={`${
-                  method !== 'login' ? 'pointer-events-none opacity-0' : ''
+                  hideForgotPassword && 'pointer-events-none opacity-0'
                 } ${
                   submitting
                     ? 'cursor-not-allowed text-zinc-200/30'
                     : 'text-zinc-200/50 hover:text-zinc-200'
                 } w-fit place-self-end transition`}
-                onClick={() => setMethod('recover')}
               >
-                {language === 'vi' ? 'Quên mật khẩu?' : 'Forgot password?'}
-              </button>
+                Forgot password?
+              </Link>
             )}
           </div>
 
@@ -233,37 +155,32 @@ const AuthForm = ({
               className="bg-blue-300/10"
               variant="light"
               loading={submitting}
-              onClick={handleAuth}
-              disabled={isFormInvalid || method === 'recover'}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              disabled={isFormInvalid || disabled}
             >
               {ctaText}
             </Button>
 
-            <div>
-              <span className="text-zinc-200/30">
-                {language === 'vi'
-                  ? method === 'login'
-                    ? 'Chưa có tài khoản?'
-                    : 'Đã có tài khoản?'
-                  : method === 'login'
-                  ? "Don't have an account?"
-                  : 'Already have an account?'}
-              </span>{' '}
-              <button
-                className="font-semibold text-zinc-200/50 transition hover:text-zinc-200"
-                onClick={() =>
-                  setMethod(method === 'login' ? 'signup' : 'login')
-                }
-              >
-                {language === 'vi'
-                  ? method === 'login'
-                    ? 'Đăng ký'
-                    : 'Đăng nhập'
-                  : method === 'login'
-                  ? 'Sign up'
-                  : 'Login'}
-              </button>
-            </div>
+            {secondaryAction && (
+              <div>
+                {secondaryAction.description && (
+                  <>
+                    <span className="text-zinc-200/30">
+                      {secondaryAction.description}
+                    </span>{' '}
+                  </>
+                )}
+                <Link
+                  href={secondaryAction.href}
+                  className="font-semibold text-zinc-200/50 transition hover:text-zinc-200"
+                >
+                  {secondaryAction.label}
+                </Link>
+              </div>
+            )}
           </div>
 
           <Divider className="w-full border-zinc-300/10" variant="dashed" />
@@ -284,26 +201,6 @@ const AuthForm = ({
             </Link>
             , and to receive periodic emails with updates.
           </div>
-
-          <Divider className="w-full border-zinc-300/10" />
-          <Select
-            icon={<GlobeAltIcon className="h-5" />}
-            label={language === 'vi' ? 'Ngôn ngữ' : 'Language'}
-            placeholder={
-              language === 'vi' ? 'Chọn ngôn ngữ' : 'Select language'
-            }
-            className="w-full"
-            classNames={{
-              label: 'text-zinc-200/80 mb-1',
-              input: 'bg-zinc-300/10 border-zinc-300/10',
-            }}
-            value={language}
-            onChange={(value) => setLanguage(value || 'en')}
-            data={[
-              { label: 'Tiếng Việt', value: 'vi' },
-              { label: 'English', value: 'en' },
-            ]}
-          />
         </div>
       </div>
     </>

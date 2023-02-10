@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const ProjectOverviewPage = () => {
   const router = useRouter();
@@ -40,20 +41,24 @@ const ProjectOverviewPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Overview – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
-      <div className="grid gap-4">
-        <div className="rounded-lg bg-zinc-900 p-4">
-          <h1 className="font-bold">Overview</h1>
-          <p className="text-zinc-400">
-            This is the overview page for the{' '}
-            <span className="font-semibold text-white">{project?.name}</span>{' '}
-            project.
-          </p>
-        </div>
-      </div>
+      <HeaderX label={`Overview – ${project?.name || 'Untitled Project'}`} />
+
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Overview</h1>
+            <p className="text-zinc-400">
+              A quick summary of the{' '}
+              <span className="font-semibold text-zinc-200">
+                {project?.name || 'Untitled Project'}
+              </span>{' '}
+              project and its progress.
+            </p>
+          </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
     </>
   );
 };

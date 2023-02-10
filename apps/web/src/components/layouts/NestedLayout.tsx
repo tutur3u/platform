@@ -5,7 +5,6 @@ import Layout from './Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ActionIcon } from '@mantine/core';
 import { StarIcon } from '@heroicons/react/24/outline';
-import { useOrgs } from '../../hooks/useOrganizations';
 import LoadingIndicator from '../common/LoadingIndicator';
 
 interface NestedLayoutProps {
@@ -42,12 +41,12 @@ const projectTabs = [
     href: '/calendar',
   },
   {
-    name: 'Tasks',
-    href: '/tasks',
+    name: 'Boards',
+    href: '/boards',
   },
   {
-    name: 'Notes',
-    href: '/notes',
+    name: 'Documents',
+    href: '/documents',
   },
   {
     name: 'Finance',

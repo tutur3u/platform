@@ -4,10 +4,10 @@ import React, { ReactElement } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import DefaultLayout from '../components/layouts/DefaultLayout';
 import { showNotification } from '@mantine/notifications';
-import { AuthFormFields } from '../utils/auth-handler';
+import { useRouter } from 'next/router';
+import { AuthFormFields, authenticate } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -33,27 +33,20 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const LoginPage = () => {
+const PasswordRecoveryPage = () => {
   const supabaseClient = useSupabaseClient();
   const router = useRouter();
 
-  const handleLogin = async ({ email, password }: AuthFormFields) => {
+  const handleRecovery = async ({ email, password }: AuthFormFields) => {
     try {
       if (!password || !email) throw new Error('Please fill in all fields');
 
-      const { authenticate } = await import('../utils/auth-handler');
-
       await authenticate({
         supabaseClient,
-        method: 'login',
+        method: 'signup',
         email,
         password,
       });
-
-      const { mutate } = await import('swr');
-
-      mutate('/api/user');
-      mutate('/api/orgs');
 
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
@@ -70,26 +63,26 @@ const LoginPage = () => {
 
   return (
     <>
-      <HeaderX label="Tuturuuu — Log in" />
+      <HeaderX label="Tuturuuu — Password Recovery" />
       <AuthForm
-        title="Welcome back"
-        description="Log in to your account"
-        submitLabel="Log in"
-        submittingLabel="Logging in"
+        title="Recover password"
+        description="Enter your email address to recover your password"
+        submitLabel="Send recovery email"
+        submittingLabel="Sending recovery email"
         secondaryAction={{
-          description: "Don't have an account?",
-          label: 'Sign up',
-          href: '/signup',
+          description: 'Already have an account?',
+          label: 'Log in',
+          href: '/login',
         }}
-        onSubmit={handleLogin}
-        disableForgotPassword={false}
-        hideForgotPassword={false}
+        onSubmit={handleRecovery}
+        recoveryMode
+        disabled
       />
     </>
   );
 };
 
-LoginPage.getLayout = function getLayout(page: ReactElement) {
+PasswordRecoveryPage.getLayout = function getLayout(page: ReactElement) {
   return (
     <DefaultLayout hideNavLinks hideFooter>
       {page}
@@ -97,4 +90,4 @@ LoginPage.getLayout = function getLayout(page: ReactElement) {
   );
 };
 
-export default LoginPage;
+export default PasswordRecoveryPage;

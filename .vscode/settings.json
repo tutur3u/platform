@@ -9,11 +9,11 @@
     // ".eslintrc.js": true,
     //* Package Manager
     // ".npmrc": true,
-    "node_modules": true,
-    "pnpm-lock.yaml": true,
+    // "node_modules": true,
+    // "pnpm-lock.yaml": true,
     // "pnpm-workspace.yaml": true,
     //* Build
-    ".turbo": true,
+    // ".turbo": true,
     // "turbo.json": true,
     //* Git
     // ".gitignore": true,

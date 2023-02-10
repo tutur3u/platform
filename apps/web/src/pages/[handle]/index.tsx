@@ -71,18 +71,10 @@ interface ProfilePageParams {
 const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   user,
 }): ReactElement => {
-  const {
-    setRootSegment,
-    changeLeftSidebarSecondaryPref,
-    changeRightSidebarPref,
-  } = useAppearance();
+  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
-    changeRightSidebarPref({
-      main: 'hidden',
-      secondary: 'hidden',
-    });
 
     setRootSegment({
       content: 'Calendar',
@@ -212,8 +204,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   return (
     <>
       <HeaderX
-        label={`${user?.username} (${user?.display_name})`}
-        disableBranding
+        label={`${user?.username} ${
+          user?.display_name ? `(${user?.display_name})` : ''
+        }`}
       />
       <div className="absolute inset-0 top-[4.5rem] flex h-full w-full flex-col border-zinc-800 md:static">
         <div className="relative flex h-64 items-center justify-center">

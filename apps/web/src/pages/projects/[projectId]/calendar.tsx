@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const ProjectCalendarPage = () => {
   const router = useRouter();
@@ -40,20 +41,21 @@ const ProjectCalendarPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Calendar – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
+      <HeaderX label={`Calendar – ${project?.name || 'Untitled Project'}`} />
 
-      <div className="grid gap-4">
-        {projectId && (
-          <div className="mt-2 mb-2 flex items-center justify-between">
-            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-              Calendar
-            </h1>
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Calendar</h1>
+            <p className="text-zinc-400">
+              Organize tasks, events, and deadlines effectively and
+              collaboratively with a calendar.
+            </p>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
     </>
   );
 };
