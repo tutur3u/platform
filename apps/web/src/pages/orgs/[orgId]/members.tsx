@@ -1,9 +1,9 @@
 import {
   ArrowRightOnRectangleIcon,
-  PlusIcon,
+  UserPlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
-import { Tooltip } from '@mantine/core';
+import { Divider, Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import { useUser } from '@supabase/auth-helpers-react';
@@ -102,7 +102,6 @@ const OrganizationMembersPage = () => {
   };
 
   const showSelectUserForm = () => {
-    if (!orgId) return;
     openModal({
       title: <div className="font-semibold">Invite a member</div>,
       centered: true,
@@ -112,25 +111,34 @@ const OrganizationMembersPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Members – ${orgData?.name || 'Unnamed Organization'}`}
-      />
+      <HeaderX label={`Members – ${orgData?.name || 'Unnamed Organization'}`} />
 
       {orgId && (
-        <div className="mt-2 mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-            Members ({membersData?.members?.length || 0})
-          </h1>
-          <button
-            onClick={showSelectUserForm}
-            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-          >
-            Invite <PlusIcon className="h-4 w-4" />
-          </button>
-        </div>
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">
+              Members ({membersData?.members?.length || 0})
+            </h1>
+            <p className="text-zinc-400">
+              Manage members of your organization.
+            </p>
+          </div>
+        </>
       )}
 
-      <div className="mb-16 flex max-w-lg flex-col gap-4">
+      <Divider className="my-4" />
+
+      {orgId && (
+        <button
+          onClick={showSelectUserForm}
+          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+        >
+          Invite member
+          <UserPlusIcon className="h-4 w-4" />
+        </button>
+      )}
+
+      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
         {membersData?.members
           ?.sort(
             (

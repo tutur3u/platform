@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/24/solid';
+import { SquaresPlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
@@ -81,7 +81,6 @@ const OrganizationProjectsPage = () => {
   };
 
   const showProjectEditForm = () => {
-    if (!orgId) return;
     openModal({
       title: <div className="font-semibold">Create new project</div>,
       centered: true,
@@ -99,21 +98,31 @@ const OrganizationProjectsPage = () => {
         label={`Projects – ${orgData?.name || 'Unnamed Organization'}`}
       />
 
-      <div className="grid gap-4">
-        {orgId && (
-          <div className="mt-2 mb-2 flex items-center justify-between">
-            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
+      {orgId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">
               Projects ({projectsData?.length || 0})
             </h1>
-            <button
-              onClick={showProjectEditForm}
-              className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-            >
-              New project <PlusIcon className="h-4 w-4" />
-            </button>
+            <p className="text-zinc-400">
+              Organize work into projects and track progress with ease.
+            </p>
           </div>
-        )}
+        </>
+      )}
 
+      <Divider className="my-4" />
+
+      {orgId && (
+        <button
+          onClick={showProjectEditForm}
+          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+        >
+          New project <SquaresPlusIcon className="h-4 w-4" />
+        </button>
+      )}
+
+      <div className="mt-4 grid gap-4">
         <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {projectsData?.map(
             (project: { id: string; name: string; created_at: string }) => (

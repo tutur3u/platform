@@ -4,10 +4,10 @@ import React, { ReactElement } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import DefaultLayout from '../components/layouts/DefaultLayout';
 import { showNotification } from '@mantine/notifications';
+import { useRouter } from 'next/router';
 import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -33,11 +33,11 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const LoginPage = () => {
+const SignupPage = () => {
   const supabaseClient = useSupabaseClient();
   const router = useRouter();
 
-  const handleLogin = async ({ email, password }: AuthFormFields) => {
+  const handleSignup = async ({ email, password }: AuthFormFields) => {
     try {
       if (!password || !email) throw new Error('Please fill in all fields');
 
@@ -45,7 +45,7 @@ const LoginPage = () => {
 
       await authenticate({
         supabaseClient,
-        method: 'login',
+        method: 'signup',
         email,
         password,
       });
@@ -70,26 +70,26 @@ const LoginPage = () => {
 
   return (
     <>
-      <HeaderX label="Tuturuuu — Log in" />
+      <HeaderX label="Tuturuuu — Sign up" />
       <AuthForm
-        title="Welcome back"
-        description="Log in to your account"
-        submitLabel="Log in"
-        submittingLabel="Logging in"
+        title="Get started"
+        description="Create a new account"
+        submitLabel="Sign up"
+        submittingLabel="Signing up"
         secondaryAction={{
-          description: "Don't have an account?",
-          label: 'Sign up',
-          href: '/signup',
+          description: 'Already have an account?',
+          label: 'Log in',
+          href: '/login',
         }}
-        onSubmit={handleLogin}
+        onSubmit={handleSignup}
         disableForgotPassword={false}
-        hideForgotPassword={false}
+        hideForgotPassword
       />
     </>
   );
 };
 
-LoginPage.getLayout = function getLayout(page: ReactElement) {
+SignupPage.getLayout = function getLayout(page: ReactElement) {
   return (
     <DefaultLayout hideNavLinks hideFooter>
       {page}
@@ -97,4 +97,4 @@ LoginPage.getLayout = function getLayout(page: ReactElement) {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
