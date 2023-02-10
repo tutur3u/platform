@@ -1,24 +1,24 @@
-import { Modal, Textarea, TextInput, useMantineTheme } from '@mantine/core';
 import { ReactElement, useEffect, useState } from 'react';
-import InputForm from '../../components/finance/InputForm';
+import WalletTab from '../../components/finance/wallets/WalletTab';
 import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
+import { DEV_MODE } from '../../constants/common';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { DEV_MODE } from '../../constants/common';
-import RecurringTab from '../../components/finance/RecurringTab';
-import TrannsactionRow from '../../components/finance/TransactionRow';
-import Link from 'next/link';
+import { Wallet } from '../../types/primitives/Wallet';
+import WalletEditForm from '../../components/forms/WalletEditForm';
+import { openModal } from '@mantine/modals';
+import { Transaction } from '../../types/primitives/Transaction';
+import { useWallets } from '../../hooks/useWallets';
+import { useProjects } from '../../hooks/useProjects';
+import { Select } from '@mantine/core';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
-
-  const [modalWalletOpened, setModalWalletOpened] = useState(false);
-  // const [modalTransactionOpened, setModalTransactionOpened] = useState(false);
 
   useEffect(() => {
     changeLeftSidebarSecondaryPref('hidden');
@@ -34,7 +34,35 @@ const FinancePage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const theme = useMantineTheme();
+  const {
+    wallets,
+    createWallet,
+    updateWallet,
+    deleteWallet,
+    projectId,
+    setProjectId,
+  } = useWallets();
+  const { projects, isProjectsLoading } = useProjects();
+
+  const showEditOrgModal = (wallet?: Wallet) => {
+    openModal({
+      title: (
+        <div className="font-semibold">
+          {wallet ? 'Edit wallet' : 'Create wallet'}
+        </div>
+      ),
+      centered: true,
+      children: (
+        <WalletEditForm
+          projects={projects}
+          isProjectsLoading={isProjectsLoading}
+          wallet={wallet}
+          onSubmit={wallet ? updateWallet : createWallet}
+          onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+        />
+      ),
+    });
+  };
 
   if (!DEV_MODE)
     return (
@@ -50,135 +78,36 @@ const FinancePage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Finance" />
-      <div className="h-full p-4 md:p-8">
-        <div className="flex h-full min-h-full w-full flex-col gap-8">
-          <div className="flex h-fit w-full items-center justify-center gap-8 text-xl font-semibold">
-            <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
-              Dashboard
-            </div>
-            <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
-              Transaction
-            </div>
-            <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
-              <Link href="/finance/wallets">Wallet</Link>
-            </div>
-            <div className="transition duration-500 hover:cursor-pointer hover:text-blue-700">
-              Report
-            </div>
-          </div>
+      <div className="flex w-full">
+        <div className="flex h-screen w-72 flex-col gap-8 border-r border-zinc-800 p-5">
+          <Select
+            label="Select project"
+            placeholder="Select project"
+            data={projects.map((project) => ({
+              label: project.name,
+              value: project.id,
+            }))}
+            value={projectId}
+            onChange={setProjectId}
+          />
 
-          <div className="flex-col justify-between xl:flex xl:flex-row">
-            <div>
-              <div className="h-fit w-full rounded-lg bg-green-300/30 p-5 text-green-300 hover:cursor-pointer sm:w-1/2 lg:w-[17rem]">
-                <div className="text-xl font-semibold">Total balance</div>
-                <div className=" text-4xl font-bold">0 VND</div>
-              </div>
+          <button
+            onClick={() => showEditOrgModal()}
+            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+          >
+            Create wallet
+          </button>
 
-              <Modal
-                opened={modalWalletOpened}
-                onClose={() => setModalWalletOpened(false)}
-                title="Add Wallet"
-                overlayColor={
-                  theme.colorScheme === 'dark'
-                    ? theme.colors.dark[9]
-                    : theme.colors.gray[2]
-                }
-                overlayOpacity={0.55}
-                overlayBlur={3}
-              >
-                <div className="flex flex-col gap-4">
-                  <TextInput placeholder="Balance" />
-                  <TextInput placeholder="Wallet name" />
-                  <Textarea
-                    placeholder="Description"
-                    autosize
-                    minRows={2}
-                    maxRows={4}
-                  />
-                </div>
-                <div className="mt-4 text-right">
-                  <button className="rounded-md bg-zinc-800 px-3 py-1 hover:bg-blue-300/30 hover:text-blue-300">
-                    Save
-                  </button>
-                </div>
-              </Modal>
-
-              <InputForm />
-
-              <div
-                onClick={() => setModalWalletOpened(true)}
-                className="my-5 rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
-              >
-                Create your first wallet
-              </div>
-
-              {/* <div
-                onClick={() => setModalTransactionOpened(true)}
-                className="my-5 rounded-lg bg-zinc-800 p-2 text-center hover:cursor-pointer"
-              >
-                Add transaction
-              </div> */}
-            </div>
-
-            <div className="w-full lg:w-[50rem]">
-              <div className="flex w-full gap-8 overflow-x-scroll">
-                <RecurringTab name="iCloud 50GB" amount={1000} />
-                <RecurringTab name="Netflix" amount={1000} />
-                {/* <RecurringTab name="Netflix" amount={1000} /> */}
-                <RecurringTab name="Dribbble" amount={1000} />
-                <RecurringTab name="iCloud 50GB" amount={1000} />
-              </div>
-              <div className="w-full py-5">
-                <div className="text-xl font-semibold">Latest transactions</div>
-                <div>
-                  You did not have any record. Create a wallet to add
-                  transaction.
-                </div>
-                <div>
-                  <TrannsactionRow
-                    wallet="Momo"
-                    category="Meal"
-                    title="Breakfast"
-                    time="Today"
-                    amount={1000}
-                    type="Expense"
-                  />
-                  <TrannsactionRow
-                    wallet="Cake"
-                    category="Meal"
-                    title="Lunch"
-                    time="06/02/2023"
-                    amount={100}
-                    type="Expense"
-                  />
-                  <TrannsactionRow
-                    wallet="BIDV"
-                    category="Salary"
-                    title="Salary 1/2023"
-                    time="20/01/2023"
-                    amount={10000}
-                    type="Income"
-                  />
-                  <TrannsactionRow
-                    wallet="Momo"
-                    category="Meal"
-                    title="Breakfast"
-                    time="Today"
-                    amount={1000}
-                    type="Expense"
-                  />
-                  <TrannsactionRow
-                    wallet="Momo"
-                    category="Meal"
-                    title="Breakfast"
-                    time="Today"
-                    amount={1000}
-                    type="Expense"
-                  />
-                </div>
-              </div>
-            </div>
+          <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
+            {wallets &&
+              wallets.map((wallet, index) => (
+                <WalletTab
+                  key={index}
+                  name={wallet.name}
+                  balance={wallet.balance}
+                  onClick={() => showEditOrgModal(wallet)}
+                />
+              ))}
           </div>
         </div>
       </div>
