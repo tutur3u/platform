@@ -4,8 +4,9 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
-const ProjectTasksPage = () => {
+const ProjectBoardsPage = () => {
   const router = useRouter();
   const { projectId } = router.query;
 
@@ -31,7 +32,7 @@ const ProjectTasksPage = () => {
               content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
-            { content: 'Tasks', href: `/projects/${projectId}/tasks` },
+            { content: 'Boards', href: `/projects/${projectId}/tasks` },
           ]
         : []
     );
@@ -40,23 +41,27 @@ const ProjectTasksPage = () => {
 
   return (
     <>
-      <HeaderX label={`Tasks – ${project?.name || 'Untitled Project'}`} />
+      <HeaderX label={`Boards – ${project?.name || 'Untitled Project'}`} />
 
-      <div className="grid gap-4">
-        {projectId && (
-          <div className="mt-2 mb-2 flex items-center justify-between">
-            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-              Tasks
-            </h1>
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Boards</h1>
+            <p className="text-zinc-400">
+              A great way to organize your tasks into different categories and
+              easily track their progress.
+            </p>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
     </>
   );
 };
 
-ProjectTasksPage.getLayout = function getLayout(page: ReactElement) {
+ProjectBoardsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout orgMode={false}>{page}</NestedLayout>;
 };
 
-export default ProjectTasksPage;
+export default ProjectBoardsPage;

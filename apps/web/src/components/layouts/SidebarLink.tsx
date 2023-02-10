@@ -67,8 +67,8 @@ export default function SidebarLink({
           className={`flex items-center gap-2 rounded ${
             defaultHighlight
               ? defaultActive && isActive
-                ? 'bg-zinc-300/10 p-2 text-zinc-200'
-                : 'p-2 text-zinc-400 hover:bg-zinc-300/10 hover:text-zinc-200'
+                ? 'bg-zinc-300/10 p-2 text-zinc-100'
+                : 'p-2 text-zinc-300 hover:bg-zinc-300/5 hover:text-zinc-100'
               : ''
           } ${
             left || isExpanded ? 'justify-start' : 'justify-center'

@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const ProjectMembersPage = () => {
   const router = useRouter();
@@ -64,19 +65,22 @@ const ProjectMembersPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Members – ${project?.name || 'Untitled Project'}`}
-      />
+      <HeaderX label={`Members – ${project?.name || 'Untitled Project'}`} />
 
-      {project.orgs.id && (
-        <div className="mt-2 mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-            Members ({membersData?.members?.length || 0})
-          </h1>
-        </div>
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">
+              Members ({membersData?.members?.length || 0})
+            </h1>
+            <p className="text-zinc-400">Manage who can access this project.</p>
+          </div>
+        </>
       )}
 
-      <div className="mb-16 flex max-w-lg flex-col gap-4">
+      <Divider className="my-4" />
+
+      <div className="mb-16 grid gap-4 md:grid-cols-2">
         {membersData?.members
           ?.sort(
             (

@@ -46,8 +46,8 @@ export default function SidebarButton({
           disabled
             ? 'cursor-not-allowed text-zinc-600'
             : isActive
-            ? 'bg-zinc-300/10 text-zinc-200'
-            : 'text-zinc-400 hover:bg-zinc-300/10 hover:text-zinc-200'
+            ? 'bg-zinc-300/10 text-zinc-100'
+            : 'text-zinc-300 hover:bg-zinc-300/5 hover:text-zinc-100'
         } ${className}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}

@@ -5,6 +5,7 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import { useUserList } from '../../../hooks/useUserList';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const OrganizationOverviewPage = () => {
   const router = useRouter();
@@ -67,23 +68,24 @@ const OrganizationOverviewPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Overview – ${data?.name || 'Unnamed Organization'}`}
-      />
+      <HeaderX label={`Overview – ${data?.name || 'Unnamed Organization'}`} />
 
-      <div className="grid gap-4">
-        <h1 className="font-bold">Overview</h1>
+      {orgId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Overview</h1>
+            <p className="text-zinc-400">
+              A quick summary of the{' '}
+              <span className="font-semibold text-zinc-200">
+                {data?.name || 'Unnamed Organization'}
+              </span>{' '}
+              organization and its progress.
+            </p>
+          </div>
+        </>
+      )}
 
-        <div className="rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <p className="text-zinc-400">
-            This is the overview page for the{' '}
-            <span className="font-semibold text-white">
-              {data?.name || 'Unnamed Organization'}
-            </span>{' '}
-            workspace.
-          </p>
-        </div>
-      </div>
+      <Divider className="my-4" />
     </>
   );
 };

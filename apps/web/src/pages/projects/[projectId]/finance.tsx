@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
 
 const ProjectFinancePage = () => {
   const router = useRouter();
@@ -40,19 +41,20 @@ const ProjectFinancePage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Finance – ${project?.name || 'Untitled Project'}`}
-      />
+      <HeaderX label={`Finance – ${project?.name || 'Untitled Project'}`} />
 
-      <div className="grid gap-4">
-        {projectId && (
-          <div className="mt-2 mb-2 flex items-center justify-between">
-            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-              Finance
-            </h1>
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Finance</h1>
+            <p className="text-zinc-400">
+              Track financial progress and budget.
+            </p>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
     </>
   );
 };
