@@ -14,6 +14,9 @@ import { Transaction } from '../../types/primitives/Transaction';
 import { useWallets } from '../../hooks/useWallets';
 import { useProjects } from '../../hooks/useProjects';
 import { Select } from '@mantine/core';
+import TransactionEditForm from '../../components/forms/TransactionEditForm';
+import { useTransactions } from '../../hooks/useTransactions';
+import TransactionTab from '../../components/finance/transactions/TransactionTab';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -41,10 +44,19 @@ const FinancePage: PageWithLayoutProps = () => {
     deleteWallet,
     projectId,
     setProjectId,
+    isWalletsLoading,
   } = useWallets();
   const { projects, isProjectsLoading } = useProjects();
+  const {
+    transactions,
+    createTransaction,
+    updateTransaction,
+    deleteTransaction,
+    walletId,
+    setWalletId,
+  } = useTransactions();
 
-  const showEditOrgModal = (wallet?: Wallet) => {
+  const showEditWalletModal = (wallet?: Wallet) => {
     openModal({
       title: (
         <div className="font-semibold">
@@ -59,6 +71,28 @@ const FinancePage: PageWithLayoutProps = () => {
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
           onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+        />
+      ),
+    });
+  };
+
+  const showEditTransactionModal = (transaction?: Transaction) => {
+    openModal({
+      title: (
+        <div className="font-semibold">
+          {transaction ? 'Edit transaction' : 'Create transaction'}
+        </div>
+      ),
+      centered: true,
+      children: (
+        <TransactionEditForm
+          wallets={wallets}
+          isWalletsLoading={isWalletsLoading}
+          transaction={transaction}
+          onSubmit={transaction ? updateTransaction : createTransaction}
+          onDelete={
+            transaction ? () => deleteTransaction(transaction) : undefined
+          }
         />
       ),
     });
@@ -92,7 +126,7 @@ const FinancePage: PageWithLayoutProps = () => {
           />
 
           <button
-            onClick={() => showEditOrgModal()}
+            onClick={() => showEditWalletModal()}
             className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
             Create wallet
@@ -105,7 +139,28 @@ const FinancePage: PageWithLayoutProps = () => {
                   key={index}
                   name={wallet.name}
                   balance={wallet.balance}
-                  onClick={() => showEditOrgModal(wallet)}
+                  onClick={() => showEditWalletModal(wallet)}
+                />
+              ))}
+          </div>
+        </div>
+
+        <div className="p-5">
+          <button
+            onClick={() => showEditTransactionModal()}
+            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+          >
+            Add transaction
+          </button>
+
+          <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
+            {transactions &&
+              transactions.map((transaction, index) => (
+                <TransactionTab
+                  key={index}
+                  name={transaction.name}
+                  amount={transaction.amount}
+                  onClick={() => showEditTransactionModal(transaction)}
                 />
               ))}
           </div>

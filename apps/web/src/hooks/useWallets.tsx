@@ -1,12 +1,6 @@
 import useSWR, { mutate } from 'swr';
 
-import {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-} from 'react';
+import { createContext, useContext, ReactNode, useState } from 'react';
 import { Wallet } from '../types/primitives/Wallet';
 import { Transaction } from '../types/primitives/Transaction';
 import { showNotification } from '@mantine/notifications';
@@ -24,8 +18,10 @@ const WalletContext = createContext({
   projectId: null as string | null,
   setProjectId: (id: string | null) => console.log(id),
 
-  createWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
-  updateWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
+  createWallet: (projectId: string, wallet: Wallet) =>
+    console.log(projectId, wallet),
+  updateWallet: (projectId: string, wallet: Wallet) =>
+    console.log(projectId, wallet),
   deleteWallet: (wallet: Wallet) => console.log(wallet),
 });
 
