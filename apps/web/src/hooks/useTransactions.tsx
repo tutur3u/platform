@@ -9,6 +9,9 @@ const TransactionContext = createContext({
   isTransactionsLoading: false,
   transactions: [] as Transaction[],
 
+  isWalletsLoading: false,
+  wallets: [] as Wallet[],
+
   transactionId: null as string | null,
   setTransactionId: (id: string | null) => console.log(id),
 
@@ -23,29 +26,48 @@ const TransactionContext = createContext({
 });
 
 export const TransactionProvider = ({ children }: { children: ReactNode }) => {
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [walletId, setWalletId] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
 
+  const { data: wallets, error: walletsError } = useSWR(
+    projectId ? `/api/projects/${projectId}/wallets` : null
+  );
+
+  const isWalletsLoading = !wallets && !walletsError;
+
   const { data: transactions, error: transactionsError } = useSWR(
-    walletId ? `/api/wallets/${walletId}/transactions/${transactionId}/transactions`
-    : null
+    projectId && walletId
+      ? `/api/projects/${projectId}/wallets/${walletId}/transactions/`
+      : null
   );
 
   const isTransactionsLoading = !transactions && !transactionsError;
 
-  const createTransaction = async (walletId: string, transaction: Transaction) => {
+  const createTransaction = async (
+    walletId: string,
+    transaction: Transaction
+  ) => {
+    transaction.amount =
+      transaction.type === 'income'
+        ? transaction.amount
+        : transaction.amount * -1;
+
     try {
-      const res = await fetch(`/api/wallets/${walletId}/transactions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: transaction?.name || '',
-          description: transaction?.description || '',
-          amount: transaction?.amount || 0,
-        }),
-      });
+      const res = await fetch(
+        `/api/projects/${projectId}/wallets/${walletId}/transactions`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: transaction?.name || '',
+            description: transaction?.description || '',
+            amount: transaction?.amount || 0,
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error('Failed to create transaction');
-      mutate(`/api/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to create transaction',
@@ -55,10 +77,13 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTransaction = async (walletId: string, transaction: Transaction) => {
+  const updateTransaction = async (
+    walletId: string,
+    transaction: Transaction
+  ) => {
     try {
       const res = await fetch(
-        `/api/wallets/${walletId}/transactions/${transaction.id}`,
+        `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'PUT',
           body: JSON.stringify({
@@ -70,7 +95,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to update transaction');
-      mutate(`/api/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to update transaction',
@@ -83,14 +108,14 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   const deleteTransaction = async (transaction: Transaction) => {
     try {
       const res = await fetch(
-        `/api/wallets/${walletId}/transactions/${transaction.id}`,
+        `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'DELETE',
         }
       );
 
       if (!res.ok) throw new Error('Failed to delete transaction');
-      mutate(`/api/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to delete transaction',
@@ -103,7 +128,10 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   const values = {
     isTransactionsLoading,
     transactions,
-    
+
+    wallets,
+    isWalletsLoading,
+
     transactionId,
     setTransactionId,
 
