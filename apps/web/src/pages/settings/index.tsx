@@ -17,26 +17,14 @@ import HeaderX from '../../components/metadata/HeaderX';
 import { DatePicker } from '@mantine/dates';
 
 const SettingPage: PageWithLayoutProps = () => {
-  const {
-    setRootSegment,
-    changeRightSidebarPref,
-    changeLeftSidebarSecondaryPref,
-  } = useAppearance();
+  const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment({
       content: 'Settings',
       href: '/settings',
     });
-
-    changeRightSidebarPref({
-      main: 'hidden',
-      secondary: 'hidden',
-    });
-
-    changeLeftSidebarSecondaryPref('hidden');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setRootSegment]);
 
   const router = useRouter();
   const user = useUser();
@@ -77,7 +65,7 @@ const SettingPage: PageWithLayoutProps = () => {
     setSaving(false);
   };
 
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     await supabaseClient.auth.signOut();
     router.push('/login');
   };
@@ -227,26 +215,6 @@ const SettingPage: PageWithLayoutProps = () => {
             >
               Always expanded
             </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-4 xl:order-7 ${
-                leftSidebarPref.main === 'auto'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeLeftSidebarMainPref('auto')}
-            >
-              Expand on hover
-            </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-8 ${
-                rightSidebarPref.main === 'auto'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeRightSidebarMainPref('auto')}
-            >
-              Expand on hover
-            </div>
           </div>
         </div>
       </div>
@@ -272,9 +240,9 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
           <div
             className="col-span-full flex w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-            onClick={handleSignOut}
+            onClick={handleLogout}
           >
-            Sign out
+            Log out
           </div>
         </div>
       </div>

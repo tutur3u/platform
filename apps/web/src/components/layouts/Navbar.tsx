@@ -21,11 +21,14 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
 
       {hideNavLinks || (
         <div className="flex items-center gap-4">
+          <Link href="/login" className="hover:text-blue-200">
+            Log in
+          </Link>
           <Link
-            href="/login"
-            className="rounded-full bg-blue-300/20 px-8 py-1 text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
+            href="/signup"
+            className="rounded-full bg-blue-300/20 px-4 py-1 text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
           >
-            Login
+            Get Started
           </Link>
         </div>
       )}

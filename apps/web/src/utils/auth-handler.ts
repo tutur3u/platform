@@ -1,6 +1,10 @@
 import { SupabaseClient } from '@supabase/auth-helpers-react';
 
-export type AuthMethod = 'login' | 'signup' | 'logout' | 'recover' | 'reset';
+export type AuthMethod = 'login' | 'signup';
+export interface AuthFormFields {
+  email: string;
+  password?: string;
+}
 
 interface AuthProps {
   supabaseClient: SupabaseClient;
@@ -15,13 +19,6 @@ export const authenticate = async ({
   email,
   password,
 }: AuthProps) => {
-  // If the method is empty, throw an error
-  if (!method) throw new Error('No method provided');
-
-  // If the email or password is empty, throw an error
-  if (!email || !password) throw new Error('Invalid credentials');
-
-  // Make a request to the API
   await fetch(`/api/auth/${method}`, {
     method: 'POST',
     headers: {

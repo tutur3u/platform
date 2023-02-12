@@ -7,64 +7,45 @@ import {
   Cog6ToothIcon,
   UserCircleIcon,
   PlusIcon,
-  ArchiveBoxIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   BuildingOffice2Icon,
   Squares2X2Icon,
   UserPlusIcon,
-} from '@heroicons/react/24/solid';
-
-import {
-  FolderPlusIcon,
   SquaresPlusIcon,
-  EllipsisHorizontalIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/react/24/solid';
 
 import SidebarLink from './SidebarLink';
 import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
-import {
-  Accordion,
-  Avatar,
-  Chip,
-  Divider,
-  Loader,
-  Menu,
-  Popover,
-  Select,
-  Tooltip,
-} from '@mantine/core';
+import { Avatar, Divider, Popover, Tooltip } from '@mantine/core';
 import { useUserData } from '../../hooks/useUserData';
-import SidebarDivider from './SidebarDivider';
 import { useOrgs } from '../../hooks/useOrganizations';
 import OrgEditForm from '../forms/OrgEditForm';
-import { openConfirmModal, openModal } from '@mantine/modals';
+import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
-import { TaskBoard } from '../../types/primitives/TaskBoard';
-import BoardEditForm from '../forms/BoardEditForm';
-import useSWR, { mutate } from 'swr';
-import { TaskList } from '../../types/primitives/TaskList';
-import TaskListEditForm from '../forms/TaskListEditForm';
-import TaskListWrapper from '../tasks/lists/TaskListWrapper';
-import { Task } from '../../types/primitives/Task';
-import TaskWrapper from '../tasks/core/TaskWrapper';
 import SidebarButton from './SidebarButton';
 import OrganizationSelector from '../selectors/OrganizationSelector';
 import { useProjects } from '../../hooks/useProjects';
 import ProjectEditForm from '../forms/ProjectEditForm';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 function LeftSidebar({ className }: SidebarProps) {
   const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { data: user } = useUserData();
 
-  useEffect(() => {
-    if (!user) mutate('/api/user');
-  }, [user]);
+  const router = useRouter();
+  const { supabaseClient } = useSessionContext();
+
+  const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    router.push('/');
+  };
 
   const { createOrg } = useOrgs();
   const { orgId, org, members, isProjectsLoading, createProject, projects } =
@@ -85,217 +66,6 @@ function LeftSidebar({ className }: SidebarProps) {
       children: <ProjectEditForm onSubmit={createProject} />,
     });
   };
-
-  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
-  const [selectedListId, setSelectedListId] = useState<string | null>(null);
-
-  const { data: boards, error: boardsError } = useSWR<TaskBoard[] | null>(
-    user?.id ? '/api/tasks/boards' : null
-  );
-
-  const [viewOption, setViewOption] = useState('my-tasks');
-
-  const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
-    user?.id && selectedBoardId && viewOption === 'all'
-      ? `/api/tasks/lists?boardId=${selectedBoardId}`
-      : null
-  );
-
-  const [listViewOptions, setListViewOption] = useState<
-    {
-      id: string;
-      option: string;
-    }[]
-  >([]);
-
-  const getViewOptionForList = (listId: string) => {
-    const data = listViewOptions.find((o) => o.id === listId);
-    return data?.option || 'todos';
-  };
-
-  const setViewOptionForList = (listId: string, option: string) => {
-    setListViewOption((prev) => {
-      // If the option is already set, update it
-      const existing = prev.find((o) => o.id === listId);
-      if (existing) {
-        existing.option = option;
-        return [...prev];
-      } else {
-        // Otherwise, add a new option
-        return [...prev, { id: listId, option }];
-      }
-    });
-  };
-
-  const buildQuery = (listId: string, option: string) => {
-    let query = `/api/tasks?listId=${listId}`;
-
-    if (option === 'todos') query += '&todos=true';
-    if (option === 'completed') query += '&completed=true';
-
-    return query;
-  };
-
-  const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
-    user?.id && selectedBoardId && viewOption !== 'all'
-      ? `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
-      : null
-  );
-
-  const isBoardsLoading = !boards && !boardsError;
-  const isListsLoading = !lists && !listsError && viewOption === 'all';
-  const isTasksLoading = !tasks && !tasksError && viewOption !== 'all';
-
-  const isContentLoading = isBoardsLoading || isListsLoading || isTasksLoading;
-
-  // Automatically select the first board if none is selected
-  useEffect(() => {
-    const boardsSelected = !!selectedBoardId;
-
-    if (!boards || boards.length === 0) {
-      setSelectedBoardId(null);
-      return;
-    }
-
-    const firstBoardId = boards[0].id;
-    if (!boardsSelected) setSelectedBoardId(firstBoardId);
-  }, [boards, boards?.length, selectedBoardId]);
-
-  const addBoard = async (board: TaskBoard) => {
-    const res = await fetch('/api/tasks/boards', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: board.name,
-      }),
-    });
-
-    if (res.ok) {
-      mutate('/api/tasks/boards');
-      const newBoard = await res.json();
-      setSelectedBoardId(newBoard.id);
-    }
-  };
-
-  const updateBoard = async (board: TaskBoard) => {
-    const res = await fetch(`/api/tasks/boards/${board.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: board.name,
-      }),
-    });
-
-    if (res.ok) {
-      mutate('/api/tasks/boards');
-    }
-  };
-
-  const deleteBoard = async (board: TaskBoard) => {
-    const res = await fetch(`/api/tasks/boards/${board.id}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      mutate('/api/tasks/boards');
-      setSelectedBoardId(null);
-    }
-  };
-
-  const showEditBoardModal = (board?: TaskBoard) => {
-    openModal({
-      title: board ? 'Edit board' : 'New board',
-      centered: true,
-      children: (
-        <BoardEditForm
-          board={board}
-          onSubmit={board ? updateBoard : addBoard}
-        />
-      ),
-    });
-  };
-
-  const showDeleteBoardModal = (board?: TaskBoard) => {
-    if (!board) return;
-    openConfirmModal({
-      title: (
-        <div className="font-semibold">
-          Delete {'"'}
-          <span className="font-bold text-purple-300">{board.name}</span>
-          {'" '}
-          board
-        </div>
-      ),
-      centered: true,
-      children: (
-        <div className="p-4 text-center">
-          <p className="text-lg font-medium text-zinc-300">
-            Are you sure you want to delete this board?
-          </p>
-          <p className="text-sm text-zinc-500">
-            All of your data will be permanently removed. This action cannot be
-            undone.
-          </p>
-        </div>
-      ),
-      onConfirm: () => deleteBoard(board),
-      closeOnConfirm: true,
-      labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
-      },
-    });
-  };
-
-  const addList = async (list: TaskList) => {
-    if (!selectedBoardId) return;
-
-    const res = await fetch('/api/tasks/lists', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: list.name,
-        boardId: selectedBoardId,
-      }),
-    });
-
-    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
-  };
-
-  const updateList = async (list: TaskList) => {
-    if (!selectedBoardId) return;
-
-    const res = await fetch(`/api/tasks/lists/${list.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: list.name,
-      }),
-    });
-
-    if (res.ok) mutate(`/api/tasks/lists?boardId=${selectedBoardId}`);
-  };
-
-  const showEditListModal = (boardId: string, list?: TaskList) => {
-    openModal({
-      title: list ? 'Edit list' : 'New list',
-      centered: true,
-      children: (
-        <TaskListEditForm list={list} onSubmit={list ? updateList : addList} />
-      ),
-    });
-  };
-
-  const getBoard = (id?: string | null) =>
-    boards?.find((b) => b.id === id) || boards?.[0];
 
   const [userPopover, setUserPopover] = useState(false);
   const [newPopover, setNewPopover] = useState(false);
@@ -341,6 +111,115 @@ function LeftSidebar({ className }: SidebarProps) {
           </div>
 
           <Divider className="my-2" />
+
+          {org.id && (
+            <div className="mx-2">
+              <Tooltip
+                label={
+                  <div>
+                    <div className="font-semibold">
+                      {org.name || 'Unnamed Organization'}
+                    </div>
+                    <div className="text-xs font-semibold">
+                      {members.length}{' '}
+                      {members.length === 1 ? 'member' : 'members'}
+                    </div>
+                  </div>
+                }
+                position="right"
+                offset={16}
+                disabled={leftSidebarPref.main === 'open'}
+              >
+                <div className="rounded border border-zinc-700/50 bg-zinc-800/50 p-2 transition">
+                  <div className="">
+                    <div
+                      className={`mb-1 flex ${
+                        leftSidebarPref.main === 'closed'
+                          ? 'items-center justify-center'
+                          : 'justify-between gap-2 font-semibold'
+                      }`}
+                    >
+                      <Link
+                        href={`/orgs/${orgId}`}
+                        className="line-clamp-1 text-zinc-300 transition hover:text-zinc-100"
+                      >
+                        {leftSidebarPref.main === 'closed' ? (
+                          <BuildingOffice2Icon className="w-5" />
+                        ) : (
+                          org?.name || 'Unnamed Organization'
+                        )}
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Tooltip.Group>
+                      <Avatar.Group
+                        spacing="sm"
+                        color="blue"
+                        className={
+                          leftSidebarPref.main === 'closed' ? 'hidden' : ''
+                        }
+                      >
+                        {members &&
+                          members.slice(0, 3).map((member) => (
+                            <Tooltip
+                              key={member.id}
+                              label={
+                                <div className="font-semibold">
+                                  <div>
+                                    {member?.display_name || member?.email}
+                                  </div>
+                                  {member?.username && (
+                                    <div className="text-blue-300">
+                                      @{member.username}
+                                    </div>
+                                  )}
+                                </div>
+                              }
+                              color="#182a3d"
+                            >
+                              <Avatar color="blue" radius="xl">
+                                {getInitials(
+                                  member?.display_name || member?.email
+                                )}
+                              </Avatar>
+                            </Tooltip>
+                          ))}
+                        {members.length > 3 && (
+                          <Tooltip
+                            label={
+                              <div className="font-semibold">
+                                {members.length - 3} more
+                              </div>
+                            }
+                            color="#182a3d"
+                          >
+                            <Avatar color="blue" radius="xl">
+                              +{members.length - 3}
+                            </Avatar>
+                          </Tooltip>
+                        )}
+                      </Avatar.Group>
+                    </Tooltip.Group>
+
+                    {leftSidebarPref.main === 'closed' || (
+                      <Link
+                        href={`/orgs/${orgId}/members`}
+                        className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
+                      >
+                        <div>Invite</div>
+                        <UserPlusIcon className="w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </Tooltip>
+
+              <Divider variant="dashed" className="my-2" />
+            </div>
+          )}
+
           <Popover
             opened={newPopover}
             onChange={setNewPopover}
@@ -374,7 +253,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 left
               />
 
-              <Divider className="my-1" />
+              <Divider />
 
               {orgId && (
                 <SidebarButton
@@ -411,7 +290,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
               {orgId && (
                 <>
-                  <Divider className="my-1" />
+                  <Divider />
                   <SidebarButton
                     onClick={() => setNewPopover(false)}
                     activeIcon={<UserPlusIcon className="w-5" />}
@@ -450,10 +329,10 @@ function LeftSidebar({ className }: SidebarProps) {
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
-                href="/notes"
+                href="/documents"
                 onClick={() => setUserPopover(false)}
                 activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                label="Notes"
+                label="Documents"
                 showTooltip={leftSidebarPref.main === 'closed'}
               />
               <SidebarLink
@@ -468,120 +347,6 @@ function LeftSidebar({ className }: SidebarProps) {
             <Divider />
 
             <div className="m-2">
-              {org.id && (
-                <>
-                  <Tooltip
-                    label={
-                      <div>
-                        <div className="font-semibold">
-                          {org.name || 'Unnamed Organization'}
-                        </div>
-                        <div className="text-xs font-semibold">
-                          {members.length}{' '}
-                          {members.length === 1 ? 'member' : 'members'}
-                        </div>
-                      </div>
-                    }
-                    position="right"
-                    offset={16}
-                    disabled={leftSidebarPref.main === 'open'}
-                  >
-                    <div className="rounded border border-zinc-700/50 bg-zinc-800 p-2 transition">
-                      <div className="">
-                        <div
-                          className={`mb-1 flex ${
-                            leftSidebarPref.main === 'closed'
-                              ? 'items-center justify-center'
-                              : 'justify-between gap-2 font-semibold'
-                          }`}
-                        >
-                          <Link
-                            href={`/orgs/${orgId}`}
-                            className="line-clamp-1 text-zinc-400 transition hover:text-zinc-100"
-                          >
-                            {leftSidebarPref.main === 'closed' ? (
-                              <BuildingOffice2Icon className="w-5" />
-                            ) : (
-                              org?.name || 'Unnamed Organization'
-                            )}
-                          </Link>
-
-                          {leftSidebarPref.main === 'closed' || (
-                            <div className="flex cursor-default items-center rounded bg-blue-500/20 px-2 py-0.5 text-sm font-bold text-blue-300">
-                              Free
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between">
-                        <Tooltip.Group>
-                          <Avatar.Group
-                            spacing="sm"
-                            color="blue"
-                            className={
-                              leftSidebarPref.main === 'closed' ? 'hidden' : ''
-                            }
-                          >
-                            {members &&
-                              members.slice(0, 3).map((member) => (
-                                <Tooltip
-                                  key={member.id}
-                                  label={
-                                    <div className="font-semibold">
-                                      <div>
-                                        {member?.display_name || member?.email}
-                                      </div>
-                                      {member?.username && (
-                                        <div className="text-blue-300">
-                                          @{member.username}
-                                        </div>
-                                      )}
-                                    </div>
-                                  }
-                                  color="#182a3d"
-                                >
-                                  <Avatar color="blue" radius="xl">
-                                    {getInitials(
-                                      member?.display_name || member?.email
-                                    )}
-                                  </Avatar>
-                                </Tooltip>
-                              ))}
-                            {members.length > 3 && (
-                              <Tooltip
-                                label={
-                                  <div className="font-semibold">
-                                    {members.length - 3} more
-                                  </div>
-                                }
-                                color="#182a3d"
-                              >
-                                <Avatar color="blue" radius="xl">
-                                  +{members.length - 3}
-                                </Avatar>
-                              </Tooltip>
-                            )}
-                          </Avatar.Group>
-                        </Tooltip.Group>
-
-                        {leftSidebarPref.main === 'closed' || (
-                          <Link
-                            href={`/orgs/${orgId}/members`}
-                            className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
-                          >
-                            <div>Invite</div>
-                            <UserPlusIcon className="w-4" />
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </Tooltip>
-
-                  <Divider variant="dashed" className="my-2" />
-                </>
-              )}
-
               {isProjectsLoading || (
                 <div
                   className={`flex flex-col ${
@@ -726,7 +491,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
                 {leftSidebarPref.main !== 'open' && (
                   <>
-                    <Divider className="my-1" variant="dashed" />
+                    <Divider variant="dashed" />
                     <OrganizationSelector
                       showLabel
                       className="mx-2 mb-2"
@@ -734,204 +499,21 @@ function LeftSidebar({ className }: SidebarProps) {
                     />
                   </>
                 )}
+
+                <Divider variant="dashed" />
+                <SidebarButton
+                  onClick={() => {
+                    setUserPopover(false);
+                    handleLogout();
+                  }}
+                  activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
+                  label="Log out"
+                  left
+                />
               </Popover.Dropdown>
             </Popover>
           </div>
         </div>
-
-        {leftSidebarPref.secondary === 'visible' &&
-          (isBoardsLoading ? (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
-              <Loader />
-            </div>
-          ) : !boards || boards?.length === 0 ? (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-4 border-r border-zinc-800/80 p-8 text-center">
-              <div className="text-lg font-semibold">
-                Start organizing your tasks in a miraculous way.
-              </div>
-              <button
-                onClick={() => showEditBoardModal()}
-                className="rounded-lg bg-purple-300/20 px-4 py-2 text-lg font-semibold text-purple-300 transition hover:bg-purple-300/30"
-              >
-                Create a board
-              </button>
-            </div>
-          ) : (
-            <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-2">
-              <div className="relative mx-2 flex gap-2 text-2xl font-semibold">
-                <Select
-                  defaultValue={selectedBoardId || boards?.[0]?.id}
-                  data={
-                    boards
-                      ? boards.map((board: TaskBoard) => ({
-                          value: board.id,
-                          label: board.name || 'Untitled Board',
-                          group:
-                            user?.display_name ||
-                            user?.username ||
-                            user?.email ||
-                            'Unknown',
-                        }))
-                      : []
-                  }
-                  value={
-                    boards.some((board) => board.id === selectedBoardId)
-                      ? selectedBoardId
-                      : boards?.[0]?.id
-                  }
-                  onChange={setSelectedBoardId}
-                  className="w-full"
-                />
-                <div className="flex items-center gap-1">
-                  {selectedBoardId && (
-                    <Menu openDelay={100} closeDelay={400} withArrow>
-                      <Menu.Target>
-                        <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                          <PlusIcon className="w-5" />
-                        </button>
-                      </Menu.Target>
-
-                      <Menu.Dropdown>
-                        <Menu.Item
-                          icon={<SquaresPlusIcon className="w-5" />}
-                          onClick={() => showEditBoardModal()}
-                        >
-                          New board
-                        </Menu.Item>
-
-                        <Menu.Item
-                          icon={<FolderPlusIcon className="w-5" />}
-                          onClick={() => showEditListModal(selectedBoardId)}
-                        >
-                          New task list
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  )}
-
-                  <Menu openDelay={100} closeDelay={400} withArrow>
-                    <Menu.Target>
-                      <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                        <EllipsisHorizontalIcon className="w-5" />
-                      </button>
-                    </Menu.Target>
-
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        icon={<ArchiveBoxIcon className="w-5" />}
-                        disabled
-                      >
-                        Archived lists
-                      </Menu.Item>
-                      <Menu.Item
-                        icon={<Cog6ToothIcon className="w-5" />}
-                        onClick={() =>
-                          showEditBoardModal(getBoard(selectedBoardId))
-                        }
-                      >
-                        Board settings
-                      </Menu.Item>
-                      <Menu.Divider />
-                      <Menu.Item
-                        icon={<TrashIcon className="w-5" />}
-                        color="red"
-                        onClick={() =>
-                          showDeleteBoardModal(getBoard(selectedBoardId))
-                        }
-                      >
-                        Delete board
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                </div>
-              </div>
-
-              <SidebarDivider
-                padBottom={false}
-                padLeft={false}
-                padRight={false}
-              />
-
-              <Chip.Group
-                multiple={false}
-                value={viewOption}
-                onChange={setViewOption}
-                className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2"
-              >
-                <Chip variant="filled" value="all">
-                  All
-                </Chip>
-                <Chip color="cyan" variant="filled" value="my-tasks">
-                  My tasks
-                </Chip>
-                <Chip color="teal" variant="filled" value="recently-updated">
-                  Recently added
-                </Chip>
-              </Chip.Group>
-
-              {isContentLoading ? (
-                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-                  <Loader />
-                </div>
-              ) : viewOption !== 'all' ? (
-                !tasks || tasks.length === 0 ? (
-                  <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-                    You have no assigned tasks in this board.
-                  </div>
-                ) : (
-                  <div className="scrollbar-none flex flex-col gap-2 overflow-auto p-4">
-                    {tasks.map((task) => (
-                      <TaskWrapper
-                        key={task.id}
-                        task={task}
-                        highlight={viewOption !== 'my-tasks'}
-                        onUpdated={() =>
-                          mutate(
-                            `/api/tasks?boardId=${selectedBoardId}&option=${viewOption}`
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                )
-              ) : lists?.length === 0 ? (
-                <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-                  Create a task list to get started
-                </div>
-              ) : (
-                <Accordion
-                  value={selectedListId}
-                  onChange={(id) => {
-                    setSelectedListId((prevId) => {
-                      if (prevId === id) return null;
-                      return id;
-                    });
-
-                    // If the list is being collapsed, don't mutate
-                    if (!id || selectedListId === id) return;
-
-                    const option = getViewOptionForList(id);
-                    const query = buildQuery(id, option);
-                    mutate(query);
-                  }}
-                  chevronPosition="left"
-                  radius="lg"
-                  className="scrollbar-none flex flex-col overflow-auto"
-                >
-                  {lists?.map((list) => (
-                    <TaskListWrapper
-                      key={list.id}
-                      list={list}
-                      option={getViewOptionForList(list.id)}
-                      setOption={(option) =>
-                        setViewOptionForList(list.id, option)
-                      }
-                    />
-                  ))}
-                </Accordion>
-              )}
-            </div>
-          ))}
       </div>
 
       <div

@@ -4,8 +4,10 @@ import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Divider } from '@mantine/core';
+import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 
-const ProjectTasksPage = () => {
+const ProjectDocumentsPage = () => {
   const router = useRouter();
   const { projectId } = router.query;
 
@@ -31,7 +33,7 @@ const ProjectTasksPage = () => {
               content: project?.name || 'Untitled Project',
               href: `/projects/${projectId}`,
             },
-            { content: 'Tasks', href: `/projects/${projectId}/tasks` },
+            { content: 'Documents', href: `/projects/${projectId}/documents` },
           ]
         : []
     );
@@ -40,26 +42,31 @@ const ProjectTasksPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Tasks – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
+      <HeaderX label={`Documents – ${project?.name || 'Untitled Project'}`} />
 
-      <div className="grid gap-4">
-        {projectId && (
-          <div className="mt-2 mb-2 flex items-center justify-between">
-            <h1 className="text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-              Tasks
-            </h1>
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Documents</h1>
+            <p className="text-zinc-400">
+              Store text-based information with enhanced formatting and
+              collaboration.
+            </p>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
+
+      <button className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10">
+        New document <DocumentPlusIcon className="h-4 w-4" />
+      </button>
     </>
   );
 };
 
-ProjectTasksPage.getLayout = function getLayout(page: ReactElement) {
+ProjectDocumentsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout orgMode={false}>{page}</NestedLayout>;
 };
 
-export default ProjectTasksPage;
+export default ProjectDocumentsPage;

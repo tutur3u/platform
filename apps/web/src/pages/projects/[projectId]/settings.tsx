@@ -1,4 +1,4 @@
-import { TextInput } from '@mantine/core';
+import { Divider, TextInput } from '@mantine/core';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect, useState } from 'react';
@@ -87,6 +87,7 @@ const ProjectSettingsPage = () => {
           : []
       );
 
+      mutate(`/api/projects/${projectId}`);
       mutate(`/api/orgs/${project.orgs.id}/projects`);
     }
 
@@ -113,14 +114,22 @@ const ProjectSettingsPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Settings – ${project?.name || 'Untitled Project'}`}
-        disableBranding
-      />
+      <HeaderX label={`Settings – ${project?.name || 'Untitled Project'}`} />
+
+      {projectId && (
+        <>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">Settings</h1>
+            <p className="text-zinc-400">
+              Manage the settings of your project.
+            </p>
+          </div>
+        </>
+      )}
+
+      <Divider className="my-4" />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <h1 className="col-span-full font-bold">Settings</h1>
-
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <div className="mb-1 text-3xl font-bold">Basic Information</div>
           <div className="mb-4 font-semibold text-zinc-500">
@@ -146,12 +155,18 @@ const ProjectSettingsPage = () => {
 
           <div className="h-full" />
 
-          <div
-            onClick={handleSave}
-            className="col-span-full mt-8 flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+          <button
+            onClick={
+              isSaving || name === project?.name ? undefined : handleSave
+            }
+            className={`${
+              isSaving || name === project?.name
+                ? 'cursor-not-allowed opacity-50'
+                : 'hover:border-blue-300/30 hover:bg-blue-300/20'
+            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
           >
             {isSaving ? 'Saving...' : 'Save'}
-          </div>
+          </button>
         </div>
 
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
