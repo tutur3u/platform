@@ -10,20 +10,13 @@ interface Props {
   wallet?: Wallet;
   onSubmit: (projectId: string, wallet: Wallet) => void;
   onDelete?: () => void;
-  projects: Project[];
-  isProjectsLoading: boolean;
+  projectId: string;
 }
 
-const WalletEditForm = ({
-  wallet,
-  onSubmit,
-  onDelete,
-  projects,
-  isProjectsLoading,
-}: Props) => {
-  const [projectId, setProjectId] = useState<string | null>(
-    wallet?.project_id || projects[0]?.id
-  );
+const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
+  // const [projectId, setProjectId] = useState<string | null>(
+  //   wallet?.project_id || projects[0]?.id
+  // );
 
   const [name, setName] = useState(wallet?.name || '');
   const [balance, setBalance] = useState<number | undefined>(wallet?.balance);
@@ -43,7 +36,7 @@ const WalletEditForm = ({
         />
       )}
 
-      {isProjectsLoading || (
+      {/* {isProjectsLoading || (
         <Select
           label="Project"
           placeholder="Select project"
@@ -54,7 +47,7 @@ const WalletEditForm = ({
             label: project.name,
           }))}
         />
-      )}
+      )} */}
 
       <TextInput
         label="Wallet name"

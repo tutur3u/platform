@@ -45,6 +45,8 @@ const FinancePage: PageWithLayoutProps = () => {
     projectId,
     setProjectId,
     isWalletsLoading,
+    walletId,
+    setWalletId,
   } = useWallets();
   const { projects, isProjectsLoading } = useProjects();
   const {
@@ -52,9 +54,18 @@ const FinancePage: PageWithLayoutProps = () => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    walletId,
-    setWalletId,
+    currentTransactions,
   } = useTransactions();
+
+  let currentWallet = () => {
+    const wallet = wallets.find((wallet) => wallet.id === walletId);
+    return wallet;
+  };
+
+  let currentProject = () => {
+    const project = projects.find((project) => project.id === projectId);
+    return project;
+  };
 
   const showEditWalletModal = (wallet?: Wallet) => {
     openModal({
@@ -66,8 +77,7 @@ const FinancePage: PageWithLayoutProps = () => {
       centered: true,
       children: (
         <WalletEditForm
-          projects={projects}
-          isProjectsLoading={isProjectsLoading}
+          projectId={projectId || ''}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
           onDelete={wallet ? () => deleteWallet(wallet) : undefined}
@@ -137,16 +147,15 @@ const FinancePage: PageWithLayoutProps = () => {
               wallets.map((wallet, index) => (
                 <WalletTab
                   key={index}
-                  name={wallet.name}
-                  balance={wallet.balance}
-                  onClick={() => showEditWalletModal(wallet)}
+                  wallet={wallet}
+                  onClick={() => setWalletId(wallet.id)}
                 />
               ))}
           </div>
         </div>
 
         <div className="p-5">
-          <button
+          {/* <button
             onClick={() => showEditTransactionModal()}
             className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
@@ -154,8 +163,8 @@ const FinancePage: PageWithLayoutProps = () => {
           </button>
 
           <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
-            {transactions &&
-              transactions.map((transaction, index) => (
+            {currentTransactions &&
+              currentTransactions.map((transaction, index) => (
                 <TransactionTab
                   key={index}
                   name={transaction.name}
@@ -163,7 +172,9 @@ const FinancePage: PageWithLayoutProps = () => {
                   onClick={() => showEditTransactionModal(transaction)}
                 />
               ))}
-          </div>
+          </div> */}
+
+          <div>{`This is wallet ${currentWallet.name} of project ${currentProject.name}`}</div>
         </div>
       </div>
     </>

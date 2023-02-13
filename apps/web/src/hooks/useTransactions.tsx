@@ -23,6 +23,8 @@ const TransactionContext = createContext({
   updateTransaction: (walletId: string, transaction: Transaction) =>
     console.log(transaction),
   deleteTransaction: (transaction: Transaction) => console.log(transaction),
+
+  currentTransactions: [] as Transaction[],
 });
 
 export const TransactionProvider = ({ children }: { children: ReactNode }) => {
@@ -125,6 +127,10 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const currentTransactions = transactions?.filter(
+    (transaction: Transaction) => transaction.wallet_id === walletId
+  );
+
   const values = {
     isTransactionsLoading,
     transactions,
@@ -141,6 +147,8 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
+
+    currentTransactions,
   };
 
   return (
