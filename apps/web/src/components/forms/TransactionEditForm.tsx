@@ -31,6 +31,10 @@ const TransactionEditForm = ({
     transaction?.description || ''
   );
 
+  const [type, setType] = useState<string | null>(
+    transaction?.type || 'expense'
+  );
+
   return (
     <>
       {transaction?.id && (
@@ -66,6 +70,17 @@ const TransactionEditForm = ({
         }
       />
 
+      <Select
+        label="Type"
+        placeholder="Choose type"
+        data={[
+          { value: 'expense', label: 'Expense' },
+          { value: 'income', label: 'Income' },
+        ]}
+        value={type}
+        onChange={setType}
+      />
+
       <TextInput
         label="Description"
         placeholder="Enter description"
@@ -99,6 +114,7 @@ const TransactionEditForm = ({
               name,
               amount: amount || 0,
               description,
+              type: type || 'expense',
             };
 
             onSubmit(walletId || '', newTransaction);

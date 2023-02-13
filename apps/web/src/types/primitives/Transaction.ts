@@ -5,4 +5,5 @@ export interface Transaction {
   description?: string;
   created_at?: Date;
   wallet_id?: string;
+  type: string;
 }
