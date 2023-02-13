@@ -6,6 +6,11 @@ import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { PlusIcon } from '@heroicons/react/24/solid';
+import { openModal } from '@mantine/modals';
+import { Wallet } from '../../../types/primitives/Wallet';
+import WalletEditForm from '../../../components/forms/WalletEditForm';
+import { useWallets } from '../../../hooks/useWallets';
+import WalletTab from '../../../components/finance/wallets/WalletTab';
 
 const ProjectFinancePage = () => {
   const router = useRouter();
@@ -40,6 +45,36 @@ const ProjectFinancePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
+  const {
+    wallets,
+    createWallet,
+    updateWallet,
+    deleteWallet,
+    setProjectId,
+    setWalletId,
+  } = useWallets();
+
+  setProjectId(projectId as string);
+
+  const showEditWalletModal = (wallet?: Wallet) => {
+    openModal({
+      title: (
+        <div className="font-semibold">
+          {wallet ? 'Edit wallet' : 'Create wallet'}
+        </div>
+      ),
+      centered: true,
+      children: (
+        <WalletEditForm
+          projectId={projectId || ''}
+          wallet={wallet}
+          onSubmit={wallet ? updateWallet : createWallet}
+          onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+        />
+      ),
+    });
+  };
+
   return (
     <>
       <HeaderX label={`Finance – ${project?.name || 'Untitled Project'}`} />
@@ -57,9 +92,23 @@ const ProjectFinancePage = () => {
 
       <Divider className="my-4" />
 
-      <button className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10">
+      <button
+        onClick={() => showEditWalletModal()}
+        className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+      >
         New wallet <PlusIcon className="h-4 w-4" />
       </button>
+
+      <div className="my-5 grid grid-cols-2 gap-5 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+        {wallets &&
+          wallets.map((wallet, index) => (
+            <WalletTab
+              key={index}
+              wallet={wallet}
+              onClick={() => setWalletId(wallet.id)}
+            />
+          ))}
+      </div>
     </>
   );
 };
