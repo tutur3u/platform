@@ -40,7 +40,7 @@ importers:
       '@types/node': ^18.13.0
       '@types/react': ^18.0.28
       '@types/react-beautiful-dnd': ^13.1.3
-      '@types/react-dom': ^18.0.10
+      '@types/react-dom': ^18.0.11
       '@types/react-resizable': ^3.0.3
       '@types/testing-library__jest-dom': ^5.14.5
       '@types/uuid': ^9.0.0
@@ -65,7 +65,7 @@ importers:
       react-beautiful-dnd: ^13.1.1
       react-dom: 18.2.0
       react-resizable: ^3.0.4
-      supabase: ^1.38.1
+      supabase: ^1.38.2
       swr: ^2.0.3
       tailwind-scrollbar: ^2.1.0
       tailwindcss: ^3.2.6
@@ -110,7 +110,7 @@ importers:
       '@types/node': 18.13.0
       '@types/react': 18.0.28
       '@types/react-beautiful-dnd': 13.1.3
-      '@types/react-dom': 18.0.10
+      '@types/react-dom': 18.0.11
       '@types/react-resizable': 3.0.3
       '@types/testing-library__jest-dom': 5.14.5
       '@types/uuid': 9.0.0
@@ -126,7 +126,7 @@ importers:
       jest-environment-jsdom: 29.4.2
       lint-staged: 13.1.2
       postcss: 8.4.21
-      supabase: 1.38.1
+      supabase: 1.38.2
       tailwind-scrollbar: 2.1.0_tailwindcss@3.2.6
       tailwindcss: 3.2.6_postcss@8.4.21
       tsconfig: link:../../packages/tsconfig
@@ -1534,7 +1534,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.20.13
       '@testing-library/dom': 8.20.0
-      '@types/react-dom': 18.0.10
+      '@types/react-dom': 18.0.11
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     dev: true
@@ -1663,6 +1663,12 @@ packages:
 
   /@types/react-dom/18.0.10:
     resolution: {integrity: sha512-E42GW/JA4Qv15wQdqJq8DL4JhNpB3prJgjgapN3qJT9K2zO5IIAQh4VXvCEDupoqAwnz0cY4RlXeC/ajX5SFHg==}
+    dependencies:
+      '@types/react': 18.0.28
+    dev: true
+
+  /@types/react-dom/18.0.11:
+    resolution: {integrity: sha512-O38bPbI2CWtgw/OoQoY+BRelw7uysmXbWvw3nLWO21H1HSh+GOlqPuXshJfjmpNlKiiSDG9cc1JZAaMmVdcTlw==}
     dependencies:
       '@types/react': 18.0.28
     dev: true
@@ -6131,8 +6137,8 @@ packages:
     resolution: {integrity: sha512-GP6WDNWf+o403jrEp9c5jibKavrtLW+/qYGhFxFrG8maXhwTBI7gLLhiBb0o7uFccWN+EOS9aMO6cGHWAO07OA==}
     dev: false
 
-  /supabase/1.38.1:
-    resolution: {integrity: sha512-BUlEw/yxbtBgrsdX0w7/8VIqOeJbFLVqNCfuHjZvTZx7fEbP/WI/qZjI1DeX6CAW6Qo9OHHauGMocOMKZoKreA==}
+  /supabase/1.38.2:
+    resolution: {integrity: sha512-o+AdB3LD0lgBAaqL6zjcvYtbh+ITCT6Tqk3VJG1ds7SQirPWGbyb91bUKEckW9DmnEW/0J9O1ZBsEiyhGrxttQ==}
     hasBin: true
     requiresBuild: true
     dependencies:
