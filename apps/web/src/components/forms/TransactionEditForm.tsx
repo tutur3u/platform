@@ -4,27 +4,26 @@ import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction } from '../../types/primitives/Transaction';
-import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {
   transaction?: Transaction;
-  onSubmit: (walletId: string, transaction: Transaction) => void;
+  onSubmit: (
+    projectId: string,
+    walletId: string,
+    transaction: Transaction
+  ) => void;
   onDelete?: () => void;
-  wallets: Wallet[];
-  isWalletsLoading: boolean;
+  projectId: string;
+  walletId: string;
 }
 
 const TransactionEditForm = ({
+  projectId,
+  walletId,
+  onDelete,
   transaction,
   onSubmit,
-  onDelete,
-  wallets,
-  isWalletsLoading,
 }: Props) => {
-  const [walletId, setwalletId] = useState<string | null>(
-    transaction?.wallet_id || wallets[0]?.id
-  );
-
   const [name, setName] = useState(transaction?.name || '');
   const [amount, setAmount] = useState<number | undefined>(transaction?.amount);
   const [description, setDescription] = useState(
@@ -117,7 +116,7 @@ const TransactionEditForm = ({
               type: type || 'expense',
             };
 
-            onSubmit(walletId || '', newTransaction);
+            onSubmit(projectId, walletId || '', newTransaction);
             closeAllModals();
           }}
           mt="md"

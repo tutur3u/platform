@@ -1,4 +1,5 @@
 import { ReactElement, useEffect, useState } from 'react';
+import useSWR from 'swr';
 import WalletTab from '../../components/finance/wallets/WalletTab';
 import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
@@ -37,38 +38,33 @@ const FinancePage: PageWithLayoutProps = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const {
-    wallets,
-    createWallet,
-    updateWallet,
-    deleteWallet,
-    projectId,
-    setProjectId,
-    isWalletsLoading,
-    walletId,
-    setWalletId,
-  } = useWallets();
-  
+  const { createWallet, updateWallet, deleteWallet } = useWallets();
   const { projects, isProjectsLoading } = useProjects();
-  const {
-    transactions,
-    createTransaction,
-    updateTransaction,
-    deleteTransaction,
-    currentTransactions,
-  } = useTransactions();
+  const { createTransaction, updateTransaction, deleteTransaction } =
+    useTransactions();
 
-  let currentWallet = () => {
-    const wallet = wallets.find((wallet) => wallet.id === walletId);
-    return wallet;
-  };
+  const [projectId, setProjectId] = useState<string | null>();
+  const [walletId, setWalletId] = useState<string | null>();
 
-  let currentProject = () => {
-    const project = projects.find((project) => project.id === projectId);
-    return project;
-  };
+  const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
+    projectId ? `/api/projects/${projectId}/wallets` : null
+  );
+
+  const isWalletsLoading = !wallets && !walletsError;
+
+  const { data: transactions, error: transactionsError } = useSWR<
+    Transaction[] | null
+  >(
+    projectId && walletId
+      ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
+      : null
+  );
+
+  const isTransactionsLoading = !transactions && !transactionsError;
 
   const showEditWalletModal = (wallet?: Wallet) => {
+    if (!projectId) return;
+
     openModal({
       title: (
         <div className="font-semibold">
@@ -81,13 +77,15 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+          onDelete={wallet ? () => deleteWallet(projectId, wallet) : undefined}
         />
       ),
     });
   };
 
   const showEditTransactionModal = (transaction?: Transaction) => {
+    if (!projectId || !walletId) return;
+
     openModal({
       title: (
         <div className="font-semibold">
@@ -97,12 +95,14 @@ const FinancePage: PageWithLayoutProps = () => {
       centered: true,
       children: (
         <TransactionEditForm
-          wallets={wallets}
-          isWalletsLoading={isWalletsLoading}
+          projectId={projectId || ''}
+          walletId={walletId || ''}
           transaction={transaction}
           onSubmit={transaction ? updateTransaction : createTransaction}
           onDelete={
-            transaction ? () => deleteTransaction(transaction) : undefined
+            transaction
+              ? () => deleteTransaction(projectId, walletId, transaction)
+              : undefined
           }
         />
       ),
@@ -164,18 +164,15 @@ const FinancePage: PageWithLayoutProps = () => {
           </button>
 
           <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
-            {currentTransactions &&
-              currentTransactions.map((transaction, index) => (
+            {transactions &&
+              transactions.map((transaction, index) => (
                 <TransactionTab
                   key={index}
-                  name={transaction.name}
-                  amount={transaction.amount}
+                  transaction={transaction}
                   onClick={() => showEditTransactionModal(transaction)}
                 />
               ))}
           </div>
-
-          <div>{`This is wallet ${currentWallet.name} of project ${currentProject.name}`}</div>
         </div>
       </div>
     </>

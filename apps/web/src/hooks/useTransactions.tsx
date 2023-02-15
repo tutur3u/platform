@@ -1,4 +1,4 @@
-import useSWR, { mutate } from 'swr';
+import { mutate } from 'swr';
 
 import { createContext, useContext, ReactNode, useState } from 'react';
 import { Wallet } from '../types/primitives/Wallet';
@@ -6,55 +6,29 @@ import { Transaction } from '../types/primitives/Transaction';
 import { showNotification } from '@mantine/notifications';
 
 const TransactionContext = createContext({
-  isTransactionsLoading: false,
-  transactions: [] as Transaction[],
-
-  isWalletsLoading: false,
-  wallets: [] as Wallet[],
-
-  transactionId: null as string | null,
-  setTransactionId: (id: string | null) => console.log(id),
-
-  walletId: null as string | null,
-  setWalletId: (id: string | null) => console.log(id),
-
-  createTransaction: (walletId: string, transaction: Transaction) =>
-    console.log(transaction),
-  updateTransaction: (walletId: string, transaction: Transaction) =>
-    console.log(transaction),
-  deleteTransaction: (transaction: Transaction) => console.log(transaction),
-
-  currentTransactions: [] as Transaction[],
+  createTransaction: (
+    projectId: string,
+    walletId: string,
+    transaction: Transaction
+  ) => console.log(transaction),
+  updateTransaction: (
+    projectId: string,
+    walletId: string,
+    transaction: Transaction
+  ) => console.log(transaction),
+  deleteTransaction: (
+    projectId: string,
+    walletId: string,
+    transaction: Transaction
+  ) => console.log(transaction),
 });
 
 export const TransactionProvider = ({ children }: { children: ReactNode }) => {
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [walletId, setWalletId] = useState<string | null>(null);
-  const [transactionId, setTransactionId] = useState<string | null>(null);
-
-  const { data: wallets, error: walletsError } = useSWR(
-    projectId ? `/api/projects/${projectId}/wallets` : null
-  );
-
-  const isWalletsLoading = !wallets && !walletsError;
-
-  const { data: transactions, error: transactionsError } = useSWR(
-    projectId && walletId
-      ? `/api/projects/${projectId}/wallets/${walletId}/transactions/`
-      : null
-  );
-
-  const isTransactionsLoading = !transactions && !transactionsError;
-
   const createTransaction = async (
+    projectId: string,
     walletId: string,
     transaction: Transaction
   ) => {
-    transaction.amount =
-      transaction.type === 'income'
-        ? transaction.amount
-        : transaction.amount * -1;
-
     try {
       const res = await fetch(
         `/api/projects/${projectId}/wallets/${walletId}/transactions`,
@@ -63,7 +37,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
-            amount: transaction?.amount || 0,
+            amount:
+              (transaction?.amount || 0) *
+              (transaction?.type === 'income' ? 1 : -1),
           }),
         }
       );
@@ -80,6 +56,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateTransaction = async (
+    projectId: string,
     walletId: string,
     transaction: Transaction
   ) => {
@@ -91,7 +68,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
-            amount: transaction?.amount || 0,
+            amount:
+              (transaction?.amount || 0) *
+              (transaction?.type === 'income' ? 1 : -1),
           }),
         }
       );
@@ -107,7 +86,11 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteTransaction = async (transaction: Transaction) => {
+  const deleteTransaction = async (
+    projectId: string,
+    walletId: string,
+    transaction: Transaction
+  ) => {
     try {
       const res = await fetch(
         `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
@@ -126,29 +109,10 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   };
-
-  const currentTransactions = transactions?.filter(
-    (transaction: Transaction) => transaction.wallet_id === walletId
-  );
-
   const values = {
-    isTransactionsLoading,
-    transactions,
-
-    wallets,
-    isWalletsLoading,
-
-    transactionId,
-    setTransactionId,
-
-    walletId,
-    setWalletId,
-
     createTransaction,
     updateTransaction,
     deleteTransaction,
-
-    currentTransactions,
   };
 
   return (

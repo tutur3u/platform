@@ -15,6 +15,7 @@ import { UserListProvider } from '../../hooks/useUserList';
 import { CalendarProvider } from '../../hooks/useCalendar';
 import { ProjectProvider } from '../../hooks/useProjects';
 import { WalletProvider } from '../../hooks/useWallets';
+import { TransactionProvider } from '../../hooks/useTransactions';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -51,7 +52,11 @@ const Providers = ({
                     <NotificationsProvider position="bottom-left">
                       <OrganizationProvider>
                         <ProjectProvider>
-                          <WalletProvider>{children}</WalletProvider>
+                          <WalletProvider>
+                            <TransactionProvider>
+                              {children}
+                            </TransactionProvider>
+                          </WalletProvider>
                         </ProjectProvider>
                       </OrganizationProvider>
                     </NotificationsProvider>
