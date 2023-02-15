@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
@@ -19,6 +19,14 @@ const ProjectFinancePage = () => {
   const { data: project } = useSWR(
     projectId ? `/api/projects/${projectId}` : null
   );
+
+  const [walletId, setWalletId] = useState<string | null>();
+
+  const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
+    projectId ? `/api/projects/${projectId}/wallets` : null
+  );
+
+  const isWalletsLoading = !wallets && !walletsError;
 
   const { setRootSegment } = useAppearance();
 
@@ -45,16 +53,7 @@ const ProjectFinancePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
 
-  const {
-    wallets,
-    createWallet,
-    updateWallet,
-    deleteWallet,
-    setProjectId,
-    setWalletId,
-  } = useWallets();
-
-  setProjectId(projectId as string);
+  const { createWallet, updateWallet, deleteWallet } = useWallets();
 
   const showEditWalletModal = (wallet?: Wallet) => {
     openModal({
@@ -66,10 +65,12 @@ const ProjectFinancePage = () => {
       centered: true,
       children: (
         <WalletEditForm
-          projectId={projectId || ''}
+          projectId={(projectId || '') as string}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={wallet ? () => deleteWallet(wallet) : undefined}
+          onDelete={
+            wallet ? () => deleteWallet(projectId as string, wallet) : undefined
+          }
         />
       ),
     });
