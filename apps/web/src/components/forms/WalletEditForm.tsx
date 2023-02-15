@@ -8,9 +8,9 @@ import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {
   wallet?: Wallet;
-  onSubmit: (projectId: string, wallet: Wallet) => void;
+  onSubmit: (projectId: string | string[], wallet: Wallet) => void;
   onDelete?: () => void;
-  projectId: string;
+  projectId?: string | string[];
 }
 
 const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {

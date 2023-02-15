@@ -48,6 +48,7 @@ const FinancePage: PageWithLayoutProps = () => {
     walletId,
     setWalletId,
   } = useWallets();
+  
   const { projects, isProjectsLoading } = useProjects();
   const {
     transactions,
@@ -131,7 +132,7 @@ const FinancePage: PageWithLayoutProps = () => {
               label: project.name,
               value: project.id,
             }))}
-            value={projectId}
+            value={projectId as string | undefined}
             onChange={setProjectId}
           />
 
@@ -155,7 +156,7 @@ const FinancePage: PageWithLayoutProps = () => {
         </div>
 
         <div className="p-5">
-          {/* <button
+          <button
             onClick={() => showEditTransactionModal()}
             className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
@@ -172,7 +173,7 @@ const FinancePage: PageWithLayoutProps = () => {
                   onClick={() => showEditTransactionModal(transaction)}
                 />
               ))}
-          </div> */}
+          </div>
 
           <div>{`This is wallet ${currentWallet.name} of project ${currentProject.name}`}</div>
         </div>

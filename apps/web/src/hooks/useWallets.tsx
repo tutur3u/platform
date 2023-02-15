@@ -15,12 +15,12 @@ const WalletContext = createContext({
   walletId: null as string | null,
   setWalletId: (id: string | null) => console.log(id),
 
-  projectId: null as string | null,
+  projectId: null as string | string[] | null,
   setProjectId: (id: string | null) => console.log(id),
 
-  createWallet: (projectId: string, wallet: Wallet) =>
+  createWallet: (projectId: string | string[], wallet: Wallet) =>
     console.log(projectId, wallet),
-  updateWallet: (projectId: string, wallet: Wallet) =>
+  updateWallet: (projectId: string | string[], wallet: Wallet) =>
     console.log(projectId, wallet),
   deleteWallet: (wallet: Wallet) => console.log(wallet),
 });
@@ -43,7 +43,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const isTransactionsLoading = !transactions && !transactionsError;
 
-  const createWallet = async (projectId: string, wallet: Wallet) => {
+  const createWallet = async (projectId: string | string[], wallet: Wallet) => {
     try {
       const res = await fetch(`/api/projects/${projectId}/wallets`, {
         method: 'POST',
@@ -66,7 +66,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateWallet = async (projectId: string, wallet: Wallet) => {
+  const updateWallet = async (projectId: string | string[], wallet: Wallet) => {
     try {
       const res = await fetch(
         `/api/projects/${projectId}/wallets/${wallet.id}`,
