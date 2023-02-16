@@ -7,12 +7,14 @@ import { StarIcon } from '@heroicons/react/24/outline';
 import LoadingIndicator from '../common/LoadingIndicator';
 import SidebarLayout from './SidebarLayout';
 
+type Mode = 'workspace' | 'project' | 'document';
+
 interface NestedLayoutProps {
   children: React.ReactNode;
-  orgMode?: boolean;
+  mode: Mode;
 }
 
-const orgTabs = [
+const workspaceTabs = [
   {
     name: 'Overview',
     href: '/',
@@ -64,7 +66,7 @@ const projectTabs = [
 
 const NestedLayout: FC<NestedLayoutProps> = ({
   children,
-  orgMode = true,
+  mode = 'workspace',
 }: NestedLayoutProps) => {
   const router = useRouter();
   const { segments } = useAppearance();
@@ -73,31 +75,41 @@ const NestedLayout: FC<NestedLayoutProps> = ({
     query: { orgId, projectId },
   } = router;
 
-  const tabs = orgMode ? orgTabs : projectTabs;
-  const path = orgMode ? `/orgs/${orgId}` : `/projects/${projectId}`;
+  const tabs =
+    mode === 'document'
+      ? []
+      : mode === 'workspace'
+      ? workspaceTabs
+      : projectTabs;
+  const path =
+    mode === 'workspace' ? `/orgs/${orgId}` : `/projects/${projectId}`;
 
   return (
     <SidebarLayout>
-      <nav className="absolute left-0 right-0 border-b border-zinc-800">
+      <nav className="w-full border-b border-zinc-800">
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
           <ActionIcon color="yellow">
             <StarIcon className="h-6 w-6" />
           </ActionIcon>
 
           {segments && segments.length > 0 ? (
-            <div className="flex flex-wrap gap-x-2">
+            <div className="scrollbar-none flex gap-x-2 overflow-x-auto">
               {segments
                 // remove last segment
-                .slice(0, segments.length - 1)
+                .slice(
+                  0,
+                  mode === 'document' ? segments.length : segments.length - 1
+                )
                 .map((s, index) => (
                   <Fragment key={`segment-${s.href}`}>
                     <Link
                       href={s.href}
                       className="min-w-max rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
                     >
-                      {s?.content || 'Unnamed Workspace'}
+                      {s?.content || ''}
                     </Link>
-                    {index < segments.length - 2 && (
+                    {index <
+                      segments.length - (mode === 'document' ? 1 : 2) && (
                       <span className="text-zinc-500">/</span>
                     )}
                   </Fragment>
@@ -115,7 +127,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
               className={`group rounded-t-lg border-b-2 pb-2 ${
                 segments &&
                 segments.length > 0 &&
-                (orgMode
+                (mode === 'workspace'
                   ? segments
                       .map((segment) => segment.content)
                       .includes(tab.name)
@@ -131,7 +143,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           ))}
         </div>
       </nav>
-      <div className="my-32 mx-4 md:mx-8 lg:mx-16 xl:mx-32">{children}</div>
+      <div className="m-4 md:mx-8 lg:mx-16 xl:mx-32">{children}</div>
     </SidebarLayout>
   );
 };

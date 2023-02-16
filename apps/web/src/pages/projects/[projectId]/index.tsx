@@ -64,7 +64,7 @@ const ProjectOverviewPage = () => {
 };
 
 ProjectOverviewPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+  return <NestedLayout mode="project">{page}</NestedLayout>;
 };
 
 export default ProjectOverviewPage;

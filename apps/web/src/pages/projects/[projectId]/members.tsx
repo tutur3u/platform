@@ -83,7 +83,7 @@ const ProjectMembersPage = () => {
 
       <Divider className="my-4" />
 
-      <div className="mb-16 grid gap-4 md:grid-cols-2">
+      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
         {membersData?.members
           ?.sort(
             (
@@ -133,7 +133,7 @@ const ProjectMembersPage = () => {
 };
 
 ProjectMembersPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+  return <NestedLayout mode="project">{page}</NestedLayout>;
 };
 
 export default ProjectMembersPage;

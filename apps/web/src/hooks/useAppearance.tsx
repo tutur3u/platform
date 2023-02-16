@@ -46,6 +46,7 @@ const AppearanceContext = createContext({
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>
     console.log(segment, conditions),
+  setLastSegment: (segment: Segment) => console.log(segment),
   addSegment: (segment: Segment, conditions?: boolean[]) =>
     console.log(segment, conditions),
 });
@@ -223,6 +224,15 @@ export const AppearanceProvider = ({
     []
   );
 
+  const setLastSegment = useCallback((segment: Segment) => {
+    // Update the segments
+    setSegments((oldSegments) => {
+      const newSegments = [...oldSegments];
+      newSegments[newSegments.length - 1] = segment;
+      return newSegments;
+    });
+  }, []);
+
   const addSegment = (segment: Segment, conditions?: boolean[]) => {
     // If not all conditions are true, don't add the segment
     if (conditions && conditions.some((condition) => !condition)) return;
@@ -249,6 +259,7 @@ export const AppearanceProvider = ({
 
     segments,
     setRootSegment,
+    setLastSegment,
     addSegment,
   };
 

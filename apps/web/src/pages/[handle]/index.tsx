@@ -143,7 +143,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     };
   }, [userData?.id, user?.id]);
 
-  const [saving, setSaving] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
 
   const handleNoteSave = async (note: string) => {
     if (!loadedNote || noteLoading || saving || !userData) return;
