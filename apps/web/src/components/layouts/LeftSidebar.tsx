@@ -36,11 +36,11 @@ import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
-  const { data: user } = useUserData();
-
   const router = useRouter();
+
+  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { supabaseClient } = useSessionContext();
+  const { data: user } = useUserData();
 
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
@@ -48,6 +48,7 @@ function LeftSidebar({ className }: SidebarProps) {
   };
 
   const { createOrg } = useOrgs();
+
   const { orgId, org, members, isProjectsLoading, createProject, projects } =
     useProjects();
 
@@ -516,12 +517,12 @@ function LeftSidebar({ className }: SidebarProps) {
         </div>
       </div>
 
-      <div
-        className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
-          leftSidebarPref.main === 'open' ? 'block' : 'hidden'
-        }`}
-        onClick={() => changeLeftSidebarMainPref('closed')}
-      />
+      {leftSidebarPref.main === 'open' && (
+        <div
+          className="z-10 block h-full w-full overflow-hidden bg-zinc-900/50 backdrop-blur md:hidden"
+          onClick={() => changeLeftSidebarMainPref('closed')}
+        />
+      )}
     </>
   );
 }
