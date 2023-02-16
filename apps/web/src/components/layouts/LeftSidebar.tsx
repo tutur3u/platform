@@ -519,7 +519,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
       {leftSidebarPref.main === 'open' && (
         <div
-          className="z-10 block h-full w-full overflow-hidden bg-zinc-900/50 backdrop-blur md:hidden"
+          className="absolute inset-0 z-10 overflow-hidden bg-zinc-900/50 backdrop-blur md:hidden"
           onClick={() => changeLeftSidebarMainPref('closed')}
         />
       )}
