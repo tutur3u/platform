@@ -103,6 +103,7 @@ function LeftSidebar({ className }: SidebarProps) {
         >
           <div className="relative mx-4 mb-2 flex justify-start pb-1">
             <Logo
+              root={!user}
               alwaysShowLabel={leftSidebarPref.main === 'open'}
               showLabel={
                 leftSidebarPref.main !== 'closed' &&
@@ -354,55 +355,52 @@ function LeftSidebar({ className }: SidebarProps) {
                     leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
                   }`}
                 >
-                  {projects.length > 0 ? (
-                    projects.map((project) => (
-                      <SidebarLink
-                        key={project.id}
-                        href={`/projects/${project.id}`}
-                        defaultHighlight={leftSidebarPref.main !== 'closed'}
-                        activeIcon={
-                          <Avatar
-                            radius="sm"
-                            color="blue"
-                            className="bg-blue-500/20"
-                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                          >
-                            {project?.name ? (
-                              getInitials(project.name)
-                            ) : (
-                              <BuildingOffice2Icon className="w-5" />
-                            )}
-                          </Avatar>
-                        }
-                        inactiveIcon={
-                          <Avatar
-                            radius="sm"
-                            color="blue"
-                            className="hover:bg-blue-500/10"
-                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                          >
-                            {project?.name ? (
-                              getInitials(project.name)
-                            ) : (
-                              <BuildingOffice2Icon className="w-5" />
-                            )}
-                          </Avatar>
-                        }
-                        label={project?.name || 'Untitled Project'}
-                        showTooltip={leftSidebarPref.main === 'closed'}
-                      />
-                    ))
-                  ) : (
-                    <SidebarButton
-                      label="New project"
-                      activeIcon={<SquaresPlusIcon className="w-5" />}
-                      showLabel={leftSidebarPref.main === 'open'}
-                      showTooltip={
-                        leftSidebarPref.main === 'closed' && !newPopover
+                  {projects.map((project) => (
+                    <SidebarLink
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      defaultHighlight={leftSidebarPref.main !== 'closed'}
+                      activeIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="bg-blue-500/20"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
                       }
-                      onClick={showProjectEditForm}
+                      inactiveIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="hover:bg-blue-500/10"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
+                      }
+                      label={project?.name || 'Untitled Project'}
+                      showTooltip={leftSidebarPref.main === 'closed'}
                     />
-                  )}
+                  ))}
+                  <SidebarButton
+                    label="New project"
+                    activeIcon={<SquaresPlusIcon className="w-5" />}
+                    showLabel={leftSidebarPref.main === 'open'}
+                    showTooltip={
+                      leftSidebarPref.main === 'closed' && !newPopover
+                    }
+                    onClick={showProjectEditForm}
+                  />
                 </div>
               )}
             </div>

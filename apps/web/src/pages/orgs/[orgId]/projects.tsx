@@ -100,7 +100,10 @@ const OrganizationProjectsPage = () => {
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
-              Projects ({projectsData?.length || 0})
+              Projects{' '}
+              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+                {projectsData?.length || 0}
+              </span>
             </h1>
             <p className="text-zinc-400">
               Organize work into projects and track progress with ease.

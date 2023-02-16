@@ -117,7 +117,10 @@ const OrganizationMembersPage = () => {
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
-              Members ({membersData?.members?.length || 0})
+              Members{' '}
+              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+                {membersData?.members?.length || 0}
+              </span>
             </h1>
             <p className="text-zinc-400">Manage members of your workspace.</p>
           </div>

@@ -12,7 +12,7 @@ const fetchProjects = async (
     .from('projects')
     .select('id, name, created_at')
     .eq('org_id', orgId)
-    .order('id');
+    .order('created_at');
 
   if (error) return res.status(500).json({ error: error.message });
 
