@@ -37,7 +37,7 @@ const ProjectMembersPage = () => {
       project?.orgs?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Organization',
+              content: project?.orgs?.name || 'Unnamed Workspace',
               href: `/orgs/${project.orgs.id}`,
             },
             {
@@ -71,7 +71,10 @@ const ProjectMembersPage = () => {
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
-              Members ({membersData?.members?.length || 0})
+              Members{' '}
+              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+                {membersData?.members?.length || 0}
+              </span>
             </h1>
             <p className="text-zinc-400">Manage who can access this project.</p>
           </div>
@@ -80,7 +83,7 @@ const ProjectMembersPage = () => {
 
       <Divider className="my-4" />
 
-      <div className="mb-16 grid gap-4 md:grid-cols-2">
+      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
         {membersData?.members
           ?.sort(
             (
@@ -130,7 +133,7 @@ const ProjectMembersPage = () => {
 };
 
 ProjectMembersPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+  return <NestedLayout mode="project">{page}</NestedLayout>;
 };
 
 export default ProjectMembersPage;

@@ -15,10 +15,9 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
   if (userError) return res.status(401).json({ error: userError.message });
 
   const currentOrgs = supabase
-    .from('org_members')
-    .select('orgs(id, name)')
-    .eq('user_id', user?.id)
-    .order('org_id');
+    .from('orgs')
+    .select('id, name')
+    .order('created_at');
 
   const invitedOrgs = supabase
     .from('org_invites')
@@ -35,7 +34,7 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: invited.error.message });
 
   return res.status(200).json({
-    current: current.data.map((org) => org.orgs),
+    current: current.data.map((org) => org),
     invited: invited.data.map((org) => ({
       ...org.orgs,
       created_at: org.created_at,

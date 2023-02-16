@@ -38,7 +38,7 @@ const HomePage = () => {
 
   const showEditOrgModal = (org?: Organization) => {
     openModal({
-      title: 'New organization',
+      title: 'New workspace',
       centered: true,
       children: <OrgEditForm org={org} onSubmit={addOrg} />,
     });
@@ -53,7 +53,7 @@ const HomePage = () => {
       mutate('/api/orgs');
       showNotification({
         title: `Accepted invite to ${org.name}`,
-        message: 'You can now access this organization',
+        message: 'You can now access this workspace',
       });
     } else {
       showNotification({
@@ -115,7 +115,7 @@ const HomePage = () => {
           ) : (
             <div className="flex flex-col">
               <div className="flex flex-row">
-                You are not a member of any organizations.
+                You are not a member of any workspaces.
               </div>
             </div>
           )}
@@ -124,7 +124,7 @@ const HomePage = () => {
             className="mt-8 w-full rounded bg-blue-300/20 px-8 py-4 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 md:w-fit"
             onClick={() => showEditOrgModal()}
           >
-            New organization
+            New workspace
           </button>
         </>
       )}

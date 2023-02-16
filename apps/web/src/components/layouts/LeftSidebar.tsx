@@ -28,7 +28,7 @@ import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
 import SidebarButton from './SidebarButton';
-import OrganizationSelector from '../selectors/OrganizationSelector';
+import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import { useProjects } from '../../hooks/useProjects';
 import ProjectEditForm from '../forms/ProjectEditForm';
 import Link from 'next/link';
@@ -36,11 +36,11 @@ import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 
 function LeftSidebar({ className }: SidebarProps) {
-  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
-  const { data: user } = useUserData();
-
   const router = useRouter();
+
+  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
   const { supabaseClient } = useSessionContext();
+  const { data: user } = useUserData();
 
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
@@ -48,12 +48,13 @@ function LeftSidebar({ className }: SidebarProps) {
   };
 
   const { createOrg } = useOrgs();
+
   const { orgId, org, members, isProjectsLoading, createProject, projects } =
     useProjects();
 
   const showEditOrgModal = () => {
     openModal({
-      title: <div className="font-semibold">New organization</div>,
+      title: <div className="font-semibold">New workspace</div>,
       centered: true,
       children: <OrgEditForm onSubmit={createOrg} />,
     });
@@ -102,6 +103,7 @@ function LeftSidebar({ className }: SidebarProps) {
         >
           <div className="relative mx-4 mb-2 flex justify-start pb-1">
             <Logo
+              root={!user}
               alwaysShowLabel={leftSidebarPref.main === 'open'}
               showLabel={
                 leftSidebarPref.main !== 'closed' &&
@@ -118,7 +120,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 label={
                   <div>
                     <div className="font-semibold">
-                      {org.name || 'Unnamed Organization'}
+                      {org.name || 'Unnamed Workspace'}
                     </div>
                     <div className="text-xs font-semibold">
                       {members.length}{' '}
@@ -146,7 +148,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         {leftSidebarPref.main === 'closed' ? (
                           <BuildingOffice2Icon className="w-5" />
                         ) : (
-                          org?.name || 'Unnamed Organization'
+                          org?.name || 'Unnamed Workspace'
                         )}
                       </Link>
                     </div>
@@ -249,7 +251,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   showEditOrgModal();
                 }}
                 activeIcon={<BuildingOffice2Icon className="w-5" />}
-                label="New organization"
+                label="New workspace"
                 left
               />
 
@@ -308,7 +310,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <div className="scrollbar-none my-2 h-full overflow-auto">
             <div className="mx-2 mb-2 flex flex-col gap-1">
               <SidebarLink
-                href="/"
+                href="/home"
                 onClick={() => setUserPopover(false)}
                 activeIcon={<HomeIcon className="w-5" />}
                 label="Home"
@@ -353,55 +355,52 @@ function LeftSidebar({ className }: SidebarProps) {
                     leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
                   }`}
                 >
-                  {projects.length > 0 ? (
-                    projects.map((project) => (
-                      <SidebarLink
-                        key={project.id}
-                        href={`/projects/${project.id}`}
-                        defaultHighlight={leftSidebarPref.main !== 'closed'}
-                        activeIcon={
-                          <Avatar
-                            radius="sm"
-                            color="blue"
-                            className="bg-blue-500/20"
-                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                          >
-                            {project?.name ? (
-                              getInitials(project.name)
-                            ) : (
-                              <BuildingOffice2Icon className="w-5" />
-                            )}
-                          </Avatar>
-                        }
-                        inactiveIcon={
-                          <Avatar
-                            radius="sm"
-                            color="blue"
-                            className="hover:bg-blue-500/10"
-                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                          >
-                            {project?.name ? (
-                              getInitials(project.name)
-                            ) : (
-                              <BuildingOffice2Icon className="w-5" />
-                            )}
-                          </Avatar>
-                        }
-                        label={project?.name || 'Untitled Project'}
-                        showTooltip={leftSidebarPref.main === 'closed'}
-                      />
-                    ))
-                  ) : (
-                    <SidebarButton
-                      label="New project"
-                      activeIcon={<SquaresPlusIcon className="w-5" />}
-                      showLabel={leftSidebarPref.main === 'open'}
-                      showTooltip={
-                        leftSidebarPref.main === 'closed' && !newPopover
+                  {projects.map((project) => (
+                    <SidebarLink
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      defaultHighlight={leftSidebarPref.main !== 'closed'}
+                      activeIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="bg-blue-500/20"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
                       }
-                      onClick={showProjectEditForm}
+                      inactiveIcon={
+                        <Avatar
+                          radius="sm"
+                          color="blue"
+                          className="hover:bg-blue-500/10"
+                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                        >
+                          {project?.name ? (
+                            getInitials(project.name)
+                          ) : (
+                            <BuildingOffice2Icon className="w-5" />
+                          )}
+                        </Avatar>
+                      }
+                      label={project?.name || 'Untitled Project'}
+                      showTooltip={leftSidebarPref.main === 'closed'}
                     />
-                  )}
+                  ))}
+                  <SidebarButton
+                    label="New project"
+                    activeIcon={<SquaresPlusIcon className="w-5" />}
+                    showLabel={leftSidebarPref.main === 'open'}
+                    showTooltip={
+                      leftSidebarPref.main === 'closed' && !newPopover
+                    }
+                    onClick={showProjectEditForm}
+                  />
                 </div>
               )}
             </div>
@@ -435,7 +434,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <Divider className="my-2" variant="dashed" />
 
           <div className="mx-2 flex items-center justify-center gap-2">
-            {leftSidebarPref.main === 'open' && <OrganizationSelector />}
+            {leftSidebarPref.main === 'open' && <WorkspaceSelector />}
 
             <Popover
               opened={userPopover}
@@ -492,7 +491,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 {leftSidebarPref.main !== 'open' && (
                   <>
                     <Divider variant="dashed" />
-                    <OrganizationSelector
+                    <WorkspaceSelector
                       showLabel
                       className="mx-2 mb-2"
                       onChange={() => setUserPopover(false)}
@@ -516,12 +515,12 @@ function LeftSidebar({ className }: SidebarProps) {
         </div>
       </div>
 
-      <div
-        className={`z-10 h-screen w-screen bg-zinc-900/50 backdrop-blur md:hidden ${
-          leftSidebarPref.main === 'open' ? 'block' : 'hidden'
-        }`}
-        onClick={() => changeLeftSidebarMainPref('closed')}
-      />
+      {leftSidebarPref.main === 'open' && (
+        <div
+          className="absolute inset-0 z-10 overflow-hidden bg-zinc-900/50 backdrop-blur md:hidden"
+          onClick={() => changeLeftSidebarMainPref('closed')}
+        />
+      )}
     </>
   );
 }

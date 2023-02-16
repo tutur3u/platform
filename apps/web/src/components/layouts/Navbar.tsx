@@ -1,11 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { useUserData } from '../../hooks/useUserData';
+import dynamic from 'next/dynamic';
 
 interface NavbarProps {
   hideNavLinks?: boolean;
 }
 
+const UserProfilePopover = dynamic(() => import('./UserProfilePopover'));
+
 const Navbar = ({ hideNavLinks }: NavbarProps) => {
+  const { data: user } = useUserData();
+
   return (
     <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-4 font-semibold text-white backdrop-blur-lg md:px-32 lg:px-64">
       <Link href="/" className="flex gap-2 transition hover:text-blue-200">
@@ -19,7 +25,9 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
         <div className="text-2xl">Tuturuuu</div>
       </Link>
 
-      {hideNavLinks || (
+      {hideNavLinks ? null : user ? (
+        <UserProfilePopover user={user} />
+      ) : (
         <div className="flex items-center gap-4">
           <Link href="/login" className="hover:text-blue-200">
             Log in

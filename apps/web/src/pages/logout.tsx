@@ -1,5 +1,27 @@
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext } from '@supabase/auth-helpers-react';
+import { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
+
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const supabase = createServerSupabaseClient(ctx);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session)
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+
+  return {
+    props: {},
+  };
+};
 
 const LogOutPage = () => {
   const router = useRouter();

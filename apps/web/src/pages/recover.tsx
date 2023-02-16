@@ -19,7 +19,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (session)
     return {
       redirect: {
-        destination: '/',
+        destination: '/home',
         permanent: false,
       },
       props: {
@@ -51,7 +51,7 @@ const PasswordRecoveryPage = () => {
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
       const { redirectedFrom: nextUrl } = router.query;
-      router.push(nextUrl ? nextUrl.toString() : '/');
+      router.push(nextUrl ? nextUrl.toString() : '/home');
     } catch (error: any) {
       showNotification({
         title: 'Error',

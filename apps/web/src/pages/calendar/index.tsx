@@ -1,5 +1,4 @@
 import { ReactElement, useEffect, useState } from 'react';
-import Layout from '../../components/layouts/Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
@@ -27,6 +26,7 @@ import {
 import SidebarDivider from '../../components/layouts/SidebarDivider';
 import TaskWrapper from '../../components/tasks/core/TaskWrapper';
 import TaskListWrapper from '../../components/tasks/lists/TaskListWrapper';
+import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const CalendarPage: PageWithLayoutProps = () => {
   const {
@@ -477,7 +477,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 };
 
 CalendarPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 };
 
 export default CalendarPage;
