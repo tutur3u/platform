@@ -42,6 +42,7 @@ importers:
       '@tiptap/extension-superscript': 2.0.0-beta.217
       '@tiptap/extension-text-align': 2.0.0-beta.217
       '@tiptap/extension-underline': 2.0.0-beta.217
+      '@tiptap/pm': 2.0.0-beta.217
       '@tiptap/react': 2.0.0-beta.217
       '@tiptap/starter-kit': 2.0.0-beta.217
       '@types/cookie': ^0.5.1
@@ -106,6 +107,7 @@ importers:
       '@tiptap/extension-superscript': 2.0.0-beta.217_pv7cmqvutaztpd4mucego55zca
       '@tiptap/extension-text-align': 2.0.0-beta.217_pv7cmqvutaztpd4mucego55zca
       '@tiptap/extension-underline': 2.0.0-beta.217_pv7cmqvutaztpd4mucego55zca
+      '@tiptap/pm': 2.0.0-beta.217_pv7cmqvutaztpd4mucego55zca
       '@tiptap/react': 2.0.0-beta.217_6cynlrg7wtsnnol642bufaujhy
       '@tiptap/starter-kit': 2.0.0-beta.217_@tiptap+pm@2.0.0-beta.217
       '@vercel/analytics': 0.1.9_react@18.2.0
@@ -867,7 +869,7 @@ packages:
     resolution: {integrity: sha512-VLYKXQmtmuEz6IxJsrZwzG9NvtkQsWNnWMsKxqWNu3+CnfzJQhp0WDDKWLVV9hLKr0l3SLLFRqcYHjhtyuDVxg==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@sinclair/typebox': 0.25.22
+      '@sinclair/typebox': 0.25.23
     dev: true
 
   /@jest/source-map/29.4.3:
@@ -1465,8 +1467,8 @@ packages:
   /@rushstack/eslint-patch/1.2.0:
     resolution: {integrity: sha512-sXo/qW2/pAcmT43VoRKOJbDOfV3cYpq3szSVfIThQXNt+E4DfKj361vaAt3c88U5tPUxzEswam7GW48PJqtKAg==}
 
-  /@sinclair/typebox/0.25.22:
-    resolution: {integrity: sha512-6U6r2L7rnM7EG8G1tWzIjdB3QlsHF4slgcqXNN/SF0xJOAr0nDmT2GedlkyO3mrv8mDTJ24UuOMWR3diBrCvQQ==}
+  /@sinclair/typebox/0.25.23:
+    resolution: {integrity: sha512-VEB8ygeP42CFLWyAJhN5OklpxUliqdNEUcXb4xZ/CINqtYGTjL5ukluKdKzQ0iWdUxyQ7B0539PAUhHKrCNWSQ==}
     dev: true
 
   /@sinonjs/commons/2.0.0:
