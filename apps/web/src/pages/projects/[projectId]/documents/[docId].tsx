@@ -175,7 +175,7 @@ const ProjectDocumentEditor = () => {
       {document && (
         <>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex w-full items-center gap-4">
               {saving ? (
                 <Loader className="h-7 w-7" />
               ) : (
