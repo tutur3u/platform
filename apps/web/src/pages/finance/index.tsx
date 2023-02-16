@@ -45,6 +45,7 @@ const FinancePage: PageWithLayoutProps = () => {
 
   const [projectId, setProjectId] = useState<string | null>();
   const [walletId, setWalletId] = useState<string | null>();
+  const [wallet, setWallet] = useState<Wallet>();
 
   const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
     projectId ? `/api/projects/${projectId}/wallets` : null
@@ -61,6 +62,13 @@ const FinancePage: PageWithLayoutProps = () => {
   );
 
   const isTransactionsLoading = !transactions && !transactionsError;
+
+  useEffect(() => {
+    if (walletId) {
+      const wallet = wallets?.find((wallet) => wallet.id === walletId);
+      if (wallet) setWallet(wallet);
+    }
+  }, [walletId, wallets]);
 
   const showEditWalletModal = (wallet?: Wallet) => {
     if (!projectId) return;
@@ -155,13 +163,21 @@ const FinancePage: PageWithLayoutProps = () => {
           </div>
         </div>
 
-        <div className="p-5">
-          <button
-            onClick={() => showEditTransactionModal()}
-            className="flex mb-7 items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
-          >
-            Add transaction
-          </button>
+        <div className="w-full p-5">
+          <div className="flex w-full justify-between">
+            <button
+              onClick={() => showEditTransactionModal()}
+              className="mb-7 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            >
+              Add transaction
+            </button>
+            <button
+              onClick={() => showEditWalletModal(wallet)}
+              className="mb-7 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            >
+              Edit wallet
+            </button>
+          </div>
 
           <div className="scrollbar-none grid grid-cols-4 gap-5 overflow-y-scroll">
             {transactions &&

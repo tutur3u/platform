@@ -65,6 +65,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
         `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
