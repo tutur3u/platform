@@ -107,7 +107,7 @@ const ProjectSettingsPage = () => {
     });
 
     if (res.ok) {
-      router.push(`/`);
+      router.push(`/orgs/${project.orgs.id}/projects`);
       mutate(`/api/orgs/${project.orgs.id}/projects`);
     }
   };
