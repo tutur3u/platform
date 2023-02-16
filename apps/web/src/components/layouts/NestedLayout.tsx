@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { FC, Fragment } from 'react';
-import Layout from './Layout';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ActionIcon } from '@mantine/core';
 import { StarIcon } from '@heroicons/react/24/outline';
 import LoadingIndicator from '../common/LoadingIndicator';
+import SidebarLayout from './SidebarLayout';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -77,7 +77,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const path = orgMode ? `/orgs/${orgId}` : `/projects/${projectId}`;
 
   return (
-    <Layout>
+    <SidebarLayout>
       <nav className="absolute left-0 right-0 border-b border-zinc-800">
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
           <ActionIcon color="yellow">
@@ -132,7 +132,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
         </div>
       </nav>
       <div className="my-32 mx-4 md:mx-8 lg:mx-16 xl:mx-32">{children}</div>
-    </Layout>
+    </SidebarLayout>
   );
 };
 

@@ -1,6 +1,5 @@
 import { ReactElement, useEffect, useState } from 'react';
 import WalletTab from '../../components/finance/wallets/WalletTab';
-import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
 import { DEV_MODE } from '../../constants/common';
 import { useAppearance } from '../../hooks/useAppearance';
@@ -14,6 +13,7 @@ import { Transaction } from '../../types/primitives/Transaction';
 import { useWallets } from '../../hooks/useWallets';
 import { useProjects } from '../../hooks/useProjects';
 import { Select } from '@mantine/core';
+import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -116,7 +116,7 @@ const FinancePage: PageWithLayoutProps = () => {
 };
 
 FinancePage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 };
 
 export default FinancePage;

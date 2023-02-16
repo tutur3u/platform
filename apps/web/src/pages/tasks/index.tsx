@@ -1,11 +1,11 @@
 import { ReactElement, useEffect } from 'react';
-import Layout from '../../components/layouts/Layout';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { DEV_MODE } from '../../constants/common';
+import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const TasksPage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -47,7 +47,7 @@ const TasksPage: PageWithLayoutProps = () => {
 };
 
 TasksPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 };
 
 export default TasksPage;

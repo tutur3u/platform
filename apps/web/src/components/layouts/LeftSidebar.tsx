@@ -308,7 +308,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <div className="scrollbar-none my-2 h-full overflow-auto">
             <div className="mx-2 mb-2 flex flex-col gap-1">
               <SidebarLink
-                href="/"
+                href="/home"
                 onClick={() => setUserPopover(false)}
                 activeIcon={<HomeIcon className="w-5" />}
                 label="Home"

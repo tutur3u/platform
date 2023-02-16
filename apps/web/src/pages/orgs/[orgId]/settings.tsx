@@ -106,7 +106,7 @@ const OrganizationSettingsPage = () => {
     await deleteOrg(org.id, {
       onSuccess: () => {
         mutate('/api/orgs');
-        router.push('/');
+        router.push('/home');
       },
       onCompleted: () => setIsDeleting(false),
     });
