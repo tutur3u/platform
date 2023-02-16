@@ -14,7 +14,7 @@ export default function TransactionTab({
   return (
     <button
       onClick={onClick}
-      className="h-fit w-[50%] rounded-lg bg-yellow-300/10 p-3 text-yellow-300 transition hover:cursor-pointer hover:bg-yellow-300/20"
+      className="h-fit w-full rounded-lg bg-yellow-300/10 p-3 text-yellow-300 transition hover:cursor-pointer hover:bg-yellow-300/20"
     >
       <div className="font-semibold">{transaction.name}</div>
       <div className=" text-2xl font-bold">

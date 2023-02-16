@@ -158,12 +158,12 @@ const FinancePage: PageWithLayoutProps = () => {
         <div className="p-5">
           <button
             onClick={() => showEditTransactionModal()}
-            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            className="flex mb-7 items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
             Add transaction
           </button>
 
-          <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
+          <div className="scrollbar-none grid grid-cols-4 gap-5 overflow-y-scroll">
             {transactions &&
               transactions.map((transaction, index) => (
                 <TransactionTab
