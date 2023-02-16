@@ -11,7 +11,7 @@ type Mode = 'workspace' | 'project' | 'document';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
-  mode: Mode;
+  mode?: Mode;
 }
 
 const workspaceTabs = [
