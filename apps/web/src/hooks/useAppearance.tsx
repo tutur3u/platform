@@ -20,28 +20,24 @@ export interface SidebarPreference {
 
 const AppearanceContext = createContext({
   theme: 'dark' as Theme,
-  changeTheme: (theme: Theme) => console.log('changeTheme', theme),
+  changeTheme: (theme: Theme) => console.log(theme),
 
   leftSidebarPref: { main: 'closed', secondary: 'hidden' } as SidebarPreference,
 
-  changeLeftSidebarPref: (pref: SidebarPreference) =>
-    console.log('changeLeftSidebar', pref),
-  changeLeftSidebarMainPref: (pref: MainSidebarPref) =>
-    console.log('changeLeftSidebarMainPref', pref),
+  changeLeftSidebarPref: (pref: SidebarPreference) => console.log(pref),
+  changeLeftSidebarMainPref: (pref: MainSidebarPref) => console.log(pref),
   changeLeftSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
-    console.log('changeLeftSidebarSecondaryPref', pref),
+    console.log(pref),
 
   rightSidebarPref: {
     main: 'closed',
     secondary: 'visible',
   } as SidebarPreference,
 
-  changeRightSidebarPref: (pref: SidebarPreference) =>
-    console.log('changeRightSidebar', pref),
-  changeRightSidebarMainPref: (pref: MainSidebarPref) =>
-    console.log('changeRightSidebarMainPref', pref),
+  changeRightSidebarPref: (pref: SidebarPreference) => console.log(pref),
+  changeRightSidebarMainPref: (pref: MainSidebarPref) => console.log(pref),
   changeRightSidebarSecondaryPref: (pref: SecondarySidebarPref) =>
-    console.log('changeRightSidebarSecondaryPref', pref),
+    console.log(pref),
 
   segments: [] as Segment[],
   setRootSegment: (segment: Segment | Segment[], conditions?: boolean[]) =>

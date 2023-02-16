@@ -1,10 +1,10 @@
 import { useRouter } from 'next/router';
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
 import HeaderX from '../../../../components/metadata/HeaderX';
-import { Divider } from '@mantine/core';
+import { Divider, Loader } from '@mantine/core';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Document } from '../../../../types/primitives/Document';
 import Link from 'next/link';
@@ -52,7 +52,11 @@ const ProjectDocumentsPage = () => {
     projectId ? `/api/projects/${projectId}/documents` : null
   );
 
+  const [creating, setCreating] = useState(false);
+
   const addDocument = async () => {
+    setCreating(true);
+
     const res = await fetch(`/api/projects/${projectId}/documents`, {
       method: 'POST',
       headers: {
@@ -64,6 +68,7 @@ const ProjectDocumentsPage = () => {
     });
 
     if (!res.ok) {
+      setCreating(false);
       showNotification({
         title: 'Error',
         message: 'An error occurred while creating the document.',
@@ -83,7 +88,12 @@ const ProjectDocumentsPage = () => {
       {projectId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Documents</h1>
+            <h1 className="text-2xl font-bold">
+              Documents{' '}
+              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+                {documents?.length || 0}
+              </span>
+            </h1>
             <p className="text-zinc-400">
               Store text-based information with enhanced formatting and
               collaboration.
@@ -98,10 +108,15 @@ const ProjectDocumentsPage = () => {
         onClick={addDocument}
         className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
       >
-        New document <DocumentPlusIcon className="h-4 w-4" />
+        {creating ? 'Creating document' : 'New document'}{' '}
+        {creating ? (
+          <Loader className="ml-1 h-4 w-4" />
+        ) : (
+          <DocumentPlusIcon className="h-4 w-4" />
+        )}
       </button>
 
-      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents &&
           documents?.map((document) => (
             <Link
@@ -109,8 +124,17 @@ const ProjectDocumentsPage = () => {
               key={document.id}
               className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80"
             >
-              <p className="font-semibold lg:text-lg xl:text-xl">
+              <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
                 {document.name || 'Untitled Document'}
+              </p>
+
+              <Divider className="my-2" />
+
+              <p className="text-zinc-400">
+                <div
+                  className="prose line-clamp-5"
+                  dangerouslySetInnerHTML={{ __html: document.content || '' }}
+                />
               </p>
             </Link>
           ))}

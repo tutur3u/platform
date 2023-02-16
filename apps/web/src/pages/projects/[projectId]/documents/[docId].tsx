@@ -3,10 +3,18 @@ import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { ReactElement, useEffect, useState } from 'react';
 import { useAppearance } from '../../../../hooks/useAppearance';
-import { Divider, Loader, TextInput, Tooltip } from '@mantine/core';
+import {
+  Divider,
+  Loader,
+  SegmentedControl,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
 import {
   Cog6ToothIcon,
   DocumentCheckIcon,
+  EyeIcon,
+  PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -78,6 +86,8 @@ const ProjectDocumentEditor = () => {
     });
   }, [projectId, docId, document, name, setLastSegment]);
 
+  const [mode, setMode] = useState('preview');
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -94,6 +104,13 @@ const ProjectDocumentEditor = () => {
       setContent(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    const editable = mode === 'edit';
+    editor.setEditable(editable);
+    setSaving(false);
+  }, [mode, editor]);
 
   useEffect(() => {
     if (!document) return;
@@ -116,8 +133,8 @@ const ProjectDocumentEditor = () => {
     if (!document) return;
     if (!projectId || !docId) return;
     if (!name && !content) return;
-    if (name !== debouncedName || content !== debouncedContent) return;
 
+    if (name !== debouncedName || content !== debouncedContent) return;
     if (name === document?.name && content === document?.content) {
       setSaving(false);
       return;
@@ -208,7 +225,31 @@ const ProjectDocumentEditor = () => {
             </button>
           </div>
 
-          <Divider variant="dashed" className="mt-2 mb-4" />
+          <Divider variant="dashed" className="my-2" />
+
+          <SegmentedControl
+            value={mode}
+            onChange={setMode}
+            data={[
+              {
+                label: (
+                  <div className="flex items-center gap-2">
+                    <EyeIcon className="inline-block h-5" /> Preview
+                  </div>
+                ),
+                value: 'preview',
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-2">
+                    <PencilIcon className="inline-block h-5" /> Edit
+                  </div>
+                ),
+                value: 'edit',
+              },
+            ]}
+            className="mb-2"
+          />
         </>
       )}
 

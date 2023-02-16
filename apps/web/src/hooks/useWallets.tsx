@@ -1,52 +1,19 @@
 import useSWR, { mutate } from 'swr';
 
-import {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-} from 'react';
+import { createContext, useContext, ReactNode, useState } from 'react';
 import { Wallet } from '../types/primitives/Wallet';
 import { Transaction } from '../types/primitives/Transaction';
 import { showNotification } from '@mantine/notifications';
 
 const WalletContext = createContext({
-  isWalletsLoading: false,
-  wallets: [] as Wallet[],
-
-  isTransactionsLoading: false,
-  transactions: [] as Transaction[],
-
-  walletId: null as string | null,
-  setWalletId: (id: string | null) => console.log(id),
-
-  projectId: null as string | null,
-  setProjectId: (id: string | null) => console.log(id),
-
-  createWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
-  updateWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
-  deleteWallet: (wallet: Wallet) => console.log(wallet),
+  createWallet: (projectId: string, wallet: Wallet) =>
+    console.log(projectId, wallet),
+  updateWallet: (projectId: string, wallet: Wallet) =>
+    console.log(projectId, wallet),
+  deleteWallet: (projectId: string, wallet: Wallet) => console.log(wallet),
 });
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [walletId, setWalletId] = useState<string | null>(null);
-
-  const { data: wallets, error: walletsError } = useSWR(
-    projectId ? `/api/projects/${projectId}/wallets` : null
-  );
-
-  const isWalletsLoading = !wallets && !walletsError;
-
-  const { data: transactions, error: transactionsError } = useSWR(
-    projectId && walletId
-      ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
-      : null
-  );
-
-  const isTransactionsLoading = !transactions && !transactionsError;
-
   const createWallet = async (projectId: string, wallet: Wallet) => {
     try {
       const res = await fetch(`/api/projects/${projectId}/wallets`, {
@@ -96,7 +63,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteWallet = async (wallet: Wallet) => {
+  const deleteWallet = async (projectId: string, wallet: Wallet) => {
     try {
       const res = await fetch(
         `/api/projects/${projectId}/wallets/${wallet.id}`,
@@ -117,18 +84,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const values = {
-    isWalletsLoading,
-    wallets,
-
-    isTransactionsLoading,
-    transactions,
-
-    walletId,
-    setWalletId,
-
-    projectId,
-    setProjectId,
-
     createWallet,
     updateWallet,
     deleteWallet,
