@@ -5,7 +5,7 @@ import { Organization } from '../types/primitives/Organization';
 import { useUser } from '@supabase/auth-helpers-react';
 import { showNotification } from '@mantine/notifications';
 
-const OrganizationContext = createContext({
+const WorkspaceContext = createContext({
   orgs: {} as {
     current: Organization[];
     invited: Organization[];
@@ -65,14 +65,14 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to create organization');
+      if (!res.ok) throw new Error('Failed to create workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/orgs');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to create organization',
-        message: 'Make sure you have permission to create new organizations',
+        title: 'Failed to create workspace',
+        message: 'Make sure you have permission to create new workspaces',
         color: 'red',
       });
     } finally {
@@ -94,14 +94,14 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify(org),
       });
 
-      if (!res.ok) throw new Error('Failed to update organization');
+      if (!res.ok) throw new Error('Failed to update workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/orgs');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to update organization',
-        message: 'Make sure you have permission to update this organization',
+        title: 'Failed to update workspace',
+        message: 'Make sure you have permission to update this workspace',
         color: 'red',
       });
     } finally {
@@ -122,14 +122,14 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         method: 'DELETE',
       });
 
-      if (!res.ok) throw new Error('Failed to delete organization');
+      if (!res.ok) throw new Error('Failed to delete workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/orgs');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to delete organization',
-        message: 'Make sure there are no projects in this organization',
+        title: 'Failed to delete workspace',
+        message: 'Make sure there are no projects in this workspace',
         color: 'red',
       });
     } finally {
@@ -148,17 +148,17 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <OrganizationContext.Provider value={values}>
+    <WorkspaceContext.Provider value={values}>
       {children}
-    </OrganizationContext.Provider>
+    </WorkspaceContext.Provider>
   );
 };
 
 export const useOrgs = () => {
-  const context = useContext(OrganizationContext);
+  const context = useContext(WorkspaceContext);
 
   if (context === undefined)
-    throw new Error(`useOrgs() must be used within a OrganizationProvider.`);
+    throw new Error(`useOrgs() must be used within a WorkspaceProvider.`);
 
   return context;
 };

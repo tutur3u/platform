@@ -1,6 +1,5 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import Layout from '../../components/layouts/Layout';
 import { TextInput } from '@mantine/core';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
@@ -15,6 +14,7 @@ import {
 } from '@heroicons/react/24/solid';
 import HeaderX from '../../components/metadata/HeaderX';
 import { DatePicker } from '@mantine/dates';
+import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useAppearance();
@@ -272,7 +272,7 @@ const SettingPage: PageWithLayoutProps = () => {
 };
 
 SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 };
 
 export default SettingPage;

@@ -21,7 +21,7 @@ const ProjectOverviewPage = () => {
       project?.orgs?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Organization',
+              content: project?.orgs?.name || 'Unnamed Workspace',
               href: `/orgs/${project?.orgs?.id}`,
             },
             {
@@ -64,7 +64,7 @@ const ProjectOverviewPage = () => {
 };
 
 ProjectOverviewPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+  return <NestedLayout mode="project">{page}</NestedLayout>;
 };
 
 export default ProjectOverviewPage;

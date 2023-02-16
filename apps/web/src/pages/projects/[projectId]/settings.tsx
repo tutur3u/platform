@@ -24,7 +24,7 @@ const ProjectSettingsPage = () => {
       project?.orgs?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Organization',
+              content: project?.orgs?.name || 'Unnamed Workspace',
               href: `/orgs/${project?.orgs?.id}`,
             },
             {
@@ -71,7 +71,7 @@ const ProjectSettingsPage = () => {
         project?.orgs?.id
           ? [
               {
-                content: project?.orgs?.name || 'Unnamed Organization',
+                content: project?.orgs?.name || 'Unnamed Workspace',
                 href: `/orgs/${project.orgs.id}`,
               },
               {
@@ -107,7 +107,7 @@ const ProjectSettingsPage = () => {
     });
 
     if (res.ok) {
-      router.push(`/`);
+      router.push(`/orgs/${project.orgs.id}/projects`);
       mutate(`/api/orgs/${project.orgs.id}/projects`);
     }
   };
@@ -190,7 +190,7 @@ const ProjectSettingsPage = () => {
 };
 
 ProjectSettingsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout orgMode={false}>{page}</NestedLayout>;
+  return <NestedLayout mode="project">{page}</NestedLayout>;
 };
 
 export default ProjectSettingsPage;

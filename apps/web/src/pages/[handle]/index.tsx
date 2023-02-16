@@ -9,7 +9,6 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import Image from 'next/image';
 import { KeyboardEvent, ReactElement, useEffect, useState } from 'react';
-import Layout from '../../components/layouts/Layout';
 import ProfileCard from '../../components/profile/ProfileCard';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
@@ -18,6 +17,7 @@ import { getInitials } from '../../utils/name-helper';
 import useSWR, { mutate } from 'swr';
 import { useDebouncedValue } from '@mantine/hooks';
 import HeaderX from '../../components/metadata/HeaderX';
+import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // Create authenticated Supabase Client
@@ -143,7 +143,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
     };
   }, [userData?.id, user?.id]);
 
-  const [saving, setSaving] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
 
   const handleNoteSave = async (note: string) => {
     if (!loadedNote || noteLoading || saving || !userData) return;
@@ -318,7 +318,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 };
 
 ProfilePage.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 };
 
 export default ProfilePage;

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 interface LogoProps {
+  root?: boolean;
   showLogo?: boolean;
   showLabel?: boolean;
   alwaysShowLabel?: boolean;
@@ -9,6 +10,7 @@ interface LogoProps {
 }
 
 export default function Logo({
+  root = true,
   showLogo = true,
   showLabel = true,
   alwaysShowLabel = false,
@@ -19,7 +21,7 @@ export default function Logo({
 
   return (
     <Link
-      href="/"
+      href={root ? '/' : '/home'}
       onClick={onClick}
       className={`flex items-center gap-2 ${css}`}
     >
