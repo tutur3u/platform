@@ -12,7 +12,7 @@ interface Props {
   className?: string;
 }
 
-const OrganizationSelector = ({ showLabel, onChange, className }: Props) => {
+const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   const router = useRouter();
 
   const { isLoading, orgs, createOrg } = useOrgs();
@@ -23,18 +23,18 @@ const OrganizationSelector = ({ showLabel, onChange, className }: Props) => {
   const orgOptions = hasOrgs
     ? orgs.current.map((o) => ({
         value: o.id,
-        label: o?.name || 'Unnamed Organization',
+        label: o?.name || 'Unnamed Workspace',
       }))
     : [
         {
           value: '',
-          label: 'No organization',
+          label: 'No workspace',
         },
       ];
 
   const showEditOrgModal = () => {
     openModal({
-      title: <div className="font-semibold">New organization</div>,
+      title: <div className="font-semibold">New workspace</div>,
       centered: true,
       children: <OrgEditForm onSubmit={createOrg} />,
     });
@@ -47,13 +47,13 @@ const OrganizationSelector = ({ showLabel, onChange, className }: Props) => {
         onClick={showEditOrgModal}
       >
         <BuildingOffice2Icon className="w-4" />
-        <div className="line-clamp-1">Create Organization</div>
+        <div className="line-clamp-1">Create workspace</div>
       </button>
     );
 
   return (
     <Select
-      label={showLabel ? 'Organization' : undefined}
+      label={showLabel ? 'Workspace' : undefined}
       data={orgOptions}
       value={orgId}
       onChange={(orgId) => {
@@ -70,4 +70,4 @@ const OrganizationSelector = ({ showLabel, onChange, className }: Props) => {
   );
 };
 
-export default OrganizationSelector;
+export default WorkspaceSelector;

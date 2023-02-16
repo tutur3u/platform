@@ -28,7 +28,7 @@ import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
 import SidebarButton from './SidebarButton';
-import OrganizationSelector from '../selectors/OrganizationSelector';
+import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import { useProjects } from '../../hooks/useProjects';
 import ProjectEditForm from '../forms/ProjectEditForm';
 import Link from 'next/link';
@@ -54,7 +54,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const showEditOrgModal = () => {
     openModal({
-      title: <div className="font-semibold">New organization</div>,
+      title: <div className="font-semibold">New workspace</div>,
       centered: true,
       children: <OrgEditForm onSubmit={createOrg} />,
     });
@@ -119,7 +119,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 label={
                   <div>
                     <div className="font-semibold">
-                      {org.name || 'Unnamed Organization'}
+                      {org.name || 'Unnamed Workspace'}
                     </div>
                     <div className="text-xs font-semibold">
                       {members.length}{' '}
@@ -147,7 +147,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         {leftSidebarPref.main === 'closed' ? (
                           <BuildingOffice2Icon className="w-5" />
                         ) : (
-                          org?.name || 'Unnamed Organization'
+                          org?.name || 'Unnamed Workspace'
                         )}
                       </Link>
                     </div>
@@ -250,7 +250,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   showEditOrgModal();
                 }}
                 activeIcon={<BuildingOffice2Icon className="w-5" />}
-                label="New organization"
+                label="New workspace"
                 left
               />
 
@@ -436,7 +436,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <Divider className="my-2" variant="dashed" />
 
           <div className="mx-2 flex items-center justify-center gap-2">
-            {leftSidebarPref.main === 'open' && <OrganizationSelector />}
+            {leftSidebarPref.main === 'open' && <WorkspaceSelector />}
 
             <Popover
               opened={userPopover}
@@ -493,7 +493,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 {leftSidebarPref.main !== 'open' && (
                   <>
                     <Divider variant="dashed" />
-                    <OrganizationSelector
+                    <WorkspaceSelector
                       showLabel
                       className="mx-2 mb-2"
                       onChange={() => setUserPopover(false)}

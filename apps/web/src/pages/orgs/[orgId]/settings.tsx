@@ -8,7 +8,7 @@ import { useAppearance } from '../../../hooks/useAppearance';
 import { useOrgs } from '../../../hooks/useOrganizations';
 import HeaderX from '../../../components/metadata/HeaderX';
 
-const OrganizationSettingsPage = () => {
+const WorkspaceSettingsPage = () => {
   const router = useRouter();
   const { orgId } = router.query;
 
@@ -114,7 +114,7 @@ const OrganizationSettingsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Settings – ${org?.name || 'Unnamed Organization'}`} />
+      <HeaderX label={`Settings – ${org?.name || 'Unnamed Workspace'}`} />
 
       {orgId && (
         <>
@@ -133,13 +133,13 @@ const OrganizationSettingsPage = () => {
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <div className="mb-1 text-3xl font-bold">Basic Information</div>
           <div className="mb-4 font-semibold text-zinc-500">
-            Manage the basic information of your organization.
+            Manage the basic information of your workspace.
           </div>
 
           <div className="grid max-w-xs gap-2">
             <TextInput
-              label="Organization Name"
-              placeholder={org?.name || name || 'Organization Name'}
+              label="Workspace Name"
+              placeholder={org?.name || name || 'Workspace Name'}
               value={name}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setName(e.currentTarget.value)
@@ -151,7 +151,7 @@ const OrganizationSettingsPage = () => {
           </div>
 
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
-            This organization was created{' '}
+            This workspace was created{' '}
             <span className="font-semibold text-zinc-300">
               {moment(org.created_at).fromNow()}
             </span>
@@ -179,7 +179,7 @@ const OrganizationSettingsPage = () => {
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
           <div className="mb-1 text-3xl font-bold">Security</div>
           <div className="mb-4 font-semibold text-zinc-500">
-            Manage the security of your organization.
+            Manage the security of your workspace.
           </div>
 
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
@@ -191,7 +191,7 @@ const OrganizationSettingsPage = () => {
                   : 'hover:border-red-300/30 hover:bg-red-300/20'
               } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition`}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Organization'}
+              {isDeleting ? 'Deleting...' : 'Delete Workspace'}
             </button>
           </div>
         </div>
@@ -200,8 +200,8 @@ const OrganizationSettingsPage = () => {
   );
 };
 
-OrganizationSettingsPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceSettingsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default OrganizationSettingsPage;
+export default WorkspaceSettingsPage;

@@ -68,7 +68,7 @@ const OrganizationOverviewPage = () => {
 
   return (
     <>
-      <HeaderX label={`Overview – ${data?.name || 'Unnamed Organization'}`} />
+      <HeaderX label={`Overview – ${data?.name || 'Unnamed Workspace'}`} />
 
       {orgId && (
         <>
@@ -77,9 +77,9 @@ const OrganizationOverviewPage = () => {
             <p className="text-zinc-400">
               A quick summary of the{' '}
               <span className="font-semibold text-zinc-200">
-                {data?.name || 'Unnamed Organization'}
+                {data?.name || 'Unnamed Workspace'}
               </span>{' '}
-              organization and its progress.
+              workspace and its progress.
             </p>
           </div>
         </>

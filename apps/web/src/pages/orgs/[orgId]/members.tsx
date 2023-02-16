@@ -86,7 +86,7 @@ const OrganizationMembersPage = () => {
             } has been revoked`
           : `${
               member?.display_name || member?.email
-            } has been removed from the organization`,
+            } has been removed from this workspace`,
         color: 'teal',
       });
 
@@ -111,7 +111,7 @@ const OrganizationMembersPage = () => {
 
   return (
     <>
-      <HeaderX label={`Members – ${orgData?.name || 'Unnamed Organization'}`} />
+      <HeaderX label={`Members – ${orgData?.name || 'Unnamed Workspace'}`} />
 
       {orgId && (
         <>
@@ -119,9 +119,7 @@ const OrganizationMembersPage = () => {
             <h1 className="text-2xl font-bold">
               Members ({membersData?.members?.length || 0})
             </h1>
-            <p className="text-zinc-400">
-              Manage members of your organization.
-            </p>
+            <p className="text-zinc-400">Manage members of your workspace.</p>
           </div>
         </>
       )}

@@ -69,9 +69,9 @@ const OrgPreviewCard = ({ org }: Props) => {
             : 'text-zinc-300 hover:text-blue-200'
         } text-2xl font-semibold transition duration-150`}
       >
-        {org?.name || `Unnamed Organization`}
+        {org?.name || `Unnamed Workspace`}
         {isRoot && (
-          <Tooltip label="Verified organization" withArrow>
+          <Tooltip label="Verified workspace" withArrow>
             <CheckBadgeIcon className="ml-1 inline-block h-6 w-6 text-purple-300" />
           </Tooltip>
         )}

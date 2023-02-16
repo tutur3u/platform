@@ -94,9 +94,7 @@ const OrganizationProjectsPage = () => {
 
   return (
     <>
-      <HeaderX
-        label={`Projects – ${orgData?.name || 'Unnamed Organization'}`}
-      />
+      <HeaderX label={`Projects – ${orgData?.name || 'Unnamed Workspace'}`} />
 
       {orgId && (
         <>

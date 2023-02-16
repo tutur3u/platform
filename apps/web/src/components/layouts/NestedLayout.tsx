@@ -95,7 +95,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                       href={s.href}
                       className="min-w-max rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
                     >
-                      {s?.content || 'Unnamed Organization'}
+                      {s?.content || 'Unnamed Workspace'}
                     </Link>
                     {index < segments.length - 2 && (
                       <span className="text-zinc-500">/</span>

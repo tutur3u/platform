@@ -22,7 +22,7 @@ const ProjectFinancePage = () => {
       project?.orgs?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Organization',
+              content: project?.orgs?.name || 'Unnamed Workspace',
               href: `/orgs/${project.orgs.id}`,
             },
             {
