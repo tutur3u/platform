@@ -18,15 +18,15 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
     <>
       {org?.id && (
         <TextInput
-          label="Organization ID"
+          label="Workspace ID"
           value={org?.id}
           disabled={!!org?.id}
           className="mb-2"
         />
       )}
       <TextInput
-        label="Organization name"
-        placeholder="Enter organization name"
+        label="Workspace name"
+        placeholder="Enter workspace name"
         value={name}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setName(event.currentTarget.value)
