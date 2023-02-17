@@ -45,6 +45,7 @@ const fetchWallets = async (
   const { data, error } = await supabase
     .from('project_wallets')
     .select('id, name, balance, currency, created_at, project_id')
+    .order('created_at')
     .eq('project_id', projectId);
 
   if (error) return res.status(401).json({ error: error.message });
