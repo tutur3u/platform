@@ -395,16 +395,24 @@ const ProjectBoardEditor = () => {
             </div>
           ) : (
             <div className="scrollbar-none flex flex-col gap-2 overflow-auto p-4">
-              {tasks.map((task) => (
-                <TaskWrapper
-                  key={task.id}
-                  task={task}
-                  highlight={viewOption !== 'my-tasks'}
-                  onUpdated={() =>
-                    mutate(`/api/tasks?boardId=${boardId}&option=${viewOption}`)
-                  }
-                />
-              ))}
+              {projectId &&
+                boardId &&
+                selectedListId &&
+                tasks.map((task) => (
+                  <TaskWrapper
+                    key={task.id}
+                    task={task}
+                    projectId={projectId as string}
+                    boardId={boardId as string}
+                    listId={selectedListId}
+                    highlight={viewOption !== 'my-tasks'}
+                    onUpdated={() =>
+                      mutate(
+                        `/api/tasks?boardId=${boardId}&option=${viewOption}`
+                      )
+                    }
+                  />
+                ))}
             </div>
           )
         ) : lists?.length === 0 ? (

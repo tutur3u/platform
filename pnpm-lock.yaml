@@ -76,7 +76,7 @@ importers:
       react-beautiful-dnd: ^13.1.1
       react-dom: 18.2.0
       react-resizable: ^3.0.4
-      supabase: ^1.38.5
+      supabase: ^1.38.6
       swr: ^2.0.3
       tailwind-scrollbar: ^2.1.0
       tailwindcss: ^3.2.7
@@ -148,7 +148,7 @@ importers:
       jest-environment-jsdom: 29.4.3
       lint-staged: 13.1.2
       postcss: 8.4.21
-      supabase: 1.38.5
+      supabase: 1.38.6
       tailwind-scrollbar: 2.1.0_tailwindcss@3.2.7
       tailwindcss: 3.2.7_postcss@8.4.21
       tsconfig: link:../../packages/tsconfig
@@ -6496,8 +6496,8 @@ packages:
     resolution: {integrity: sha512-GP6WDNWf+o403jrEp9c5jibKavrtLW+/qYGhFxFrG8maXhwTBI7gLLhiBb0o7uFccWN+EOS9aMO6cGHWAO07OA==}
     dev: false
 
-  /supabase/1.38.5:
-    resolution: {integrity: sha512-vyZ5YBUmMZl44xLWXyzH0qbpTKHDs/8HwMVEv5HLYz1tW2EUuCoTSEXQ1Vdj9ZU8WOsIcC0V+nyLEVMyaR28Og==}
+  /supabase/1.38.6:
+    resolution: {integrity: sha512-8k5hvCtfNc9f5d3oljliIDU7/lyo2AAOJogoCwe4tkYDFykSMvBdsySdWRjYvNXAnVM4xHba4C/lYnicYl0Fmg==}
     hasBin: true
     requiresBuild: true
     dependencies:

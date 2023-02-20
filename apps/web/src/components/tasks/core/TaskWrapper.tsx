@@ -25,6 +25,9 @@ import { useUserData } from '../../../hooks/useUserData';
 
 export interface TaskWrapperProps {
   task: Task;
+  projectId: string;
+  boardId: string;
+  listId: string;
   showCompleted?: boolean;
   highlight?: boolean;
   onUpdated: () => void;
@@ -32,6 +35,9 @@ export interface TaskWrapperProps {
 
 const TaskWrapper = ({
   task,
+  projectId,
+  boardId,
+  listId,
   showCompleted,
   highlight = true,
   onUpdated,
@@ -90,7 +96,15 @@ const TaskWrapper = ({
           : theme.colors.gray[2],
       overlayOpacity: 0.55,
       overlayBlur: 3,
-      children: <TaskEditForm task={task} onUpdated={onUpdated} />,
+      children: (
+        <TaskEditForm
+          task={task}
+          projectId={projectId}
+          boardId={boardId}
+          listId={listId}
+          onUpdated={onUpdated}
+        />
+      ),
     });
   };
 

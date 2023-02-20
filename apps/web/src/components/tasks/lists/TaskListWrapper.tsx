@@ -104,6 +104,9 @@ const TaskListWrapper = ({
                 <TaskWrapper
                   key={task.id}
                   task={task}
+                  projectId={projectId}
+                  boardId={boardId}
+                  listId={list.id}
                   showCompleted={option === 'completed'}
                   onUpdated={resync}
                 />
