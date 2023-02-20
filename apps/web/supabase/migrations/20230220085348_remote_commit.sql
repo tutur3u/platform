@@ -39,17 +39,6 @@ AS $function$
 $function$
 ;
 
-
-drop policy "Enable read access for members of the task board" on "public"."task_board_members";
-
-alter table "public"."task_board_members" drop constraint "task_board_members_user_id_fkey";
-
-alter table "public"."task_board_members" drop constraint "task_board_members_pkey";
-
-drop index if exists "public"."task_board_members_pkey";
-
-drop table "public"."task_board_members";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.is_org_member(_user_id uuid, _org_id uuid)
