@@ -11,7 +11,6 @@ import {
   Tooltip,
 } from '@mantine/core';
 import {
-  Cog6ToothIcon,
   DocumentCheckIcon,
   EyeIcon,
   PencilIcon,

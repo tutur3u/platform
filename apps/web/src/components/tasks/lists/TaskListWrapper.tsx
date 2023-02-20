@@ -10,21 +10,25 @@ import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
 
 export interface TaskListWrapperProps {
+  projectId: string;
+  boardId: string;
   list: TaskList;
   option: string;
   setOption: (option: string) => void;
 }
 
 const TaskListWrapper = ({
+  projectId,
+  boardId,
   list,
   option = 'todos',
   setOption,
 }: TaskListWrapperProps) => {
   const buildQuery = (listId: string) => {
-    let query = `/api/tasks?listId=${listId}`;
+    let query = `/api/projects/${projectId}/boards/${boardId}/lists/${listId}/tasks`;
 
-    if (option === 'todos') query += '&todos=true';
-    if (option === 'completed') query += '&completed=true';
+    if (option === 'todos') query += '?todos=true';
+    if (option === 'completed') query += '?completed=true';
 
     return query;
   };
@@ -47,8 +51,9 @@ const TaskListWrapper = ({
       size: 'xl',
       children: (
         <TaskEditForm
+          projectId={projectId}
+          boardId={boardId}
           listId={list.id}
-          boardId={list.board_id}
           onUpdated={resync}
         />
       ),
@@ -61,7 +66,11 @@ const TaskListWrapper = ({
       value={list.id}
       className="border-zinc-800/80"
     >
-      <TaskListAccordionControl list={list}>
+      <TaskListAccordionControl
+        projectId={projectId}
+        boardId={boardId}
+        list={list}
+      >
         <div className="line-clamp-1 font-semibold">
           {list.name || 'Untitled List'}
         </div>
