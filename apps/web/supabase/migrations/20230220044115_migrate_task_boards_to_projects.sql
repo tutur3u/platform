@@ -16,11 +16,7 @@ alter table "public"."org_boards" drop constraint "org_boards_board_id_fkey";
 
 alter table "public"."task_lists" drop constraint "task_lists_board_id_fkey";
 
-alter table "public"."task_boards" drop constraint "task_boards_pkey";
-
-drop index if exists "public"."task_boards_pkey";
-
-drop table "public"."task_boards";
+drop table "public"."task_boards" cascade;
 
 create table "public"."project_boards" (
     "id" uuid not null default uuid_generate_v4(),
