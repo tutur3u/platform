@@ -12,24 +12,31 @@ import { TaskList } from '../../../types/primitives/TaskList';
 import TaskListEditForm from '../../forms/TaskListEditForm';
 
 const TaskListAccordionControl = (
-  props: AccordionControlProps & { list: TaskList }
+  props: AccordionControlProps & {
+    projectId: string;
+    boardId: string;
+    list: TaskList;
+  }
 ) => {
-  const { list, ...rest } = props;
+  const { projectId, boardId, list, ...rest } = props;
 
   const updateList = async (list: TaskList) => {
     if (!list?.id) return;
 
-    const res = await fetch(`/api/tasks/lists/${list.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: list.name,
-      }),
-    });
+    const res = await fetch(
+      `/api/projects/${projectId}/boards/${boardId}/lists/${list.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: list.name,
+        }),
+      }
+    );
 
-    if (res.ok) mutate(`/api/tasks/lists?boardId=${list.board_id}`);
+    if (res.ok) mutate(`/api/projects/${projectId}/boards/${boardId}/lists`);
   };
 
   const deleteList = async () => {
@@ -39,7 +46,7 @@ const TaskListAccordionControl = (
       method: 'DELETE',
     });
 
-    if (res.ok) mutate(`/api/tasks/lists?boardId=${list.board_id}`);
+    if (res.ok) mutate(`/api/projects/${projectId}/boards/${boardId}/lists`);
   };
 
   const showDeleteListModal = (list: TaskList) => {
@@ -87,7 +94,7 @@ const TaskListAccordionControl = (
       <Accordion.Control {...rest} />
       <Menu openDelay={100} closeDelay={400} withArrow position="right">
         <Menu.Target>
-          <button className="rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
+          <button className="rounded border border-transparent text-zinc-500 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
             <EllipsisHorizontalIcon className="w-6" />
           </button>
         </Menu.Target>

@@ -11,7 +11,6 @@ import {
   Tooltip,
 } from '@mantine/core';
 import {
-  Cog6ToothIcon,
   DocumentCheckIcon,
   EyeIcon,
   PencilIcon,
@@ -29,6 +28,7 @@ import SubScript from '@tiptap/extension-subscript';
 import { useEditor } from '@tiptap/react';
 import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
+import HeaderX from '../../../../components/metadata/HeaderX';
 
 const ProjectDocumentEditor = () => {
   const router = useRouter();
@@ -114,8 +114,8 @@ const ProjectDocumentEditor = () => {
 
   useEffect(() => {
     if (!document) return;
-    setName(document?.name);
-    setContent(document?.content);
+    setName(document?.name || '');
+    setContent(document?.content || '');
 
     if (!editor) return;
     if (!editor?.commands) return;
@@ -132,7 +132,7 @@ const ProjectDocumentEditor = () => {
   useEffect(() => {
     if (!document) return;
     if (!projectId || !docId) return;
-    if (!name && !content) return;
+    if (name == null && content == null) return;
 
     if (name !== debouncedName || content !== debouncedContent) return;
     if (name === document?.name && content === document?.content) {
@@ -189,6 +189,12 @@ const ProjectDocumentEditor = () => {
 
   return (
     <>
+      <HeaderX
+        label={`${name || 'Untitled Document'} - ${
+          project?.name || 'Untitled Project'
+        }`}
+      />
+
       {document && (
         <>
           <div className="flex items-center justify-between gap-4">
