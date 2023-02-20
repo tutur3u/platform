@@ -14,8 +14,6 @@ alter table "public"."task_boards" drop constraint "task_boards_creator_id_fkey"
 
 alter table "public"."org_boards" drop constraint "org_boards_board_id_fkey";
 
-alter table "public"."task_board_members" drop constraint "task_board_members_board_id_fkey";
-
 alter table "public"."task_lists" drop constraint "task_lists_board_id_fkey";
 
 alter table "public"."task_boards" drop constraint "task_boards_pkey";
@@ -52,10 +50,6 @@ alter table "public"."project_boards" validate constraint "project_boards_projec
 alter table "public"."org_boards" add constraint "org_boards_board_id_fkey" FOREIGN KEY (board_id) REFERENCES project_boards(id) not valid;
 
 alter table "public"."org_boards" validate constraint "org_boards_board_id_fkey";
-
-alter table "public"."task_board_members" add constraint "task_board_members_board_id_fkey" FOREIGN KEY (board_id) REFERENCES project_boards(id) ON DELETE CASCADE not valid;
-
-alter table "public"."task_board_members" validate constraint "task_board_members_board_id_fkey";
 
 alter table "public"."task_lists" add constraint "task_lists_board_id_fkey" FOREIGN KEY (board_id) REFERENCES project_boards(id) ON DELETE CASCADE not valid;
 
