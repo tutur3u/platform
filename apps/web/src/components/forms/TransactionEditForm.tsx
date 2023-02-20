@@ -25,13 +25,15 @@ const TransactionEditForm = ({
   onSubmit,
 }: Props) => {
   const [name, setName] = useState(transaction?.name || '');
-  const [amount, setAmount] = useState<number | undefined>(transaction?.amount);
+  const [amount, setAmount] = useState<number | undefined>(
+    Math.abs(transaction?.amount || 0)
+  );
   const [description, setDescription] = useState(
     transaction?.description || ''
   );
 
   const [type, setType] = useState<string | null>(
-    transaction?.type || 'expense'
+    transaction?.amount && transaction?.amount < 0 ? 'expense' : 'income'
   );
 
   return (
