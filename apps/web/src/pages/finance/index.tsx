@@ -128,10 +128,14 @@ const FinancePage: PageWithLayoutProps = () => {
           <Select
             label="Select project"
             placeholder="Select project"
-            data={projects.map((project) => ({
-              label: project.name,
-              value: project.id,
-            }))}
+            data={
+              projects
+                ? projects.map((project) => ({
+                    label: project.name,
+                    value: project.id,
+                  }))
+                : []
+            }
             value={projectId as string | undefined}
             onChange={setProjectId}
           />

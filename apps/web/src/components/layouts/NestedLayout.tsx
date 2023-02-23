@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import { FC, Fragment } from 'react';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ActionIcon } from '@mantine/core';
-import { StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import LoadingIndicator from '../common/LoadingIndicator';
 import SidebarLayout from './SidebarLayout';
 
@@ -12,6 +13,9 @@ type Mode = 'workspace' | 'project' | 'document';
 interface NestedLayoutProps {
   children: React.ReactNode;
   mode?: Mode;
+
+  isFavorite?: boolean;
+  onFavorite?: () => void;
 }
 
 const workspaceTabs = [
@@ -67,6 +71,8 @@ const projectTabs = [
 const NestedLayout: FC<NestedLayoutProps> = ({
   children,
   mode = 'workspace',
+  isFavorite = false,
+  onFavorite,
 }: NestedLayoutProps) => {
   const router = useRouter();
   const { segments } = useAppearance();
@@ -88,9 +94,15 @@ const NestedLayout: FC<NestedLayoutProps> = ({
     <SidebarLayout>
       <nav className="w-full border-b border-zinc-800">
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
-          <ActionIcon color="yellow">
-            <StarIcon className="h-6 w-6" />
-          </ActionIcon>
+          {onFavorite && (
+            <ActionIcon color="yellow" onClick={onFavorite}>
+              {isFavorite ? (
+                <StarIcon className="h-6 w-6" />
+              ) : (
+                <OutlinedStarIcon className="h-6 w-6" />
+              )}
+            </ActionIcon>
+          )}
 
           {segments && segments.length > 0 ? (
             <div className="scrollbar-none flex gap-x-2 overflow-x-auto">

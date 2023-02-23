@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUserData } from '../../hooks/useUserData';
 import dynamic from 'next/dynamic';
+import { useUser } from '@supabase/auth-helpers-react';
 
 interface NavbarProps {
   hideNavLinks?: boolean;
@@ -10,7 +10,7 @@ interface NavbarProps {
 const UserProfilePopover = dynamic(() => import('./UserProfilePopover'));
 
 const Navbar = ({ hideNavLinks }: NavbarProps) => {
-  const { data: user } = useUserData();
+  const user = useUser();
 
   return (
     <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-4 font-semibold text-white backdrop-blur-lg md:px-32 lg:px-64">
@@ -26,7 +26,7 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
       </Link>
 
       {hideNavLinks ? null : user ? (
-        <UserProfilePopover user={user} />
+        <UserProfilePopover />
       ) : (
         <div className="flex items-center gap-4">
           <Link href="/login" className="hover:text-blue-200">

@@ -1,4 +1,4 @@
-import { Avatar, Divider, Popover } from '@mantine/core';
+import { Avatar, Divider, Loader, Popover } from '@mantine/core';
 import { getInitials } from '../../utils/name-helper';
 import {
   ArrowRightOnRectangleIcon,
@@ -9,15 +9,12 @@ import {
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useState } from 'react';
-import { UserData } from '../../types/primitives/UserData';
 import SidebarLink from './SidebarLink';
 import SidebarButton from './SidebarButton';
+import { useUserData } from '../../hooks/useUserData';
 
-interface Props {
-  user: UserData;
-}
-
-const UserProfilePopover = ({ user }: Props) => {
+const UserProfilePopover = () => {
+  const { data: user, isLoading } = useUserData();
   const router = useRouter();
 
   const { supabaseClient } = useSessionContext();
@@ -38,15 +35,19 @@ const UserProfilePopover = ({ user }: Props) => {
       position="top-end"
     >
       <Popover.Target>
-        <Avatar
-          color="blue"
-          className={`cursor-pointer hover:bg-blue-500/10 ${
-            userPopover ? 'bg-blue-500/10' : ''
-          }`}
-          onClick={() => setUserPopover((o) => !o)}
-        >
-          {getInitials(user?.display_name || user?.email)}
-        </Avatar>
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <Avatar
+            color="blue"
+            className={`cursor-pointer hover:bg-blue-500/10 ${
+              userPopover ? 'bg-blue-500/10' : ''
+            }`}
+            onClick={() => setUserPopover((o) => !o)}
+          >
+            {getInitials(user?.display_name || user?.email)}
+          </Avatar>
+        )}
       </Popover.Target>
 
       <Popover.Dropdown className="grid gap-1 p-1">
