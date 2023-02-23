@@ -7,8 +7,10 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { Divider, Loader } from '@mantine/core';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Document } from '../../../../types/primitives/Document';
-import Link from 'next/link';
 import { showNotification } from '@mantine/notifications';
+import DocumentCard from '../../../../components/document/DocumentCard';
+import DocumentEditForm from '../../../../components/forms/DocumentEditForm';
+import { openModal } from '@mantine/modals';
 
 const ProjectDocumentsPage = () => {
   const router = useRouter();
@@ -54,7 +56,13 @@ const ProjectDocumentsPage = () => {
 
   const [creating, setCreating] = useState(false);
 
-  const createDocument = async () => {
+  const createDocument = async ({
+    projectId,
+    doc,
+  }: {
+    projectId: string;
+    doc: Partial<Document>;
+  }) => {
     setCreating(true);
 
     const res = await fetch(`/api/projects/${projectId}/documents`, {
@@ -63,7 +71,7 @@ const ProjectDocumentsPage = () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: '',
+        name: doc.name,
       }),
     });
 
@@ -81,31 +89,42 @@ const ProjectDocumentsPage = () => {
     router.push(`/projects/${projectId}/documents/${id}`);
   };
 
+  const showDocumentEditForm = () => {
+    openModal({
+      title: <div className="font-semibold">Create new document</div>,
+      centered: true,
+      children: (
+        <DocumentEditForm
+          wsId={project.orgs.id}
+          onSubmit={(projectId, doc) => createDocument({ projectId, doc })}
+        />
+      ),
+    });
+  };
+
   return (
     <>
       <HeaderX label={`Documents – ${project?.name || 'Untitled Project'}`} />
 
       {projectId && (
-        <>
-          <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">
-              Documents{' '}
-              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
-                {documents?.length || 0}
-              </span>
-            </h1>
-            <p className="text-zinc-400">
-              Store text-based information with enhanced formatting and
-              collaboration.
-            </p>
-          </div>
-        </>
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <h1 className="text-2xl font-bold">
+            Documents{' '}
+            <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+              {documents?.length || 0}
+            </span>
+          </h1>
+          <p className="text-zinc-400">
+            Store text-based information with enhanced formatting and
+            collaboration.
+          </p>
+        </div>
       )}
 
       <Divider className="my-4" />
 
       <button
-        onClick={createDocument}
+        onClick={showDocumentEditForm}
         className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
       >
         {creating ? 'Creating document' : 'New document'}{' '}
@@ -118,25 +137,8 @@ const ProjectDocumentsPage = () => {
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents &&
-          documents?.map((document) => (
-            <Link
-              href={`/projects/${projectId}/documents/${document.id}`}
-              key={document.id}
-              className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80"
-            >
-              <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
-                {document.name || 'Untitled Document'}
-              </p>
-
-              <Divider className="my-2" />
-
-              <p className="text-zinc-400">
-                <div
-                  className="prose line-clamp-5"
-                  dangerouslySetInnerHTML={{ __html: document.content || '' }}
-                />
-              </p>
-            </Link>
+          documents?.map((doc) => (
+            <DocumentCard projectId={projectId as string} document={doc} />
           ))}
       </div>
     </>

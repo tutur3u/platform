@@ -22,7 +22,7 @@ const ProjectContext = createContext({
   members: [] as User[],
   isMembersLoading: true,
 
-  projects: [] as Project[],
+  projects: undefined as Project[] | undefined,
   isProjectsLoading: true,
 
   setOrgId: (orgId: string) => {
@@ -83,7 +83,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   const isOrgLoading = !org && !orgError;
 
-  const { data: projects, error: projectsError } = useSWR(
+  const { data: projects, error: projectsError } = useSWR<Project[]>(
     orgId ? `/api/orgs/${orgId}/projects` : null
   );
 

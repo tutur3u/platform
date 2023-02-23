@@ -44,7 +44,7 @@ const fetchDocuments = async (
 
   const { data, error } = await supabase
     .from('project_documents')
-    .select('id, name, content')
+    .select('id, name, content, created_at')
     .eq('project_id', projectId)
     .order('created_at');
 

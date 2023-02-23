@@ -1,53 +1,123 @@
 import { ReactElement, useEffect } from 'react';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
-import { useUserData } from '../../hooks/useUserData';
-import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { DEV_MODE } from '../../constants/common';
-import SidebarLayout from '../../components/layouts/SidebarLayout';
+import DocumentCard from '../../components/document/DocumentCard';
+import { useUser } from '@supabase/auth-helpers-react';
+import useSWR from 'swr';
+import { Document } from '../../types/primitives/Document';
+import { useProjects } from '../../hooks/useProjects';
+import NestedLayout from '../../components/layouts/NestedLayout';
+import { Divider } from '@mantine/core';
+import PlusCardButton from '../../components/common/PlusCardButton';
+import { openModal } from '@mantine/modals';
+import DocumentEditForm from '../../components/forms/DocumentEditForm';
+import { showNotification } from '@mantine/notifications';
+import { useRouter } from 'next/router';
 
 const DocumentsPage: PageWithLayoutProps = () => {
+  const router = useRouter();
+  const user = useUser();
+
+  const { orgId } = useProjects();
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { updateUsers } = useUserList();
-  const { data } = useUserData();
+
+  const { data: workspace, error: workspaceError } = useSWR(
+    orgId ? `/api/orgs/${orgId}` : null
+  );
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
-    setRootSegment({
-      content: 'Documents',
-      href: '/documents',
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (data) updateUsers([data]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-
-  if (!DEV_MODE)
-    return (
-      <>
-        <HeaderX label="Documents" />
-        <div className="p-4 md:h-screen md:p-8">
-          <div className="flex h-full min-h-full w-full items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-8 text-center text-2xl font-semibold text-purple-300 md:text-6xl">
-            Under construction 🚧
-          </div>
-        </div>
-      </>
+    setRootSegment(
+      orgId
+        ? [
+            {
+              content: workspace?.name || 'Unnamed Workspace',
+              href: `/orgs/${orgId}`,
+            },
+            { content: 'Documents', href: `/documents` },
+          ]
+        : []
     );
+  }, [orgId, workspace?.name, setRootSegment]);
+
+  const { data: documents, error: documentsError } = useSWR<Document[]>(
+    user?.id && orgId ? `/api/users/${user.id}/documents?wsId=${orgId}` : null
+  );
+
+  const createDocument = async ({
+    projectId,
+    doc,
+  }: {
+    projectId: string;
+    doc: Partial<Document>;
+  }) => {
+    const res = await fetch(`/api/projects/${projectId}/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: doc.name,
+      }),
+    });
+
+    if (!res.ok) {
+      showNotification({
+        title: 'Error',
+        message: 'An error occurred while creating the document.',
+        color: 'red',
+      });
+      return;
+    }
+
+    const { id } = await res.json();
+    router.push(`/projects/${projectId}/documents/${id}`);
+  };
+
+  const showDocumentEditForm = () => {
+    openModal({
+      title: <div className="font-semibold">Create new document</div>,
+      centered: true,
+      children: (
+        <DocumentEditForm
+          wsId={orgId}
+          onSubmit={(projectId, doc) => createDocument({ projectId, doc })}
+        />
+      ),
+    });
+  };
 
   return (
     <>
       <HeaderX label="Documents" />
-      <div className="flex-colp-6 flex h-full w-full"></div>
+
+      <div className="rounded-lg bg-zinc-900 p-4">
+        <h1 className="text-2xl font-bold">
+          Documents{' '}
+          <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+            {documents?.length || 0}
+          </span>
+        </h1>
+      </div>
+
+      <Divider className="my-4" />
+
+      <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {documents && documents.length === 0 && (
+          <div className="col-span-full text-zinc-500">
+            No documents on this workspace.
+          </div>
+        )}
+
+        <PlusCardButton onClick={showDocumentEditForm} />
+        {documents && documents?.map((doc) => <DocumentCard document={doc} />)}
+      </div>
     </>
   );
 };
 
 DocumentsPage.getLayout = function getLayout(page: ReactElement) {
-  return <SidebarLayout>{page}</SidebarLayout>;
+  return <NestedLayout mode="document">{page}</NestedLayout>;
 };
 
 export default DocumentsPage;
