@@ -26,12 +26,8 @@ const WalletDetailPage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
-    projectId ? `/api/projects/${projectId}/wallets` : null
-  );
-
   const { data: wallet, error: walletError } = useSWR<Wallet>(
-    walletId ? `/api/projects/${projectId}/documents/${walletId}` : null
+    walletId ? `/api/projects/${projectId}/wallets/${walletId}` : null
   );
 
   const { data: transactions, error: transactionsError } = useSWR<
@@ -41,8 +37,6 @@ const WalletDetailPage = () => {
       ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
       : null
   );
-
-  const currentWallet = wallets?.find((w) => w.id === walletId);
 
   const { setRootSegment } = useAppearance();
 
@@ -65,7 +59,7 @@ const WalletDetailPage = () => {
             { content: 'Finance', href: `/projects/${projectId}/finance` },
             {
               content: wallet
-                ? wallet?.name || 'Untitled Document'
+                ? wallet?.name || 'Untitled Wallet'
                 : 'Loading...',
               href: `/projects/${projectId}/finance/${walletId}`,
             },
@@ -133,29 +127,36 @@ const WalletDetailPage = () => {
       {projectId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Finance</h1>
-            <p className="text-zinc-400">
-              Track financial progress and budget.
+            <h1 className="text-2xl font-bold">
+              {wallet?.name || 'Untitled Wallet'}
+            </h1>
+            <p className="text-xl text-zinc-400">
+              {Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(wallet?.balance || 0)}
             </p>
           </div>
         </>
       )}
 
       <Divider className="my-4" />
-      <div className="mb-5 flex items-center justify-between">
-        <button
-          onClick={() => showEditTransactionModal()}
-          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-        >
-          Add transaction <PlusIcon className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => showEditWalletModal(currentWallet)}
-          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
-        >
-          Edit wallet <PencilIcon className="h-4 w-4"/>
-        </button>
-      </div>
+      {wallet && (
+        <div className="mb-5 flex items-center justify-between">
+          <button
+            onClick={() => showEditTransactionModal()}
+            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+          >
+            Add transaction <PlusIcon className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => showEditWalletModal(wallet)}
+            className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+          >
+            Edit wallet <PencilIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-1 md:gap-4 lg:grid-cols-2 xl:grid-cols-4">
         {transactions &&
@@ -172,7 +173,7 @@ const WalletDetailPage = () => {
 };
 
 WalletDetailPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="project">{page}</NestedLayout>;
+  return <NestedLayout mode="document">{page}</NestedLayout>;
 };
 
 export default WalletDetailPage;

@@ -46,6 +46,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to create transaction',
@@ -80,6 +81,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to update transaction',
@@ -104,6 +106,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to delete transaction',
