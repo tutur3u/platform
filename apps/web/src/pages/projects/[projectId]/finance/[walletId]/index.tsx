@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider } from '@mantine/core';
-import { PlusIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import { useAppearance } from '../../../../../hooks/useAppearance';
 import { Wallet } from '../../../../../types/primitives/Wallet';
@@ -10,11 +10,17 @@ import { useWallets } from '../../../../../hooks/useWallets';
 import WalletEditForm from '../../../../../components/forms/WalletEditForm';
 import HeaderX from '../../../../../components/metadata/HeaderX';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import TransactionEditForm from '../../../../../components/forms/TransactionEditForm';
+import { Transaction } from '../../../../../types/primitives/Transaction';
+import { useTransactions } from '../../../../../hooks/useTransactions';
+import TransactionTab from '../../../../../components/finance/transactions/TransactionTab';
 
 const WalletDetailPage = () => {
   const router = useRouter();
   const { projectId, walletId } = router.query;
   const { createWallet, updateWallet, deleteWallet } = useWallets();
+  const { createTransaction, updateTransaction, deleteTransaction } =
+    useTransactions();
 
   const { data: project } = useSWR(
     projectId ? `/api/projects/${projectId}` : null
@@ -26,6 +32,14 @@ const WalletDetailPage = () => {
 
   const { data: wallet, error: walletError } = useSWR<Wallet>(
     walletId ? `/api/projects/${projectId}/documents/${walletId}` : null
+  );
+
+  const { data: transactions, error: transactionsError } = useSWR<
+    Transaction[] | null
+  >(
+    projectId && walletId
+      ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
+      : null
   );
 
   const currentWallet = wallets?.find((w) => w.id === walletId);
@@ -81,6 +95,37 @@ const WalletDetailPage = () => {
     });
   };
 
+  const showEditTransactionModal = (transaction?: Transaction) => {
+    if (!projectId || !walletId) return;
+
+    openModal({
+      title: (
+        <div className="font-semibold">
+          {transaction ? 'Edit transaction' : 'Create transaction'}
+        </div>
+      ),
+      centered: true,
+      children: (
+        <TransactionEditForm
+          projectId={(projectId || '') as string}
+          walletId={(walletId || '') as string}
+          transaction={transaction}
+          onSubmit={transaction ? updateTransaction : createTransaction}
+          onDelete={
+            transaction
+              ? () =>
+                  deleteTransaction(
+                    projectId as string,
+                    walletId as string,
+                    transaction
+                  )
+              : undefined
+          }
+        />
+      ),
+    });
+  };
+
   return (
     <>
       <HeaderX label={`Finance – ${project?.name || 'Untitled Project'}`} />
@@ -97,16 +142,31 @@ const WalletDetailPage = () => {
       )}
 
       <Divider className="my-4" />
-      <div>
+      <div className="mb-5 flex items-center justify-between">
+        <button
+          onClick={() => showEditTransactionModal()}
+          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+        >
+          Add transaction <PlusIcon className="h-4 w-4" />
+        </button>
         <button
           onClick={() => showEditWalletModal(currentWallet)}
           className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
         >
-          Edit wallet <PlusIcon className="h-4 w-4" />
+          Edit wallet <PencilIcon className="h-4 w-4"/>
         </button>
       </div>
 
-      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-1 md:gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {transactions &&
+          transactions.map((transaction) => (
+            <TransactionTab
+              key={transaction.id}
+              transaction={transaction}
+              onClick={() => showEditTransactionModal(transaction)}
+            />
+          ))}
+      </div>
     </>
   );
 };
