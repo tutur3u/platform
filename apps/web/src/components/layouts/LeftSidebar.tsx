@@ -367,43 +367,44 @@ function LeftSidebar({ className }: SidebarProps) {
                     leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
                   }`}
                 >
-                  {projects.map((project) => (
-                    <SidebarLink
-                      key={project.id}
-                      href={`/projects/${project.id}`}
-                      defaultHighlight={leftSidebarPref.main !== 'closed'}
-                      activeIcon={
-                        <Avatar
-                          radius="sm"
-                          color="blue"
-                          className="bg-blue-500/20"
-                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                        >
-                          {project?.name ? (
-                            getInitials(project.name)
-                          ) : (
-                            <BuildingOffice2Icon className="w-5" />
-                          )}
-                        </Avatar>
-                      }
-                      inactiveIcon={
-                        <Avatar
-                          radius="sm"
-                          color="blue"
-                          className="hover:bg-blue-500/10"
-                          size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
-                        >
-                          {project?.name ? (
-                            getInitials(project.name)
-                          ) : (
-                            <BuildingOffice2Icon className="w-5" />
-                          )}
-                        </Avatar>
-                      }
-                      label={project?.name || 'Untitled Project'}
-                      showTooltip={leftSidebarPref.main === 'closed'}
-                    />
-                  ))}
+                  {projects &&
+                    projects.map((project) => (
+                      <SidebarLink
+                        key={project.id}
+                        href={`/projects/${project.id}`}
+                        defaultHighlight={leftSidebarPref.main !== 'closed'}
+                        activeIcon={
+                          <Avatar
+                            radius="sm"
+                            color="blue"
+                            className="bg-blue-500/20"
+                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                          >
+                            {project?.name ? (
+                              getInitials(project.name)
+                            ) : (
+                              <BuildingOffice2Icon className="w-5" />
+                            )}
+                          </Avatar>
+                        }
+                        inactiveIcon={
+                          <Avatar
+                            radius="sm"
+                            color="blue"
+                            className="hover:bg-blue-500/10"
+                            size={leftSidebarPref.main === 'open' ? 'sm' : 'md'}
+                          >
+                            {project?.name ? (
+                              getInitials(project.name)
+                            ) : (
+                              <BuildingOffice2Icon className="w-5" />
+                            )}
+                          </Avatar>
+                        }
+                        label={project?.name || 'Untitled Project'}
+                        showTooltip={leftSidebarPref.main === 'closed'}
+                      />
+                    ))}
                   <SidebarButton
                     label="New project"
                     activeIcon={<SquaresPlusIcon className="w-5" />}
