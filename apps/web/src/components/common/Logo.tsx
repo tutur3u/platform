@@ -37,7 +37,7 @@ export default function Logo({
       )}
       {showLabel && (
         <div
-          className={`absolute left-[2.71rem] text-2xl font-semibold text-white transition duration-200 ${
+          className={`text-2xl font-semibold text-white transition duration-200 ${
             alwaysShowLabel ||
             'group-hover:static group-hover:translate-x-0 group-hover:opacity-100 md:-translate-x-2 md:opacity-0'
           }`}

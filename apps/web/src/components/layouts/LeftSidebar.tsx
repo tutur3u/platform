@@ -14,6 +14,7 @@ import {
   UserPlusIcon,
   SquaresPlusIcon,
   ArrowRightOnRectangleIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/solid';
 
 import SidebarLink from './SidebarLink';
@@ -87,7 +88,7 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`${className} group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 backdrop-blur-lg transition-all duration-300`}
+        className={`group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 transition-all duration-300 ${className}`}
       >
         <div
           className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-4 pb-2 ${
@@ -95,13 +96,13 @@ function LeftSidebar({ className }: SidebarProps) {
             leftSidebarPref.secondary === 'visible'
               ? 'opacity-100'
               : leftSidebarPref.main === 'open'
-              ? 'w-64 opacity-100'
+              ? 'w-full opacity-100 md:w-64'
               : leftSidebarPref.secondary === 'visible'
               ? 'opacity-100'
               : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
-          <div className="relative mx-4 mb-2 flex justify-start pb-1">
+          <div className="relative mx-4 mb-2 flex items-center justify-between pb-1">
             <Logo
               root={!user}
               alwaysShowLabel={leftSidebarPref.main === 'open'}
@@ -110,6 +111,17 @@ function LeftSidebar({ className }: SidebarProps) {
                 leftSidebarPref.secondary === 'hidden'
               }
             />
+
+            <button
+              className="rounded-lg bg-zinc-800 p-1.5 transition hover:bg-zinc-700 md:hidden"
+              onClick={() =>
+                changeLeftSidebarMainPref(
+                  leftSidebarPref.main === 'open' ? 'closed' : 'open'
+                )
+              }
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
           </div>
 
           <Divider className="my-2" />
@@ -514,13 +526,6 @@ function LeftSidebar({ className }: SidebarProps) {
           </div>
         </div>
       </div>
-
-      {leftSidebarPref.main === 'open' && (
-        <div
-          className="absolute inset-0 z-10 overflow-hidden bg-zinc-900/50 backdrop-blur md:hidden"
-          onClick={() => changeLeftSidebarMainPref('closed')}
-        />
-      )}
     </>
   );
 }
