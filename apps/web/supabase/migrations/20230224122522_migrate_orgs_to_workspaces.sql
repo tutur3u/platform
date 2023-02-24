@@ -84,7 +84,7 @@ alter table "public"."workspaces" enable row level security;
 
 alter table "public"."projects" drop column "org_id";
 
-alter table "public"."projects" add column "ws_id" uuid not null;
+alter table "public"."projects" add column "ws_id" uuid;
 
 CREATE UNIQUE INDEX org_invites_pkey ON public.workspace_invites USING btree (ws_id, user_id);
 
