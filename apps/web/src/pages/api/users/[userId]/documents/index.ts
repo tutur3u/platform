@@ -44,16 +44,14 @@ const fetchDocuments = async (
 
   const queryBuilder = supabase
     .from('project_documents')
-    .select(
-      'id, name, content, project_id, projects!inner(org_id), created_at'
-    );
+    .select('id, name, content, project_id, projects!inner(ws_id), created_at');
 
-  if (wsId) queryBuilder.eq('projects.org_id', wsId);
+  if (wsId) queryBuilder.eq('projects.ws_id', wsId);
   const { data, error } = await queryBuilder.order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
 
-  // Filter out projects.org_id
+  // Filter out projects.ws_id
   const filteredData = data.map((doc) => {
     const { projects, ...rest } = doc;
     return rest;

@@ -1,39 +1,39 @@
 import useSWR, { mutate } from 'swr';
 
 import { createContext, useContext, ReactNode } from 'react';
-import { Organization } from '../types/primitives/Organization';
+import { Workspace } from '../types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
 import { showNotification } from '@mantine/notifications';
 
 const WorkspaceContext = createContext({
-  orgs: {} as {
-    current: Organization[];
-    invited: Organization[];
+  workspaces: {} as {
+    current: Workspace[];
+    invited: Workspace[];
   },
   isLoading: true,
   isError: false,
 
-  createOrg: async (
-    org: Organization,
+  createWorkspace: async (
+    ws: Workspace,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
       onCompleted?: () => void;
     }
   ) => {
-    console.log('createOrg', org, options);
+    console.log('createWorkspace', ws, options);
   },
-  updateOrg: async (
-    org: Organization,
+  updateWorkspace: async (
+    ws: Workspace,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
       onCompleted?: () => void;
     }
   ) => {
-    console.log('updateOrg', org, options);
+    console.log('updateWorkspace', ws, options);
   },
-  deleteOrg: async (
+  deleteWorkspace: async (
     id: string,
     options?: {
       onSuccess?: () => void;
@@ -41,16 +41,16 @@ const WorkspaceContext = createContext({
       onCompleted?: () => void;
     }
   ) => {
-    console.log('deleteOrg', id, options);
+    console.log('deleteWorkspace', id, options);
   },
 });
 
-export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
+export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const user = useUser();
-  const { data, error } = useSWR(user ? '/api/orgs' : null);
+  const { data, error } = useSWR(user ? '/api/workspaces' : null);
 
-  const createOrg = async (
-    org: Organization,
+  const createWorkspace = async (
+    ws: Workspace,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -58,16 +58,16 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch('/api/orgs', {
+      const res = await fetch('/api/workspaces', {
         method: 'POST',
         body: JSON.stringify({
-          name: org?.name || '',
+          name: ws?.name || '',
         }),
       });
 
       if (!res.ok) throw new Error('Failed to create workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/orgs');
+      mutate('/api/workspaces');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -80,8 +80,8 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateOrg = async (
-    org: Organization,
+  const updateWorkspace = async (
+    ws: Workspace,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -89,14 +89,14 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/orgs/${org.id}`, {
+      const res = await fetch(`/api/workspaces/${ws.id}`, {
         method: 'PUT',
-        body: JSON.stringify(org),
+        body: JSON.stringify(ws),
       });
 
       if (!res.ok) throw new Error('Failed to update workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/orgs');
+      mutate('/api/workspaces');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -109,8 +109,8 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteOrg = async (
-    orgId: string,
+  const deleteWorkspace = async (
+    wsId: string,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -118,13 +118,13 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/orgs/${orgId}`, {
+      const res = await fetch(`/api/workspaces/${wsId}`, {
         method: 'DELETE',
       });
 
       if (!res.ok) throw new Error('Failed to delete workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/orgs');
+      mutate('/api/workspaces');
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -138,13 +138,13 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const values = {
-    orgs: data || [],
+    workspaces: data || [],
     isLoading: !error && !data,
     isError: error,
 
-    createOrg,
-    updateOrg,
-    deleteOrg,
+    createWorkspace,
+    updateWorkspace,
+    deleteWorkspace,
   };
 
   return (
@@ -154,11 +154,11 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useOrgs = () => {
+export const useWorkspaces = () => {
   const context = useContext(WorkspaceContext);
 
   if (context === undefined)
-    throw new Error(`useOrgs() must be used within a WorkspaceProvider.`);
+    throw new Error(`useWorkspaces() must be used within a WorkspaceProvider.`);
 
   return context;
 };

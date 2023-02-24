@@ -24,15 +24,15 @@ const ProjectDocumentsPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project?.orgs?.id
+      project?.workspaces?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Workspace',
-              href: `/orgs/${project.orgs.id}`,
+              content: project?.workspaces?.name || 'Unnamed Workspace',
+              href: `/workspaces/${project.workspaces.id}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${project?.orgs?.id}/projects`,
+              href: `/workspaces/${project?.workspaces?.id}/projects`,
             },
             {
               content: project?.name || 'Untitled Project',
@@ -44,8 +44,8 @@ const ProjectDocumentsPage = () => {
     );
   }, [
     projectId,
-    project?.orgs?.id,
-    project?.orgs?.name,
+    project?.workspaces?.id,
+    project?.workspaces?.name,
     project?.name,
     setRootSegment,
   ]);
@@ -95,7 +95,7 @@ const ProjectDocumentsPage = () => {
       centered: true,
       children: (
         <DocumentEditForm
-          wsId={project.orgs.id}
+          wsId={project.workspaces.id}
           onSubmit={(projectId, doc) => createDocument({ projectId, doc })}
         />
       ),

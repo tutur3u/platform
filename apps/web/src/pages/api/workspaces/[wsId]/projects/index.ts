@@ -1,42 +1,36 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const fetchBoards = async (
+const fetchProjects = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('task_boards')
+    .from('projects')
     .select('id, name, created_at')
-    .eq('org_id', orgId);
+    .eq('ws_id', wsId)
+    .order('created_at');
 
   if (error) return res.status(500).json({ error: error.message });
 
   return res.status(200).json(data);
 };
 
-const createBoard = async (
+const createProject = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { name } = req.body;
 
-  if (!name)
-    return res.status(400).json({
-      error: {
-        message: 'Invalid request',
-      },
-    });
-
   const { data, error } = await supabase
-    .from('task_boards')
-    .insert({ org_id: orgId, name })
+    .from('projects')
+    .insert({ ws_id: wsId, name })
     .select('id')
     .single();
 
@@ -47,21 +41,21 @@ const createBoard = async (
       },
     });
 
-  return res.status(200).json({ message: 'Board created', id: data.id });
+  return res.status(200).json({ message: 'Project created', id: data.id });
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { orgId } = req.query;
+    const { wsId } = req.query;
 
-    if (!orgId || typeof orgId !== 'string') throw new Error('Invalid orgId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchBoards(req, res, orgId);
+        return await fetchProjects(req, res, wsId);
 
       case 'POST':
-        return await createBoard(req, res, orgId);
+        return await createProject(req, res, wsId);
 
       default:
         throw new Error(

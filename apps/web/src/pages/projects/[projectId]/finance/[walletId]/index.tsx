@@ -42,15 +42,15 @@ const WalletDetailPage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project?.orgs?.id
+      project?.workspaces?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Workspace',
-              href: `/orgs/${project.orgs.id}`,
+              content: project?.workspaces?.name || 'Unnamed Workspace',
+              href: `/workspaces/${project.workspaces.id}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${project?.orgs?.id}/projects`,
+              href: `/workspaces/${project?.workspaces?.id}/projects`,
             },
             {
               content: project?.name || 'Untitled Project',

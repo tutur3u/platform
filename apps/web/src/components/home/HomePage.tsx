@@ -2,16 +2,16 @@ import { useEffect } from 'react';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
-import { Organization } from '../../types/primitives/Organization';
-import { useOrgs } from '../../hooks/useOrganizations';
+import { Workspace } from '../../types/primitives/Workspace';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { openModal } from '@mantine/modals';
-import OrgEditForm from '../forms/OrgEditForm';
+import WorkspaceEditForm from '../forms/WorkspaceEditForm';
 import { showNotification } from '@mantine/notifications';
 import { mutate } from 'swr';
 import HeaderX from '../metadata/HeaderX';
 import LoadingIndicator from '../common/LoadingIndicator';
-import OrganizationInviteSnippet from '../notifications/OrganizationInviteSnippet';
-import OrgPreviewCard from '../cards/OrgPreviewCard';
+import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
+import WorkspacePreviewCard from '../cards/WorkspacePreviewCard';
 
 const HomePage = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -33,46 +33,45 @@ const HomePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const { isLoading, orgs, createOrg } = useOrgs();
-  const addOrg = (org: Organization) => createOrg(org);
+  const { isLoading, workspaces, createWorkspace } = useWorkspaces();
 
-  const showEditOrgModal = (org?: Organization) => {
+  const showEditWorkspaceModal = (ws?: Workspace) => {
     openModal({
       title: 'New workspace',
       centered: true,
-      children: <OrgEditForm org={org} onSubmit={addOrg} />,
+      children: <WorkspaceEditForm ws={ws} onSubmit={createWorkspace} />,
     });
   };
 
-  const acceptInvite = async (org: Organization) => {
-    const response = await fetch(`/api/orgs/${org.id}/invites`, {
+  const acceptInvite = async (ws: Workspace) => {
+    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
       method: 'POST',
     });
 
     if (response.ok) {
-      mutate('/api/orgs');
+      mutate('/api/workspaces');
       showNotification({
-        title: `Accepted invite to ${org.name}`,
+        title: `Accepted invite to ${ws.name}`,
         message: 'You can now access this workspace',
       });
     } else {
       showNotification({
-        title: `Failed to accept invite to ${org.name}`,
+        title: `Failed to accept invite to ${ws.name}`,
         message: 'Please try again later',
       });
     }
   };
 
-  const declineInvite = async (org: Organization) => {
-    const response = await fetch(`/api/orgs/${org.id}/invites`, {
+  const declineInvite = async (ws: Workspace) => {
+    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
       method: 'DELETE',
     });
 
     if (response.ok) {
-      mutate('/api/orgs');
+      mutate('/api/workspaces');
     } else {
       showNotification({
-        title: `Failed to decline invite to ${org.name}`,
+        title: `Failed to decline invite to ${ws.name}`,
         message: 'Please try again later',
       });
     }
@@ -87,12 +86,12 @@ const HomePage = () => {
         </div>
       ) : (
         <>
-          {orgs?.invited?.length > 0 && (
+          {workspaces?.invited?.length > 0 && (
             <div className="mb-16 grid gap-8">
-              {orgs?.invited?.map((org) => (
-                <OrganizationInviteSnippet
-                  key={org.id}
-                  org={org}
+              {workspaces?.invited?.map((ws) => (
+                <WorkspaceInviteSnippet
+                  key={ws.id}
+                  ws={ws}
                   onAccept={acceptInvite}
                   onDecline={declineInvite}
                 />
@@ -100,17 +99,11 @@ const HomePage = () => {
             </div>
           )}
 
-          {orgs?.current?.length > 0 ? (
+          {workspaces?.current?.length > 0 ? (
             <div className="grid gap-8">
-              {orgs?.current
-                // sort org with nill uuid first, since it's the root org
-                // and should be displayed first
-                ?.sort((a) =>
-                  a.id === '00000000-0000-0000-0000-000000000000' ? -1 : 1
-                )
-                ?.map((org) => (
-                  <OrgPreviewCard key={org.id} org={org} />
-                ))}
+              {workspaces?.current?.map((ws) => (
+                <WorkspacePreviewCard key={ws.id} ws={ws} />
+              ))}
             </div>
           ) : (
             <div className="flex flex-col">
@@ -122,7 +115,7 @@ const HomePage = () => {
 
           <button
             className="mt-8 w-full rounded bg-blue-300/20 px-8 py-4 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 md:w-fit"
-            onClick={() => showEditOrgModal()}
+            onClick={() => showEditWorkspaceModal()}
           >
             New workspace
           </button>

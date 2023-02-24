@@ -4,7 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const acceptInvite = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -12,8 +12,8 @@ const acceptInvite = async (
   });
 
   const { error } = await supabase
-    .from('org_members')
-    .insert({ org_id: orgId });
+    .from('workspace_members')
+    .insert({ ws_id: wsId });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({ message: 'success' });
@@ -22,7 +22,7 @@ const acceptInvite = async (
 const declineInvite = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -30,9 +30,9 @@ const declineInvite = async (
   });
 
   const { data, error } = await supabase
-    .from('org_invites')
+    .from('workspace_invites')
     .delete()
-    .eq('org_id', orgId);
+    .eq('ws_id', wsId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
@@ -40,16 +40,16 @@ const declineInvite = async (
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { orgId } = req.query;
+    const { wsId } = req.query;
 
-    if (!orgId || typeof orgId !== 'string') throw new Error('Invalid orgId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'POST':
-        return await acceptInvite(req, res, orgId);
+        return await acceptInvite(req, res, wsId);
 
       case 'DELETE':
-        return await declineInvite(req, res, orgId);
+        return await declineInvite(req, res, wsId);
 
       default:
         throw new Error(

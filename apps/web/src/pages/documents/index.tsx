@@ -19,29 +19,29 @@ const DocumentsPage: PageWithLayoutProps = () => {
   const router = useRouter();
   const user = useUser();
 
-  const { orgId } = useProjects();
+  const { wsId } = useProjects();
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
 
   const { data: workspace, error: workspaceError } = useSWR(
-    orgId ? `/api/orgs/${orgId}` : null
+    wsId ? `/api/workspaces/${wsId}` : null
   );
 
   useEffect(() => {
     setRootSegment(
-      orgId
+      wsId
         ? [
             {
               content: workspace?.name || 'Unnamed Workspace',
-              href: `/orgs/${orgId}`,
+              href: `/workspaces/${wsId}`,
             },
             { content: 'Documents', href: `/documents` },
           ]
         : []
     );
-  }, [orgId, workspace?.name, setRootSegment]);
+  }, [wsId, workspace?.name, setRootSegment]);
 
   const { data: documents, error: documentsError } = useSWR<Document[]>(
-    user?.id && orgId ? `/api/users/${user.id}/documents?wsId=${orgId}` : null
+    user?.id && wsId ? `/api/users/${user.id}/documents?wsId=${wsId}` : null
   );
 
   const createDocument = async ({
@@ -80,7 +80,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
       centered: true,
       children: (
         <DocumentEditForm
-          wsId={orgId}
+          wsId={wsId}
           onSubmit={(projectId, doc) => createDocument({ projectId, doc })}
         />
       ),

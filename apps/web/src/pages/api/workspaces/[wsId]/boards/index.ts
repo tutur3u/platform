@@ -1,36 +1,42 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const fetchProjects = async (
+const fetchBoards = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('projects')
+    .from('task_boards')
     .select('id, name, created_at')
-    .eq('org_id', orgId)
-    .order('created_at');
+    .eq('ws_id', wsId);
 
   if (error) return res.status(500).json({ error: error.message });
 
   return res.status(200).json(data);
 };
 
-const createProject = async (
+const createBoard = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { name } = req.body;
 
+  if (!name)
+    return res.status(400).json({
+      error: {
+        message: 'Invalid request',
+      },
+    });
+
   const { data, error } = await supabase
-    .from('projects')
-    .insert({ org_id: orgId, name })
+    .from('task_boards')
+    .insert({ ws_id: wsId, name })
     .select('id')
     .single();
 
@@ -41,21 +47,21 @@ const createProject = async (
       },
     });
 
-  return res.status(200).json({ message: 'Project created', id: data.id });
+  return res.status(200).json({ message: 'Board created', id: data.id });
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { orgId } = req.query;
+    const { wsId } = req.query;
 
-    if (!orgId || typeof orgId !== 'string') throw new Error('Invalid orgId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchProjects(req, res, orgId);
+        return await fetchBoards(req, res, wsId);
 
       case 'POST':
-        return await createProject(req, res, orgId);
+        return await createBoard(req, res, wsId);
 
       default:
         throw new Error(

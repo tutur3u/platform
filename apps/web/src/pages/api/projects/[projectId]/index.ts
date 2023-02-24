@@ -10,7 +10,7 @@ const fetchProject = async (
 
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, created_at, orgs(id, name)')
+    .select('id, name, created_at, workspaces(id, name)')
     .eq('id', projectId)
     .single();
 
