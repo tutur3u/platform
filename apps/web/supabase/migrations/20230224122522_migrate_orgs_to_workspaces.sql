@@ -22,8 +22,6 @@ drop policy "Enable read access for organization members or invited members" on 
 
 drop policy "Enable update for all organization members" on "public"."orgs";
 
-drop policy "Enable read access for members of the task board" on "public"."task_board_members";
-
 drop policy "Enable all access for organization members" on "public"."projects";
 
 alter table "public"."org_invites" drop constraint "org_invites_org_id_fkey";
@@ -36,8 +34,6 @@ alter table "public"."org_members" drop constraint "org_members_user_id_fkey";
 
 alter table "public"."projects" drop constraint "projects_org_id_fkey";
 
-alter table "public"."task_board_members" drop constraint "task_board_members_user_id_fkey";
-
 drop function if exists "public"."add_org_creator"();
 
 alter table "public"."org_invites" drop constraint "org_invites_pkey";
@@ -45,10 +41,6 @@ alter table "public"."org_invites" drop constraint "org_invites_pkey";
 alter table "public"."org_members" drop constraint "org_members_pkey";
 
 alter table "public"."orgs" drop constraint "orgs_pkey";
-
-alter table "public"."task_board_members" drop constraint "task_board_members_pkey";
-
-drop index if exists "public"."task_board_members_pkey";
 
 drop index if exists "public"."org_invites_pkey";
 
@@ -61,8 +53,6 @@ drop table "public"."org_invites";
 drop table "public"."org_members";
 
 drop table "public"."orgs";
-
-drop table "public"."task_board_members";
 
 create table "public"."workspace_invites" (
     "ws_id" uuid not null,
