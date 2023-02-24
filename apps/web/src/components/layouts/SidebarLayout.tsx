@@ -17,7 +17,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
       }
 
       case 'open': {
-        if (pref.secondary === 'hidden') return 'w-64';
+        if (pref.secondary === 'hidden') return 'w-full md:w-64';
         return 'w-full md:w-96';
       }
     }

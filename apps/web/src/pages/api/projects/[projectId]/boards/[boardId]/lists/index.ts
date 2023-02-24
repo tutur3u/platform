@@ -3,17 +3,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { projectId } = req.query;
-
-    if (!projectId || typeof projectId !== 'string')
-      throw new Error('Invalid projectId');
-
     switch (req.method) {
       case 'GET':
-        return await fetchDocuments(req, res, projectId);
+        return await fetchLists(req, res);
 
       case 'POST':
-        return await createDocument(req, res, projectId);
+        return await createList(req, res);
 
       default:
         throw new Error(
@@ -32,48 +27,41 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchDocuments = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  projectId: string
-) => {
+const fetchLists = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
+  const { boardId } = req.query;
+  if (!boardId) return res.status(401).json({ error: 'Invalid board ID' });
+
   const { data, error } = await supabase
-    .from('project_documents')
-    .select('id, name, content, created_at')
-    .eq('project_id', projectId)
+    .from('task_lists')
+    .select('id, name')
+    .eq('board_id', boardId)
     .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
 };
 
-const createDocument = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  projectId: string
-) => {
+const createList = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name, content } = req.body;
+  const { name, boardId } = req.body;
 
-  const { data, error } = await supabase
-    .from('project_documents')
+  const { error } = await supabase
+    .from('task_lists')
     .insert({
       name,
-      content,
-      project_id: projectId,
+      board_id: boardId,
     })
-    .select('id')
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ id: data.id });
+  return res.status(200).json({});
 };

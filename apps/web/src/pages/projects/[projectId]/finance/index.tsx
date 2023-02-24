@@ -82,7 +82,12 @@ const ProjectFinancePage = () => {
       {projectId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Finance</h1>
+            <h1 className="text-2xl font-bold">
+              Finance{' '}
+              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+                {wallets?.length || 0}
+              </span>
+            </h1>
             <p className="text-zinc-400">
               Track financial progress and budget.
             </p>

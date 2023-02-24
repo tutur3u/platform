@@ -3,10 +3,17 @@ import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { ReactElement, useEffect, useState } from 'react';
 import { useAppearance } from '../../../../hooks/useAppearance';
-import { Divider, Loader, TextInput, Tooltip } from '@mantine/core';
 import {
-  Cog6ToothIcon,
+  Divider,
+  Loader,
+  SegmentedControl,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
+import {
   DocumentCheckIcon,
+  EyeIcon,
+  PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -21,6 +28,7 @@ import SubScript from '@tiptap/extension-subscript';
 import { useEditor } from '@tiptap/react';
 import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
+import HeaderX from '../../../../components/metadata/HeaderX';
 
 const ProjectDocumentEditor = () => {
   const router = useRouter();
@@ -78,6 +86,8 @@ const ProjectDocumentEditor = () => {
     });
   }, [projectId, docId, document, name, setLastSegment]);
 
+  const [mode, setMode] = useState('preview');
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -96,9 +106,16 @@ const ProjectDocumentEditor = () => {
   });
 
   useEffect(() => {
+    if (!editor) return;
+    const editable = mode === 'edit';
+    editor.setEditable(editable);
+    setSaving(false);
+  }, [mode, editor]);
+
+  useEffect(() => {
     if (!document) return;
-    setName(document?.name);
-    setContent(document?.content);
+    setName(document?.name || '');
+    setContent(document?.content || '');
 
     if (!editor) return;
     if (!editor?.commands) return;
@@ -115,9 +132,9 @@ const ProjectDocumentEditor = () => {
   useEffect(() => {
     if (!document) return;
     if (!projectId || !docId) return;
-    if (!name && !content) return;
-    if (name !== debouncedName || content !== debouncedContent) return;
+    if (name == null && content == null) return;
 
+    if (name !== debouncedName || content !== debouncedContent) return;
     if (name === document?.name && content === document?.content) {
       setSaving(false);
       return;
@@ -172,6 +189,12 @@ const ProjectDocumentEditor = () => {
 
   return (
     <>
+      <HeaderX
+        label={`${name || 'Untitled Document'} - ${
+          project?.name || 'Untitled Project'
+        }`}
+      />
+
       {document && (
         <>
           <div className="flex items-center justify-between gap-4">
@@ -208,7 +231,31 @@ const ProjectDocumentEditor = () => {
             </button>
           </div>
 
-          <Divider variant="dashed" className="mt-2 mb-4" />
+          <Divider variant="dashed" className="my-2" />
+
+          <SegmentedControl
+            value={mode}
+            onChange={setMode}
+            data={[
+              {
+                label: (
+                  <div className="flex items-center gap-2">
+                    <EyeIcon className="inline-block h-5" /> Preview
+                  </div>
+                ),
+                value: 'preview',
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-2">
+                    <PencilIcon className="inline-block h-5" /> Edit
+                  </div>
+                ),
+                value: 'edit',
+              },
+            ]}
+            className="mb-2"
+          />
         </>
       )}
 

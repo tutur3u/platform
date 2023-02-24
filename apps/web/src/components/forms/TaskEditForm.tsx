@@ -37,8 +37,9 @@ import Link from 'next/link';
 
 interface TaskEditFormProps {
   task?: Task;
-  listId?: string;
-  boardId?: string;
+  projectId: string;
+  boardId: string;
+  listId: string;
   onUpdated: () => void;
 }
 
@@ -46,8 +47,9 @@ type UserWithValue = UserData & { value: string };
 
 const TaskEditForm = ({
   task,
-  listId,
+  projectId,
   boardId,
+  listId,
   onUpdated,
 }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
@@ -279,24 +281,6 @@ const TaskEditForm = ({
 
   const showActionIcons = currentTab === 'details';
 
-  const [currentBoardId, setCurrentBoardId] = useState<string | null>(
-    task?.board_id || boardId || null
-  );
-
-  const [currentListId, setCurrentListId] = useState<string | null>(
-    task?.list_id || listId || null
-  );
-
-  const { data: boards } = useSWR<TaskBoard[] | null>(
-    userData?.id ? '/api/tasks/boards' : null
-  );
-
-  const { data: lists } = useSWR<TaskList[] | null>(
-    userData?.id && currentBoardId
-      ? `/api/tasks/lists?boardId=${currentBoardId}`
-      : null
-  );
-
   const addTask = async () => {
     if (!listId) return;
 
@@ -333,7 +317,7 @@ const TaskEditForm = ({
         completed: task.completed,
         startDate,
         endDate,
-        listId: currentListId,
+        listId,
       }),
     });
 
@@ -442,34 +426,6 @@ const TaskEditForm = ({
             maxRows={10}
             autosize
           />
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Select
-              label="Current board"
-              value={currentBoardId}
-              onChange={setCurrentBoardId}
-              data={
-                boards?.map((board) => ({
-                  value: board.id,
-                  label: board.name,
-                })) || []
-              }
-              // disabled={!boards || boards?.length <= 1}
-              disabled
-            />
-            <Select
-              label="Current list"
-              value={currentListId}
-              onChange={setCurrentListId}
-              data={
-                lists?.map((list) => ({
-                  value: list.id,
-                  label: list.name,
-                })) || []
-              }
-              disabled={!lists || lists?.length <= 1}
-            />
-          </div>
         </Tabs.Panel>
 
         <Tabs.Panel value="datetime">

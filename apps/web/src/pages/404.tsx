@@ -2,8 +2,11 @@ import React, { ReactElement } from 'react';
 import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import Layout from '../components/layouts/DefaultLayout';
 import Link from 'next/link';
+import { useUser } from '@supabase/auth-helpers-react';
 
 const Error404Page: PageWithLayoutProps = () => {
+  const user = useUser();
+
   return (
     <div className="absolute inset-0 mx-4 mt-24 mb-8 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
       <h1 className="text-9xl font-bold">
@@ -16,7 +19,7 @@ const Error404Page: PageWithLayoutProps = () => {
       </p>
 
       <Link
-        href="/"
+        href={user ? '/home' : '/'}
         className="mt-4 block w-fit rounded-lg bg-blue-300/20 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
       >
         Go back to home

@@ -16,14 +16,6 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
 
   return (
     <>
-      {board?.id && (
-        <TextInput
-          label="Board ID"
-          value={board?.id}
-          disabled={!!board?.id}
-          className="mb-2"
-        />
-      )}
       <TextInput
         label="Board name"
         placeholder="Enter board name"

@@ -10,10 +10,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchDocuments(req, res, projectId);
+        return await fetchBoards(req, res, projectId);
 
       case 'POST':
-        return await createDocument(req, res, projectId);
+        return await createBoard(req, res, projectId);
 
       default:
         throw new Error(
@@ -32,7 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchDocuments = async (
+const fetchBoards = async (
   req: NextApiRequest,
   res: NextApiResponse,
   projectId: string
@@ -43,8 +43,8 @@ const fetchDocuments = async (
   });
 
   const { data, error } = await supabase
-    .from('project_documents')
-    .select('id, name, content, created_at')
+    .from('project_boards')
+    .select('id, name')
     .eq('project_id', projectId)
     .order('created_at');
 
@@ -52,7 +52,7 @@ const fetchDocuments = async (
   return res.status(200).json(data);
 };
 
-const createDocument = async (
+const createBoard = async (
   req: NextApiRequest,
   res: NextApiResponse,
   projectId: string
@@ -62,13 +62,12 @@ const createDocument = async (
     res,
   });
 
-  const { name, content } = req.body;
+  const { name } = req.body;
 
   const { data, error } = await supabase
-    .from('project_documents')
+    .from('project_boards')
     .insert({
       name,
-      content,
       project_id: projectId,
     })
     .select('id')
