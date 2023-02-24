@@ -18,6 +18,7 @@ import SidebarLayout from '../../components/layouts/SidebarLayout';
 import TransactionEditForm from '../../components/forms/TransactionEditForm';
 import { useTransactions } from '../../hooks/useTransactions';
 import TransactionTab from '../../components/finance/transactions/TransactionTab';
+import { PlusIcon} from '@heroicons/react/24/solid';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -124,41 +125,68 @@ const FinancePage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <div className="flex w-full">
-        <div className="flex h-screen w-72 flex-col gap-8 border-r border-zinc-800 p-5">
-          <Select
-            label="Select project"
-            placeholder="Select project"
-            data={
-              projects
-                ? projects.map((project) => ({
-                    label: project.name,
-                    value: project.id,
-                  }))
-                : []
-            }
-            value={projectId as string | undefined}
-            onChange={(pid) => {
-              setProjectId(pid);
-              setWalletId(null);
-            }}
-          />
+      <div className="tablet:flex w-full">
+        <div className="tablet:border-r tablet:h-screen flex h-fit w-72 flex-col gap-5 border-zinc-800 p-5">
+          <div className="flex flex-col gap-3">
+            <Select
+              label="Select project"
+              placeholder="Select project"
+              data={
+                projects
+                  ? projects.map((project) => ({
+                      label: project.name,
+                      value: project.id,
+                    }))
+                  : []
+              }
+              value={projectId as string | undefined}
+              onChange={(pid) => {
+                setProjectId(pid);
+                setWalletId(null);
+              }}
+            />
+            <div className="tablet:hidden flex items-end justify-between">
+              <Select
+                label="Select wallet"
+                placeholder="Select wallet"
+                data={
+                  wallets
+                    ? wallets.map((wallet) => ({
+                        label: wallet.name,
+                        value: wallet.id,
+                      }))
+                    : []
+                }
+                value={walletId as string | undefined}
+                onChange={(wid) => {
+                  setWalletId(wid);
+                }}
+                className="w-[80%]"
+              />
+
+              <button
+                className="rounded-md bg-zinc-800 p-2 text-zinc-500 transition hover:text-zinc-400"
+                onClick={() => showEditWalletModal()}
+              >
+                <PlusIcon className="w-5" />
+              </button>
+            </div>
+          </div>
 
           <button
             onClick={() => showEditWalletModal()}
-            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            className="tablet:block hidden w-full rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
             Create wallet
           </button>
 
-          <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
+          <div className="scrollbar-none tablet:flex hidden flex-col gap-5 overflow-y-scroll">
             {wallets &&
               wallets.map((wallet) => (
                 <WalletTab
                   key={wallet.id}
                   wallet={wallet}
                   onClick={() => setWalletId(wallet.id)}
-                  isActive={wallet.id === walletId}
                 />
               ))}
           </div>
@@ -166,10 +194,22 @@ const FinancePage: PageWithLayoutProps = () => {
 
         {walletId ? (
           <div className="w-full p-5">
+            <div className="mb-6 rounded-lg bg-zinc-900 p-4">
+              <h1 className="text-2xl font-bold">
+                {wallet?.name || 'Untitled Wallet'}
+              </h1>
+              <p className="text-xl text-zinc-400">
+                {Intl.NumberFormat('vi-VN', {
+                  style: 'currency',
+                  currency: 'VND',
+                }).format(wallet?.balance || 0)}
+              </p>
+            </div>
+
             <div className="flex w-full justify-between">
               <button
                 onClick={() => showEditTransactionModal()}
-                className="mb-7 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+                className="mb-6 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
               >
                 Add transaction
               </button>
@@ -183,7 +223,7 @@ const FinancePage: PageWithLayoutProps = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-1 md:gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            <div className="tablet:grid-cols-2 grid grid-cols-1 gap-6 lg:grid-cols-3 xl:grid-cols-4">
               {transactions &&
                 transactions.map((transaction) => (
                   <TransactionTab

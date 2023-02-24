@@ -3,6 +3,10 @@ module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {},
+    screens: {
+      tablet: '640px',
+      // => @media (min-width: 640px) { ... }
+    },
   },
   darkMode: true,
   variants: {
