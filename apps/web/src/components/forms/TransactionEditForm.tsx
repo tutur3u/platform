@@ -32,8 +32,12 @@ const TransactionEditForm = ({
     transaction?.description || ''
   );
 
-  const [type, setType] = useState<string | null>(
-    transaction?.amount && transaction?.amount < 0 ? 'expense' : 'income'
+  const [type, setType] = useState<'expense' | 'income'>(
+    transaction?.amount !== undefined
+      ? transaction.amount < 0
+        ? 'expense'
+        : 'income'
+      : 'expense'
   );
 
   return (
@@ -79,7 +83,7 @@ const TransactionEditForm = ({
           { value: 'income', label: 'Income' },
         ]}
         value={type}
-        onChange={setType}
+        onChange={(value) => setType(value as 'expense' | 'income')}
       />
 
       <TextInput
@@ -110,19 +114,18 @@ const TransactionEditForm = ({
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newTransaction = {
+            const newTransaction: Transaction = {
               id: transaction?.id || uuidv4(),
               name,
-              amount: amount || 0,
+              amount: type === 'expense' ? (amount || 0) * -1 : amount || 0,
               description,
-              type: type || 'expense',
             };
 
             onSubmit(projectId, walletId || '', newTransaction);
             closeAllModals();
           }}
           mt="md"
-          disabled={!name}
+          disabled={!amount}
         >
           {transaction?.id ? 'Save' : 'Add'}
         </Button>

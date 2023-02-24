@@ -18,7 +18,7 @@ import SidebarLayout from '../../components/layouts/SidebarLayout';
 import TransactionEditForm from '../../components/forms/TransactionEditForm';
 import { useTransactions } from '../../hooks/useTransactions';
 import TransactionTab from '../../components/finance/transactions/TransactionTab';
-import { PlusIcon} from '@heroicons/react/24/solid';
+import { PlusIcon } from '@heroicons/react/24/solid';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -236,7 +236,7 @@ const FinancePage: PageWithLayoutProps = () => {
           </div>
         ) : (
           <div className="flex w-full items-center justify-center p-4 md:p-8">
-            <div className="text-2xl font-semibold text-zinc-500">
+            <div className="text-center text-lg font-semibold text-zinc-500 md:text-2xl">
               Select a wallet to view transactions.
             </div>
           </div>
