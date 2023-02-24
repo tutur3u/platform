@@ -17,8 +17,8 @@ const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
   const pid = projectId ?? project_id;
   const showProject = !hideProject && pid;
 
-  const href = id && showProject ? `/projects/${pid}/documents/${id}` : '';
-  const { data: project } = useSWR(pid ? `/api/projects/${pid}` : null);
+  const href = id && pid ? `/projects/${pid}/documents/${id}` : '';
+  const { data: project } = useSWR(showProject ? `/api/projects/${pid}` : null);
 
   return (
     <Link
@@ -37,7 +37,7 @@ const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
 
             <p className="text-zinc-400">
               <div
-                className="prose line-clamp-5"
+                className="prose line-clamp-3"
                 dangerouslySetInnerHTML={{
                   __html: document.content || '',
                 }}
@@ -47,17 +47,17 @@ const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
         )}
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-2 justify-self-end font-semibold">
+      <div className="mt-8 flex flex-wrap gap-2 justify-self-end text-sm font-semibold">
         {hideProject || (
-          <div className="flex max-w-full gap-2 rounded-lg bg-purple-300/10 px-4 py-2 text-purple-300">
-            <Squares2X2Icon className="w-6 flex-none" />
+          <div className="flex max-w-full items-center gap-1 rounded-lg bg-purple-300/10 px-2 py-1.5 text-purple-300">
+            <Squares2X2Icon className="w-5 flex-none" />
             <div className="line-clamp-1">
               {project?.name || 'Untitled Project'}
             </div>
           </div>
         )}
-        <div className="flex max-w-full gap-2 rounded-lg bg-blue-300/10 px-4 py-2 text-blue-300">
-          <DocumentPlusIcon className="w-6 flex-none" />
+        <div className="flex max-w-full items-center gap-1 rounded-lg bg-blue-300/10 px-2 py-1.5 text-blue-300">
+          <DocumentPlusIcon className="w-5 flex-none" />
           <div className="line-clamp-1">{moment(created_at).fromNow()}</div>
         </div>
       </div>
