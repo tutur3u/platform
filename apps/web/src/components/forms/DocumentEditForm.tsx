@@ -20,7 +20,7 @@ const DocumentEditForm = ({
   onDelete,
 }: DocumentEditFormProps) => {
   const { data: projects, error: projectsError } = useSWR<Document[]>(
-    wsId ? `/api/orgs/${wsId}/projects` : null
+    wsId ? `/api/workspaces/${wsId}/projects` : null
   );
 
   useEffect(() => {

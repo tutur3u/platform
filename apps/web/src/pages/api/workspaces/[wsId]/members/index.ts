@@ -4,19 +4,19 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const fetchMembers = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const membersQuery = supabase
-    .from('org_members')
+    .from('workspace_members')
     .select('created_at, users(id, username, display_name, avatar_url, email)')
-    .eq('org_id', orgId);
+    .eq('ws_id', wsId);
 
   const invitesQuery = supabase
-    .from('org_invites')
+    .from('workspace_invites')
     .select('created_at, users(id, username, display_name, avatar_url, email)')
-    .eq('org_id', orgId);
+    .eq('ws_id', wsId);
 
   const [members, invites] = await Promise.all([membersQuery, invitesQuery]);
 
@@ -40,7 +40,7 @@ const fetchMembers = async (
 const inviteMember = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
@@ -58,8 +58,8 @@ const inviteMember = async (
 
   if (id) {
     const { error } = await supabase
-      .from('org_invites')
-      .insert({ org_id: orgId, user_id: id });
+      .from('workspace_invites')
+      .insert({ ws_id: wsId, user_id: id });
 
     if (error)
       return res.status(500).json({
@@ -86,8 +86,8 @@ const inviteMember = async (
     const { id: userId } = data;
 
     const { error: inviteError } = await supabase
-      .from('org_invites')
-      .insert({ org_id: orgId, user_id: userId });
+      .from('workspace_invites')
+      .insert({ ws_id: wsId, user_id: userId });
 
     if (inviteError)
       return res.status(500).json({
@@ -102,16 +102,16 @@ const inviteMember = async (
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { orgId } = req.query;
+    const { wsId } = req.query;
 
-    if (!orgId || typeof orgId !== 'string') throw new Error('Invalid orgId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchMembers(req, res, orgId);
+        return await fetchMembers(req, res, wsId);
 
       case 'POST':
-        return await inviteMember(req, res, orgId);
+        return await inviteMember(req, res, wsId);
 
       default:
         throw new Error(

@@ -23,8 +23,8 @@ import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import { Avatar, Divider, Popover, Tooltip } from '@mantine/core';
 import { useUserData } from '../../hooks/useUserData';
-import { useOrgs } from '../../hooks/useOrganizations';
-import OrgEditForm from '../forms/OrgEditForm';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
+import WorkspaceEditForm from '../forms/WorkspaceEditForm';
 import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
@@ -48,16 +48,16 @@ function LeftSidebar({ className }: SidebarProps) {
     router.push('/');
   };
 
-  const { createOrg } = useOrgs();
+  const { createWorkspace } = useWorkspaces();
 
-  const { orgId, org, members, isProjectsLoading, createProject, projects } =
+  const { wsId, ws, members, isProjectsLoading, createProject, projects } =
     useProjects();
 
-  const showEditOrgModal = () => {
+  const showEditWorkspaceModal = () => {
     openModal({
       title: <div className="font-semibold">New workspace</div>,
       centered: true,
-      children: <OrgEditForm onSubmit={createOrg} />,
+      children: <WorkspaceEditForm onSubmit={createWorkspace} />,
     });
   };
 
@@ -126,13 +126,13 @@ function LeftSidebar({ className }: SidebarProps) {
 
           <Divider className="my-2" />
 
-          {org.id && (
+          {ws.id && (
             <div className="mx-2">
               <Tooltip
                 label={
                   <div>
                     <div className="font-semibold">
-                      {org.name || 'Unnamed Workspace'}
+                      {ws.name || 'Unnamed Workspace'}
                     </div>
                     <div className="text-xs font-semibold">
                       {members.length}{' '}
@@ -154,13 +154,13 @@ function LeftSidebar({ className }: SidebarProps) {
                       }`}
                     >
                       <Link
-                        href={`/orgs/${orgId}`}
+                        href={`/workspaces/${wsId}`}
                         className="line-clamp-1 text-zinc-300 transition hover:text-zinc-100"
                       >
                         {leftSidebarPref.main === 'closed' ? (
                           <BuildingOffice2Icon className="w-5" />
                         ) : (
-                          org?.name || 'Unnamed Workspace'
+                          ws?.name || 'Unnamed Workspace'
                         )}
                       </Link>
                     </div>
@@ -219,7 +219,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
                     {leftSidebarPref.main === 'closed' || (
                       <Link
-                        href={`/orgs/${orgId}/members`}
+                        href={`/workspaces/${wsId}/members`}
                         className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
                       >
                         <div>Invite</div>
@@ -260,7 +260,7 @@ function LeftSidebar({ className }: SidebarProps) {
               <SidebarButton
                 onClick={() => {
                   setNewPopover(false);
-                  showEditOrgModal();
+                  showEditWorkspaceModal();
                 }}
                 activeIcon={<BuildingOffice2Icon className="w-5" />}
                 label="New workspace"
@@ -269,7 +269,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
               <Divider />
 
-              {orgId && (
+              {wsId && (
                 <SidebarButton
                   onClick={() => {
                     setNewPopover(false);
@@ -302,7 +302,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 disabled
               />
 
-              {orgId && (
+              {wsId && (
                 <>
                   <Divider />
                   <SidebarButton

@@ -1,27 +1,27 @@
 import { SparklesIcon } from '@heroicons/react/24/solid';
 import moment from 'moment';
-import { Organization } from '../../types/primitives/Organization';
+import { Workspace } from '../../types/primitives/Workspace';
 
 interface Props {
-  org: Organization;
-  onAccept?: (org: Organization) => void;
-  onDecline?: (org: Organization) => void;
+  ws: Workspace;
+  onAccept?: (ws: Workspace) => void;
+  onDecline?: (ws: Workspace) => void;
 }
 
-const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
+const WorkspaceInviteSnippet = ({ ws, onAccept, onDecline }: Props) => {
   return (
     <div className="max-w-xl rounded-lg bg-zinc-900 p-8">
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-zinc-500">You have been invited to join </span>
-        {org?.name || `Unnamed Workspace`}{' '}
-        {org?.id === '00000000-0000-0000-0000-000000000000' && (
+        {ws?.name || `Unnamed Workspace`}{' '}
+        {ws?.id === '00000000-0000-0000-0000-000000000000' && (
           <SparklesIcon className="inline-block h-5 w-5 text-yellow-300" />
         )}
-        {org?.created_at ? (
+        {ws?.created_at ? (
           <>
             {' • '}
             <span className="text-zinc-400">
-              {moment(org.created_at).fromNow()}
+              {moment(ws.created_at).fromNow()}
             </span>
           </>
         ) : null}
@@ -30,7 +30,7 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
         {onDecline ? (
           <div
             className="flex cursor-pointer items-center justify-center rounded bg-zinc-300/10 p-2 font-semibold text-zinc-300 transition duration-300 hover:bg-red-300/30 hover:text-red-300"
-            onClick={() => onDecline(org)}
+            onClick={() => onDecline(ws)}
           >
             Decline invitation
           </div>
@@ -39,7 +39,7 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
         {onAccept ? (
           <div
             className="flex flex-1 cursor-pointer items-center justify-center rounded bg-zinc-300/10 p-2 font-semibold text-zinc-300 transition duration-300 hover:bg-green-300/30 hover:text-green-300"
-            onClick={() => onAccept(org)}
+            onClick={() => onAccept(ws)}
           >
             Accept invitation
           </div>
@@ -49,4 +49,4 @@ const OrganizationInviteSnippet = ({ org, onAccept, onDecline }: Props) => {
   );
 };
 
-export default OrganizationInviteSnippet;
+export default WorkspaceInviteSnippet;

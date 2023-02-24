@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
@@ -14,18 +14,21 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (userError) return res.status(401).json({ error: userError.message });
 
-  const currentOrgs = supabase
-    .from('orgs')
+  const currentWorkspaces = supabase
+    .from('workspaces')
     .select('id, name')
     .order('created_at');
 
-  const invitedOrgs = supabase
-    .from('org_invites')
-    .select('created_at, orgs(id, name)')
+  const invitedWorkspaces = supabase
+    .from('workspace_invites')
+    .select('created_at, workspaces(id, name)')
     .eq('user_id', user?.id);
 
   // use Promise.all to run both queries in parallel
-  const [current, invited] = await Promise.all([currentOrgs, invitedOrgs]);
+  const [current, invited] = await Promise.all([
+    currentWorkspaces,
+    invitedWorkspaces,
+  ]);
 
   if (current.error)
     return res.status(401).json({ error: current.error.message });
@@ -34,15 +37,15 @@ const fetchOrgs = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: invited.error.message });
 
   return res.status(200).json({
-    current: current.data.map((org) => org),
-    invited: invited.data.map((org) => ({
-      ...org.orgs,
-      created_at: org.created_at,
+    current: current.data.map((ws) => ws),
+    invited: invited.data.map((ws) => ({
+      ...ws.workspaces,
+      created_at: ws.created_at,
     })),
   });
 };
 
-const createOrg = async (req: NextApiRequest, res: NextApiResponse) => {
+const createWorkspace = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
@@ -51,7 +54,7 @@ const createOrg = async (req: NextApiRequest, res: NextApiResponse) => {
   const { name } = JSON.parse(req.body);
 
   const { error } = await supabase
-    .from('orgs')
+    .from('workspaces')
     .insert({
       name,
     })
@@ -65,10 +68,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     switch (req.method) {
       case 'GET':
-        return await fetchOrgs(req, res);
+        return await fetchWorkspaces(req, res);
 
       case 'POST':
-        return await createOrg(req, res);
+        return await createWorkspace(req, res);
 
       default:
         throw new Error(

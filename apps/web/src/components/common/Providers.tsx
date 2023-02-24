@@ -9,7 +9,7 @@ import { ModalsProvider } from '@mantine/modals';
 import { NotificationsProvider } from '@mantine/notifications';
 import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
-import { OrganizationProvider } from '../../hooks/useOrganizations';
+import { WorkspaceProvider } from '../../hooks/useWorkspaces';
 import { SWRConfig } from 'swr';
 import { UserListProvider } from '../../hooks/useUserList';
 import { CalendarProvider } from '../../hooks/useCalendar';
@@ -50,7 +50,7 @@ const Providers = ({
                 <AppearanceProvider>
                   <ModalsProvider>
                     <NotificationsProvider position="bottom-left">
-                      <OrganizationProvider>
+                      <WorkspaceProvider>
                         <ProjectProvider>
                           <WalletProvider>
                             <TransactionProvider>
@@ -58,7 +58,7 @@ const Providers = ({
                             </TransactionProvider>
                           </WalletProvider>
                         </ProjectProvider>
-                      </OrganizationProvider>
+                      </WorkspaceProvider>
                     </NotificationsProvider>
                   </ModalsProvider>
                 </AppearanceProvider>

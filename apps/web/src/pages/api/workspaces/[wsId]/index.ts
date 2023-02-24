@@ -1,17 +1,17 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const fetchOrg = async (
+const fetchWorkspaces = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('orgs')
+    .from('workspaces')
     .select('id, name, created_at')
-    .eq('id', orgId)
+    .eq('id', wsId)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -20,10 +20,10 @@ const fetchOrg = async (
   return res.status(200).json(data);
 };
 
-const updateOrg = async (
+const updateWorkspace = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -33,27 +33,27 @@ const updateOrg = async (
   const { name } = JSON.parse(req.body);
 
   const { error } = await supabase
-    .from('orgs')
+    .from('workspaces')
     .update({
       name,
     })
-    .eq('id', orgId);
+    .eq('id', wsId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteOrg = async (
+const deleteWorkspace = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  orgId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { error } = await supabase.from('orgs').delete().eq('id', orgId);
+  const { error } = await supabase.from('workspaces').delete().eq('id', wsId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
@@ -61,27 +61,19 @@ const deleteOrg = async (
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { orgId } = req.query;
+    const { wsId } = req.query;
 
-    if (!orgId || typeof orgId !== 'string') throw new Error('Invalid orgId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchOrg(req, res, orgId);
+        return await fetchWorkspaces(req, res, wsId);
 
-      case 'PUT': {
-        if (orgId === '00000000-0000-0000-0000-000000000000')
-          throw new Error('Invalid orgId');
+      case 'PUT':
+        return await updateWorkspace(req, res, wsId);
 
-        return await updateOrg(req, res, orgId);
-      }
-
-      case 'DELETE': {
-        if (orgId === '00000000-0000-0000-0000-000000000000')
-          throw new Error('Invalid orgId');
-
-        return await deleteOrg(req, res, orgId);
-      }
+      case 'DELETE':
+        return await deleteWorkspace(req, res, wsId);
 
       default:
         throw new Error(

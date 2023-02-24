@@ -3,27 +3,19 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Organization } from '../../types/primitives/Organization';
+import { Workspace } from '../../types/primitives/Workspace';
 
-interface OrgEditFormProps {
-  org?: Organization;
-  onSubmit: (org: Organization) => void;
+interface Props {
+  ws?: Workspace;
+  onSubmit: (ws: Workspace) => void;
   onDelete?: () => void;
 }
 
-const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
-  const [name, setName] = useState(org?.name || '');
+const WorkspaceEditForm = ({ ws, onSubmit, onDelete }: Props) => {
+  const [name, setName] = useState(ws?.name || '');
 
   return (
     <>
-      {org?.id && (
-        <TextInput
-          label="Workspace ID"
-          value={org?.id}
-          disabled={!!org?.id}
-          className="mb-2"
-        />
-      )}
       <TextInput
         label="Workspace name"
         placeholder="Enter workspace name"
@@ -34,7 +26,7 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
         data-autofocus
       />
       <div className="flex gap-2">
-        {org?.id && onDelete && (
+        {ws?.id && onDelete && (
           <Button
             fullWidth
             variant="subtle"
@@ -49,18 +41,18 @@ const OrgEditForm = ({ org, onSubmit, onDelete }: OrgEditFormProps) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newOrg = { id: org?.id || uuidv4(), name };
+            const newWorkspace = { id: ws?.id || uuidv4(), name };
 
-            onSubmit(newOrg);
+            onSubmit(newWorkspace);
             closeAllModals();
           }}
           mt="md"
         >
-          {org?.id ? 'Save' : 'Add'}
+          {ws?.id ? 'Save' : 'Add'}
         </Button>
       </div>
     </>
   );
 };
 
-export default OrgEditForm;
+export default WorkspaceEditForm;

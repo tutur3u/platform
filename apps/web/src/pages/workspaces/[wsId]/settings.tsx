@@ -5,85 +5,85 @@ import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
-import { useOrgs } from '../../../hooks/useOrganizations';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import HeaderX from '../../../components/metadata/HeaderX';
 
 const WorkspaceSettingsPage = () => {
   const router = useRouter();
-  const { orgId } = router.query;
+  const { wsId } = router.query;
 
-  const { updateOrg, deleteOrg } = useOrgs();
+  const { updateWorkspace, deleteWorkspace } = useWorkspaces();
 
-  const { data: org, error } = useSWR(`/api/orgs/${orgId}`);
-  const isLoading = !org && !error;
+  const { data: ws, error } = useSWR(`/api/workspaces/${wsId}`);
+  const isLoading = !ws && !error;
 
   const { setRootSegment } = useAppearance();
 
-  const [name, setName] = useState(org?.name);
+  const [name, setName] = useState(ws?.name);
 
   useEffect(() => {
-    setName(org?.name);
+    setName(ws?.name);
     setRootSegment(
-      orgId
+      wsId
         ? [
             {
-              content: org?.name ?? 'Loading...',
-              href: `/orgs/${orgId}`,
+              content: ws?.name ?? 'Loading...',
+              href: `/workspaces/${wsId}`,
             },
             {
               content: 'Settings',
-              href: `/orgs/${orgId}/settings`,
+              href: `/workspaces/${wsId}/settings`,
             },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, org?.name]);
+  }, [wsId, ws?.name]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   if (isLoading) return <div>Loading...</div>;
 
-  const isSystemOrg = orgId === '00000000-0000-0000-0000-000000000000';
+  const isSystemWs = wsId === '00000000-0000-0000-0000-000000000000';
 
   const handleSave = async () => {
     setIsSaving(true);
 
-    if (isSystemOrg) {
+    if (isSystemWs) {
       setIsSaving(false);
       return;
     }
 
-    if (!updateOrg || !org) {
+    if (!updateWorkspace || !ws) {
       setIsSaving(false);
-      throw new Error('Failed to update org');
+      throw new Error('Failed to update workspace');
     }
 
-    await updateOrg(
+    await updateWorkspace(
       {
-        id: org.id,
+        id: ws.id,
         name,
       },
       {
         onSuccess: () => {
           setRootSegment(
-            orgId
+            wsId
               ? [
                   {
                     content: name,
-                    href: `/orgs/${orgId}`,
+                    href: `/workspaces/${wsId}`,
                   },
                   {
                     content: 'Settings',
-                    href: `/orgs/${orgId}/settings`,
+                    href: `/workspaces/${wsId}/settings`,
                   },
                 ]
               : []
           );
 
-          mutate('/api/orgs');
-          mutate(`/api/orgs/${orgId}`);
+          mutate('/api/workspaces');
+          mutate(`/api/workspaces/${wsId}`);
         },
         onCompleted: () => setIsSaving(false),
       }
@@ -93,19 +93,19 @@ const WorkspaceSettingsPage = () => {
   const handleDelete = async () => {
     setIsDeleting(true);
 
-    if (isSystemOrg) {
+    if (isSystemWs) {
       setIsDeleting(false);
       return;
     }
 
-    if (!deleteOrg || !org) {
+    if (!deleteWorkspace || !ws) {
       setIsDeleting(false);
-      throw new Error('Failed to delete org');
+      throw new Error('Failed to delete workspace');
     }
 
-    await deleteOrg(org.id, {
+    await deleteWorkspace(ws.id, {
       onSuccess: () => {
-        mutate('/api/orgs');
+        mutate('/api/workspaces');
         router.push('/home');
       },
       onCompleted: () => setIsDeleting(false),
@@ -114,9 +114,9 @@ const WorkspaceSettingsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Settings – ${org?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`Settings – ${ws?.name || 'Unnamed Workspace'}`} />
 
-      {orgId && (
+      {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">Settings</h1>
@@ -139,21 +139,19 @@ const WorkspaceSettingsPage = () => {
           <div className="grid max-w-xs gap-2">
             <TextInput
               label="Workspace Name"
-              placeholder={org?.name || name || 'Workspace Name'}
+              placeholder={ws?.name || name || 'Workspace Name'}
               value={name}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setName(e.currentTarget.value)
               }
-              // Disable this form if the current org is the root org (Tuturuuu)
-              // Which has an ID of '00000000-0000-0000-0000-000000000000'
-              disabled={isSystemOrg}
+              disabled={isSystemWs}
             />
           </div>
 
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
             This workspace was created{' '}
             <span className="font-semibold text-zinc-300">
-              {moment(org.created_at).fromNow()}
+              {moment(ws.created_at).fromNow()}
             </span>
             .
           </div>
@@ -162,12 +160,12 @@ const WorkspaceSettingsPage = () => {
 
           <button
             onClick={
-              isSystemOrg || isSaving || name === org?.name
+              isSystemWs || isSaving || name === ws?.name
                 ? undefined
                 : handleSave
             }
             className={`${
-              isSystemOrg || isSaving || name === org?.name
+              isSystemWs || isSaving || name === ws?.name
                 ? 'cursor-not-allowed opacity-50'
                 : 'hover:border-blue-300/30 hover:bg-blue-300/20'
             } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
@@ -184,9 +182,9 @@ const WorkspaceSettingsPage = () => {
 
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
             <button
-              onClick={isSystemOrg ? undefined : handleDelete}
+              onClick={isSystemWs ? undefined : handleDelete}
               className={`${
-                isSystemOrg
+                isSystemWs
                   ? 'cursor-not-allowed opacity-50'
                   : 'hover:border-red-300/30 hover:bg-red-300/20'
               } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition`}
