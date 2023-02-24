@@ -1,10 +1,10 @@
 import { Select } from '@mantine/core';
-import { useOrgs } from '../../hooks/useOrganizations';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useProjects } from '../../hooks/useProjects';
 import { useRouter } from 'next/router';
 import { BuildingOffice2Icon } from '@heroicons/react/24/solid';
-import OrgEditForm from '../forms/OrgEditForm';
 import { openModal } from '@mantine/modals';
+import WorkspaceEditForm from '../forms/WorkspaceEditForm';
 
 interface Props {
   showLabel?: boolean;
@@ -15,13 +15,13 @@ interface Props {
 const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   const router = useRouter();
 
-  const { isLoading, orgs, createOrg } = useOrgs();
-  const { orgId, setOrgId } = useProjects();
+  const { isLoading, workspaces, createWorkspace } = useWorkspaces();
+  const { wsId, setWsId } = useProjects();
 
-  const hasOrgs = orgs?.current && orgs.current.length > 0;
+  const hasWorkspaces = workspaces?.current && workspaces.current.length > 0;
 
-  const orgOptions = hasOrgs
-    ? orgs.current.map((o) => ({
+  const wsOptions = hasWorkspaces
+    ? workspaces.current.map((o) => ({
         value: o.id,
         label: o?.name || 'Unnamed Workspace',
       }))
@@ -32,19 +32,19 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
         },
       ];
 
-  const showEditOrgModal = () => {
+  const showEditWorkspaceModal = () => {
     openModal({
       title: <div className="font-semibold">New workspace</div>,
       centered: true,
-      children: <OrgEditForm onSubmit={createOrg} />,
+      children: <WorkspaceEditForm onSubmit={createWorkspace} />,
     });
   };
 
-  if (!isLoading && !hasOrgs)
+  if (!isLoading && !hasWorkspaces)
     return (
       <button
         className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
-        onClick={showEditOrgModal}
+        onClick={showEditWorkspaceModal}
       >
         <BuildingOffice2Icon className="w-4" />
         <div className="line-clamp-1">Create workspace</div>
@@ -54,14 +54,14 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   return (
     <Select
       label={showLabel ? 'Workspace' : undefined}
-      data={orgOptions}
-      value={orgId}
-      onChange={(orgId) => {
-        setOrgId(orgId || '');
+      data={wsOptions}
+      value={wsId}
+      onChange={(wsId) => {
+        setWsId(wsId || '');
         if (onChange) onChange();
-        router.push(`/orgs/${orgId}`);
+        router.push(`/workspaces/${wsId}`);
       }}
-      disabled={isLoading || !hasOrgs}
+      disabled={isLoading || !hasWorkspaces}
       classNames={{
         label: 'mb-1',
       }}

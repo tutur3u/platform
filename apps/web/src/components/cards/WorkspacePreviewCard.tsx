@@ -4,23 +4,23 @@ import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import useSWR, { mutate } from 'swr';
-import { Organization } from '../../types/primitives/Organization';
+import { Workspace } from '../../types/primitives/Workspace';
 import { Project } from '../../types/primitives/Project';
 import ProjectEditForm from '../forms/ProjectEditForm';
 
 interface Props {
-  org: Organization;
+  ws: Workspace;
 }
 
-const OrgPreviewCard = ({ org }: Props) => {
+const WorkspacePreviewCard = ({ ws }: Props) => {
   const { data: projects, error } = useSWR(
-    org?.id ? `/api/orgs/${org?.id}/projects` : null
+    ws?.id ? `/api/workspaces/${ws?.id}/projects` : null
   );
 
   const isLoading = !projects && !error;
 
-  const createProject = async (orgId: string, project: Partial<Project>) => {
-    const res = await fetch(`/api/orgs/${orgId}/projects`, {
+  const createProject = async (wsId: string, project: Partial<Project>) => {
+    const res = await fetch(`/api/workspaces/${wsId}/projects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ const OrgPreviewCard = ({ org }: Props) => {
     });
 
     if (res.status === 200) {
-      mutate(`/api/orgs/${orgId}/projects`);
+      mutate(`/api/workspaces/${wsId}/projects`);
       showNotification({
         title: 'Project created',
         color: 'teal',
@@ -45,31 +45,31 @@ const OrgPreviewCard = ({ org }: Props) => {
   };
 
   const showProjectEditForm = () => {
-    if (!org.id) return;
+    if (!ws.id) return;
     openModal({
       title: <div className="font-semibold">Create new project</div>,
       centered: true,
       children: (
         <ProjectEditForm
-          onSubmit={(project) => createProject(org.id, project)}
+          onSubmit={(project) => createProject(ws.id, project)}
         />
       ),
     });
   };
 
-  const isRoot = org?.id === '00000000-0000-0000-0000-000000000000';
+  const isRoot = ws?.id === '00000000-0000-0000-0000-000000000000';
 
   return (
     <div>
       <Link
-        href={`/orgs/${org.id}`}
+        href={`/workspaces/${ws.id}`}
         className={`${
           isRoot
             ? 'text-purple-200 hover:text-purple-300'
             : 'text-zinc-300 hover:text-blue-200'
         } text-2xl font-semibold transition duration-150`}
       >
-        {org?.name || `Unnamed Workspace`}
+        {ws?.name || `Unnamed Workspace`}
         {isRoot && (
           <Tooltip label="Verified workspace" withArrow>
             <CheckBadgeIcon className="ml-1 inline-block h-6 w-6 text-purple-300" />
@@ -96,7 +96,7 @@ const OrgPreviewCard = ({ org }: Props) => {
         {projects?.length > 3 && (
           <Link
             className="col-span-full flex cursor-pointer items-center justify-center rounded bg-zinc-500/10 p-4 text-center text-xl font-semibold text-zinc-300 transition duration-150 hover:bg-zinc-800"
-            href={`/orgs/${org.id}/projects`}
+            href={`/workspaces/${ws.id}/projects`}
           >
             View all projects
           </Link>
@@ -106,4 +106,4 @@ const OrgPreviewCard = ({ org }: Props) => {
   );
 };
 
-export default OrgPreviewCard;
+export default WorkspacePreviewCard;

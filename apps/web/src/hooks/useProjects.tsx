@@ -9,15 +9,15 @@ import {
 } from 'react';
 import { Project } from '../types/primitives/Project';
 import { showNotification } from '@mantine/notifications';
-import { useOrgs } from './useOrganizations';
+import { useWorkspaces } from './useWorkspaces';
 import { useRouter } from 'next/router';
-import { Organization } from '../types/primitives/Organization';
+import { Workspace } from '../types/primitives/Workspace';
 import { User } from '../types/primitives/User';
 
 const ProjectContext = createContext({
-  orgId: '',
-  org: {} as Organization,
-  isOrgLoading: true,
+  wsId: '',
+  ws: {} as Workspace,
+  isWsLoading: true,
 
   members: [] as User[],
   isMembersLoading: true,
@@ -25,8 +25,8 @@ const ProjectContext = createContext({
   projects: undefined as Project[] | undefined,
   isProjectsLoading: true,
 
-  setOrgId: (orgId: string) => {
-    console.log('setOrgId', orgId);
+  setWsId: (wsId: string) => {
+    console.log('setWsId', wsId);
   },
 
   createProject: async (
@@ -64,33 +64,33 @@ const ProjectContext = createContext({
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
-  const { orgs } = useOrgs();
-  const [orgId, setOrgId] = useState<string>('');
+  const { workspaces } = useWorkspaces();
+  const [wsId, setWsId] = useState<string>('');
 
   useEffect(() => {
-    if (!orgs?.current || orgs.current.length === 0) {
-      setOrgId('');
+    if (!workspaces?.current || workspaces.current.length === 0) {
+      setWsId('');
       return;
     }
 
-    const orgId = orgs.current[0].id;
-    setOrgId((prevId) => (prevId === orgId ? prevId : orgId));
-  }, [orgs]);
+    const wsId = workspaces.current[0].id;
+    setWsId((prevId) => (prevId === wsId ? prevId : wsId));
+  }, [workspaces]);
 
-  const { data: org, error: orgError } = useSWR(
-    orgId ? `/api/orgs/${orgId}` : null
+  const { data: ws, error: wsError } = useSWR(
+    wsId ? `/api/workspaces/${wsId}` : null
   );
 
-  const isOrgLoading = !org && !orgError;
+  const isWsLoading = !ws && !wsError;
 
   const { data: projects, error: projectsError } = useSWR<Project[]>(
-    orgId ? `/api/orgs/${orgId}/projects` : null
+    wsId ? `/api/workspaces/${wsId}/projects` : null
   );
 
   const isProjectsLoading = !projects && !projectsError;
 
   const { data: membersData, error: membersError } = useSWR(
-    orgId ? `/api/orgs/${orgId}/members` : null
+    wsId ? `/api/workspaces/${wsId}/members` : null
   );
 
   const isMembersLoading = !membersData && !membersError;
@@ -104,7 +104,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/orgs/${orgId}/projects`, {
+      const res = await fetch(`/api/workspaces/${wsId}/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create project');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/orgs/${orgId}/projects`);
+      mutate(`/api/workspaces/${wsId}/projects`);
 
       const data = await res.json();
       router.push(`/projects/${data.id}`);
@@ -146,7 +146,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update project');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/orgs/${orgId}/projects`);
+      mutate(`/api/workspaces/${wsId}/projects`);
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -174,7 +174,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete project');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/orgs/${orgId}/projects`);
+      mutate(`/api/workspaces/${wsId}/projects`);
     } catch (e: any) {
       if (options?.onError) options.onError();
       showNotification({
@@ -188,9 +188,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const values = {
-    orgId,
-    org: org || {},
-    isOrgLoading,
+    wsId,
+    ws: ws || {},
+    isWsLoading,
 
     members: membersData?.members || [],
     isMembersLoading,
@@ -198,7 +198,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     projects: projects || [],
     isProjectsLoading,
 
-    setOrgId,
+    setWsId,
     createProject,
     updateProject,
     deleteProject,

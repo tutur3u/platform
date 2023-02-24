@@ -16,33 +16,35 @@ const ProjectMembersPage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { data: orgData, error: orgError } = useSWR(
-    project?.orgs?.id ? `/api/orgs/${project.orgs?.id}` : null
+  const { data: ws, error: wsError } = useSWR(
+    project?.workspaces?.id ? `/api/workspaces/${project.workspaces?.id}` : null
   );
 
   const { data: membersData, error: membersError } = useSWR(
-    project?.orgs?.id ? `/api/orgs/${project.orgs?.id}/members` : null
+    project?.workspaces?.id
+      ? `/api/workspaces/${project.workspaces?.id}/members`
+      : null
   );
 
-  const isLoadingProject = !project && !projectError;
-  const isLoadingOrg = !orgData && !orgError;
-  const isLoadingMembers = !membersData && !membersError;
+  const isProjectLoading = !project && !projectError;
+  const isWsLoading = !ws && !wsError;
+  const isMembersLoading = !membersData && !membersError;
 
-  const isLoading = isLoadingProject || isLoadingOrg || isLoadingMembers;
+  const isLoading = isProjectLoading || isWsLoading || isMembersLoading;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
-      project?.orgs?.id
+      project?.workspaces?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Workspace',
-              href: `/orgs/${project.orgs.id}`,
+              content: project?.workspaces?.name || 'Unnamed Workspace',
+              href: `/workspaces/${project.workspaces.id}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${project?.orgs?.id}/projects`,
+              href: `/workspaces/${project?.workspaces?.id}/projects`,
             },
             {
               content: project?.name || 'Untitled Project',
@@ -53,11 +55,16 @@ const ProjectMembersPage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
+  }, [
+    projectId,
+    project?.workspaces?.id,
+    project?.workspaces?.name,
+    project?.name,
+  ]);
 
   useEffect(() => {
-    if (orgData?.error || orgError) router.push('/');
-  }, [orgData, orgError, router]);
+    if (ws?.error || wsError) router.push('/');
+  }, [ws, wsError, router]);
 
   const user = useUser();
 

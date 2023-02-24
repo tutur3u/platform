@@ -17,46 +17,46 @@ import { User } from '../../../types/primitives/User';
 import SelectUserForm from '../../../components/forms/SelectUserForm';
 import HeaderX from '../../../components/metadata/HeaderX';
 
-const OrganizationMembersPage = () => {
+const WorkspaceMembersPage = () => {
   const router = useRouter();
-  const { orgId } = router.query;
+  const { wsId } = router.query;
 
-  const { data: orgData, error: orgError } = useSWR(
-    orgId ? `/api/orgs/${orgId}` : null
+  const { data: ws, error: wsError } = useSWR(
+    wsId ? `/api/workspaces/${wsId}` : null
   );
 
   const { data: membersData, error: membersError } = useSWR(
-    orgId ? `/api/orgs/${orgId}/members` : null
+    wsId ? `/api/workspaces/${wsId}/members` : null
   );
 
-  const isLoadingOrg = !orgData && !orgError;
-  const isLoadingMembers = !membersData && !membersError;
+  const isWsLoading = !ws && !wsError;
+  const isMembersLoading = !membersData && !membersError;
 
-  const isLoading = isLoadingOrg || isLoadingMembers;
+  const isLoading = isWsLoading || isMembersLoading;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
-      orgId
+      wsId
         ? [
             {
-              content: orgData?.name ?? 'Loading...',
-              href: `/orgs/${orgId}`,
+              content: ws?.name ?? 'Loading...',
+              href: `/workspaces/${wsId}`,
             },
             {
               content: 'Members',
-              href: `/orgs/${orgId}/members`,
+              href: `/workspaces/${wsId}/members`,
             },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, orgData?.name]);
+  }, [wsId, ws?.name]);
 
   useEffect(() => {
-    if (orgData?.error || orgError) router.push('/');
-  }, [orgData, orgError, router]);
+    if (ws?.error || wsError) router.push('/');
+  }, [ws, wsError, router]);
 
   const user = useUser();
 
@@ -66,7 +66,7 @@ const OrganizationMembersPage = () => {
     if (!member?.id) return;
 
     const response = await fetch(
-      `/api/orgs/${orgId}/members/${member.id}${
+      `/api/workspaces/${wsId}/members/${member.id}${
         invited ? '?invited=true' : ''
       }`,
       {
@@ -75,7 +75,7 @@ const OrganizationMembersPage = () => {
     );
 
     if (response.ok) {
-      mutate(`/api/orgs/${orgId}/members`);
+      mutate(`/api/workspaces/${wsId}/members`);
       showNotification({
         title: invited ? 'Invitation revoked' : 'Member removed',
         message: invited
@@ -105,15 +105,15 @@ const OrganizationMembersPage = () => {
     openModal({
       title: <div className="font-semibold">Invite a member</div>,
       centered: true,
-      children: <SelectUserForm orgId={orgId as string} />,
+      children: <SelectUserForm wsId={wsId as string} />,
     });
   };
 
   return (
     <>
-      <HeaderX label={`Members – ${orgData?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`Members – ${ws?.name || 'Unnamed Workspace'}`} />
 
-      {orgId && (
+      {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
@@ -129,7 +129,7 @@ const OrganizationMembersPage = () => {
 
       <Divider className="my-4" />
 
-      {orgId && (
+      {wsId && (
         <button
           onClick={showSelectUserForm}
           className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
@@ -247,8 +247,8 @@ const OrganizationMembersPage = () => {
   );
 };
 
-OrganizationMembersPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceMembersPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default OrganizationMembersPage;
+export default WorkspaceMembersPage;

@@ -78,7 +78,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const { segments } = useAppearance();
 
   const {
-    query: { orgId, projectId },
+    query: { wsId, projectId },
   } = router;
 
   const tabs =
@@ -88,7 +88,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
       ? workspaceTabs
       : projectTabs;
   const path =
-    mode === 'workspace' ? `/orgs/${orgId}` : `/projects/${projectId}`;
+    mode === 'workspace' ? `/workspaces/${wsId}` : `/projects/${projectId}`;
 
   return (
     <SidebarLayout>

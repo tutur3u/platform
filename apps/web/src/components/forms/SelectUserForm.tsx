@@ -12,12 +12,12 @@ import {
 } from '../../utils/email-helper';
 
 interface SelectUserFormProps {
-  orgId: string;
+  wsId: string;
 }
 
 type UserWithValue = User & { value: string };
 
-const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
+const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
   const [value, setValue] = useState('');
   const [debounced] = useDebouncedValue(value, 300);
 
@@ -99,7 +99,7 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
   const handleInvite = async () => {
     setInviting(true);
 
-    const response = await fetch(`/api/orgs/${orgId}/members`, {
+    const response = await fetch(`/api/workspaces/${wsId}/members`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ const SelectUserForm = ({ orgId }: SelectUserFormProps) => {
     });
 
     if (response.ok) {
-      mutate(`/api/orgs/${orgId}/members`);
+      mutate(`/api/workspaces/${wsId}/members`);
       setValue('');
       setSelectedUser(null);
       closeAllModals();

@@ -13,47 +13,47 @@ import ProjectEditForm from '../../../components/forms/ProjectEditForm';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 
-const OrganizationProjectsPage = () => {
+const WorkspaceProjectsPage = () => {
   const router = useRouter();
-  const { orgId } = router.query;
+  const { wsId } = router.query;
 
-  const { data: orgData, error: orgError } = useSWR(
-    orgId ? `/api/orgs/${orgId}` : null
+  const { data: ws, error: wsError } = useSWR(
+    wsId ? `/api/workspaces/${wsId}` : null
   );
 
   const { data: projectsData, error: projectsError } = useSWR(
-    orgId ? `/api/orgs/${orgId}/projects` : null
+    wsId ? `/api/workspaces/${wsId}/projects` : null
   );
 
-  const isLoadingOrg = !orgData && !orgError;
-  const isLoadingprojects = !projectsData && !projectsError;
+  const isWsLoading = !ws && !wsError;
+  const isProjectsLoading = !projectsData && !projectsError;
 
-  const isLoading = isLoadingOrg || isLoadingprojects;
+  const isLoading = isWsLoading || isProjectsLoading;
 
   const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
-      orgId
+      wsId
         ? [
             {
-              content: orgData?.name ?? 'Loading...',
-              href: `/orgs/${orgId}`,
+              content: ws?.name ?? 'Loading...',
+              href: `/workspaces/${wsId}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${orgId}/projects`,
+              href: `/workspaces/${wsId}/projects`,
             },
           ]
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, orgData?.name]);
+  }, [wsId, ws?.name]);
 
   if (isLoading) return <div>Loading...</div>;
 
-  const createProject = async (orgId: string, project: Partial<Project>) => {
-    const res = await fetch(`/api/orgs/${orgId}/projects`, {
+  const createProject = async (wsId: string, project: Partial<Project>) => {
+    const res = await fetch(`/api/workspaces/${wsId}/projects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ const OrganizationProjectsPage = () => {
     });
 
     if (res.status === 200) {
-      mutate(`/api/orgs/${orgId}/projects`);
+      mutate(`/api/workspaces/${wsId}/projects`);
       showNotification({
         title: 'Project created',
         color: 'teal',
@@ -86,7 +86,7 @@ const OrganizationProjectsPage = () => {
       centered: true,
       children: (
         <ProjectEditForm
-          onSubmit={(project) => createProject(orgId as string, project)}
+          onSubmit={(project) => createProject(wsId as string, project)}
         />
       ),
     });
@@ -94,9 +94,9 @@ const OrganizationProjectsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Projects – ${orgData?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`Projects – ${ws?.name || 'Unnamed Workspace'}`} />
 
-      {orgId && (
+      {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
@@ -114,7 +114,7 @@ const OrganizationProjectsPage = () => {
 
       <Divider className="my-4" />
 
-      {orgId && (
+      {wsId && (
         <button
           onClick={showProjectEditForm}
           className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
@@ -156,8 +156,8 @@ const OrganizationProjectsPage = () => {
   );
 };
 
-OrganizationProjectsPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceProjectsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default OrganizationProjectsPage;
+export default WorkspaceProjectsPage;

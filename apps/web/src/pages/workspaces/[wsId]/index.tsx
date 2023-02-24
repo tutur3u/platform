@@ -7,16 +7,16 @@ import { useUserList } from '../../../hooks/useUserList';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 
-const OrganizationOverviewPage = () => {
+const WorkspaceOverviewPage = () => {
   const router = useRouter();
   const { updateUsers } = useUserList();
 
-  const { orgId } = router.query;
+  const { wsId } = router.query;
 
-  const { data, error } = useSWR(orgId ? `/api/orgs/${orgId}` : null);
+  const { data, error } = useSWR(wsId ? `/api/workspaces/${wsId}` : null);
 
   const { data: membersData } = useSWR(
-    orgId ? `/api/orgs/${orgId}/members` : null
+    wsId ? `/api/workspaces/${wsId}/members` : null
   );
 
   useEffect(() => {
@@ -50,11 +50,11 @@ const OrganizationOverviewPage = () => {
       [
         {
           content: data?.name ?? 'Loading...',
-          href: `/orgs/${data?.id}`,
+          href: `/workspaces/${data?.id}`,
         },
         {
           content: 'Overview',
-          href: `/orgs/${data?.id}`,
+          href: `/workspaces/${data?.id}`,
         },
       ],
       [data?.id]
@@ -70,7 +70,7 @@ const OrganizationOverviewPage = () => {
     <>
       <HeaderX label={`Overview – ${data?.name || 'Unnamed Workspace'}`} />
 
-      {orgId && (
+      {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">Overview</h1>
@@ -90,8 +90,8 @@ const OrganizationOverviewPage = () => {
   );
 };
 
-OrganizationOverviewPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceOverviewPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout>{page}</NestedLayout>;
 };
 
-export default OrganizationOverviewPage;
+export default WorkspaceOverviewPage;

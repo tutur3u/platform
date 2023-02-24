@@ -4,7 +4,7 @@ import { useUser } from '@supabase/auth-helpers-react';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { useUserData } from '../../hooks/useUserData';
 import LoadingIndicator from '../common/LoadingIndicator';
-import { useOrgs } from '../../hooks/useOrganizations';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
@@ -70,17 +70,21 @@ const OnboardingForm = () => {
   };
 
   const [workspaceName, setWorkspaceName] = useState('');
-  const { isLoading: isOrgsLoading, orgs, createOrg } = useOrgs();
+  const {
+    isLoading: isWsLoading,
+    workspaces,
+    createWorkspace,
+  } = useWorkspaces();
 
   useEffect(() => {
-    if (!orgs || !orgs?.current?.length) return;
+    if (!workspaces || !workspaces?.current?.length) return;
     if (!profileCompleted) return;
 
     // If there is a redirectedFrom URL, redirect to it
     // Otherwise, redirect to the homepage
     const { redirectedFrom: nextUrl } = router.query;
     router.push(nextUrl ? nextUrl.toString() : '/');
-  }, [router, orgs, profileCompleted]);
+  }, [router, workspaces, profileCompleted]);
 
   return (
     <>
@@ -88,8 +92,10 @@ const OnboardingForm = () => {
         <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {!user ||
           isUserLoading ||
-          isOrgsLoading ||
-          (orgs && orgs?.current?.length > 0 && profileCompleted) ? (
+          isWsLoading ||
+          (workspaces &&
+            workspaces?.current?.length > 0 &&
+            profileCompleted) ? (
             <LoadingIndicator className="h-8 w-8" />
           ) : (
             <>
@@ -192,8 +198,8 @@ const OnboardingForm = () => {
                       ? async () => {
                           try {
                             setSaving(true);
-                            await createOrg({
-                              id: 'new-org',
+                            await createWorkspace({
+                              id: 'new-ws',
                               name: workspaceName,
                             });
                           } catch (error) {

@@ -31,15 +31,15 @@ const ProjectFinancePage = () => {
 
   useEffect(() => {
     setRootSegment(
-      project?.orgs?.id
+      project?.workspaces?.id
         ? [
             {
-              content: project?.orgs?.name || 'Unnamed Workspace',
-              href: `/orgs/${project.orgs.id}`,
+              content: project?.workspaces?.name || 'Unnamed Workspace',
+              href: `/workspaces/${project.workspaces.id}`,
             },
             {
               content: 'Projects',
-              href: `/orgs/${project?.orgs?.id}/projects`,
+              href: `/workspaces/${project?.workspaces?.id}/projects`,
             },
             {
               content: project?.name || 'Untitled Project',
@@ -50,7 +50,12 @@ const ProjectFinancePage = () => {
         : []
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project?.orgs?.id, project?.orgs?.name, project?.name]);
+  }, [
+    projectId,
+    project?.workspaces?.id,
+    project?.workspaces?.name,
+    project?.name,
+  ]);
 
   const { createWallet, updateWallet, deleteWallet } = useWallets();
 
