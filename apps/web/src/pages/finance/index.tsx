@@ -45,6 +45,7 @@ const FinancePage: PageWithLayoutProps = () => {
 
   const [projectId, setProjectId] = useState<string | null>();
   const [walletId, setWalletId] = useState<string | null>();
+  const [wallet, setWallet] = useState<Wallet>();
 
   const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
     projectId ? `/api/projects/${projectId}/wallets` : null
@@ -61,6 +62,13 @@ const FinancePage: PageWithLayoutProps = () => {
   );
 
   const isTransactionsLoading = !transactions && !transactionsError;
+
+  useEffect(() => {
+    if (walletId) {
+      const wallet = wallets?.find((wallet) => wallet.id === walletId);
+      if (wallet) setWallet(wallet);
+    }
+  }, [walletId, wallets]);
 
   const showEditWalletModal = (wallet?: Wallet) => {
     if (!projectId) return;
@@ -149,29 +157,40 @@ const FinancePage: PageWithLayoutProps = () => {
 
           <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
             {wallets &&
-              wallets.map((wallet, index) => (
+              wallets.map((wallet) => (
                 <WalletTab
-                  key={index}
+                  key={wallet.id}
                   wallet={wallet}
                   onClick={() => setWalletId(wallet.id)}
+                  isActive={wallet.id === walletId}
                 />
               ))}
           </div>
         </div>
 
-        <div className="p-5">
-          <button
-            onClick={() => showEditTransactionModal()}
-            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
-          >
-            Add transaction
-          </button>
+        <div className="w-full p-5">
+          <div className="flex w-full justify-between">
+            <button
+              onClick={() => showEditTransactionModal()}
+              className="mb-7 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            >
+              Add transaction
+            </button>
+            {wallet && (
+              <button
+                onClick={() => showEditWalletModal(wallet)}
+                className="mb-7 flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+              >
+                Edit wallet
+              </button>
+            )}
+          </div>
 
-          <div className="scrollbar-none flex flex-col gap-5 overflow-y-scroll">
+          <div className="grid grid-cols-2 gap-5 md:grid-cols-1 md:gap-4 lg:grid-cols-2 xl:grid-cols-4">
             {transactions &&
-              transactions.map((transaction, index) => (
+              transactions.map((transaction) => (
                 <TransactionTab
-                  key={index}
+                  key={transaction.id}
                   transaction={transaction}
                   onClick={() => showEditTransactionModal(transaction)}
                 />

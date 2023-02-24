@@ -46,6 +46,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to create transaction',
@@ -65,6 +66,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
         `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
@@ -77,6 +81,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to update transaction',
@@ -101,6 +106,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete transaction');
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
+      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to delete transaction',
