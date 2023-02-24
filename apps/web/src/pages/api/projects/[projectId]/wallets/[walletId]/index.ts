@@ -8,6 +8,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       throw new Error('Invalid ID');
 
     switch (req.method) {
+      case 'GET':
+        return await fetchWallet(req, res, walletId);
+
       case 'PUT':
         return await updateWallet(req, res, walletId);
 
@@ -30,6 +33,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 export default handler;
+
+const fetchWallet = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  walletId: string
+) => {
+  const supabase = createServerSupabaseClient({ req, res });
+
+  const { data, error } = await supabase
+    .from('project_wallets')
+    .select('id, name, balance')
+    .eq('id', walletId)
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data) return res.status(404).json({ error: 'Not found' });
+
+  return res.status(200).json(data);
+};
 
 const updateWallet = async (
   req: NextApiRequest,
@@ -67,7 +89,10 @@ const deleteWallet = async (
     res,
   });
 
-  const { error } = await supabase.from('project_wallets').delete().eq('id', walletId);
+  const { error } = await supabase
+    .from('project_wallets')
+    .delete()
+    .eq('id', walletId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

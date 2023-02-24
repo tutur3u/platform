@@ -2,23 +2,23 @@ import Link from 'next/link';
 import { Document } from '../../types/primitives/Document';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import { DocumentPlusIcon, Squares2X2Icon } from '@heroicons/react/24/solid';
+import useSWR from 'swr';
 
 interface Props {
   projectId?: string;
   document: Document;
+  hideProject?: boolean;
 }
 
-const DocumentCard = ({ projectId, document }: Props) => {
+const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
   const { id, name, content, project_id, created_at } = document;
 
-  const hasProjectId = !!(projectId || project_id);
-  const hasId = !!id;
+  const pid = projectId ?? project_id;
+  const showProject = !hideProject && pid;
 
-  const href =
-    hasProjectId && hasId
-      ? `/projects/${projectId ?? project_id}/documents/${id}`
-      : '';
+  const href = id && showProject ? `/projects/${pid}/documents/${id}` : '';
+  const { data: project } = useSWR(pid ? `/api/projects/${pid}` : null);
 
   return (
     <Link
@@ -47,9 +47,18 @@ const DocumentCard = ({ projectId, document }: Props) => {
         )}
       </div>
 
-      <div className="mt-8 justify-self-end">
-        <div className="flex w-fit gap-2 rounded-lg bg-blue-300/10 px-4 py-2 font-semibold text-blue-300">
-          <DocumentPlusIcon className="w-6" /> {moment(created_at).fromNow()}
+      <div className="mt-8 flex flex-wrap gap-2 justify-self-end font-semibold">
+        {hideProject || (
+          <div className="flex max-w-full gap-2 rounded-lg bg-purple-300/10 px-4 py-2 text-purple-300">
+            <Squares2X2Icon className="w-6 flex-none" />
+            <div className="line-clamp-1">
+              {project?.name || 'Untitled Project'}
+            </div>
+          </div>
+        )}
+        <div className="flex max-w-full gap-2 rounded-lg bg-blue-300/10 px-4 py-2 text-blue-300">
+          <DocumentPlusIcon className="w-6 flex-none" />
+          <div className="line-clamp-1">{moment(created_at).fromNow()}</div>
         </div>
       </div>
     </Link>

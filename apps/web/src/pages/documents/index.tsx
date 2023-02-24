@@ -110,7 +110,10 @@ const DocumentsPage: PageWithLayoutProps = () => {
         )}
 
         <PlusCardButton onClick={showDocumentEditForm} />
-        {documents && documents?.map((doc) => <DocumentCard document={doc} />)}
+        {documents &&
+          documents?.map((doc) => (
+            <DocumentCard document={doc} hideProject={false} />
+          ))}
       </div>
     </>
   );
