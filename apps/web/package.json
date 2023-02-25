@@ -51,7 +51,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "18.2.0",
     "react-resizable": "^3.0.4",
-    "swr": "^2.0.3",
+    "swr": "^2.0.4",
     "ui": "workspace:*",
     "uuid": "^9.0.0"
   },
