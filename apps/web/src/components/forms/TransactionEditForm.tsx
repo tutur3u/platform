@@ -42,15 +42,6 @@ const TransactionEditForm = ({
 
   return (
     <>
-      {transaction?.id && (
-        <TextInput
-          label="Transaction ID"
-          value={transaction?.id}
-          className="mb-2"
-          disabled
-        />
-      )}
-
       <TextInput
         label="Transaction name"
         placeholder="Enter transaction name"
