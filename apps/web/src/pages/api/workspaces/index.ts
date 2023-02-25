@@ -16,7 +16,7 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const currentWorkspaces = supabase
     .from('workspaces')
-    .select('id, name')
+    .select('id, name, workspace_members!inner(ws_id)')
     .order('created_at');
 
   const invitedWorkspaces = supabase

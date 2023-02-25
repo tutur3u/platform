@@ -19,5 +19,8 @@
     // ".gitignore": true,
     //* Documentation
     // "README.md": true
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "mtxr.sqltools"
   }
 }
