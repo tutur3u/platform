@@ -92,7 +92,11 @@ const NestedLayout: FC<NestedLayoutProps> = ({
 
   return (
     <SidebarLayout>
-      <nav className="w-full border-b border-zinc-800">
+      <nav
+        className={`${
+          mode === 'document' ? 'h-16' : 'h-25'
+        } w-full flex-none border-b border-zinc-800`}
+      >
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
           {onFavorite && (
             <ActionIcon color="yellow" onClick={onFavorite}>
@@ -155,7 +159,13 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           ))}
         </div>
       </nav>
-      <div className="m-4 md:mx-8 lg:mx-16 xl:mx-32">{children}</div>
+      <div
+        className={`${
+          mode === 'document' ? 'h-[calc(100vh-4rem)]' : 'h-[calc(100vh-13rem)]'
+        } p-4 md:px-8 lg:px-16 xl:px-32`}
+      >
+        {children}
+      </div>
     </SidebarLayout>
   );
 };
