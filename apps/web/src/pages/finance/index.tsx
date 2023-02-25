@@ -18,6 +18,7 @@ import NestedLayout from '../../components/layouts/NestedLayout';
 import TransactionEditForm from '../../components/forms/TransactionEditForm';
 import { useTransactions } from '../../hooks/useTransactions';
 import TransactionTab from '../../components/finance/transactions/TransactionTab';
+import { PlusIcon } from '@heroicons/react/24/solid';
 
 const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
@@ -133,10 +134,10 @@ const FinancePage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="flex h-full w-full gap-4">
-      <div className="flex h-full w-72 flex-col gap-2">
+    <div className="flex h-full w-full flex-col gap-4 md:flex-row">
+      <div className="flex flex-col gap-2 md:h-full md:w-72">
         <Select
-          label="Select project"
+          label="Project"
           placeholder="Select project"
           data={
             projects
@@ -156,30 +157,62 @@ const FinancePage: PageWithLayoutProps = () => {
         {projectId && (
           <button
             onClick={() => showEditWalletModal()}
-            className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
+            className="w-full rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
           >
             Create wallet
           </button>
         )}
 
-        <Divider variant="dashed" className="my-1 w-full" />
+        <Divider className="my-1 w-full" />
 
-        <div className="scrollbar-none flex flex-col gap-4 overflow-y-scroll">
+        <Select
+          label="Wallet"
+          placeholder="Select wallet"
+          data={
+            wallets
+              ? wallets.map((wallet) => ({
+                  label: wallet.name,
+                  value: wallet.id,
+                }))
+              : []
+          }
+          value={walletId as string | undefined}
+          onChange={(wid) => {
+            setWalletId(wid);
+          }}
+        />
+
+        <Divider variant="dashed" className="my-1 hidden w-full md:block" />
+
+        <div className="scrollbar-none hidden flex-col gap-4 overflow-y-scroll md:flex">
           {wallets &&
             wallets.map((wallet) => (
               <WalletTab
                 key={wallet.id}
                 wallet={wallet}
                 onClick={() => setWalletId(wallet.id)}
-                isActive={wallet.id === walletId}
               />
             ))}
         </div>
       </div>
 
       {walletId ? (
-        <div className="flex h-full w-full flex-col gap-4 rounded-lg border border-zinc-800 p-4">
-          <div className="flex w-full flex-initial justify-between">
+        <div className="flex h-full w-full flex-col gap-4 rounded-lg border-zinc-800 md:border md:p-4">
+          <div className="hidden rounded-lg bg-zinc-900 p-4 md:block">
+            <h1 className="text-2xl font-bold">
+              {wallet?.name || 'Untitled Wallet'}
+            </h1>
+            <p className="text-xl text-zinc-400">
+              {Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(wallet?.balance || 0)}
+            </p>
+          </div>
+
+          <Divider className="hidden w-full md:block" />
+
+          <div className="flex w-full justify-between">
             <button
               onClick={() => showEditTransactionModal()}
               className="flex items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
@@ -196,7 +229,7 @@ const FinancePage: PageWithLayoutProps = () => {
             )}
           </div>
 
-          <div className="grid max-h-full grid-cols-2 gap-5 overflow-y-auto md:grid-cols-1 md:gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          <div className="grid max-h-full gap-4 overflow-y-auto md:grid-cols-2 md:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
             {transactions &&
               transactions.map((transaction) => (
                 <TransactionTab
@@ -209,7 +242,7 @@ const FinancePage: PageWithLayoutProps = () => {
         </div>
       ) : (
         <div className="flex w-full items-center justify-center rounded-lg border border-zinc-800 p-4 md:p-8">
-          <div className="text-2xl font-semibold text-zinc-500">
+          <div className="text-center font-semibold text-zinc-500 md:text-2xl">
             Select a wallet to view transactions.
           </div>
         </div>

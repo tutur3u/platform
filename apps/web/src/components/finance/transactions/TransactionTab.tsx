@@ -17,12 +17,13 @@ export default function TransactionTab({
   return (
     <button
       onClick={onClick}
-      className={`h-fit w-full rounded-lg transition hover:cursor-pointer ${
+      className={`w-full rounded-lg transition hover:cursor-pointer ${
         transaction.amount < 0 ? expenseCss : incomeCss
       }`}
     >
-      <div className="font-semibold">{transaction.name}</div>
+      <div className="font-semibold">{transaction?.name || 'Unknown'}</div>
       <div className=" text-2xl font-bold">
+        {transaction.amount >= 0 ? '+' : '-'}
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',

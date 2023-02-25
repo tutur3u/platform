@@ -28,6 +28,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create wallet');
       mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to create wallet',
@@ -57,6 +58,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update wallet');
       mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to update wallet',
@@ -77,6 +79,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete wallet');
       mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
     } catch (e: any) {
       showNotification({
         title: 'Failed to delete wallet',
