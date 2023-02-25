@@ -180,9 +180,10 @@ const FinancePage: PageWithLayoutProps = () => {
           onChange={(wid) => {
             setWalletId(wid);
           }}
+          className="md:hidden"
         />
 
-        <Divider variant="dashed" className="my-1 hidden w-full md:block" />
+        <Divider variant="dashed" className="my-1 w-full md:hidden" />
 
         <div className="scrollbar-none hidden flex-col gap-4 overflow-y-scroll md:flex">
           {wallets &&
