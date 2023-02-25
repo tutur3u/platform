@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect } from 'react';
 import { UserData } from '../types/primitives/UserData';
 import useSWR, { mutate } from 'swr';
 import { useUser } from '@supabase/auth-helpers-react';
+import { DEV_MODE } from '../constants/common';
 
 const UserDataContext = createContext({
   isLoading: true,
@@ -19,6 +20,18 @@ export const UserDataProvider = ({
   const { data, error } = useSWR(user ? '/api/user' : null);
 
   const isLoading = !data && !error;
+
+  useEffect(() => {
+    const setupLocalEnv = async () => {
+      // Dynamically import the local environment helper.
+      const { setup } = await import('../utils/dev/local-environment-helper');
+
+      // Setup the local environment.
+      await setup();
+    };
+
+    if (DEV_MODE && user) setupLocalEnv();
+  }, [user]);
 
   useEffect(() => {
     if (error) {
