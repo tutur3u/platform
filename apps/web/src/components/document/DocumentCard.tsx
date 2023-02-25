@@ -9,9 +9,15 @@ interface Props {
   projectId?: string;
   document: Document;
   hideProject?: boolean;
+  mode: 'list' | 'grid';
 }
 
-const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
+const DocumentCard = ({
+  projectId,
+  document,
+  hideProject = true,
+  mode,
+}: Props) => {
   const { id, name, content, project_id, created_at } = document;
 
   const pid = projectId ?? project_id;
@@ -24,7 +30,9 @@ const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
     <Link
       href={href}
       key={`doc-${id}`}
-      className="relative flex flex-col justify-between rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80"
+      className={`flex ${
+        mode === 'list' ? 'items-center gap-4' : 'flex-col'
+      } relative flex justify-between rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80`}
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
@@ -47,7 +55,11 @@ const DocumentCard = ({ projectId, document, hideProject = true }: Props) => {
         )}
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-2 justify-self-end text-sm font-semibold">
+      <div
+        className={`${
+          mode === 'grid' && 'mt-8'
+        } flex flex-wrap items-center gap-2 justify-self-end text-sm font-semibold`}
+      >
         {hideProject || (
           <div className="flex max-w-full items-center gap-1 rounded-lg bg-purple-300/10 px-2 py-1.5 text-purple-300">
             <Squares2X2Icon className="w-5 flex-none" />

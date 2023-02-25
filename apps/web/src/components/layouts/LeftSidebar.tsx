@@ -447,7 +447,9 @@ function LeftSidebar({ className }: SidebarProps) {
           <Divider className="my-2" variant="dashed" />
 
           <div className="mx-2 flex items-center justify-center gap-2">
-            {leftSidebarPref.main === 'open' && <WorkspaceSelector />}
+            {leftSidebarPref.main === 'open' && (
+              <WorkspaceSelector className="w-full md:w-auto" />
+            )}
 
             <Popover
               opened={userPopover}

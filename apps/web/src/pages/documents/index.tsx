@@ -1,4 +1,4 @@
-import { ReactElement, useEffect } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useAppearance } from '../../hooks/useAppearance';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
@@ -8,12 +8,17 @@ import useSWR from 'swr';
 import { Document } from '../../types/primitives/Document';
 import { useProjects } from '../../hooks/useProjects';
 import NestedLayout from '../../components/layouts/NestedLayout';
-import { Divider } from '@mantine/core';
+import { Divider, Loader } from '@mantine/core';
 import PlusCardButton from '../../components/common/PlusCardButton';
 import { openModal } from '@mantine/modals';
 import DocumentEditForm from '../../components/forms/DocumentEditForm';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
+import {
+  DocumentPlusIcon,
+  ListBulletIcon,
+  Squares2X2Icon,
+} from '@heroicons/react/24/solid';
 
 const DocumentsPage: PageWithLayoutProps = () => {
   const router = useRouter();
@@ -87,32 +92,72 @@ const DocumentsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const [creating, setCreating] = useState(false);
+  const [mode, setMode] = useState<'list' | 'grid'>('grid');
+
   return (
     <>
       <HeaderX label="Documents" />
 
-      <div className="rounded-lg bg-zinc-900 p-4">
-        <h1 className="text-2xl font-bold">
+      <div className="flex flex-col items-center gap-4 md:flex-row">
+        <h1 className="w-full flex-grow rounded-lg bg-zinc-900 p-4 text-2xl font-bold md:w-auto">
           Documents{' '}
           <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
             {documents?.length || 0}
           </span>
         </h1>
+
+        <div className="flex gap-4">
+          <button
+            onClick={showDocumentEditForm}
+            className="flex flex-none items-center gap-1 rounded bg-blue-300/20 p-4 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+          >
+            {creating ? 'Creating document' : 'New document'}{' '}
+            {creating ? (
+              <Loader className="ml-1 h-4 w-4" />
+            ) : (
+              <DocumentPlusIcon className="h-4 w-4" />
+            )}
+          </button>
+          <div className="flex gap-2 rounded-lg border border-zinc-800 p-2">
+            <button
+              className={`${
+                mode === 'list' ? 'bg-zinc-800' : 'text-zinc-700'
+              } h-fit rounded-lg p-2 transition`}
+              onClick={() => setMode('list')}
+            >
+              <ListBulletIcon className="h-6 w-6" />
+            </button>
+            <button
+              className={`${
+                mode === 'grid' ? 'bg-zinc-800' : 'text-zinc-700'
+              } h-fit rounded-lg p-2 transition`}
+              onClick={() => setMode('grid')}
+            >
+              <Squares2X2Icon className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <Divider className="my-4" />
 
-      <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div
+        className={`grid ${
+          mode === 'list'
+            ? 'grid-cols-1'
+            : 'md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+        } mt-2 gap-4`}
+      >
         {documents && documents.length === 0 && (
           <div className="col-span-full text-zinc-500">
             No documents on this workspace.
           </div>
         )}
 
-        <PlusCardButton onClick={showDocumentEditForm} />
         {documents &&
           documents?.map((doc) => (
-            <DocumentCard document={doc} hideProject={false} />
+            <DocumentCard document={doc} hideProject={false} mode={mode} />
           ))}
       </div>
     </>

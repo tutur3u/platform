@@ -37,9 +37,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
-            amount:
-              (transaction?.amount || 0) *
-              (transaction?.type === 'income' ? 1 : -1),
+            amount: transaction?.amount || 0,
           }),
         }
       );
@@ -73,9 +71,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             name: transaction?.name || '',
             description: transaction?.description || '',
-            amount:
-              (transaction?.amount || 0) *
-              (transaction?.type === 'income' ? 1 : -1),
+            amount: transaction?.amount || 0,
           }),
         }
       );
