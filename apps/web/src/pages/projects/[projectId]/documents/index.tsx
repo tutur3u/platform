@@ -5,7 +5,11 @@ import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { Divider, Loader } from '@mantine/core';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import {
+  DocumentPlusIcon,
+  ListBulletIcon,
+  Squares2X2Icon,
+} from '@heroicons/react/24/solid';
 import { Document } from '../../../../types/primitives/Document';
 import { showNotification } from '@mantine/notifications';
 import DocumentCard from '../../../../components/document/DocumentCard';
@@ -102,22 +106,52 @@ const ProjectDocumentsPage = () => {
     });
   };
 
+  const [mode, setMode] = useState<'list' | 'grid'>('grid');
+
   return (
     <>
       <HeaderX label={`Documents – ${project?.name || 'Untitled Project'}`} />
 
       {projectId && (
-        <div className="rounded-lg bg-zinc-900 p-4">
-          <h1 className="text-2xl font-bold">
+        <div className="flex flex-col items-center gap-4 md:flex-row">
+          <h1 className="w-full flex-grow rounded-lg bg-zinc-900 p-4 text-2xl font-bold md:w-auto">
             Documents{' '}
             <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
               {documents?.length || 0}
             </span>
           </h1>
-          <p className="text-zinc-400">
-            Store text-based information with enhanced formatting and
-            collaboration.
-          </p>
+
+          <div className="flex gap-4">
+            <button
+              onClick={showDocumentEditForm}
+              className="flex flex-none items-center gap-1 rounded bg-blue-300/20 p-4 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+            >
+              {creating ? 'Creating document' : 'New document'}{' '}
+              {creating ? (
+                <Loader className="ml-1 h-4 w-4" />
+              ) : (
+                <DocumentPlusIcon className="h-4 w-4" />
+              )}
+            </button>
+            <div className="flex gap-2 rounded-lg border border-zinc-800 p-2">
+              <button
+                className={`${
+                  mode === 'list' ? 'bg-zinc-800' : 'text-zinc-700'
+                } h-fit rounded-lg p-2 transition`}
+                onClick={() => setMode('list')}
+              >
+                <ListBulletIcon className="h-6 w-6" />
+              </button>
+              <button
+                className={`${
+                  mode === 'grid' ? 'bg-zinc-800' : 'text-zinc-700'
+                } h-fit rounded-lg p-2 transition`}
+                onClick={() => setMode('grid')}
+              >
+                <Squares2X2Icon className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -135,10 +169,20 @@ const ProjectDocumentsPage = () => {
         )}
       </button>
 
-      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div
+        className={`grid ${
+          mode === 'list'
+            ? 'grid-cols-1'
+            : 'md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+        } mb-8 mt-4 gap-4`}
+      >
         {documents &&
           documents?.map((doc) => (
-            <DocumentCard projectId={projectId as string} document={doc} />
+            <DocumentCard
+              projectId={projectId as string}
+              document={doc}
+              mode={mode}
+            />
           ))}
       </div>
     </>
