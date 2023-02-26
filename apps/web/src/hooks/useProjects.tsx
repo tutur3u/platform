@@ -118,7 +118,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await res.json();
       router.push(`/projects/${data.id}`);
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to create project',
@@ -147,7 +147,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to update project');
       if (options?.onSuccess) options.onSuccess();
       mutate(`/api/workspaces/${wsId}/projects`);
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to update project',
@@ -175,7 +175,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to delete project');
       if (options?.onSuccess) options.onSuccess();
       mutate(`/api/workspaces/${wsId}/projects`);
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to delete project',

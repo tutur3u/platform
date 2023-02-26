@@ -7,7 +7,7 @@ interface SidebarLayoutProps {
 }
 
 const SidebarLayout = ({ children }: SidebarLayoutProps) => {
-  const { leftSidebarPref, rightSidebarPref } = useAppearance();
+  const { leftSidebarPref } = useAppearance();
 
   const generateSidebarWidth = (pref: SidebarPreference) => {
     switch (pref.main) {

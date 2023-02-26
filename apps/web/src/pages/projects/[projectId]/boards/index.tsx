@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect } from 'react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
 import HeaderX from '../../../../components/metadata/HeaderX';
@@ -50,7 +50,7 @@ const ProjectBoardsPage = () => {
     project?.name,
   ]);
 
-  const { data: boards, error: boardsError } = useSWR<TaskBoard[]>(
+  const { data: boards } = useSWR<TaskBoard[]>(
     projectId ? `/api/projects/${projectId}/boards` : null
   );
 

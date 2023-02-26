@@ -34,17 +34,13 @@ const ProjectDocumentEditor = () => {
   const router = useRouter();
   const { projectId, docId } = router.query;
 
-  const { data: project, error: projectError } = useSWR(
+  const { data: project } = useSWR(
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const projectLoading = !project && !projectError;
-
-  const { data: document, error: documentError } = useSWR<Document>(
+  const { data: document } = useSWR<Document>(
     docId ? `/api/projects/${projectId}/documents/${docId}` : null
   );
-
-  const documentLoading = !document && !documentError;
 
   const { setRootSegment, setLastSegment } = useAppearance();
 
@@ -151,9 +147,7 @@ const ProjectDocumentEditor = () => {
       }),
     })
       .then((res) => res.json())
-      .then((_) => {
-        setSaving(false);
-      });
+      .then(() => setSaving(false));
   }, [
     name,
     content,
@@ -180,9 +174,7 @@ const ProjectDocumentEditor = () => {
           method: 'DELETE',
         })
           .then((res) => res.json())
-          .then((_) => {
-            router.push(`/projects/${projectId}/documents`);
-          });
+          .then(() => router.push(`/projects/${projectId}/documents`));
       },
     });
   };

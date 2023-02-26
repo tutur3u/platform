@@ -59,10 +59,10 @@ const LoginPage = () => {
       // Otherwise, redirect to the homepage
       const { redirectedFrom: nextUrl } = router.query;
       router.push(nextUrl ? nextUrl.toString() : '/home');
-    } catch (error: any) {
+    } catch (error) {
       showNotification({
         title: 'Error',
-        message: error?.message || error || 'Something went wrong',
+        message: typeof error === 'string' ? error : 'Something went wrong',
         color: 'red',
       });
     }

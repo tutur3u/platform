@@ -1,7 +1,7 @@
 import { TextInput, Divider, Button, PasswordInput } from '@mantine/core';
 import { ChangeEvent, useState } from 'react';
 import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
-import { AuthFormFields, AuthMethod } from '../../utils/auth-handler';
+import { AuthFormFields } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
 

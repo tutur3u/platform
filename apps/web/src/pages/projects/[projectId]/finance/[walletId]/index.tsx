@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import { Divider } from '@mantine/core';
 import { PencilIcon, PlusIcon } from '@heroicons/react/24/solid';
@@ -26,13 +26,11 @@ const WalletDetailPage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { data: wallet, error: walletError } = useSWR<Wallet>(
+  const { data: wallet } = useSWR<Wallet>(
     walletId ? `/api/projects/${projectId}/wallets/${walletId}` : null
   );
 
-  const { data: transactions, error: transactionsError } = useSWR<
-    Transaction[] | null
-  >(
+  const { data: transactions } = useSWR<Transaction[] | null>(
     projectId && walletId
       ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
       : null

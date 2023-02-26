@@ -10,7 +10,6 @@ import {
   Loader,
   Menu,
   SegmentedControl,
-  Select,
 } from '@mantine/core';
 import {
   ArchiveBoxIcon,
@@ -19,7 +18,6 @@ import {
   FolderPlusIcon,
   PlusIcon,
   QueueListIcon,
-  SquaresPlusIcon,
   TrashIcon,
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
@@ -39,19 +37,15 @@ const ProjectBoardEditor = () => {
   const router = useRouter();
   const { projectId, boardId } = router.query;
 
-  const { data: project, error: projectError } = useSWR(
+  const { data: project } = useSWR(
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const projectLoading = !project && !projectError;
-
-  const { data: board, error: boardError } = useSWR<TaskBoard>(
+  const { data: board } = useSWR<TaskBoard>(
     boardId ? `/api/projects/${projectId}/boards/${boardId}` : null
   );
 
-  const boardLoading = !board && !boardError;
-
-  const { setRootSegment, setLastSegment } = useAppearance();
+  const { setRootSegment } = useAppearance();
 
   useEffect(() => {
     setRootSegment(
@@ -156,9 +150,7 @@ const ProjectBoardEditor = () => {
           method: 'DELETE',
         })
           .then((res) => res.json())
-          .then((_) => {
-            router.push(`/projects/${projectId}/boards`);
-          });
+          .then(() => router.push(`/projects/${projectId}/boards`));
       },
     });
   };
