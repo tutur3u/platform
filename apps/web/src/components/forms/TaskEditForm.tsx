@@ -6,7 +6,6 @@ import {
   Button,
   Group,
   Loader,
-  Select,
   Tabs,
   Text,
   Textarea,
@@ -31,27 +30,17 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/solid';
 import { useUserData } from '../../hooks/useUserData';
-import { TaskBoard } from '../../types/primitives/TaskBoard';
-import { TaskList } from '../../types/primitives/TaskList';
 import Link from 'next/link';
 
 interface TaskEditFormProps {
   task?: Task;
-  projectId: string;
-  boardId: string;
   listId: string;
   onUpdated: () => void;
 }
 
 type UserWithValue = UserData & { value: string };
 
-const TaskEditForm = ({
-  task,
-  projectId,
-  boardId,
-  listId,
-  onUpdated,
-}: TaskEditFormProps) => {
+const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState(task?.description || '');
 
@@ -609,6 +598,7 @@ const TaskEditForm = ({
                 itemComponent={AutoCompleteItem}
                 data={suggestions}
                 onItemSubmit={(item) => {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   const { value, ...user } = item as UserWithValue;
 
                   // Update assignees

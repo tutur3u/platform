@@ -68,7 +68,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/workspaces');
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to create workspace',
@@ -97,7 +97,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to update workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/workspaces');
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to update workspace',
@@ -125,7 +125,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to delete workspace');
       if (options?.onSuccess) options.onSuccess();
       mutate('/api/workspaces');
-    } catch (e: any) {
+    } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to delete workspace',

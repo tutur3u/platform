@@ -16,5 +16,9 @@ module.exports = {
   variants: {
     width: ['responsive', 'hover', 'focus'],
   },
-  plugins: [require('tailwind-scrollbar'), require('@tailwindcss/line-clamp')],
+  plugins: [
+    require('tailwind-scrollbar'),
+    require('@tailwindcss/line-clamp'),
+    require('tailwindcss-themer'),
+  ],
 };

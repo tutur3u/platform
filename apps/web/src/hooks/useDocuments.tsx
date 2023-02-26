@@ -1,6 +1,6 @@
-import useSWR, { mutate } from 'swr';
+import { mutate } from 'swr';
 
-import { createContext, useContext, ReactNode, useState } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { Document } from '../types/primitives/Document';
 import { showNotification } from '@mantine/notifications';
 
@@ -26,7 +26,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create document');
       mutate(`/api/projects/${projectId}/documents`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to create document',
         message: 'Make sure you have permission to create new documents',
@@ -50,7 +50,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update document');
       mutate(`/api/projects/${projectId}/documents`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to update document',
         message: 'Make sure you have permission to update documents',
@@ -70,7 +70,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete document');
       mutate(`/api/projects/${projectId}/documents`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to delete document',
         message: 'Make sure you have permission to delete documents',

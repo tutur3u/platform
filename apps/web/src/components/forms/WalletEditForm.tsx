@@ -3,7 +3,6 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Project } from '../../types/primitives/Project';
 import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {

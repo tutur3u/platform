@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../../hooks/useAppearance';
@@ -21,11 +21,9 @@ const ProjectFinancePage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
+  const { data: wallets } = useSWR<Wallet[] | null>(
     projectId ? `/api/projects/${projectId}/wallets` : null
   );
-
-  const isWalletsLoading = !wallets && !walletsError;
 
   const { setRootSegment } = useAppearance();
 

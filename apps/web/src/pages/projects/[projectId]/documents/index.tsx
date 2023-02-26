@@ -54,7 +54,7 @@ const ProjectDocumentsPage = () => {
     setRootSegment,
   ]);
 
-  const { data: documents, error: documentsError } = useSWR<Document[]>(
+  const { data: documents } = useSWR<Document[]>(
     projectId ? `/api/projects/${projectId}/documents` : null
   );
 
@@ -179,6 +179,7 @@ const ProjectDocumentsPage = () => {
         {documents &&
           documents?.map((doc) => (
             <DocumentCard
+              key={`doc-${doc.id}`}
               projectId={projectId as string}
               document={doc}
               mode={mode}

@@ -52,12 +52,14 @@ const PasswordRecoveryPage = () => {
       // Otherwise, redirect to the homepage
       const { redirectedFrom: nextUrl } = router.query;
       router.push(nextUrl ? nextUrl.toString() : '/home');
-    } catch (error: any) {
-      showNotification({
-        title: 'Error',
-        message: error?.message || error || 'Something went wrong',
-        color: 'red',
-      });
+    } catch (e) {
+      if (e instanceof Error)
+        showNotification({
+          title: 'Error',
+          message: e?.message || 'Something went wrong',
+          color: 'red',
+        });
+      else alert(e);
     }
   };
 

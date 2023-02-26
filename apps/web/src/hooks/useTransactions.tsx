@@ -1,7 +1,6 @@
 import { mutate } from 'swr';
 
-import { createContext, useContext, ReactNode, useState } from 'react';
-import { Wallet } from '../types/primitives/Wallet';
+import { createContext, useContext, ReactNode } from 'react';
 import { Transaction } from '../types/primitives/Transaction';
 import { showNotification } from '@mantine/notifications';
 
@@ -46,7 +45,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
       mutate(`/api/projects/${projectId}/wallets/${walletId}`);
       mutate(`/api/projects/${projectId}/wallets`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to create transaction',
         message: 'Make sure you have permission to create new transactions',
@@ -80,7 +79,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
       mutate(`/api/projects/${projectId}/wallets/${walletId}`);
       mutate(`/api/projects/${projectId}/wallets`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to update transaction',
         message: 'Make sure you have permission to update transactions',
@@ -106,7 +105,7 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
       mutate(`/api/projects/${projectId}/wallets/${walletId}`);
       mutate(`/api/projects/${projectId}/wallets`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to delete transaction',
         message: 'Make sure you have permission to delete transactions',
