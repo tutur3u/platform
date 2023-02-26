@@ -1,8 +1,7 @@
-import useSWR, { mutate } from 'swr';
+import { mutate } from 'swr';
 
-import { createContext, useContext, ReactNode, useState } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { Wallet } from '../types/primitives/Wallet';
-import { Transaction } from '../types/primitives/Transaction';
 import { showNotification } from '@mantine/notifications';
 
 const WalletContext = createContext({
@@ -29,7 +28,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create wallet');
       mutate(`/api/projects/${projectId}/wallets`);
       mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to create wallet',
         message: 'Make sure you have permission to create new wallets',
@@ -59,7 +58,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to update wallet');
       mutate(`/api/projects/${projectId}/wallets`);
       mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to update wallet',
         message: 'Make sure you have permission to update wallets',
@@ -80,7 +79,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to delete wallet');
       mutate(`/api/projects/${projectId}/wallets`);
       mutate(`/api/projects/${projectId}/wallets/${wallet.id}`);
-    } catch (e: any) {
+    } catch (e) {
       showNotification({
         title: 'Failed to delete wallet',
         message: 'Make sure you have permission to delete wallets',

@@ -1,4 +1,4 @@
-import { Select, Textarea, TextInput } from '@mantine/core';
+import { Select } from '@mantine/core';
 import AdjustmentInput from './AdjustmentInput';
 import Input from './Input';
 import TransferInput from './TransferInput';

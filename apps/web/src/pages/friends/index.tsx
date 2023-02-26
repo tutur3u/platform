@@ -4,7 +4,6 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { DEV_MODE } from '../../constants/common';
 import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const FriendsPage: PageWithLayoutProps = () => {

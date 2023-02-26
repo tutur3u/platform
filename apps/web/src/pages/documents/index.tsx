@@ -9,7 +9,6 @@ import { Document } from '../../types/primitives/Document';
 import { useProjects } from '../../hooks/useProjects';
 import NestedLayout from '../../components/layouts/NestedLayout';
 import { Divider, Loader } from '@mantine/core';
-import PlusCardButton from '../../components/common/PlusCardButton';
 import { openModal } from '@mantine/modals';
 import DocumentEditForm from '../../components/forms/DocumentEditForm';
 import { showNotification } from '@mantine/notifications';
@@ -25,11 +24,9 @@ const DocumentsPage: PageWithLayoutProps = () => {
   const user = useUser();
 
   const { wsId } = useProjects();
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { setRootSegment } = useAppearance();
 
-  const { data: workspace, error: workspaceError } = useSWR(
-    wsId ? `/api/workspaces/${wsId}` : null
-  );
+  const { data: workspace } = useSWR(wsId ? `/api/workspaces/${wsId}` : null);
 
   useEffect(() => {
     setRootSegment(
@@ -45,9 +42,12 @@ const DocumentsPage: PageWithLayoutProps = () => {
     );
   }, [wsId, workspace?.name, setRootSegment]);
 
-  const { data: documents, error: documentsError } = useSWR<Document[]>(
+  const { data: documents } = useSWR<Document[]>(
     user?.id && wsId ? `/api/users/${user.id}/documents?wsId=${wsId}` : null
   );
+
+  const [creating, setCreating] = useState(false);
+  const [mode, setMode] = useState<'list' | 'grid'>('grid');
 
   const createDocument = async ({
     projectId,
@@ -56,6 +56,8 @@ const DocumentsPage: PageWithLayoutProps = () => {
     projectId: string;
     doc: Partial<Document>;
   }) => {
+    setCreating(true);
+
     const res = await fetch(`/api/projects/${projectId}/documents`, {
       method: 'POST',
       headers: {
@@ -91,9 +93,6 @@ const DocumentsPage: PageWithLayoutProps = () => {
       ),
     });
   };
-
-  const [creating, setCreating] = useState(false);
-  const [mode, setMode] = useState<'list' | 'grid'>('grid');
 
   return (
     <>
@@ -157,7 +156,12 @@ const DocumentsPage: PageWithLayoutProps = () => {
 
         {documents &&
           documents?.map((doc) => (
-            <DocumentCard document={doc} hideProject={false} mode={mode} />
+            <DocumentCard
+              key={`doc-${doc.id}`}
+              document={doc}
+              hideProject={false}
+              mode={mode}
+            />
           ))}
       </div>
     </>

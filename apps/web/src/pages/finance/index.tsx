@@ -1,8 +1,6 @@
 import { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import WalletTab from '../../components/finance/wallets/WalletTab';
-import HeaderX from '../../components/metadata/HeaderX';
-import { DEV_MODE } from '../../constants/common';
 import { useAppearance } from '../../hooks/useAppearance';
 import { useUserData } from '../../hooks/useUserData';
 import { useUserList } from '../../hooks/useUserList';
@@ -18,18 +16,15 @@ import NestedLayout from '../../components/layouts/NestedLayout';
 import TransactionEditForm from '../../components/forms/TransactionEditForm';
 import { useTransactions } from '../../hooks/useTransactions';
 import TransactionTab from '../../components/finance/transactions/TransactionTab';
-import { PlusIcon } from '@heroicons/react/24/solid';
 
 const FinancePage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { setRootSegment } = useAppearance();
   const { updateUsers } = useUserList();
   const { data } = useUserData();
 
-  const { wsId, projects, isProjectsLoading } = useProjects();
+  const { wsId, projects } = useProjects();
 
-  const { data: workspace, error: workspaceError } = useSWR(
-    wsId ? `/api/workspaces/${wsId}` : null
-  );
+  const { data: workspace } = useSWR(wsId ? `/api/workspaces/${wsId}` : null);
 
   useEffect(() => {
     setRootSegment(
@@ -63,21 +58,15 @@ const FinancePage: PageWithLayoutProps = () => {
   const [walletId, setWalletId] = useState<string | null>();
   const [wallet, setWallet] = useState<Wallet>();
 
-  const { data: wallets, error: walletsError } = useSWR<Wallet[] | null>(
+  const { data: wallets } = useSWR<Wallet[] | null>(
     projectId ? `/api/projects/${projectId}/wallets` : null
   );
 
-  const isWalletsLoading = !wallets && !walletsError;
-
-  const { data: transactions, error: transactionsError } = useSWR<
-    Transaction[] | null
-  >(
+  const { data: transactions } = useSWR<Transaction[] | null>(
     projectId && walletId
       ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
       : null
   );
-
-  const isTransactionsLoading = !transactions && !transactionsError;
 
   useEffect(() => {
     if (walletId) {

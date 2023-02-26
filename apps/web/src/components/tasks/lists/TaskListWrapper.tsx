@@ -49,14 +49,7 @@ const TaskListWrapper = ({
       title: 'Add task',
       centered: true,
       size: 'xl',
-      children: (
-        <TaskEditForm
-          projectId={projectId}
-          boardId={boardId}
-          listId={list.id}
-          onUpdated={resync}
-        />
-      ),
+      children: <TaskEditForm listId={list.id} onUpdated={resync} />,
     });
   };
 

@@ -31,8 +31,6 @@ const setupLocalEnvironment = async (
   if (currentInvitesError || !currentInvites)
     return res.status(401).json({ error: currentInvitesError.message });
 
-  console.log(currentInvites);
-
   const { data, error } = await supabaseService
     .from('workspace_invites')
     .insert(

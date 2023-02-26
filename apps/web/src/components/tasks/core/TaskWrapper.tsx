@@ -35,8 +35,6 @@ export interface TaskWrapperProps {
 
 const TaskWrapper = ({
   task,
-  projectId,
-  boardId,
   listId,
   showCompleted,
   highlight = true,
@@ -97,13 +95,7 @@ const TaskWrapper = ({
       overlayOpacity: 0.55,
       overlayBlur: 3,
       children: (
-        <TaskEditForm
-          task={task}
-          projectId={projectId}
-          boardId={boardId}
-          listId={listId}
-          onUpdated={onUpdated}
-        />
+        <TaskEditForm task={task} listId={listId} onUpdated={onUpdated} />
       ),
     });
   };

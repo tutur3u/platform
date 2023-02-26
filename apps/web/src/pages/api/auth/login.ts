@@ -65,10 +65,10 @@ const handler = async (
 
     // If the identifier is neither an email nor a username, throw an error
     throw 'Invalid credentials';
-  } catch (error: any) {
-    return res.status(500).json({
+  } catch (error) {
+    return res.status(400).json({
       error: {
-        message: error || 'Something went wrong',
+        message: typeof error === 'string' ? error : 'Something went wrong',
       },
     });
   }
