@@ -24,6 +24,15 @@ This turborepo has some additional tools already setup for you:
 - [ESLint](https://eslint.org/) for code linting.
 - [Prettier](https://prettier.io) for code formatting.
 
+### Setup
+
+Before proceeding to the Build and Develop sections, you should have pnpm installed on your local machine.
+The most common way to install it is using npm:
+
+```
+npm install -g pnpm
+```
+
 ### Build
 
 To build all apps and packages, run the following command:
