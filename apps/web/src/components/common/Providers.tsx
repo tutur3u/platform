@@ -16,6 +16,7 @@ import { CalendarProvider } from '../../hooks/useCalendar';
 import { ProjectProvider } from '../../hooks/useProjects';
 import { WalletProvider } from '../../hooks/useWallets';
 import { TransactionProvider } from '../../hooks/useTransactions';
+import { theme } from '../../styles/mantine-theme';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -41,11 +42,7 @@ const Providers = ({
       >
         <CalendarProvider>
           <UserDataProvider>
-            <MantineProvider
-              theme={{
-                colorScheme: 'dark',
-              }}
-            >
+            <MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
               <UserListProvider>
                 <AppearanceProvider>
                   <ModalsProvider>

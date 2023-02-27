@@ -11,6 +11,9 @@ jobs:
     name: Build and test
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
 
     env:
       # Use Vercel Remote Caching
@@ -51,12 +54,12 @@ jobs:
 
       - uses: pnpm/action-setup@v2.0.1
         with:
-          version: 6.32.2
+          version: 7
 
-      - name: Setup Node.js environment
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
           cache: "pnpm"
 
       - name: Install dependencies
