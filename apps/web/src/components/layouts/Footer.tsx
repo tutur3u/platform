@@ -26,7 +26,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
             </div>
 
             <Link
-              href="https://app.tuturuuu.com/login"
+              href="https://tuturuuu.com/signup"
               className="mt-4 block w-fit rounded-lg bg-blue-300/20 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
             >
               Get Started

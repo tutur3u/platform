@@ -64,6 +64,8 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
       disabled={isLoading || !hasWorkspaces}
       classNames={{
         label: 'mb-1',
+        item: 'text-sm',
+        input: 'font-semibold',
       }}
       className={className}
     />
