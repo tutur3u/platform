@@ -33,6 +33,8 @@ The most common way to install it is using npm:
 npm install -g pnpm
 ```
 
+More information can be found at the [pnpm installation](https://pnpm.io/installation) page.
+
 ### Build
 
 To build all apps and packages, run the following command:
