@@ -44,7 +44,7 @@ const fetchWallets = async (
 
   const { data, error } = await supabase
     .from('project_wallets')
-    .select('id, name, balance, currency, created_at, project_id')
+    .select('id, name, balance, currency, created_at, description, project_id')
     .order('created_at')
     .eq('project_id', projectId);
 
