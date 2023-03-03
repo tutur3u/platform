@@ -6,6 +6,9 @@ import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useAppearance } from '../../../hooks/useAppearance';
 import HeaderX from '../../../components/metadata/HeaderX';
+import { Project } from '../../../types/primitives/Project';
+import { openModal } from '@mantine/modals';
+import ProjectDeleteForm from '../../../components/forms/ProjectDeleteForm';
 
 const ProjectSettingsPage = () => {
   const router = useRouter();
@@ -46,6 +49,14 @@ const ProjectSettingsPage = () => {
     project?.workspaces?.name,
     project?.name,
   ]);
+
+  const showDeleteProjectModal = async (project: Project) => {
+    openModal({
+      title: <div className="font-semibold">Are you absolutely sure?</div>,
+      centered: true,
+      children: <ProjectDeleteForm project={project} onDelete={handleDelete} />,
+    });
+  };
 
   const [name, setName] = useState<string>(project?.name || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -183,7 +194,7 @@ const ProjectSettingsPage = () => {
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
             <div
               className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
-              onClick={handleDelete}
+              onClick={() => showDeleteProjectModal(project)}
             >
               {isDeleting ? 'Deleting...' : 'Delete Project'}
             </div>
