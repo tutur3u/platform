@@ -15,7 +15,7 @@ import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { ChangeEvent } from 'react';
 import { Task } from '../../types/primitives/Task';
-import { DatePicker, TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import moment from 'moment';
 import { Priority } from '../../types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -82,18 +82,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       );
     }
   }, []);
-
-  const handleTimeChange = (newDate: Date | null, date: Date | null) => {
-    if (!newDate) return date;
-
-    // Copy hours and minutes to old date
-    if (date) {
-      date.setHours(newDate.getHours());
-      date.setMinutes(newDate.getMinutes());
-    }
-
-    return date;
-  };
 
   const handleDateChange = (newDate: Date | null, date: Date | null) => {
     if (!newDate) return null;
@@ -419,7 +407,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
         <Tabs.Panel value="datetime">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <DatePicker
+            <DateTimePicker
               label="Start date"
               placeholder="When should the task start?"
               value={startDate}
@@ -431,24 +419,10 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               maxDate={endDate || undefined}
               className="mb-2 lg:col-span-2"
             />
-
-            {startDate && (
-              <TimeInput
-                label="Time"
-                placeholder="At what time should the task start?"
-                value={startDate}
-                onChange={(newDate) =>
-                  setStartDate((date) =>
-                    date ? handleTimeChange(newDate, date) : newDate
-                  )
-                }
-                clearable
-              />
-            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <DatePicker
+            <DateTimePicker
               label="Due date"
               placeholder="When should the task be completed?"
               value={endDate}
@@ -460,20 +434,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               minDate={startDate || undefined}
               className="mb-2 lg:col-span-2"
             />
-
-            {endDate && (
-              <TimeInput
-                label="Time"
-                placeholder="At what time should the task be completed?"
-                value={endDate}
-                onChange={(newDate) =>
-                  setEndDate((date) =>
-                    date ? handleTimeChange(newDate, date) : newDate
-                  )
-                }
-                clearable
-              />
-            )}
           </div>
         </Tabs.Panel>
 

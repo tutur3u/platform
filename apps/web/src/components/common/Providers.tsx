@@ -6,7 +6,7 @@ import {
 
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
-import { NotificationsProvider } from '@mantine/notifications';
+import { Notifications } from '@mantine/notifications';
 import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { WorkspaceProvider } from '../../hooks/useWorkspaces';
@@ -42,11 +42,11 @@ const Providers = ({
       >
         <CalendarProvider>
           <UserDataProvider>
-            <MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
+            <MantineProvider theme={theme}>
               <UserListProvider>
                 <AppearanceProvider>
                   <ModalsProvider>
-                    <NotificationsProvider position="bottom-left">
+                    <Notifications position="bottom-left">
                       <WorkspaceProvider>
                         <ProjectProvider>
                           <WalletProvider>
@@ -56,7 +56,7 @@ const Providers = ({
                           </WalletProvider>
                         </ProjectProvider>
                       </WorkspaceProvider>
-                    </NotificationsProvider>
+                    </Notifications>
                   </ModalsProvider>
                 </AppearanceProvider>
               </UserListProvider>
