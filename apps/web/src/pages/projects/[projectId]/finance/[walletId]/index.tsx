@@ -80,11 +80,20 @@ const WalletDetailPage = () => {
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
           onDelete={
-            wallet ? () => deleteWallet(projectId as string, wallet) : undefined
+            wallet
+              ? () => handleDeleteWallet(projectId as string, wallet)
+              : undefined
           }
         />
       ),
     });
+  };
+
+  const handleDeleteWallet = (projectId: string, wallet: Wallet) => {
+    if (!projectId || !walletId) return;
+
+    deleteWallet(projectId, wallet);
+    router.push(`/projects/${projectId}/finance`);
   };
 
   const showEditTransactionModal = (transaction?: Transaction) => {
