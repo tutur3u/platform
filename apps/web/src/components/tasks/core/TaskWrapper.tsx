@@ -88,12 +88,14 @@ const TaskWrapper = ({
       ),
       centered: true,
       size: 'xl',
-      overlayColor:
-        theme.colorScheme === 'dark'
-          ? theme.colors.dark[9]
-          : theme.colors.gray[2],
-      overlayOpacity: 0.55,
-      overlayBlur: 3,
+      overlayProps: {
+        color:
+          theme.colorScheme === 'dark'
+            ? theme.colors.dark[9]
+            : theme.colors.gray[2],
+        opacity: 0.55,
+        blur: 3,
+      },
       children: (
         <TaskEditForm task={task} listId={listId} onUpdated={onUpdated} />
       ),

@@ -1,17 +1,12 @@
 import { Select, Textarea, TextInput } from '@mantine/core';
-import { DatePicker, TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 
 interface InputProps {
   type: string;
 }
 
 export default function Input({ type }: InputProps) {
-  let placeholder;
-  if (type === 'Lend') {
-    placeholder = 'Borrower';
-  } else if (type === 'Borrow') {
-    placeholder = 'Lender';
-  }
+  const placeholder = type === 'Lend' ? 'Borrower' : 'Lender';
 
   return (
     <>
@@ -38,13 +33,7 @@ export default function Input({ type }: InputProps) {
           />
         ) : null}
 
-        <DatePicker
-          allowLevelChange={false}
-          placeholder="Date"
-          defaultValue={new Date()}
-        />
-
-        <TimeInput label="Time" defaultValue={new Date()} />
+        <DateTimePicker placeholder="Date" defaultValue={new Date()} />
 
         <Textarea placeholder="Description" autosize minRows={2} maxRows={4} />
         <div className="flex justify-end">

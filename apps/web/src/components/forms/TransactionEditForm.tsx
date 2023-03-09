@@ -25,8 +25,8 @@ const TransactionEditForm = ({
   transaction,
   onSubmit,
 }: Props) => {
-  const [amount, setAmount] = useState<number | undefined>(
-    transaction?.amount && Math.abs(transaction?.amount)
+  const [amount, setAmount] = useState<number | ''>(
+    (transaction?.amount && Math.abs(transaction?.amount)) || ''
   );
   const [name, setName] = useState(transaction?.name || '');
   const [description, setDescription] = useState(

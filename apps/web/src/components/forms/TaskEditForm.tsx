@@ -15,7 +15,7 @@ import { closeAllModals } from '@mantine/modals';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { ChangeEvent } from 'react';
 import { Task } from '../../types/primitives/Task';
-import { DatePicker, TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import moment from 'moment';
 import { Priority } from '../../types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -82,30 +82,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       );
     }
   }, []);
-
-  const handleTimeChange = (newDate: Date | null, date: Date | null) => {
-    if (!newDate) return date;
-
-    // Copy hours and minutes to old date
-    if (date) {
-      date.setHours(newDate.getHours());
-      date.setMinutes(newDate.getMinutes());
-    }
-
-    return date;
-  };
-
-  const handleDateChange = (newDate: Date | null, date: Date | null) => {
-    if (!newDate) return null;
-
-    // Copy hours and minutes from old date
-    if (date) {
-      newDate.setHours(date.getHours());
-      newDate.setMinutes(date.getMinutes());
-    }
-
-    return newDate;
-  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debounced] = useDebouncedValue(searchQuery, 300);
@@ -376,7 +352,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       >
         <Tabs.List className="mb-2">
           <Tabs.Tab value="details">Details</Tabs.Tab>
-          <Tabs.Tab value="datetime">Date & Time</Tabs.Tab>
+          <Tabs.Tab value="datetime">Duration</Tabs.Tab>
           <Tabs.Tab value="priority">Priority</Tabs.Tab>
           {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
           {task?.id && (
@@ -418,62 +394,21 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
         </Tabs.Panel>
 
         <Tabs.Panel value="datetime">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <DatePicker
+          <div className="grid gap-4 md:grid-cols-2">
+            <DateTimePicker
               label="Start date"
               placeholder="When should the task start?"
               value={startDate}
-              onChange={(newDate) =>
-                setStartDate((date) =>
-                  date ? handleDateChange(newDate, date) : newDate
-                )
-              }
-              maxDate={endDate || undefined}
-              className="mb-2 lg:col-span-2"
+              onChange={setStartDate}
+              maxDate={endDate ?? undefined}
             />
-
-            {startDate && (
-              <TimeInput
-                label="Time"
-                placeholder="At what time should the task start?"
-                value={startDate}
-                onChange={(newDate) =>
-                  setStartDate((date) =>
-                    date ? handleTimeChange(newDate, date) : newDate
-                  )
-                }
-                clearable
-              />
-            )}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <DatePicker
+            <DateTimePicker
               label="Due date"
               placeholder="When should the task be completed?"
               value={endDate}
-              onChange={(newDate) =>
-                setEndDate((date) =>
-                  date ? handleDateChange(newDate, date) : newDate
-                )
-              }
-              minDate={startDate || undefined}
-              className="mb-2 lg:col-span-2"
+              onChange={setEndDate}
+              minDate={startDate ?? undefined}
             />
-
-            {endDate && (
-              <TimeInput
-                label="Time"
-                placeholder="At what time should the task be completed?"
-                value={endDate}
-                onChange={(newDate) =>
-                  setEndDate((date) =>
-                    date ? handleTimeChange(newDate, date) : newDate
-                  )
-                }
-                clearable
-              />
-            )}
           </div>
         </Tabs.Panel>
 
