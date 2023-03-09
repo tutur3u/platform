@@ -69,21 +69,18 @@ const TaskListWrapper = ({
         </div>
       </TaskListAccordionControl>
       <Accordion.Panel>
-        <Chip.Group
-          multiple={false}
-          value={option}
-          onChange={setOption}
-          className="my-2 flex flex-wrap justify-center gap-2"
-        >
-          <Chip variant="filled" value="all">
-            All
-          </Chip>
-          <Chip color="yellow" variant="filled" value="todos">
-            Todos
-          </Chip>
-          <Chip color="green" variant="filled" value="completed">
-            Completed
-          </Chip>
+        <Chip.Group multiple={false} value={option} onChange={setOption}>
+          <div className="my-2 flex flex-wrap justify-center gap-2">
+            <Chip variant="filled" value="all">
+              All
+            </Chip>
+            <Chip color="yellow" variant="filled" value="todos">
+              Todos
+            </Chip>
+            <Chip color="green" variant="filled" value="completed">
+              Completed
+            </Chip>
+          </div>
         </Chip.Group>
 
         {isLoading ? (

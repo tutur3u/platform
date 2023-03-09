@@ -4,9 +4,6 @@ import {
   SupabaseClient,
 } from '@supabase/auth-helpers-react';
 
-import { MantineProvider } from '@mantine/core';
-import { ModalsProvider } from '@mantine/modals';
-import { NotificationsProvider } from '@mantine/notifications';
 import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { WorkspaceProvider } from '../../hooks/useWorkspaces';
@@ -16,7 +13,7 @@ import { CalendarProvider } from '../../hooks/useCalendar';
 import { ProjectProvider } from '../../hooks/useProjects';
 import { WalletProvider } from '../../hooks/useWallets';
 import { TransactionProvider } from '../../hooks/useTransactions';
-import { theme } from '../../styles/mantine-theme';
+import MantineProvider from '../mantine/MantineProvider';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -42,22 +39,16 @@ const Providers = ({
       >
         <CalendarProvider>
           <UserDataProvider>
-            <MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
+            <MantineProvider>
               <UserListProvider>
                 <AppearanceProvider>
-                  <ModalsProvider>
-                    <NotificationsProvider position="bottom-left">
-                      <WorkspaceProvider>
-                        <ProjectProvider>
-                          <WalletProvider>
-                            <TransactionProvider>
-                              {children}
-                            </TransactionProvider>
-                          </WalletProvider>
-                        </ProjectProvider>
-                      </WorkspaceProvider>
-                    </NotificationsProvider>
-                  </ModalsProvider>
+                  <WorkspaceProvider>
+                    <ProjectProvider>
+                      <WalletProvider>
+                        <TransactionProvider>{children}</TransactionProvider>
+                      </WalletProvider>
+                    </ProjectProvider>
+                  </WorkspaceProvider>
                 </AppearanceProvider>
               </UserListProvider>
             </MantineProvider>

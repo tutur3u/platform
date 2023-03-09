@@ -363,17 +363,18 @@ const ProjectBoardEditor = () => {
           multiple={false}
           value={viewOption}
           onChange={setViewOption}
-          className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2"
         >
-          <Chip variant="filled" value="all">
-            All
-          </Chip>
-          <Chip color="cyan" variant="filled" value="my-tasks">
-            My tasks
-          </Chip>
-          <Chip color="teal" variant="filled" value="recently-updated">
-            Recently added
-          </Chip>
+          <div className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2">
+            <Chip variant="filled" value="all">
+              All
+            </Chip>
+            <Chip color="cyan" variant="filled" value="my-tasks">
+              My tasks
+            </Chip>
+            <Chip color="teal" variant="filled" value="recently-updated">
+              Recently added
+            </Chip>
+          </div>
         </Chip.Group>
 
         {isContentLoading ? (
