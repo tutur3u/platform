@@ -118,6 +118,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
+          popoverProps={{ withinPortal: true }}
         />
 
         <DateTimePicker
@@ -138,6 +139,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
+          popoverProps={{ withinPortal: true }}
         />
       </div>
 
