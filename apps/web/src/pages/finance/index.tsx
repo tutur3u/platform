@@ -136,7 +136,7 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={wallet ? () => deleteWallet(projectId, wallet) : undefined}
+          onDelete={wallet ? () => handleDeleteWallet(wallet) : undefined}
         />
       ),
     });
@@ -166,6 +166,19 @@ const FinancePage: PageWithLayoutProps = () => {
         />
       ),
     });
+  };
+
+  const handleDeleteWallet = (wallet: Wallet) => {
+    deleteWallet(projectId as string, wallet);
+    setWalletId(null);
+
+    showNotification({
+      title: 'Wallet deleted',
+      color: 'teal',
+      message: `Wallet ${wallet.name} deleted successfully`,
+    });
+
+    mutate('/api/workspaces');
   };
 
   return (
