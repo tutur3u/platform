@@ -352,7 +352,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       >
         <Tabs.List className="mb-2">
           <Tabs.Tab value="details">Details</Tabs.Tab>
-          <Tabs.Tab value="datetime">Date & Time</Tabs.Tab>
+          <Tabs.Tab value="datetime">Duration</Tabs.Tab>
           <Tabs.Tab value="priority">Priority</Tabs.Tab>
           {task?.id && <Tabs.Tab value="activities">Activities</Tabs.Tab>}
           {task?.id && (
