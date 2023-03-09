@@ -33,7 +33,11 @@ export default function Input({ type }: InputProps) {
           />
         ) : null}
 
-        <DateTimePicker placeholder="Date" defaultValue={new Date()} />
+        <DateTimePicker
+          placeholder="Date"
+          defaultValue={new Date()}
+          popoverProps={{ withinPortal: true }}
+        />
 
         <Textarea placeholder="Description" autosize minRows={2} maxRows={4} />
         <div className="flex justify-end">

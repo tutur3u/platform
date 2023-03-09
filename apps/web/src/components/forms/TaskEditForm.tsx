@@ -401,6 +401,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               value={startDate}
               onChange={setStartDate}
               maxDate={endDate ?? undefined}
+              popoverProps={{ withinPortal: true }}
             />
             <DateTimePicker
               label="Due date"
@@ -408,6 +409,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               value={endDate}
               onChange={setEndDate}
               minDate={startDate ?? undefined}
+              popoverProps={{ withinPortal: true }}
             />
           </div>
         </Tabs.Panel>
