@@ -83,18 +83,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     }
   }, []);
 
-  const handleDateChange = (newDate: Date | null, date: Date | null) => {
-    if (!newDate) return null;
-
-    // Copy hours and minutes from old date
-    if (date) {
-      newDate.setHours(date.getHours());
-      newDate.setMinutes(date.getMinutes());
-    }
-
-    return newDate;
-  };
-
   const [searchQuery, setSearchQuery] = useState('');
   const [debounced] = useDebouncedValue(searchQuery, 300);
 
@@ -406,33 +394,20 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
         </Tabs.Panel>
 
         <Tabs.Panel value="datetime">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <DateTimePicker
               label="Start date"
               placeholder="When should the task start?"
               value={startDate}
-              onChange={(newDate) =>
-                setStartDate((date) =>
-                  date ? handleDateChange(newDate, date) : newDate
-                )
-              }
-              maxDate={endDate || undefined}
-              className="mb-2 lg:col-span-2"
+              onChange={setStartDate}
+              maxDate={endDate ?? undefined}
             />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <DateTimePicker
               label="Due date"
               placeholder="When should the task be completed?"
               value={endDate}
-              onChange={(newDate) =>
-                setEndDate((date) =>
-                  date ? handleDateChange(newDate, date) : newDate
-                )
-              }
-              minDate={startDate || undefined}
-              className="mb-2 lg:col-span-2"
+              onChange={setEndDate}
+              minDate={startDate ?? undefined}
             />
           </div>
         </Tabs.Panel>
