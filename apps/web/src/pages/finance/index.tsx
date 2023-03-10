@@ -21,6 +21,7 @@ import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { Project } from '../../types/primitives/Project';
 import { SquaresPlusIcon } from '@heroicons/react/24/solid';
+import WalletDeleteForm from '../../components/forms/WalletDeleteForm';
 
 const FinancePage: PageWithLayoutProps = () => {
   const router = useRouter();
@@ -121,6 +122,11 @@ const FinancePage: PageWithLayoutProps = () => {
     });
   };
 
+  const handleDeleteWallet = (wallet: Wallet) => {
+    deleteWallet(projectId as string, wallet);
+    setWalletId(null);
+  };
+
   const showEditWalletModal = (wallet?: Wallet) => {
     if (!projectId) return;
 
@@ -136,7 +142,23 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={wallet ? () => handleDeleteWallet(wallet) : undefined}
+          onDelete={wallet ? () => showDeleteWalletModal(wallet) : undefined}
+        />
+      ),
+    });
+  };
+
+  const showDeleteWalletModal = async (wallet: Wallet) => {
+    openModal({
+      title: <div className="font-semibold">Are you absolutely sure?</div>,
+      centered: true,
+      children: (
+        <WalletDeleteForm
+          wallet={wallet}
+          onDelete={() => {
+            deleteWallet(projectId as string, wallet);
+            setWalletId(null);
+          }}
         />
       ),
     });
@@ -166,19 +188,6 @@ const FinancePage: PageWithLayoutProps = () => {
         />
       ),
     });
-  };
-
-  const handleDeleteWallet = (wallet: Wallet) => {
-    deleteWallet(projectId as string, wallet);
-    setWalletId(null);
-
-    showNotification({
-      title: 'Wallet deleted',
-      color: 'teal',
-      message: `Wallet ${wallet.name} deleted successfully`,
-    });
-
-    mutate('/api/workspaces');
   };
 
   return (

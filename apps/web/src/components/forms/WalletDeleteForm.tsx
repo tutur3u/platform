@@ -1,26 +1,25 @@
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import { useState } from 'react';
-import { Project } from '../../types/primitives/Project';
+import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {
-  project: Project;
-  onDelete: (project: Project) => void;
+  wallet: Wallet;
+  onDelete: (wallet: Wallet) => void;
 }
 
-export default function ProjectDeleteForm({ project, onDelete }: Props) {
+export default function WalletDeleteForm({ wallet, onDelete }: Props) {
   const [name, setName] = useState<string>('');
-  const isDisabled = project.name !== name;
+  const isDisabled = wallet.name !== name;
 
   return (
     <div className="flex flex-col gap-2">
       <div>
         This action cannot be undone. This will permanently delete the{' '}
-        {project.name} project.
+        {wallet.name} wallet.
       </div>
       <div>
-        Please type <span className="font-bold">{project.name}</span> to
-        confirm.
+        Please type <span className="font-bold">{wallet.name}</span> to confirm.
       </div>
       <div className="flex flex-col">
         <TextInput onChange={(e) => setName(e.currentTarget.value)} />
@@ -30,11 +29,11 @@ export default function ProjectDeleteForm({ project, onDelete }: Props) {
           mt="md"
           disabled={isDisabled}
           onClick={() => {
-            onDelete(project);
+            onDelete(wallet);
             closeAllModals();
           }}
         >
-          Delete this project and all of its data
+          Delete this wallet and all of its data
         </Button>
       </div>
     </div>
