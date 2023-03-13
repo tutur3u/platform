@@ -7,7 +7,7 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { Wallet } from '../../types/primitives/Wallet';
 import WalletEditForm from '../../components/forms/WalletEditForm';
-import { openModal } from '@mantine/modals';
+import { closeAllModals, openModal } from '@mantine/modals';
 import { Transaction } from '../../types/primitives/Transaction';
 import { useWallets } from '../../hooks/useWallets';
 import { useProjects } from '../../hooks/useProjects';
@@ -122,11 +122,6 @@ const FinancePage: PageWithLayoutProps = () => {
     });
   };
 
-  const handleDeleteWallet = (wallet: Wallet) => {
-    deleteWallet(projectId as string, wallet);
-    setWalletId(null);
-  };
-
   const showEditWalletModal = (wallet?: Wallet) => {
     if (!projectId) return;
 
@@ -158,6 +153,7 @@ const FinancePage: PageWithLayoutProps = () => {
           onDelete={() => {
             deleteWallet(projectId as string, wallet);
             setWalletId(null);
+            closeAllModals();
           }}
         />
       ),

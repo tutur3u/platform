@@ -102,7 +102,6 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
             color="red"
             onClick={() => {
               onDelete();
-              closeAllModals();
             }}
             mt="md"
           >
