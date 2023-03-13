@@ -3,7 +3,7 @@ import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import { Divider } from '@mantine/core';
 import { PencilIcon, PlusIcon } from '@heroicons/react/24/solid';
-import { openModal } from '@mantine/modals';
+import { closeAllModals, openModal } from '@mantine/modals';
 import { useAppearance } from '../../../../../hooks/useAppearance';
 import { Wallet } from '../../../../../types/primitives/Wallet';
 import { useWallets } from '../../../../../hooks/useWallets';
@@ -14,6 +14,7 @@ import TransactionEditForm from '../../../../../components/forms/TransactionEdit
 import { Transaction } from '../../../../../types/primitives/Transaction';
 import { useTransactions } from '../../../../../hooks/useTransactions';
 import TransactionTab from '../../../../../components/finance/transactions/TransactionTab';
+import WalletDeleteForm from '../../../../../components/forms/WalletDeleteForm';
 
 const WalletDetailPage = () => {
   const router = useRouter();
@@ -79,11 +80,7 @@ const WalletDetailPage = () => {
           projectId={(projectId || '') as string}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={
-            wallet
-              ? () => handleDeleteWallet(projectId as string, wallet)
-              : undefined
-          }
+          onDelete={wallet ? () => showDeleteWalletModal(wallet) : undefined}
         />
       ),
     });
@@ -94,6 +91,22 @@ const WalletDetailPage = () => {
 
     deleteWallet(projectId, wallet);
     router.push(`/projects/${projectId}/finance`);
+  };
+
+  const showDeleteWalletModal = async (wallet: Wallet) => {
+    openModal({
+      title: <div className="font-semibold">Are you absolutely sure?</div>,
+      centered: true,
+      children: (
+        <WalletDeleteForm
+          wallet={wallet}
+          onDelete={() => {
+            handleDeleteWallet(projectId as string, wallet);
+            closeAllModals();
+          }}
+        />
+      ),
+    });
   };
 
   const showEditTransactionModal = (transaction?: Transaction) => {
