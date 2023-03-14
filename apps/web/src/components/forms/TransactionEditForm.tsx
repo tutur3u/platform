@@ -1,5 +1,5 @@
 import { Button, NumberInput, Select, TextInput } from '@mantine/core';
-import { DatePicker, TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
@@ -29,6 +29,7 @@ const TransactionEditForm = ({
     (transaction?.amount && Math.abs(transaction?.amount)) || ''
   );
   const [name, setName] = useState(transaction?.name || '');
+  // const [date, setDate] = useState(transaction?.date || new Date());
   const [description, setDescription] = useState(
     transaction?.description || ''
   );
@@ -40,12 +41,6 @@ const TransactionEditForm = ({
         : 'income'
       : 'expense'
   );
-
-  // const [date, setDate] = useState<Date | null>(
-  //   transaction?.date || new Date()
-  // );
-
-  // const [time, setTime] = useState<Date | null>(transaction?.time || null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -61,6 +56,7 @@ const TransactionEditForm = ({
             ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
             : ''
         }
+        data-autofocus
       />
 
       <TextInput
@@ -70,7 +66,14 @@ const TransactionEditForm = ({
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setName(event.currentTarget.value)
         }
-        data-autofocus
+      />
+
+      <DateTimePicker
+        label="Date and time"
+        placeholder="Choose date and time"
+        // value={date}
+        // onChange={setDate}
+        popoverProps={{ withinPortal: true }}
       />
 
       <Select
@@ -92,15 +95,6 @@ const TransactionEditForm = ({
           setDescription(event.currentTarget.value)
         }
       />
-
-      {/* <DatePicker label="Date" value={date} onChange={setDate} />
-
-      <TimeInput
-        label="Time"
-        value={time}
-        onChange={setTime}
-        defaultValue={new Date()}
-      /> */}
 
       <div className="flex gap-2">
         {transaction?.id && onDelete && (
@@ -127,7 +121,6 @@ const TransactionEditForm = ({
               amount: type === 'expense' ? (amount || 0) * -1 : amount || 0,
               description,
               // date,
-              // time,
             };
 
             onSubmit(projectId, walletId || '', newTransaction);
