@@ -5,5 +5,6 @@ export interface Transaction {
   description?: string;
   // date: Date;
   created_at?: Date;
+  category_id?: string;
   wallet_id?: string;
 }

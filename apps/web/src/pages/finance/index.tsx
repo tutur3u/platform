@@ -22,6 +22,7 @@ import { useRouter } from 'next/router';
 import { Project } from '../../types/primitives/Project';
 import { SquaresPlusIcon } from '@heroicons/react/24/solid';
 import WalletDeleteForm from '../../components/forms/WalletDeleteForm';
+import { Category } from '../../types/primitives/Category';
 
 const FinancePage: PageWithLayoutProps = () => {
   const router = useRouter();
@@ -181,10 +182,38 @@ const FinancePage: PageWithLayoutProps = () => {
               ? () => deleteTransaction(projectId, walletId, transaction)
               : undefined
           }
+          categories={categories}
         />
       ),
     });
   };
+
+  const categories: Category[] = [
+    {
+      id: '1',
+      name: 'Food',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '2',
+      name: 'Transport',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '3',
+      name: 'Shopping',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '3',
+      name: 'Salary',
+      workspace_id: '1',
+      type: 'income',
+    },
+  ];
 
   return (
     <>
@@ -308,7 +337,7 @@ const FinancePage: PageWithLayoutProps = () => {
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-4">
             <div className="text-center font-semibold text-zinc-500 md:text-2xl">
-              Select a wallet to view transactions.
+              Add project and wallet to start tracking your finance.
             </div>
             <button
               onClick={showProjectEditForm}

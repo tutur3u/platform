@@ -4,6 +4,7 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Category } from '../../types/primitives/Category';
 import { Transaction } from '../../types/primitives/Transaction';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
   onDelete?: () => void;
   projectId: string;
   walletId: string;
+  categories: Category[];
 }
 
 const TransactionEditForm = ({
@@ -24,6 +26,7 @@ const TransactionEditForm = ({
   onDelete,
   transaction,
   onSubmit,
+  categories,
 }: Props) => {
   const [amount, setAmount] = useState<number | ''>(
     (transaction?.amount && Math.abs(transaction?.amount)) || ''
@@ -40,6 +43,10 @@ const TransactionEditForm = ({
         ? 'expense'
         : 'income'
       : 'expense'
+  );
+
+  const [categoryId, setCategoryId] = useState<string | null>(
+    transaction?.category_id || null
   );
 
   return (
@@ -74,6 +81,17 @@ const TransactionEditForm = ({
         // value={date}
         // onChange={setDate}
         popoverProps={{ withinPortal: true }}
+      />
+
+      <Select
+        label="Category"
+        placeholder="Choose category"
+        data={categories.map((category) => ({
+          value: category.id,
+          label: category.name,
+        }))}
+        value={categoryId}
+        onChange={(value) => setCategoryId(value as string)}
       />
 
       <Select

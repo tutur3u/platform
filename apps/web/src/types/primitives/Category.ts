@@ -4,4 +4,5 @@ export interface Category {
   description?: string;
   workspace_id: string;
   created_at?: Date;
+  type: string;
 }
