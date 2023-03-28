@@ -10,14 +10,13 @@ import { Transaction } from '../../types/primitives/Transaction';
 interface Props {
   transaction?: Transaction;
   onSubmit: (
-    projectId: string,
-    walletId: string,
+    // projectId: string,
+    // walletId: string,
     transaction: Transaction
   ) => void;
   onDelete?: () => void;
   projectId: string;
   walletId: string;
-  categories: Category[];
 }
 
 const TransactionEditForm = ({
@@ -26,13 +25,14 @@ const TransactionEditForm = ({
   onDelete,
   transaction,
   onSubmit,
-  categories,
 }: Props) => {
   const [amount, setAmount] = useState<number | ''>(
     (transaction?.amount && Math.abs(transaction?.amount)) || ''
   );
   const [name, setName] = useState(transaction?.name || '');
-  // const [date, setDate] = useState(transaction?.date || new Date());
+  const [date, setDate] = useState<Date | null>(
+    transaction?.date || new Date()
+  );
   const [description, setDescription] = useState(
     transaction?.description || ''
   );
@@ -45,9 +45,36 @@ const TransactionEditForm = ({
       : 'expense'
   );
 
-  const [categoryId, setCategoryId] = useState<string | null>(
-    transaction?.category_id || null
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    transaction?.category_id
   );
+
+  const categories: Category[] = [
+    {
+      id: '1',
+      name: 'Food',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '2',
+      name: 'Transport',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '3',
+      name: 'Shopping',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '4',
+      name: 'Salary',
+      workspace_id: '1',
+      type: 'income',
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -78,8 +105,8 @@ const TransactionEditForm = ({
       <DateTimePicker
         label="Date and time"
         placeholder="Choose date and time"
-        // value={date}
-        // onChange={setDate}
+        value={date}
+        onChange={setDate}
         popoverProps={{ withinPortal: true }}
       />
 
@@ -91,7 +118,7 @@ const TransactionEditForm = ({
           label: category.name,
         }))}
         value={categoryId}
-        onChange={(value) => setCategoryId(value as string)}
+        onChange={(id) => setCategoryId(id || undefined)}
       />
 
       <Select
@@ -138,10 +165,14 @@ const TransactionEditForm = ({
               name,
               amount: type === 'expense' ? (amount || 0) * -1 : amount || 0,
               description,
-              // date,
+              category_id: categoryId,
+              date: date || new Date(),
             };
 
-            onSubmit(projectId, walletId || '', newTransaction);
+            console.log(newTransaction);
+
+            // onSubmit(projectId, walletId, newTransaction);
+            onSubmit(newTransaction);
             closeAllModals();
           }}
           mt="md"

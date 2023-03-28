@@ -76,6 +76,12 @@ const FinancePage: PageWithLayoutProps = () => {
       : null
   );
 
+  const [localTransactions, setLocalTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    if (transactions) setLocalTransactions(transactions);
+  }, [transactions]);
+
   useEffect(() => {
     if (walletId) {
       const wallet = wallets?.find((wallet) => wallet.id === walletId);
@@ -161,6 +167,16 @@ const FinancePage: PageWithLayoutProps = () => {
     });
   };
 
+  const updateLocalTransaction = (transaction: Transaction) => {
+    setLocalTransactions((transactions) =>
+      transactions.map((t) => (t.id === transaction.id ? transaction : t))
+    );
+  };
+
+  const createLocalTransaction = (transaction: Transaction) => {
+    setLocalTransactions((transactions) => [...transactions, transaction]);
+  };
+
   const showEditTransactionModal = (transaction?: Transaction) => {
     if (!projectId || !walletId) return;
 
@@ -176,44 +192,19 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           walletId={walletId || ''}
           transaction={transaction}
-          onSubmit={transaction ? updateTransaction : createTransaction}
+          // onSubmit={transaction ? updateTransaction : createTransaction}
+          onSubmit={
+            transaction ? updateLocalTransaction : createLocalTransaction
+          }
           onDelete={
             transaction
               ? () => deleteTransaction(projectId, walletId, transaction)
               : undefined
           }
-          categories={categories}
         />
       ),
     });
   };
-
-  const categories: Category[] = [
-    {
-      id: '1',
-      name: 'Food',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '2',
-      name: 'Transport',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '3',
-      name: 'Shopping',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '3',
-      name: 'Salary',
-      workspace_id: '1',
-      type: 'income',
-    },
-  ];
 
   return (
     <>
@@ -315,8 +306,8 @@ const FinancePage: PageWithLayoutProps = () => {
               </div>
 
               <div className="grid max-h-full gap-4 overflow-y-auto md:grid-cols-2 md:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
-                {transactions &&
-                  transactions.map((transaction) => (
+                {localTransactions &&
+                  localTransactions.map((transaction) => (
                     <TransactionTab
                       key={transaction.id}
                       transaction={transaction}

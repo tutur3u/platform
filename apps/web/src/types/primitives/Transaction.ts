@@ -3,7 +3,7 @@ export interface Transaction {
   name: string;
   amount: number;
   description?: string;
-  // date: Date;
+  date: Date;
   created_at?: Date;
   category_id?: string;
   wallet_id?: string;
