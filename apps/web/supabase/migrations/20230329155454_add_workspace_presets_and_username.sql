@@ -14,9 +14,9 @@ alter table "public"."workspace_presets" enable row level security;
 alter table "public"."users"
     rename column "username" to "handle";
 alter table "public"."workspaces"
-add column "handle" text not null;
+add column "handle" text;
 alter table "public"."workspaces"
-add column "preset" text not null default ''::text;
+add column "preset" text default ''::text;
 CREATE UNIQUE INDEX handles_pkey ON public.handles USING btree (value);
 CREATE UNIQUE INDEX workspace_presets_pkey ON public.workspace_presets USING btree (name);
 CREATE UNIQUE INDEX workspaces_handle_key ON public.workspaces USING btree (handle);
