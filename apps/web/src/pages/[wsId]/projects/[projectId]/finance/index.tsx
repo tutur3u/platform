@@ -1,16 +1,16 @@
 import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { useAppearance } from '../../../../hooks/useAppearance';
-import HeaderX from '../../../../components/metadata/HeaderX';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useAppearance } from '../../../../../hooks/useAppearance';
+import HeaderX from '../../../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
-import { Wallet } from '../../../../types/primitives/Wallet';
-import WalletEditForm from '../../../../components/forms/WalletEditForm';
-import { useWallets } from '../../../../hooks/useWallets';
-import WalletTab from '../../../../components/finance/wallets/WalletTab';
+import { Wallet } from '../../../../../types/primitives/Wallet';
+import WalletEditForm from '../../../../../components/forms/WalletEditForm';
+import { useWallets } from '../../../../../hooks/useWallets';
+import WalletTab from '../../../../../components/finance/wallets/WalletTab';
 import Link from 'next/link';
 
 const ProjectFinancePage = () => {
