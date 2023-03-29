@@ -42,7 +42,7 @@
     "@tiptap/extension-underline": "2.0.0-beta.220",
     "@tiptap/pm": "2.0.0-beta.220",
     "@tiptap/react": "2.0.0-beta.220",
-    "@tiptap/starter-kit": "2.0.0-beta.220",
+    "@tiptap/starter-kit": "2.0.0",
     "@vercel/analytics": "^0.1.11",
     "dayjs": "^1.11.7",
     "eventsource-parser": "^1.0.0",
