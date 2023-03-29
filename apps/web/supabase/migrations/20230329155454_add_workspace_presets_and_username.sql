@@ -11,9 +11,8 @@ create table "public"."workspace_presets" (
     "enabled" boolean not null default true
 );
 alter table "public"."workspace_presets" enable row level security;
-alter table "public"."users" drop column "username";
 alter table "public"."users"
-add column "handle" text not null;
+    rename column "username" to "handle";
 alter table "public"."workspaces"
 add column "handle" text not null;
 alter table "public"."workspaces"
