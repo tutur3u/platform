@@ -43,6 +43,14 @@ const setupLocalEnvironment = async (
           ws_id: '00000000-0000-0000-0000-000000000002',
           user_id: user.id,
         },
+        {
+          ws_id: '00000000-0000-0000-0000-000000000003',
+          user_id: user.id,
+        },
+        {
+          ws_id: '00000000-0000-0000-0000-000000000004',
+          user_id: user.id,
+        },
       ].filter(({ ws_id }) => currentInvites.every((i) => i.ws_id !== ws_id))
     );
 

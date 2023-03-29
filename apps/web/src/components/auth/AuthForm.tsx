@@ -1,4 +1,4 @@
-import { TextInput, Divider, Button, PasswordInput } from '@mantine/core';
+import { TextInput, Button, PasswordInput, Divider } from '@mantine/core';
 import { ChangeEvent, useState } from 'react';
 import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { AuthFormFields } from '../../utils/auth-handler';
@@ -74,13 +74,13 @@ const AuthForm = ({
   return (
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
-        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           <div className="text-center">
             <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
               {title}
             </div>
 
-            <div className="text-xl font-semibold text-zinc-400">
+            <div className="text-xl font-semibold text-zinc-200">
               {description}
             </div>
           </div>
@@ -184,18 +184,18 @@ const AuthForm = ({
           </div>
 
           <Divider className="w-full border-zinc-300/10" variant="dashed" />
-          <div className="text-center text-sm font-semibold text-zinc-500">
+          <div className="text-center text-sm font-semibold text-zinc-400">
             By continuing, you agree to Tuturuuu&apos;s{' '}
             <Link
               href="https://tuturuuu.com/terms"
-              className="text-zinc-400 underline decoration-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:decoration-zinc-200"
+              className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
               Terms of Service
             </Link>{' '}
             and{' '}
             <Link
               href="https://tuturuuu.com/privacy"
-              className="text-zinc-400 underline decoration-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:decoration-zinc-200"
+              className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
               Privacy Policy
             </Link>

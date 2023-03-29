@@ -88,10 +88,10 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <>
       <div
-        className={`group fixed top-0 left-0 z-20 flex h-full items-start justify-start bg-zinc-900 transition-all duration-300 ${className}`}
+        className={`group fixed left-0 top-0 z-20 flex h-full items-start justify-start bg-zinc-900 transition-all duration-300 ${className}`}
       >
         <div
-          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pt-4 pb-2 ${
+          className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pb-2 pt-4 ${
             leftSidebarPref.main === 'open' &&
             leftSidebarPref.secondary === 'visible'
               ? 'opacity-100'
@@ -184,9 +184,9 @@ function LeftSidebar({ className }: SidebarProps) {
                                   <div>
                                     {member?.display_name || member?.email}
                                   </div>
-                                  {member?.username && (
+                                  {member?.handle && (
                                     <div className="text-blue-300">
-                                      @{member.username}
+                                      @{member.handle}
                                     </div>
                                   )}
                                 </div>
@@ -463,8 +463,8 @@ function LeftSidebar({ className }: SidebarProps) {
                   label={
                     <div className="font-semibold">
                       <div>{user?.display_name || user?.email}</div>
-                      {user?.username && (
-                        <div className="text-blue-300">@{user.username}</div>
+                      {user?.handle && (
+                        <div className="text-blue-300">@{user.handle}</div>
                       )}
                     </div>
                   }
@@ -487,7 +487,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
               <Popover.Dropdown className="grid gap-1 p-1">
                 <SidebarLink
-                  href={user?.username ? `/${user.username}` : '/settings'}
+                  href={user?.handle ? `/${user.handle}` : '/settings'}
                   onClick={() => setUserPopover(false)}
                   activeIcon={<UserCircleIcon className="w-5" />}
                   label="Profile"

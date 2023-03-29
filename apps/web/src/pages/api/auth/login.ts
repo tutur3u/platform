@@ -8,11 +8,11 @@ const handler = async (
   res: NextApiResponse<AuthResponse>
 ) => {
   try {
-    const { username, email, password }: AuthRequest = req.body;
+    const { handle, email, password }: AuthRequest = req.body;
 
     //* Basic validation
     // Check if all required fields are present
-    if ((!username && !email) || !password)
+    if ((!handle && !email) || !password)
       return res.status(400).json({
         error: {
           message: 'Not all required fields are present',
@@ -22,17 +22,17 @@ const handler = async (
     // Validate if the email is valid
     const validEmail = email ? /^[^@]+@[^@]+\.[^@]+$/.test(email) : false;
 
-    // Validate if the username is valid
-    const validUsername = username
-      ? /^[a-zA-Z0-9]+$/.test(username) &&
-        username.length >= 3 &&
-        username.length <= 20
+    // Validate if the handle is valid
+    const validUsername = handle
+      ? /^[a-zA-Z0-9]+$/.test(handle) &&
+        handle.length >= 3 &&
+        handle.length <= 20
       : false;
 
     if (!validEmail && !validUsername)
       return res.status(400).json({
         error: {
-          message: 'Invalid email or username',
+          message: 'Invalid email or handle',
         },
       });
 
@@ -57,13 +57,13 @@ const handler = async (
       return res.status(200).json(session);
     }
 
-    // If the identifier is a username, login with username
-    if (username) {
-      const session = await loginWithUsername(supabase, username, password);
+    // If the identifier is a handle, login with handle
+    if (handle) {
+      const session = await loginWithUsername(supabase, handle, password);
       return res.status(200).json(session);
     }
 
-    // If the identifier is neither an email nor a username, throw an error
+    // If the identifier is neither an email nor a handle, throw an error
     throw 'Invalid credentials';
   } catch (error) {
     return res.status(400).json({
@@ -95,13 +95,13 @@ const loginWithEmail = async (
 
 const loginWithUsername = async (
   supabase: SupabaseClient,
-  username: string,
+  handle: string,
   password: string
 ) => {
   const { data, error } = await supabase
     .from('users')
     .select('email')
-    .eq('username', username)
+    .eq('handle', handle)
     .single();
 
   // Check if there is an error

@@ -80,7 +80,7 @@ const WorkspaceMembersPage = () => {
         title: invited ? 'Invitation revoked' : 'Member removed',
         message: invited
           ? `Invitation to ${
-              (member?.username && `@${member?.username}`) ||
+              (member?.handle && `@${member?.handle}`) ||
               member?.display_name ||
               member?.email
             } has been revoked`
@@ -172,7 +172,7 @@ const WorkspaceMembersPage = () => {
                 <p className="text-zinc-400">{member.email}</p>
 
                 <button
-                  className="absolute top-4 right-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
+                  className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
                   onClick={() => deleteMember(member, false)}
                 >
                   {user?.id === member.id ? (
@@ -222,7 +222,7 @@ const WorkspaceMembersPage = () => {
               <p className="text-zinc-400">{member.email}</p>
 
               <button
-                className="absolute top-4 right-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
+                className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
                 onClick={() => deleteMember(member, true)}
               >
                 <Tooltip label="Revoke invitation">

@@ -40,8 +40,8 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 
   const { data: user, error } = await supabase
     .from('users')
-    .select('id, username, display_name, birthday, created_at')
-    .eq('username', handle)
+    .select('id, handle, display_name, birthday, created_at')
+    .eq('handle', handle)
     .single();
 
   if (error) {
@@ -61,7 +61,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 interface ProfilePageParams {
   user: {
     id: string;
-    username: string;
+    handle: string;
     display_name: string;
     birthday: string;
     created_at: string;
@@ -204,7 +204,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   return (
     <>
       <HeaderX
-        label={`${user?.username} ${
+        label={`${user?.handle} ${
           user?.display_name ? `(${user?.display_name})` : ''
         }`}
       />
@@ -230,7 +230,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
               {user.display_name}
             </div>
             <div className="text-lg font-semibold text-purple-300">
-              @{user.username}
+              @{user.handle}
             </div>
           </div>
         </div>

@@ -52,14 +52,14 @@ const TaskWrapper = ({
             display_name?: string;
             email?: string;
             phone?: string;
-            username?: string;
+            handle?: string;
             created_at?: string;
           }) => ({
             id: assignee.id,
             display_name: assignee.display_name,
             email: assignee.email,
             phone: assignee.phone,
-            username: assignee.username,
+            handle: assignee.handle,
             created_at: assignee.created_at,
           })
         )
@@ -261,9 +261,9 @@ const TaskWrapper = ({
                     label={
                       <div className="font-semibold">
                         <div>{assignee?.display_name}</div>
-                        {assignee?.username && (
+                        {assignee?.handle && (
                           <div className="text-blue-300">
-                            @{assignee.username}
+                            @{assignee.handle}
                           </div>
                         )}
                       </div>

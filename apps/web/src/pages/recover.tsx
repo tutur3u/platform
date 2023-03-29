@@ -1,13 +1,13 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import React, { ReactElement } from 'react';
+import React from 'react';
 import HeaderX from '../components/metadata/HeaderX';
-import DefaultLayout from '../components/layouts/DefaultLayout';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { AuthFormFields, authenticate } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import Image from 'next/image';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -19,7 +19,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (session)
     return {
       redirect: {
-        destination: '/home',
+        destination: '/onboarding',
         permanent: false,
       },
       props: {
@@ -51,7 +51,7 @@ const PasswordRecoveryPage = () => {
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
       const { redirectedFrom: nextUrl } = router.query;
-      router.push(nextUrl ? nextUrl.toString() : '/home');
+      router.push(nextUrl ? nextUrl.toString() : '/onboarding');
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -66,6 +66,13 @@ const PasswordRecoveryPage = () => {
   return (
     <>
       <HeaderX label="Tuturuuu — Password Recovery" />
+      <Image
+        src="/media/background/auth-featured-bg.jpg"
+        alt="Featured background"
+        width={1619}
+        height={1080}
+        className="fixed inset-0 h-screen w-screen object-cover"
+      />
       <AuthForm
         title="Recover password"
         description="Enter your email address to recover your password"
@@ -81,14 +88,6 @@ const PasswordRecoveryPage = () => {
         disabled
       />
     </>
-  );
-};
-
-PasswordRecoveryPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <DefaultLayout hideNavLinks hideFooter>
-      {page}
-    </DefaultLayout>
   );
 };
 

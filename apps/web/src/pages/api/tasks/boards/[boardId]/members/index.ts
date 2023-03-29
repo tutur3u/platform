@@ -38,7 +38,7 @@ const fetchMembers = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('task_board_members')
-    .select('...users(id, display_name, username)')
+    .select('...users(id, display_name, handle)')
     .eq('board_id', boardId)
     .order('created_at');
 

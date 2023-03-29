@@ -10,12 +10,12 @@ const fetchMembers = async (
 
   const membersQuery = supabase
     .from('workspace_members')
-    .select('created_at, users(id, username, display_name, avatar_url, email)')
+    .select('created_at, users(id, handle, display_name, avatar_url, email)')
     .eq('ws_id', wsId);
 
   const invitesQuery = supabase
     .from('workspace_invites')
-    .select('created_at, users(id, username, display_name, avatar_url, email)')
+    .select('created_at, users(id, handle, display_name, avatar_url, email)')
     .eq('ws_id', wsId);
 
   const [members, invites] = await Promise.all([membersQuery, invitesQuery]);

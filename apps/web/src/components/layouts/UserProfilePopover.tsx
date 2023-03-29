@@ -63,7 +63,7 @@ const UserProfilePopover = () => {
         <Divider variant="dashed" />
 
         <SidebarLink
-          href={user?.username ? `/${user.username}` : '/settings'}
+          href={user?.handle ? `/${user.handle}` : '/settings'}
           onClick={() => setUserPopover(false)}
           activeIcon={<UserCircleIcon className="w-5" />}
           label="Profile"

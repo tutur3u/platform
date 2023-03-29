@@ -87,7 +87,7 @@ const HomePage = () => {
       ) : (
         <>
           {workspaces?.invited?.length > 0 && (
-            <div className="mb-16 grid gap-8">
+            <div className="mb-8 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               {workspaces?.invited?.map((ws) => (
                 <WorkspaceInviteSnippet
                   key={ws.id}

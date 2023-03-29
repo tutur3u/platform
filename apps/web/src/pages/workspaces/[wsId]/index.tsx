@@ -27,13 +27,13 @@ const WorkspaceOverviewPage = () => {
             id: string;
             display_name: string;
             email: string;
-            username: string;
+            handle: string;
             avatar_url: string;
           }) => ({
             id: m.id,
             display_name: m.display_name,
             email: m.email,
-            username: m.username,
+            handle: m.handle,
             avatar_url: m.avatar_url,
           })
         ) || []

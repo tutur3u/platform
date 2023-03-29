@@ -10,7 +10,7 @@ interface Props {
 
 const WorkspaceInviteSnippet = ({ ws, onAccept, onDecline }: Props) => {
   return (
-    <div className="max-w-xl rounded-lg bg-zinc-900 p-8">
+    <div className="rounded-lg bg-zinc-900 p-8">
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-zinc-500">You have been invited to join </span>
         {ws?.name || `Unnamed Workspace`}{' '}
