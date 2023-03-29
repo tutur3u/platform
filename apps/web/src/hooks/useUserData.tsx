@@ -44,19 +44,19 @@ export const UserDataProvider = ({
   }, [error]);
 
   const updateData = async (data: Partial<UserData>) => {
-    if (data?.username?.length) {
-      if (data.username.length < 3 || data.username.length > 20) {
+    if (data?.handle?.length) {
+      if (data.handle.length < 3 || data.handle.length > 20) {
         showNotification({
-          title: 'Invalid username',
+          title: 'Invalid handle',
           message: 'Username must be between 3 and 20 characters',
           color: 'red',
         });
         return;
       }
 
-      if (!/^[a-zA-Z0-9_]+$/.test(data.username)) {
+      if (!/^[a-zA-Z0-9_]+$/.test(data.handle)) {
         showNotification({
-          title: 'Invalid username',
+          title: 'Invalid handle',
           message: 'Username can only contain letters, numbers and underscores',
           color: 'red',
         });
@@ -82,7 +82,7 @@ export const UserDataProvider = ({
     } else if ((await response.json())?.error?.includes('duplicate key')) {
       showNotification({
         title: 'Username already taken',
-        message: 'Please choose another username',
+        message: 'Please choose another handle',
         color: 'red',
       });
     } else {
@@ -97,7 +97,7 @@ export const UserDataProvider = ({
   const parseData = (data?: {
     id: string;
     email?: string;
-    username?: string;
+    handle?: string;
     birthday?: string;
     display_name?: string;
     created_at?: string;
@@ -106,7 +106,7 @@ export const UserDataProvider = ({
     return {
       id: data.id,
       email: data.email,
-      username: data.username,
+      handle: data.handle,
       birthday: data.birthday,
       display_name: data.display_name,
       created_at: data.created_at,

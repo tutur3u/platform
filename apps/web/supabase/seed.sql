@@ -1,5 +1,18 @@
+insert into public.workspace_presets (name)
+values ('GENERAL'),
+    ('PHARMACY'),
+    ('EDUCATION');
+-- Populate handles
+insert into public.handles (value)
+values ('user1'),
+    ('user2'),
+    ('user3'),
+    ('personal'),
+    ('tuturuuu'),
+    ('prototype-pharmacy'),
+    ('prototype-school');
 -- Populate users
-insert into public.users (id, username, display_name, email)
+insert into public.users (id, handle, display_name, email)
 values (
         '00000000-0000-0000-0000-000000000001',
         'user1',
@@ -19,14 +32,30 @@ values (
         'user3@tuturuuu.com'
     );
 -- Populate workspaces
-insert into public.workspaces (id, name)
+insert into public.workspaces (id, name, handle, preset)
 values (
         '00000000-0000-0000-0000-000000000001',
-        'Personal'
+        'Personal',
+        'personal',
+        'GENERAL'
     ),
     (
         '00000000-0000-0000-0000-000000000002',
-        'Tuturuuu'
+        'Tuturuuu',
+        'tuturuuu',
+        'GENERAL'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Prototype Pharmacy',
+        'prototype-pharmacy',
+        'PHARMACY'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        'Prototype School',
+        'prototype-school',
+        'EDUCATION'
     );
 -- Populate workspace_members
 insert into public.workspace_members (user_id, ws_id)

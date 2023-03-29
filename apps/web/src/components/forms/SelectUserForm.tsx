@@ -52,7 +52,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
       const users = await fetchUsers(input);
       const suggestedUsers = users.map((user: User) => ({
         ...user,
-        value: user?.username || user?.email,
+        value: user?.handle || user?.email,
       }));
 
       setSuggestions(suggestedUsers);
@@ -64,14 +64,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      {
-        id,
-        value,
-        username,
-        avatar_url,
-        display_name,
-        ...others
-      }: UserWithValue,
+      { id, value, handle, avatar_url, display_name, ...others }: UserWithValue,
       ref
     ) =>
       id === value ? (
@@ -86,7 +79,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
             <div>
               <Text>{display_name}</Text>
               <Text size="xs" color="dimmed">
-                {username ? `@${username}` : 'No username'}
+                {handle ? `@${handle}` : 'No handle'}
               </Text>
             </div>
           </Group>
@@ -119,7 +112,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
       showNotification({
         title: 'Invitation sent',
         message: `Invitation to ${
-          (selectedUser?.username && `@${selectedUser?.username}`) ||
+          (selectedUser?.handle && `@${selectedUser?.handle}`) ||
           selectedUser?.display_name ||
           value
         } has been sent`,
@@ -143,7 +136,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         <Autocomplete
           value={value}
           onChange={setValue}
-          placeholder="Enter an username or email"
+          placeholder="Enter an handle or email"
           itemComponent={AutoCompleteItem}
           data={suggestions}
           onItemSubmit={(item) => {
@@ -169,7 +162,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
                   {selectedUser.display_name}
                 </Text>
                 <Text weight="light" className="text-blue-100">
-                  @{selectedUser.username}
+                  @{selectedUser.handle}
                 </Text>
               </div>
             </>

@@ -7,8 +7,25 @@ import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
 import LoadingIndicator from '../common/LoadingIndicator';
 import SidebarLayout from './SidebarLayout';
+import {
+  Tab,
+  financeTabs,
+  inventoryTabs,
+  miscTabs,
+  patientDetailsTabs,
+  productDetailsTabs,
+  projectTabs,
+  workspaceTabs,
+} from '../../constants/tabs';
 
-type Mode = 'workspace' | 'project' | 'document';
+type Mode =
+  | 'workspace'
+  | 'project'
+  | 'misc'
+  | 'inventory'
+  | 'finance'
+  | 'product_details'
+  | 'patient_details';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -16,85 +33,64 @@ interface NestedLayoutProps {
 
   isFavorite?: boolean;
   onFavorite?: () => void;
+
+  noTabs?: boolean;
 }
-
-const workspaceTabs = [
-  {
-    name: 'Overview',
-    href: '/',
-  },
-  {
-    name: 'Projects',
-    href: '/projects',
-  },
-  {
-    name: 'Members',
-    href: '/members',
-  },
-  {
-    name: 'Settings',
-    href: '/settings',
-  },
-];
-
-const projectTabs = [
-  {
-    name: 'Overview',
-    href: '/',
-  },
-  {
-    name: 'Calendar',
-    href: '/calendar',
-  },
-  {
-    name: 'Boards',
-    href: '/boards',
-  },
-  {
-    name: 'Documents',
-    href: '/documents',
-  },
-  {
-    name: 'Finance',
-    href: '/finance',
-  },
-  {
-    name: 'Members',
-    href: '/members',
-  },
-  {
-    name: 'Settings',
-    href: '/settings',
-  },
-];
 
 const NestedLayout: FC<NestedLayoutProps> = ({
   children,
   mode = 'workspace',
   isFavorite = false,
   onFavorite,
+  noTabs = false,
 }: NestedLayoutProps) => {
   const router = useRouter();
   const { segments } = useAppearance();
 
   const {
-    query: { wsId, projectId },
+    query: { wsId, projectId, productId, patientId },
   } = router;
 
-  const tabs =
-    mode === 'document'
-      ? []
-      : mode === 'workspace'
+  const enhanceHref = (tabs: Tab[]) => {
+    return tabs.map((tab) => {
+      if (tab.href) {
+        return {
+          ...tab,
+          href: tab.href
+            .replace('[wsId]', wsId as string)
+            .replace('[projectId]', projectId as string)
+            .replace('[productId]', productId as string)
+            .replace('[patientId]', patientId as string)
+            .replace(/\/$/, ''),
+        };
+      }
+
+      return tab;
+    });
+  };
+
+  const layoutTabs =
+    mode === 'workspace'
       ? workspaceTabs
+      : mode === 'misc'
+      ? miscTabs
+      : mode === 'inventory'
+      ? inventoryTabs
+      : mode === 'finance'
+      ? financeTabs
+      : mode === 'product_details'
+      ? productDetailsTabs
+      : mode === 'patient_details'
+      ? patientDetailsTabs
       : projectTabs;
-  const path =
-    mode === 'workspace' ? `/workspaces/${wsId}` : `/projects/${projectId}`;
+
+  const tabs = enhanceHref(layoutTabs);
 
   return (
     <SidebarLayout>
       <nav
         className={`${
-          mode === 'document' ? 'h-16' : 'h-25'
+          noTabs ? 'h-16' : 'h-25'
         } w-full flex-none border-b border-zinc-800`}
       >
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
@@ -111,21 +107,22 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           {segments && segments.length > 0 ? (
             <div className="scrollbar-none flex gap-x-2 overflow-x-auto">
               {segments
-                // remove last segment
-                .slice(
-                  0,
-                  mode === 'document' ? segments.length : segments.length - 1
+                .filter((_, index) =>
+                  // If noTabs is true, then we want to show all segments
+                  noTabs
+                    ? true
+                    : // Otherwise, don't show the last segment
+                      index < segments.length - 1
                 )
                 .map((s, index) => (
-                  <Fragment key={`segment-${s.href}`}>
+                  <Fragment key={`segment-${s.content}-${s.href}`}>
                     <Link
                       href={s.href}
                       className="min-w-max rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
                     >
                       {s?.content || ''}
                     </Link>
-                    {index <
-                      segments.length - (mode === 'document' ? 1 : 2) && (
+                    {index < segments.length - (noTabs ? 1 : 2) && (
                       <span className="text-zinc-500">/</span>
                     )}
                   </Fragment>
@@ -135,34 +132,32 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             <LoadingIndicator className="h-4 w-4" />
           )}
         </div>
-        <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
-          {tabs.map((tab) => (
-            <Link
-              key={`tab-${tab.href}`}
-              href={`${path}${tab.href}`}
-              className={`group rounded-t-lg border-b-2 pb-2 ${
-                segments &&
-                segments.length > 0 &&
-                (mode === 'workspace'
-                  ? segments
-                      .map((segment) => segment.content)
-                      .includes(tab.name)
-                  : segments[3]?.content === tab.name)
-                  ? 'border-zinc-300 text-zinc-300'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <div className="rounded px-4 py-1 font-semibold group-hover:bg-zinc-800">
-                {tab.name}
-              </div>
-            </Link>
-          ))}
-        </div>
+        {noTabs || (
+          <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
+            {tabs.map((tab) => (
+              <Link
+                key={`tab-${tab.href}`}
+                href={tab.href}
+                className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
+                  segments &&
+                  segments.length > 0 &&
+                  segments.slice(-1)[0].href === tab.href
+                    ? 'border-zinc-300 text-zinc-300'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">
+                  {tab.name}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </nav>
       <div
         className={`${
-          mode === 'document' ? 'h-[calc(100vh-4rem)]' : 'h-[calc(100vh-13rem)]'
-        } p-4 md:px-8 lg:px-16 xl:px-32`}
+          noTabs ? 'h-[calc(100vh-4rem)]' : 'h-[calc(100vh-13rem)]'
+        } px-4 py-8 md:px-8 lg:px-16 xl:px-32`}
       >
         {children}
       </div>

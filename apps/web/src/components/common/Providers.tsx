@@ -10,7 +10,6 @@ import { WorkspaceProvider } from '../../hooks/useWorkspaces';
 import { SWRConfig } from 'swr';
 import { UserListProvider } from '../../hooks/useUserList';
 import { CalendarProvider } from '../../hooks/useCalendar';
-import { ProjectProvider } from '../../hooks/useProjects';
 import { WalletProvider } from '../../hooks/useWallets';
 import { TransactionProvider } from '../../hooks/useTransactions';
 import MantineProvider from '../mantine/MantineProvider';
@@ -43,11 +42,9 @@ const Providers = ({
               <UserListProvider>
                 <AppearanceProvider>
                   <WorkspaceProvider>
-                    <ProjectProvider>
-                      <WalletProvider>
-                        <TransactionProvider>{children}</TransactionProvider>
-                      </WalletProvider>
-                    </ProjectProvider>
+                    <WalletProvider>
+                      <TransactionProvider>{children}</TransactionProvider>
+                    </WalletProvider>
                   </WorkspaceProvider>
                 </AppearanceProvider>
               </UserListProvider>

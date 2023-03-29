@@ -33,7 +33,8 @@ const HomePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const { isLoading, workspaces, createWorkspace } = useWorkspaces();
+  const { workspaces, workspacesLoading, workspaceInvites, createWorkspace } =
+    useWorkspaces();
 
   const showEditWorkspaceModal = (ws?: Workspace) => {
     openModal({
@@ -80,15 +81,15 @@ const HomePage = () => {
   return (
     <div className="p-4 md:p-8">
       <HeaderX label="Home" />
-      {isLoading ? (
+      {workspacesLoading ? (
         <div className="flex items-center justify-center">
           <LoadingIndicator className="h-8" />
         </div>
       ) : (
         <>
-          {workspaces?.invited?.length > 0 && (
-            <div className="mb-16 grid gap-8">
-              {workspaces?.invited?.map((ws) => (
+          {(workspaceInvites?.length || 0) > 0 && (
+            <div className="mb-8 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {workspaceInvites?.map((ws) => (
                 <WorkspaceInviteSnippet
                   key={ws.id}
                   ws={ws}
@@ -99,9 +100,9 @@ const HomePage = () => {
             </div>
           )}
 
-          {workspaces?.current?.length > 0 ? (
+          {(workspaces?.length || 0) > 0 ? (
             <div className="grid gap-8">
-              {workspaces?.current?.map((ws) => (
+              {workspaces?.map((ws) => (
                 <WorkspacePreviewCard key={ws.id} ws={ws} />
               ))}
             </div>

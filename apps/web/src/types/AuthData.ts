@@ -2,7 +2,7 @@ import { Session } from '@supabase/supabase-js';
 import { Error } from './Error';
 
 export type AuthRequest = {
-  username?: string;
+  handle?: string;
   email?: string;
   password: string;
 };

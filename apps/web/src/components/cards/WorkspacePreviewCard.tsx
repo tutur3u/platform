@@ -62,7 +62,7 @@ const WorkspacePreviewCard = ({ ws }: Props) => {
   return (
     <div>
       <Link
-        href={`/workspaces/${ws.id}`}
+        href={`/${ws.id}`}
         className={`${
           isRoot
             ? 'text-purple-200 hover:text-purple-300'

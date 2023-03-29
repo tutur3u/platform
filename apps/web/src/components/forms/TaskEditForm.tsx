@@ -105,7 +105,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       const users = await fetchUsers(input);
       const suggestedUsers = users.map((user: UserData) => ({
         ...user,
-        value: `${user.username} ${user.display_name} ${user.email}`,
+        value: `${user.handle} ${user.display_name} ${user.email}`,
       }));
 
       setSuggestions(suggestedUsers);
@@ -118,7 +118,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
   // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
-      { username, avatar_url, display_name, ...others }: UserWithValue,
+      { handle, avatar_url, display_name, ...others }: UserWithValue,
       ref: React.ForwardedRef<HTMLDivElement>
     ) => (
       <div ref={ref} {...others}>
@@ -128,7 +128,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
           <div>
             <Text>{display_name}</Text>
             <Text size="xs" color="dimmed">
-              {username ? `@${username}` : 'No username'}
+              {handle ? `@${handle}` : 'No handle'}
             </Text>
           </div>
         </Group>
@@ -154,14 +154,14 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               display_name?: string;
               email?: string;
               phone?: string;
-              username?: string;
+              handle?: string;
               created_at?: string;
             }) => ({
               id: assignee.id,
               display_name: assignee.display_name,
               email: assignee.email,
               phone: assignee.phone,
-              username: assignee.username,
+              handle: assignee.handle,
               created_at: assignee.created_at,
             })
           )
@@ -531,7 +531,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               <Autocomplete
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Enter an username"
+                placeholder="Enter an handle"
                 itemComponent={AutoCompleteItem}
                 data={suggestions}
                 onItemSubmit={(item) => {
@@ -568,7 +568,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
             {getAllAssignees().length > 0 && (
               <>
-                <h3 className="mt-4 mb-2 text-center text-lg font-semibold">
+                <h3 className="mb-2 mt-4 text-center text-lg font-semibold">
                   Assignees
                 </h3>
                 <div className="grid gap-2 lg:grid-cols-2">
@@ -582,7 +582,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                       }`}
                     >
                       <Link
-                        href={`/${assignee.username}`}
+                        href={`/${assignee.handle}`}
                         onClick={() => closeAllModals()}
                       >
                         <Avatar color="blue" radius="xl">
@@ -594,7 +594,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                           {assignee.display_name}
                         </Text>
                         <Text weight="light" className="text-blue-100">
-                          @{assignee.username}
+                          @{assignee.handle}
                         </Text>
                       </div>
 

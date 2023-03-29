@@ -35,7 +35,7 @@ const fetchActivities = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('users!creator_id(id, display_name, username), created_at')
+    .select('users!creator_id(id, display_name, handle), created_at')
     .eq('id', taskId)
     .single();
 

@@ -63,7 +63,7 @@ const signup = async (
     email,
     password,
     options: {
-      emailRedirectTo: 'https://tuturuuu.com/home',
+      emailRedirectTo: 'https://tuturuuu.com/onboarding',
     },
   });
 

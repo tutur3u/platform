@@ -11,12 +11,12 @@ export const isIncompleteEmail = (text: string) => {
 };
 
 export const suggestEmails = (text: string) => {
-  const username = text.split('@')[0];
+  const handle = text.split('@')[0];
   const suggestions = [
-    `${username}@gmail.com`,
-    `${username}@yahoo.com`,
-    `${username}@outlook.com`,
-    `${username}@tuturuuu.com`,
+    `${handle}@gmail.com`,
+    `${handle}@yahoo.com`,
+    `${handle}@outlook.com`,
+    `${handle}@tuturuuu.com`,
   ];
 
   return suggestions.filter((suggestion) => isEmail(suggestion));

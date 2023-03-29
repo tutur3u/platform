@@ -1,6 +1,5 @@
 import { Select } from '@mantine/core';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { useProjects } from '../../hooks/useProjects';
 import { useRouter } from 'next/router';
 import { BuildingOffice2Icon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
@@ -15,13 +14,13 @@ interface Props {
 const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   const router = useRouter();
 
-  const { isLoading, workspaces, createWorkspace } = useWorkspaces();
-  const { wsId, setWsId } = useProjects();
+  const { ws, workspaces, workspacesLoading, createWorkspace } =
+    useWorkspaces();
 
-  const hasWorkspaces = workspaces?.current && workspaces.current.length > 0;
+  const hasWorkspaces = workspaces && workspaces.length > 0;
 
   const wsOptions = hasWorkspaces
-    ? workspaces.current.map((o) => ({
+    ? workspaces.map((o) => ({
         value: o.id,
         label: o?.name || 'Unnamed Workspace',
       }))
@@ -40,7 +39,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
     });
   };
 
-  if (!isLoading && !hasWorkspaces)
+  if (!workspacesLoading && !hasWorkspaces)
     return (
       <button
         className="flex w-full items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-300/10 hover:text-zinc-200"
@@ -55,13 +54,16 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
     <Select
       label={showLabel ? 'Workspace' : undefined}
       data={wsOptions}
-      value={wsId}
+      value={ws?.id}
       onChange={(wsId) => {
-        setWsId(wsId || '');
         if (onChange) onChange();
-        router.push(`/workspaces/${wsId}`);
+
+        // replace wsId in url
+        router.push(
+          router.asPath.replace(new RegExp(`/${router.query.wsId}`), `/${wsId}`)
+        );
       }}
-      disabled={isLoading || !hasWorkspaces}
+      disabled={workspacesLoading || !hasWorkspaces}
       classNames={{
         label: 'mb-1',
         item: 'text-sm',

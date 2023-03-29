@@ -143,7 +143,7 @@ const GPTPage = () => {
 };
 
 GPTPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="document">{page}</NestedLayout>;
+  return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
 export default GPTPage;

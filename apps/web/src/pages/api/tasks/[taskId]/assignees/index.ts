@@ -38,7 +38,7 @@ const fetchAssignees = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('task_assignees')
-    .select('users(id, display_name, username)')
+    .select('users(id, display_name, handle)')
     .eq('task_id', taskId);
 
   if (error) return res.status(401).json({ error: error.message });

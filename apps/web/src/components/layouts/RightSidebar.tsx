@@ -10,7 +10,7 @@ function RightSidebar({ className }: SidebarProps) {
 
   return (
     <div
-      className={`group fixed top-0 right-0 z-20 hidden h-full flex-col items-center justify-start gap-3 border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:flex ${className} ${
+      className={`group fixed right-0 top-0 z-20 hidden h-full flex-col items-center justify-start gap-3 border-l border-zinc-800/80 bg-zinc-900 backdrop-blur-lg md:flex ${className} ${
         users.length > 0 ? 'w-full px-2 py-4' : 'w-0'
       }`}
     >
@@ -20,8 +20,8 @@ function RightSidebar({ className }: SidebarProps) {
           label={
             <div className="font-semibold">
               <div>{user?.display_name || 'Unknown'}</div>
-              {user?.username && (
-                <div className="text-blue-300">@{user.username}</div>
+              {user?.handle && (
+                <div className="text-blue-300">@{user.handle}</div>
               )}
             </div>
           }
@@ -61,9 +61,9 @@ function RightSidebar({ className }: SidebarProps) {
               <div className="text-md min-w-max font-bold">
                 {user?.display_name || user?.email || 'Not logged in'}
               </div>
-              {user?.username && (
+              {user?.handle && (
                 <div className="min-w-max text-sm font-semibold text-blue-300">
-                  @{user?.username}
+                  @{user?.handle}
                 </div>
               )}
             </div>

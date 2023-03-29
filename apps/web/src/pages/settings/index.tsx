@@ -42,13 +42,13 @@ const SettingPage: PageWithLayoutProps = () => {
   const [saving, setSaving] = useState(false);
 
   const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
+  const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
 
   useEffect(() => {
     if (data) {
       setDisplayName(data?.display_name || '');
-      setUsername(data?.username || '');
+      setUsername(data?.handle || '');
       setBirthday(data?.birthday ? moment(data?.birthday).toDate() : null);
     }
   }, [data]);
@@ -58,7 +58,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
     await updateData?.({
       display_name: displayName,
-      username,
+      handle,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
@@ -94,16 +94,16 @@ const SettingPage: PageWithLayoutProps = () => {
             label="Username"
             placeholder="tuturuuu"
             // replace all characters that are not a-z, 0-9, or _
-            value={username.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
+            value={handle.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              const username = event.currentTarget.value.replace(
+              const handle = event.currentTarget.value.replace(
                 /[^a-z0-9_]/gi,
                 ''
               );
 
               // Limit to 20 characters
-              if (username.length > 20) return;
-              setUsername(username.toLowerCase());
+              if (handle.length > 20) return;
+              setUsername(handle.toLowerCase());
             }}
             icon={<IdentificationIcon className="h-5 w-5" />}
           />
