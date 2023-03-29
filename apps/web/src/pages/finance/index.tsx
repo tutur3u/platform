@@ -7,7 +7,7 @@ import { useUserList } from '../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { Wallet } from '../../types/primitives/Wallet';
 import WalletEditForm from '../../components/forms/WalletEditForm';
-import { openModal } from '@mantine/modals';
+import { closeAllModals, openModal } from '@mantine/modals';
 import { Transaction } from '../../types/primitives/Transaction';
 import { useWallets } from '../../hooks/useWallets';
 import { useProjects } from '../../hooks/useProjects';
@@ -21,6 +21,8 @@ import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { Project } from '../../types/primitives/Project';
 import { SquaresPlusIcon } from '@heroicons/react/24/solid';
+import WalletDeleteForm from '../../components/forms/WalletDeleteForm';
+import { Category } from '../../types/primitives/Category';
 
 const FinancePage: PageWithLayoutProps = () => {
   const router = useRouter();
@@ -73,6 +75,12 @@ const FinancePage: PageWithLayoutProps = () => {
       ? `/api/projects/${projectId}/wallets/${walletId}/transactions`
       : null
   );
+
+  const [localTransactions, setLocalTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    if (transactions) setLocalTransactions(transactions);
+  }, [transactions]);
 
   useEffect(() => {
     if (walletId) {
@@ -136,10 +144,37 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           wallet={wallet}
           onSubmit={wallet ? updateWallet : createWallet}
-          onDelete={wallet ? () => handleDeleteWallet(wallet) : undefined}
+          onDelete={wallet ? () => showDeleteWalletModal(wallet) : undefined}
         />
       ),
     });
+  };
+
+  const showDeleteWalletModal = async (wallet: Wallet) => {
+    openModal({
+      title: <div className="font-semibold">Are you absolutely sure?</div>,
+      centered: true,
+      children: (
+        <WalletDeleteForm
+          wallet={wallet}
+          onDelete={() => {
+            deleteWallet(projectId as string, wallet);
+            setWalletId(null);
+            closeAllModals();
+          }}
+        />
+      ),
+    });
+  };
+
+  const updateLocalTransaction = (transaction: Transaction) => {
+    setLocalTransactions((transactions) =>
+      transactions.map((t) => (t.id === transaction.id ? transaction : t))
+    );
+  };
+
+  const createLocalTransaction = (transaction: Transaction) => {
+    setLocalTransactions((transactions) => [...transactions, transaction]);
   };
 
   const showEditTransactionModal = (transaction?: Transaction) => {
@@ -157,7 +192,10 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           walletId={walletId || ''}
           transaction={transaction}
-          onSubmit={transaction ? updateTransaction : createTransaction}
+          // onSubmit={transaction ? updateTransaction : createTransaction}
+          onSubmit={
+            transaction ? updateLocalTransaction : createLocalTransaction
+          }
           onDelete={
             transaction
               ? () => deleteTransaction(projectId, walletId, transaction)
@@ -166,19 +204,6 @@ const FinancePage: PageWithLayoutProps = () => {
         />
       ),
     });
-  };
-
-  const handleDeleteWallet = (wallet: Wallet) => {
-    deleteWallet(projectId as string, wallet);
-    setWalletId(null);
-
-    showNotification({
-      title: 'Wallet deleted',
-      color: 'teal',
-      message: `Wallet ${wallet.name} deleted successfully`,
-    });
-
-    mutate('/api/workspaces');
   };
 
   return (
@@ -281,8 +306,8 @@ const FinancePage: PageWithLayoutProps = () => {
               </div>
 
               <div className="grid max-h-full gap-4 overflow-y-auto md:grid-cols-2 md:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
-                {transactions &&
-                  transactions.map((transaction) => (
+                {localTransactions &&
+                  localTransactions.map((transaction) => (
                     <TransactionTab
                       key={transaction.id}
                       transaction={transaction}
@@ -303,7 +328,7 @@ const FinancePage: PageWithLayoutProps = () => {
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-4">
             <div className="text-center font-semibold text-zinc-500 md:text-2xl">
-              Select a wallet to view transactions.
+              Add project and wallet to start tracking your finance.
             </div>
             <button
               onClick={showProjectEditForm}
