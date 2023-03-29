@@ -15,7 +15,6 @@ import { Transaction } from '../../../../../types/primitives/Transaction';
 import { useTransactions } from '../../../../../hooks/useTransactions';
 import TransactionTab from '../../../../../components/finance/transactions/TransactionTab';
 import WalletDeleteForm from '../../../../../components/forms/WalletDeleteForm';
-import { Category } from '../../../../../types/primitives/Category';
 
 const WalletDetailPage = () => {
   const router = useRouter();
@@ -110,33 +109,6 @@ const WalletDetailPage = () => {
     });
   };
 
-  const categories: Category[] = [
-    {
-      id: '1',
-      name: 'Food',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '2',
-      name: 'Transport',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '3',
-      name: 'Shopping',
-      workspace_id: '1',
-      type: 'expense',
-    },
-    {
-      id: '3',
-      name: 'Salary',
-      workspace_id: '1',
-      type: 'income',
-    },
-  ];
-
   const showEditTransactionModal = (transaction?: Transaction) => {
     if (!projectId || !walletId) return;
 
@@ -163,7 +135,6 @@ const WalletDetailPage = () => {
                   )
               : undefined
           }
-          categories={categories}
         />
       ),
     });

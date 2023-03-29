@@ -10,8 +10,8 @@ import { Transaction } from '../../types/primitives/Transaction';
 interface Props {
   transaction?: Transaction;
   onSubmit: (
-    // projectId: string,
-    // walletId: string,
+    projectId: string,
+    walletId: string,
     transaction: Transaction
   ) => void;
   onDelete?: () => void;
@@ -171,8 +171,7 @@ const TransactionEditForm = ({
 
             console.log(newTransaction);
 
-            // onSubmit(projectId, walletId, newTransaction);
-            onSubmit(newTransaction);
+            onSubmit(projectId, walletId, newTransaction);
             closeAllModals();
           }}
           mt="md"

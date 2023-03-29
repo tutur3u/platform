@@ -22,7 +22,6 @@ import { useRouter } from 'next/router';
 import { Project } from '../../types/primitives/Project';
 import { SquaresPlusIcon } from '@heroicons/react/24/solid';
 import WalletDeleteForm from '../../components/forms/WalletDeleteForm';
-import { Category } from '../../types/primitives/Category';
 
 const FinancePage: PageWithLayoutProps = () => {
   const router = useRouter();
@@ -167,16 +166,6 @@ const FinancePage: PageWithLayoutProps = () => {
     });
   };
 
-  const updateLocalTransaction = (transaction: Transaction) => {
-    setLocalTransactions((transactions) =>
-      transactions.map((t) => (t.id === transaction.id ? transaction : t))
-    );
-  };
-
-  const createLocalTransaction = (transaction: Transaction) => {
-    setLocalTransactions((transactions) => [...transactions, transaction]);
-  };
-
   const showEditTransactionModal = (transaction?: Transaction) => {
     if (!projectId || !walletId) return;
 
@@ -192,10 +181,7 @@ const FinancePage: PageWithLayoutProps = () => {
           projectId={projectId || ''}
           walletId={walletId || ''}
           transaction={transaction}
-          // onSubmit={transaction ? updateTransaction : createTransaction}
-          onSubmit={
-            transaction ? updateLocalTransaction : createLocalTransaction
-          }
+          onSubmit={transaction ? updateTransaction : createTransaction}
           onDelete={
             transaction
               ? () => deleteTransaction(projectId, walletId, transaction)
