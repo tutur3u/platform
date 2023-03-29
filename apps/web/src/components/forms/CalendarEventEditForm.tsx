@@ -1,6 +1,6 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput } from '@mantine/core';
-import { DatePicker, TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import { useEffect, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
 import ColorPallete from '../../../../web/src/components/color/ColorPallete';
@@ -99,33 +99,8 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
 
       <Divider mt="sm" mb="xs" className={getInputColor()} />
 
-      <DatePicker
-        label="Date"
-        value={startDate}
-        onChange={(date) => {
-          setStartDate((prev) => {
-            if (!date) return null;
-            if (!prev) return date;
-            return new Date(date.setHours(prev.getHours(), prev.getMinutes()));
-          });
-        }}
-        clearable={false}
-        variant="filled"
-        styles={{
-          input: {
-            '&:focus': {
-              borderColor: 'transparent',
-            },
-          },
-        }}
-        classNames={{
-          input: `font-semibold text-center ${getInputColor()}`,
-          label: getLabelColor(),
-        }}
-      />
-
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <TimeInput
+        <DateTimePicker
           label="Start at"
           value={startDate}
           onChange={(date) => {
@@ -143,9 +118,10 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
+          popoverProps={{ withinPortal: true }}
         />
 
-        <TimeInput
+        <DateTimePicker
           label="End at"
           value={endDate}
           onChange={(date) => {
@@ -163,6 +139,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
+          popoverProps={{ withinPortal: true }}
         />
       </div>
 

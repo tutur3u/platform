@@ -13,7 +13,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/solid';
 import HeaderX from '../../components/metadata/HeaderX';
-import { DatePicker } from '@mantine/dates';
+import { DatePickerInput } from '@mantine/dates';
 import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const SettingPage: PageWithLayoutProps = () => {
@@ -108,7 +108,7 @@ const SettingPage: PageWithLayoutProps = () => {
             icon={<IdentificationIcon className="h-5 w-5" />}
           />
 
-          <DatePicker
+          <DatePickerInput
             placeholder="Your birthday"
             label="Birthday"
             icon={<CakeIcon className="h-5 w-5" />}

@@ -18,7 +18,10 @@ export default function ProjectDeleteForm({ project, onDelete }: Props) {
         This action cannot be undone. This will permanently delete the{' '}
         {project.name} project.
       </div>
-      <div>Please type {project.name} to confirm.</div>
+      <div>
+        Please type <span className="font-bold">{project.name}</span> to
+        confirm.
+      </div>
       <div className="flex flex-col">
         <TextInput onChange={(e) => setName(e.currentTarget.value)} />
         <Button

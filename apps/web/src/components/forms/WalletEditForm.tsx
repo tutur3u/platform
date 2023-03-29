@@ -18,7 +18,7 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
   // );
 
   const [name, setName] = useState(wallet?.name || '');
-  const [balance, setBalance] = useState<number | undefined>(wallet?.balance);
+  const [balance, setBalance] = useState<number | ''>(wallet?.balance || '');
   const [currency, setCurrency] = useState<string | null>(
     wallet?.currency || 'VND'
   );
@@ -102,7 +102,6 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
             color="red"
             onClick={() => {
               onDelete();
-              closeAllModals();
             }}
             mt="md"
           >

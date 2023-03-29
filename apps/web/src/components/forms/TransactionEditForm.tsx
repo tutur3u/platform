@@ -1,8 +1,10 @@
 import { Button, NumberInput, Select, TextInput } from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Category } from '../../types/primitives/Category';
 import { Transaction } from '../../types/primitives/Transaction';
 
 interface Props {
@@ -24,9 +26,12 @@ const TransactionEditForm = ({
   transaction,
   onSubmit,
 }: Props) => {
+  const [amount, setAmount] = useState<number | ''>(
+    (transaction?.amount && Math.abs(transaction?.amount)) || ''
+  );
   const [name, setName] = useState(transaction?.name || '');
-  const [amount, setAmount] = useState<number | undefined>(
-    transaction?.amount && Math.abs(transaction?.amount)
+  const [date, setDate] = useState<Date | null>(
+    transaction?.date || new Date()
   );
   const [description, setDescription] = useState(
     transaction?.description || ''
@@ -40,18 +45,39 @@ const TransactionEditForm = ({
       : 'expense'
   );
 
-  return (
-    <>
-      <TextInput
-        label="Transaction name"
-        placeholder="Enter transaction name"
-        value={name}
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          setName(event.currentTarget.value)
-        }
-        data-autofocus
-      />
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    transaction?.category_id
+  );
 
+  const categories: Category[] = [
+    {
+      id: '1',
+      name: 'Food',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '2',
+      name: 'Transport',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '3',
+      name: 'Shopping',
+      workspace_id: '1',
+      type: 'expense',
+    },
+    {
+      id: '4',
+      name: 'Salary',
+      workspace_id: '1',
+      type: 'income',
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
       <NumberInput
         label="Amount"
         placeholder="Enter amount"
@@ -64,6 +90,35 @@ const TransactionEditForm = ({
             ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
             : ''
         }
+        data-autofocus
+      />
+
+      <TextInput
+        label="Transaction name"
+        placeholder="Enter transaction name"
+        value={name}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setName(event.currentTarget.value)
+        }
+      />
+
+      <DateTimePicker
+        label="Date and time"
+        placeholder="Choose date and time"
+        value={date}
+        onChange={setDate}
+        popoverProps={{ withinPortal: true }}
+      />
+
+      <Select
+        label="Category"
+        placeholder="Choose category"
+        data={categories.map((category) => ({
+          value: category.id,
+          label: category.name,
+        }))}
+        value={categoryId}
+        onChange={(id) => setCategoryId(id || undefined)}
       />
 
       <Select
@@ -110,9 +165,13 @@ const TransactionEditForm = ({
               name,
               amount: type === 'expense' ? (amount || 0) * -1 : amount || 0,
               description,
+              category_id: categoryId,
+              date: date || new Date(),
             };
 
-            onSubmit(projectId, walletId || '', newTransaction);
+            console.log(newTransaction);
+
+            onSubmit(projectId, walletId, newTransaction);
             closeAllModals();
           }}
           mt="md"
@@ -121,7 +180,7 @@ const TransactionEditForm = ({
           {transaction?.id ? 'Save' : 'Add'}
         </Button>
       </div>
-    </>
+    </div>
   );
 };
 
