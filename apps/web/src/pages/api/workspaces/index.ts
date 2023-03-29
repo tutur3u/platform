@@ -7,42 +7,14 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) return res.status(401).json({ error: userError.message });
-
-  const currentWorkspaces = supabase
+  const { data, error } = await supabase
     .from('workspaces')
     .select('id, name, workspace_members!inner(ws_id)')
     .order('created_at');
 
-  const invitedWorkspaces = supabase
-    .from('workspace_invites')
-    .select('created_at, workspaces(id, name)')
-    .eq('user_id', user?.id);
+  if (error) return res.status(401).json({ error: error.message });
 
-  // use Promise.all to run both queries in parallel
-  const [current, invited] = await Promise.all([
-    currentWorkspaces,
-    invitedWorkspaces,
-  ]);
-
-  if (current.error)
-    return res.status(401).json({ error: current.error.message });
-
-  if (invited.error)
-    return res.status(401).json({ error: invited.error.message });
-
-  return res.status(200).json({
-    current: current.data.map((ws) => ws),
-    invited: invited.data.map((ws) => ({
-      ...ws.workspaces,
-      created_at: ws.created_at,
-    })),
-  });
+  return res.status(200).json(data);
 };
 
 const createWorkspace = async (req: NextApiRequest, res: NextApiResponse) => {

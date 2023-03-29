@@ -5,41 +5,41 @@ export type Tab = {
 
 export const workspaceTabs: Tab[] = [
   {
-    name: 'Tổng quan',
-    href: '/[wsId]/overview',
+    name: 'Overview',
+    href: '/[wsId]',
   },
   {
-    name: 'Dự án',
+    name: 'Projects',
     href: '/[wsId]/projects',
   },
   {
-    name: 'Thành viên',
+    name: 'Members',
     href: '/[wsId]/members',
   },
   {
-    name: 'Cài đặt',
+    name: 'Settings',
     href: '/[wsId]/settings',
   },
 ];
 
 export const projectTabs: Tab[] = [
   {
-    name: 'Tổng quan',
+    name: 'Overview',
     href: '/[wsId]/projects/[projectId]',
   },
   {
-    name: 'Thành viên',
+    name: 'Members',
     href: '/[wsId]/projects/[projectId]/members',
   },
   {
-    name: 'Cài đặt',
+    name: 'Settings',
     href: '/[wsId]/projects/[projectId]/settings',
   },
 ];
 
 export const miscTabs: Tab[] = [
   {
-    name: 'Tổng quan',
+    name: 'Overview',
     href: '/[wsId]/misc',
   },
   {
@@ -70,7 +70,7 @@ export const miscTabs: Tab[] = [
 
 export const inventoryTabs: Tab[] = [
   {
-    name: 'Tổng quan',
+    name: 'Overview',
     href: '/[wsId]/inventory',
   },
   {
@@ -105,7 +105,7 @@ export const inventoryTabs: Tab[] = [
 
 export const financeTabs: Tab[] = [
   {
-    name: 'Tổng quan',
+    name: 'Overview',
     href: '/[wsId]/finance',
   },
   {

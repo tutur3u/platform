@@ -20,7 +20,7 @@ const OnboardingForm = () => {
   const router = useRouter();
   const user = useUser();
 
-  const { isLoading: isUserLoading, data, updateData } = useUserData();
+  const { data, updateData } = useUserData();
 
   const [displayName, setDisplayName] = useState('');
   const [handle, setUsername] = useState('');
@@ -52,22 +52,16 @@ const OnboardingForm = () => {
     setSaving(false);
   };
 
-  const { isLoading: isWsLoading, workspaces } = useWorkspaces();
+  const { workspaces, workspaceInvites } = useWorkspaces();
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
-      // const res = await fetch('/api/workspaces');
-      // const data = await res.json();
-      // if (data?.current?.[0]?.id) router.push(`/${data.current[0].id}`);
-      router.push('/workspaces');
+      const res = await fetch('/api/workspaces');
+      const data = await res.json();
+      if (data[0]?.id) router.push(`/${data[0].id}`);
     };
 
-    if (
-      !workspaces ||
-      !workspaces?.current?.length ||
-      !workspaces?.current[0]?.id
-    )
-      return;
+    if (!workspaces || !workspaces?.length || !workspaces[0]?.id) return;
     if (!profileCompleted) return;
 
     // If there is a redirectedFrom URL, redirect to it
@@ -118,11 +112,7 @@ const OnboardingForm = () => {
         <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {!user ||
           !workspaces ||
-          isUserLoading ||
-          isWsLoading ||
-          (workspaces &&
-            workspaces?.current?.length > 0 &&
-            profileCompleted) ? (
+          (workspaces && workspaces?.length > 0 && profileCompleted) ? (
             <LoadingIndicator className="h-8 w-8" />
           ) : (
             <>
@@ -158,8 +148,8 @@ const OnboardingForm = () => {
 
               {profileCompleted ? (
                 <div className="grid w-full gap-4">
-                  {(workspaces?.invited?.length || 0) > 0 ? (
-                    workspaces?.invited?.map((ws) => (
+                  {(workspaceInvites?.length || 0) > 0 ? (
+                    workspaceInvites?.map((ws) => (
                       <WorkspaceInviteSnippet
                         key={ws.id}
                         ws={ws}

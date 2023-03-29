@@ -8,33 +8,19 @@ const fetchMembers = async (
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
-  const membersQuery = supabase
+  const { data, error } = await supabase
     .from('workspace_members')
     .select('created_at, users(id, handle, display_name, avatar_url, email)')
     .eq('ws_id', wsId);
 
-  const invitesQuery = supabase
-    .from('workspace_invites')
-    .select('created_at, users(id, handle, display_name, avatar_url, email)')
-    .eq('ws_id', wsId);
+  if (error) return res.status(500).json({ error: error.message });
 
-  const [members, invites] = await Promise.all([membersQuery, invitesQuery]);
-
-  if (members.error)
-    return res.status(500).json({ error: members.error.message });
-  if (invites.error)
-    return res.status(500).json({ error: invites.error.message });
-
-  const membersData = members.data.map((member) => ({
-    ...member.users,
-    created_at: member.created_at,
-  }));
-  const invitesData = invites.data.map((invite) => ({
-    ...invite.users,
-    created_at: invite.created_at,
-  }));
-
-  return res.status(200).json({ members: membersData, invites: invitesData });
+  return res.status(200).json(
+    data.map((member) => ({
+      ...member.users,
+      created_at: member.created_at,
+    }))
+  );
 };
 
 const inviteMember = async (
@@ -45,9 +31,6 @@ const inviteMember = async (
   const supabase = createServerSupabaseClient({ req, res });
 
   const { id, email } = req.body;
-
-  console.log('id', id);
-  console.log('email', email);
 
   if (!id && !email)
     return res.status(400).json({

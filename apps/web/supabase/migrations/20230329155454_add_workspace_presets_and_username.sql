@@ -46,7 +46,6 @@ create policy "Enable read access for authenticated users" on "public"."workspac
 select to authenticated using (true);
 alter table "public"."users"
 alter column "handle" drop not null;
-CREATE INDEX refresh_token_session_id ON auth.refresh_tokens USING btree (session_id);
 set check_function_bodies = off;
 CREATE OR REPLACE FUNCTION public.update_handle() RETURNS trigger LANGUAGE plpgsql AS $function$ BEGIN -- Check if the new handle is already taken
     IF NEW.handle IS NOT NULL
