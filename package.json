@@ -1,6 +1,6 @@
 {
   "name": "tutur3u",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -15,16 +15,17 @@
     "sb:start": "cd apps/web && pnpm sb:start",
     "sb:stop": "cd apps/web && pnpm sb:stop",
     "sb:sync": "cd apps/web && pnpm sb:sync",
-    "sb:reset": "cd apps/web && pnpm sb:reset"
+    "sb:reset": "cd apps/web && pnpm sb:reset",
+    "sb:diff": "cd apps/web && pnpm sb:diff"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",
-    "prettier": "^2.8.4",
-    "prettier-plugin-tailwindcss": "^0.2.4",
-    "turbo": "^1.8.3"
+    "prettier": "^2.8.7",
+    "prettier-plugin-tailwindcss": "^0.2.6",
+    "turbo": "^1.8.6"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@7.29.0"
+  "packageManager": "pnpm@8.0.0"
 }
