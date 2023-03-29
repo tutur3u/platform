@@ -11,13 +11,12 @@ create table "public"."workspace_presets" (
     "enabled" boolean not null default true
 );
 alter table "public"."workspace_presets" enable row level security;
-alter table "public"."users" drop column "username";
 alter table "public"."users"
-add column "handle" text not null;
+    rename column "username" to "handle";
 alter table "public"."workspaces"
-add column "handle" text not null;
+add column "handle" text;
 alter table "public"."workspaces"
-add column "preset" text not null default ''::text;
+add column "preset" text default ''::text;
 CREATE UNIQUE INDEX handles_pkey ON public.handles USING btree (value);
 CREATE UNIQUE INDEX workspace_presets_pkey ON public.workspace_presets USING btree (name);
 CREATE UNIQUE INDEX workspaces_handle_key ON public.workspaces USING btree (handle);
@@ -29,19 +28,6 @@ add constraint "workspace_presets_pkey" PRIMARY KEY using index "workspace_prese
 alter table "public"."handles"
 add constraint "handles_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) not valid;
 alter table "public"."handles" validate constraint "handles_creator_id_fkey";
-alter table "public"."users"
-add constraint "users_handle_fkey" FOREIGN KEY (handle) REFERENCES handles(value) not valid;
-alter table "public"."users" validate constraint "users_handle_fkey";
-alter table "public"."workspaces"
-add constraint "workspaces_handle_fkey" FOREIGN KEY (handle) REFERENCES handles(value) not valid;
-alter table "public"."workspaces" validate constraint "workspaces_handle_fkey";
-alter table "public"."workspaces"
-add constraint "workspaces_handle_key" UNIQUE using index "workspaces_handle_key";
-alter table "public"."workspaces"
-add constraint "workspaces_preset_fkey" FOREIGN KEY (preset) REFERENCES workspace_presets(name) not valid;
-alter table "public"."workspaces" validate constraint "workspaces_preset_fkey";
-alter table "public"."users"
-add constraint "users_username_key" UNIQUE using index "users_username_key";
 create policy "Enable read access for authenticated users" on "public"."workspace_presets" as permissive for
 select to authenticated using (true);
 alter table "public"."users"
