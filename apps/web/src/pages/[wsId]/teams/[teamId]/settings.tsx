@@ -154,13 +154,15 @@ const TeamSettingsPage = () => {
             />
           </div>
 
-          <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
-            This team was created{' '}
-            <span className="font-semibold text-zinc-300">
-              {moment(team.created_at).fromNow()}
-            </span>
-            .
-          </div>
+          {team?.created_at && (
+            <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
+              This team was created{' '}
+              <span className="font-semibold text-zinc-300">
+                {moment(team.created_at).fromNow()}
+              </span>
+              .
+            </div>
+          )}
 
           <div className="h-full" />
 
