@@ -4,7 +4,7 @@ import {
   SupabaseClient,
 } from '@supabase/auth-helpers-react';
 
-import { UserDataProvider } from '../../hooks/useUserData';
+import { UserDataProvider } from '../../hooks/useUser';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { WorkspaceProvider } from '../../hooks/useWorkspaces';
 import { SWRConfig } from 'swr';

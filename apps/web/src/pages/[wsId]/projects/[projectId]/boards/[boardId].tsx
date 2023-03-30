@@ -31,7 +31,7 @@ import BoardEditForm from '../../../../../components/forms/BoardEditForm';
 import TaskListEditForm from '../../../../../components/forms/TaskListEditForm';
 import TaskWrapper from '../../../../../components/tasks/core/TaskWrapper';
 import TaskListWrapper from '../../../../../components/tasks/lists/TaskListWrapper';
-import { useUserData } from '../../../../../hooks/useUserData';
+import { useUser } from '../../../../../hooks/useUser';
 
 const ProjectBoardEditor = () => {
   const router = useRouter();
@@ -77,7 +77,7 @@ const ProjectBoardEditor = () => {
 
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
-  const { data: user } = useUserData();
+  const { user } = useUser();
 
   const [viewOption, setViewOption] = useState('my-tasks');
 

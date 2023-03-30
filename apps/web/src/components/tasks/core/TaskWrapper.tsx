@@ -17,11 +17,11 @@ import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
 import React from 'react';
 import { Task } from '../../../types/primitives/Task';
-import { UserData } from '../../../types/primitives/UserData';
+import { User } from '../../../types/primitives/User';
 import { getInitials } from '../../../utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
-import { useUserData } from '../../../hooks/useUserData';
+import { useUser } from '../../../hooks/useUser';
 
 export interface TaskWrapperProps {
   task: Task;
@@ -44,7 +44,7 @@ const TaskWrapper = ({
     task?.id ? `/api/tasks/${task.id}/assignees` : null
   );
 
-  const assignees: UserData[] | null =
+  const assignees: User[] | null =
     rawAssigneesData != null
       ? rawAssigneesData?.map(
           (assignee: {
@@ -65,9 +65,9 @@ const TaskWrapper = ({
         )
       : null;
 
-  const { data } = useUserData();
+  const { user } = useUser();
 
-  const isMyTask = assignees?.some((assignee) => assignee.id === data?.id);
+  const isMyTask = assignees?.some((assignee) => assignee.id === user?.id);
 
   const deleteTask = async (taskId: string) => {
     if (!task?.id) return;

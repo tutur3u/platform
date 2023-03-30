@@ -1,14 +1,16 @@
 import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
-import { UserData } from '../types/primitives/UserData';
 import useSWR, { mutate } from 'swr';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useUser as useSupabaseUser } from '@supabase/auth-helpers-react';
 import { DEV_MODE } from '../constants/common';
+import { User } from '../types/primitives/User';
 
 const UserDataContext = createContext({
+  user: undefined as User | undefined,
+  updateUser: undefined as ((data: Partial<User>) => Promise<void>) | undefined,
+
   isLoading: true,
-  data: null as UserData | null | undefined,
-  updateData: null as ((data: Partial<UserData>) => Promise<void>) | null,
+  isError: false,
 });
 
 export const UserDataProvider = ({
@@ -16,10 +18,12 @@ export const UserDataProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const user = useUser();
-  const { data, error } = useSWR(user ? '/api/user' : null);
+  const sbUser = useSupabaseUser();
 
-  const isLoading = !data && !error;
+  const apiPath = sbUser ? '/api/user' : null;
+  const { data: user, error: userError } = useSWR<User>(apiPath);
+
+  const isLoading = !user && !userError;
 
   useEffect(() => {
     const setupLocalEnv = async () => {
@@ -34,16 +38,16 @@ export const UserDataProvider = ({
   }, [user]);
 
   useEffect(() => {
-    if (error) {
+    if (userError) {
       showNotification({
         title: 'Failed to fetch user data',
         message: 'Please try again later',
         color: 'red',
       });
     }
-  }, [error]);
+  }, [userError]);
 
-  const updateData = async (data: Partial<UserData>) => {
+  const updateUser = async (data: Partial<User>) => {
     if (data?.handle?.length) {
       if (data.handle.length < 3 || data.handle.length > 20) {
         showNotification({
@@ -94,29 +98,12 @@ export const UserDataProvider = ({
     }
   };
 
-  const parseData = (data?: {
-    id: string;
-    email?: string;
-    handle?: string;
-    birthday?: string;
-    display_name?: string;
-    created_at?: string;
-  }) => {
-    if (!data) return null;
-    return {
-      id: data.id,
-      email: data.email,
-      handle: data.handle,
-      birthday: data.birthday,
-      display_name: data.display_name,
-      created_at: data.created_at,
-    };
-  };
-
   const values = {
+    user,
+    updateUser,
+
     isLoading,
-    data: parseData(data),
-    updateData,
+    isError: !!userError,
   };
 
   return (
@@ -126,11 +113,11 @@ export const UserDataProvider = ({
   );
 };
 
-export const useUserData = () => {
+export const useUser = () => {
   const context = useContext(UserDataContext);
 
   if (context === undefined)
-    throw new Error(`useUserData() must be used within a UserDataProvider.`);
+    throw new Error(`useUser() must be used within a UserDataProvider.`);
 
   return context;
 };

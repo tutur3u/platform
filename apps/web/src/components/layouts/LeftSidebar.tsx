@@ -22,7 +22,7 @@ import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import { Avatar, Divider, Popover, Tooltip } from '@mantine/core';
-import { useUserData } from '../../hooks/useUserData';
+import { useUser } from '../../hooks/useUser';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import WorkspaceEditForm from '../forms/WorkspaceEditForm';
 import { openModal } from '@mantine/modals';
@@ -40,7 +40,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const { sidebar, toggleSidebar } = useAppearance();
   const { supabaseClient } = useSessionContext();
-  const { data: user } = useUserData();
+  const { user } = useUser();
 
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();

@@ -1,8 +1,6 @@
 import { AtSymbolIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput } from '@mantine/core';
-import { useUser } from '@supabase/auth-helpers-react';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { useUserData } from '../../hooks/useUserData';
 import LoadingIndicator from '../common/LoadingIndicator';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
@@ -15,12 +13,12 @@ import {
   DEFAULT_DISPLAY_NAME,
   DEFAULT_USERNAME,
 } from '../../constants/development';
+import { useUser } from '../../hooks/useUser';
 
 const OnboardingForm = () => {
   const router = useRouter();
-  const user = useUser();
 
-  const { data, updateData } = useUserData();
+  const { user, updateUser } = useUser();
 
   const [displayName, setDisplayName] = useState('');
   const [handle, setUsername] = useState('');
@@ -29,22 +27,22 @@ const OnboardingForm = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!data) return;
+    if (!user) return;
 
-    const hasDisplayName = (data?.display_name || '')?.length > 0;
-    const hasUsername = (data?.handle || '')?.length > 0;
+    const hasDisplayName = (user?.display_name || '')?.length > 0;
+    const hasUsername = (user?.handle || '')?.length > 0;
 
     setProfileCompleted(hasDisplayName && hasUsername);
     if (hasDisplayName && hasUsername) return;
 
-    setDisplayName(data?.display_name || DEV_MODE ? DEFAULT_DISPLAY_NAME : '');
-    setUsername(data?.handle || DEV_MODE ? DEFAULT_USERNAME : '');
-  }, [data]);
+    setDisplayName(user?.display_name || DEV_MODE ? DEFAULT_DISPLAY_NAME : '');
+    setUsername(user?.handle || DEV_MODE ? DEFAULT_USERNAME : '');
+  }, [user]);
 
   const updateProfile = async () => {
     setSaving(true);
 
-    await updateData?.({
+    await updateUser?.({
       display_name: displayName,
       handle,
     });
@@ -72,11 +70,18 @@ const OnboardingForm = () => {
     });
 
     if (response.ok) {
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/invites');
       showNotification({
         title: `Đã chấp nhận lời mời vào ${ws.name}`,
         message: 'Bạn có thể truy cập vào tổ chức này ngay bây giờ',
       });
+
+      // If there is a redirectedFrom URL, redirect to it
+      // Otherwise, redirect to the homepage
+      const { redirectedFrom: nextUrl } = router.query;
+
+      if (nextUrl) router.push(nextUrl.toString());
+      else if (ws.id) router.push(`/${ws.id}`);
     } else {
       showNotification({
         title: `Không thể chấp nhận lời mời vào ${ws.name}`,
@@ -91,7 +96,7 @@ const OnboardingForm = () => {
     });
 
     if (response.ok) {
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/invites');
       showNotification({
         title: `Đã từ chối lời mời vào ${ws.name}`,
         message: 'Lời mời này sẽ không hiển thị nữa',
@@ -147,7 +152,7 @@ const OnboardingForm = () => {
               <Divider className="w-full border-zinc-300/20" />
 
               {profileCompleted ? (
-                <div className="scrollbar-none grid w-full gap-4 overflow-y-scroll">
+                <div className="scrollbar-none grid h-full w-full gap-4 overflow-y-scroll">
                   {(workspaceInvites?.length || 0) > 0 ? (
                     workspaceInvites?.map((ws) => (
                       <WorkspaceInviteSnippet
@@ -158,7 +163,7 @@ const OnboardingForm = () => {
                       />
                     ))
                   ) : (
-                    <div className="text-center text-2xl font-semibold text-zinc-500">
+                    <div className="flex h-full items-center justify-center text-center text-2xl font-semibold text-zinc-300/70">
                       Chưa có lời mời nào
                     </div>
                   )}
