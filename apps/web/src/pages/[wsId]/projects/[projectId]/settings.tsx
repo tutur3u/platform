@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { ReactElement, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { useAppearance } from '../../../../hooks/useAppearance';
+import { useSegments } from '../../../../hooks/useSegments';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { Project } from '../../../../types/primitives/Project';
 import { openModal } from '@mantine/modals';
@@ -20,7 +20,7 @@ const ProjectSettingsPage = () => {
 
   const isLoading = !error && !project;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
@@ -45,8 +45,8 @@ const ProjectSettingsPage = () => {
           ]
         : []
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    setRootSegment,
     projectId,
     project?.workspaces?.id,
     project?.workspaces?.name,

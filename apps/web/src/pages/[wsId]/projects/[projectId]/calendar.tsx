@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { useAppearance } from '../../../../hooks/useAppearance';
+import { useSegments } from '../../../../hooks/useSegments';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 
@@ -14,7 +14,7 @@ const ProjectCalendarPage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
@@ -36,8 +36,8 @@ const ProjectCalendarPage = () => {
           ]
         : []
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    setRootSegment,
     projectId,
     project?.workspaces?.id,
     project?.workspaces?.name,

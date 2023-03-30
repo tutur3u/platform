@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { FC, Fragment } from 'react';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import { ActionIcon } from '@mantine/core';
 import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
@@ -45,7 +45,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   noTabs = false,
 }: NestedLayoutProps) => {
   const router = useRouter();
-  const { segments } = useAppearance();
+  const { segments } = useSegments();
 
   const {
     query: { wsId, projectId, productId, patientId },
@@ -143,7 +143,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                   segments.length > 0 &&
                   segments.slice(-1)[0].href === tab.href
                     ? 'border-zinc-300 text-zinc-300'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                    : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
                 }`}
               >
                 <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">

@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../components/layouts/NestedLayout';
-import { useAppearance } from '../../../hooks/useAppearance';
+import { useSegments } from '../../../hooks/useSegments';
 import { Project } from '../../../types/primitives/Project';
 import moment from 'moment';
 import ProjectEditForm from '../../../components/forms/ProjectEditForm';
@@ -30,7 +30,7 @@ const WorkspaceProjectsPage = () => {
 
   const isLoading = isWsLoading || isProjectsLoading;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
@@ -47,8 +47,7 @@ const WorkspaceProjectsPage = () => {
           ]
         : []
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wsId, ws?.name]);
+  }, [setRootSegment, wsId, ws?.name]);
 
   if (isLoading) return <div>Loading...</div>;
 

@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import NestedLayout from '../../components/layouts/NestedLayout';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import { Textarea } from '@mantine/core';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
@@ -39,7 +39,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const GPTPage = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment({

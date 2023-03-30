@@ -8,9 +8,15 @@ import { showNotification } from '@mantine/notifications';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import Image from 'next/image';
-import { KeyboardEvent, ReactElement, useEffect, useState } from 'react';
+import {
+  KeyboardEvent,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import ProfileCard from '../../components/profile/ProfileCard';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import { useUserData } from '../../hooks/useUserData';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { getInitials } from '../../utils/name-helper';
@@ -71,17 +77,14 @@ interface ProfilePageParams {
 const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   user,
 }): ReactElement => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
-
     setRootSegment({
       content: 'Calendar',
       href: '/finance',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setRootSegment]);
 
   const getDaysUntilBirthday = (birthday: Date) => {
     const today = new Date();
@@ -145,47 +148,49 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
   const [saving, setSaving] = useState(false);
 
-  const handleNoteSave = async (note: string) => {
-    if (!loadedNote || noteLoading || saving || !userData) return;
-    setSaving(true);
+  const handleNoteSave = useCallback(
+    async (note: string) => {
+      if (!loadedNote || noteLoading || saving || !userData) return;
+      setSaving(true);
 
-    const response = await fetch(
-      `/api/users/${userData.id}/notes/people/${user.id}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: note,
-        }),
+      const response = await fetch(
+        `/api/users/${userData.id}/notes/people/${user.id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: note,
+          }),
+        }
+      );
+
+      setSaving(false);
+
+      if (!response.ok) {
+        showNotification({
+          title: 'Error',
+          message: 'Failed to save note',
+          color: 'red',
+        });
+
+        return;
       }
-    );
 
-    setSaving(false);
-
-    if (!response.ok) {
-      showNotification({
-        title: 'Error',
-        message: 'Failed to save note',
-        color: 'red',
-      });
-
-      return;
-    }
-
-    setSaved(true);
-    setLastSavedNote(note);
-    mutate(`/api/users/${userData.id}/notes/people/${user.id}`);
-  };
+      setSaved(true);
+      setLastSavedNote(note);
+      mutate(`/api/users/${userData.id}/notes/people/${user.id}`);
+    },
+    [loadedNote, noteLoading, saving, userData, user.id]
+  );
 
   useEffect(() => {
     if (debouncedNote !== lastSavedNote) {
       setSaved(false);
       handleNoteSave(debouncedNote);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedNote, lastSavedNote]);
+  }, [handleNoteSave, debouncedNote, lastSavedNote]);
 
   const handleKeyUp = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && event.shiftKey) {

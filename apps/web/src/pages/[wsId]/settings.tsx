@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../components/layouts/NestedLayout';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import HeaderX from '../../components/metadata/HeaderX';
 
@@ -17,7 +17,7 @@ const WorkspaceSettingsPage = () => {
   const { data: ws, error } = useSWR(`/api/workspaces/${wsId}`);
   const isLoading = !ws && !error;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   const [name, setName] = useState(ws?.name);
 
@@ -37,8 +37,7 @@ const WorkspaceSettingsPage = () => {
           ]
         : []
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wsId, ws?.name]);
+  }, [setRootSegment, wsId, ws?.name]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

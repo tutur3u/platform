@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import { Divider } from '@mantine/core';
 import { PencilIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { closeAllModals, openModal } from '@mantine/modals';
-import { useAppearance } from '../../../../../../hooks/useAppearance';
+import { useSegments } from '../../../../../../hooks/useSegments';
 import { Wallet } from '../../../../../../types/primitives/Wallet';
 import { useWallets } from '../../../../../../hooks/useWallets';
 import WalletEditForm from '../../../../../../components/forms/WalletEditForm';
@@ -37,7 +37,7 @@ const WalletDetailPage = () => {
       : null
   );
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(

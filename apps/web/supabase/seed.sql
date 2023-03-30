@@ -8,7 +8,7 @@ values ('user1'),
     ('user2'),
     ('user3'),
     ('personal'),
-    ('tuturuuu'),
+    ('prototype-general'),
     ('prototype-pharmacy'),
     ('prototype-school');
 -- Populate users
@@ -41,8 +41,8 @@ values (
     ),
     (
         '00000000-0000-0000-0000-000000000002',
-        'Tuturuuu',
-        'tuturuuu',
+        'Prototype General',
+        'prototype-general',
         'GENERAL'
     ),
     (

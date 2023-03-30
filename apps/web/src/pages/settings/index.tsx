@@ -4,7 +4,7 @@ import { TextInput } from '@mantine/core';
 import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { useUserData } from '../../hooks/useUserData';
 import { useRouter } from 'next/router';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
 import {
   CakeIcon,
@@ -17,7 +17,7 @@ import { DatePickerInput } from '@mantine/dates';
 import SidebarLayout from '../../components/layouts/SidebarLayout';
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment({
@@ -31,13 +31,6 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { supabaseClient } = useSessionContext();
   const { data, updateData } = useUserData();
-
-  const {
-    leftSidebarPref,
-    changeLeftSidebarMainPref,
-    rightSidebarPref,
-    changeRightSidebarMainPref,
-  } = useAppearance();
 
   const [saving, setSaving] = useState(false);
 
@@ -163,58 +156,6 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
           <div className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-blue-300/30 bg-blue-300/20 p-2 text-xl font-semibold text-blue-300">
             Dark mode
-          </div>
-        </div>
-
-        <div className="mt-4 hidden flex-col lg:flex">
-          <div className="text-xl font-semibold text-zinc-400">Sidebars</div>
-          <div className="grid h-full gap-4 text-center xl:grid-cols-2">
-            <div className="flex cursor-default justify-center text-xl font-semibold text-zinc-300 lg:order-1">
-              <div>Left sidebar</div>
-            </div>
-            <div className="flex cursor-default justify-center text-xl font-semibold text-zinc-300 lg:order-5 xl:order-2">
-              <div>Right sidebar</div>
-            </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-2 xl:order-3 ${
-                leftSidebarPref.main === 'closed'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeLeftSidebarMainPref('closed')}
-            >
-              Always collapsed
-            </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-6 xl:order-4 ${
-                rightSidebarPref.main === 'closed'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeRightSidebarMainPref('closed')}
-            >
-              Always collapsed
-            </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-3 xl:order-5 ${
-                leftSidebarPref.main === 'open'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeLeftSidebarMainPref('open')}
-            >
-              Always expanded
-            </div>
-            <div
-              className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-2 text-xl font-semibold transition duration-150 lg:order-7 xl:order-6 ${
-                rightSidebarPref.main === 'open'
-                  ? 'border-blue-300/30 bg-blue-300/20 text-blue-300'
-                  : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300/80 hover:border-zinc-300/20 hover:bg-zinc-300/20 hover:text-zinc-300'
-              }`}
-              onClick={() => changeRightSidebarMainPref('open')}
-            >
-              Always expanded
-            </div>
           </div>
         </div>
       </div>

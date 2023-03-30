@@ -12,8 +12,8 @@
     "API_URL",
     "NODE_ENV",
 
-    "DEFAULT_DISPLAY_NAME",
-    "DEFAULT_USERNAME"
+    "NEXT_PUBLIC_DEFAULT_DISPLAY_NAME",
+    "NEXT_PUBLIC_DEFAULT_USERNAME"
   ],
   "pipeline": {
     "build": {

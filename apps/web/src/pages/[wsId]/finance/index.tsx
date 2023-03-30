@@ -1,9 +1,7 @@
 import { ReactElement, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import WalletTab from '../../../components/finance/wallets/WalletTab';
-import { useAppearance } from '../../../hooks/useAppearance';
-import { useUserData } from '../../../hooks/useUserData';
-import { useUserList } from '../../../hooks/useUserList';
+import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import { Wallet } from '../../../types/primitives/Wallet';
 import WalletEditForm from '../../../components/forms/WalletEditForm';
@@ -25,9 +23,7 @@ import { useWorkspaces } from '../../../hooks/useWorkspaces';
 
 const FinancePage: PageWithLayoutProps = () => {
   const router = useRouter();
-  const { setRootSegment } = useAppearance();
-  const { updateUsers } = useUserList();
-  const { data } = useUserData();
+  const { setRootSegment } = useSegments();
 
   const { ws, projects } = useWorkspaces();
 
@@ -48,11 +44,6 @@ const FinancePage: PageWithLayoutProps = () => {
         : []
     );
   }, [ws?.id, workspace?.name, setRootSegment]);
-
-  useEffect(() => {
-    if (data) updateUsers([data]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
 
   const { createWallet, updateWallet, deleteWallet } = useWallets();
   const { createTransaction, updateTransaction, deleteTransaction } =

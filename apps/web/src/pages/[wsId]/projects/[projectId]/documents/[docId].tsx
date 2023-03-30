@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import useSWR from 'swr';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { ReactElement, useEffect, useState } from 'react';
-import { useAppearance } from '../../../../../hooks/useAppearance';
+import { useSegments } from '../../../../../hooks/useSegments';
 import {
   Divider,
   Loader,
@@ -42,7 +42,7 @@ const ProjectDocumentEditor = () => {
     docId ? `/api/projects/${projectId}/documents/${docId}` : null
   );
 
-  const { setRootSegment, setLastSegment } = useAppearance();
+  const { setRootSegment, setLastSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(

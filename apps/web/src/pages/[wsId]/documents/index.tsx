@@ -1,6 +1,6 @@
 import { ReactElement, useEffect, useState } from 'react';
 import HeaderX from '../../../components/metadata/HeaderX';
-import { useAppearance } from '../../../hooks/useAppearance';
+import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import DocumentCard from '../../../components/document/DocumentCard';
 import { useUser } from '@supabase/auth-helpers-react';
@@ -24,7 +24,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
   const user = useUser();
 
   const { ws } = useWorkspaces();
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   const { data: workspace } = useSWR(
     ws?.id ? `/api/workspaces/${ws?.id}` : null

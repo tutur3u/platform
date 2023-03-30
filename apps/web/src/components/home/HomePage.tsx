@@ -1,7 +1,5 @@
 import { useEffect } from 'react';
-import { useAppearance } from '../../hooks/useAppearance';
-import { useUserData } from '../../hooks/useUserData';
-import { useUserList } from '../../hooks/useUserList';
+import { useSegments } from '../../hooks/useSegments';
 import { Workspace } from '../../types/primitives/Workspace';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { openModal } from '@mantine/modals';
@@ -14,24 +12,14 @@ import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
 import WorkspacePreviewCard from '../cards/WorkspacePreviewCard';
 
 const HomePage = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { updateUsers } = useUserList();
-  const { data } = useUserData();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
-
     setRootSegment({
       content: 'Home',
       href: '/',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (data) updateUsers([data]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [setRootSegment]);
 
   const { workspaces, workspacesLoading, workspaceInvites, createWorkspace } =
     useWorkspaces();

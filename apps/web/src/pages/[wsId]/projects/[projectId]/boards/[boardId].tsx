@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { ReactElement, useEffect, useState } from 'react';
-import { useAppearance } from '../../../../../hooks/useAppearance';
+import { useSegments } from '../../../../../hooks/useSegments';
 import {
   Accordion,
   Chip,
@@ -45,7 +45,7 @@ const ProjectBoardEditor = () => {
     boardId ? `/api/projects/${projectId}/boards/${boardId}` : null
   );
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(

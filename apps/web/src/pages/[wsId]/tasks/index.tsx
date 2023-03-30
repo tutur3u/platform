@@ -1,30 +1,19 @@
 import { ReactElement, useEffect } from 'react';
 import HeaderX from '../../../components/metadata/HeaderX';
-import { useAppearance } from '../../../hooks/useAppearance';
-import { useUserData } from '../../../hooks/useUserData';
-import { useUserList } from '../../../hooks/useUserList';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import { DEV_MODE } from '../../../constants/common';
 import SidebarLayout from '../../../components/layouts/SidebarLayout';
+import { useSegments } from '../../../hooks/useSegments';
 
 const TasksPage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { updateUsers } = useUserList();
-  const { data } = useUserData();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
       content: 'Tasks',
       href: '/finance',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (data) updateUsers([data]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [setRootSegment]);
 
   if (!DEV_MODE)
     return (
