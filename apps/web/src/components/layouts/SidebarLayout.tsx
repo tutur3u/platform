@@ -1,4 +1,4 @@
-import { SidebarPreference, useAppearance } from '../../hooks/useAppearance';
+import { SidebarState, useAppearance } from '../../hooks/useAppearance';
 import Header from './Header';
 import LeftSidebar from './LeftSidebar';
 
@@ -7,68 +7,25 @@ interface SidebarLayoutProps {
 }
 
 const SidebarLayout = ({ children }: SidebarLayoutProps) => {
-  const { leftSidebarPref } = useAppearance();
+  const { sidebar } = useAppearance();
 
-  const generateSidebarWidth = (pref: SidebarPreference) => {
-    switch (pref.main) {
-      case 'closed': {
-        if (pref.secondary === 'hidden') return 'w-0 md:w-16';
-        return 'w-full md:w-96';
-      }
+  const generateSidebarWidth = (state: SidebarState) =>
+    state === 'closed' ? 'w-0 md:w-16' : 'w-full md:w-64';
 
-      case 'open': {
-        if (pref.secondary === 'hidden') return 'w-full md:w-64';
-        return 'w-full md:w-96';
-      }
-    }
-  };
-
-  const generateLeftMargin = (pref: SidebarPreference) => {
-    switch (pref.main) {
-      case 'closed': {
-        if (pref.secondary === 'hidden') return 'md:ml-16';
-        return 'md:ml-96';
-      }
-
-      case 'open': {
-        if (pref.secondary === 'hidden') return 'md:ml-64';
-        return 'md:ml-96';
-      }
-    }
-  };
-
-  // const generateRightMargin = (pref: SidebarPreference) => {
-  //   switch (pref.main) {
-  //     case 'closed': {
-  //       if (pref.secondary === 'hidden') return 'md:mr-16';
-  //       return 'md:mr-96';
-  //     }
-
-  //     case 'open': {
-  //       if (pref.secondary === 'hidden') return 'md:mr-64';
-  //       return 'md:mr-96';
-  //     }
-  //   }
-  // };
-
-  const generateContentMargin = (
-    leftSidebarPref: SidebarPreference
-    // rightSidebarPref: SidebarPreference
-  ) => {
-    return generateLeftMargin(leftSidebarPref);
-  };
+  const generateLeftMargin = (state: SidebarState) =>
+    state === 'closed' ? 'md:ml-16' : 'md:ml-64';
 
   return (
     <div className="flex h-screen min-h-screen w-full bg-[#111113]">
       <LeftSidebar
         className={`transition-all duration-300 ${generateSidebarWidth(
-          leftSidebarPref
+          sidebar
         )}`}
       />
 
       <main
-        className={`scrollbar-none fixed inset-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateContentMargin(
-          leftSidebarPref
+        className={`scrollbar-none fixed inset-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateLeftMargin(
+          sidebar
         )} transition-all duration-300`}
       >
         <Header />

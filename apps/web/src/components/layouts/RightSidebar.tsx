@@ -1,12 +1,10 @@
 import { Avatar, Indicator, Tooltip } from '@mantine/core';
-import { useAppearance } from '../../hooks/useAppearance';
-import { useUserList } from '../../hooks/useUserList';
 import { SidebarProps } from '../../types/SidebarProps';
 import { getInitials } from '../../utils/name-helper';
+import { User } from '../../types/primitives/User';
 
 function RightSidebar({ className }: SidebarProps) {
-  const { rightSidebarPref } = useAppearance();
-  const { users } = useUserList();
+  const users: User[] = [];
 
   return (
     <div
@@ -25,17 +23,13 @@ function RightSidebar({ className }: SidebarProps) {
               )}
             </div>
           }
-          disabled={!user?.display_name || rightSidebarPref.main !== 'closed'}
+          disabled={!user?.display_name}
           position="left"
           color="#182a3d"
           offset={20}
           withArrow
         >
-          <div
-            className={`flex w-full items-center justify-center gap-2 ${
-              rightSidebarPref.main !== 'closed' ? 'translate-x-1' : ''
-            }`}
-          >
+          <div className="flex w-full items-center justify-center gap-2">
             <Indicator
               color="cyan"
               position="bottom-end"
@@ -53,11 +47,7 @@ function RightSidebar({ className }: SidebarProps) {
               </Avatar>
             </Indicator>
 
-            <div
-              className={`w-full overflow-hidden ${
-                rightSidebarPref.main === 'closed' ? 'md:hidden' : ''
-              }`}
-            >
+            <div className="w-full overflow-hidden">
               <div className="text-md min-w-max font-bold">
                 {user?.display_name || user?.email || 'Not logged in'}
               </div>

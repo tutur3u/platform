@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import NestedLayout from '../../components/layouts/NestedLayout';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useSegments } from '../../hooks/useSegments';
 import { User } from '../../types/primitives/User';
 import SelectUserForm from '../../components/forms/SelectUserForm';
 import HeaderX from '../../components/metadata/HeaderX';
@@ -34,7 +34,7 @@ const WorkspaceMembersPage = () => {
 
   const isLoading = isWsLoading || isMembersLoading;
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
@@ -51,8 +51,7 @@ const WorkspaceMembersPage = () => {
           ]
         : []
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wsId, ws?.name]);
+  }, [setRootSegment, wsId, ws?.name]);
 
   useEffect(() => {
     if (ws?.error || wsError) router.push('/');

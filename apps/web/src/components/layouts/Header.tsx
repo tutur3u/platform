@@ -3,13 +3,13 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { Bars3Icon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 
 export default function Header() {
-  const { changeLeftSidebarMainPref } = useAppearance();
+  const { setSidebar } = useAppearance();
 
   return (
     <div className="fixed z-10 flex h-fit w-full items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-2 backdrop-blur-lg md:hidden">
       <button
         className="rounded p-2 transition hover:bg-zinc-300/10"
-        onClick={() => changeLeftSidebarMainPref('open')}
+        onClick={() => setSidebar('open')}
       >
         <Bars3Icon className="h-6 w-6" />
       </button>

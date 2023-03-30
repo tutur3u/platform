@@ -27,9 +27,9 @@ export default function SidebarButton({
   className,
   disabled = false,
 }: SidebarButtonProps) {
-  const { leftSidebarPref } = useAppearance();
+  const { sidebar } = useAppearance();
 
-  const isExpanded = leftSidebarPref.main === 'open';
+  const isExpanded = sidebar === 'open';
 
   return (
     <Tooltip
@@ -39,20 +39,22 @@ export default function SidebarButton({
       disabled={!showTooltip}
     >
       <button
-        onClick={onClick}
-        className={`flex items-center gap-2 rounded p-2 font-semibold ${
+        onClick={disabled ? undefined : onClick}
+        className={`flex items-center gap-2 rounded p-2 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
         } ${
           disabled
             ? 'cursor-not-allowed text-zinc-600'
             : isActive
             ? 'bg-zinc-300/10 text-zinc-100'
-            : 'text-zinc-300 hover:bg-zinc-300/5 hover:text-zinc-100'
+            : 'text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
         } ${className}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
         {showLabel && (
-          <div className="line-clamp-1 inline-block text-sm">{label}</div>
+          <div className="line-clamp-1 inline-block text-sm font-semibold">
+            {label}
+          </div>
         )}
       </button>
     </Tooltip>

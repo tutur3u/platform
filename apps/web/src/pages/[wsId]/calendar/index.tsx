@@ -1,7 +1,5 @@
 import { ReactElement, useEffect } from 'react';
-import { useAppearance } from '../../../hooks/useAppearance';
-import { useUserData } from '../../../hooks/useUserData';
-import { useUserList } from '../../../hooks/useUserList';
+import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { DEV_MODE } from '../../../constants/common';
@@ -9,23 +7,14 @@ import Calendar from '../../../components/calendar/Calendar';
 import SidebarLayout from '../../../components/layouts/SidebarLayout';
 
 const CalendarPage: PageWithLayoutProps = () => {
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
-  const { updateUsers } = useUserList();
-  const { data: user } = useUserData();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
-    changeLeftSidebarSecondaryPref('hidden');
     setRootSegment({
       content: 'Calendar',
       href: '/calendar',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (user) updateUsers([user]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [setRootSegment]);
 
   if (!DEV_MODE)
     return (

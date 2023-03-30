@@ -38,7 +38,7 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
 
-  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
+  const { sidebar, toggleSidebar } = useAppearance();
   const { supabaseClient } = useSessionContext();
   const { data: user } = useUserData();
 
@@ -95,33 +95,21 @@ function LeftSidebar({ className }: SidebarProps) {
       >
         <div
           className={`flex h-full w-16 flex-col border-r border-zinc-800/80 pb-2 pt-4 ${
-            leftSidebarPref.main === 'open' &&
-            leftSidebarPref.secondary === 'visible'
-              ? 'opacity-100'
-              : leftSidebarPref.main === 'open'
+            sidebar === 'open' && sidebar === 'open'
               ? 'w-full opacity-100 md:w-64'
-              : leftSidebarPref.secondary === 'visible'
-              ? 'opacity-100'
               : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
           <div className="relative mx-4 mb-2 flex items-center justify-between pb-1">
             <Logo
               root={!user}
-              alwaysShowLabel={leftSidebarPref.main === 'open'}
-              showLabel={
-                leftSidebarPref.main !== 'closed' &&
-                leftSidebarPref.secondary === 'hidden'
-              }
+              alwaysShowLabel={sidebar === 'open'}
+              showLabel={sidebar !== 'closed'}
             />
 
             <button
               className="rounded-lg bg-zinc-800 p-1.5 transition hover:bg-zinc-700 md:hidden"
-              onClick={() =>
-                changeLeftSidebarMainPref(
-                  leftSidebarPref.main === 'open' ? 'closed' : 'open'
-                )
-              }
+              onClick={toggleSidebar}
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -146,13 +134,13 @@ function LeftSidebar({ className }: SidebarProps) {
                   }
                   position="right"
                   offset={16}
-                  disabled={leftSidebarPref.main === 'open'}
+                  disabled={sidebar === 'open'}
                 >
                   <div className="rounded border border-zinc-700/50 bg-zinc-800/50 p-2 transition">
                     <div className="">
                       <div
                         className={`mb-1 flex ${
-                          leftSidebarPref.main === 'closed'
+                          sidebar === 'closed'
                             ? 'items-center justify-center'
                             : 'justify-between gap-2 font-semibold'
                         }`}
@@ -161,7 +149,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           href={`/${ws.id}`}
                           className="line-clamp-1 text-zinc-300 transition hover:text-zinc-100"
                         >
-                          {leftSidebarPref.main === 'closed' ? (
+                          {sidebar === 'closed' ? (
                             <BuildingOffice2Icon className="w-5" />
                           ) : (
                             ws?.name || 'Unnamed Workspace'
@@ -175,9 +163,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         <Avatar.Group
                           spacing="sm"
                           color="blue"
-                          className={
-                            leftSidebarPref.main === 'closed' ? 'hidden' : ''
-                          }
+                          className={sidebar === 'closed' ? 'hidden' : ''}
                         >
                           {members &&
                             members.map((member) => (
@@ -221,7 +207,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         </Avatar.Group>
                       </Tooltip.Group>
 
-                      {leftSidebarPref.main === 'closed' || (
+                      {sidebar === 'closed' || (
                         <Link
                           href={`/${ws.id}/members`}
                           className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
@@ -252,10 +238,8 @@ function LeftSidebar({ className }: SidebarProps) {
                       onClick={() => setNewPopover((o) => !o)}
                       isActive={newPopover}
                       activeIcon={<PlusIcon className="w-5" />}
-                      showLabel={leftSidebarPref.main === 'open'}
-                      showTooltip={
-                        leftSidebarPref.main === 'closed' && !newPopover
-                      }
+                      showLabel={sidebar === 'open'}
+                      showTooltip={sidebar === 'closed' && !newPopover}
                       className="w-full"
                     />
                   </div>
@@ -331,35 +315,35 @@ function LeftSidebar({ className }: SidebarProps) {
                     onClick={() => setUserPopover(false)}
                     activeIcon={<HomeIcon className="w-5" />}
                     label="Home"
-                    showTooltip={leftSidebarPref.main === 'closed'}
+                    showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/calendar`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<CalendarDaysIcon className="w-5" />}
                     label="Calendar"
-                    showTooltip={leftSidebarPref.main === 'closed'}
+                    showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/tasks`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<CheckCircleIcon className="w-5" />}
                     label="Tasks"
-                    showTooltip={leftSidebarPref.main === 'closed'}
+                    showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/documents`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<ClipboardDocumentListIcon className="w-5" />}
                     label="Documents"
-                    showTooltip={leftSidebarPref.main === 'closed'}
+                    showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/finance`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<BanknotesIcon className="w-5" />}
                     label="Finance"
-                    showTooltip={leftSidebarPref.main === 'closed'}
+                    showTooltip={sidebar === 'closed'}
                   />
                 </div>
 
@@ -369,7 +353,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   {projectsLoading || (
                     <div
                       className={`flex flex-col ${
-                        leftSidebarPref.main === 'open' ? 'gap-1' : 'gap-2'
+                        sidebar === 'open' ? 'gap-1' : 'gap-2'
                       }`}
                     >
                       {projects &&
@@ -377,15 +361,13 @@ function LeftSidebar({ className }: SidebarProps) {
                           <SidebarLink
                             key={project.id}
                             href={`/${ws.id}/projects/${project.id}`}
-                            defaultHighlight={leftSidebarPref.main !== 'closed'}
+                            defaultHighlight={sidebar !== 'closed'}
                             activeIcon={
                               <Avatar
                                 radius="sm"
                                 color="blue"
                                 className="bg-blue-500/20"
-                                size={
-                                  leftSidebarPref.main === 'open' ? 'sm' : 'md'
-                                }
+                                size={sidebar === 'open' ? 'sm' : 'md'}
                               >
                                 {project?.name ? (
                                   getInitials(project.name)
@@ -399,9 +381,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                 radius="sm"
                                 color="blue"
                                 className="hover:bg-blue-500/10"
-                                size={
-                                  leftSidebarPref.main === 'open' ? 'sm' : 'md'
-                                }
+                                size={sidebar === 'open' ? 'sm' : 'md'}
                               >
                                 {project?.name ? (
                                   getInitials(project.name)
@@ -411,16 +391,14 @@ function LeftSidebar({ className }: SidebarProps) {
                               </Avatar>
                             }
                             label={project?.name || 'Untitled Project'}
-                            showTooltip={leftSidebarPref.main === 'closed'}
+                            showTooltip={sidebar === 'closed'}
                           />
                         ))}
                       <SidebarButton
                         label="New project"
                         activeIcon={<SquaresPlusIcon className="w-5" />}
-                        showLabel={leftSidebarPref.main === 'open'}
-                        showTooltip={
-                          leftSidebarPref.main === 'closed' && !newPopover
-                        }
+                        showLabel={sidebar === 'open'}
+                        showTooltip={sidebar === 'closed' && !newPopover}
                         onClick={showProjectEditForm}
                       />
                     </div>
@@ -434,25 +412,19 @@ function LeftSidebar({ className }: SidebarProps) {
 
           <div className="mx-2 hidden md:block">
             <SidebarButton
-              onClick={() =>
-                changeLeftSidebarMainPref(
-                  leftSidebarPref.main === 'closed' ? 'open' : 'closed'
-                )
-              }
+              onClick={toggleSidebar}
               label={
-                leftSidebarPref.main === 'closed'
-                  ? 'Expand sidebar'
-                  : 'Collapse sidebar'
+                sidebar === 'closed' ? 'Expand sidebar' : 'Collapse sidebar'
               }
               activeIcon={
-                leftSidebarPref.main === 'closed' ? (
+                sidebar === 'closed' ? (
                   <ChevronRightIcon className="w-5" />
                 ) : (
                   <ChevronLeftIcon className="w-5" />
                 )
               }
-              showLabel={leftSidebarPref.main === 'open'}
-              showTooltip={leftSidebarPref.main === 'closed'}
+              showLabel={sidebar === 'open'}
+              showTooltip={sidebar === 'closed'}
               className="w-full"
             />
           </div>
@@ -462,7 +434,7 @@ function LeftSidebar({ className }: SidebarProps) {
           {ws?.id && (
             <>
               <div className="mx-2 flex items-center justify-center gap-2">
-                {leftSidebarPref.main === 'open' && (
+                {sidebar === 'open' && (
                   <WorkspaceSelector className="w-full md:w-auto" />
                 )}
 
@@ -484,7 +456,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         </div>
                       }
                       disabled={userPopover}
-                      offset={leftSidebarPref.main === 'closed' ? 20 : 16}
+                      offset={sidebar === 'closed' ? 20 : 16}
                       position="right"
                       color="#182a3d"
                     >
@@ -518,7 +490,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       left
                     />
 
-                    {leftSidebarPref.main !== 'open' && (
+                    {sidebar !== 'open' && (
                       <>
                         <Divider variant="dashed" />
                         <WorkspaceSelector

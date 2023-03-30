@@ -8,11 +8,11 @@ import { UserDataProvider } from '../../hooks/useUserData';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { WorkspaceProvider } from '../../hooks/useWorkspaces';
 import { SWRConfig } from 'swr';
-import { UserListProvider } from '../../hooks/useUserList';
 import { CalendarProvider } from '../../hooks/useCalendar';
 import { WalletProvider } from '../../hooks/useWallets';
 import { TransactionProvider } from '../../hooks/useTransactions';
 import MantineProvider from '../mantine/MantineProvider';
+import { SegmentProvider } from '../../hooks/useSegments';
 
 interface ProvidersProps {
   supabaseClient: SupabaseClient;
@@ -39,15 +39,15 @@ const Providers = ({
         <CalendarProvider>
           <UserDataProvider>
             <MantineProvider>
-              <UserListProvider>
-                <AppearanceProvider>
+              <AppearanceProvider>
+                <SegmentProvider>
                   <WorkspaceProvider>
                     <WalletProvider>
                       <TransactionProvider>{children}</TransactionProvider>
                     </WalletProvider>
                   </WorkspaceProvider>
-                </AppearanceProvider>
-              </UserListProvider>
+                </SegmentProvider>
+              </AppearanceProvider>
             </MantineProvider>
           </UserDataProvider>
         </CalendarProvider>

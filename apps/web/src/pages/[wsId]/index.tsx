@@ -2,51 +2,23 @@ import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../components/layouts/NestedLayout';
-import { useAppearance } from '../../hooks/useAppearance';
-import { useUserList } from '../../hooks/useUserList';
 import HeaderX from '../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
+import { useSegments } from '../../hooks/useSegments';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceOverviewPage = () => {
   const router = useRouter();
-  const { updateUsers } = useUserList();
 
   const { wsId } = router.query;
 
   const { data, error } = useSWR(wsId ? `/api/workspaces/${wsId}` : null);
 
-  const { data: membersData } = useSWR(
-    wsId ? `/api/workspaces/${wsId}/members` : null
-  );
-
-  useEffect(() => {
-    if (membersData)
-      updateUsers(
-        membersData?.members?.map(
-          (m: {
-            id: string;
-            display_name: string;
-            email: string;
-            handle: string;
-            avatar_url: string;
-          }) => ({
-            id: m.id,
-            display_name: m.display_name,
-            email: m.email,
-            handle: m.handle,
-            avatar_url: m.avatar_url,
-          })
-        ) || []
-      );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [membersData]);
-
   const isLoading = !data && !error;
 
-  const { setRootSegment, changeLeftSidebarSecondaryPref } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
@@ -62,10 +34,7 @@ const WorkspaceOverviewPage = () => {
       ],
       [data?.id]
     );
-
-    changeLeftSidebarSecondaryPref('hidden');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.name]);
+  }, [setRootSegment, data]);
 
   if (isLoading) return <div>Loading...</div>;
 

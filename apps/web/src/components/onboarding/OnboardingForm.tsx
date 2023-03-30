@@ -55,12 +55,6 @@ const OnboardingForm = () => {
   const { workspaces, workspaceInvites } = useWorkspaces();
 
   useEffect(() => {
-    const fetchWorkspaces = async () => {
-      const res = await fetch('/api/workspaces');
-      const data = await res.json();
-      if (data[0]?.id) router.push(`/${data[0].id}`);
-    };
-
     if (!workspaces || !workspaces?.length || !workspaces[0]?.id) return;
     if (!profileCompleted) return;
 
@@ -69,7 +63,7 @@ const OnboardingForm = () => {
     const { redirectedFrom: nextUrl } = router.query;
 
     if (nextUrl) router.push(nextUrl.toString());
-    else fetchWorkspaces();
+    else if (workspaces?.[0]?.id) router.push(`/${workspaces[0].id}`);
   }, [router, workspaces, profileCompleted]);
 
   const acceptInvite = async (ws: Workspace) => {
@@ -98,6 +92,10 @@ const OnboardingForm = () => {
 
     if (response.ok) {
       mutate('/api/workspaces');
+      showNotification({
+        title: `Đã từ chối lời mời vào ${ws.name}`,
+        message: 'Lời mời này sẽ không hiển thị nữa',
+      });
     } else {
       showNotification({
         title: `Không thể từ chối lời mời vào ${ws.name}`,
@@ -109,11 +107,13 @@ const OnboardingForm = () => {
   return (
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
-        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+        <div className="flex h-full w-full max-w-4xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {!user ||
           !workspaces ||
           (workspaces && workspaces?.length > 0 && profileCompleted) ? (
-            <LoadingIndicator className="h-8 w-8" />
+            <div className="flex h-full w-full items-center justify-center">
+              <LoadingIndicator className="h-8 w-8" />
+            </div>
           ) : (
             <>
               <div className="text-center">
@@ -147,7 +147,7 @@ const OnboardingForm = () => {
               <Divider className="w-full border-zinc-300/20" />
 
               {profileCompleted ? (
-                <div className="grid w-full gap-4">
+                <div className="scrollbar-none grid w-full gap-4 overflow-y-scroll">
                   {(workspaceInvites?.length || 0) > 0 ? (
                     workspaceInvites?.map((ws) => (
                       <WorkspaceInviteSnippet

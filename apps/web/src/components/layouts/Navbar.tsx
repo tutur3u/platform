@@ -1,13 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useUser } from '@supabase/auth-helpers-react';
+import UserProfilePopover from './UserProfilePopover';
 
 interface NavbarProps {
   hideNavLinks?: boolean;
 }
-
-const UserProfilePopover = dynamic(() => import('./UserProfilePopover'));
 
 const Navbar = ({ hideNavLinks }: NavbarProps) => {
   const user = useUser();

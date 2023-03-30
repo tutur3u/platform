@@ -272,7 +272,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       mutate(`/api/workspaces/${wsId}/projects`);
 
       const data = await res.json();
-      router.push(`/projects/${data.id}`);
+      router.push(`/${wsId}/projects/${data.id}`);
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({

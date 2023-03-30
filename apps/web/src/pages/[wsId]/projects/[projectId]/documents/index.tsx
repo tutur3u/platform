@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { useAppearance } from '../../../../../hooks/useAppearance';
+import { useSegments } from '../../../../../hooks/useSegments';
 import HeaderX from '../../../../../components/metadata/HeaderX';
 import { Divider, Loader } from '@mantine/core';
 import {
@@ -24,7 +24,7 @@ const ProjectDocumentsPage = () => {
     projectId ? `/api/projects/${projectId}` : null
   );
 
-  const { setRootSegment } = useAppearance();
+  const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(

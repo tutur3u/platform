@@ -1,21 +1,10 @@
-export const THEME = 'THEME';
-export const CONTENT_WIDTH = 'CONTENT_WIDTH';
-export const LANGUAGE = 'LANGUAGE';
+import { SidebarState, Theme } from '../hooks/useAppearance';
 
-export const LEFT_MAIN_SIDEBAR = 'LEFT_MAIN_SIDEBAR';
-export const LEFT_SECONDARY_SIDEBAR = 'LEFT_SECONDARY_SIDEBAR';
+export const APP_THEME_KEY = 'APP_THEME';
+export const DEFAULT_APP_THEME: Theme = 'dark';
 
-export const RIGHT_MAIN_SIDEBAR = 'RIGHT_MAIN_SIDEBAR';
-export const RIGHT_SECONDARY_SIDEBAR = 'RIGHT_SECONDARY_SIDEBAR';
+export const APP_LOCALE_KEY = 'APP_LOCALE';
+export const DEFAULT_APP_LOCALE = 'en';
 
-export const configs = {
-  THEME,
-  CONTENT_WIDTH,
-  LANGUAGE,
-
-  LEFT_MAIN_SIDEBAR,
-  LEFT_SECONDARY_SIDEBAR,
-
-  RIGHT_MAIN_SIDEBAR,
-  RIGHT_SECONDARY_SIDEBAR,
-};
+export const SIDEBAR_STATE_KEY = 'SIDEBAR_STATE';
+export const DEFAULT_SIDEBAR_STATE: SidebarState = 'closed';

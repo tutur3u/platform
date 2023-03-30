@@ -9,6 +9,7 @@ interface SidebarLinkProps {
   label?: string;
   activeIcon?: React.ReactNode;
   inactiveIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
   showIcon?: boolean;
   showLabel?: boolean;
   showTooltip?: boolean;
@@ -25,6 +26,7 @@ export default function SidebarLink({
   label,
   activeIcon,
   inactiveIcon,
+  trailingIcon,
   showIcon = true,
   showLabel = true,
   showTooltip = false,
@@ -34,17 +36,16 @@ export default function SidebarLink({
   className,
 }: SidebarLinkProps) {
   const router = useRouter();
-  const { projectId } = router.query;
+  const { wsId, projectId } = router.query;
 
-  const { leftSidebarPref, changeLeftSidebarMainPref } = useAppearance();
+  const { sidebar, setSidebar } = useAppearance();
 
-  const isExpanded = leftSidebarPref.main === 'open';
+  const isExpanded = sidebar === 'open';
+
   const isActive = href
-    ? href != '/'
-      ? router.pathname
-          .replace('/[projectId]', `/${projectId}`)
-          .startsWith(href)
-      : router.pathname === href
+    ? router.pathname
+        .replace('/[projectId]', `/${projectId}`)
+        .replace('/[wsId]', `/${wsId}`) === href
     : false;
 
   return (
@@ -52,8 +53,7 @@ export default function SidebarLink({
       href={href || '#'}
       onClick={() => {
         if (onClick) onClick();
-        if (window && window.innerWidth <= 768)
-          changeLeftSidebarMainPref('closed');
+        if (window && window.innerWidth <= 768) setSidebar('closed');
       }}
       className="font-semibold"
     >
@@ -68,7 +68,7 @@ export default function SidebarLink({
             defaultHighlight
               ? defaultActive && isActive
                 ? 'bg-zinc-300/10 p-2 text-zinc-100'
-                : 'p-2 text-zinc-300 hover:bg-zinc-300/5 hover:text-zinc-100'
+                : 'p-2 text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
               : ''
           } ${
             left || isExpanded ? 'justify-start' : 'justify-center'
@@ -82,7 +82,12 @@ export default function SidebarLink({
             </div>
           )}
           {showLabel && !showTooltip && (
-            <div className="line-clamp-1 inline-block text-sm">{label}</div>
+            <>
+              <div className="line-clamp-1 inline-block w-full text-sm">
+                {label}
+              </div>
+              {trailingIcon}
+            </>
           )}
         </div>
       </Tooltip>
