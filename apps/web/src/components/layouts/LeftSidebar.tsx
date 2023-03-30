@@ -15,7 +15,12 @@ import {
   SquaresPlusIcon,
   ArrowRightOnRectangleIcon,
   XMarkIcon,
-} from '@heroicons/react/24/solid';
+  BeakerIcon,
+  ClockIcon,
+  ArchiveBoxIcon,
+  RectangleStackIcon,
+  BellIcon,
+} from '@heroicons/react/24/outline';
 
 import SidebarLink from './SidebarLink';
 import Logo from '../common/Logo';
@@ -47,8 +52,15 @@ function LeftSidebar({ className }: SidebarProps) {
     router.push('/');
   };
 
-  const { ws, members, teams, teamsLoading, createWorkspace, createTeam } =
-    useWorkspaces();
+  const {
+    ws,
+    workspaceInvites,
+    members,
+    teams,
+    teamsLoading,
+    createWorkspace,
+    createTeam,
+  } = useWorkspaces();
 
   const showEditWorkspaceModal = () => {
     openModal({
@@ -160,7 +172,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           className={sidebar === 'closed' ? 'hidden' : ''}
                         >
                           {members &&
-                            members.map((member) => (
+                            members.slice(0, 3).map((member) => (
                               <Tooltip
                                 key={member.id}
                                 label={
@@ -311,32 +323,70 @@ function LeftSidebar({ className }: SidebarProps) {
                     label="Home"
                     showTooltip={sidebar === 'closed'}
                   />
+                  {ws?.preset === 'GENERAL' && (
+                    <SidebarLink
+                      href={`/${ws.id}/calendar`}
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<CalendarDaysIcon className="w-5" />}
+                      label="Calendar"
+                      showTooltip={sidebar === 'closed'}
+                    />
+                  )}
+                  {ws?.preset === 'GENERAL' && (
+                    <SidebarLink
+                      href={`/${ws.id}/tasks`}
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<CheckCircleIcon className="w-5" />}
+                      label="Tasks"
+                      showTooltip={sidebar === 'closed'}
+                    />
+                  )}
+                  {ws?.preset === 'GENERAL' && (
+                    <SidebarLink
+                      href={`/${ws.id}/documents`}
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<ClipboardDocumentListIcon className="w-5" />}
+                      label="Documents"
+                      showTooltip={sidebar === 'closed'}
+                    />
+                  )}
+                  {ws?.preset === 'PHARMACY' && (
+                    <SidebarLink
+                      href={`/${ws.id}/misc`}
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<BeakerIcon className="w-5" />}
+                      label="Healthcare"
+                      showTooltip={sidebar === 'closed'}
+                    />
+                  )}
                   <SidebarLink
-                    href={`/${ws.id}/calendar`}
+                    href={`/${ws.id}/inventory`}
                     onClick={() => setUserPopover(false)}
-                    activeIcon={<CalendarDaysIcon className="w-5" />}
-                    label="Calendar"
+                    activeIcon={<ArchiveBoxIcon className="w-5" />}
+                    label="Inventory"
                     showTooltip={sidebar === 'closed'}
                   />
-                  <SidebarLink
-                    href={`/${ws.id}/tasks`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<CheckCircleIcon className="w-5" />}
-                    label="Tasks"
-                    showTooltip={sidebar === 'closed'}
-                  />
-                  <SidebarLink
-                    href={`/${ws.id}/documents`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                    label="Documents"
-                    showTooltip={sidebar === 'closed'}
-                  />
+                  {ws?.preset === 'EDUCATION' && (
+                    <SidebarLink
+                      href={`/${ws.id}/classes`}
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<RectangleStackIcon className="w-5" />}
+                      label="Classes"
+                      showTooltip={sidebar === 'closed'}
+                    />
+                  )}
                   <SidebarLink
                     href={`/${ws.id}/finance`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<BanknotesIcon className="w-5" />}
                     label="Finance"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
+                    href={`/${ws.id}/activities`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<ClockIcon className="w-5" />}
+                    label="Activities"
                     showTooltip={sidebar === 'closed'}
                   />
                 </div>
@@ -399,10 +449,35 @@ function LeftSidebar({ className }: SidebarProps) {
                   )}
                 </div>
               </div>
-
-              <Divider className="mb-2 hidden md:block" />
             </>
           )}
+
+          {ws ? (
+            <div className={`m-2 ${ws || 'h-full'}`}>
+              <SidebarLink
+                href={`/${ws.id}/notifications`}
+                onClick={() => setUserPopover(false)}
+                activeIcon={<BellIcon className="w-5" />}
+                label="Thông báo"
+                showTooltip={sidebar === 'closed'}
+                trailingIcon={
+                  <div
+                    className={`flex aspect-square h-6 items-center justify-center rounded-lg bg-red-300/20 text-sm text-red-300 ${
+                      workspaceInvites?.length === 0 ? 'opacity-0' : ''
+                    }`}
+                  >
+                    {(workspaceInvites?.length || 0) > 9
+                      ? '9+'
+                      : workspaceInvites?.length || 0}
+                  </div>
+                }
+              />
+            </div>
+          ) : (
+            <div className="h-full" />
+          )}
+
+          <Divider className="mb-2 hidden md:block" />
 
           <div className="mx-2 hidden md:block">
             <SidebarButton

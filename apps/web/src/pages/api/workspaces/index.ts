@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Workspace } from '../../../types/primitives/Workspace';
 
 const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
@@ -9,7 +10,7 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, workspace_members!inner(ws_id)')
+    .select('id, name, workspace_members!inner(ws_id), preset')
     .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
@@ -23,12 +24,13 @@ const createWorkspace = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
-  const { name } = JSON.parse(req.body);
+  const { name, preset } = JSON.parse(req.body) as Workspace;
 
   const { error } = await supabase
     .from('workspaces')
     .insert({
       name,
+      preset,
     })
     .single();
 
