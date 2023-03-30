@@ -6,17 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { Wallet } from '../../types/primitives/Wallet';
 
 interface Props {
+  wsId: string;
   wallet?: Wallet;
-  onSubmit: (projectId: string, wallet: Wallet) => void;
+  onSubmit: (wsId: string, wallet: Wallet) => void;
   onDelete?: () => void;
-  projectId?: string;
 }
 
-const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
-  // const [projectId, setProjectId] = useState<string | null>(
-  //   wallet?.project_id || projects[0]?.id
-  // );
-
+const WalletEditForm = ({ wsId, wallet, onSubmit, onDelete }: Props) => {
   const [name, setName] = useState(wallet?.name || '');
   const [balance, setBalance] = useState<number | ''>(wallet?.balance || '');
   const [currency, setCurrency] = useState<string | null>(
@@ -26,28 +22,6 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
 
   return (
     <>
-      {wallet?.id && (
-        <TextInput
-          label="Wallet ID"
-          value={wallet?.id}
-          className="mb-2"
-          disabled
-        />
-      )}
-
-      {/* {isProjectsLoading || (
-        <Select
-          label="Project"
-          placeholder="Select project"
-          value={projectId}
-          onChange={setProjectId}
-          data={projects.map((project) => ({
-            value: project.id,
-            label: project.name,
-          }))}
-        />
-      )} */}
-
       <TextInput
         label="Wallet name"
         placeholder="Enter wallet name"
@@ -120,7 +94,7 @@ const WalletEditForm = ({ wallet, onSubmit, onDelete, projectId }: Props) => {
               description,
             };
 
-            onSubmit(projectId || '', newWallet);
+            onSubmit(wsId, newWallet);
             closeAllModals();
           }}
           mt="md"

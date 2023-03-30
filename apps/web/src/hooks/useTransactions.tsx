@@ -6,31 +6,31 @@ import { showNotification } from '@mantine/notifications';
 
 const TransactionContext = createContext({
   createTransaction: (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
-  ) => console.log(transaction),
+  ) => console.log(wsId, walletId, transaction),
   updateTransaction: (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
-  ) => console.log(transaction),
+  ) => console.log(wsId, walletId, transaction),
   deleteTransaction: (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
-  ) => console.log(transaction),
+  ) => console.log(wsId, walletId, transaction),
 });
 
 export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   const createTransaction = async (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
   ) => {
     try {
       const res = await fetch(
-        `/api/projects/${projectId}/wallets/${walletId}/transactions`,
+        `/api/workspaces/${wsId}/wallets/${walletId}/transactions`,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -42,9 +42,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to create transaction');
-      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
-      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
-      mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}/transactions`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}`);
+      mutate(`/api/workspaces/${wsId}/wallets`);
     } catch (e) {
       showNotification({
         title: 'Failed to create transaction',
@@ -55,13 +55,13 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateTransaction = async (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
   ) => {
     try {
       const res = await fetch(
-        `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
+        `/api/workspaces/${wsId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'PUT',
           headers: {
@@ -76,9 +76,9 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to update transaction');
-      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
-      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
-      mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}/transactions`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}`);
+      mutate(`/api/workspaces/${wsId}/wallets`);
     } catch (e) {
       showNotification({
         title: 'Failed to update transaction',
@@ -89,22 +89,22 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteTransaction = async (
-    projectId: string,
+    wsId: string,
     walletId: string,
     transaction: Transaction
   ) => {
     try {
       const res = await fetch(
-        `/api/projects/${projectId}/wallets/${walletId}/transactions/${transaction.id}`,
+        `/api/workspaces/${wsId}/wallets/${walletId}/transactions/${transaction.id}`,
         {
           method: 'DELETE',
         }
       );
 
       if (!res.ok) throw new Error('Failed to delete transaction');
-      mutate(`/api/projects/${projectId}/wallets/${walletId}/transactions`);
-      mutate(`/api/projects/${projectId}/wallets/${walletId}`);
-      mutate(`/api/projects/${projectId}/wallets`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}/transactions`);
+      mutate(`/api/workspaces/${wsId}/wallets/${walletId}`);
+      mutate(`/api/workspaces/${wsId}/wallets`);
     } catch (e) {
       showNotification({
         title: 'Failed to delete transaction',

@@ -36,7 +36,7 @@ export default function SidebarLink({
   className,
 }: SidebarLinkProps) {
   const router = useRouter();
-  const { wsId, projectId } = router.query;
+  const { wsId, teamId } = router.query;
 
   const { sidebar, setSidebar } = useAppearance();
 
@@ -44,7 +44,7 @@ export default function SidebarLink({
 
   const isActive = href
     ? router.pathname
-        .replace('/[projectId]', `/${projectId}`)
+        .replace('/[teamId]', `/${teamId}`)
         .replace('/[wsId]', `/${wsId}`) === href
     : false;
 

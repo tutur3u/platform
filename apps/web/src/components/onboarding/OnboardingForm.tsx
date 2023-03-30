@@ -112,7 +112,7 @@ const OnboardingForm = () => {
   return (
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
-        <div className="flex h-full w-full max-w-4xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+        <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {!user ||
           !workspaces ||
           (workspaces && workspaces?.length > 0 && profileCompleted) ? (

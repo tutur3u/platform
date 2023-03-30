@@ -3,17 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { userId, wsId } = req.query;
+    const { wsId } = req.query;
 
-    if (!userId || typeof userId !== 'string')
-      return res.status(401).json({ error: 'Invalid user ID' });
-
-    if (!wsId || typeof wsId !== 'string')
-      return res.status(401).json({ error: 'Invalid workspace ID' });
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
         return await fetchDocuments(req, res, wsId);
+
+      case 'POST':
+        return await createDocument(req, res, wsId);
 
       default:
         throw new Error(
@@ -35,28 +34,45 @@ export default handler;
 const fetchDocuments = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId?: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const queryBuilder = supabase
+  const { data, error } = await supabase
     .from('workspace_documents')
-    .select('id, name, content, project_id, projects!inner(ws_id), created_at');
-
-  if (wsId) queryBuilder.eq('projects.ws_id', wsId);
-  const { data, error } = await queryBuilder.order('created_at');
+    .select('id, name, content, created_at')
+    .eq('ws_id', wsId)
+    .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json(data);
+};
 
-  // Filter out projects.ws_id
-  const filteredData = data.map((doc) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { projects, ...rest } = doc;
-    return rest;
+const createDocument = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  wsId: string
+) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
   });
 
-  return res.status(200).json(filteredData);
+  const { name, content } = req.body;
+
+  const { data, error } = await supabase
+    .from('workspace_documents')
+    .insert({
+      name,
+      content,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json({ id: data.id });
 };

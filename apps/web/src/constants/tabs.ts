@@ -9,8 +9,8 @@ export const workspaceTabs: Tab[] = [
     href: '/[wsId]',
   },
   {
-    name: 'Projects',
-    href: '/[wsId]/projects',
+    name: 'Teams',
+    href: '/[wsId]/teams',
   },
   {
     name: 'Members',
@@ -22,18 +22,18 @@ export const workspaceTabs: Tab[] = [
   },
 ];
 
-export const projectTabs: Tab[] = [
+export const teamTabs: Tab[] = [
   {
     name: 'Overview',
-    href: '/[wsId]/projects/[projectId]',
+    href: '/[wsId]/teams/[teamId]',
   },
   {
     name: 'Members',
-    href: '/[wsId]/projects/[projectId]/members',
+    href: '/[wsId]/teams/[teamId]/members',
   },
   {
     name: 'Settings',
-    href: '/[wsId]/projects/[projectId]/settings',
+    href: '/[wsId]/teams/[teamId]/settings',
   },
 ];
 

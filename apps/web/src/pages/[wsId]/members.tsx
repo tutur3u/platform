@@ -10,29 +10,19 @@ import { useUser } from '@supabase/auth-helpers-react';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ReactElement, useEffect } from 'react';
-import useSWR, { mutate } from 'swr';
+import { mutate } from 'swr';
 import NestedLayout from '../../components/layouts/NestedLayout';
 import { useSegments } from '../../hooks/useSegments';
 import { User } from '../../types/primitives/User';
 import SelectUserForm from '../../components/forms/SelectUserForm';
 import HeaderX from '../../components/metadata/HeaderX';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 
 const WorkspaceMembersPage = () => {
   const router = useRouter();
   const { wsId } = router.query;
 
-  const { data: ws, error: wsError } = useSWR(
-    wsId ? `/api/workspaces/${wsId}` : null
-  );
-
-  const { data: membersData, error: membersError } = useSWR(
-    wsId ? `/api/workspaces/${wsId}/members` : null
-  );
-
-  const isWsLoading = !ws && !wsError;
-  const isMembersLoading = !membersData && !membersError;
-
-  const isLoading = isWsLoading || isMembersLoading;
+  const { ws, members, memberInvites } = useWorkspaces();
 
   const { setRootSegment } = useSegments();
 
@@ -53,13 +43,7 @@ const WorkspaceMembersPage = () => {
     );
   }, [setRootSegment, wsId, ws?.name]);
 
-  useEffect(() => {
-    if (ws?.error || wsError) router.push('/');
-  }, [ws, wsError, router]);
-
   const user = useUser();
-
-  if (isLoading) return <div>Loading...</div>;
 
   const deleteMember = async (member: User, invited: boolean) => {
     if (!member?.id) return;
@@ -118,7 +102,7 @@ const WorkspaceMembersPage = () => {
             <h1 className="text-2xl font-bold">
               Members{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
-                {membersData?.members?.length || 0}
+                {members?.length || 0}
               </span>
             </h1>
             <p className="text-zinc-400">Manage members of your workspace.</p>
@@ -139,7 +123,7 @@ const WorkspaceMembersPage = () => {
       )}
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
-        {membersData?.members
+        {members
           ?.sort(
             (
               a: {
@@ -154,63 +138,7 @@ const WorkspaceMembersPage = () => {
               return 0;
             }
           )
-          ?.map(
-            (member: {
-              id: string;
-              display_name: string;
-              email: string;
-              created_at?: string;
-            }) => (
-              <div
-                key={member.id}
-                className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
-              >
-                <p className="font-semibold lg:text-lg xl:text-xl">
-                  {member.display_name}
-                </p>
-                <p className="text-zinc-400">{member.email}</p>
-
-                <button
-                  className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
-                  onClick={() => deleteMember(member, false)}
-                >
-                  {user?.id === member.id ? (
-                    <Tooltip label="Leave">
-                      <ArrowRightOnRectangleIcon className="h-6 w-6" />
-                    </Tooltip>
-                  ) : (
-                    <Tooltip label="Remove member">
-                      <XMarkIcon className="h-6 w-6" />
-                    </Tooltip>
-                  )}
-                </button>
-
-                {member?.created_at ? (
-                  <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
-                    Member since{' '}
-                    <span className="font-semibold text-zinc-400">
-                      {moment(member.created_at).fromNow()}
-                    </span>
-                    .
-                  </div>
-                ) : null}
-              </div>
-            )
-          )}
-      </div>
-
-      <h1 className="mb-4 text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-        Pending invitations ({membersData?.invites?.length || 0})
-      </h1>
-
-      <div className="flex max-w-lg flex-col gap-4">
-        {membersData?.invites?.map(
-          (member: {
-            id: string;
-            display_name: string;
-            email: string;
-            created_at?: string;
-          }) => (
+          ?.map((member) => (
             <div
               key={member.id}
               className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
@@ -222,16 +150,22 @@ const WorkspaceMembersPage = () => {
 
               <button
                 className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
-                onClick={() => deleteMember(member, true)}
+                onClick={() => deleteMember(member, false)}
               >
-                <Tooltip label="Revoke invitation">
-                  <XMarkIcon className="h-6 w-6" />
-                </Tooltip>
+                {user?.id === member.id ? (
+                  <Tooltip label="Leave">
+                    <ArrowRightOnRectangleIcon className="h-6 w-6" />
+                  </Tooltip>
+                ) : (
+                  <Tooltip label="Remove member">
+                    <XMarkIcon className="h-6 w-6" />
+                  </Tooltip>
+                )}
               </button>
 
               {member?.created_at ? (
                 <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
-                  Invited{' '}
+                  Member since{' '}
                   <span className="font-semibold text-zinc-400">
                     {moment(member.created_at).fromNow()}
                   </span>
@@ -239,8 +173,44 @@ const WorkspaceMembersPage = () => {
                 </div>
               ) : null}
             </div>
-          )
-        )}
+          ))}
+      </div>
+
+      <h1 className="mb-4 text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
+        Pending invitations ({memberInvites?.length || 0})
+      </h1>
+
+      <div className="flex max-w-lg flex-col gap-4">
+        {memberInvites?.map((member) => (
+          <div
+            key={member.id}
+            className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
+          >
+            <p className="font-semibold lg:text-lg xl:text-xl">
+              {member.display_name}
+            </p>
+            <p className="text-zinc-400">{member.email}</p>
+
+            <button
+              className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
+              onClick={() => deleteMember(member, true)}
+            >
+              <Tooltip label="Revoke invitation">
+                <XMarkIcon className="h-6 w-6" />
+              </Tooltip>
+            </button>
+
+            {member?.created_at ? (
+              <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
+                Invited{' '}
+                <span className="font-semibold text-zinc-400">
+                  {moment(member.created_at).fromNow()}
+                </span>
+                .
+              </div>
+            ) : null}
+          </div>
+        ))}
       </div>
     </>
   );

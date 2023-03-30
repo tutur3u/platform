@@ -25,7 +25,7 @@ import { useUser } from '../../../hooks/useUser';
 
 export interface TaskWrapperProps {
   task: Task;
-  projectId: string;
+  teamId: string;
   boardId: string;
   listId: string;
   showCompleted?: boolean;

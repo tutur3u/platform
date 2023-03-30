@@ -3,17 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { teamId } = req.query;
+    const { wsId } = req.query;
 
-    if (!teamId || typeof teamId !== 'string')
-      throw new Error('Invalid teamId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchBoards(req, res, teamId);
+        return await fetchWallets(req, res, wsId);
 
       case 'POST':
-        return await createBoard(req, res, teamId);
+        return await createWallet(req, res, wsId);
 
       default:
         throw new Error(
@@ -32,10 +31,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchBoards = async (
+const fetchWallets = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  teamId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -43,36 +42,35 @@ const fetchBoards = async (
   });
 
   const { data, error } = await supabase
-    .from('workspace_boards')
-    .select('id, name')
-    .eq('project_id', teamId)
-    .order('created_at');
+    .from('workspace_wallets')
+    .select('id, name, balance, currency, created_at, description')
+    .order('created_at')
+    .eq('ws_id', wsId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
 };
 
-const createBoard = async (
+const createWallet = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  teamId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name } = req.body;
+  const { name, description, balance, currency } = JSON.parse(req.body);
 
-  const { data, error } = await supabase
-    .from('workspace_boards')
-    .insert({
-      name,
-      project_id: teamId,
-    })
-    .select('id')
-    .single();
+  const { error } = await supabase.from('workspace_wallets').insert({
+    name,
+    description,
+    balance,
+    currency,
+    ws_id: wsId,
+  });
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ id: data.id });
+  return res.status(200).json({ message: 'Wallet created' });
 };

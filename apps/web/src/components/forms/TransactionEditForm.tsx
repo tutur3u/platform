@@ -8,22 +8,18 @@ import { Category } from '../../types/primitives/Category';
 import { Transaction } from '../../types/primitives/Transaction';
 
 interface Props {
-  transaction?: Transaction;
-  onSubmit: (
-    projectId: string,
-    walletId: string,
-    transaction: Transaction
-  ) => void;
-  onDelete?: () => void;
-  projectId: string;
+  wsId: string;
   walletId: string;
+  transaction?: Transaction;
+  onSubmit: (wsId: string, walletId: string, transaction: Transaction) => void;
+  onDelete?: (wsId: string, walletId: string, transaction: Transaction) => void;
 }
 
 const TransactionEditForm = ({
-  projectId,
+  wsId,
   walletId,
-  onDelete,
   transaction,
+  onDelete,
   onSubmit,
 }: Props) => {
   const [amount, setAmount] = useState<number | ''>(
@@ -148,7 +144,7 @@ const TransactionEditForm = ({
             variant="subtle"
             color="red"
             onClick={() => {
-              onDelete();
+              onDelete(wsId, walletId, transaction);
               closeAllModals();
             }}
             mt="md"
@@ -171,7 +167,7 @@ const TransactionEditForm = ({
 
             console.log(newTransaction);
 
-            onSubmit(projectId, walletId, newTransaction);
+            onSubmit(wsId, walletId, newTransaction);
             closeAllModals();
           }}
           mt="md"

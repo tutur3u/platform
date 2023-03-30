@@ -11,7 +11,7 @@ import { Workspace } from '../types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
-import { Project } from '../types/primitives/Project';
+import { Team } from '../types/primitives/Team';
 import { User } from '../types/primitives/User';
 
 const WorkspaceContext = createContext({
@@ -30,8 +30,8 @@ const WorkspaceContext = createContext({
   memberInvites: undefined as User[] | undefined,
   memberInvitesLoading: true,
 
-  projects: undefined as Project[] | undefined,
-  projectsLoading: true,
+  teams: undefined as Team[] | undefined,
+  teamsLoading: true,
 
   createWorkspace: async (
     ws: Workspace,
@@ -66,29 +66,29 @@ const WorkspaceContext = createContext({
     console.log('deleteWorkspace', id, options);
   },
 
-  createProject: async (
-    project: Partial<Project>,
+  createTeam: async (
+    team: Partial<Team>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
       onCompleted?: () => void;
     }
   ) => {
-    console.log('createProject', project, options);
+    console.log('createTeam', team, options);
   },
 
-  updateProject: async (
-    project: Partial<Project>,
+  updateTeam: async (
+    team: Partial<Team>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
       onCompleted?: () => void;
     }
   ) => {
-    console.log('updateProject', project, options);
+    console.log('updateTeam', team, options);
   },
 
-  deleteProject: async (
+  deleteTeam: async (
     id: string,
     options?: {
       onSuccess?: () => void;
@@ -96,7 +96,7 @@ const WorkspaceContext = createContext({
       onCompleted?: () => void;
     }
   ) => {
-    console.log('deleteProject', id, options);
+    console.log('deleteTeam', id, options);
   },
 });
 
@@ -156,11 +156,11 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const membersLoading = !members && !membersError;
 
-  const { data: projects, error: projectsError } = useSWR<Project[]>(
-    ws?.id ? `/api/workspaces/${ws.id}/projects` : null
+  const { data: teams, error: teamsError } = useSWR<Team[]>(
+    ws?.id ? `/api/workspaces/${ws.id}/teams` : null
   );
 
-  const projectsLoading = !projects && !projectsError;
+  const teamsLoading = !teams && !teamsError;
 
   const createWorkspace = async (
     ws: Workspace,
@@ -242,7 +242,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       if (options?.onError) options.onError();
       showNotification({
         title: 'Failed to delete workspace',
-        message: 'Make sure there are no projects in this workspace',
+        message: 'Make sure there are no teams in this workspace',
         color: 'red',
       });
     } finally {
@@ -250,8 +250,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createProject = async (
-    project: Partial<Project>,
+  const createTeam = async (
+    team: Partial<Team>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -259,25 +259,25 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/workspaces/${wsId}/projects`, {
+      const res = await fetch(`/api/workspaces/${wsId}/teams`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(project),
+        body: JSON.stringify(team),
       });
 
-      if (!res.ok) throw new Error('Failed to create project');
+      if (!res.ok) throw new Error('Failed to create team');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/projects`);
+      mutate(`/api/workspaces/${wsId}/teams`);
 
       const data = await res.json();
-      router.push(`/${wsId}/projects/${data.id}`);
+      router.push(`/${wsId}/teams/${data.id}`);
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to create project',
-        message: 'Make sure you have permission to create new projects',
+        title: 'Failed to create team',
+        message: 'Make sure you have permission to create new teams',
         color: 'red',
       });
     } finally {
@@ -285,8 +285,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateProject = async (
-    project: Partial<Project>,
+  const updateTeam = async (
+    team: Partial<Team>,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -294,19 +294,19 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
+      const res = await fetch(`/api/workspaces/${ws.id}/teams/${team.id}`, {
         method: 'PUT',
-        body: JSON.stringify(project),
+        body: JSON.stringify(team),
       });
 
-      if (!res.ok) throw new Error('Failed to update project');
+      if (!res.ok) throw new Error('Failed to update team');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/projects`);
+      mutate(`/api/workspaces/${wsId}/teams`);
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to update project',
-        message: 'Make sure you have permission to update this project',
+        title: 'Failed to update team',
+        message: 'Make sure you have permission to update this team',
         color: 'red',
       });
     } finally {
@@ -314,8 +314,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteProject = async (
-    projectId: string,
+  const deleteTeam = async (
+    teamId: string,
     options?: {
       onSuccess?: () => void;
       onError?: () => void;
@@ -323,18 +323,18 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/projects/${projectId}`, {
+      const res = await fetch(`/api/workspaces/${ws.id}/teams/${teamId}`, {
         method: 'DELETE',
       });
 
-      if (!res.ok) throw new Error('Failed to delete project');
+      if (!res.ok) throw new Error('Failed to delete team');
       if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/projects`);
+      mutate(`/api/workspaces/${wsId}/teams`);
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
-        title: 'Failed to delete project',
-        message: 'Make sure there are no projects in this project',
+        title: 'Failed to delete team',
+        message: 'Make sure there are no teams in this team',
         color: 'red',
       });
     } finally {
@@ -358,16 +358,16 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     memberInvites,
     memberInvitesLoading,
 
-    projects,
-    projectsLoading,
+    teams,
+    teamsLoading,
 
     createWorkspace,
     updateWorkspace,
     deleteWorkspace,
 
-    createProject,
-    updateProject,
-    deleteProject,
+    createTeam,
+    updateTeam,
+    deleteTeam,
   };
 
   return (

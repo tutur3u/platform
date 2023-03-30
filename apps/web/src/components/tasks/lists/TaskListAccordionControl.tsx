@@ -13,18 +13,18 @@ import TaskListEditForm from '../../forms/TaskListEditForm';
 
 const TaskListAccordionControl = (
   props: AccordionControlProps & {
-    projectId: string;
+    teamId: string;
     boardId: string;
     list: TaskList;
   }
 ) => {
-  const { projectId, boardId, list, ...rest } = props;
+  const { teamId, boardId, list, ...rest } = props;
 
   const updateList = async (list: TaskList) => {
     if (!list?.id) return;
 
     const res = await fetch(
-      `/api/projects/${projectId}/boards/${boardId}/lists/${list.id}`,
+      `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${list.id}`,
       {
         method: 'PUT',
         headers: {
@@ -36,7 +36,10 @@ const TaskListAccordionControl = (
       }
     );
 
-    if (res.ok) mutate(`/api/projects/${projectId}/boards/${boardId}/lists`);
+    if (res.ok)
+      mutate(
+        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
+      );
   };
 
   const deleteList = async () => {
@@ -46,7 +49,10 @@ const TaskListAccordionControl = (
       method: 'DELETE',
     });
 
-    if (res.ok) mutate(`/api/projects/${projectId}/boards/${boardId}/lists`);
+    if (res.ok)
+      mutate(
+        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
+      );
   };
 
   const showDeleteListModal = (list: TaskList) => {
