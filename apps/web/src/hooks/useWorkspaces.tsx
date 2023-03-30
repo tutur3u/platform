@@ -294,7 +294,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/workspaces/${ws.id}/teams/${team.id}`, {
+      const res = await fetch(`/api/workspaces/${wsId}/teams/${team.id}`, {
         method: 'PUT',
         body: JSON.stringify(team),
       });
@@ -323,7 +323,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch(`/api/workspaces/${ws.id}/teams/${teamId}`, {
+      const res = await fetch(`/api/workspaces/${wsId}/teams/${teamId}`, {
         method: 'DELETE',
       });
 

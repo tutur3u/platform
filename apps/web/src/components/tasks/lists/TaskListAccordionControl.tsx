@@ -10,21 +10,22 @@ import { openConfirmModal, openModal } from '@mantine/modals';
 import { mutate } from 'swr';
 import { TaskList } from '../../../types/primitives/TaskList';
 import TaskListEditForm from '../../forms/TaskListEditForm';
+import { Workspace } from '../../../types/primitives/Workspace';
 
 const TaskListAccordionControl = (
   props: AccordionControlProps & {
-    teamId: string;
+    ws: Workspace;
     boardId: string;
     list: TaskList;
   }
 ) => {
-  const { teamId, boardId, list, ...rest } = props;
+  const { ws, boardId, list, ...rest } = props;
 
   const updateList = async (list: TaskList) => {
     if (!list?.id) return;
 
     const res = await fetch(
-      `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${list.id}`,
+      `/api/workspaces/${ws.id}/boards/${boardId}/lists/${list.id}`,
       {
         method: 'PUT',
         headers: {
@@ -36,10 +37,7 @@ const TaskListAccordionControl = (
       }
     );
 
-    if (res.ok)
-      mutate(
-        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
-      );
+    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const deleteList = async () => {
@@ -49,10 +47,7 @@ const TaskListAccordionControl = (
       method: 'DELETE',
     });
 
-    if (res.ok)
-      mutate(
-        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
-      );
+    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showDeleteListModal = (list: TaskList) => {

@@ -15,17 +15,16 @@ const TeamSettingsPage = () => {
   const router = useRouter();
   const { wsId, teamId } = router.query;
 
-  const { ws } = useWorkspaces();
-
   const { data: team } = useSWR(
     wsId && teamId ? `/api/workspaces/${wsId}/teams/${teamId}` : null
   );
 
+  const { ws } = useWorkspaces();
   const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
-      ws?.id
+      ws
         ? [
             {
               content: ws.name || 'Unnamed Workspace',
@@ -46,7 +45,7 @@ const TeamSettingsPage = () => {
           ]
         : []
     );
-  }, [setRootSegment, ws, teamId, team?.workspaces?.name, team?.name]);
+  }, [setRootSegment, ws, teamId, team?.name]);
 
   const showDeleteTeamModal = async (team: Team) => {
     openModal({
@@ -56,7 +55,7 @@ const TeamSettingsPage = () => {
     });
   };
 
-  const [name, setName] = useState<string>(team?.name || '');
+  const [name, setName] = useState<string | undefined>(team?.name);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -80,10 +79,10 @@ const TeamSettingsPage = () => {
 
     if (res.ok) {
       setRootSegment(
-        ws?.id
+        ws
           ? [
               {
-                content: team?.workspaces?.name || 'Unnamed Workspace',
+                content: ws.name || 'Unnamed Workspace',
                 href: `/workspaces/${ws.id}`,
               },
               {
@@ -119,7 +118,7 @@ const TeamSettingsPage = () => {
     });
 
     if (res.ok) {
-      router.push(`/workspaces/${team.workspaces.id}/teams`);
+      router.push(`/${team.workspaces.id}/teams`);
       mutate(`/api/workspaces/${team.workspaces.id}/teams`);
     }
   };

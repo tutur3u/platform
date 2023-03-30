@@ -32,48 +32,37 @@ import TaskListEditForm from '../../../components/forms/TaskListEditForm';
 import TaskWrapper from '../../../components/tasks/core/TaskWrapper';
 import TaskListWrapper from '../../../components/tasks/lists/TaskListWrapper';
 import { useUser } from '../../../hooks/useUser';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 
-const ProjectBoardEditor = () => {
+const WorkspaceBoardEditor = () => {
   const router = useRouter();
-  const { teamId, boardId } = router.query;
+  const { boardId } = router.query;
 
-  const { data: project } = useSWR(
-    teamId ? `/api/workspaces/${ws.id}/teams/${teamId}` : null
-  );
+  const { ws } = useWorkspaces();
 
   const { data: board } = useSWR<TaskBoard>(
-    boardId
-      ? `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}`
-      : null
+    ws && boardId ? `/api/workspaces/${ws.id}/boards/${boardId}` : null
   );
 
   const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
-      project?.workspaces?.id
+      ws
         ? [
             {
-              content: project?.workspaces?.name || 'Unnamed Workspace',
-              href: `/workspaces/${project.workspaces.id}`,
+              content: ws.name || 'Unnamed Workspace',
+              href: `/${ws.id}`,
             },
-            {
-              content: 'Projects',
-              href: `/workspaces/${project?.workspaces?.id}/projects`,
-            },
-            {
-              content: project?.name || 'Untitled Project',
-              href: `/projects/${teamId}`,
-            },
-            { content: 'Boards', href: `/projects/${teamId}/boards` },
+            { content: 'Boards', href: `/${ws.id}/boards` },
             {
               content: board ? board?.name || 'Untitled Board' : 'Loading...',
-              href: `/projects/${teamId}/boards/${boardId}`,
+              href: `/${ws.id}/boards/${boardId}`,
             },
           ]
         : []
     );
-  }, [teamId, boardId, project, board, setRootSegment]);
+  }, [ws, boardId, board, setRootSegment]);
 
   const [mode, setMode] = useState('list');
 
@@ -84,9 +73,10 @@ const ProjectBoardEditor = () => {
   const [viewOption, setViewOption] = useState('my-tasks');
 
   const canFetchLists = user?.id && boardId && viewOption === 'all';
+
   const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
-    canFetchLists
-      ? `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
+    canFetchLists && ws
+      ? `/api/workspaces/${ws.id}/boards/${boardId}/lists`
       : null
   );
 
@@ -116,8 +106,8 @@ const ProjectBoardEditor = () => {
     });
   };
 
-  const buildQuery = (listId: string, option: string) => {
-    let query = `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${listId}/tasks`;
+  const buildQuery = (wsId: string, listId: string, option: string) => {
+    let query = `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
 
     if (option === 'todos') query += '&todos=true';
     if (option === 'completed') query += '&completed=true';
@@ -128,8 +118,8 @@ const ProjectBoardEditor = () => {
   const canFetchTasks =
     user?.id && boardId && selectedListId && viewOption !== 'all';
   const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
-    canFetchTasks
-      ? `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${selectedListId}/tasks?option=${viewOption}`
+    canFetchTasks && ws
+      ? `/api/workspaces/${ws.id}/boards/${boardId}/lists/${selectedListId}/tasks?option=${viewOption}`
       : null
   );
 
@@ -139,7 +129,7 @@ const ProjectBoardEditor = () => {
   const isContentLoading = isListsLoading || isTasksLoading;
 
   const deleteBoard = async () => {
-    if (!teamId || !boardId) return;
+    if (!boardId || !ws) return;
 
     openConfirmModal({
       title: <div className="font-semibold">Delete Board</div>,
@@ -150,31 +140,29 @@ const ProjectBoardEditor = () => {
       },
       centered: true,
       onConfirm: () => {
-        fetch(`/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}`, {
+        fetch(`/api/workspaces/${ws.id}/boards/${boardId}`, {
           method: 'DELETE',
         })
           .then((res) => res.json())
-          .then(() => router.push(`/projects/${teamId}/boards`));
+          .then(() => router.push(`/${ws.id}/boards`));
       },
     });
   };
 
   const updateBoard = async (board: TaskBoard) => {
-    const res = await fetch(
-      `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: board.name,
-        }),
-      }
-    );
+    if (!boardId || !ws) return;
+    const res = await fetch(`/api/workspaces/${ws.id}/boards/${boardId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: board.name,
+      }),
+    });
 
     if (res.ok) {
-      mutate(`/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}`);
+      mutate(`/api/workspaces/${ws.id}/boards/${boardId}`);
     }
   };
 
@@ -219,10 +207,10 @@ const ProjectBoardEditor = () => {
   };
 
   const addList = async (list: TaskList) => {
-    if (!boardId) return;
+    if (!boardId || !ws) return;
 
     const res = await fetch(
-      `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`,
+      `/api/workspaces/${ws.id}/boards/${boardId}/lists`,
       {
         method: 'POST',
         headers: {
@@ -235,17 +223,14 @@ const ProjectBoardEditor = () => {
       }
     );
 
-    if (res.ok)
-      mutate(
-        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
-      );
+    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const updateList = async (list: TaskList) => {
-    if (!boardId) return;
+    if (!boardId || !ws) return;
 
     const res = await fetch(
-      `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${list.id}`,
+      `/api/workspaces/${ws.id}/boards/${boardId}/lists/${list.id}`,
       {
         method: 'PUT',
         headers: {
@@ -257,10 +242,7 @@ const ProjectBoardEditor = () => {
       }
     );
 
-    if (res.ok)
-      mutate(
-        `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists`
-      );
+    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showEditListModal = (list?: TaskList) => {
@@ -277,7 +259,7 @@ const ProjectBoardEditor = () => {
     <>
       <HeaderX
         label={`${board?.name || 'Untitled Board'} - ${
-          project?.name || 'Untitled Project'
+          ws?.name || 'Untitled Workspace'
         }`}
       />
 
@@ -401,15 +383,12 @@ const ProjectBoardEditor = () => {
             </div>
           ) : (
             <div className="scrollbar-none flex flex-col gap-2 overflow-auto p-4">
-              {teamId &&
-                boardId &&
+              {boardId &&
                 selectedListId &&
                 tasks.map((task) => (
                   <TaskWrapper
                     key={task.id}
                     task={task}
-                    teamId={teamId as string}
-                    boardId={boardId as string}
                     listId={selectedListId}
                     highlight={viewOption !== 'my-tasks'}
                     onUpdated={() =>
@@ -435,22 +414,22 @@ const ProjectBoardEditor = () => {
               });
 
               // If the list is being collapsed, don't mutate
-              if (!id || selectedListId === id) return;
+              if (!ws || !id || selectedListId === id) return;
 
               const option = getViewOptionForList(id);
-              const query = buildQuery(id, option);
+              const query = buildQuery(ws.id, id, option);
               mutate(query);
             }}
             chevronPosition="left"
             radius="lg"
             className="scrollbar-none flex flex-col overflow-auto"
           >
-            {teamId &&
+            {ws &&
               boardId &&
               lists?.map((list) => (
                 <TaskListWrapper
                   key={list.id}
-                  teamId={teamId as string}
+                  ws={ws}
                   boardId={boardId as string}
                   list={list}
                   option={getViewOptionForList(list.id)}
@@ -464,8 +443,8 @@ const ProjectBoardEditor = () => {
   );
 };
 
-ProjectBoardEditor.getLayout = function getLayout(page: ReactElement) {
+WorkspaceBoardEditor.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default ProjectBoardEditor;
+export default WorkspaceBoardEditor;

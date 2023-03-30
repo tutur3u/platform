@@ -8,9 +8,10 @@ import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
+import { Workspace } from '../../../types/primitives/Workspace';
 
 export interface TaskListWrapperProps {
-  teamId: string;
+  ws: Workspace;
   boardId: string;
   list: TaskList;
   option: string;
@@ -18,14 +19,14 @@ export interface TaskListWrapperProps {
 }
 
 const TaskListWrapper = ({
-  teamId,
+  ws,
   boardId,
   list,
   option = 'todos',
   setOption,
 }: TaskListWrapperProps) => {
   const buildQuery = (listId: string) => {
-    let query = `/api/workspaces/${ws.id}/teams/${teamId}/boards/${boardId}/lists/${listId}/tasks`;
+    let query = `/api/workspaces/${ws.id}/boards/${boardId}/lists/${listId}/tasks`;
 
     if (option === 'todos') query += '?todos=true';
     if (option === 'completed') query += '?completed=true';
@@ -59,7 +60,7 @@ const TaskListWrapper = ({
       value={list.id}
       className="border-zinc-800/80"
     >
-      <TaskListAccordionControl teamId={teamId} boardId={boardId} list={list}>
+      <TaskListAccordionControl ws={ws} boardId={boardId} list={list}>
         <div className="line-clamp-1 font-semibold">
           {list.name || 'Untitled List'}
         </div>
@@ -90,8 +91,6 @@ const TaskListWrapper = ({
                 <TaskWrapper
                   key={task.id}
                   task={task}
-                  teamId={teamId}
-                  boardId={boardId}
                   listId={list.id}
                   showCompleted={option === 'completed'}
                   onUpdated={resync}

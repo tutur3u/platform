@@ -11,47 +11,32 @@ import BoardEditForm from '../../../components/forms/BoardEditForm';
 import { TaskBoard } from '../../../types/primitives/TaskBoard';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 
-const ProjectBoardsPage = () => {
+const WorkspaceBoardsPage = () => {
   const router = useRouter();
   const { teamId } = router.query;
 
-  const { data: project } = useSWR(
-    teamId ? `/api/workspaces/${ws.id}/teams/${teamId}` : null
-  );
+  const { ws } = useWorkspaces();
 
   const { setRootSegment } = useSegments();
 
   useEffect(() => {
     setRootSegment(
-      project?.workspaces?.id
+      ws
         ? [
             {
-              content: project?.workspaces?.name || 'Unnamed Workspace',
-              href: `/workspaces/${project.workspaces.id}`,
+              content: ws.name || 'Unnamed Workspace',
+              href: `/workspaces/${ws.id}`,
             },
-            {
-              content: 'Projects',
-              href: `/workspaces/${project?.workspaces?.id}/projects`,
-            },
-            {
-              content: project?.name || 'Untitled Project',
-              href: `/projects/${teamId}`,
-            },
-            { content: 'Boards', href: `/projects/${teamId}/tasks` },
+            { content: 'Boards', href: `/${ws.id}/boards` },
           ]
         : []
     );
-  }, [
-    setRootSegment,
-    teamId,
-    project?.workspaces?.id,
-    project?.workspaces?.name,
-    project?.name,
-  ]);
+  }, [setRootSegment, teamId, ws]);
 
   const { data: boards } = useSWR<TaskBoard[]>(
-    teamId ? `/api/workspaces/${ws.id}/teams/${teamId}/boards` : null
+    teamId && ws ? `/api/workspaces/${ws.id}/boards` : null
   );
 
   const createBoard = async ({
@@ -61,7 +46,8 @@ const ProjectBoardsPage = () => {
     teamId: string;
     board: TaskBoard;
   }) => {
-    const res = await fetch(`/api/workspaces/${ws.id}/teams/${teamId}/boards`, {
+    if (!ws) return;
+    const res = await fetch(`/api/workspaces/${ws.id}/boards`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -102,7 +88,7 @@ const ProjectBoardsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Boards – ${project?.name || 'Untitled Project'}`} />
+      <HeaderX label={`Boards – ${ws?.name || 'Untitled Workspace'}`} />
 
       {teamId && (
         <>
@@ -148,8 +134,8 @@ const ProjectBoardsPage = () => {
   );
 };
 
-ProjectBoardsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="project">{page}</NestedLayout>;
+WorkspaceBoardsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="workspace">{page}</NestedLayout>;
 };
 
-export default ProjectBoardsPage;
+export default WorkspaceBoardsPage;

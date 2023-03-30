@@ -18,7 +18,6 @@ const TeamMembersPage = () => {
   );
 
   const { ws, members } = useWorkspaces();
-
   const { setRootSegment } = useSegments();
 
   useEffect(() => {
