@@ -6,11 +6,24 @@ interface Props {
   ws: Workspace;
   onAccept?: (ws: Workspace) => void;
   onDecline?: (ws: Workspace) => void;
+
+  gray?: boolean;
 }
 
-const WorkspaceInviteSnippet = ({ ws, onAccept, onDecline }: Props) => {
+const WorkspaceInviteSnippet = ({
+  ws,
+  onAccept,
+  onDecline,
+  gray = false,
+}: Props) => {
   return (
-    <div className="rounded-lg border border-blue-300/20 bg-blue-300/5 p-8">
+    <div
+      className={`rounded-lg border p-8 ${
+        gray
+          ? 'border-zinc-300/20 bg-zinc-300/5'
+          : 'border-blue-300/20 bg-blue-300/5'
+      }`}
+    >
       {ws?.created_at ? (
         <>
           <div className="w-fit rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 text-blue-300">
