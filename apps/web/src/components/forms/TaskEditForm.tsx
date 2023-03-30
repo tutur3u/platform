@@ -19,7 +19,6 @@ import { DateTimePicker } from '@mantine/dates';
 import moment from 'moment';
 import { Priority } from '../../types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
-import { UserData } from '../../types/primitives/UserData';
 import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
 import { getInitials } from '../../utils/name-helper';
@@ -29,8 +28,9 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
-import { useUserData } from '../../hooks/useUserData';
 import Link from 'next/link';
+import { User } from '../../types/primitives/User';
+import { useUser } from '../../hooks/useUser';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -38,7 +38,7 @@ interface TaskEditFormProps {
   onUpdated: () => void;
 }
 
-type UserWithValue = UserData & { value: string };
+type UserWithValue = User & { value: string };
 
 const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
@@ -54,10 +54,10 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
   const [priority, setPriority] = useState<Priority>(task?.priority);
 
-  const [assignees, setAssignees] = useState<UserData[] | null>(null);
-  const [candidateAssignees, setCandidateAssignees] = useState<
-    UserData[] | null
-  >(null);
+  const [assignees, setAssignees] = useState<User[] | null>(null);
+  const [candidateAssignees, setCandidateAssignees] = useState<User[] | null>(
+    null
+  );
 
   const isAssigneeAdded = (assigneeId: string) =>
     assignees?.find((a) => a.id === assigneeId);
@@ -103,7 +103,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
     const fetchData = async (input: string) => {
       const users = await fetchUsers(input);
-      const suggestedUsers = users.map((user: UserData) => ({
+      const suggestedUsers = users.map((user: User) => ({
         ...user,
         value: `${user.handle} ${user.display_name} ${user.email}`,
       }));
@@ -146,7 +146,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       return;
     }
 
-    const assignees: UserData[] | null =
+    const assignees: User[] | null =
       rawAssigneesData != null
         ? rawAssigneesData?.map(
             (assignee: {
@@ -221,7 +221,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     }
   };
 
-  const { data: userData, isLoading: isUserLoading } = useUserData();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const { data: creatorData, error: creatorError } = useSWR(
     task?.id ? `/api/tasks/${task.id}/activities` : null
@@ -550,15 +550,13 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
               {isUserLoading ? (
                 <Loader className="h-6 w-6" color="blue" size="sm" />
-              ) : userData &&
+              ) : user &&
                 (assignees?.length === 0 ||
-                  !assignees?.some(
-                    (assignee) => assignee.id === userData.id
-                  )) ? (
+                  !assignees?.some((assignee) => assignee.id === user.id)) ? (
                 <button
                   className="rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 font-semibold text-blue-300 transition hover:bg-blue-300/20"
                   onClick={() =>
-                    setCandidateAssignees((prev) => [...(prev || []), userData])
+                    setCandidateAssignees((prev) => [...(prev || []), user])
                   }
                 >
                   Assign me

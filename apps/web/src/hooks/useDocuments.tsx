@@ -5,18 +5,18 @@ import { Document } from '../types/primitives/Document';
 import { showNotification } from '@mantine/notifications';
 
 const DocumentContext = createContext({
-  createDocument: (projectId: string, document: Document) =>
-    console.log(projectId, document),
-  updateDocument: (projectId: string, document: Document) =>
-    console.log(projectId, document),
-  deleteDocument: (projectId: string, document: Document) =>
-    console.log(projectId, document),
+  createDocument: (wsId: string, document: Document) =>
+    console.log(wsId, document),
+  updateDocument: (wsId: string, document: Document) =>
+    console.log(wsId, document),
+  deleteDocument: (wsId: string, document: Document) =>
+    console.log(wsId, document),
 });
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
-  const createDocument = async (projectId: string, document: Document) => {
+  const createDocument = async (wsId: string, document: Document) => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/documents`, {
+      const res = await fetch(`/api/workspaces/${wsId}/documents`, {
         method: 'POST',
         body: JSON.stringify({
           name: document?.name || '',
@@ -25,7 +25,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!res.ok) throw new Error('Failed to create document');
-      mutate(`/api/projects/${projectId}/documents`);
+      mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to create document',
@@ -35,10 +35,10 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateDocument = async (projectId: string, document: Document) => {
+  const updateDocument = async (wsId: string, document: Document) => {
     try {
       const res = await fetch(
-        `/api/projects/${projectId}/documents/${document.id}`,
+        `/api/workspaces/${wsId}/documents/${document.id}`,
         {
           method: 'PUT',
           body: JSON.stringify({
@@ -49,7 +49,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to update document');
-      mutate(`/api/projects/${projectId}/documents`);
+      mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to update document',
@@ -59,17 +59,17 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteDocument = async (projectId: string, document: Document) => {
+  const deleteDocument = async (wsId: string, document: Document) => {
     try {
       const res = await fetch(
-        `/api/projects/${projectId}/documents/${document.id}`,
+        `/api/workspaces/${wsId}/documents/${document.id}`,
         {
           method: 'DELETE',
         }
       );
 
       if (!res.ok) throw new Error('Failed to delete document');
-      mutate(`/api/projects/${projectId}/documents`);
+      mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to delete document',

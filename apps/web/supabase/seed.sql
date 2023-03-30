@@ -71,8 +71,8 @@ values (
         '00000000-0000-0000-0000-000000000003',
         '00000000-0000-0000-0000-000000000002'
     );
--- Populate projects
-insert into public.projects (id, name, ws_id)
+-- Populate workspace_teams
+insert into public.workspace_teams (id, name, ws_id)
 values (
         '00000000-0000-0000-0000-000000000001',
         'Personal',
@@ -99,7 +99,7 @@ values (
         '00000000-0000-0000-0000-000000000002'
     );
 -- Populate documents
-insert into public.project_documents (name, project_id)
+insert into public.workspace_documents (name, ws_id)
 values (
         'Document 1',
         '00000000-0000-0000-0000-000000000001'
@@ -124,17 +124,39 @@ values (
         'Document 6',
         '00000000-0000-0000-0000-000000000004'
     );
+-- Populate boards
+insert into public.workspace_boards (id, name, ws_id)
+values (
+        '00000000-0000-0000-0000-000000000001',
+        'Board 1',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'Board 2',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Board 3',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        'Board 4',
+        '00000000-0000-0000-0000-000000000002'
+    );
 -- Populate wallets
-insert into public.project_wallets (id, name, project_id)
+insert into public.workspace_wallets (id, name, ws_id)
 values (
         '00000000-0000-0000-0000-000000000001',
         'Wallet 1',
-        '00000000-0000-0000-0000-000000000001'
+        '00000000-0000-0000-0000-000000000002'
     ),
     (
         '00000000-0000-0000-0000-000000000002',
         'Wallet 2',
-        '00000000-0000-0000-0000-000000000001'
+        '00000000-0000-0000-0000-000000000002'
     ),
     (
         '00000000-0000-0000-0000-000000000003',

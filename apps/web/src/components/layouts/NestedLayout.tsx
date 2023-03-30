@@ -14,13 +14,13 @@ import {
   miscTabs,
   patientDetailsTabs,
   productDetailsTabs,
-  projectTabs,
+  teamTabs,
   workspaceTabs,
 } from '../../constants/tabs';
 
 type Mode =
   | 'workspace'
-  | 'project'
+  | 'team'
   | 'misc'
   | 'inventory'
   | 'finance'
@@ -48,7 +48,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const { segments } = useSegments();
 
   const {
-    query: { wsId, projectId, productId, patientId },
+    query: { wsId, teamId, productId, patientId },
   } = router;
 
   const enhanceHref = (tabs: Tab[]) => {
@@ -58,7 +58,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           ...tab,
           href: tab.href
             .replace('[wsId]', wsId as string)
-            .replace('[projectId]', projectId as string)
+            .replace('[teamId]', teamId as string)
             .replace('[productId]', productId as string)
             .replace('[patientId]', patientId as string)
             .replace(/\/$/, ''),
@@ -82,7 +82,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
       ? productDetailsTabs
       : mode === 'patient_details'
       ? patientDetailsTabs
-      : projectTabs;
+      : teamTabs;
 
   const tabs = enhanceHref(layoutTabs);
 

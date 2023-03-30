@@ -45,22 +45,23 @@ const DocumentsPage: PageWithLayoutProps = () => {
   }, [ws?.id, workspace?.name, setRootSegment]);
 
   const { data: documents } = useSWR<Document[]>(
-    user?.id && ws?.id ? `/api/users/${user.id}/documents?wsId=${ws.id}` : null
+    user?.id && ws?.id ? `/api/workspaces/${ws.id}/documents` : null
   );
 
   const [creating, setCreating] = useState(false);
   const [mode, setMode] = useState<'list' | 'grid'>('grid');
 
   const createDocument = async ({
-    projectId,
+    wsId,
     doc,
   }: {
-    projectId: string;
+    wsId: string;
     doc: Partial<Document>;
   }) => {
+    if (!ws) return;
     setCreating(true);
 
-    const res = await fetch(`/api/projects/${projectId}/documents`, {
+    const res = await fetch(`/api/workspaces/${ws.id}/documents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
     }
 
     const { id } = await res.json();
-    router.push(`/projects/${projectId}/documents/${id}`);
+    router.push(`/${wsId}/documents/${id}`);
   };
 
   const showDocumentEditForm = () => {
@@ -90,8 +91,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
       centered: true,
       children: (
         <DocumentEditForm
-          wsId={ws.id}
-          onSubmit={(projectId, doc) => createDocument({ projectId, doc })}
+          onSubmit={(doc) => createDocument({ wsId: ws?.id, doc })}
         />
       ),
     });
@@ -157,12 +157,13 @@ const DocumentsPage: PageWithLayoutProps = () => {
           </div>
         )}
 
-        {documents &&
+        {ws &&
+          documents &&
           documents?.map((doc) => (
             <DocumentCard
               key={`doc-${doc.id}`}
+              wsId={ws?.id}
               document={doc}
-              hideProject={false}
               mode={mode}
             />
           ))}

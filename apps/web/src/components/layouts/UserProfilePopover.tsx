@@ -11,10 +11,10 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useState } from 'react';
 import SidebarLink from './SidebarLink';
 import SidebarButton from './SidebarButton';
-import { useUserData } from '../../hooks/useUserData';
+import { useUser } from '../../hooks/useUser';
 
 const UserProfilePopover = () => {
-  const { data: user, isLoading } = useUserData();
+  const { user, isLoading } = useUser();
   const router = useRouter();
 
   const { supabaseClient } = useSessionContext();

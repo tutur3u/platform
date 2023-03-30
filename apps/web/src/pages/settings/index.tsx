@@ -1,8 +1,8 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { TextInput } from '@mantine/core';
-import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
-import { useUserData } from '../../hooks/useUserData';
+import { useSessionContext } from '@supabase/auth-helpers-react';
+import { useUser } from '../../hooks/useUser';
 import { useRouter } from 'next/router';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -27,10 +27,9 @@ const SettingPage: PageWithLayoutProps = () => {
   }, [setRootSegment]);
 
   const router = useRouter();
-  const user = useUser();
 
   const { supabaseClient } = useSessionContext();
-  const { data, updateData } = useUserData();
+  const { user, updateUser } = useUser();
 
   const [saving, setSaving] = useState(false);
 
@@ -39,17 +38,17 @@ const SettingPage: PageWithLayoutProps = () => {
   const [birthday, setBirthday] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (data) {
-      setDisplayName(data?.display_name || '');
-      setUsername(data?.handle || '');
-      setBirthday(data?.birthday ? moment(data?.birthday).toDate() : null);
+    if (user) {
+      setDisplayName(user?.display_name || '');
+      setUsername(user?.handle || '');
+      setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
     }
-  }, [data]);
+  }, [user]);
 
   const handleSave = async () => {
     setSaving(true);
 
-    await updateData?.({
+    await updateUser?.({
       display_name: displayName,
       handle,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
@@ -119,14 +118,14 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </div>
 
-        {data?.created_at && (
+        {user?.created_at && (
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
             You are a member of Tuturuuu since{' '}
             <span className="font-semibold text-zinc-300">
-              {moment(data.created_at).toDate().toLocaleDateString()}
+              {moment(user.created_at).toDate().toLocaleDateString()}
             </span>{' '}
             <span className="font-semibold text-zinc-400">
-              ({moment(data.created_at).fromNow()})
+              ({moment(user.created_at).fromNow()})
             </span>
             .
           </div>

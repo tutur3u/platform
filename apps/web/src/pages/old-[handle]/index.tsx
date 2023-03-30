@@ -17,7 +17,6 @@ import {
 } from 'react';
 import ProfileCard from '../../components/profile/ProfileCard';
 import { useSegments } from '../../hooks/useSegments';
-import { useUserData } from '../../hooks/useUserData';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import { getInitials } from '../../utils/name-helper';
 import useSWR, { mutate } from 'swr';
@@ -107,11 +106,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
   const birthday = new Date(user.birthday);
 
-  const { data: userData } = useUserData();
-
   const { data: personalNote, error: personalNoteError } = useSWR(
-    userData?.id && user?.id
-      ? `/api/users/${userData.id}/notes/people/${user.id}`
+    user?.id && user?.id
+      ? `/api/users/${user.id}/notes/people/${user.id}`
       : null
   );
 
@@ -135,8 +132,8 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
   }, [noteLoading, loadedNote, personalNote]);
 
   useEffect(() => {
-    if (!userData?.id || !user?.id) return;
-    mutate(`/api/users/${userData?.id}/notes/people/${user.id}`);
+    if (!user.id) return;
+    mutate(`/api/users/${user?.id}/notes/people/${user.id}`);
 
     return () => {
       setNote('');
@@ -144,17 +141,17 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
       setLoadedNote(false);
       setSaved(false);
     };
-  }, [userData?.id, user?.id]);
+  }, [user?.id]);
 
   const [saving, setSaving] = useState(false);
 
   const handleNoteSave = useCallback(
     async (note: string) => {
-      if (!loadedNote || noteLoading || saving || !userData) return;
+      if (!loadedNote || noteLoading || saving || !user) return;
       setSaving(true);
 
       const response = await fetch(
-        `/api/users/${userData.id}/notes/people/${user.id}`,
+        `/api/users/${user.id}/notes/people/${user.id}`,
         {
           method: 'POST',
           headers: {
@@ -180,9 +177,9 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 
       setSaved(true);
       setLastSavedNote(note);
-      mutate(`/api/users/${userData.id}/notes/people/${user.id}`);
+      mutate(`/api/users/${user.id}/notes/people/${user.id}`);
     },
-    [loadedNote, noteLoading, saving, userData, user.id]
+    [loadedNote, noteLoading, saving, user]
   );
 
   useEffect(() => {
@@ -313,7 +310,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
               }}
               onKeyUp={handleKeyUp}
               onKeyDown={handleKeyDown}
-              disabled={!user || !userData || !loadedNote}
+              disabled={!user || !user || !loadedNote}
             />
           </div>
         </div>

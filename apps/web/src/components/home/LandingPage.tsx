@@ -5,7 +5,7 @@ const LandingPage = () => {
   return (
     <>
       <DefaultHead />
-      <div className="mx-4 mt-24 mb-8 md:mx-32 lg:mx-64">
+      <div className="mx-4 mb-8 mt-24 md:mx-32 lg:mx-64">
         <section className="grid gap-8 xl:grid-cols-2">
           <div>
             <h1 className="text-xl font-semibold text-zinc-200 xl:text-3xl">
@@ -59,7 +59,7 @@ const LandingPage = () => {
               </h2>
 
               <Divider
-                className="mt-2 mb-4 border-blue-300/20"
+                className="mb-4 mt-2 border-blue-300/20"
                 variant="dashed"
               />
 
@@ -77,7 +77,7 @@ const LandingPage = () => {
               </h2>
 
               <Divider
-                className="mt-2 mb-4 border-orange-300/20"
+                className="mb-4 mt-2 border-orange-300/20"
                 variant="dashed"
               />
 
@@ -91,39 +91,39 @@ const LandingPage = () => {
 
             <div className="rounded-lg bg-green-300/10 p-4">
               <h2 className="text-center text-lg font-semibold text-green-300 md:text-2xl">
-                Notion-like Note Taking
-              </h2>
-
-              <Divider
-                className="mt-2 mb-4 border-green-300/20"
-                variant="dashed"
-              />
-
-              <p className="text-green-300/80">
-                Store all your notes, ideas, and information in one place for
-                easy access and organization. Our note-taking experience is
-                designed to be flexible and intuitive, so you can focus on your
-                thoughts and ideas, not on the tool itself.
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-red-300/10 p-4">
-              <h2 className="text-center text-lg font-semibold text-red-300 md:text-2xl">
                 Personal & Team Finance Tracker
               </h2>
 
               <Divider
-                className="mt-2 mb-4 border-red-300/20"
+                className="mb-4 mt-2 border-green-300/20"
                 variant="dashed"
               />
 
-              <p className="text-red-300/80">
+              <p className="text-green-300/80">
                 Keep track of your finances and budget like a pro, with our
                 user-friendly finance tracker. Our platform makes it easy to see
                 where your money is going, so you can make informed decisions
                 about your financial future. With our platform, you&apos;ll have
                 everything you need to streamline your tasks, manage your
                 schedules, and keep track of your finances, all in one place.
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-red-300/10 p-4">
+              <h2 className="text-center text-lg font-semibold text-red-300 md:text-2xl">
+                Notion-like Note Taking
+              </h2>
+
+              <Divider
+                className="mb-4 mt-2 border-red-300/20"
+                variant="dashed"
+              />
+
+              <p className="text-red-300/80">
+                Store all your notes, ideas, and information in one place for
+                easy access and organization. Our note-taking experience is
+                designed to be flexible and intuitive, so you can focus on your
+                thoughts and ideas, not on the tool itself.
               </p>
             </div>
           </div>

@@ -43,7 +43,7 @@ const fetchDocuments = async (
   });
 
   const queryBuilder = supabase
-    .from('project_documents')
+    .from('workspace_documents')
     .select('id, name, content, project_id, projects!inner(ws_id), created_at');
 
   if (wsId) queryBuilder.eq('projects.ws_id', wsId);

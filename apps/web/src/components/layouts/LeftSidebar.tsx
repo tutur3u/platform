@@ -22,7 +22,7 @@ import Logo from '../common/Logo';
 import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import { Avatar, Divider, Popover, Tooltip } from '@mantine/core';
-import { useUserData } from '../../hooks/useUserData';
+import { useUser } from '../../hooks/useUser';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import WorkspaceEditForm from '../forms/WorkspaceEditForm';
 import { openModal } from '@mantine/modals';
@@ -30,7 +30,7 @@ import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
 import SidebarButton from './SidebarButton';
 import WorkspaceSelector from '../selectors/WorkspaceSelector';
-import ProjectEditForm from '../forms/ProjectEditForm';
+import TeamEditForm from '../forms/TeamEditForm';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
@@ -40,21 +40,15 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const { sidebar, toggleSidebar } = useAppearance();
   const { supabaseClient } = useSessionContext();
-  const { data: user } = useUserData();
+  const { user } = useUser();
 
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
     router.push('/');
   };
 
-  const {
-    ws,
-    members,
-    projects,
-    projectsLoading,
-    createWorkspace,
-    createProject,
-  } = useWorkspaces();
+  const { ws, members, teams, teamsLoading, createWorkspace, createTeam } =
+    useWorkspaces();
 
   const showEditWorkspaceModal = () => {
     openModal({
@@ -64,11 +58,11 @@ function LeftSidebar({ className }: SidebarProps) {
     });
   };
 
-  const showProjectEditForm = () => {
+  const showTeamEditForm = () => {
     openModal({
-      title: <div className="font-semibold">Create new project</div>,
+      title: <div className="font-semibold">Create new team</div>,
       centered: true,
-      children: <ProjectEditForm onSubmit={createProject} />,
+      children: <TeamEditForm onSubmit={createTeam} />,
     });
   };
 
@@ -262,10 +256,10 @@ function LeftSidebar({ className }: SidebarProps) {
                     <SidebarButton
                       onClick={() => {
                         setNewPopover(false);
-                        showProjectEditForm();
+                        showTeamEditForm();
                       }}
                       activeIcon={<Squares2X2Icon className="w-5" />}
-                      label="New project"
+                      label="New team"
                       left
                     />
                   )}
@@ -350,17 +344,17 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Divider />
 
                 <div className="m-2">
-                  {projectsLoading || (
+                  {teamsLoading || (
                     <div
                       className={`flex flex-col ${
                         sidebar === 'open' ? 'gap-1' : 'gap-2'
                       }`}
                     >
-                      {projects &&
-                        projects.map((project) => (
+                      {teams &&
+                        teams.map((team) => (
                           <SidebarLink
-                            key={project.id}
-                            href={`/${ws.id}/projects/${project.id}`}
+                            key={team.id}
+                            href={`/${ws.id}/teams/${team.id}`}
                             defaultHighlight={sidebar !== 'closed'}
                             activeIcon={
                               <Avatar
@@ -369,8 +363,8 @@ function LeftSidebar({ className }: SidebarProps) {
                                 className="bg-blue-500/20"
                                 size={sidebar === 'open' ? 'sm' : 'md'}
                               >
-                                {project?.name ? (
-                                  getInitials(project.name)
+                                {team?.name ? (
+                                  getInitials(team.name)
                                 ) : (
                                   <BuildingOffice2Icon className="w-5" />
                                 )}
@@ -383,23 +377,23 @@ function LeftSidebar({ className }: SidebarProps) {
                                 className="hover:bg-blue-500/10"
                                 size={sidebar === 'open' ? 'sm' : 'md'}
                               >
-                                {project?.name ? (
-                                  getInitials(project.name)
+                                {team?.name ? (
+                                  getInitials(team.name)
                                 ) : (
                                   <BuildingOffice2Icon className="w-5" />
                                 )}
                               </Avatar>
                             }
-                            label={project?.name || 'Untitled Project'}
+                            label={team?.name || 'Untitled Team'}
                             showTooltip={sidebar === 'closed'}
                           />
                         ))}
                       <SidebarButton
-                        label="New project"
+                        label="New team"
                         activeIcon={<SquaresPlusIcon className="w-5" />}
                         showLabel={sidebar === 'open'}
                         showTooltip={sidebar === 'closed' && !newPopover}
-                        onClick={showProjectEditForm}
+                        onClick={showTeamEditForm}
                       />
                     </div>
                   )}
