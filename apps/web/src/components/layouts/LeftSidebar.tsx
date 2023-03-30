@@ -15,7 +15,11 @@ import {
   SquaresPlusIcon,
   ArrowRightOnRectangleIcon,
   XMarkIcon,
-} from '@heroicons/react/24/solid';
+  BeakerIcon,
+  ClockIcon,
+  ArchiveBoxIcon,
+  RectangleStackIcon,
+} from '@heroicons/react/24/outline';
 
 import SidebarLink from './SidebarLink';
 import Logo from '../common/Logo';
@@ -160,7 +164,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           className={sidebar === 'closed' ? 'hidden' : ''}
                         >
                           {members &&
-                            members.map((member) => (
+                            members.slice(0, 3).map((member) => (
                               <Tooltip
                                 key={member.id}
                                 label={
@@ -333,10 +337,38 @@ function LeftSidebar({ className }: SidebarProps) {
                     showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
+                    href={`/${ws.id}/misc`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<BeakerIcon className="w-5" />}
+                    label="Healthcare"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
+                    href={`/${ws.id}/inventory`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<ArchiveBoxIcon className="w-5" />}
+                    label="Inventory"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
+                    href={`/${ws.id}/classes`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<RectangleStackIcon className="w-5" />}
+                    label="Classes"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
                     href={`/${ws.id}/finance`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<BanknotesIcon className="w-5" />}
                     label="Finance"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
+                    href={`/${ws.id}/activities`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<ClockIcon className="w-5" />}
+                    label="Activities"
                     showTooltip={sidebar === 'closed'}
                   />
                 </div>
