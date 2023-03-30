@@ -8,10 +8,7 @@ const DefaultHead = () => {
         name="description"
         content="A simple, easy to use productivity tool for your team. Create tasks, track progress, and get reminders. All in one place."
       />
-      <meta
-        property="og:image"
-        content="https://tuturuuu.com/media/logos/og-image.png"
-      />
+      <meta property="og:image" content="/media/logos/og-image.png" />
       <meta
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no"

@@ -187,14 +187,14 @@ const AuthForm = ({
           <div className="text-center text-sm font-semibold text-zinc-400">
             By continuing, you agree to Tuturuuu&apos;s{' '}
             <Link
-              href="https://tuturuuu.com/terms"
+              href="/terms"
               className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
               Terms of Service
             </Link>{' '}
             and{' '}
             <Link
-              href="https://tuturuuu.com/privacy"
+              href="/privacy"
               className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
               Privacy Policy
