@@ -38,9 +38,9 @@ export default function SidebarButton({
       offset={16}
       disabled={!showTooltip}
     >
-      <button
+      <div
         onClick={disabled ? undefined : onClick}
-        className={`flex items-center gap-2 rounded p-2 ${
+        className={`flex cursor-pointer items-center gap-2 rounded p-2 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
         } ${
           disabled
@@ -56,7 +56,7 @@ export default function SidebarButton({
             {label}
           </div>
         )}
-      </button>
+      </div>
     </Tooltip>
   );
 }

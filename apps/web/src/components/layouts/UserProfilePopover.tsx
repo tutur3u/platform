@@ -4,7 +4,6 @@ import {
   ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
   HomeIcon,
-  UserCircleIcon,
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
@@ -12,6 +11,7 @@ import { useState } from 'react';
 import SidebarLink from './SidebarLink';
 import SidebarButton from './SidebarButton';
 import { useUser } from '../../hooks/useUser';
+import useTranslation from 'next-translate/useTranslation';
 
 const UserProfilePopover = () => {
   const { user, isLoading } = useUser();
@@ -25,6 +25,12 @@ const UserProfilePopover = () => {
     await supabaseClient.auth.signOut();
     router.push('/');
   };
+
+  const { t } = useTranslation('common');
+
+  const home = t('home');
+  const settings = t('settings');
+  const logout = t('logout');
 
   return (
     <Popover
@@ -55,7 +61,7 @@ const UserProfilePopover = () => {
           href="/home"
           onClick={() => setUserPopover(false)}
           activeIcon={<HomeIcon className="w-5" />}
-          label="Home"
+          label={home}
           defaultActive={false}
           left
         />
@@ -63,18 +69,10 @@ const UserProfilePopover = () => {
         <Divider variant="dashed" />
 
         <SidebarLink
-          href={user?.handle ? `/${user.handle}` : '/settings'}
-          onClick={() => setUserPopover(false)}
-          activeIcon={<UserCircleIcon className="w-5" />}
-          label="Profile"
-          defaultActive={false}
-          left
-        />
-        <SidebarLink
           href="/settings"
           onClick={() => setUserPopover(false)}
           activeIcon={<Cog6ToothIcon className="w-5" />}
-          label="Settings"
+          label={settings}
           defaultActive={false}
           left
         />
@@ -87,7 +85,7 @@ const UserProfilePopover = () => {
             handleLogout();
           }}
           activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
-          label="Log out"
+          label={logout}
           left
         />
       </Popover.Dropdown>

@@ -59,6 +59,7 @@ const WorkspaceMembersPage = () => {
 
     if (response.ok) {
       mutate(`/api/workspaces/${wsId}/members`);
+      mutate(`/api/workspaces/${wsId}/members/invites`);
       showNotification({
         title: invited ? 'Invitation revoked' : 'Member removed',
         message: invited

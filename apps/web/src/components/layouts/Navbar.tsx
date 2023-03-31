@@ -32,9 +32,10 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
           width={320}
           height={320}
           alt="logo"
-          className="w-8"
+          className="h-8 w-8"
         />
-        <div className="text-2xl">Tuturuuu</div>
+        <div className="mr-4 text-2xl">Tuturuuu</div>
+        <LanguageSelector hideOnMobile />
       </Link>
 
       {hideNavLinks ? null : user ? (
@@ -42,7 +43,6 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
       ) : (
         <>
           <div className="hidden items-center gap-4 md:flex">
-            <LanguageSelector />
             <Link href="/login" className="hover:text-blue-200">
               {login}
             </Link>

@@ -13,7 +13,6 @@ import useSWR from 'swr';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
-import { getUsersLabel } from '../../../utils/ws-helper';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -29,7 +28,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: getUsersLabel(ws), href: `/${ws.id}/users` },
+            { content: 'Users', href: `/${ws.id}/users` },
             {
               content: 'List',
               href: `/${ws.id}/users/list`,

@@ -14,6 +14,8 @@ import {
   DEFAULT_USERNAME,
 } from '../../constants/development';
 import { useUser } from '../../hooks/useUser';
+import useTranslation from 'next-translate/useTranslation';
+import LanguageSelector from '../selectors/LanguageSelector';
 
 const OnboardingForm = () => {
   const router = useRouter();
@@ -64,6 +66,34 @@ const OnboardingForm = () => {
     else if (workspaces?.[0]?.id) router.push(`/${workspaces[0].id}`);
   }, [router, workspaces, profileCompleted]);
 
+  const { t } = useTranslation('onboarding');
+
+  const displayNameLabel = t('display-name');
+  const usernameLabel = t('username');
+
+  const save = t('save');
+
+  const welcome = t('welcome');
+  const welcomeDesc = t('welcome-desc');
+
+  const justAMoment = t('just-a-moment');
+  const justAMomentDesc = t('just-a-moment-desc');
+
+  const currentlyLoggedIn = t('currently-logged-in');
+  const noInvites = t('no-invites');
+
+  const acceptInviteSuccessTitle = t('invite:accept-invite-success-title');
+  const acceptInviteSuccessMessage = t('invite:accept-invite-success-msg');
+
+  const acceptInviteErrorTitle = t('invite:accept-invite-error-title');
+  const acceptInviteErrorMessage = t('invite:accept-invite-error-msg');
+
+  const declineInviteSuccessTitle = t('invite:decline-invite-success-title');
+  const declineInviteSuccessMessage = t('invite:decline-invite-success-msg');
+
+  const declineInviteErrorTitle = t('invite:decline-invite-error-title');
+  const declineInviteErrorMessage = t('invite:decline-invite-error-msg');
+
   const acceptInvite = async (ws: Workspace) => {
     const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
       method: 'POST',
@@ -72,8 +102,8 @@ const OnboardingForm = () => {
     if (response.ok) {
       mutate('/api/workspaces/invites');
       showNotification({
-        title: `Đã chấp nhận lời mời vào ${ws.name}`,
-        message: 'Bạn có thể truy cập vào tổ chức này ngay bây giờ',
+        title: acceptInviteSuccessTitle,
+        message: acceptInviteSuccessMessage,
         color: 'teal',
       });
 
@@ -85,8 +115,8 @@ const OnboardingForm = () => {
       else if (ws.id) router.push(`/${ws.id}`);
     } else {
       showNotification({
-        title: `Không thể chấp nhận lời mời vào ${ws.name}`,
-        message: 'Vui lòng thử lại sau',
+        title: acceptInviteErrorTitle,
+        message: acceptInviteErrorMessage,
         color: 'red',
       });
     }
@@ -100,14 +130,14 @@ const OnboardingForm = () => {
     if (response.ok) {
       mutate('/api/workspaces/invites');
       showNotification({
-        title: `Đã từ chối lời mời vào ${ws.name}`,
-        message: 'Lời mời này sẽ không hiển thị nữa',
+        title: declineInviteSuccessTitle,
+        message: declineInviteSuccessMessage,
         color: 'teal',
       });
     } else {
       showNotification({
-        title: `Không thể từ chối lời mời vào ${ws.name}`,
-        message: 'Vui lòng thử lại sau',
+        title: declineInviteErrorTitle,
+        message: declineInviteErrorMessage,
         color: 'red',
       });
     }
@@ -127,13 +157,11 @@ const OnboardingForm = () => {
             <>
               <div className="text-center">
                 <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
-                  {profileCompleted ? 'Còn chút nữa thôi!' : 'Chào mừng!'}
+                  {profileCompleted ? justAMoment : welcome}
                 </div>
 
                 <div className="text-xl font-semibold text-zinc-200">
-                  {profileCompleted
-                    ? 'Chấp nhận lời mời để bắt đầu trải nghiệm'
-                    : 'Hãy dành một chút thời gian để hoàn thành thông tin cá nhân của bạn.'}
+                  {profileCompleted ? justAMomentDesc : welcomeDesc}
                 </div>
               </div>
 
@@ -141,8 +169,8 @@ const OnboardingForm = () => {
                 <>
                   <Divider className="w-full border-zinc-300/20" />
                   <div className="w-full rounded-lg bg-green-300/10 p-4 text-center text-green-300">
-                    <div className="text-lg font-semibold opacity-70">
-                      Currently logged in as
+                    <div className="text-lg font-semibold opacity-80">
+                      {currentlyLoggedIn}
                     </div>
                     <Divider
                       className="my-2 w-full border-green-300/20"
@@ -168,7 +196,7 @@ const OnboardingForm = () => {
                     ))
                   ) : (
                     <div className="flex h-full items-center justify-center text-center text-2xl font-semibold text-zinc-300/70">
-                      Chưa có lời mời nào
+                      {noInvites}
                     </div>
                   )}
                 </div>
@@ -177,7 +205,7 @@ const OnboardingForm = () => {
                   <TextInput
                     id="display-name"
                     icon={<UserCircleIcon className="h-5" />}
-                    label="Tên hiển thị"
+                    label={displayNameLabel}
                     placeholder="Trần Văn A"
                     value={displayName}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -195,7 +223,7 @@ const OnboardingForm = () => {
                   <TextInput
                     id="handle"
                     icon={<AtSymbolIcon className="h-5" />}
-                    label="Tên đăng nhập"
+                    label={usernameLabel}
                     placeholder="tranvana"
                     value={handle}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -220,12 +248,15 @@ const OnboardingForm = () => {
                     loading={saving}
                     onClick={updateProfile}
                   >
-                    Lưu
+                    {save}
                   </Button>
                 </div>
               )}
             </>
           )}
+
+          <Divider className="w-full border-zinc-300/20" />
+          <LanguageSelector transparent fullWidth />
         </div>
       </div>
     </>
