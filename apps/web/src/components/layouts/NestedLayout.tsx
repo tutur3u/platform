@@ -11,21 +11,23 @@ import {
   Tab,
   financeTabs,
   inventoryTabs,
-  miscTabs,
-  patientDetailsTabs,
+  healthcareTabs,
+  wsUserDetailsTabs,
   productDetailsTabs,
   teamTabs,
   workspaceTabs,
+  workspaceUsersTabs,
 } from '../../constants/tabs';
 
 type Mode =
   | 'workspace'
+  | 'workspace_users'
   | 'team'
-  | 'misc'
+  | 'healthcare'
   | 'inventory'
   | 'finance'
   | 'product_details'
-  | 'patient_details';
+  | 'user_details';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -48,7 +50,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const { segments } = useSegments();
 
   const {
-    query: { wsId, teamId, productId, patientId },
+    query: { wsId, teamId, productId, patientId, userId },
   } = router;
 
   const enhanceHref = (tabs: Tab[]) => {
@@ -61,6 +63,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             .replace('[teamId]', teamId as string)
             .replace('[productId]', productId as string)
             .replace('[patientId]', patientId as string)
+            .replace('[userId]', userId as string)
             .replace(/\/$/, ''),
         };
       }
@@ -72,16 +75,18 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   const layoutTabs =
     mode === 'workspace'
       ? workspaceTabs
-      : mode === 'misc'
-      ? miscTabs
+      : mode === 'workspace_users'
+      ? workspaceUsersTabs
+      : mode === 'healthcare'
+      ? healthcareTabs
       : mode === 'inventory'
       ? inventoryTabs
       : mode === 'finance'
       ? financeTabs
       : mode === 'product_details'
       ? productDetailsTabs
-      : mode === 'patient_details'
-      ? patientDetailsTabs
+      : mode === 'user_details'
+      ? wsUserDetailsTabs
       : teamTabs;
 
   const tabs = enhanceHref(layoutTabs);

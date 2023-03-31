@@ -5,7 +5,7 @@ export type Tab = {
 
 export const workspaceTabs: Tab[] = [
   {
-    name: 'Overview',
+    name: 'Home',
     href: '/[wsId]',
   },
   {
@@ -19,6 +19,21 @@ export const workspaceTabs: Tab[] = [
   {
     name: 'Settings',
     href: '/[wsId]/settings',
+  },
+];
+
+export const workspaceUsersTabs: Tab[] = [
+  {
+    name: 'Overview',
+    href: '/[wsId]/users',
+  },
+  {
+    name: 'List',
+    href: '/[wsId]/users/list',
+  },
+  {
+    name: 'Roles',
+    href: '/[wsId]/users/roles',
   },
 ];
 
@@ -37,34 +52,30 @@ export const teamTabs: Tab[] = [
   },
 ];
 
-export const miscTabs: Tab[] = [
+export const healthcareTabs: Tab[] = [
   {
     name: 'Overview',
-    href: '/[wsId]/misc',
-  },
-  {
-    name: 'Bệnh nhân',
-    href: '/[wsId]/misc/patients',
+    href: '/[wsId]/healthcare',
   },
   {
     name: 'Đơn thuốc',
-    href: '/[wsId]/misc/prescriptions',
+    href: '/[wsId]/healthcare/prescriptions',
   },
   {
     name: 'Kiểm tra sức khoẻ',
-    href: '/[wsId]/misc/checkups',
+    href: '/[wsId]/healthcare/checkups',
   },
   {
     name: 'Chẩn đoán',
-    href: '/[wsId]/misc/diagnoses',
+    href: '/[wsId]/healthcare/diagnoses',
   },
   {
     name: 'Chỉ số',
-    href: '/[wsId]/misc/vitals',
+    href: '/[wsId]/healthcare/vitals',
   },
   {
     name: 'Nhóm chỉ số',
-    href: '/[wsId]/misc/vital-groups',
+    href: '/[wsId]/healthcare/vital-groups',
   },
 ];
 
@@ -133,25 +144,21 @@ export const productDetailsTabs: Tab[] = [
   },
 ];
 
-export const patientDetailsTabs: Tab[] = [
+export const wsUserDetailsTabs: Tab[] = [
   {
     name: 'Thông tin',
-    href: '/[wsId]/misc/patients/[patientId]',
+    href: '/[wsId]/users/[userId]',
   },
   {
     name: 'Chỉ số',
-    href: '/[wsId]/misc/patients/[patientId]/vitals',
+    href: '/[wsId]/users/[userId]/vitals',
   },
   {
-    name: 'Khám bệnh',
-    href: '/[wsId]/misc/patients/[patientId]/examinations',
+    name: 'Đơn thuốc',
+    href: '/[wsId]/users/[userId]/prescriptions',
   },
   {
-    name: 'Xét nghiệm',
-    href: '/[wsId]/misc/patients/[patientId]/tests',
-  },
-  {
-    name: 'Siêu âm',
-    href: '/[wsId]/misc/patients/[patientId]/ultrasounds',
+    name: 'Kiểm tra sức khoẻ',
+    href: '/[wsId]/users/[userId]/checkups',
   },
 ];

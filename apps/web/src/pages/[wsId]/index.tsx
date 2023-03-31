@@ -9,7 +9,7 @@ import { useSegments } from '../../hooks/useSegments';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const WorkspaceOverviewPage = () => {
+const WorkspaceHomePage = () => {
   const router = useRouter();
 
   const { wsId } = router.query;
@@ -28,7 +28,7 @@ const WorkspaceOverviewPage = () => {
           href: `/${data?.id}`,
         },
         {
-          content: 'Overview',
+          content: 'Home',
           href: `/${data?.id}`,
         },
       ],
@@ -40,12 +40,12 @@ const WorkspaceOverviewPage = () => {
 
   return (
     <>
-      <HeaderX label={`Overview – ${data?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`Home – ${data?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Overview</h1>
+            <h1 className="text-2xl font-bold">Home</h1>
             <p className="text-zinc-400">
               A quick summary of the{' '}
               <span className="font-semibold text-zinc-200">
@@ -62,8 +62,8 @@ const WorkspaceOverviewPage = () => {
   );
 };
 
-WorkspaceOverviewPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceHomePage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="workspace">{page}</NestedLayout>;
 };
 
-export default WorkspaceOverviewPage;
+export default WorkspaceHomePage;

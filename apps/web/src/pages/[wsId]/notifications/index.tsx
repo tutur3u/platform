@@ -37,11 +37,13 @@ const NotificationsPage = () => {
       showNotification({
         title: `Đã chấp nhận lời mời vào ${ws.name}`,
         message: 'Bạn có thể truy cập vào tổ chức này ngay bây giờ',
+        color: 'teal',
       });
     } else {
       showNotification({
         title: `Không thể chấp nhận lời mời vào ${ws.name}`,
         message: 'Vui lòng thử lại sau',
+        color: 'red',
       });
     }
   };
@@ -56,11 +58,13 @@ const NotificationsPage = () => {
       showNotification({
         title: `Đã từ chối lời mời vào ${ws.name}`,
         message: 'Lời mời này sẽ không hiển thị nữa',
+        color: 'teal',
       });
     } else {
       showNotification({
         title: `Không thể từ chối lời mời vào ${ws.name}`,
         message: 'Vui lòng thử lại sau',
+        color: 'red',
       });
     }
   };

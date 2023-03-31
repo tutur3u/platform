@@ -1,1 +1,1 @@
-export type WorkspacePreset = 'GENERAL' | 'PHARMACY' | 'EDUCATION';
+export type WorkspacePreset = 'ALL' | 'GENERAL' | 'PHARMACY' | 'EDUCATION';

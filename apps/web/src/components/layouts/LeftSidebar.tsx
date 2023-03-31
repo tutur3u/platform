@@ -20,6 +20,8 @@ import {
   ArchiveBoxIcon,
   RectangleStackIcon,
   BellIcon,
+  UserGroupIcon,
+  FingerPrintIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarLink from './SidebarLink';
@@ -34,11 +36,12 @@ import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
 import { useEffect, useState } from 'react';
 import SidebarButton from './SidebarButton';
-import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import TeamEditForm from '../forms/TeamEditForm';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
+import WorkspaceSelector from '../selectors/WorkspaceSelector';
+import { getUsersLabel } from '../../utils/ws-helper';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
@@ -322,8 +325,9 @@ function LeftSidebar({ className }: SidebarProps) {
                     activeIcon={<HomeIcon className="w-5" />}
                     label="Home"
                     showTooltip={sidebar === 'closed'}
+                    exactMatch
                   />
-                  {ws?.preset === 'GENERAL' && (
+                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
                     <SidebarLink
                       href={`/${ws.id}/calendar`}
                       onClick={() => setUserPopover(false)}
@@ -332,7 +336,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
-                  {ws?.preset === 'GENERAL' && (
+                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
                     <SidebarLink
                       href={`/${ws.id}/tasks`}
                       onClick={() => setUserPopover(false)}
@@ -341,7 +345,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
-                  {ws?.preset === 'GENERAL' && (
+                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
                     <SidebarLink
                       href={`/${ws.id}/documents`}
                       onClick={() => setUserPopover(false)}
@@ -350,9 +354,23 @@ function LeftSidebar({ className }: SidebarProps) {
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
-                  {ws?.preset === 'PHARMACY' && (
+                  <SidebarLink
+                    href={`/${ws.id}/users`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<UserGroupIcon className="w-5" />}
+                    label={getUsersLabel(ws)}
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  <SidebarLink
+                    href={`/${ws.id}/attendance`}
+                    onClick={() => setUserPopover(false)}
+                    activeIcon={<FingerPrintIcon className="w-5" />}
+                    label="Attendance"
+                    showTooltip={sidebar === 'closed'}
+                  />
+                  {(ws?.preset === 'ALL' || ws?.preset === 'PHARMACY') && (
                     <SidebarLink
-                      href={`/${ws.id}/misc`}
+                      href={`/${ws.id}/healthcare`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<BeakerIcon className="w-5" />}
                       label="Healthcare"
@@ -366,7 +384,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     label="Inventory"
                     showTooltip={sidebar === 'closed'}
                   />
-                  {ws?.preset === 'EDUCATION' && (
+                  {(ws?.preset === 'ALL' || ws?.preset === 'EDUCATION') && (
                     <SidebarLink
                       href={`/${ws.id}/classes`}
                       onClick={() => setUserPopover(false)}
