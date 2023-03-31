@@ -10,7 +10,7 @@ interface Props {
 
 const MantineProvider = (props: Props) => {
   return (
-    <Provider theme={theme}>
+    <Provider theme={theme} withGlobalStyles withNormalizeCSS>
       <Notifications position="bottom-right" />
       <ModalsProvider>{props.children}</ModalsProvider>
     </Provider>
