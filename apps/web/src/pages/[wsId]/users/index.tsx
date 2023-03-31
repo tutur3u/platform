@@ -5,7 +5,6 @@ import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-work
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import { getUsersLabel } from '../../../utils/ws-helper';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -21,7 +20,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: getUsersLabel(ws), href: `/${ws.id}/users` },
+            { content: 'Users', href: `/${ws.id}/users` },
             {
               content: 'Overview',
               href: `/${ws.id}/users`,

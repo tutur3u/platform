@@ -79,6 +79,9 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
       `/api/workspaces/${wsId}/inventory/products/${productId}/prices`,
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(prices),
       }
     );

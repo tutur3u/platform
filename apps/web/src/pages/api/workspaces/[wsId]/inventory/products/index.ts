@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Product } from '../../../../../../types/primitives/Product';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -80,7 +81,7 @@ const createProduct = async (
 
   const { name, manufacturer, description, usage, category_id } = JSON.parse(
     req.body
-  );
+  ) as Product;
 
   const { data, error } = await supabase
     .from('workspace_products')

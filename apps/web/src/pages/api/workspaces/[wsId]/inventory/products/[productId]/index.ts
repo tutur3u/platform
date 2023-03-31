@@ -1,6 +1,6 @@
-import { ProductPrice } from './../../../../../../../../types/primitives/ProductPrice';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Product } from '../../../../../../../types/primitives/Product';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -11,14 +11,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchPrices(req, res, productId);
+        return await fetchProduct(req, res, productId);
 
-      case 'POST': {
-        return await addPrices(req, res, productId);
+      case 'PUT': {
+        return await updateProduct(req, res, productId);
       }
 
       case 'DELETE': {
-        return await deletePrices(req, res, productId);
+        return await deleteProduct(req, res, productId);
       }
 
       default:
@@ -36,7 +36,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchPrices = async (
+const fetchProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
   productId: string
@@ -44,9 +44,10 @@ const fetchPrices = async (
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('inventory_products')
-    .select('product_id, unit_id ,amount, price')
-    .eq('product_id', productId);
+    .from('workspace_products')
+    .select('id, name, manufacturer, description, usage, category_id')
+    .eq('id', productId)
+    .single();
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
@@ -54,7 +55,7 @@ const fetchPrices = async (
   return res.status(200).json(data);
 };
 
-const addPrices = async (
+const updateProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
   productId: string
@@ -64,21 +65,25 @@ const addPrices = async (
     res,
   });
 
-  const { prices } = req.body as { prices: ProductPrice[] };
+  const { name, manufacturer, description, usage, category_id } =
+    req.body as Product;
 
-  const { error } = await supabase.from('inventory_products').insert(
-    prices.map((p: ProductPrice) => ({
-      price: p.price,
-      product_id: productId,
-      unit_id: p.unit_id,
-    }))
-  );
+  const { error } = await supabase
+    .from('workspace_products')
+    .update({
+      name,
+      manufacturer,
+      description,
+      usage,
+      category_id,
+    })
+    .eq('id', productId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deletePrices = async (
+const deleteProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
   productId: string
@@ -89,9 +94,9 @@ const deletePrices = async (
   });
 
   const { error } = await supabase
-    .from('inventory_products')
+    .from('workspace_products')
     .delete()
-    .eq('product_id', productId);
+    .eq('id', productId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

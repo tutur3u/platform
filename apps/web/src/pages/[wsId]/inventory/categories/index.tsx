@@ -107,7 +107,7 @@ const CategoriesPage: PageWithLayoutProps = () => {
                 href={`/${ws.id}/inventory/categories/${category.id}`}
                 name={category.name}
                 showAmount={showProducts}
-                productAmountFetchPath={`/api/categories/${category.id}/products`}
+                // productAmountFetchPath={`/api/categories/${category.id}/products`}
               />
             ))}
         </div>

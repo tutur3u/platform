@@ -5,7 +5,6 @@ import {
   ClipboardDocumentListIcon,
   BanknotesIcon,
   Cog6ToothIcon,
-  UserCircleIcon,
   PlusIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
@@ -41,7 +40,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import WorkspaceSelector from '../selectors/WorkspaceSelector';
-import { getUsersLabel } from '../../utils/ws-helper';
+import LanguageSelector from '../selectors/LanguageSelector';
+import useTranslation from 'next-translate/useTranslation';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
@@ -97,6 +97,39 @@ function LeftSidebar({ className }: SidebarProps) {
     }
   }, []);
 
+  const { t } = useTranslation('sidebar-tabs');
+
+  const invite = t('invite');
+  const moreMembers = t('more-members');
+
+  const newLabel = t('new');
+
+  const newWs = t('new-ws');
+  const newTeam = t('new-team');
+  const newTask = t('new-task');
+  const newNote = t('new-note');
+  const newTransaction = t('new-transaction');
+  const invitePeople = t('invite-people');
+
+  const home = t('home');
+  const calendar = t('calendar');
+  const tasks = t('tasks');
+  const documents = t('documents');
+  const users = t('users');
+  const attendance = t('attendance');
+  const healthcare = t('healthcare');
+  const inventory = t('inventory');
+  const classes = t('classes');
+  const finance = t('finance');
+  const activities = t('activities');
+  const notifications = t('notifications');
+
+  const collapseSidebar = t('collapse-sidebar');
+  const expandSidebar = t('expand-sidebar');
+
+  const settings = t('common:settings');
+  const logout = t('common:logout');
+
   return (
     <>
       <div
@@ -111,7 +144,6 @@ function LeftSidebar({ className }: SidebarProps) {
         >
           <div className="relative mx-4 mb-2 flex items-center justify-between pb-1">
             <Logo
-              root={!user}
               alwaysShowLabel={sidebar === 'open'}
               showLabel={sidebar !== 'closed'}
             />
@@ -203,7 +235,7 @@ function LeftSidebar({ className }: SidebarProps) {
                             <Tooltip
                               label={
                                 <div className="font-semibold">
-                                  {(members?.length || 0) - 3} more
+                                  {(members?.length || 0) - 3} {moreMembers}
                                 </div>
                               }
                               color="#182a3d"
@@ -221,7 +253,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           href={`/${ws.id}/members`}
                           className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
                         >
-                          <div>Invite</div>
+                          <div>{invite}</div>
                           <UserPlusIcon className="w-4" />
                         </Link>
                       )}
@@ -243,7 +275,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Popover.Target>
                   <div className="mx-2">
                     <SidebarButton
-                      label="New"
+                      label={newLabel}
                       onClick={() => setNewPopover((o) => !o)}
                       isActive={newPopover}
                       activeIcon={<PlusIcon className="w-5" />}
@@ -261,7 +293,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       showEditWorkspaceModal();
                     }}
                     activeIcon={<BuildingOffice2Icon className="w-5" />}
-                    label="New workspace"
+                    label={newWs}
                     left
                   />
 
@@ -274,28 +306,28 @@ function LeftSidebar({ className }: SidebarProps) {
                         showTeamEditForm();
                       }}
                       activeIcon={<Squares2X2Icon className="w-5" />}
-                      label="New team"
+                      label={newTeam}
                       left
                     />
                   )}
                   <SidebarButton
                     onClick={() => setNewPopover(false)}
                     activeIcon={<CheckCircleIcon className="w-5" />}
-                    label="New task"
+                    label={newTask}
                     left
                     disabled
                   />
                   <SidebarButton
                     onClick={() => setNewPopover(false)}
                     activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                    label="New note"
+                    label={newNote}
                     left
                     disabled
                   />
                   <SidebarButton
                     onClick={() => setNewPopover(false)}
                     activeIcon={<BanknotesIcon className="w-5" />}
-                    label="New transaction"
+                    label={newTransaction}
                     left
                     disabled
                   />
@@ -306,7 +338,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       <SidebarButton
                         onClick={() => setNewPopover(false)}
                         activeIcon={<UserPlusIcon className="w-5" />}
-                        label="Invite people"
+                        label={invitePeople}
                         left
                         disabled
                       />
@@ -323,7 +355,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     href={`/${ws.id}`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<HomeIcon className="w-5" />}
-                    label="Home"
+                    label={home}
                     showTooltip={sidebar === 'closed'}
                     exactMatch
                   />
@@ -332,7 +364,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       href={`/${ws.id}/calendar`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<CalendarDaysIcon className="w-5" />}
-                      label="Calendar"
+                      label={calendar}
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
@@ -341,7 +373,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       href={`/${ws.id}/tasks`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<CheckCircleIcon className="w-5" />}
-                      label="Tasks"
+                      label={tasks}
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
@@ -350,7 +382,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       href={`/${ws.id}/documents`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                      label="Documents"
+                      label={documents}
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
@@ -358,14 +390,14 @@ function LeftSidebar({ className }: SidebarProps) {
                     href={`/${ws.id}/users`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<UserGroupIcon className="w-5" />}
-                    label={getUsersLabel(ws)}
+                    label={users}
                     showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/attendance`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<FingerPrintIcon className="w-5" />}
-                    label="Attendance"
+                    label={attendance}
                     showTooltip={sidebar === 'closed'}
                   />
                   {(ws?.preset === 'ALL' || ws?.preset === 'PHARMACY') && (
@@ -373,7 +405,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       href={`/${ws.id}/healthcare`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<BeakerIcon className="w-5" />}
-                      label="Healthcare"
+                      label={healthcare}
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
@@ -381,7 +413,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     href={`/${ws.id}/inventory`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<ArchiveBoxIcon className="w-5" />}
-                    label="Inventory"
+                    label={inventory}
                     showTooltip={sidebar === 'closed'}
                   />
                   {(ws?.preset === 'ALL' || ws?.preset === 'EDUCATION') && (
@@ -389,7 +421,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       href={`/${ws.id}/classes`}
                       onClick={() => setUserPopover(false)}
                       activeIcon={<RectangleStackIcon className="w-5" />}
-                      label="Classes"
+                      label={classes}
                       showTooltip={sidebar === 'closed'}
                     />
                   )}
@@ -397,14 +429,14 @@ function LeftSidebar({ className }: SidebarProps) {
                     href={`/${ws.id}/finance`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<BanknotesIcon className="w-5" />}
-                    label="Finance"
+                    label={finance}
                     showTooltip={sidebar === 'closed'}
                   />
                   <SidebarLink
                     href={`/${ws.id}/activities`}
                     onClick={() => setUserPopover(false)}
                     activeIcon={<ClockIcon className="w-5" />}
-                    label="Activities"
+                    label={activities}
                     showTooltip={sidebar === 'closed'}
                   />
                 </div>
@@ -457,7 +489,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           />
                         ))}
                       <SidebarButton
-                        label="New team"
+                        label={newTeam}
                         activeIcon={<SquaresPlusIcon className="w-5" />}
                         showLabel={sidebar === 'open'}
                         showTooltip={sidebar === 'closed' && !newPopover}
@@ -476,7 +508,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 href={`/${ws.id}/notifications`}
                 onClick={() => setUserPopover(false)}
                 activeIcon={<BellIcon className="w-5" />}
-                label="Thông báo"
+                label={notifications}
                 showTooltip={sidebar === 'closed'}
                 trailingIcon={
                   <div
@@ -500,9 +532,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <div className="mx-2 hidden md:block">
             <SidebarButton
               onClick={toggleSidebar}
-              label={
-                sidebar === 'closed' ? 'Expand sidebar' : 'Collapse sidebar'
-              }
+              label={sidebar === 'closed' ? expandSidebar : collapseSidebar}
               activeIcon={
                 sidebar === 'closed' ? (
                   <ChevronRightIcon className="w-5" />
@@ -560,33 +590,28 @@ function LeftSidebar({ className }: SidebarProps) {
                   </Popover.Target>
 
                   <Popover.Dropdown className="grid gap-1 p-1">
-                    <SidebarLink
-                      href={user?.handle ? `/${user.handle}` : '/settings'}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<UserCircleIcon className="w-5" />}
-                      label="Profile"
-                      defaultActive={false}
-                      left
-                    />
-                    <SidebarLink
-                      href="/settings"
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<Cog6ToothIcon className="w-5" />}
-                      label="Settings"
-                      defaultActive={false}
-                      left
-                    />
-
                     {sidebar !== 'open' && (
                       <>
-                        <Divider variant="dashed" />
                         <WorkspaceSelector
                           showLabel
                           className="mx-2 mb-2"
                           onChange={() => setUserPopover(false)}
                         />
+                        <Divider variant="dashed" />
                       </>
                     )}
+
+                    <LanguageSelector fullWidth />
+                    <Divider variant="dashed" />
+
+                    <SidebarLink
+                      href="/settings"
+                      onClick={() => setUserPopover(false)}
+                      activeIcon={<Cog6ToothIcon className="w-5" />}
+                      label={settings}
+                      defaultActive={false}
+                      left
+                    />
 
                     <Divider variant="dashed" />
                     <SidebarButton
@@ -595,7 +620,7 @@ function LeftSidebar({ className }: SidebarProps) {
                         handleLogout();
                       }}
                       activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
-                      label="Log out"
+                      label={logout}
                       left
                     />
                   </Popover.Dropdown>
