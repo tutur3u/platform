@@ -6,6 +6,8 @@
     "/": ["home"],
     "/login": ["auth", "login"],
     "/signup": ["auth", "signup"],
-    "/recover": ["auth", "recover"]
+    "/recover": ["auth", "recover"],
+    "/onboarding": ["onboarding", "invite"],
+    "/[wsId]/notifications": ["invite"]
   }
 }

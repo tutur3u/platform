@@ -1,6 +1,8 @@
 import moment from 'moment';
 import { Workspace } from '../../types/primitives/Workspace';
 import { Divider } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
+import 'moment/locale/vi';
 
 interface Props {
   ws: Workspace;
@@ -16,6 +18,15 @@ const WorkspaceInviteSnippet = ({
   onDecline,
   gray = false,
 }: Props) => {
+  const { t, lang } = useTranslation('invite');
+
+  const creationDate = moment(ws?.created_at).locale(lang).fromNow();
+
+  const invitedTo = t('invited-to');
+
+  const declineInvite = t('decline-invite');
+  const acceptInvite = t('accept-invite');
+
   return (
     <div
       className={`rounded-lg border p-8 ${
@@ -26,16 +37,16 @@ const WorkspaceInviteSnippet = ({
     >
       {ws?.created_at ? (
         <>
-          <div className="w-fit rounded border border-blue-300/20 bg-blue-300/10 px-2 py-0.5 text-blue-300">
-            {moment(ws.created_at).fromNow()}
+          <div className="w-fit rounded border border-purple-300/20 bg-purple-300/10 px-4 py-0.5 text-purple-300">
+            {creationDate}
           </div>
           <Divider className="my-2 border-blue-300/20" />
         </>
       ) : null}
 
       <div className="cursor-default font-semibold transition duration-150">
-        <span className="text-zinc-300/80">You have been invited to join </span>
-        {ws?.name || `Unnamed Workspace`}
+        <span className="text-zinc-300/60">{invitedTo} </span>
+        <span className="text-zinc-200">{ws?.name || `Unnamed Workspace`}</span>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -44,7 +55,7 @@ const WorkspaceInviteSnippet = ({
             className="flex cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300 transition duration-300 hover:border-red-300/10 hover:bg-red-300/10 hover:text-red-300"
             onClick={() => onDecline(ws)}
           >
-            Decline invitation
+            {declineInvite}
           </div>
         ) : null}
 
@@ -53,7 +64,7 @@ const WorkspaceInviteSnippet = ({
             className="flex flex-1 cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300 transition duration-300 hover:border-green-300/10 hover:bg-green-300/10 hover:text-green-300"
             onClick={() => onAccept(ws)}
           >
-            Accept invitation
+            {acceptInvite}
           </div>
         ) : null}
       </div>

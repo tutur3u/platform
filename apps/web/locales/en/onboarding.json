@@ -1,0 +1,11 @@
+{
+  "welcome": "Welcome!",
+  "welcome-desc": "Take a moment to complete your profile.",
+  "just-a-moment": "Just a moment...",
+  "just-a-moment-desc": "Accept a workspace invite to get started.",
+  "currently-logged-in": "You are currently logged in as",
+  "display-name": "Display Name",
+  "username": "Username",
+  "save": "Save",
+  "no-invites": "You have no pending invites."
+}

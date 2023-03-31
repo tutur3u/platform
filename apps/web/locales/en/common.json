@@ -7,5 +7,11 @@
   "stress": "stress",
   "get-started": "Get Started",
   "get-started-desc": "Sign up for free and start using our platform today.",
-  "copyright": "Copyright © 2023 Tuturuuu LLC. All rights reserved."
+  "copyright": "Copyright © 2023 Tuturuuu LLC. All rights reserved.",
+  "404-msg": "The page you are looking for does not exist.",
+  "500-msg": "Something went wrong. Please try again later.",
+  "back-to-home": "Go back to home",
+  "home": "Home",
+  "settings": "Settings",
+  "logout": "Logout"
 }
