@@ -18,6 +18,7 @@ interface SidebarLinkProps {
   defaultHighlight?: boolean;
   left?: boolean;
   className?: string;
+  exactMatch?: boolean;
 }
 
 export default function SidebarLink({
@@ -34,6 +35,7 @@ export default function SidebarLink({
   defaultHighlight = true,
   left = false,
   className,
+  exactMatch = false,
 }: SidebarLinkProps) {
   const router = useRouter();
   const { wsId, teamId } = router.query;
@@ -42,10 +44,14 @@ export default function SidebarLink({
 
   const isExpanded = sidebar === 'open';
 
+  const enhancedPath = router.pathname
+    .replace('/[teamId]', `/${teamId}`)
+    .replace('/[wsId]', `/${wsId}`);
+
   const isActive = href
-    ? router.pathname
-        .replace('/[teamId]', `/${teamId}`)
-        .replace('/[wsId]', `/${wsId}`) === href
+    ? exactMatch
+      ? enhancedPath === href
+      : enhancedPath.startsWith(href)
     : false;
 
   return (

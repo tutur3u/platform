@@ -6,6 +6,7 @@ import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Category } from '../../types/primitives/Category';
 import { Transaction } from '../../types/primitives/Transaction';
+import moment from 'moment';
 
 interface Props {
   wsId: string;
@@ -27,7 +28,7 @@ const TransactionEditForm = ({
   );
   const [name, setName] = useState(transaction?.name || '');
   const [date, setDate] = useState<Date | null>(
-    transaction?.date || new Date()
+    transaction?.taken_at ? moment(transaction.taken_at).toDate() : new Date()
   );
   const [description, setDescription] = useState(
     transaction?.description || ''
@@ -162,7 +163,7 @@ const TransactionEditForm = ({
               amount: type === 'expense' ? (amount || 0) * -1 : amount || 0,
               description,
               category_id: categoryId,
-              date: date || new Date(),
+              taken_at: date?.toISOString() || new Date().toISOString(),
             };
 
             console.log(newTransaction);
