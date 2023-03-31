@@ -4,6 +4,8 @@ import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { AuthFormFields } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
+import useTranslation from 'next-translate/useTranslation';
+import LanguageSelector from '../selectors/LanguageSelector';
 
 interface AuthFormProps {
   title: string;
@@ -40,6 +42,8 @@ const AuthForm = ({
 
   onSubmit,
 }: AuthFormProps) => {
+  const { t } = useTranslation('auth');
+
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm({
@@ -70,6 +74,14 @@ const AuthForm = ({
   };
 
   const ctaText = submitting ? submittingLabel : submitLabel;
+
+  const noticeP1 = t('notice-p1');
+  const noticeP2 = t('notice-p2');
+
+  const and = t('common:and');
+
+  const tos = t('tos');
+  const privacy = t('privacy');
 
   return (
     <>
@@ -110,7 +122,7 @@ const AuthForm = ({
               <PasswordInput
                 id="password"
                 icon={<LockClosedIcon className="h-5" />}
-                label="Password"
+                label={t('password')}
                 placeholder="••••••••"
                 value={form.values.password}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -145,7 +157,7 @@ const AuthForm = ({
                     : 'text-zinc-200/50 hover:text-zinc-200'
                 } w-fit place-self-end transition`}
               >
-                Forgot password?
+                {t('login:forgot-password')}
               </Link>
             )}
           </div>
@@ -185,22 +197,23 @@ const AuthForm = ({
 
           <Divider className="w-full border-zinc-300/10" variant="dashed" />
           <div className="text-center text-sm font-semibold text-zinc-400">
-            By continuing, you agree to Tuturuuu&apos;s{' '}
+            {noticeP1}{' '}
             <Link
               href="/terms"
               className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
-              Terms of Service
+              {tos}
             </Link>{' '}
-            and{' '}
+            {and}{' '}
             <Link
               href="/privacy"
               className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
             >
-              Privacy Policy
-            </Link>
-            , and to receive periodic emails with updates.
+              {privacy}
+            </Link>{' '}
+            {noticeP2}
           </div>
+          <LanguageSelector fullWidth transparent />
         </div>
       </div>
     </>

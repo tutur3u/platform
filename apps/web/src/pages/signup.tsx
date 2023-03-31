@@ -8,6 +8,7 @@ import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -70,9 +71,21 @@ const SignupPage = () => {
     }
   };
 
+  const { t } = useTranslation('signup');
+
+  const signup = t('signup');
+  const signingUp = t('signing-up');
+
+  const login = t('login');
+
+  const getStarted = t('get-started');
+  const getStartedDesc = t('get-started-desc');
+
+  const alreadyHaveAccount = t('already-have-account');
+
   return (
     <>
-      <HeaderX label="Tuturuuu — Sign up" />
+      <HeaderX label={`Tuturuuu — ${signup}`} />
       <Image
         src="/media/background/auth-featured-bg.jpg"
         alt="Featured background"
@@ -81,13 +94,13 @@ const SignupPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
       <AuthForm
-        title="Get started"
-        description="Create a new account"
-        submitLabel="Sign up"
-        submittingLabel="Signing up"
+        title={getStarted}
+        description={getStartedDesc}
+        submitLabel={signup}
+        submittingLabel={signingUp}
         secondaryAction={{
-          description: 'Already have an account?',
-          label: 'Log in',
+          description: alreadyHaveAccount,
+          label: login,
           href: '/login',
         }}
         onSubmit={handleSignup}

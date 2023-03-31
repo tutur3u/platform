@@ -1,0 +1,8 @@
+{
+  "recover-password": "Recover password",
+  "recover-password-desc": "Enter your email address to recover your password",
+  "send": "Send recovery email",
+  "sending": "Sending recovery email",
+  "login": "Login",
+  "already-have-account": "Already have an account?"
+}

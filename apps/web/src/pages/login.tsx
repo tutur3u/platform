@@ -8,6 +8,7 @@ import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -68,9 +69,21 @@ const LoginPage = () => {
     }
   };
 
+  const { t } = useTranslation('login');
+
+  const login = t('login');
+  const loggingIn = t('logging-in');
+
+  const signup = t('signup');
+
+  const welcomeBack = t('welcome-back');
+  const welcomeBackDesc = t('welcome-back-desc');
+
+  const noAccount = t('no-account');
+
   return (
     <>
-      <HeaderX label="Tuturuuu — Log in" />
+      <HeaderX label={`Tuturuuu — ${login}`} />
       <Image
         src="/media/background/auth-featured-bg.jpg"
         alt="Featured background"
@@ -79,13 +92,13 @@ const LoginPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
       <AuthForm
-        title="Welcome back"
-        description="Log in to your account"
-        submitLabel="Log in"
-        submittingLabel="Logging in"
+        title={welcomeBack}
+        description={welcomeBackDesc}
+        submitLabel={login}
+        submittingLabel={loggingIn}
         secondaryAction={{
-          description: "Don't have an account?",
-          label: 'Sign up',
+          description: noAccount,
+          label: signup,
           href: '/signup',
         }}
         onSubmit={handleLogin}

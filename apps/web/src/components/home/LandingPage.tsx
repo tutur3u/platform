@@ -3,35 +3,35 @@ import DefaultHead from '../headers/DefaultHead';
 import useTranslation from 'next-translate/useTranslation';
 
 const LandingPage = () => {
-  const { t, lang } = useTranslation();
+  const { t, lang } = useTranslation('home');
 
-  const headlineMain = t('home:headline-main');
-  const headlineSecondary = t('home:headline-secondary');
+  const headlineMain = t('headline-main');
+  const headlineSecondary = t('headline-secondary');
 
-  const descP1 = t('home:desc-p1');
-  const descP2 = t('home:desc-p2');
+  const descP1 = t('desc-p1');
+  const descP2 = t('desc-p2');
 
-  const tasks = t('home:tasks');
-  const schedules = t('home:schedules');
-  const finances = t('home:finances');
-  const notes = t('home:notes');
+  const tasks = t('tasks');
+  const schedules = t('schedules');
+  const finances = t('finances');
+  const notes = t('notes');
 
-  const and = t('home:and');
+  const and = t('common:and');
 
-  const comingSoon = t('home:coming-soon');
-  const featuresLead = t('home:features-lead');
+  const comingSoon = t('coming-soon');
+  const featuresLead = t('features-lead');
 
-  const taskManagement = t('home:task-management');
-  const taskManagementDesc = t('home:task-management-desc');
+  const taskManagement = t('task-management');
+  const taskManagementDesc = t('task-management-desc');
 
-  const scheduleManagement = t('home:schedule-management');
-  const scheduleManagementDesc = t('home:schedule-management-desc');
+  const scheduleManagement = t('schedule-management');
+  const scheduleManagementDesc = t('schedule-management-desc');
 
-  const financeManagement = t('home:finance-management');
-  const financeManagementDesc = t('home:finance-management-desc');
+  const financeManagement = t('finance-management');
+  const financeManagementDesc = t('finance-management-desc');
 
-  const noteManagement = t('home:note-management');
-  const noteManagementDesc = t('home:note-management-desc');
+  const noteManagement = t('note-management');
+  const noteManagementDesc = t('note-management-desc');
 
   return (
     <>
@@ -45,7 +45,7 @@ const LandingPage = () => {
                 className={`w-fit bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text font-bold text-transparent ${
                   lang === 'en'
                     ? 'py-0.5 text-4xl md:text-5xl xl:py-2 xl:text-6xl'
-                    : 'py-0.5 text-4xl md:text-4xl xl:py-2 xl:text-5xl'
+                    : 'py-0.5 text-3xl md:text-4xl xl:py-2 xl:text-5xl'
                 }`}
               >
                 {headlineMain}

@@ -3,6 +3,9 @@
   "defaultLocale": "en",
   "pages": {
     "*": ["common"],
-    "/": ["home"]
+    "/": ["home"],
+    "/login": ["auth", "login"],
+    "/signup": ["auth", "signup"],
+    "/recover": ["auth", "recover"]
   }
 }
