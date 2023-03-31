@@ -1,4 +1,5 @@
 import { Divider } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -7,6 +8,18 @@ interface FooterProps {
 }
 
 const Footer = ({ hideSlogan = false }: FooterProps) => {
+  const { t } = useTranslation();
+
+  const maximize = t('common:maximize');
+  const productivity = t('common:productivity');
+  const minimize = t('common:minimize');
+  const stress = t('common:stress');
+
+  const getStarted = t('common:get-started');
+  const getStartedDesc = t('common:get-started-desc');
+
+  const copyright = t('common:copyright');
+
   return (
     <div className="w-full text-center">
       <Divider className="mb-16 border-zinc-500/10" />
@@ -15,21 +28,21 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
         <>
           <div className="flex flex-col items-center p-8">
             <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
-              <span className="text-green-300">Maximize</span>{' '}
-              <span className="text-blue-300">productivity</span>,{' '}
-              <span className="text-orange-300">minimize</span>{' '}
-              <span className="text-red-300">stress</span>.
+              <span className="text-green-300">{maximize}</span>{' '}
+              <span className="text-blue-300">{productivity}</span>,{' '}
+              <span className="text-orange-300">{minimize}</span>{' '}
+              <span className="text-red-300">{stress}</span>.
             </div>
 
             <div className="mt-2 text-zinc-300 md:text-xl">
-              Start your journey to a more productive life today.
+              {getStartedDesc}
             </div>
 
             <Link
               href="/signup"
               className="mt-4 block w-full max-w-xs rounded border border-blue-300/20 bg-blue-300/10 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
             >
-              Get Started
+              {getStarted}
             </Link>
           </div>
 
@@ -107,7 +120,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
       <Divider className="my-8 border-zinc-500/10" />
 
       <div className="px-4 pb-8 text-center text-zinc-400 md:px-32 lg:px-64">
-        <div>Copyright © 2023 Tuturuuu LLC. All rights reserved.</div>
+        <div>{copyright}</div>
       </div>
     </div>
   );

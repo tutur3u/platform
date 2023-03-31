@@ -1,0 +1,11 @@
+{
+  "locales": ["en", "vi"],
+  "defaultLocale": "en",
+  "pages": {
+    "*": ["common"],
+    "/": ["home"],
+    "/login": ["auth", "login"],
+    "/signup": ["auth", "signup"],
+    "/recover": ["auth", "recover"]
+  }
+}

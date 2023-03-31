@@ -8,6 +8,7 @@ import { AuthFormFields, authenticate } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -63,9 +64,20 @@ const PasswordRecoveryPage = () => {
     }
   };
 
+  const { t } = useTranslation('recover');
+
+  const recoverPassword = t('recover-password');
+  const recoverPasswordDesc = t('recover-password-desc');
+
+  const send = t('send');
+  const sending = t('sending');
+
+  const alreadyHaveAccount = t('already-have-account');
+  const login = t('login');
+
   return (
     <>
-      <HeaderX label="Tuturuuu — Password Recovery" />
+      <HeaderX label={`Tuturuuu — ${recoverPassword}`} />
       <Image
         src="/media/background/auth-featured-bg.jpg"
         alt="Featured background"
@@ -74,13 +86,13 @@ const PasswordRecoveryPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
       <AuthForm
-        title="Recover password"
-        description="Enter your email address to recover your password"
-        submitLabel="Send recovery email"
-        submittingLabel="Sending recovery email"
+        title={recoverPassword}
+        description={recoverPasswordDesc}
+        submitLabel={send}
+        submittingLabel={sending}
         secondaryAction={{
-          description: 'Already have an account?',
-          label: 'Log in',
+          description: alreadyHaveAccount,
+          label: login,
           href: '/login',
         }}
         onSubmit={handleRecovery}
