@@ -513,7 +513,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 trailingIcon={
                   <div
                     className={`flex aspect-square h-6 items-center justify-center rounded-lg bg-red-300/20 text-sm text-red-300 ${
-                      workspaceInvites?.length === 0 ? 'opacity-0' : ''
+                      (workspaceInvites?.length || 0) === 0 ? 'opacity-0' : ''
                     }`}
                   >
                     {(workspaceInvites?.length || 0) > 9
