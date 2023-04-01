@@ -4,19 +4,31 @@
   "pages": {
     "*": ["common"],
     "/": ["home"],
+
     "/login": ["auth", "login"],
     "/signup": ["auth", "signup"],
     "/recover": ["auth", "recover"],
     "/onboarding": ["onboarding", "invite"],
 
+    "/settings": ["sidebar-tabs", "settings-tabs"],
+    "/settings/account": ["sidebar-tabs", "settings-tabs"],
+    "/settings/appearance": ["sidebar-tabs", "settings-tabs"],
+    "/settings/security": ["sidebar-tabs", "settings-tabs"],
+    "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
+
     "/[wsId]": ["sidebar-tabs", "workspace-tabs"],
-    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
     "/[wsId]/members": ["sidebar-tabs", "workspace-tabs"],
     "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs"],
 
     "/[wsId]/calendar": ["sidebar-tabs"],
     "/[wsId]/tasks": ["sidebar-tabs"],
     "/[wsId]/documents": ["sidebar-tabs"],
+
+    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
+
+    "/[wsId]/teams/[teamId]": ["sidebar-tabs", "team-tabs"],
+    "/[wsId]/teams/[teamId]/members": ["sidebar-tabs", "team-tabs"],
+    "/[wsId]/teams/[teamId]/settings": ["sidebar-tabs", "team-tabs"],
 
     "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
     "/[wsId]/users/list": ["sidebar-tabs", "workspace-users-tabs"],
@@ -95,10 +107,6 @@
     "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/activities": ["sidebar-tabs"],
-    "/[wsId]/notifications": ["invite", "sidebar-tabs"],
-
-    "/[wsId]/teams/[teamId]": ["sidebar-tabs"],
-    "/[wsId]/teams/[teamId]/members": ["sidebar-tabs"],
-    "/[wsId]/teams/[teamId]/settings": ["sidebar-tabs"]
+    "/[wsId]/notifications": ["invite", "sidebar-tabs"]
   }
 }

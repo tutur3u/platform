@@ -4,15 +4,15 @@ export const teamTabs: NavTabs = {
   namespace: 'team-tabs',
   tabs: [
     {
-      name: 'Overview',
+      name: 'overview',
       href: '/[wsId]/teams/[teamId]',
     },
     {
-      name: 'Members',
+      name: 'members',
       href: '/[wsId]/teams/[teamId]/members',
     },
     {
-      name: 'Settings',
+      name: 'settings',
       href: '/[wsId]/teams/[teamId]/settings',
     },
   ],

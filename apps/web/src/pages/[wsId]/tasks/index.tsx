@@ -30,7 +30,7 @@ const TasksPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Tasks" />
-      <div className="flex-colp-6 flex h-full w-full"></div>
+      <div className="flex h-full w-full flex-col p-6"></div>
     </>
   );
 };

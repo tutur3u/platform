@@ -1,4 +1,5 @@
 export type Mode =
+  | 'settings'
   | 'workspace'
   | 'workspace_users'
   | 'team'
@@ -11,6 +12,7 @@ export type Mode =
 export type Tab = {
   name: string;
   href: string;
+  disabled?: boolean;
 };
 
 export type NavTabs = {
