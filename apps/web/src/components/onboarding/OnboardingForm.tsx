@@ -252,11 +252,11 @@ const OnboardingForm = () => {
                   </Button>
                 </div>
               )}
+
+              <Divider className="w-full border-zinc-300/20" />
+              <LanguageSelector transparent fullWidth />
             </>
           )}
-
-          <Divider className="w-full border-zinc-300/20" />
-          <LanguageSelector transparent fullWidth />
         </div>
       </div>
     </>

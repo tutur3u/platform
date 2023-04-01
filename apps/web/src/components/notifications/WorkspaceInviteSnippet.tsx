@@ -31,13 +31,13 @@ const WorkspaceInviteSnippet = ({
     <div
       className={`rounded-lg border p-8 ${
         gray
-          ? 'border-zinc-300/20 bg-zinc-300/5'
-          : 'border-blue-300/20 bg-blue-300/5'
+          ? 'border-zinc-300/20 bg-zinc-300/10'
+          : 'border-blue-300/20 bg-blue-300/10'
       }`}
     >
       {ws?.created_at ? (
         <>
-          <div className="w-fit rounded border border-purple-300/20 bg-purple-300/10 px-4 py-0.5 text-purple-300">
+          <div className="w-fit rounded border border-purple-300/10 bg-purple-300/10 px-4 py-0.5 text-purple-300">
             {creationDate}
           </div>
           <Divider className="my-2 border-blue-300/20" />
