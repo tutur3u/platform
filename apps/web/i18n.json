@@ -9,76 +9,90 @@
     "/recover": ["auth", "recover"],
     "/onboarding": ["onboarding", "invite"],
 
-    "/[wsId]": ["sidebar-tabs"],
-    "/[wsId]/teams": ["sidebar-tabs"],
-    "/[wsId]/members": ["sidebar-tabs"],
-    "/[wsId]/settings": ["sidebar-tabs"],
+    "/[wsId]": ["sidebar-tabs", "workspace-tabs"],
+    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
+    "/[wsId]/members": ["sidebar-tabs", "workspace-tabs"],
+    "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs"],
+
     "/[wsId]/calendar": ["sidebar-tabs"],
     "/[wsId]/tasks": ["sidebar-tabs"],
     "/[wsId]/documents": ["sidebar-tabs"],
 
-    "/[wsId]/users": ["sidebar-tabs"],
-    "/[wsId]/users/list": ["sidebar-tabs"],
-    "/[wsId]/users/roles": ["sidebar-tabs"],
+    "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/list": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/roles": ["sidebar-tabs", "workspace-users-tabs"],
+
     "/[wsId]/users/new": ["sidebar-tabs"],
     "/[wsId]/users/[userId]": ["sidebar-tabs"],
 
     "/[wsId]/attendance": ["sidebar-tabs"],
 
-    "/[wsId]/healthcare": ["sidebar-tabs"],
+    "/[wsId]/healthcare": ["sidebar-tabs", "healthcare-tabs"],
 
-    "/[wsId]/healthcare/prescriptions": ["sidebar-tabs"],
-    "/[wsId]/healthcare/prescriptions/new": ["sidebar-tabs"],
-    "/[wsId]/healthcare/prescriptions/[prescriptionId]": ["sidebar-tabs"],
+    "/[wsId]/healthcare/prescriptions": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/prescriptions/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/prescriptions/[prescriptionId]": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
 
-    "/[wsId]/healthcare/checkups": ["sidebar-tabs"],
-    "/[wsId]/healthcare/checkups/new": ["sidebar-tabs"],
-    "/[wsId]/healthcare/checkups/[checkupId]": ["sidebar-tabs"],
+    "/[wsId]/healthcare/checkups": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/checkups/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/checkups/[checkupId]": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
 
-    "/[wsId]/healthcare/diagnoses": ["sidebar-tabs"],
-    "/[wsId]/healthcare/diagnoses/new": ["sidebar-tabs"],
-    "/[wsId]/healthcare/diagnoses/[diagnosisId]": ["sidebar-tabs"],
+    "/[wsId]/healthcare/diagnoses": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/diagnoses/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/diagnoses/[diagnosisId]": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
 
-    "/[wsId]/healthcare/vitals": ["sidebar-tabs"],
-    "/[wsId]/healthcare/vitals/new": ["sidebar-tabs"],
-    "/[wsId]/healthcare/vitals/[vitalId]": ["sidebar-tabs"],
+    "/[wsId]/healthcare/vitals": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vitals/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vitals/[vitalId]": ["sidebar-tabs", "healthcare-tabs"],
 
-    "/[wsId]/healthcare/vital-groups": ["sidebar-tabs"],
-    "/[wsId]/healthcare/vital-groups/new": ["sidebar-tabs"],
-    "/[wsId]/healthcare/vital-groups/[groupId]": ["sidebar-tabs"],
+    "/[wsId]/healthcare/vital-groups": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vital-groups/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vital-groups/[groupId]": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
 
-    "/[wsId]/inventory": ["sidebar-tabs"],
+    "/[wsId]/inventory": ["sidebar-tabs", "inventory-tabs"],
 
-    "/[wsId]/inventory/products": ["sidebar-tabs"],
+    "/[wsId]/inventory/products": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/products/new": ["sidebar-tabs"],
     "/[wsId]/inventory/products/[productId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/categories": ["sidebar-tabs"],
+    "/[wsId]/inventory/categories": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
     "/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/batches": ["sidebar-tabs"],
+    "/[wsId]/inventory/batches": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/batches/new": ["sidebar-tabs"],
     "/[wsId]/inventory/batches/[batchId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/warehouses": ["sidebar-tabs"],
+    "/[wsId]/inventory/warehouses": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
     "/[wsId]/inventory/warehouses/[warehouseId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/units": ["sidebar-tabs"],
+    "/[wsId]/inventory/units": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/units/new": ["sidebar-tabs"],
     "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/suppliers": ["sidebar-tabs"],
+    "/[wsId]/inventory/suppliers": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
     "/[wsId]/inventory/suppliers/[supplierId]": ["sidebar-tabs"],
 
     "/[wsId]/classes": ["sidebar-tabs"],
 
-    "/[wsId]/finance": ["sidebar-tabs"],
-    "/[wsId]/finance/wallets": ["sidebar-tabs"],
-    "/[wsId]/finance/transactions": ["sidebar-tabs"],
-    "/[wsId]/finance/categories": ["sidebar-tabs"],
+    "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["invite", "sidebar-tabs"],

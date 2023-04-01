@@ -7,27 +7,9 @@ import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
 import LoadingIndicator from '../common/LoadingIndicator';
 import SidebarLayout from './SidebarLayout';
-import {
-  Tab,
-  financeTabs,
-  inventoryTabs,
-  healthcareTabs,
-  wsUserDetailsTabs,
-  productDetailsTabs,
-  teamTabs,
-  workspaceTabs,
-  workspaceUsersTabs,
-} from '../../constants/tabs';
-
-type Mode =
-  | 'workspace'
-  | 'workspace_users'
-  | 'team'
-  | 'healthcare'
-  | 'inventory'
-  | 'finance'
-  | 'product_details'
-  | 'user_details';
+import useTranslation from 'next-translate/useTranslation';
+import { getTabs } from '../../utils/tab-helper';
+import { Mode } from '../../types/Tab';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -47,49 +29,11 @@ const NestedLayout: FC<NestedLayoutProps> = ({
   noTabs = false,
 }: NestedLayoutProps) => {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const tabs = getTabs({ t, router, mode });
+
   const { segments } = useSegments();
-
-  const {
-    query: { wsId, teamId, productId, patientId, userId },
-  } = router;
-
-  const enhanceHref = (tabs: Tab[]) => {
-    return tabs.map((tab) => {
-      if (tab.href) {
-        return {
-          ...tab,
-          href: tab.href
-            .replace('[wsId]', wsId as string)
-            .replace('[teamId]', teamId as string)
-            .replace('[productId]', productId as string)
-            .replace('[patientId]', patientId as string)
-            .replace('[userId]', userId as string)
-            .replace(/\/$/, ''),
-        };
-      }
-
-      return tab;
-    });
-  };
-
-  const layoutTabs =
-    mode === 'workspace'
-      ? workspaceTabs
-      : mode === 'workspace_users'
-      ? workspaceUsersTabs
-      : mode === 'healthcare'
-      ? healthcareTabs
-      : mode === 'inventory'
-      ? inventoryTabs
-      : mode === 'finance'
-      ? financeTabs
-      : mode === 'product_details'
-      ? productDetailsTabs
-      : mode === 'user_details'
-      ? wsUserDetailsTabs
-      : teamTabs;
-
-  const tabs = enhanceHref(layoutTabs);
 
   return (
     <SidebarLayout>
