@@ -98,10 +98,10 @@ const DocumentsPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label="Documents" />
 
-      <div className="flex flex-col items-center gap-4 md:flex-row">
+      <div className="flex flex-col items-center gap-4 pb-8 md:flex-row">
         <h1 className="w-full flex-grow rounded-lg bg-zinc-900 p-4 text-2xl font-bold md:w-auto">
           Documents{' '}
           <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
@@ -168,7 +168,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
             />
           ))}
       </div>
-    </>
+    </div>
   );
 };
 

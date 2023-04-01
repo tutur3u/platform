@@ -86,16 +86,27 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             {tabs.map((tab) => (
               <Link
                 key={`tab-${tab.href}`}
-                href={tab.href}
+                href={tab.disabled ? '#' : tab.href}
+                onClick={(e) => {
+                  if (tab.disabled) e.preventDefault();
+                }}
                 className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
-                  segments &&
-                  segments.length > 0 &&
-                  segments.slice(-1)[0].href === tab.href
+                  tab.disabled
+                    ? 'cursor-not-allowed border-transparent text-zinc-500/80 opacity-50'
+                    : segments &&
+                      segments.length > 0 &&
+                      segments.slice(-1)[0].href === tab.href
                     ? 'border-zinc-300 text-zinc-300'
                     : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
                 }`}
               >
-                <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">
+                <div
+                  className={`rounded px-4 py-1 text-center font-semibold ${
+                    tab.disabled
+                      ? 'cursor-not-allowed'
+                      : 'md:group-hover:bg-zinc-800'
+                  }`}
+                >
                   {tab.name}
                 </div>
               </Link>

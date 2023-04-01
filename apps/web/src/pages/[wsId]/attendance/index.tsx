@@ -29,7 +29,7 @@ const ClassesPage: PageWithLayoutProps = () => {
   //   return (
   //     <>
   //       <HeaderX label="Classes" />
-  //       <div className="flex-colp-6 flex h-full w-full"></div>
+  //       <div className="flex-col p-6 flex h-full w-full"></div>
   //     </>
   //   );
 };

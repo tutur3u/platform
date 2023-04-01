@@ -40,7 +40,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import WorkspaceSelector from '../selectors/WorkspaceSelector';
-import LanguageSelector from '../selectors/LanguageSelector';
 import useTranslation from 'next-translate/useTranslation';
 
 function LeftSidebar({ className }: SidebarProps) {
@@ -524,7 +523,15 @@ function LeftSidebar({ className }: SidebarProps) {
               />
             </div>
           ) : (
-            <div className="h-full" />
+            <div className={`mx-2 h-full`}>
+              <SidebarLink
+                href={`/onboarding`}
+                onClick={() => setUserPopover(false)}
+                activeIcon={<HomeIcon className="w-5" />}
+                label={home}
+                showTooltip={sidebar === 'closed'}
+              />
+            </div>
           )}
 
           <Divider className="mb-2 hidden md:block" />
@@ -546,10 +553,9 @@ function LeftSidebar({ className }: SidebarProps) {
             />
           </div>
 
-          <Divider className="my-2" variant="dashed" />
-
           {ws?.id && (
             <>
+              <Divider className="my-2" variant="dashed" />
               <div className="mx-2 flex items-center justify-center gap-2">
                 {sidebar === 'open' && (
                   <WorkspaceSelector className="w-full md:w-auto" />
@@ -600,9 +606,6 @@ function LeftSidebar({ className }: SidebarProps) {
                         <Divider variant="dashed" />
                       </>
                     )}
-
-                    <LanguageSelector fullWidth />
-                    <Divider variant="dashed" />
 
                     <SidebarLink
                       href="/settings"

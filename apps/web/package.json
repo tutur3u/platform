@@ -34,7 +34,7 @@
     "@supabase/auth-helpers-nextjs": "^0.5.6",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.13.1",
-    "@tabler/icons-react": "^2.13.0",
+    "@tabler/icons-react": "^2.13.1",
     "@tiptap/extension-highlight": "2.0.1",
     "@tiptap/extension-link": "2.0.1",
     "@tiptap/extension-subscript": "2.0.1",

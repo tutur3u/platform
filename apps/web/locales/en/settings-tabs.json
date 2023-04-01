@@ -1,0 +1,9 @@
+{
+  "account": "Account",
+  "appearance": "Appearance",
+  "security": "Security",
+  "notifications": "Notifications",
+  "integrations": "Integrations",
+  "workspaces": "Workspaces",
+  "billing": "Billing"
+}
