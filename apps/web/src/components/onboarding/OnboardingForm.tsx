@@ -4,10 +4,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import LoadingIndicator from '../common/LoadingIndicator';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
-import { showNotification } from '@mantine/notifications';
 import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
-import { mutate } from 'swr';
-import { Workspace } from '../../types/primitives/Workspace';
 import { DEV_MODE } from '../../constants/common';
 import {
   DEFAULT_DISPLAY_NAME,
@@ -82,67 +79,6 @@ const OnboardingForm = () => {
   const currentlyLoggedIn = t('currently-logged-in');
   const noInvites = t('no-invites');
 
-  const acceptInviteSuccessTitle = t('invite:accept-invite-success-title');
-  const acceptInviteSuccessMessage = t('invite:accept-invite-success-msg');
-
-  const acceptInviteErrorTitle = t('invite:accept-invite-error-title');
-  const acceptInviteErrorMessage = t('invite:accept-invite-error-msg');
-
-  const declineInviteSuccessTitle = t('invite:decline-invite-success-title');
-  const declineInviteSuccessMessage = t('invite:decline-invite-success-msg');
-
-  const declineInviteErrorTitle = t('invite:decline-invite-error-title');
-  const declineInviteErrorMessage = t('invite:decline-invite-error-msg');
-
-  const acceptInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
-      method: 'POST',
-    });
-
-    if (response.ok) {
-      mutate('/api/workspaces/invites');
-      showNotification({
-        title: acceptInviteSuccessTitle,
-        message: acceptInviteSuccessMessage,
-        color: 'teal',
-      });
-
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { redirectedFrom: nextUrl } = router.query;
-
-      if (nextUrl) router.push(nextUrl.toString());
-      else if (ws.id) router.push(`/${ws.id}`);
-    } else {
-      showNotification({
-        title: acceptInviteErrorTitle,
-        message: acceptInviteErrorMessage,
-        color: 'red',
-      });
-    }
-  };
-
-  const declineInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
-      method: 'DELETE',
-    });
-
-    if (response.ok) {
-      mutate('/api/workspaces/invites');
-      showNotification({
-        title: declineInviteSuccessTitle,
-        message: declineInviteSuccessMessage,
-        color: 'teal',
-      });
-    } else {
-      showNotification({
-        title: declineInviteErrorTitle,
-        message: declineInviteErrorMessage,
-        color: 'red',
-      });
-    }
-  };
-
   return (
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
@@ -187,12 +123,7 @@ const OnboardingForm = () => {
                 <div className="scrollbar-none grid h-full w-full gap-4 overflow-y-scroll">
                   {(workspaceInvites?.length || 0) > 0 ? (
                     workspaceInvites?.map((ws) => (
-                      <WorkspaceInviteSnippet
-                        key={ws.id}
-                        ws={ws}
-                        onAccept={acceptInvite}
-                        onDecline={declineInvite}
-                      />
+                      <WorkspaceInviteSnippet key={ws.id} ws={ws} />
                     ))
                   ) : (
                     <div className="flex h-full items-center justify-center text-center text-2xl font-semibold text-zinc-300/70">

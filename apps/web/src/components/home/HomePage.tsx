@@ -4,8 +4,6 @@ import { Workspace } from '../../types/primitives/Workspace';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { openModal } from '@mantine/modals';
 import WorkspaceEditForm from '../forms/WorkspaceEditForm';
-import { showNotification } from '@mantine/notifications';
-import { mutate } from 'swr';
 import HeaderX from '../metadata/HeaderX';
 import LoadingIndicator from '../common/LoadingIndicator';
 import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
@@ -32,40 +30,6 @@ const HomePage = () => {
     });
   };
 
-  const acceptInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
-      method: 'POST',
-    });
-
-    if (response.ok) {
-      mutate('/api/workspaces');
-      showNotification({
-        title: `Accepted invite to ${ws.name}`,
-        message: 'You can now access this workspace',
-      });
-    } else {
-      showNotification({
-        title: `Failed to accept invite to ${ws.name}`,
-        message: 'Please try again later',
-      });
-    }
-  };
-
-  const declineInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
-      method: 'DELETE',
-    });
-
-    if (response.ok) {
-      mutate('/api/workspaces');
-    } else {
-      showNotification({
-        title: `Failed to decline invite to ${ws.name}`,
-        message: 'Please try again later',
-      });
-    }
-  };
-
   return (
     <div className="p-4 md:p-8">
       <HeaderX label="Home" />
@@ -78,12 +42,7 @@ const HomePage = () => {
           {(workspaceInvites?.length || 0) > 0 && (
             <div className="mb-8 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               {workspaceInvites?.map((ws) => (
-                <WorkspaceInviteSnippet
-                  key={ws.id}
-                  ws={ws}
-                  onAccept={acceptInvite}
-                  onDecline={declineInvite}
-                />
+                <WorkspaceInviteSnippet key={ws.id} ws={ws} />
               ))}
             </div>
           )}

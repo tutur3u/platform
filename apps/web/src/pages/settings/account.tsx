@@ -1,6 +1,6 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { Divider, TextInput } from '@mantine/core';
+import { TextInput } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -16,6 +16,7 @@ import LanguageSelector from '../../components/selectors/LanguageSelector';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import useTranslation from 'next-translate/useTranslation';
+import SettingItemCard from '../../components/settings/SettingItemCard';
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
@@ -75,15 +76,15 @@ const SettingPage: PageWithLayoutProps = () => {
   const logOut = t('common:logout');
 
   return (
-    <div className="grid min-h-full gap-4 pb-8 xl:grid-cols-2">
+    <div className="grid gap-4 pb-8 lg:grid-cols-2 xl:grid-cols-3">
       <HeaderX label="Settings" />
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">Display name</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Please enter your name as you would like it to be displayed on your
-          profile.
-        </div>
 
+      <SettingItemCard
+        title="Display name"
+        description="Please enter your name as you would like it to be displayed on your profile."
+        saving={saving}
+        onSave={handleSave}
+      >
         <TextInput
           placeholder="John Doe"
           value={displayName}
@@ -91,21 +92,14 @@ const SettingPage: PageWithLayoutProps = () => {
             setDisplayName(event.currentTarget.value)
           }
         />
+      </SettingItemCard>
 
-        <Divider className="my-4" />
-        <div
-          onClick={handleSave}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </div>
-      </div>
-
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">Handle</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          This is your custom URL namespace within Tuturuuu.
-        </div>
+      <SettingItemCard
+        title="Handle"
+        description="This is your custom URL namespace within Tuturuuu."
+        saving={saving}
+        onSave={handleSave}
+      >
         <TextInput
           placeholder="tuturuuu"
           // replace all characters that are not a-z, 0-9, or _
@@ -122,40 +116,27 @@ const SettingPage: PageWithLayoutProps = () => {
           }}
           icon={<AtSymbolIcon className="h-5 w-5" />}
         />
-        <Divider className="my-4" />
-        <div
-          onClick={handleSave}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </div>
-      </div>
+      </SettingItemCard>
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">Birthday</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Your birthday will only be used for social features.
-        </div>
+      <SettingItemCard
+        title="Birthday"
+        description="Your birthday will only be used for social features."
+        saving={saving}
+        onSave={handleSave}
+      >
         <DatePickerInput
           placeholder="Your birthday"
           icon={<CakeIcon className="h-5 w-5" />}
           value={birthday}
           onChange={setBirthday}
         />
-        <Divider className="my-4" />
-        <div
-          onClick={handleSave}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </div>
-      </div>
+      </SettingItemCard>
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">Email</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Your email address that you used to login with.
-        </div>
+      <SettingItemCard
+        title="Email"
+        description="Your email address that you used to login with."
+        comingSoon
+      >
         <TextInput
           placeholder="example@tuturuuu.com"
           value={user?.email || ''}
@@ -163,33 +144,23 @@ const SettingPage: PageWithLayoutProps = () => {
           readOnly
           disabled
         />
-        <Divider className="my-4" />
-        <div className="flex cursor-not-allowed items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300/30">
-          Coming soon
-        </div>
-      </div>
+      </SettingItemCard>
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">Language</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Change the language of the website
-        </div>
+      <SettingItemCard
+        title="Language"
+        description="Change the language of the website."
+      >
         <LanguageSelector fullWidth />
-      </div>
+      </SettingItemCard>
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-        <div className="mb-1 text-2xl font-bold">{logOut}</div>
-        <div className="mb-4 font-semibold text-zinc-500">
-          Log out of your account
-        </div>
-
+      <SettingItemCard title={logOut} description="Log out of your account.">
         <div
           onClick={handleLogout}
           className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
         >
           {logOut}
         </div>
-      </div>
+      </SettingItemCard>
     </div>
   );
 };

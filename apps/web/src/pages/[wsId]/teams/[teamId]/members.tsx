@@ -48,7 +48,7 @@ const TeamMembersPage = () => {
   const user = useUser();
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label={`Members – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (
@@ -62,10 +62,9 @@ const TeamMembersPage = () => {
             </h1>
             <p className="text-zinc-400">Manage who can access this team.</p>
           </div>
+          <Divider className="my-4" />
         </>
       )}
-
-      <Divider className="my-4" />
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
         {members
@@ -105,7 +104,7 @@ const TeamMembersPage = () => {
             </div>
           ))}
       </div>
-    </>
+    </div>
   );
 };
 

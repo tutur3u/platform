@@ -112,7 +112,7 @@ const WorkspaceSettingsPage = () => {
   };
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label={`Settings – ${ws?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (
@@ -123,10 +123,9 @@ const WorkspaceSettingsPage = () => {
               Manage the settings of your project.
             </p>
           </div>
+          <Divider className="my-4" />
         </>
       )}
-
-      <Divider className="my-4" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
@@ -193,7 +192,7 @@ const WorkspaceSettingsPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

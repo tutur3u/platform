@@ -45,7 +45,7 @@ const TeamCalendarPage = () => {
   ]);
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label={`Calendar – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (
@@ -57,11 +57,10 @@ const TeamCalendarPage = () => {
               collaboratively with a calendar.
             </p>
           </div>
+          <Divider className="my-4" />
         </>
       )}
-
-      <Divider className="my-4" />
-    </>
+    </div>
   );
 };
 

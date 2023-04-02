@@ -94,7 +94,7 @@ const WorkspaceMembersPage = () => {
   };
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label={`Members – ${ws?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (
@@ -108,10 +108,9 @@ const WorkspaceMembersPage = () => {
             </h1>
             <p className="text-zinc-400">Manage members of your workspace.</p>
           </div>
+          <Divider className="my-4" />
         </>
       )}
-
-      <Divider className="my-4" />
 
       {wsId && (
         <button
@@ -213,7 +212,7 @@ const WorkspaceMembersPage = () => {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

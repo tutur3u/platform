@@ -33,7 +33,7 @@ const LanguageSelector = ({
         if (onChange) onChange();
       }}
       data={data}
-      className={`font-semibold ${fullWidth ? 'w-full' : 'w-36'} ${
+      className={`font-semibold ${fullWidth ? 'w-full' : 'w-40'} ${
         hideOnMobile ? 'hidden md:block' : ''
       }`}
       classNames={{

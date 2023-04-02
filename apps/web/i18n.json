@@ -22,7 +22,9 @@
 
     "/[wsId]/calendar": ["sidebar-tabs"],
     "/[wsId]/tasks": ["sidebar-tabs"],
-    "/[wsId]/documents": ["sidebar-tabs"],
+
+    "/[wsId]/documents": ["sidebar-tabs", "documents"],
+    "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
 
     "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
 
@@ -107,6 +109,6 @@
     "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/activities": ["sidebar-tabs"],
-    "/[wsId]/notifications": ["invite", "sidebar-tabs"]
+    "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
 }

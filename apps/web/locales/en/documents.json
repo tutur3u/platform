@@ -1,0 +1,13 @@
+{
+  "documents": "Documents",
+  "new-document": "New document",
+  "create": "Create",
+  "save": "Save",
+  "delete": "Delete",
+  "creating": "Creating document",
+  "no-documents": "No documents in this workspace",
+  "create-new-document": "Create new document",
+  "create-document-error": "An error occurred while creating the document.",
+  "document-name": "Document name",
+  "document-name-placeholder": "Enter document name"
+}
