@@ -17,7 +17,7 @@ export const financeTabs: NavTabs = {
     },
     {
       name: 'transaction-categories',
-      href: '/[wsId]/finance/categories',
+      href: '/[wsId]/finance/transactions/categories',
     },
   ],
 };

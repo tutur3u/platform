@@ -3,17 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { walletId } = req.query;
-
-    if (!walletId || typeof walletId !== 'string')
-      throw new Error('Invalid walletId');
+    const { transactionId } = req.query;
+    if (!transactionId || typeof transactionId !== 'string')
+      throw new Error('Invalid ID');
 
     switch (req.method) {
-      case 'GET':
-        return await fetchTransactions(req, res, walletId);
+      case 'PUT':
+        return await updateTransaction(req, res, transactionId);
 
-      case 'POST':
-        return await createTransaction(req, res, walletId);
+      case 'DELETE':
+        return await deleteTransaction(req, res, transactionId);
 
       default:
         throw new Error(
@@ -32,45 +31,46 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchTransactions = async (
+const updateTransaction = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  walletId: string
+  transactionId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { data, error } = await supabase
+  const { description, amount, category_id } = req.body;
+
+  const { error } = await supabase
     .from('wallet_transactions')
-    .select('id, name, amount, created_at, description, wallet_id')
-    .order('created_at')
-    .eq('wallet_id', walletId);
+    .update({
+      description,
+      amount,
+      category_id,
+    })
+    .eq('id', transactionId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
 
-const createTransaction = async (
+const deleteTransaction = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  walletId: string
+  transactionId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name, description, amount } = JSON.parse(req.body);
-
-  const { error } = await supabase.from('wallet_transactions').insert({
-    name,
-    description,
-    amount,
-    wallet_id: walletId,
-  });
+  const { error } = await supabase
+    .from('wallet_transactions')
+    .delete()
+    .eq('id', transactionId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ message: 'Transaction created' });
+  return res.status(200).json({});
 };

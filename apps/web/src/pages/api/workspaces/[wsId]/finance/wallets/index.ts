@@ -1,5 +1,7 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Wallet } from '../../../../../../types/primitives/Wallet';
+import { Transaction } from '../../../../../../types/primitives/Transaction';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -61,16 +63,34 @@ const createWallet = async (
     res,
   });
 
-  const { name, description, balance, currency } = JSON.parse(req.body);
+  const { name, description, balance, currency } = req.body as Wallet;
 
-  const { error } = await supabase.from('workspace_wallets').insert({
-    name,
-    description,
-    balance,
-    currency,
-    ws_id: wsId,
-  });
+  const { data: wallet, error: walletError } = await supabase
+    .from('workspace_wallets')
+    .insert({
+      name,
+      description,
+      currency,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
-  if (error) return res.status(401).json({ error: error.message });
+  if (!wallet) return res.status(401).json({ error: walletError.message });
+
+  if (balance && balance != 0) {
+    const { error: transactionError } = await supabase
+      .from('wallet_transactions')
+      .insert({
+        description: 'Initial deposit',
+        amount: balance,
+        is_expense: false,
+        wallet_id: wallet.id,
+      } as Transaction);
+
+    if (transactionError)
+      return res.status(401).json({ error: transactionError.message });
+  }
+
   return res.status(200).json({});
 };

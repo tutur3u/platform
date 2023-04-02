@@ -43,7 +43,7 @@ const fetchWallet = async (
 
   const { data, error } = await supabase
     .from('workspace_wallets')
-    .select('id, name, balance')
+    .select('name, description, currency, balance')
     .eq('id', walletId)
     .single();
 
@@ -63,14 +63,13 @@ const updateWallet = async (
     res,
   });
 
-  const { name, description, balance, currency } = req.body;
+  const { name, description, currency } = req.body;
 
   const { error } = await supabase
     .from('workspace_wallets')
     .update({
       name,
       description,
-      balance,
       currency,
     })
     .eq('id', walletId);

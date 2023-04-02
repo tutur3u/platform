@@ -1,19 +1,21 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { TransactionCategory } from '../../../../../../../types/primitives/TransactionCategory';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId } = req.query;
-
-    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+    const { categoryId } = req.query;
+    if (!categoryId || typeof categoryId !== 'string')
+      throw new Error('Invalid ID');
 
     switch (req.method) {
       case 'GET':
-        return await fetchCategories(req, res, wsId);
+        return await getCategory(req, res, categoryId);
 
-      case 'POST':
-        return await createCategory(req, res, wsId);
+      case 'PUT':
+        return await updateCategory(req, res, categoryId);
+
+      case 'DELETE':
+        return await deleteCategory(req, res, categoryId);
 
       default:
         throw new Error(
@@ -32,10 +34,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchCategories = async (
+const getCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string
+  categoryId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -44,31 +46,52 @@ const fetchCategories = async (
 
   const { data, error } = await supabase
     .from('transaction_categories')
-    .select('id, name, is_expense')
-    .order('created_at')
-    .eq('ws_id', wsId);
+    .select('id, name, is_expense, created_at')
+    .eq('id', categoryId)
+    .single();
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
 };
 
-const createCategory = async (
+const updateCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string
+  categoryId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name, is_expense } = req.body as TransactionCategory;
+  const { name, is_expense } = req.body;
 
-  const { error } = await supabase.from('transaction_categories').insert({
-    name,
-    is_expense,
-    ws_id: wsId,
+  const { error } = await supabase
+    .from('transaction_categories')
+    .update({
+      name,
+      is_expense,
+    })
+    .eq('id', categoryId);
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json({});
+};
+
+const deleteCategory = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  categoryId: string
+) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
   });
+
+  const { error } = await supabase
+    .from('transaction_categories')
+    .delete()
+    .eq('id', categoryId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

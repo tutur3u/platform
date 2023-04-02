@@ -104,9 +104,36 @@
     "/[wsId]/classes": ["sidebar-tabs"],
 
     "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
+
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/wallets/[walletId]": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "wallet-details-tabs"
+    ],
+    "/[wsId]/finance/wallets/[walletId]/transactions": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "wallet-details-tabs"
+    ],
+
     "/[wsId]/finance/transactions": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/[transactionId]": [
+      "sidebar-tabs",
+      "finance-tabs"
+    ],
+
+    "/[wsId]/finance/transactions/categories": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/categories/new": [
+      "sidebar-tabs",
+      "finance-tabs"
+    ],
+    "/[wsId]/finance/transactions/categories/[categoryId]": [
+      "sidebar-tabs",
+      "finance-tabs"
+    ],
 
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]

@@ -1,50 +1,73 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import PlusCardButton from '../../../../components/common/PlusCardButton';
-import { useLocalStorage } from '@mantine/hooks';
-import { Transaction } from '../../../../types/primitives/Transaction';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import { useRouter } from 'next/router';
+import { Wallet } from '../../../../../types/primitives/Wallet';
 import useSWR from 'swr';
-import TransactionCard from '../../../../components/cards/TransactionCard';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import TransactionCard from '../../../../../components/cards/TransactionCard';
 import ModeSelector, {
   Mode,
-} from '../../../../components/selectors/ModeSelector';
+} from '../../../../../components/selectors/ModeSelector';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Transaction } from '../../../../../types/primitives/Transaction';
+import { useLocalStorage } from '@mantine/hooks';
+import PlusCardButton from '../../../../../components/common/PlusCardButton';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const FinanceTransactionsPage: PageWithLayoutProps = () => {
+const WalletTransactionsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const router = useRouter();
+  const { wsId, walletId } = router.query;
+
+  const apiPath =
+    wsId && walletId
+      ? `/api/workspaces/${wsId}/finance/wallets/${walletId}`
+      : null;
+
+  const { data: wallet } = useSWR<Wallet>(apiPath);
+
   useEffect(() => {
     setRootSegment(
-      ws
+      ws && wallet
         ? [
             {
               content: ws?.name || 'Tổ chức không tên',
-              href: `/${ws.id}`,
+              href: `/${wsId}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: 'Tài chính', href: `/${wsId}/finance` },
+            {
+              content: 'Nguồn tiền',
+              href: `/${wsId}/finance/wallets`,
+            },
+            {
+              content: wallet?.name || 'Nguồn tiền không tên',
+              href: `/${wsId}/finance/wallets/${walletId}`,
+            },
             {
               content: 'Giao dịch',
-              href: `/${ws.id}/finance/transactions`,
+              href: `/${wsId}/finance/wallets/${walletId}/transactions`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [wsId, walletId, ws, wallet, setRootSegment]);
 
-  const apiPath = `/api/workspaces/${ws?.id}/finance/transactions`;
+  const transactionsApiPath =
+    wsId && walletId
+      ? `/api/workspaces/${wsId}/finance/transactions?walletIds=${walletId}`
+      : null;
 
-  const { data: transactions } = useSWR<Transaction[]>(ws?.id ? apiPath : null);
+  const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'finance-transactions-mode',
@@ -63,7 +86,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label="Nguồn tiền – Tài chính" />
       <div className="flex min-h-full w-full flex-col pb-8">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
@@ -96,13 +119,16 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
+          <PlusCardButton
+            href={`/${wsId}/finance/transactions/new?walletId=${walletId}`}
+          />
           {transactions &&
             transactions?.map((c) => (
               <TransactionCard
                 key={c.id}
                 transaction={c}
                 showAmount={showAmount}
+                redirectToWallets
               />
             ))}
         </div>
@@ -111,8 +137,8 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
   );
 };
 
-FinanceTransactionsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="finance">{page}</NestedLayout>;
+WalletTransactionsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="wallet_details">{page}</NestedLayout>;
 };
 
-export default FinanceTransactionsPage;
+export default WalletTransactionsPage;

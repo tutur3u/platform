@@ -216,7 +216,7 @@ values (
         '00000000-0000-0000-0000-000000000004'
     );
 -- Populate transactions
-insert into public.wallet_transactions (name, amount, wallet_id)
+insert into public.wallet_transactions (description, amount, wallet_id)
 values (
         'Transaction 1',
         100000,

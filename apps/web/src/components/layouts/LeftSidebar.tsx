@@ -1,26 +1,13 @@
 import {
   HomeIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  BanknotesIcon,
   Cog6ToothIcon,
-  PlusIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   BuildingOffice2Icon,
-  Squares2X2Icon,
   UserPlusIcon,
-  SquaresPlusIcon,
   ArrowRightOnRectangleIcon,
   XMarkIcon,
-  BeakerIcon,
-  ClockIcon,
-  ArchiveBoxIcon,
-  RectangleStackIcon,
   BellIcon,
-  UserGroupIcon,
-  FingerPrintIcon,
 } from '@heroicons/react/24/outline';
 
 import SidebarLink from './SidebarLink';
@@ -30,17 +17,17 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { Avatar, Divider, Popover, Tooltip } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
-import WorkspaceEditForm from '../forms/WorkspaceEditForm';
-import { openModal } from '@mantine/modals';
 import { getInitials } from '../../utils/name-helper';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import SidebarButton from './SidebarButton';
-import TeamEditForm from '../forms/TeamEditForm';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import useTranslation from 'next-translate/useTranslation';
+import CreateNewButton from './sidebar/CreateNewButton';
+import SidebarLinkList from './sidebar/SidebarLinkList';
+import SidebarTeamList from './sidebar/SidebarTeamList';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
@@ -54,73 +41,16 @@ function LeftSidebar({ className }: SidebarProps) {
     router.push('/');
   };
 
-  const {
-    ws,
-    workspaceInvites,
-    members,
-    teams,
-    teamsLoading,
-    createWorkspace,
-    createTeam,
-  } = useWorkspaces();
-
-  const showEditWorkspaceModal = () => {
-    openModal({
-      title: <div className="font-semibold">New workspace</div>,
-      centered: true,
-      children: <WorkspaceEditForm onSubmit={createWorkspace} />,
-    });
-  };
-
-  const showTeamEditForm = () => {
-    openModal({
-      title: <div className="font-semibold">Create new team</div>,
-      centered: true,
-      children: <TeamEditForm onSubmit={createTeam} />,
-    });
-  };
+  const { ws, workspaceInvites, members } = useWorkspaces();
 
   const [userPopover, setUserPopover] = useState(false);
-  const [newPopover, setNewPopover] = useState(false);
-
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-      window.addEventListener('resize', handleResize);
-      handleResize();
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
 
   const { t } = useTranslation('sidebar-tabs');
 
   const invite = t('invite');
   const moreMembers = t('more-members');
 
-  const newLabel = t('new');
-
-  const newWs = t('new-ws');
-  const newTeam = t('new-team');
-  const newTask = t('new-task');
-  const newNote = t('new-note');
-  const newTransaction = t('new-transaction');
-  const invitePeople = t('invite-people');
-
   const home = t('home');
-  const calendar = t('calendar');
-  const tasks = t('tasks');
-  const documents = t('documents');
-  const users = t('users');
-  const attendance = t('attendance');
-  const healthcare = t('healthcare');
-  const inventory = t('inventory');
-  const classes = t('classes');
-  const finance = t('finance');
-  const activities = t('activities');
   const notifications = t('notifications');
 
   const collapseSidebar = t('collapse-sidebar');
@@ -263,240 +193,28 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Divider variant="dashed" className="my-2" />
               </div>
 
-              <Popover
-                opened={newPopover}
-                onChange={setNewPopover}
-                width={200}
-                offset={16}
-                position={isMobile ? 'bottom-start' : 'right'}
-                positionDependencies={[isMobile]}
-              >
-                <Popover.Target>
-                  <div className="mx-2">
-                    <SidebarButton
-                      label={newLabel}
-                      onClick={() => setNewPopover((o) => !o)}
-                      isActive={newPopover}
-                      activeIcon={<PlusIcon className="w-5" />}
-                      showLabel={sidebar === 'open'}
-                      showTooltip={sidebar === 'closed' && !newPopover}
-                      className="w-full"
-                    />
-                  </div>
-                </Popover.Target>
-
-                <Popover.Dropdown className="mt-2 grid gap-1 p-1">
-                  <SidebarButton
-                    onClick={() => {
-                      setNewPopover(false);
-                      showEditWorkspaceModal();
-                    }}
-                    activeIcon={<BuildingOffice2Icon className="w-5" />}
-                    label={newWs}
-                    left
-                  />
-
-                  <Divider />
-
-                  {ws?.id && (
-                    <SidebarButton
-                      onClick={() => {
-                        setNewPopover(false);
-                        showTeamEditForm();
-                      }}
-                      activeIcon={<Squares2X2Icon className="w-5" />}
-                      label={newTeam}
-                      left
-                    />
-                  )}
-                  <SidebarButton
-                    onClick={() => setNewPopover(false)}
-                    activeIcon={<CheckCircleIcon className="w-5" />}
-                    label={newTask}
-                    left
-                    disabled
-                  />
-                  <SidebarButton
-                    onClick={() => setNewPopover(false)}
-                    activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                    label={newNote}
-                    left
-                    disabled
-                  />
-                  <SidebarButton
-                    onClick={() => setNewPopover(false)}
-                    activeIcon={<BanknotesIcon className="w-5" />}
-                    label={newTransaction}
-                    left
-                    disabled
-                  />
-
-                  {ws?.id && (
-                    <>
-                      <Divider />
-                      <SidebarButton
-                        onClick={() => setNewPopover(false)}
-                        activeIcon={<UserPlusIcon className="w-5" />}
-                        label={invitePeople}
-                        left
-                        disabled
-                      />
-                    </>
-                  )}
-                </Popover.Dropdown>
-              </Popover>
+              <CreateNewButton
+                sidebarOpened={sidebar === 'open'}
+                hasWorkspace={!!ws?.id}
+              />
 
               <Divider className="mt-2" />
 
               <div className="scrollbar-none my-2 h-full overflow-auto">
-                <div className="mx-2 mb-2 flex flex-col gap-1">
-                  <SidebarLink
-                    href={`/${ws.id}`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<HomeIcon className="w-5" />}
-                    label={home}
-                    showTooltip={sidebar === 'closed'}
-                    exactMatch
+                {ws?.preset && (
+                  <SidebarLinkList
+                    wsId={ws.id}
+                    wsPreset={ws.preset}
+                    sidebarOpened={sidebar === 'open'}
                   />
-                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
-                    <SidebarLink
-                      href={`/${ws.id}/calendar`}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<CalendarDaysIcon className="w-5" />}
-                      label={calendar}
-                      showTooltip={sidebar === 'closed'}
-                    />
-                  )}
-                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
-                    <SidebarLink
-                      href={`/${ws.id}/tasks`}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<CheckCircleIcon className="w-5" />}
-                      label={tasks}
-                      showTooltip={sidebar === 'closed'}
-                    />
-                  )}
-                  {(ws?.preset === 'ALL' || ws?.preset === 'GENERAL') && (
-                    <SidebarLink
-                      href={`/${ws.id}/documents`}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-                      label={documents}
-                      showTooltip={sidebar === 'closed'}
-                    />
-                  )}
-                  <SidebarLink
-                    href={`/${ws.id}/users`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<UserGroupIcon className="w-5" />}
-                    label={users}
-                    showTooltip={sidebar === 'closed'}
-                  />
-                  <SidebarLink
-                    href={`/${ws.id}/attendance`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<FingerPrintIcon className="w-5" />}
-                    label={attendance}
-                    showTooltip={sidebar === 'closed'}
-                  />
-                  {(ws?.preset === 'ALL' || ws?.preset === 'PHARMACY') && (
-                    <SidebarLink
-                      href={`/${ws.id}/healthcare`}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<BeakerIcon className="w-5" />}
-                      label={healthcare}
-                      showTooltip={sidebar === 'closed'}
-                    />
-                  )}
-                  <SidebarLink
-                    href={`/${ws.id}/inventory`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<ArchiveBoxIcon className="w-5" />}
-                    label={inventory}
-                    showTooltip={sidebar === 'closed'}
-                  />
-                  {(ws?.preset === 'ALL' || ws?.preset === 'EDUCATION') && (
-                    <SidebarLink
-                      href={`/${ws.id}/classes`}
-                      onClick={() => setUserPopover(false)}
-                      activeIcon={<RectangleStackIcon className="w-5" />}
-                      label={classes}
-                      showTooltip={sidebar === 'closed'}
-                    />
-                  )}
-                  <SidebarLink
-                    href={`/${ws.id}/finance`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<BanknotesIcon className="w-5" />}
-                    label={finance}
-                    showTooltip={sidebar === 'closed'}
-                  />
-                  <SidebarLink
-                    href={`/${ws.id}/activities`}
-                    onClick={() => setUserPopover(false)}
-                    activeIcon={<ClockIcon className="w-5" />}
-                    label={activities}
-                    showTooltip={sidebar === 'closed'}
-                  />
-                </div>
+                )}
 
                 <Divider />
 
-                <div className="m-2">
-                  {teamsLoading || (
-                    <div
-                      className={`flex flex-col ${
-                        sidebar === 'open' ? 'gap-1' : 'gap-2'
-                      }`}
-                    >
-                      {teams &&
-                        teams.map((team) => (
-                          <SidebarLink
-                            key={team.id}
-                            href={`/${ws.id}/teams/${team.id}`}
-                            defaultHighlight={sidebar !== 'closed'}
-                            activeIcon={
-                              <Avatar
-                                radius="sm"
-                                color="blue"
-                                className="bg-blue-500/20"
-                                size={sidebar === 'open' ? 'sm' : 'md'}
-                              >
-                                {team?.name ? (
-                                  getInitials(team.name)
-                                ) : (
-                                  <BuildingOffice2Icon className="w-5" />
-                                )}
-                              </Avatar>
-                            }
-                            inactiveIcon={
-                              <Avatar
-                                radius="sm"
-                                color="blue"
-                                className="hover:bg-blue-500/10"
-                                size={sidebar === 'open' ? 'sm' : 'md'}
-                              >
-                                {team?.name ? (
-                                  getInitials(team.name)
-                                ) : (
-                                  <BuildingOffice2Icon className="w-5" />
-                                )}
-                              </Avatar>
-                            }
-                            label={team?.name || 'Untitled Team'}
-                            showTooltip={sidebar === 'closed'}
-                          />
-                        ))}
-                      <SidebarButton
-                        label={newTeam}
-                        activeIcon={<SquaresPlusIcon className="w-5" />}
-                        showLabel={sidebar === 'open'}
-                        showTooltip={sidebar === 'closed' && !newPopover}
-                        onClick={showTeamEditForm}
-                      />
-                    </div>
-                  )}
-                </div>
+                <SidebarTeamList
+                  wsId={ws.id}
+                  sidebarOpened={sidebar === 'open'}
+                />
               </div>
             </>
           )}
