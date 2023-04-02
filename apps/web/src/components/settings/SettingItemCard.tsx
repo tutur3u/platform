@@ -25,9 +25,9 @@ const SettingItemCard = ({
       <div className="mb-1 text-2xl font-bold">{title}</div>
       <div className="mb-4 font-semibold text-zinc-500">{description}</div>
 
-      <div className="h-full" />
-
       {children}
+
+      <div className="h-full" />
 
       {(onSave || comingSoon) && (
         <>

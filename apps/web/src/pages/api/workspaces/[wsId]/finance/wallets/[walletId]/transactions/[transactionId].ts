@@ -3,16 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId } = req.query;
-
-    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+    const { transactionId } = req.query;
+    if (!transactionId || typeof transactionId !== 'string')
+      throw new Error('Invalid ID');
 
     switch (req.method) {
-      case 'GET':
-        return await fetchWallets(req, res, wsId);
+      case 'PUT':
+        return await updateTransaction(req, res, transactionId);
 
-      case 'POST':
-        return await createWallet(req, res, wsId);
+      case 'DELETE':
+        return await deleteTransaction(req, res, transactionId);
 
       default:
         throw new Error(
@@ -31,46 +31,45 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchWallets = async (
+const updateTransaction = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string
+  transactionId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { data, error } = await supabase
-    .from('workspace_wallets')
-    .select('id, name, balance, currency, created_at, description')
-    .order('created_at')
-    .eq('ws_id', wsId);
+  const { description, amount } = req.body;
+
+  const { error } = await supabase
+    .from('wallet_transactions')
+    .update({
+      description,
+      amount,
+    })
+    .eq('id', transactionId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
 
-const createWallet = async (
+const deleteTransaction = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string
+  transactionId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name, description, balance, currency } = JSON.parse(req.body);
-
-  const { error } = await supabase.from('workspace_wallets').insert({
-    name,
-    description,
-    balance,
-    currency,
-    ws_id: wsId,
-  });
+  const { error } = await supabase
+    .from('wallet_transactions')
+    .delete()
+    .eq('id', transactionId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ message: 'Wallet created' });
+  return res.status(200).json({});
 };

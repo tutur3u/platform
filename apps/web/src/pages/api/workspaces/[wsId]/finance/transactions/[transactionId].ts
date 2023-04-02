@@ -8,6 +8,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       throw new Error('Invalid ID');
 
     switch (req.method) {
+      case 'GET':
+        return await getTransaction(req, res, transactionId);
+
       case 'PUT':
         return await updateTransaction(req, res, transactionId);
 
@@ -31,6 +34,26 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
+const getTransaction = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  transactionId: string
+) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
+
+  const { data, error } = await supabase
+    .from('wallet_transactions')
+    .select('id, description, amount, created_at, wallet_id')
+    .eq('id', transactionId)
+    .single();
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json(data);
+};
+
 const updateTransaction = async (
   req: NextApiRequest,
   res: NextApiResponse,
@@ -41,12 +64,11 @@ const updateTransaction = async (
     res,
   });
 
-  const { name, description, amount } = req.body;
+  const { description, amount } = req.body;
 
   const { error } = await supabase
     .from('wallet_transactions')
     .update({
-      name,
       description,
       amount,
     })

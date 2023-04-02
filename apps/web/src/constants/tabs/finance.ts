@@ -18,6 +18,7 @@ export const financeTabs: NavTabs = {
     {
       name: 'transaction-categories',
       href: '/[wsId]/finance/categories',
+      disabled: true,
     },
   ],
 };

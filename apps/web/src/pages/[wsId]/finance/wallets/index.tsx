@@ -94,7 +94,7 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href="/inventory/products/new" />
+          <PlusCardButton href={`/${ws?.id}/finance/wallets/new`} />
           {wallets &&
             wallets?.map((w: Wallet) => (
               <WalletCard key={w.id} wallet={w} showPrice={showPrice} />
