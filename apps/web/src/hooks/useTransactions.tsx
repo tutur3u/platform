@@ -34,7 +34,6 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
         {
           method: 'POST',
           body: JSON.stringify({
-            name: transaction?.name || '',
             description: transaction?.description || '',
             amount: transaction?.amount || 0,
           }),
@@ -68,7 +67,6 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name: transaction?.name || '',
             description: transaction?.description || '',
             amount: transaction?.amount || 0,
           }),
