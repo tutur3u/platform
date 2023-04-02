@@ -107,6 +107,6 @@
     "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/activities": ["sidebar-tabs"],
-    "/[wsId]/notifications": ["invite", "sidebar-tabs"]
+    "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
 }
