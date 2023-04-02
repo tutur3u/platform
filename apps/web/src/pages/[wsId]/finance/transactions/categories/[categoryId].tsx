@@ -59,8 +59,8 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (!category) return;
-    setName(category.name);
-    setIsExpense(category.is_expense);
+    setName(category.name || '');
+    setIsExpense(category.is_expense || true);
   }, [category]);
 
   const hasRequiredFields = () => name.length > 0;
@@ -154,6 +154,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
+              disabled={!category}
             />
           </SettingItemCard>
 
@@ -172,6 +173,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
                 { label: 'Chi tiêu', value: 'expense' },
                 { label: 'Thu nhập', value: 'income' },
               ]}
+              disabled={!category}
             />
           </SettingItemCard>
         </div>
