@@ -5,7 +5,6 @@ import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
-import { useRouter } from 'next/router';
 
 interface Props {
   ws: Workspace;
@@ -13,7 +12,6 @@ interface Props {
 }
 
 const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
-  const router = useRouter();
   const { t, lang } = useTranslation('invite');
 
   const creationDate = moment(ws?.created_at).locale(lang).fromNow();
@@ -42,18 +40,12 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
 
     if (response.ok) {
       mutate('/api/workspaces/invites');
+      mutate('/api/workspaces');
       showNotification({
         title: acceptInviteSuccessTitle,
         message: acceptInviteSuccessMessage,
         color: 'teal',
       });
-
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { redirectedFrom: nextUrl } = router.query;
-
-      if (nextUrl) router.push(nextUrl.toString());
-      else if (ws.id) router.push(`/${ws.id}`);
     } else {
       showNotification({
         title: acceptInviteErrorTitle,

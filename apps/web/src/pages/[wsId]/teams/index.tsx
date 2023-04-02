@@ -78,7 +78,7 @@ const WorkspaceTeamsPage = () => {
   };
 
   return (
-    <>
+    <div className="pb-8">
       <HeaderX label={`Teams – ${ws?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (
@@ -94,10 +94,9 @@ const WorkspaceTeamsPage = () => {
               Organize work into teams and track progress with ease.
             </p>
           </div>
+          <Divider className="my-4" />
         </>
       )}
-
-      <Divider className="my-4" />
 
       {wsId && (
         <button
@@ -133,7 +132,7 @@ const WorkspaceTeamsPage = () => {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
