@@ -22,7 +22,9 @@
 
     "/[wsId]/calendar": ["sidebar-tabs"],
     "/[wsId]/tasks": ["sidebar-tabs"],
-    "/[wsId]/documents": ["sidebar-tabs"],
+
+    "/[wsId]/documents": ["sidebar-tabs", "documents"],
+    "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
 
     "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
 

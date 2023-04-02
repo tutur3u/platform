@@ -30,6 +30,7 @@ import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
 const ProjectDocumentEditor = () => {
   const router = useRouter();
@@ -43,6 +44,10 @@ const ProjectDocumentEditor = () => {
 
   const { setRootSegment } = useSegments();
 
+  const { t } = useTranslation('documents');
+
+  const documentsLabel = t('documents');
+
   useEffect(() => {
     setRootSegment(
       ws
@@ -51,7 +56,7 @@ const ProjectDocumentEditor = () => {
               content: ws.name || 'Unnamed Workspace',
               href: `/${ws.id}`,
             },
-            { content: 'Documents', href: `/${ws.id}/documents` },
+            { content: documentsLabel, href: `/${ws.id}/documents` },
             {
               content: doc ? doc?.name || 'Untitled Document' : 'Loading...',
               href: `/${ws.id}/documents/${docId}`,
@@ -59,7 +64,7 @@ const ProjectDocumentEditor = () => {
           ]
         : []
     );
-  }, [ws, docId, doc, setRootSegment]);
+  }, [ws, docId, doc, documentsLabel, setRootSegment]);
 
   const [name, setName] = useState<string | null>();
   const [content, setContent] = useState<string | null>();

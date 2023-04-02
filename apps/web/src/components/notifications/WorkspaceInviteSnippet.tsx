@@ -2,9 +2,9 @@ import moment from 'moment';
 import { Workspace } from '../../types/primitives/Workspace';
 import { Divider } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
-import 'moment/locale/vi';
 import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
+import 'moment/locale/vi';
 
 interface Props {
   ws: Workspace;

@@ -1,0 +1,13 @@
+{
+  "documents": "Tài liệu",
+  "new-document": "Tài liệu mới",
+  "create": "Tạo",
+  "save": "Lưu",
+  "delete": "Xóa",
+  "creating": "Đang tạo",
+  "no-documents": "Không có tài liệu nào trong không gian làm việc này",
+  "create-new-document": "Tạo tài liệu mới",
+  "create-document-error": "Đã xảy ra lỗi khi tạo tài liệu.",
+  "document-name": "Tên tài liệu",
+  "document-name-placeholder": "Nhập tên tài liệu"
+}

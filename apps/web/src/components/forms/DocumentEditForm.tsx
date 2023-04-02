@@ -3,6 +3,7 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { Document } from '../../types/primitives/Document';
+import useTranslation from 'next-translate/useTranslation';
 
 interface DocumentEditFormProps {
   doc?: Document;
@@ -15,13 +16,21 @@ const DocumentEditForm = ({
   onSubmit,
   onDelete,
 }: DocumentEditFormProps) => {
+  const { t } = useTranslation('documents');
   const [name, setName] = useState(doc?.name || '');
+
+  const documentNameLabel = t('document-name');
+  const documentNamePlaceholder = t('document-name-placeholder');
+
+  const deleteLabel = t('delete');
+  const createLabel = t('create');
+  const saveLabel = t('save');
 
   return (
     <>
       <TextInput
-        label="Document name"
-        placeholder="Enter document name"
+        label={documentNameLabel}
+        placeholder={documentNamePlaceholder}
         value={name}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setName(event.currentTarget.value)
@@ -38,7 +47,7 @@ const DocumentEditForm = ({
             onClick={onDelete}
             mt="md"
           >
-            Delete
+            {deleteLabel}
           </Button>
         )}
         <Button
@@ -51,7 +60,7 @@ const DocumentEditForm = ({
           }}
           mt="md"
         >
-          {doc?.id ? 'Save' : 'Add'}
+          {doc?.id ? saveLabel : createLabel}
         </Button>
       </div>
     </>

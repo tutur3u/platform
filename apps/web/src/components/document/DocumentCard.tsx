@@ -3,6 +3,8 @@ import { Document } from '../../types/primitives/Document';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import useTranslation from 'next-translate/useTranslation';
+import 'moment/locale/vi';
 
 interface Props {
   wsId: string;
@@ -13,6 +15,10 @@ interface Props {
 const DocumentCard = ({ wsId, document, mode }: Props) => {
   const { id, name, content, created_at } = document;
   const href = id ? `/${wsId}/documents/${id}` : '';
+
+  const { lang } = useTranslation();
+
+  const creationDate = moment(created_at).locale(lang).fromNow();
 
   return (
     <Link
@@ -50,7 +56,7 @@ const DocumentCard = ({ wsId, document, mode }: Props) => {
       >
         <div className="flex max-w-full items-center gap-1 rounded-lg bg-blue-300/10 px-2 py-1.5 text-blue-300">
           <DocumentPlusIcon className="w-5 flex-none" />
-          <div className="line-clamp-1">{moment(created_at).fromNow()}</div>
+          <div className="line-clamp-1">{creationDate}</div>
         </div>
       </div>
     </Link>
