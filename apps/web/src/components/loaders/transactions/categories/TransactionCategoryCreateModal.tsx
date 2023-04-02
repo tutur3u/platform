@@ -17,7 +17,7 @@ interface Progress {
   created: Status;
 }
 
-const TransactionCreateModal = ({ wsId, category }: Props) => {
+const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -175,4 +175,4 @@ const TransactionCreateModal = ({ wsId, category }: Props) => {
   );
 };
 
-export default TransactionCreateModal;
+export default TransactionCategoryCreateModal;

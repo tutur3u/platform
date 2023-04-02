@@ -45,7 +45,7 @@ const fetchTransactions = async (
 
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('id, amount, created_at, description, wallet_id')
+    .select('id, amount, created_at, description, wallet_id, category_id')
     .order('created_at')
     .eq('wallet_id', walletId);
 
@@ -63,11 +63,12 @@ const createTransaction = async (
     res,
   });
 
-  const { description, amount } = req.body as Transaction;
+  const { description, amount, category_id } = req.body as Transaction;
 
   const { error } = await supabase.from('wallet_transactions').insert({
     description,
     amount,
+    category_id,
     wallet_id: walletId,
   });
 

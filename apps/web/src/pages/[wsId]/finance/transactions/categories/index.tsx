@@ -1,20 +1,20 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Divider, Pagination, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import PlusCardButton from '../../../../components/common/PlusCardButton';
+import PlusCardButton from '../../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
-import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
+import { TransactionCategory } from '../../../../../types/primitives/TransactionCategory';
 import useSWR from 'swr';
-import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import GeneralItemCard from '../../../../../components/cards/GeneralItemCard';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import ModeSelector, {
   Mode,
-} from '../../../../components/selectors/ModeSelector';
+} from '../../../../../components/selectors/ModeSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -33,7 +33,7 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
             { content: 'Tài chính', href: `/${ws.id}/finance` },
             {
               content: 'Danh mục giao dịch',
-              href: `/${ws.id}/finance/categories`,
+              href: `/${ws.id}/finance/transactions/categories`,
             },
           ]
         : []
@@ -86,12 +86,14 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href="/inventory/products/new" />
+          <PlusCardButton
+            href={`/${ws.id}/finance/transactions/categories/new`}
+          />
           {categories &&
             categories?.map((c) => (
               <GeneralItemCard
                 key={c.id}
-                href={`/${ws.id}}/inventory/products/${c.id}`}
+                href={`/${ws.id}/finance/transactions/categories/${c.id}`}
                 name={c.name}
               />
             ))}

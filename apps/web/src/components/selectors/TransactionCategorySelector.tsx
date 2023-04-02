@@ -6,18 +6,22 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 
 interface Props {
+  categoryId?: string;
   category: TransactionCategory | null;
   setCategory: (category: TransactionCategory | null) => void;
 
   blacklist?: string[];
 
   softDisabled?: boolean;
+  preventPreselected?: boolean;
   disabled?: boolean;
   required?: boolean;
+  clearable?: boolean;
   className?: string;
 }
 
 const TransactionCategorySelector = ({
+  categoryId: _categoryId,
   category,
   setCategory,
 
@@ -25,8 +29,10 @@ const TransactionCategorySelector = ({
 
   className,
 
+  preventPreselected = false,
   disabled = false,
   required = false,
+  clearable = false,
 }: Props) => {
   const {
     query: { categoryId },
@@ -55,13 +61,23 @@ const TransactionCategorySelector = ({
   useEffect(() => {
     if (!categorys || !setCategory || category?.id) return;
 
-    if (categoryId && categorys.find((v) => v.id === categoryId)) {
-      setCategory(categorys.find((v) => v.id === categoryId) || null);
+    const id = _categoryId || categoryId;
+
+    if (id && categorys.find((v) => v.id === id)) {
+      setCategory(categorys.find((v) => v.id === id) || null);
       return;
     }
 
-    if (categorys.length === 1) setCategory(categorys[0]);
-  }, [categoryId, category, categorys, setCategory]);
+    if (preventPreselected) return;
+    setCategory(categorys?.[0]);
+  }, [
+    _categoryId,
+    categoryId,
+    category,
+    categorys,
+    setCategory,
+    preventPreselected,
+  ]);
 
   return (
     <Select
@@ -98,6 +114,7 @@ const TransactionCategorySelector = ({
       }}
       disabled={!categorys || disabled}
       required={required}
+      clearable={clearable}
       searchable
     />
   );

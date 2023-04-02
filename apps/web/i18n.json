@@ -125,9 +125,15 @@
       "finance-tabs"
     ],
 
-    "/[wsId]/finance/categories": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/categories/new": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/categories/[categoryId]": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/categories": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/categories/new": [
+      "sidebar-tabs",
+      "finance-tabs"
+    ],
+    "/[wsId]/finance/transactions/categories/[categoryId]": [
+      "sidebar-tabs",
+      "finance-tabs"
+    ],
 
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]

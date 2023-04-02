@@ -3,19 +3,19 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { transactionId } = req.query;
-    if (!transactionId || typeof transactionId !== 'string')
+    const { categoryId } = req.query;
+    if (!categoryId || typeof categoryId !== 'string')
       throw new Error('Invalid ID');
 
     switch (req.method) {
       case 'GET':
-        return await getTransaction(req, res, transactionId);
+        return await getCategory(req, res, categoryId);
 
       case 'PUT':
-        return await updateTransaction(req, res, transactionId);
+        return await updateCategory(req, res, categoryId);
 
       case 'DELETE':
-        return await deleteTransaction(req, res, transactionId);
+        return await deleteCategory(req, res, categoryId);
 
       default:
         throw new Error(
@@ -34,10 +34,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const getTransaction = async (
+const getCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  transactionId: string
+  categoryId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -45,44 +45,43 @@ const getTransaction = async (
   });
 
   const { data, error } = await supabase
-    .from('wallet_transactions')
-    .select('id, description, amount, created_at, wallet_id, category_id')
-    .eq('id', transactionId)
+    .from('transaction_categories')
+    .select('id, name, is_expense, created_at')
+    .eq('id', categoryId)
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
 };
 
-const updateTransaction = async (
+const updateCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  transactionId: string
+  categoryId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { description, amount, category_id } = req.body;
+  const { name, is_expense } = req.body;
 
   const { error } = await supabase
-    .from('wallet_transactions')
+    .from('transaction_categories')
     .update({
-      description,
-      amount,
-      category_id,
+      name,
+      is_expense,
     })
-    .eq('id', transactionId);
+    .eq('id', categoryId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteTransaction = async (
+const deleteCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  transactionId: string
+  categoryId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -90,9 +89,9 @@ const deleteTransaction = async (
   });
 
   const { error } = await supabase
-    .from('wallet_transactions')
+    .from('transaction_categories')
     .delete()
-    .eq('id', transactionId);
+    .eq('id', categoryId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

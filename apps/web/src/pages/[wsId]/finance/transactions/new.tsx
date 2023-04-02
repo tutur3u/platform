@@ -47,6 +47,13 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [category, setCategory] = useState<TransactionCategory | null>(null);
 
+  useEffect(() => {
+    if (!category) return;
+    setAmount((oldAmount) =>
+      category.is_expense === false ? Math.abs(oldAmount) : -Math.abs(oldAmount)
+    );
+  }, [category, amount]);
+
   const hasRequiredFields = () => amount != 0 && wallet;
 
   const showCreateModal = () => {
@@ -64,6 +71,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           transaction={{
             description,
             amount,
+            category_id: category?.id,
           }}
           redirectUrl={`/${ws.id}/finance/transactions`}
         />
@@ -111,12 +119,17 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             <NumberInput
               placeholder="Nhập số tiền"
               value={amount}
-              onChange={(num) => setAmount(Number(num))}
+              onChange={(num) =>
+                category
+                  ? setAmount(
+                      Number(num) * (category?.is_expense === false ? 1 : -1)
+                    )
+                  : setAmount(Number(num))
+              }
               className="w-full"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
-              min={0}
               parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
               formatter={(value) =>
                 !Number.isNaN(parseFloat(value || ''))

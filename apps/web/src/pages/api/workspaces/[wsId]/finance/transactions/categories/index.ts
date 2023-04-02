@@ -1,22 +1,19 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { TransactionCategory } from '../../../../../../../types/primitives/TransactionCategory';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId, walletId } = req.query;
+    const { wsId } = req.query;
 
     if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchTransactionCategorys(req, res, wsId);
+        return await fetchCategories(req, res, wsId);
 
-      case 'POST': {
-        if (!walletId || typeof walletId !== 'string')
-          throw new Error('Invalid walletId');
-
-        return await createTransactionCategory(req, res, walletId);
-      }
+      case 'POST':
+        return await createCategory(req, res, wsId);
 
       default:
         throw new Error(
@@ -35,7 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchTransactionCategorys = async (
+const fetchCategories = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -55,7 +52,7 @@ const fetchTransactionCategorys = async (
   return res.status(200).json(data);
 };
 
-const createTransactionCategory = async (
+const createCategory = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -65,7 +62,7 @@ const createTransactionCategory = async (
     res,
   });
 
-  const { name, is_expense } = JSON.parse(req.body);
+  const { name, is_expense } = req.body as TransactionCategory;
 
   const { error } = await supabase.from('transaction_categories').insert({
     name,
