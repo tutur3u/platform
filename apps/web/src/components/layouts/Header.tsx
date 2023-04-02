@@ -6,7 +6,7 @@ export default function Header() {
   const { setSidebar } = useAppearance();
 
   return (
-    <div className="fixed z-10 flex h-fit w-full items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-2 backdrop-blur-lg md:hidden">
+    <div className="fixed z-10 flex h-fit w-full items-center justify-between border-b  border-zinc-800 bg-[#111113]/70 p-2 backdrop-blur-md md:hidden">
       <button
         className="rounded p-2 transition hover:bg-zinc-300/10"
         onClick={() => setSidebar('open')}

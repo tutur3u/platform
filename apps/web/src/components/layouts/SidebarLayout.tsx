@@ -29,7 +29,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
         )} transition-all duration-300`}
       >
         <Header />
-        <div className="mt-16 md:mt-0">{children}</div>
+        <div className="relative mt-[calc(3.5rem+1px)] md:mt-0">{children}</div>
       </main>
     </div>
   );

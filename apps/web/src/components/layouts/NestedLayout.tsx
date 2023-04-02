@@ -40,7 +40,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
       <nav
         className={`${
           noTabs ? 'h-16' : 'h-25'
-        } w-full flex-none border-b border-zinc-800`}
+        } fixed z-10 w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
       >
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
           {onFavorite && (
@@ -114,10 +114,11 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           </div>
         )}
       </nav>
+
       <div
         className={`${
-          noTabs ? 'h-[calc(100vh-4rem)]' : 'h-[calc(100vh-13rem)]'
-        } px-4 py-8 md:px-8 lg:px-16 xl:px-32`}
+          noTabs ? 'h-[calc(100vh-4rem)] pt-24' : 'h-[calc(100vh-13rem)] pt-32'
+        } px-4 md:px-8 lg:px-16 xl:px-32`}
       >
         {children}
       </div>
