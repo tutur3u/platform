@@ -40,14 +40,14 @@ export default function SidebarButton({
     >
       <div
         onClick={disabled ? undefined : onClick}
-        className={`flex cursor-pointer items-center gap-2 rounded p-2 ${
+        className={`flex items-center gap-2 rounded p-2 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
         } ${
           disabled
             ? 'cursor-not-allowed text-zinc-600'
             : isActive
-            ? 'bg-zinc-300/10 text-zinc-100'
-            : 'text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
+            ? 'cursor-pointer bg-zinc-300/10 text-zinc-100'
+            : 'cursor-pointer text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
         } ${className}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
