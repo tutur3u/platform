@@ -3,7 +3,7 @@
   "accept-invite": "Accept Invite",
   "decline-invite": "Decline Invite",
   "accept-invite-success-title": "You have successfully accepted the invite.",
-  "accept-invite-success-msg": "You will be redirected to the workspace shortly.",
+  "accept-invite-success-msg": "You can now access this workspace.",
   "decline-invite-success-title": "You have successfully declined the invite.",
   "decline-invite-success-msg": "This invite will no longer be visible.",
   "accept-invite-error-title": "There was an error accepting the invite.",

@@ -5,6 +5,7 @@ import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-work
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import StatisticCard from '../../../components/cards/StatisticCard';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -37,7 +38,12 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Bệnh nhân – Khám bệnh" />
-      <div className="flex min-h-full w-full flex-col pb-8"></div>
+      <div className="flex min-h-full w-full flex-col pb-8">
+        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatisticCard title="Người dùng" href={`/${ws?.id}/users/list`} />
+          <StatisticCard title="Vai trò" href={`/${ws?.id}/users/roles`} />
+        </div>
+      </div>
     </>
   );
 };
