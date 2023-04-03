@@ -41,7 +41,7 @@ const fetchVitals = async (
     res,
   });
 
-  const { blacklist } = req.query;
+  const { blacklist, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('healthcare_vitals')
@@ -52,6 +52,27 @@ const fetchVitals = async (
   if (blacklist && typeof blacklist === 'string') {
     // const blacklistArray = blacklist.split(',');
     queryBuilder.not('id', 'in', `(${blacklist})`);
+  }
+
+  if (query) {
+    queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    console.log(start, end);
+
+    queryBuilder.range(start, end).limit(parsedSize);
   }
 
   const { data, error } = await queryBuilder;

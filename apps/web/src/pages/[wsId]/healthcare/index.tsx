@@ -6,6 +6,7 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import { useSegments } from '../../../hooks/useSegments';
 import StatisticCard from '../../../components/cards/StatisticCard';
+import useSWR from 'swr';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -33,6 +34,32 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const prescriptionsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/prescriptions/count`
+    : null;
+
+  const checkupsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/checkups/count`
+    : null;
+
+  const diagnosesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/diagnoses/count`
+    : null;
+
+  const vitalsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/vitals/count`
+    : null;
+
+  const groupsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/vital-groups/count`
+    : null;
+
+  const { data: prescriptions } = useSWR<number>(prescriptionsCountApi);
+  const { data: checkups } = useSWR<number>(checkupsCountApi);
+  const { data: diagnoses } = useSWR<number>(diagnosesCountApi);
+  const { data: vitals } = useSWR<number>(vitalsCountApi);
+  const { data: groups } = useSWR<number>(groupsCountApi);
+
   return (
     <>
       <HeaderX label="Tổng quan – Khám bệnh" />
@@ -40,23 +67,31 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Đơn thuốc"
+            value={prescriptions}
             href={`/${ws?.id}/healthcare/prescriptions`}
           />
 
           <StatisticCard
             title="Kiểm tra sức khoẻ"
+            value={checkups}
             href={`/${ws?.id}/healthcare/checkups`}
           />
 
           <StatisticCard
             title="Chẩn đoán"
+            value={diagnoses}
             href={`/${ws?.id}/healthcare/diagnoses`}
           />
 
-          <StatisticCard title="Chỉ số" href={`/${ws?.id}/healthcare/vitals`} />
+          <StatisticCard
+            title="Chỉ số"
+            value={vitals}
+            href={`/${ws?.id}/healthcare/vitals`}
+          />
 
           <StatisticCard
             title="Nhóm chỉ số"
+            value={groups}
             href={`/${ws?.id}/healthcare/vital-groups`}
           />
         </div>

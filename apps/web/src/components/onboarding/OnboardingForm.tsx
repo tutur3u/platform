@@ -52,15 +52,25 @@ const OnboardingForm = () => {
   const { workspaces, workspaceInvites } = useWorkspaces();
 
   useEffect(() => {
-    if (!workspaces || !workspaces?.length || !workspaces[0]?.id) return;
+    const fetchWorkspaces = async () => {
+      const res = await fetch('/api/workspaces');
+      const data = await res.json();
+
+      if (data?.length > 0) router.push(`/${data?.[0]?.id}`);
+    };
+
     if (!profileCompleted) return;
 
     // If there is a redirectedFrom URL, redirect to it
     // Otherwise, redirect to the homepage
     const { redirectedFrom: nextUrl } = router.query;
 
-    if (nextUrl) router.push(nextUrl.toString());
-    else if (workspaces?.[0]?.id) router.push(`/${workspaces[0].id}`);
+    if (nextUrl) {
+      router.push(nextUrl.toString());
+      return;
+    }
+
+    fetchWorkspaces();
   }, [router, workspaces, profileCompleted]);
 
   const { t } = useTranslation('onboarding');
@@ -126,7 +136,7 @@ const OnboardingForm = () => {
                       <WorkspaceInviteSnippet key={ws.id} ws={ws} />
                     ))
                   ) : (
-                    <div className="flex h-full items-center justify-center text-center text-2xl font-semibold text-zinc-300/70">
+                    <div className="flex h-full items-center justify-center px-8 py-16 text-center text-2xl font-semibold text-zinc-300/70">
                       {noInvites}
                     </div>
                   )}

@@ -25,7 +25,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (!session.user?.email || !session.user.email.endsWith('@tuturuuu.com'))
     return {
       redirect: {
-        destination: '/home',
+        destination: '/onboarding',
         permanent: false,
       },
     };
