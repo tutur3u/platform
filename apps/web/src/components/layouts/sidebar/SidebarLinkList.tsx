@@ -52,6 +52,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
           activeIcon={<CalendarDaysIcon className="w-5" />}
           label={calendar}
           showTooltip={!sidebarOpened}
+          disabled
         />
       )}
 
@@ -61,6 +62,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
           activeIcon={<CheckCircleIcon className="w-5" />}
           label={tasks}
           showTooltip={!sidebarOpened}
+          disabled
         />
       )}
 
@@ -85,6 +87,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<FingerPrintIcon className="w-5" />}
         label={attendance}
         showTooltip={!sidebarOpened}
+        disabled
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'PHARMACY') && (
@@ -109,6 +112,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
           activeIcon={<RectangleStackIcon className="w-5" />}
           label={classes}
           showTooltip={!sidebarOpened}
+          disabled
         />
       )}
 
@@ -124,6 +128,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<ClockIcon className="w-5" />}
         label={activities}
         showTooltip={!sidebarOpened}
+        disabled
       />
     </div>
   );

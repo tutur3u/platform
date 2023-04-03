@@ -2,6 +2,7 @@ import { Tooltip } from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAppearance } from '../../hooks/useAppearance';
+import { DEV_MODE } from '../../constants/common';
 
 interface SidebarLinkProps {
   href?: string;
@@ -19,6 +20,7 @@ interface SidebarLinkProps {
   left?: boolean;
   className?: string;
   exactMatch?: boolean;
+  disabled?: boolean;
 }
 
 export default function SidebarLink({
@@ -36,6 +38,7 @@ export default function SidebarLink({
   left = false,
   className,
   exactMatch = false,
+  disabled = false,
 }: SidebarLinkProps) {
   const router = useRouter();
   const { wsId, teamId } = router.query;
@@ -54,10 +57,13 @@ export default function SidebarLink({
       : enhancedPath.startsWith(href)
     : false;
 
+  if (disabled && !DEV_MODE) return null;
+
   return (
     <Link
-      href={href || '#'}
-      onClick={() => {
+      href={disabled ? '#' : href || '#'}
+      onClick={(e) => {
+        if (disabled) e.preventDefault();
         if (onClick) onClick();
         if (window && window.innerWidth <= 768) setSidebar('closed');
       }}
@@ -71,7 +77,9 @@ export default function SidebarLink({
       >
         <div
           className={`flex items-center gap-2 rounded ${
-            defaultHighlight
+            disabled
+              ? 'cursor-not-allowed p-2 text-zinc-300/50'
+              : defaultHighlight
               ? defaultActive && isActive
                 ? 'bg-zinc-300/10 p-2 text-zinc-100'
                 : 'p-2 text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
