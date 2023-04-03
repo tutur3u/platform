@@ -37,7 +37,7 @@
     "/[wsId]/users/roles": ["sidebar-tabs", "workspace-users-tabs"],
 
     "/[wsId]/users/new": ["sidebar-tabs"],
-    "/[wsId]/users/[userId]": ["sidebar-tabs"],
+    "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],
 
     "/[wsId]/attendance": ["sidebar-tabs"],
 

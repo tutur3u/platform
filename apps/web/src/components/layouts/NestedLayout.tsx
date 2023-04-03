@@ -10,6 +10,7 @@ import SidebarLayout from './SidebarLayout';
 import useTranslation from 'next-translate/useTranslation';
 import { getTabs } from '../../utils/tab-helper';
 import { Mode } from '../../types/Tab';
+import { DEV_MODE } from '../../constants/common';
 
 interface NestedLayoutProps {
   children: React.ReactNode;
@@ -83,34 +84,36 @@ const NestedLayout: FC<NestedLayoutProps> = ({
         </div>
         {noTabs || (
           <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
-            {tabs.map((tab) => (
-              <Link
-                key={`tab-${tab.href}`}
-                href={tab.disabled ? '#' : tab.href}
-                onClick={(e) => {
-                  if (tab.disabled) e.preventDefault();
-                }}
-                className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
-                  tab.disabled
-                    ? 'cursor-not-allowed border-transparent text-zinc-500/80 opacity-50'
-                    : segments &&
-                      segments.length > 0 &&
-                      segments.slice(-1)[0].href === tab.href
-                    ? 'border-zinc-300 text-zinc-300'
-                    : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
-                }`}
-              >
-                <div
-                  className={`rounded px-4 py-1 text-center font-semibold ${
+            {tabs
+              .filter((tab) => DEV_MODE || !tab.disabled)
+              .map((tab) => (
+                <Link
+                  key={`tab-${tab.href}`}
+                  href={tab.disabled ? '#' : tab.href}
+                  onClick={(e) => {
+                    if (tab.disabled) e.preventDefault();
+                  }}
+                  className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
                     tab.disabled
-                      ? 'cursor-not-allowed'
-                      : 'md:group-hover:bg-zinc-800'
+                      ? 'cursor-not-allowed border-transparent text-zinc-500/80 opacity-50'
+                      : segments &&
+                        segments.length > 0 &&
+                        segments.slice(-1)[0].href === tab.href
+                      ? 'border-zinc-300 text-zinc-300'
+                      : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
                   }`}
                 >
-                  {tab.name}
-                </div>
-              </Link>
-            ))}
+                  <div
+                    className={`rounded px-4 py-1 text-center font-semibold ${
+                      tab.disabled
+                        ? 'cursor-not-allowed'
+                        : 'md:group-hover:bg-zinc-800'
+                    }`}
+                  >
+                    {tab.name}
+                  </div>
+                </Link>
+              ))}
           </div>
         )}
       </nav>

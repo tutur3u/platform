@@ -1,4 +1,6 @@
 {
   "information": "Information",
-  "transactions": "Transactions"
+  "transactions": "Transactions",
+  "access": "Access",
+  "activity": "Activity"
 }
