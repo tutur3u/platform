@@ -1,18 +1,20 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useLocalStorage } from '@mantine/hooks';
-import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
+import ModeSelector, {
+  Mode,
+} from '../../../../components/selectors/ModeSelector';
 import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import PlusCardButton from '../../../components/common/PlusCardButton';
-import PatientCard from '../../../components/cards/PatientCard';
+import PlusCardButton from '../../../../components/common/PlusCardButton';
 import useSWR from 'swr';
-import { useSegments } from '../../../hooks/useSegments';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
+import { useSegments } from '../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
+import { UserRole } from '../../../../types/primitives/UserRole';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -40,26 +42,16 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const apiPath = `/api/workspaces/${ws?.id}/users`;
-  const { data: users } = useSWR<WorkspaceUser[]>(ws?.id ? apiPath : null);
+  const apiPath = ws?.id ? `/api/workspaces/${ws?.id}/users/roles` : null;
+  const { data: roles } = useSWR<UserRole[]>(apiPath);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',
     defaultValue: 'grid',
   });
 
-  const [showPhone, setShowPhone] = useLocalStorage({
-    key: 'workspace-users-showPhone',
-    defaultValue: true,
-  });
-
-  const [showGender, setShowGender] = useLocalStorage({
-    key: 'workspace-users-showGender',
-    defaultValue: true,
-  });
-
-  const [showAddress, setShowAddress] = useLocalStorage({
-    key: 'workspace-users-showAddress',
+  const [showUsers, setShowUsers] = useLocalStorage({
+    key: 'workspace-users-roles-showUsers',
     defaultValue: true,
   });
 
@@ -70,7 +62,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Bệnh nhân – Khám bệnh" />
+      <HeaderX label="Vai trò – Người dùng" />
       <div className="flex min-h-full w-full flex-col pb-8">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
@@ -87,19 +79,9 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <div className="col-span-2 hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số điện thoại"
-            checked={showPhone}
-            onChange={(event) => setShowPhone(event.currentTarget.checked)}
-          />
-          <Switch
-            label="Hiển thị giới tính"
-            checked={showGender}
-            onChange={(event) => setShowGender(event.currentTarget.checked)}
-          />
-          <Switch
-            label="Hiển thị địa chỉ"
-            checked={showAddress}
-            onChange={(event) => setShowAddress(event.currentTarget.checked)}
+            label="Hiển thị số người dùng"
+            checked={showUsers}
+            onChange={(event) => setShowUsers(event.currentTarget.checked)}
           />
         </div>
 
@@ -113,15 +95,14 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href={`/${ws.id}/users/new`} />
-          {users &&
-            users?.map((u) => (
-              <PatientCard
-                key={u.id}
-                user={u}
-                showAddress={showAddress}
-                showGender={showGender}
-                showPhone={showPhone}
+          <PlusCardButton href={`/${ws.id}/users/roles/new`} />
+          {roles &&
+            roles?.map((r) => (
+              <GeneralItemCard
+                key={r.id}
+                name={r.name}
+                href={`/${ws.id}/users/roles/${r.id}`}
+                showAmount={showUsers}
               />
             ))}
         </div>

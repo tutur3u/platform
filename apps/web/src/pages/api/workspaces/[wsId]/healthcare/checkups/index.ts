@@ -42,13 +42,38 @@ const fetchCheckups = async (
     res,
   });
 
-  const { data, error } = await supabase
+  const { query, page, itemsPerPage } = req.query;
+
+  const queryBuilder = supabase
     .from('healthcare_checkups')
     .select(
       'id, patient_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
     )
     .eq('ws_id', wsId)
     .order('created_at');
+
+  if (query) {
+    queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    console.log(start, end);
+
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data as Checkup[]);

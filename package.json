@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "buildx": "pnpm i && turbo run build",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
     "lint": "turbo run lint",

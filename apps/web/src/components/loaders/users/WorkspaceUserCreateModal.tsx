@@ -31,7 +31,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     if (hasSuccess)
       showNotification({
         title: 'Thành công',
-        message: 'Đã tạo bệnh nhân',
+        message: 'Đã tạo người dùng',
         color: 'green',
       });
   }, [hasSuccess]);
@@ -52,7 +52,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể tạo bệnh nhân',
+        message: 'Không thể tạo người dùng',
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -81,16 +81,16 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo bệnh nhân"
+          title="Tạo người dùng"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo bệnh nhân</div>
+            <div className="text-green-300">Đã tạo người dùng</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo bệnh nhân</div>
+            <div className="text-red-300">Không thể tạo người dùng</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo bệnh nhân</div>
+            <div className="text-blue-300">Đang tạo người dùng</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo bệnh nhân</div>
+            <div className="text-zinc-400/80">Đang chờ tạo người dùng</div>
           )}
         </Timeline.Item>
 
@@ -125,7 +125,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem bệnh nhân
+            Xem người dùng
           </Link>
         )}
 

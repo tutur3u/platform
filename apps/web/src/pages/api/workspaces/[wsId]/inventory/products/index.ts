@@ -42,19 +42,40 @@ const fetchProducts = async (
     res,
   });
 
-  const { categoryIds, unique, hasUnit } = req.query;
+  const { categoryIds, unique, hasUnit, query, page, itemsPerPage } = req.query;
 
   if (unique) {
     const queryBuilder = supabase
       .from('workspace_products')
       .select('id, name, manufacturer, description, usage, category_id');
 
+    if (query) {
+      queryBuilder.ilike('name', `%${query}%`);
+    }
+
+    if (
+      page &&
+      itemsPerPage &&
+      typeof page === 'string' &&
+      typeof itemsPerPage === 'string'
+    ) {
+      const parsedPage = parseInt(page);
+      const parsedSize = parseInt(itemsPerPage);
+
+      const start = (parsedPage - 1) * parsedSize;
+      const end = parsedPage * parsedSize;
+
+      console.log(start, end);
+
+      queryBuilder.range(start, end).limit(parsedSize);
+    }
+
     const { data, error } = await queryBuilder;
 
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   } else {
-    const { data, error } = await supabase.rpc('get_inventory_products', {
+    const queryBuilder = supabase.rpc('get_inventory_products', {
       _ws_id: wsId,
       _category_ids: categoryIds
         ? typeof categoryIds === 'string'
@@ -63,6 +84,29 @@ const fetchProducts = async (
         : null,
       _has_unit: hasUnit ? hasUnit === 'true' : null,
     });
+
+    if (query) {
+      queryBuilder.ilike('name', `%${query}%`);
+    }
+
+    if (
+      page &&
+      itemsPerPage &&
+      typeof page === 'string' &&
+      typeof itemsPerPage === 'string'
+    ) {
+      const parsedPage = parseInt(page);
+      const parsedSize = parseInt(itemsPerPage);
+
+      const start = (parsedPage - 1) * parsedSize;
+      const end = parsedPage * parsedSize;
+
+      console.log(start, end);
+
+      queryBuilder.range(start, end).limit(parsedSize);
+    }
+
+    const { data, error } = await queryBuilder;
 
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);

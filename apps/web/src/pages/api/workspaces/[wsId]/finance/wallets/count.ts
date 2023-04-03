@@ -9,7 +9,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchSum(req, res, wsId);
+        return await fetchCount(req, res, wsId);
 
       default:
         throw new Error(
@@ -28,7 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchSum = async (
+const fetchCount = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string

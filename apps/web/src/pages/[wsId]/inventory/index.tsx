@@ -8,6 +8,7 @@ import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import StatisticCard from '../../../components/cards/StatisticCard';
+import useSWR from 'swr';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -34,6 +35,41 @@ const InventoryPage: PageWithLayoutProps = () => {
 
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
+
+  const productsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/products/count`
+    : null;
+
+  const categoriesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/categories/count`
+    : null;
+
+  const batchesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/batches/count`
+    : null;
+
+  const warehousesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/warehouses/count`
+    : null;
+
+  const unitsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/units/count`
+    : null;
+
+  const suppliersCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/suppliers/count`
+    : null;
+
+  const { data: products } = useSWR<{
+    ws: number;
+    inventory: number;
+  }>(productsCountApi);
+
+  const { data: categories } = useSWR<number>(categoriesCountApi);
+  const { data: batches } = useSWR<number>(batchesCountApi);
+  const { data: warehouses } = useSWR<number>(warehousesCountApi);
+  const { data: units } = useSWR<number>(unitsCountApi);
+  const { data: suppliers } = useSWR<number>(suppliersCountApi);
 
   return (
     <>
@@ -65,13 +101,47 @@ const InventoryPage: PageWithLayoutProps = () => {
 
         <Divider className="col-span-full" variant="dashed" />
 
-        <StatisticCard title="Sản phẩm" />
-        <StatisticCard title="Sản phẩm khác nhau" />
-        <StatisticCard title="Danh mục sản phẩm" />
-        <StatisticCard title="Lô hàng" />
-        <StatisticCard title="Kho chứa" />
-        <StatisticCard title="Đơn vị tính" />
-        <StatisticCard title="Nhà cung cấp" />
+        <StatisticCard
+          title="Sản phẩm"
+          value={products?.ws}
+          href={`/${ws?.id}/inventory/products`}
+        />
+
+        <StatisticCard
+          title="Sản phẩm có đơn giá"
+          value={products?.inventory}
+          href={`/${ws?.id}/inventory/products`}
+        />
+
+        <StatisticCard
+          title="Danh mục sản phẩm"
+          value={categories}
+          href={`/${ws?.id}/inventory/categories`}
+        />
+
+        <StatisticCard
+          title="Lô hàng"
+          value={batches}
+          href={`/${ws?.id}/inventory/batches`}
+        />
+
+        <StatisticCard
+          title="Kho chứa"
+          value={warehouses}
+          href={`/${ws?.id}/inventory/warehouses`}
+        />
+
+        <StatisticCard
+          title="Đơn vị tính"
+          value={units}
+          href={`/${ws?.id}/inventory/units`}
+        />
+
+        <StatisticCard
+          title="Nhà cung cấp"
+          value={suppliers}
+          href={`/${ws?.id}/inventory/suppliers`}
+        />
       </div>
     </>
   );

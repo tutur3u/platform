@@ -58,7 +58,7 @@ const UserProfilePopover = () => {
 
       <Popover.Dropdown className="grid gap-1 p-1">
         <SidebarLink
-          href="/home"
+          href="/onboarding"
           onClick={() => setUserPopover(false)}
           activeIcon={<HomeIcon className="w-5" />}
           label={home}

@@ -10,6 +10,7 @@ import {
   IdentificationIcon,
   PhoneIcon,
   ShieldCheckIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
 import { openModal } from '@mantine/modals';
@@ -20,6 +21,8 @@ import moment from 'moment';
 import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
 import WorkspaceUserEditModal from '../../../../components/loaders/users/WorkspaceUserEditModal';
 import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
+import { UserRole } from '../../../../types/primitives/UserRole';
+import UserRoleSelector from '../../../../components/selectors/UserRoleSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -43,10 +46,12 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
 
   const router = useRouter();
-  const { userId } = router.query;
+  const { wsId, userId } = router.query;
 
-  const apiPath = `/api/workspaces/${ws?.id}/users/${userId}`;
-  const { data: user } = useSWR<WorkspaceUser>(ws && userId ? apiPath : null);
+  const apiPath =
+    wsId && userId ? `/api/workspaces/${wsId}/users/${userId}` : null;
+
+  const { data: user } = useSWR<WorkspaceUser>(apiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -106,9 +111,40 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     }
   }, [user]);
 
-  const hasData = () => !!user;
+  const [roles, setRoles] = useState<UserRole[]>([]);
 
-  const hasRequiredFields = () => name.length > 0 && hasData();
+  const allRolesValid = () => roles.every((role) => role.id.length > 0);
+
+  const hasData = () => !!user;
+  const hasRequiredFields = () =>
+    name.length > 0 && allRolesValid() && hasData();
+
+  const getUniqueUnitIds = () => {
+    const roleIds = new Set<string>();
+    roles.forEach((r) => roleIds.add(r.id));
+    return Array.from(roleIds);
+  };
+
+  const addEmptyRole = () => {
+    setRoles((roles) => [
+      ...roles,
+      {
+        id: '',
+      },
+    ]);
+  };
+
+  const updateRole = (index: number, role: UserRole | null) => {
+    setRoles((roles) => {
+      const newRoles = [...roles];
+      if (!role) newRoles.splice(index, 1);
+      else newRoles[index] = role;
+      return newRoles;
+    });
+  };
+
+  const removeRole = (index: number) =>
+    setRoles((roles) => roles.filter((_, i) => i !== index));
 
   const showEditModal = () => {
     if (!user) return;
@@ -320,6 +356,37 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
             />
+
+            <Divider className="col-span-full my-2" />
+
+            <div className="col-span-full grid gap-2">
+              <div className="text-2xl font-semibold">Vai trò</div>
+              <Divider className="my-2" variant="dashed" />
+
+              <button
+                className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                onClick={addEmptyRole}
+              >
+                + Thêm vai trò
+              </button>
+
+              {roles.map((r, idx) => (
+                <div key={`role-${idx}`} className="flex items-end gap-2">
+                  <UserRoleSelector
+                    role={r}
+                    setRole={(r) => updateRole(idx, r)}
+                    blacklist={getUniqueUnitIds()}
+                    className="w-full"
+                  />
+                  <button
+                    className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
+                    onClick={() => removeRole(idx)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

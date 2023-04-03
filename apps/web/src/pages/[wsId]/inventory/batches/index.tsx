@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import WarehouseMultiSelector from '../../../../components/selectors/WarehouseMultiSelector';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
@@ -16,6 +16,8 @@ import ModeSelector, {
 import { useLocalStorage } from '@mantine/hooks';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -44,16 +46,28 @@ const BatchesPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [query, setQuery] = useState('');
-
+  const [activePage, setPage] = useState(1);
   const [warehouseIds, setWarehouseIds] = useState<string[]>(['']);
 
-  const wids =
-    warehouseIds.length > 0 ? `warehouseIds=${warehouseIds.join(',')}` : '';
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'inventory-batches-items-per-page',
+    defaultValue: 15,
+  });
 
-  const queryData = wids ? `?${wids}` : '';
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/batches${queryData}`;
+  const apiPath = ws?.id
+    ? `/api/workspaces/${
+        ws?.id
+      }/inventory/batches?warehouseIds=${warehouseIds.join(
+        ','
+      )}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
 
-  const { data: batches } = useSWR<ProductBatch[]>(ws?.id ? apiPath : null);
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/batches/count`
+    : null;
+
+  const { data: batches } = useSWR<ProductBatch[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [showProducts, setShowProducts] = useLocalStorage({
     key: 'inventory-batches-showProducts',
@@ -69,8 +83,6 @@ const BatchesPage: PageWithLayoutProps = () => {
     key: 'inventory-batches-mode',
     defaultValue: 'grid',
   });
-
-  const [activePage, setPage] = useState(1);
 
   if (!ws) return null;
 
@@ -90,10 +102,16 @@ const BatchesPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
           <WarehouseMultiSelector
             warehouseIds={warehouseIds}
             setWarehouseIds={setWarehouseIds}
-            className="md:col-span-2"
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
@@ -109,9 +127,12 @@ const BatchesPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

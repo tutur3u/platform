@@ -11,5 +11,15 @@ export const walletDetailsTabs: NavTabs = {
       name: 'transactions',
       href: '/[wsId]/finance/wallets/[walletId]/transactions',
     },
+    {
+      name: 'access',
+      href: '/[wsId]/finance/wallets/[walletId]/access',
+      disabled: true,
+    },
+    {
+      name: 'activity',
+      href: '/[wsId]/finance/wallets/[walletId]/activity',
+      disabled: true,
+    },
   ],
 };

@@ -37,7 +37,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Bệnh nhân – Khám bệnh" />
+      <HeaderX label="Tổng quan – Người dùng" />
       <div className="flex min-h-full w-full flex-col pb-8">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard title="Người dùng" href={`/${ws?.id}/users/list`} />

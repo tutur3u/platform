@@ -7,7 +7,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import PrescriptionCard from '../../../../components/cards/PrescriptionCard';
@@ -16,6 +16,8 @@ import useSWR from 'swr';
 import StatusSelector from '../../../../components/selectors/StatusSelector';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -45,11 +47,24 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
 
   const [status, setStatus] = useState('');
 
-  const filter = status ? `?status=${status}` : '';
-  const apiPath = `/api/workspaces/${ws?.id}/healthcare/prescriptions${filter}`;
-  const { data: prescriptions } = useSWR<Prescription[]>(
-    ws?.id ? apiPath : null
-  );
+  const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
+
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'healthcare-prescriptions-items-per-page',
+    defaultValue: 15,
+  });
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws?.id}/healthcare/prescriptions?status=${status}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/prescriptions/count`
+    : null;
+
+  const { data: prescriptions } = useSWR<Prescription[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'healthcare-prescriptions-mode',
@@ -96,9 +111,6 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
     defaultValue: false,
   });
 
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
-
   if (!ws) return null;
 
   return (
@@ -117,6 +129,13 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
           <StatusSelector
             status={status}
             setStatus={setStatus}
@@ -167,9 +186,12 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

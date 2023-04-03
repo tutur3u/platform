@@ -58,8 +58,8 @@ const PrescriptionProductInput = ({
   }, [wsId, p.id, p.unit_id, p?.price, updatePrice]);
 
   return (
-    <div className="grid items-end gap-2 md:gap-4 xl:grid-cols-2">
-      <div className="flex w-full items-end gap-2 md:gap-4">
+    <div className="grid items-end gap-2 xl:grid-cols-2">
+      <div className="flex w-full items-end gap-2">
         <ProductUnitSelector
           id={`${p.id}::${p.unit_id}`}
           setId={(id) =>
@@ -80,7 +80,7 @@ const PrescriptionProductInput = ({
         </button>
       </div>
 
-      <div className="flex w-full items-end gap-2 md:gap-4">
+      <div className="flex w-full items-end gap-2">
         <NumberInput
           label="Số lượng"
           placeholder="Số lượng"

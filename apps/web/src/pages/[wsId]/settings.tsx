@@ -105,7 +105,7 @@ const WorkspaceSettingsPage = () => {
     await deleteWorkspace(ws.id, {
       onSuccess: () => {
         mutate('/api/workspaces');
-        router.push('/home');
+        router.push('/onboarding');
       },
       onCompleted: () => setIsDeleting(false),
     });

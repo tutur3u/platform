@@ -11,35 +11,35 @@ interface Props {
 const PaginationSelector = ({ items, setItems }: Props) => {
   const data = [
     {
-      label: '3 / trang',
+      label: '3 mục',
       value: '3',
     },
     {
-      label: '7 / trang',
+      label: '7 mục',
       value: '7',
     },
     {
-      label: '11 / trang',
+      label: '11 mục',
       value: '11',
     },
     {
-      label: '15 / trang',
+      label: '15 mục',
       value: '15',
     },
     {
-      label: '35 / trang',
+      label: '35 mục',
       value: '35',
     },
     {
-      label: '55 / trang',
+      label: '55 mục',
       value: '55',
     },
     {
-      label: '75 / trang',
+      label: '75 mục',
       value: '75',
     },
     {
-      label: '95 / trang',
+      label: '95 mục',
       value: '95',
     },
   ];

@@ -42,7 +42,7 @@ const fetchPrescriptions = async (
     res,
   });
 
-  const { status } = req.query;
+  const { status, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('healthcare_prescriptions')
@@ -54,6 +54,27 @@ const fetchPrescriptions = async (
 
   if (status === 'completed') queryBuilder.not('completed_at', 'is', null);
   else if (status === 'incomplete') queryBuilder.is('completed_at', null);
+
+  if (query) {
+    queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    console.log(start, end);
+
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
 
   const { data, error } = await queryBuilder;
 

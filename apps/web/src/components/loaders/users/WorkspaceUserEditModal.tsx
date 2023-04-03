@@ -34,7 +34,7 @@ const WorkspaceUserEditModal = ({ wsId, user }: Props) => {
 
     showNotification({
       title: 'Thành công',
-      message: 'Đã cập nhật bệnh nhân',
+      message: 'Đã cập nhật người dùng',
       color: 'green',
     });
   }, [hasSuccess, user.id, wsId]);
@@ -55,7 +55,7 @@ const WorkspaceUserEditModal = ({ wsId, user }: Props) => {
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể cập nhật bệnh nhân',
+        message: 'Không thể cập nhật người dùng',
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updated: 'error' }));
@@ -130,7 +130,7 @@ const WorkspaceUserEditModal = ({ wsId, user }: Props) => {
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem bệnh nhân
+            Xem người dùng
           </button>
         )}
 

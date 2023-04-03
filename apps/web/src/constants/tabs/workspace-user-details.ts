@@ -4,20 +4,23 @@ export const wsUserDetailsTabs: NavTabs = {
   namespace: 'ws-user-details-tabs',
   tabs: [
     {
-      name: 'Thông tin',
+      name: 'information',
       href: '/[wsId]/users/[userId]',
     },
     {
-      name: 'Chỉ số',
+      name: 'vitals',
       href: '/[wsId]/users/[userId]/vitals',
+      disabled: true,
     },
     {
-      name: 'Đơn thuốc',
+      name: 'prescriptions',
       href: '/[wsId]/users/[userId]/prescriptions',
+      disabled: true,
     },
     {
-      name: 'Kiểm tra sức khoẻ',
+      name: 'checkups',
       href: '/[wsId]/users/[userId]/checkups',
+      disabled: true,
     },
   ],
 };

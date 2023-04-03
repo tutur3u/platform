@@ -7,7 +7,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
@@ -15,6 +15,8 @@ import useSWR from 'swr';
 import { VitalGroup } from '../../../../types/primitives/VitalGroup';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,8 +44,24 @@ const MiscVitalGroupsPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const apiPath = `/api/workspaces/${ws?.id}/healthcare/vital-groups`;
-  const { data: groups } = useSWR<VitalGroup[]>(ws?.id ? apiPath : null);
+  const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
+
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'healthcare-vital-groups-items-per-page',
+    defaultValue: 15,
+  });
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws?.id}/healthcare/vital-groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/healthcare/vital-groups/count`
+    : null;
+
+  const { data: groups } = useSWR<VitalGroup[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'healthcare-vital-groups-mode',
@@ -65,9 +83,6 @@ const MiscVitalGroupsPage: PageWithLayoutProps = () => {
     defaultValue: true,
   });
 
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
-
   if (!ws) return null;
 
   return (
@@ -86,7 +101,14 @@ const MiscVitalGroupsPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
-          <div className="col-span-2 hidden xl:block" />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
+          <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị mô tả"
@@ -110,9 +132,12 @@ const MiscVitalGroupsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

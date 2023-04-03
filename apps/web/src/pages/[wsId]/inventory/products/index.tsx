@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import CategoryMultiSelector from '../../../../components/selectors/CategoryMultiSelector';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
@@ -16,6 +16,8 @@ import { useLocalStorage } from '@mantine/hooks';
 import { Product } from '../../../../types/primitives/Product';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -44,16 +46,31 @@ const ProductsPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [query, setQuery] = useState('');
-
+  const [activePage, setPage] = useState(1);
   const [categoryIds, setCategoryIds] = useState<string[]>(['']);
 
-  const cids =
-    categoryIds.length > 0 ? `categoryIds=${categoryIds.join(',')}` : '';
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'inventory-products-items-per-page',
+    defaultValue: 15,
+  });
 
-  const queryData = cids ? `?${cids}` : '';
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/products${queryData}`;
+  const apiPath = ws?.id
+    ? `/api/workspaces/${
+        ws?.id
+      }/inventory/products?categoryIds=${categoryIds.join(
+        ','
+      )}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
 
-  const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/products/count`
+    : null;
+
+  const { data: products } = useSWR<Product[]>(apiPath);
+  const { data: count } = useSWR<{
+    ws: number;
+    inventory: number;
+  }>(countApi);
 
   const [showAmount, setShowAmount] = useLocalStorage({
     key: 'inventory-products-showAmount',
@@ -80,8 +97,6 @@ const ProductsPage: PageWithLayoutProps = () => {
     defaultValue: 'grid',
   });
 
-  const [activePage, setPage] = useState(1);
-
   if (!ws) return null;
 
   return (
@@ -100,10 +115,16 @@ const ProductsPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
           <CategoryMultiSelector
             categoryIds={categoryIds}
             setCategoryIds={setCategoryIds}
-            className="md:col-span-2"
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
@@ -129,9 +150,12 @@ const ProductsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={(count?.ws || 0) + (count?.inventory || 0)}
+        />
 
         <div
           className={`grid gap-4 ${

@@ -236,7 +236,7 @@ const ProductOriginPage: PageWithLayoutProps = () => {
             {prices.map((p, idx) => (
               <div
                 key={p.product_id + p.unit_id + idx}
-                className="flex items-end gap-2 md:gap-4"
+                className="flex items-end gap-2"
               >
                 <UnitSelector
                   unitId={p.unit_id}
