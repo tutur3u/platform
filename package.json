@@ -17,7 +17,8 @@
     "sb:stop": "cd apps/web && pnpm sb:stop",
     "sb:sync": "cd apps/web && pnpm sb:sync",
     "sb:reset": "cd apps/web && pnpm sb:reset",
-    "sb:diff": "cd apps/web && pnpm sb:diff"
+    "sb:diff": "cd apps/web && pnpm sb:diff",
+    "sb:new": "cd apps/web && pnpm sb:new"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",

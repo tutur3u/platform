@@ -150,7 +150,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-4 md:grid-cols-2">
+        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">Thông tin cơ bản</div>
             <Divider className="my-2" variant="dashed" />
@@ -158,7 +158,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
           <SettingItemCard
             title="Tên nguồn tiền"
-            description="Tên nguồn tiền sẽ được hiển thị trên bảng điều khiển và các báo cáo."
+            description="Tên nguồn tiền sẽ được hiển thị trên bảng điều khiển."
           >
             <TextInput
               placeholder="Nhập tên nguồn tiền"
@@ -172,7 +172,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Số tiền ban đầu"
+            title="Số tiền hiện có"
             description="Số tiền hiện có trong nguồn tiền này."
           >
             <NumberInput
@@ -194,22 +194,6 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Mô tả"
-            description="Mô tả ngắn gọn về nguồn tiền này."
-          >
-            <Textarea
-              placeholder="Nhập mô tả"
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              minRows={3}
-              maxRows={5}
-            />
-          </SettingItemCard>
-
-          <SettingItemCard
             title="Đơn vị tiền tệ"
             description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
           >
@@ -227,6 +211,22 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
               required
+            />
+          </SettingItemCard>
+
+          <SettingItemCard
+            title="Mô tả"
+            description="Mô tả ngắn gọn về nguồn tiền này."
+          >
+            <Textarea
+              placeholder="Nhập mô tả"
+              value={description}
+              onChange={(e) => setDescription(e.currentTarget.value)}
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              minRows={3}
+              maxRows={5}
             />
           </SettingItemCard>
         </div>

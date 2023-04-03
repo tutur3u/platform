@@ -5,6 +5,9 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
+import StatisticCard from '../../../components/cards/StatisticCard';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -29,10 +32,63 @@ const FinancePage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const sumApi = ws?.id ? `/api/workspaces/${ws.id}/finance/wallets/sum` : null;
+
+  const walletsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/wallets/count`
+    : null;
+
+  const transactionsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/count`
+    : null;
+
+  const categoriesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/categories/count`
+    : null;
+
+  const { data: sum } = useSWR<number>(sumApi);
+  const { data: walletsCount } = useSWR<number>(walletsCountApi);
+  const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
+  const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
+
+  const { t } = useTranslation('finance-tabs');
+
+  const walletsLabel = t('wallets');
+  const transactionsLabel = t('transactions');
+  const transactionCategoriesLabel = t('transaction-categories');
+
   return (
     <>
       <HeaderX label="Tổng quan – Tài chính" />
-      <div className="flex h-full w-full flex-col gap-4 md:flex-row"></div>
+      <div className="flex min-h-full w-full flex-col pb-8">
+        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatisticCard
+            title="Tổng tiền"
+            value={Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(sum || 0)}
+          />
+
+          <StatisticCard
+            title={walletsLabel}
+            value={walletsCount?.toString()}
+            href={`/${ws?.id}/finance/wallets`}
+          />
+
+          <StatisticCard
+            title={transactionsLabel}
+            value={transactionsCount?.toString()}
+            href={`/${ws?.id}/finance/transactions`}
+          />
+
+          <StatisticCard
+            title={transactionCategoriesLabel}
+            value={categoriesCount?.toString()}
+            href={`/${ws?.id}/finance/transactions/categories`}
+          />
+        </div>
+      </div>
     </>
   );
 };
