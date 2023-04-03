@@ -3,7 +3,7 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
@@ -15,6 +15,8 @@ import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,9 +44,24 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const apiPath = `/api/workspaces/${ws?.id}/finance/transactions`;
+  const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
 
-  const { data: transactions } = useSWR<Transaction[]>(ws?.id ? apiPath : null);
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'finance-transactions-items-per-page',
+    defaultValue: 15,
+  });
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/count`
+    : null;
+
+  const { data: transactions } = useSWR<Transaction[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'finance-transactions-mode',
@@ -55,9 +72,6 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     key: 'finance-wallets-showAmount',
     defaultValue: true,
   });
-
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
 
   if (!ws) return null;
 
@@ -77,7 +91,14 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
-          <div className="col-span-2 hidden xl:block" />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
+          <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị số tiền"
@@ -87,9 +108,12 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

@@ -3,7 +3,7 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Divider, Pagination, TextInput } from '@mantine/core';
+import { Divider, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
@@ -15,6 +15,8 @@ import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import ModeSelector, {
   Mode,
 } from '../../../../../components/selectors/ModeSelector';
+import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,19 +44,29 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const apiPath = `/api/workspaces/${ws?.id}/finance/transactions/categories`;
+  const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
 
-  const { data: categories } = useSWR<TransactionCategory[]>(
-    ws?.id ? apiPath : null
-  );
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'finance-categories-items-per-page',
+    defaultValue: 15,
+  });
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/categories?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/categories/count`
+    : null;
+
+  const { data: categories } = useSWR<TransactionCategory[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'finance-categories-mode',
     defaultValue: 'grid',
   });
-
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
 
   if (!ws) return null;
 
@@ -74,12 +86,23 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
+          <div className="hidden xl:block" />
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${
