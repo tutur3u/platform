@@ -255,9 +255,9 @@ const NewBatchPage: PageWithLayoutProps = () => {
             {products.map((p, idx) => (
               <div
                 key={p.id + idx}
-                className="grid items-end gap-2 md:gap-4 xl:grid-cols-2"
+                className="grid items-end gap-2 xl:grid-cols-2"
               >
-                <div className="flex w-full items-end gap-2 md:gap-4">
+                <div className="flex w-full items-end gap-2">
                   <ProductUnitSelector
                     id={`${p.id}::${p.unit_id}`}
                     setId={(id) =>
@@ -278,7 +278,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
                   </button>
                 </div>
 
-                <div className="flex w-full items-end gap-2 md:gap-4">
+                <div className="flex w-full items-end gap-2">
                   <NumberInput
                     label="Số lượng"
                     placeholder="Số lượng nhập"

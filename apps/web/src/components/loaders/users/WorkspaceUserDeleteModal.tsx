@@ -30,7 +30,7 @@ const WorkspaceUserDeleteModal = ({ wsId, userId }: Props) => {
 
     showNotification({
       title: 'Thành công',
-      message: 'Đã xoá bệnh nhân',
+      message: 'Đã xoá người dùng',
       color: 'green',
     });
   }, [hasSuccess, userId]);
@@ -47,7 +47,7 @@ const WorkspaceUserDeleteModal = ({ wsId, userId }: Props) => {
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể xoá bệnh nhân',
+        message: 'Không thể xoá người dùng',
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removed: 'error' }));
@@ -75,16 +75,16 @@ const WorkspaceUserDeleteModal = ({ wsId, userId }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Xoá bệnh nhân"
+          title="Xoá người dùng"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã xoá bệnh nhân</div>
+            <div className="text-green-300">Đã xoá người dùng</div>
           ) : progress.removed === 'error' ? (
-            <div className="text-red-300">Không thể xoá bệnh nhân</div>
+            <div className="text-red-300">Không thể xoá người dùng</div>
           ) : progress.removed === 'loading' ? (
-            <div className="text-blue-300">Đang xoá bệnh nhân</div>
+            <div className="text-blue-300">Đang xoá người dùng</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá bệnh nhân</div>
+            <div className="text-zinc-400/80">Đang chờ xoá người dùng</div>
           )}
         </Timeline.Item>
 

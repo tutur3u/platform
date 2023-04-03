@@ -34,7 +34,10 @@
 
     "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
     "/[wsId]/users/list": ["sidebar-tabs", "workspace-users-tabs"],
+
     "/[wsId]/users/roles": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/roles/new": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/roles/[roleId]": ["sidebar-tabs", "workspace-users-tabs"],
 
     "/[wsId]/users/new": ["sidebar-tabs"],
     "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],

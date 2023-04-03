@@ -5,19 +5,19 @@ import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Status } from '../status';
-import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
+import { Status } from '../../status';
+import { UserRole } from '../../../../types/primitives/UserRole';
 
 interface Props {
   wsId: string;
-  user: Partial<WorkspaceUser>;
+  role: Partial<UserRole>;
 }
 
 interface Progress {
   created: Status;
 }
 
-const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
+const UserRoleCreateModal = ({ wsId, role }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -31,18 +31,18 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     if (hasSuccess)
       showNotification({
         title: 'Thành công',
-        message: 'Đã tạo người dùng',
+        message: 'Đã tạo vai trò',
         color: 'green',
       });
   }, [hasSuccess]);
 
-  const createWorkspaceUser = async () => {
-    const res = await fetch(`/api/workspaces/${wsId}/users`, {
+  const createUserRole = async () => {
+    const res = await fetch(`/api/workspaces/${wsId}/users/roles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify(role),
     });
 
     if (res.ok) {
@@ -52,7 +52,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể tạo người dùng',
+        message: 'Không thể tạo vai trò',
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -60,12 +60,12 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     }
   };
 
-  const [categoryId, setWorkspaceUserId] = useState<string | null>(null);
+  const [categoryId, setUserRoleId] = useState<string | null>(null);
 
   const handleCreate = async () => {
     setProgress((progress) => ({ ...progress, created: 'loading' }));
-    const categoryId = await createWorkspaceUser();
-    if (categoryId) setWorkspaceUserId(categoryId);
+    const categoryId = await createUserRole();
+    if (categoryId) setUserRoleId(categoryId);
   };
 
   const [started, setStarted] = useState(false);
@@ -81,16 +81,16 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo người dùng"
+          title="Tạo vai trò"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo người dùng</div>
+            <div className="text-green-300">Đã tạo vai trò</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo người dùng</div>
+            <div className="text-red-300">Không thể tạo vai trò</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo người dùng</div>
+            <div className="text-blue-300">Đang tạo vai trò</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo người dùng</div>
+            <div className="text-zinc-400/80">Đang chờ tạo vai trò</div>
           )}
         </Timeline.Item>
 
@@ -121,11 +121,11 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
 
         {categoryId && (hasError || hasSuccess) && (
           <Link
-            href={`/${wsId}/users/${categoryId}`}
+            href={`/${wsId}/roles/${categoryId}`}
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem người dùng
+            Xem vai trò
           </Link>
         )}
 
@@ -146,7 +146,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/users/list`);
+              router.push(`/${wsId}/users/roles`);
               closeAllModals();
               return;
             }
@@ -170,4 +170,4 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
   );
 };
 
-export default WorkspaceUserCreateModal;
+export default UserRoleCreateModal;

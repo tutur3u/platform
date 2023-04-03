@@ -6,6 +6,7 @@ import {
   BeakerIcon,
   CalendarDaysIcon,
   CheckCircleIcon,
+  CircleStackIcon,
   ClipboardDocumentListIcon,
   ClockIcon,
   FingerPrintIcon,
@@ -34,6 +35,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const inventory = t('inventory');
   const classes = t('classes');
   const finance = t('finance');
+  const databases = t('databases');
   const activities = t('activities');
 
   return (
@@ -121,6 +123,14 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<BanknotesIcon className="w-5" />}
         label={finance}
         showTooltip={!sidebarOpened}
+      />
+
+      <SidebarLink
+        href={`/${wsId}/databases`}
+        activeIcon={<CircleStackIcon className="w-5" />}
+        label={databases}
+        showTooltip={!sidebarOpened}
+        disabled
       />
 
       <SidebarLink
