@@ -38,12 +38,11 @@ const fetchTransactions = async (
     res,
   });
 
-  const { walletIds } = req.query;
+  const { walletIds, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('wallet_transactions')
     .select(
-      // 'transaction_categories!inner(name, ws_id)'
       'id, description, amount, category_id, workspace_wallets!inner(ws_id)'
     )
     .order('created_at', { ascending: false })
@@ -51,6 +50,27 @@ const fetchTransactions = async (
 
   if (walletIds && typeof walletIds === 'string') {
     queryBuilder.in('wallet_id', walletIds.split(','));
+  }
+
+  if (query) {
+    queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    console.log(start, end);
+
+    queryBuilder.range(start, end).limit(parsedSize);
   }
 
   const { data, error } = await queryBuilder;
