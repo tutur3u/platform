@@ -219,8 +219,8 @@ importers:
         specifier: ^8.4.21
         version: 8.4.21
       supabase:
-        specifier: ^1.46.5
-        version: 1.46.5
+        specifier: ^1.47.2
+        version: 1.47.2
       tailwind-scrollbar:
         specifier: ^3.0.0
         version: 3.0.0(tailwindcss@3.3.1)
@@ -6746,8 +6746,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.46.5:
-    resolution: {integrity: sha512-N1BObR6JYubMqjacpvJ9/WixEBsPS6KSCqVxg4D+X3SLcqP3p05ppjF2he/m9b48KwNgohZ2eno5Hes8GxtNtg==}
+  /supabase@1.47.2:
+    resolution: {integrity: sha512-zHpet82EJOXFW5A5zIFzd+0DB3vkc1Mx2PvMbZfiUyC5XlgBTcJLkc8wQzxaBWdaPa/XY2c/mRCg7aYIXuIhJA==}
     hasBin: true
     requiresBuild: true
     dependencies:
