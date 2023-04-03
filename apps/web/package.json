@@ -15,7 +15,8 @@
     "sb:stop": "pnpm supabase stop",
     "sb:sync": "pnpm supabase db remote commit",
     "sb:reset": "pnpm supabase db reset",
-    "sb:diff": "pnpm supabase db diff -f new_migration"
+    "sb:diff": "pnpm supabase db diff -f new_migration",
+    "sb:new": "pnpm supabase migration new new_migration"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",
