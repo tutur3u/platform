@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
@@ -15,6 +15,8 @@ import ModeSelector, {
 import { useLocalStorage } from '@mantine/hooks';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -43,10 +45,23 @@ const UnitsPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/units`;
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'inventory-units-items-per-page',
+    defaultValue: 15,
+  });
 
-  const { data: units } = useSWR<ProductUnit[]>(ws?.id ? apiPath : null);
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws?.id}/inventory/units?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/inventory/units/count`
+    : null;
+
+  const { data: units } = useSWR<ProductUnit[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [showProducts, setShowProducts] = useLocalStorage({
     key: 'inventory-units-showProducts',
@@ -57,8 +72,6 @@ const UnitsPage: PageWithLayoutProps = () => {
     key: 'inventory-units-mode',
     defaultValue: 'grid',
   });
-
-  const [activePage, setPage] = useState(1);
 
   if (!ws) return null;
 
@@ -78,7 +91,14 @@ const UnitsPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
-          <div className="col-span-2 hidden xl:block" />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
+          <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị sản phẩm"
@@ -88,9 +108,12 @@ const UnitsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

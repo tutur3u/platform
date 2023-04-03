@@ -38,9 +38,12 @@ const fetchCount = async (
     res,
   });
 
-  const { data, error } = await supabase.rpc('get_workspace_wallets_count', {
-    ws_id: wsId,
-  });
+  const { data, error } = await supabase.rpc(
+    'get_inventory_product_categories_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);

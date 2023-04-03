@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 interface Props {
   title: string;
-  value?: string;
+  value?: string | number;
   href?: string;
 
   onClick?: () => void;
@@ -18,7 +18,7 @@ const StatisticCard = ({ title, value, href, onClick }: Props) => {
       >
         <div className="p-2 text-center text-lg font-semibold">{title}</div>
         <div className="m-4 mt-0 flex items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-4 text-2xl font-bold text-zinc-300">
-          {value || 'N/A'}
+          {value != null ? value : 'N/A'}
         </div>
       </Link>
     );
@@ -30,7 +30,7 @@ const StatisticCard = ({ title, value, href, onClick }: Props) => {
     >
       <div className="p-2 text-center text-lg font-semibold">{title}</div>
       <div className="m-4 mt-0 flex items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-4 text-2xl font-bold text-zinc-300">
-        {value || 'N/A'}
+        {value != null ? value : 'N/A'}
       </div>
     </button>
   );
