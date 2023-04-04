@@ -55,11 +55,13 @@
     "openai": "^3.2.1",
     "react": "18.2.0",
     "react-beautiful-dnd": "^13.1.1",
+    "react-csv-reader": "^4.0.0",
     "react-dom": "18.2.0",
     "react-resizable": "^3.0.5",
     "swr": "^2.1.2",
     "ui": "workspace:*",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
@@ -68,7 +70,7 @@
     "@types/jest": "^29.5.0",
     "@types/js-cookie": "^3.0.3",
     "@types/node": "^18.15.11",
-    "@types/react": "^18.0.32",
+    "@types/react": "^18.0.33",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.0.11",
     "@types/react-resizable": "^3.0.4",

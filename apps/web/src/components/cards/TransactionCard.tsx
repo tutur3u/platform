@@ -6,12 +6,14 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 interface Props {
   transaction: Transaction;
   showAmount?: boolean;
+  disableLink?: boolean;
   redirectToWallets?: boolean;
 }
 
 const TransactionCard = ({
   transaction,
   showAmount = false,
+  disableLink = false,
   redirectToWallets = false,
 }: Props) => {
   const { ws } = useWorkspaces();
@@ -19,9 +21,13 @@ const TransactionCard = ({
 
   return (
     <Link
-      href={`/${ws.id}/finance/transactions/${transaction.id}${
-        redirectToWallets ? '?redirectToWallets=true' : ''
-      }`}
+      href={
+        disableLink
+          ? '#'
+          : `/${ws.id}/finance/transactions/${transaction.id}${
+              redirectToWallets ? '?redirectToWallets=true' : ''
+            }`
+      }
       className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">

@@ -4,8 +4,6 @@ import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../components/layouts/NestedLayout';
-import { Divider } from '@mantine/core';
-import Link from 'next/link';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import StatisticCard from '../../../components/cards/StatisticCard';
 import useSWR from 'swr';
@@ -75,7 +73,7 @@ const InventoryPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label="Tổng quan – Kho hàng" />
       <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Link
+        {/* <Link
           href="/warehouse/attention"
           className="rounded bg-yellow-300/10 transition duration-300 hover:-translate-y-1 hover:bg-yellow-300/20 lg:col-span-2"
         >
@@ -99,7 +97,7 @@ const InventoryPage: PageWithLayoutProps = () => {
           </div>
         </Link>
 
-        <Divider className="col-span-full" variant="dashed" />
+        <Divider className="col-span-full" variant="dashed" /> */}
 
         <StatisticCard
           title="Sản phẩm"

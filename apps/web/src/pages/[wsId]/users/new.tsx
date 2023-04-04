@@ -33,10 +33,9 @@ const NewPatientPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Khám bệnh', href: `/${ws.id}/healthcare` },
             {
-              content: 'Bệnh nhân',
-              href: `/${ws.id}/users`,
+              content: 'Người dùng',
+              href: `/${ws.id}/users/list`,
             },
             { content: 'Tạo mới', href: `/${ws.id}/users/new` },
           ]
@@ -119,7 +118,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
             </div>
 
             <TextInput
-              label="Tên bệnh nhân"
+              label="Tên"
               placeholder='Ví dụ: "Nguyễn Văn A"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
@@ -130,7 +129,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
             />
             <Select
               label="Giới tính"
-              placeholder="Chọn giới tính của bệnh nhân"
+              placeholder="Chọn giới tính"
               value={gender}
               data={genders}
               onChange={(val) => setGender(val || '')}
@@ -142,7 +141,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
 
             <DatePickerInput
               label="Ngày sinh"
-              placeholder="Chọn ngày sinh của bệnh nhân"
+              placeholder="Chọn ngày sinh"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
@@ -165,7 +164,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
 
             <TextInput
               label="CMND/CCCD"
-              placeholder="Nhập số CMND/CCCD của bệnh nhân"
+              placeholder="Nhập số CMND/CCCD"
               value={nationalId}
               onChange={(e) => setNationalId(e.currentTarget.value)}
               className="md:col-span-2"
@@ -177,7 +176,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
 
             <TextInput
               label="Người giám hộ"
-              placeholder="Nhập tên người giám hộ của bệnh nhân"
+              placeholder="Nhập tên người giám hộ"
               value={guardian}
               onChange={(e) => setGuardian(e.currentTarget.value)}
               className="md:col-span-2"
@@ -191,7 +190,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
 
             <Textarea
               label="Ghi chú"
-              placeholder="Ghi chú về bệnh nhân"
+              placeholder="Ghi chú về người dùng"
               value={note}
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
@@ -234,7 +233,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
 
             <Textarea
               label="Địa chỉ"
-              placeholder="Nhập địa chỉ của bệnh nhân"
+              placeholder="Nhập địa chỉ"
               value={address}
               onChange={(e) => setAddress(e.currentTarget.value)}
               className="md:col-span-2"

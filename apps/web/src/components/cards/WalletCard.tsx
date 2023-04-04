@@ -5,16 +5,21 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 
 interface Props {
   wallet: Wallet;
+  disableLink?: boolean;
   showPrice?: boolean;
 }
 
-const WalletCard = ({ wallet, showPrice = false }: Props) => {
+const WalletCard = ({
+  wallet,
+  disableLink = false,
+  showPrice = false,
+}: Props) => {
   const { ws } = useWorkspaces();
   if (!ws) return null;
 
   return (
     <Link
-      href={`/${ws.id}/finance/wallets/${wallet.id}`}
+      href={disableLink ? '#' : `/${ws.id}/finance/wallets/${wallet.id}`}
       className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">

@@ -4,12 +4,13 @@ export const productDetailsTabs: NavTabs = {
   namespace: 'product-details-tabs',
   tabs: [
     {
-      name: 'Thông tin',
+      name: 'information',
       href: '/[wsId]/inventory/products/[productId]',
     },
     {
-      name: 'Nguồn gốc',
+      name: 'origin',
       href: '/[wsId]/inventory/products/[productId]/origin',
+      disabled: true,
     },
   ],
 };

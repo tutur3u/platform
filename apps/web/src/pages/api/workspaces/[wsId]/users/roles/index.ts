@@ -42,11 +42,40 @@ const fetchUserRoles = async (
     res,
   });
 
-  const { data, error } = await supabase
+  const { blacklist, query, page, itemsPerPage } = req.query;
+
+  const queryBuilder = supabase
     .from('workspace_user_roles')
     .select('id, name, created_at')
     .eq('ws_id', wsId)
     .order('created_at');
+
+  if (blacklist && typeof blacklist === 'string') {
+    queryBuilder.not('id', 'in', `(${blacklist})`);
+  }
+
+  if (query) {
+    queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    console.log(start, end);
+
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);
