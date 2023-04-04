@@ -30,7 +30,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     setRootSegment(
-      ws
+      ws && role
         ? [
             {
               content: ws?.name || 'Tổ chức không tên',
@@ -42,15 +42,15 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               href: `/${ws.id}/users/roles`,
             },
             {
-              content: 'Tạo mới',
-              href: `/${ws.id}/users/roles/new`,
+              content: role?.name || 'Vai trò không tên',
+              href: `/${ws.id}/users/roles/${role.id}`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, role, setRootSegment]);
 
   const [name, setName] = useState<string>('');
 

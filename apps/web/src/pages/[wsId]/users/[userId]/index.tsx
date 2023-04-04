@@ -55,19 +55,15 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     setRootSegment(
-      ws
+      ws && user
         ? [
             {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Users', href: `/${ws.id}/users` },
+            { content: 'Người dùng', href: `/${ws.id}/users/list` },
             {
-              content: 'List',
-              href: `/${ws.id}/users/list`,
-            },
-            {
-              content: user?.name || 'Bệnh nhân',
+              content: user?.name || 'Người dùng không tên',
               href: `/${ws.id}/users/${userId}`,
             },
             {

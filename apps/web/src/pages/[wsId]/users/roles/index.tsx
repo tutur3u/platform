@@ -7,7 +7,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
-import { Divider, Pagination, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import useSWR from 'swr';
@@ -15,6 +15,8 @@ import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
 import { UserRole } from '../../../../types/primitives/UserRole';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,8 +44,22 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const apiPath = ws?.id ? `/api/workspaces/${ws?.id}/users/roles` : null;
+  const [query, setQuery] = useState('');
+  const [activePage, setPage] = useState(1);
+
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+    key: 'users-roles-items-per-page',
+    defaultValue: 15,
+  });
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws?.id}/users/roles?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const countApi = ws?.id ? `/api/workspaces/${ws.id}/users/roles/count` : null;
+
   const { data: roles } = useSWR<UserRole[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',
@@ -54,9 +70,6 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     key: 'workspace-users-roles-showUsers',
     defaultValue: true,
   });
-
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
 
   if (!ws) return null;
 
@@ -76,7 +89,14 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
-          <div className="col-span-2 hidden xl:block" />
+          <PaginationSelector
+            items={itemsPerPage}
+            setItems={(size) => {
+              setPage(1);
+              setItemsPerPage(size);
+            }}
+          />
+          <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị số người dùng"
@@ -86,9 +106,12 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" />
-        <div className="flex items-center justify-center py-4 text-center">
-          <Pagination value={activePage} onChange={setPage} total={10} noWrap />
-        </div>
+        <PaginationIndicator
+          activePage={activePage}
+          setActivePage={setPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={count}
+        />
 
         <div
           className={`grid gap-4 ${

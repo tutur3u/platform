@@ -11,6 +11,10 @@ interface Props {
 const PaginationSelector = ({ items, setItems }: Props) => {
   const data = [
     {
+      label: '1 mục',
+      value: '1',
+    },
+    {
       label: '3 mục',
       value: '3',
     },

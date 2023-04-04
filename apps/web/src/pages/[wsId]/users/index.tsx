@@ -6,6 +6,7 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import StatisticCard from '../../../components/cards/StatisticCard';
+import useSWR from 'swr';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -33,6 +34,15 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const usersCountApi = ws?.id ? `/api/workspaces/${ws.id}/users/count` : null;
+
+  const rolesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/users/roles/count`
+    : null;
+
+  const { data: users } = useSWR<number>(usersCountApi);
+  const { data: roles } = useSWR<number>(rolesCountApi);
+
   if (!ws) return null;
 
   return (
@@ -40,8 +50,17 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
       <HeaderX label="Tổng quan – Người dùng" />
       <div className="flex min-h-full w-full flex-col pb-8">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatisticCard title="Người dùng" href={`/${ws?.id}/users/list`} />
-          <StatisticCard title="Vai trò" href={`/${ws?.id}/users/roles`} />
+          <StatisticCard
+            title="Người dùng"
+            value={users}
+            href={`/${ws?.id}/users/list`}
+          />
+
+          <StatisticCard
+            title="Vai trò"
+            value={roles}
+            href={`/${ws?.id}/users/roles`}
+          />
         </div>
       </div>
     </>
