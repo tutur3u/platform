@@ -1,4 +1,4 @@
-import { Avatar } from '@mantine/core';
+import { Avatar, Divider } from '@mantine/core';
 import React from 'react';
 import { getInitials } from '../../../utils/name-helper';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
@@ -17,6 +17,7 @@ const SidebarTeamList = ({ wsId, sidebarOpened }: Props) => {
     <div className="m-2">
       {teamsLoading || (
         <div className={`flex flex-col ${sidebarOpened ? 'gap-1' : 'gap-2'}`}>
+          {(teams?.length || 0) > 0 && <Divider />}
           {teams &&
             teams.map((team) => (
               <SidebarLink

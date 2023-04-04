@@ -11,13 +11,16 @@ import {
   IdentificationIcon,
   PhoneIcon,
   EnvelopeIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
-import PatientCreateModal from '../../../components/loaders/users/WorkspaceUserCreateModal';
+import WorkspaceUserCreateModal from '../../../components/loaders/users/WorkspaceUserCreateModal';
 import 'dayjs/locale/vi';
 import { genders } from '../../../utils/gender-helper';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import moment from 'moment';
+import UserRoleSelector from '../../../components/selectors/UserRoleSelector';
+import { UserRole } from '../../../types/primitives/UserRole';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -60,7 +63,37 @@ const NewPatientPage: PageWithLayoutProps = () => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
-  const hasRequiredFields = () => name.length > 0;
+  const [roles, setRoles] = useState<UserRole[]>([]);
+  const allRolesValid = () => roles.every((role) => role.id.length > 0);
+
+  const hasRequiredFields = () => name.length > 0 && allRolesValid();
+
+  const getUniqueUnitIds = () => {
+    const roleIds = new Set<string>();
+    roles.forEach((r) => roleIds.add(r.id));
+    return Array.from(roleIds);
+  };
+
+  const addEmptyRole = () => {
+    setRoles((roles) => [
+      ...roles,
+      {
+        id: '',
+      },
+    ]);
+  };
+
+  const updateRole = (index: number, role: UserRole | null) => {
+    setRoles((roles) => {
+      const newRoles = [...roles];
+      if (!role) newRoles.splice(index, 1);
+      else newRoles[index] = role;
+      return newRoles;
+    });
+  };
+
+  const removeRole = (index: number) =>
+    setRoles((roles) => roles.filter((_, i) => i !== index));
 
   const showCreateModal = () => {
     if (!ws) return;
@@ -71,7 +104,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
       closeOnClickOutside: false,
       withCloseButton: false,
       children: (
-        <PatientCreateModal
+        <WorkspaceUserCreateModal
           wsId={ws.id}
           user={{
             name,
@@ -85,6 +118,7 @@ const NewPatientPage: PageWithLayoutProps = () => {
             email,
             address,
           }}
+          roles={roles}
         />
       ),
     });
@@ -242,6 +276,37 @@ const NewPatientPage: PageWithLayoutProps = () => {
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
             />
+
+            <Divider className="col-span-full my-2" />
+
+            <div className="col-span-full grid gap-2">
+              <div className="text-2xl font-semibold">Vai trò</div>
+              <Divider className="my-2" variant="dashed" />
+
+              <button
+                className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                onClick={addEmptyRole}
+              >
+                + Thêm vai trò
+              </button>
+
+              {roles.map((r, idx) => (
+                <div key={`role-${idx}`} className="flex items-end gap-2">
+                  <UserRoleSelector
+                    role={r}
+                    setRole={(r) => updateRole(idx, r)}
+                    blacklist={getUniqueUnitIds()}
+                    className="w-full"
+                  />
+                  <button
+                    className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
+                    onClick={() => removeRole(idx)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

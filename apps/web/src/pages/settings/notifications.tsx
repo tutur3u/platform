@@ -21,7 +21,7 @@ const SettingPage: PageWithLayoutProps = () => {
   }, [setRootSegment]);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 pb-8 lg:grid-cols-2">
       <HeaderX label="Settings" />
 
       <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">

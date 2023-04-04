@@ -51,7 +51,11 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   const apiPath =
     wsId && userId ? `/api/workspaces/${wsId}/users/${userId}` : null;
 
+  const rolesApiPath =
+    wsId && userId ? `/api/workspaces/${wsId}/users/${userId}/roles` : null;
+
   const { data: user } = useSWR<WorkspaceUser>(apiPath);
+  const { data: userRoles } = useSWR<UserRole[]>(rolesApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -109,6 +113,10 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
   const [roles, setRoles] = useState<UserRole[]>([]);
 
+  useEffect(() => {
+    if (userRoles) setRoles(userRoles);
+  }, [userRoles]);
+
   const allRolesValid = () => roles.every((role) => role.id.length > 0);
 
   const hasData = () => !!user;
@@ -143,7 +151,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     setRoles((roles) => roles.filter((_, i) => i !== index));
 
   const showEditModal = () => {
-    if (!user) return;
+    if (!user || !userRoles) return;
     if (typeof userId !== 'string') return;
     if (!ws?.id) return;
 
@@ -171,6 +179,8 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
             email,
             address,
           }}
+          oldRoles={userRoles}
+          roles={roles}
         />
       ),
     });
@@ -187,7 +197,9 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: <WorkspaceUserDeleteModal wsId={ws.id} userId={userId} />,
+      children: (
+        <WorkspaceUserDeleteModal wsId={ws.id} userId={userId} roles={roles} />
+      ),
     });
   };
 

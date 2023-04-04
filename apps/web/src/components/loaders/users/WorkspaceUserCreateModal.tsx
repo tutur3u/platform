@@ -1,31 +1,42 @@
 import { Timeline } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import {
+  BanknotesIcon,
+  CheckBadgeIcon,
+  PlusIcon,
+} from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
+import { UserRole } from '../../../types/primitives/UserRole';
 
 interface Props {
   wsId: string;
   user: Partial<WorkspaceUser>;
+  roles: UserRole[];
 }
 
 interface Progress {
-  created: Status;
+  createdUser: Status;
+  createdRoles: Status;
 }
 
-const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
+const WorkspaceUserCreateModal = ({ wsId, user, roles }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
-    created: 'idle',
+    createdUser: 'idle',
+    createdRoles: 'idle',
   });
 
-  const hasError = progress.created === 'error';
-  const hasSuccess = progress.created === 'success';
+  const hasError =
+    progress.createdUser === 'error' || progress.createdRoles === 'error';
+
+  const hasSuccess =
+    progress.createdUser === 'success' && progress.createdRoles === 'success';
 
   useEffect(() => {
     if (hasSuccess)
@@ -46,7 +57,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
     });
 
     if (res.ok) {
-      setProgress((progress) => ({ ...progress, created: 'success' }));
+      setProgress((progress) => ({ ...progress, createdUser: 'success' }));
       const { id } = await res.json();
       return id;
     } else {
@@ -55,17 +66,52 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
         message: 'Không thể tạo người dùng',
         color: 'red',
       });
-      setProgress((progress) => ({ ...progress, created: 'error' }));
+      setProgress((progress) => ({ ...progress, createdUser: 'error' }));
       return false;
     }
   };
 
-  const [categoryId, setWorkspaceUserId] = useState<string | null>(null);
+  const createRoles = async (userId: string) => {
+    if (roles.length === 0) {
+      setProgress((progress) => ({ ...progress, createdRoles: 'success' }));
+      return true;
+    }
+
+    const res = await fetch(`/api/workspaces/${wsId}/users/${userId}/roles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ roles }),
+    });
+
+    if (res.ok) {
+      setProgress((progress) => ({ ...progress, createdRoles: 'success' }));
+      return true;
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo đơn giá',
+        color: 'red',
+      });
+      setProgress((progress) => ({ ...progress, createdRoles: 'error' }));
+      return false;
+    }
+  };
+
+  const [userId, setUserId] = useState<string | null>(null);
 
   const handleCreate = async () => {
-    setProgress((progress) => ({ ...progress, created: 'loading' }));
-    const categoryId = await createWorkspaceUser();
-    if (categoryId) setWorkspaceUserId(categoryId);
+    setProgress((progress) => ({
+      ...progress,
+      createdUser: 'loading',
+    }));
+    const prescriptionId = await createWorkspaceUser();
+    if (!prescriptionId) return;
+
+    setUserId(prescriptionId);
+    setProgress((progress) => ({ ...progress, createdRoles: 'loading' }));
+    await createRoles(prescriptionId);
   };
 
   const [started, setStarted] = useState(false);
@@ -73,7 +119,13 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
   return (
     <>
       <Timeline
-        active={progress.created === 'success' ? 1 : 0}
+        active={
+          progress.createdUser === 'success'
+            ? 2
+            : progress.createdRoles === 'success'
+            ? 1
+            : 0
+        }
         bulletSize={32}
         lineWidth={4}
         color={started ? 'green' : 'gray'}
@@ -83,14 +135,39 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
           bullet={<PlusIcon className="h-5 w-5" />}
           title="Tạo người dùng"
         >
-          {progress.created === 'success' ? (
+          {progress.createdUser === 'success' ? (
             <div className="text-green-300">Đã tạo người dùng</div>
-          ) : progress.created === 'error' ? (
+          ) : progress.createdUser === 'error' ? (
             <div className="text-red-300">Không thể tạo người dùng</div>
-          ) : progress.created === 'loading' ? (
+          ) : progress.createdUser === 'loading' ? (
             <div className="text-blue-300">Đang tạo người dùng</div>
           ) : (
             <div className="text-zinc-400/80">Đang chờ tạo người dùng</div>
+          )}
+        </Timeline.Item>
+
+        <Timeline.Item
+          bullet={<BanknotesIcon className="h-5 w-5" />}
+          title={`Thêm vai trò (${roles?.length || 0})`}
+        >
+          {progress.createdUser === 'success' ? (
+            progress.createdRoles === 'success' ? (
+              <div className="text-green-300">
+                Đã thêm {roles.length} vai trò
+              </div>
+            ) : progress.createdRoles === 'error' ? (
+              <div className="text-red-300">Không thể thêm vai trò</div>
+            ) : progress.createdRoles === 'loading' ? (
+              <div className="text-blue-300">
+                Đang thêm {roles.length} vai trò
+              </div>
+            ) : (
+              <div className="text-zinc-400/80">Đang chờ thêm vai trò</div>
+            )
+          ) : progress.createdUser === 'error' ? (
+            <div className="text-red-300">Đã huỷ thêm vai trò</div>
+          ) : (
+            <div className="text-zinc-400/80">Đang chờ thêm người dùng</div>
           )}
         </Timeline.Item>
 
@@ -99,7 +176,7 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
-          {progress.created === 'success' ? (
+          {progress.createdRoles === 'success' ? (
             <div className="text-green-300">Đã hoàn tất</div>
           ) : hasError ? (
             <div className="text-red-300">Đã huỷ hoàn tất</div>
@@ -119,9 +196,9 @@ const WorkspaceUserCreateModal = ({ wsId, user }: Props) => {
           </button>
         )}
 
-        {categoryId && (hasError || hasSuccess) && (
+        {userId && (hasError || hasSuccess) && (
           <Link
-            href={`/${wsId}/users/${categoryId}`}
+            href={`/${wsId}/users/${userId}`}
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >

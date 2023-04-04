@@ -24,23 +24,25 @@ interface NestedLayoutProps {
 
 const NestedLayout: FC<NestedLayoutProps> = ({
   children,
-  mode = 'workspace',
+  mode,
   isFavorite = false,
   onFavorite,
   noTabs = false,
 }: NestedLayoutProps) => {
   const router = useRouter();
+
   const { t } = useTranslation();
-
-  const tabs = getTabs({ t, router, mode });
-
   const { segments } = useSegments();
+
+  const tabs = mode ? getTabs({ t, router, mode }) : [];
+
+  const disableTabs = noTabs || tabs.length === 0;
 
   return (
     <SidebarLayout>
       <nav
         className={`${
-          noTabs ? 'h-16' : 'h-25'
+          disableTabs ? 'h-16' : 'h-25'
         } fixed z-10 w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
       >
         <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
@@ -58,8 +60,8 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             <div className="scrollbar-none flex gap-x-2 overflow-x-auto">
               {segments
                 .filter((_, index) =>
-                  // If noTabs is true, then we want to show all segments
-                  noTabs
+                  // If disableTabs is true, then we want to show all segments
+                  disableTabs
                     ? true
                     : // Otherwise, don't show the last segment
                       index < segments.length - 1
@@ -72,7 +74,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
                     >
                       {s?.content || ''}
                     </Link>
-                    {index < segments.length - (noTabs ? 1 : 2) && (
+                    {index < segments.length - (disableTabs ? 1 : 2) && (
                       <span className="text-zinc-500">/</span>
                     )}
                   </Fragment>
@@ -82,7 +84,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
             <LoadingIndicator className="h-4 w-4" />
           )}
         </div>
-        {noTabs || (
+        {disableTabs || (
           <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
             {tabs
               .filter((tab) => DEV_MODE || !tab.disabled)
@@ -120,7 +122,9 @@ const NestedLayout: FC<NestedLayoutProps> = ({
 
       <div
         className={`${
-          noTabs ? 'h-[calc(100vh-4rem)] pt-24' : 'h-[calc(100vh-13rem)] pt-32'
+          disableTabs
+            ? 'h-[calc(100vh-4rem)] pt-24'
+            : 'h-[calc(100vh-13rem)] pt-32'
         } px-4 md:px-8 lg:px-16 xl:px-32`}
       >
         {children}

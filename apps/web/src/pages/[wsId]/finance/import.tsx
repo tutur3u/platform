@@ -1,18 +1,18 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../components/layouts/NestedLayout';
 import { Divider, FileInput, Select, Switch, Tabs } from '@mantine/core';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import { Wallet } from '../../../../types/primitives/Wallet';
-import { Transaction } from '../../../../types/primitives/Transaction';
-import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
-import WalletCard from '../../../../components/cards/WalletCard';
-import TransactionCard from '../../../../components/cards/TransactionCard';
-import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
+import { useSegments } from '../../../hooks/useSegments';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import SettingItemCard from '../../../components/settings/SettingItemCard';
+import { Wallet } from '../../../types/primitives/Wallet';
+import { Transaction } from '../../../types/primitives/Transaction';
+import { TransactionCategory } from '../../../types/primitives/TransactionCategory';
+import WalletCard from '../../../components/cards/WalletCard';
+import TransactionCard from '../../../components/cards/TransactionCard';
+import GeneralItemCard from '../../../components/cards/GeneralItemCard';
 import { read } from 'xlsx';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -32,12 +32,8 @@ const WalletImportPage: PageWithLayoutProps = () => {
             },
             { content: 'Tài chính', href: `/${ws.id}/finance` },
             {
-              content: 'Nguồn tiền',
-              href: `/${ws.id}/finance/wallets`,
-            },
-            {
               content: 'Nhập dữ liệu',
-              href: `/${ws.id}/finance/wallets/import`,
+              href: `/${ws.id}/finance/import`,
             },
           ]
         : []

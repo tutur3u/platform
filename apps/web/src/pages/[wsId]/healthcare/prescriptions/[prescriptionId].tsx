@@ -24,18 +24,20 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
 
   const router = useRouter();
-  const { prescriptionId } = router.query;
+  const { wsId, prescriptionId } = router.query;
 
-  const prescriptionApiPath = `/api/workspaces/${ws?.id}/healthcare/prescriptions/${prescriptionId}`;
-  const productsApiPath = `/api/workspaces/${ws?.id}/healthcare/prescriptions/${prescriptionId}/products`;
+  const apiPath =
+    wsId && prescriptionId
+      ? `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}`
+      : null;
 
-  const { data: prescription } = useSWR<Prescription>(
-    ws?.id && prescriptionId ? prescriptionApiPath : null
-  );
+  const productsApiPath =
+    wsId && prescriptionId
+      ? `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}/products`
+      : null;
 
-  const { data: productPrices } = useSWR<Product[]>(
-    ws?.id && prescriptionId ? productsApiPath : null
-  );
+  const { data: prescription } = useSWR<Prescription>(apiPath);
+  const { data: productPrices } = useSWR<Product[]>(productsApiPath);
 
   useEffect(() => {
     setRootSegment(

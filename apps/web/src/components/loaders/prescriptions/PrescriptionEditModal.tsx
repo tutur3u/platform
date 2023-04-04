@@ -16,9 +16,8 @@ import { Product } from '../../../types/primitives/Product';
 interface Props {
   wsId: string;
 
-  oldProducts: Product[];
-
   prescription: Prescription;
+  oldProducts: Product[];
   products: Product[];
 }
 
