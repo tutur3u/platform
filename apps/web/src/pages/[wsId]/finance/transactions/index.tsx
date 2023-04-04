@@ -17,6 +17,7 @@ import ModeSelector, {
 } from '../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import SidebarLink from '../../../../components/layouts/SidebarLink';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -98,7 +99,13 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
               setItemsPerPage(size);
             }}
           />
-          <div className="hidden xl:block" />
+          {ws && (
+            <SidebarLink
+              href={`/${ws.id}/finance/import`}
+              label="Nhập dữ liệu từ tệp"
+              className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+            />
+          )}
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị số tiền"

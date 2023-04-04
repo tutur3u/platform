@@ -65,8 +65,6 @@ const fetchDiagnoses = async (
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
 
-    console.log(start, end);
-
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
