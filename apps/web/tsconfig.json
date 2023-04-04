@@ -5,7 +5,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../../new.tsx",
+    "src/pages/[wsId]/healthcare/prescriptions/new.tsx",
   ],
   "exclude": [
     "node_modules"
