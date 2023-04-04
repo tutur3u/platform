@@ -22,7 +22,7 @@ interface Props {
 }
 
 const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
-  const [newPopover, setNewPopover] = useState(false);
+  const [popover, setPopover] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -67,8 +67,8 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
 
   return (
     <Popover
-      opened={newPopover}
-      onChange={setNewPopover}
+      opened={popover}
+      onChange={setPopover}
       width={200}
       offset={16}
       position={isMobile ? 'bottom-start' : 'right'}
@@ -78,11 +78,11 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
         <div className="mx-2">
           <SidebarButton
             label={newLabel}
-            onClick={() => setNewPopover((o) => !o)}
-            isActive={newPopover}
+            onClick={() => setPopover((o) => !o)}
+            isActive={popover}
             activeIcon={<PlusIcon className="w-5" />}
             showLabel={sidebarOpened}
-            showTooltip={!sidebarOpened && !newPopover}
+            showTooltip={!sidebarOpened && !popover}
             className="w-full"
           />
         </div>
@@ -91,7 +91,7 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
       <Popover.Dropdown className="mt-2 grid gap-1 p-1">
         <SidebarButton
           onClick={() => {
-            setNewPopover(false);
+            setPopover(false);
             showEditWorkspaceModal();
           }}
           activeIcon={<BuildingOffice2Icon className="w-5" />}
@@ -104,7 +104,7 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
         {hasWorkspace && (
           <SidebarButton
             onClick={() => {
-              setNewPopover(false);
+              setPopover(false);
               showTeamEditForm();
             }}
             activeIcon={<Squares2X2Icon className="w-5" />}
@@ -113,21 +113,21 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
           />
         )}
         <SidebarButton
-          onClick={() => setNewPopover(false)}
+          onClick={() => setPopover(false)}
           activeIcon={<CheckCircleIcon className="w-5" />}
           label={newTask}
           left
           disabled
         />
         <SidebarButton
-          onClick={() => setNewPopover(false)}
+          onClick={() => setPopover(false)}
           activeIcon={<ClipboardDocumentListIcon className="w-5" />}
           label={newNote}
           left
           disabled
         />
         <SidebarButton
-          onClick={() => setNewPopover(false)}
+          onClick={() => setPopover(false)}
           activeIcon={<BanknotesIcon className="w-5" />}
           label={newTransaction}
           left
@@ -138,7 +138,7 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
           <>
             <Divider />
             <SidebarButton
-              onClick={() => setNewPopover(false)}
+              onClick={() => setPopover(false)}
               activeIcon={<UserPlusIcon className="w-5" />}
               label={invitePeople}
               left

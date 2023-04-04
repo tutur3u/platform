@@ -82,7 +82,10 @@
 
     "/[wsId]/inventory/products": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/products/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/products/[productId]": ["sidebar-tabs"],
+    "/[wsId]/inventory/products/[productId]": [
+      "sidebar-tabs",
+      "product-details-tabs"
+    ],
 
     "/[wsId]/inventory/categories": ["sidebar-tabs", "inventory-tabs"],
     "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
@@ -109,10 +112,10 @@
     "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
+    "/[wsId]/finance/wallets/import": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
-      "finance-tabs",
       "wallet-details-tabs"
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [

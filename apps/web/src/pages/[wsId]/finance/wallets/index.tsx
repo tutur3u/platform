@@ -17,6 +17,7 @@ import ModeSelector, {
 import WalletCard from '../../../../components/cards/WalletCard';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import SidebarLink from '../../../../components/layouts/SidebarLink';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -96,7 +97,13 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
               setItemsPerPage(size);
             }}
           />
-          <div className="hidden xl:block" />
+          {ws && (
+            <SidebarLink
+              href={`/${ws.id}/finance/wallets/import`}
+              label="Nhập dữ liệu"
+              className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+            />
+          )}
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị tiền trong ví"

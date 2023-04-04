@@ -5,29 +5,39 @@ interface Props {
   description: string;
   saving?: boolean;
 
+  disabled?: boolean;
   comingSoon?: boolean;
 
   onSave?: () => void;
 
-  children: React.ReactNode;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 const SettingItemCard = ({
   title,
   description,
   saving,
+  disabled,
   comingSoon,
   onSave,
+  className,
   children,
 }: Props) => {
   return (
-    <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+    <div
+      className={`flex flex-col rounded border border-zinc-800/80 bg-[#19191d] p-4 ${
+        disabled ? 'cursor-not-allowed opacity-50' : ''
+      } ${className}`}
+    >
       <div className="mb-1 text-2xl font-bold">{title}</div>
-      <div className="mb-4 font-semibold text-zinc-500">{description}</div>
-
-      {children}
+      <div className="mb-4 whitespace-pre-line font-semibold text-zinc-500">
+        {description}
+      </div>
 
       <div className="h-full" />
+
+      {children}
 
       {(onSave || comingSoon) && (
         <>

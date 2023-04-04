@@ -50,7 +50,6 @@ const fetchVitals = async (
     .order('created_at');
 
   if (blacklist && typeof blacklist === 'string') {
-    // const blacklistArray = blacklist.split(',');
     queryBuilder.not('id', 'in', `(${blacklist})`);
   }
 

@@ -42,13 +42,17 @@ const fetchUserRoles = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { blacklist, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('workspace_user_roles')
     .select('id, name, created_at')
     .eq('ws_id', wsId)
     .order('created_at');
+
+  if (blacklist && typeof blacklist === 'string') {
+    queryBuilder.not('id', 'in', `(${blacklist})`);
+  }
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);
