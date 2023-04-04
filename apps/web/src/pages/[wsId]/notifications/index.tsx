@@ -8,10 +8,15 @@ import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { useSegments } from '../../../hooks/useSegments';
 import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const NotificationsPage = () => {
+  const {
+    query: { wsId },
+  } = useRouter();
+
   const { wsLoading, workspaceInvites } = useWorkspaces();
   const { setRootSegment } = useSegments();
 
@@ -20,17 +25,17 @@ const NotificationsPage = () => {
   useEffect(() => {
     setRootSegment({
       content: t('sidebar-tabs:notifications'),
-      href: `/notifications`,
+      href: `/${wsId}/notifications`,
     });
 
     return () => setRootSegment([]);
-  }, [t, setRootSegment]);
+  }, [wsId, t, setRootSegment]);
 
   const noNotifications = t('no-notifications');
   const desc = t('no-notifications-desc');
 
   return (
-    <div className="h-full">
+    <div className="min-h-full pb-8">
       <HeaderX label="Thông báo" />
       {wsLoading ? (
         <div className="flex items-center justify-center">

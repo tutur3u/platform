@@ -209,8 +209,6 @@ function LeftSidebar({ className }: SidebarProps) {
                   />
                 )}
 
-                <Divider />
-
                 <SidebarTeamList
                   wsId={ws.id}
                   sidebarOpened={sidebar === 'open'}

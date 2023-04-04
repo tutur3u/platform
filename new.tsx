@@ -1,18 +1,18 @@
 import { ReactElement, useCallback, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from './apps/web/src/components/metadata/HeaderX';
+import { PageWithLayoutProps } from './apps/web/src/types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from './apps/web/src/utils/serverless/enforce-has-workspaces';
+import NestedLayout from './apps/web/src/components/layouts/NestedLayout';
 import { Divider, NumberInput, Switch, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import PatientSelector from '../../../../components/selectors/PatientSelector';
-import { Product } from '../../../../types/primitives/Product';
-import PrescriptionCreateModal from '../../../../components/loaders/prescriptions/PrescriptionCreateModal';
+import PatientSelector from './apps/web/src/components/selectors/PatientSelector';
+import { Product } from './apps/web/src/types/primitives/Product';
+import PrescriptionCreateModal from './apps/web/src/components/loaders/prescriptions/PrescriptionCreateModal';
 import 'dayjs/locale/vi';
-import PrescriptionProductInput from '../../../../components/inputs/PrescriptionProductInput';
+import PrescriptionProductInput from './apps/web/src/components/inputs/PrescriptionProductInput';
 import { useLocalStorage } from '@mantine/hooks';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import { useSegments } from './apps/web/src/hooks/useSegments';
+import { useWorkspaces } from './apps/web/src/hooks/useWorkspaces';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
