@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 7803",
-    "devx": "pnpm i && pnpm supabase stop && pnpm supabase start && next dev -p 7803",
+    "devx": "pnpm supabase stop && pnpm i && pnpm supabase start && next dev -p 7803",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -89,7 +89,7 @@
     "lint-staged": "^13.2.0",
     "next-translate-plugin": "^2.0.4",
     "postcss": "^8.4.21",
-    "supabase": "^1.47.3",
+    "supabase": "^1.47.4",
     "tailwind-scrollbar": "^3.0.0",
     "tailwindcss": "^3.3.1",
     "tailwindcss-themer": "^3.0.1",
