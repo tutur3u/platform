@@ -1,13 +1,14 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import React from 'react';
+import React, { useEffect } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -19,7 +20,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (session)
     return {
       redirect: {
-        destination: '/onboarding',
+        destination: '/reset-password',
         permanent: false,
       },
       props: {
@@ -34,13 +35,18 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const PasswordRecoveryPage = () => {
+  const router = useRouter();
+  const user = useUser();
+
+  useEffect(() => {
+    if (user) router.push('/reset-password');
+  }, [router, user]);
+
   const supabaseClient = useSupabaseClient();
 
   const handleRecovery = async ({ email }: AuthFormFields) => {
     try {
       if (!email) throw new Error('Please fill in all fields');
-
-      console.log('email', email);
 
       await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: 'https://tuturuuu.com/reset-password',
