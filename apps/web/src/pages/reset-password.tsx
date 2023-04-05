@@ -17,15 +17,14 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (session)
+  if (!session)
     return {
       redirect: {
-        destination: '/onboarding',
+        destination: '/recover',
         permanent: false,
       },
       props: {
         initialSession: session,
-        user: session.user,
       },
     };
 
@@ -47,14 +46,15 @@ const ResetPasswordPage = () => {
         password,
       });
 
-      console.log('password', password);
-
       if (error) throw new Error(error.message);
+
       showNotification({
         title: 'Success',
         message: 'Password reset successfully',
         color: 'green',
       });
+
+      router.push('/onboarding');
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -64,23 +64,18 @@ const ResetPasswordPage = () => {
         });
       else alert(e);
     }
-    router.push('https://tuturuuu.com/onboarding');
   };
 
-  const { t } = useTranslation('recover');
+  const { t } = useTranslation('reset-password');
 
-  const recoverPassword = t('recover-password');
-  const recoverPasswordDesc = t('recover-password-desc');
+  const resetPassword = t('reset-password');
+  const resetPasswordDesc = t('reset-password-desc');
 
-  const send = t('send');
-  const sending = t('sending');
-
-  const alreadyHaveAccount = t('already-have-account');
-  const login = t('login');
+  const resetting = t('resetting');
 
   return (
     <>
-      <HeaderX label={`Tuturuuu — ${recoverPassword}`} />
+      <HeaderX label={`Tuturuuu — ${resetPassword}`} />
       <Image
         src="/media/background/auth-featured-bg.jpg"
         alt="Featured background"
@@ -89,15 +84,10 @@ const ResetPasswordPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
       <AuthForm
-        title={recoverPassword}
-        description={recoverPasswordDesc}
-        submitLabel={send}
-        submittingLabel={sending}
-        secondaryAction={{
-          description: alreadyHaveAccount,
-          label: login,
-          href: '/login',
-        }}
+        title={resetPassword}
+        description={resetPasswordDesc}
+        submitLabel={resetPassword}
+        submittingLabel={resetting}
         onSubmit={handleResetPassword}
         resetPasswordMode
       />
