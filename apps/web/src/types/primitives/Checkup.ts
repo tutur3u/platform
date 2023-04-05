@@ -2,7 +2,7 @@ export interface Checkup {
   id: string;
   ws_id?: string;
   diagnosis_id?: string | null;
-  patient_id?: string;
+  user_id?: string;
   note?: string;
   checked?: boolean;
   next_checked?: boolean;

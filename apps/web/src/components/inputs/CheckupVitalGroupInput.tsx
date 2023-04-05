@@ -15,7 +15,7 @@ interface Props {
   updateGroupId: (idx: number, id: string) => void;
   removeGroup: (idx: number) => void;
 
-  addVitals: (groupId: string, vitalIds: string[]) => void;
+  addVitals: (groupId: string, vitals: Vital[]) => void;
 }
 
 const CheckupVitalGroupInput = ({
@@ -38,11 +38,7 @@ const CheckupVitalGroupInput = ({
   const { data: vitals } = useSWR<Vital[]>(vitalsApiPath);
 
   useEffect(() => {
-    if (vitals)
-      addVitals(
-        group.id,
-        vitals.map((v) => v.id)
-      );
+    if (vitals) addVitals(group.id, vitals);
   }, [group, vitals, addVitals]);
 
   return (

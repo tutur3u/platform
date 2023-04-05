@@ -10,8 +10,8 @@ import ModeSelector, {
 import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
-import PrescriptionCard from '../../../../components/cards/PrescriptionCard';
-import { Prescription } from '../../../../types/primitives/Prescription';
+import InvoiceCard from '../../../../components/cards/InvoiceCard';
+import { Invoice } from '../../../../types/primitives/Invoice';
 import useSWR from 'swr';
 import StatusSelector from '../../../../components/selectors/StatusSelector';
 import { useSegments } from '../../../../hooks/useSegments';
@@ -21,7 +21,7 @@ import PaginationIndicator from '../../../../components/pagination/PaginationInd
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const MiscPrescriptionsPage: PageWithLayoutProps = () => {
+const MiscsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -33,10 +33,10 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Khám bệnh', href: `/${ws.id}/healthcare` },
+            { content: 'Tài chính', href: `/${ws.id}/finance` },
             {
-              content: 'Đơn thuốc',
-              href: `/${ws.id}/healthcare/prescriptions`,
+              content: 'Hoá đơn',
+              href: `/${ws.id}/finance/invoices`,
             },
           ]
         : []
@@ -51,63 +51,63 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'healthcare-prescriptions-items-per-page',
+    key: 'finance-invoices-items-per-page',
     defaultValue: 15,
   });
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/healthcare/prescriptions?status=${status}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${ws?.id}/finance/invoices?status=${status}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
   const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/healthcare/prescriptions/count`
+    ? `/api/workspaces/${ws.id}/finance/invoices/count`
     : null;
 
-  const { data: prescriptions } = useSWR<Prescription[]>(apiPath);
+  const { data: invoices } = useSWR<Invoice[]>(apiPath);
   const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'healthcare-prescriptions-mode',
+    key: 'finance-invoices-mode',
     defaultValue: 'grid',
   });
 
   const [showPhone, setShowPhone] = useLocalStorage({
-    key: 'healthcare-prescriptions-showPhone',
+    key: 'finance-invoices-showPhone',
     defaultValue: false,
   });
 
   const [showGender, setShowGender] = useLocalStorage({
-    key: 'healthcare-prescriptions-showGender',
+    key: 'finance-invoices-showGender',
     defaultValue: false,
   });
 
   const [showAddress, setShowAddress] = useLocalStorage({
-    key: 'healthcare-prescriptions-showAddress',
+    key: 'finance-invoices-showAddress',
     defaultValue: false,
   });
 
   const [showTime, setShowTime] = useLocalStorage({
-    key: 'healthcare-prescriptions-showTime',
+    key: 'finance-invoices-showTime',
     defaultValue: true,
   });
 
   const [showStatus, setShowStatus] = useLocalStorage({
-    key: 'healthcare-prescriptions-showStatus',
+    key: 'finance-invoices-showStatus',
     defaultValue: true,
   });
 
   const [showAmount, setShowAmount] = useLocalStorage({
-    key: 'healthcare-prescriptions-showAmount',
+    key: 'finance-invoices-showAmount',
     defaultValue: true,
   });
 
   const [showPrice, setShowPrice] = useLocalStorage({
-    key: 'healthcare-prescriptions-showPrice',
+    key: 'finance-invoices-showPrice',
     defaultValue: true,
   });
 
   const [showCreator, setShowCreator] = useLocalStorage({
-    key: 'healthcare-prescriptions-showCreator',
+    key: 'finance-invoices-showCreator',
     defaultValue: false,
   });
 
@@ -115,7 +115,7 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Đơn thuốc – Khám bệnh" />
+      <HeaderX label="Hoá đơn – Tài chính" />
       <div className="flex min-h-full w-full flex-col pb-8">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
@@ -198,13 +198,13 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href={`/${ws.id}/healthcare/prescriptions/new`} />
+          <PlusCardButton href={`/${ws.id}/finance/invoices/new`} />
 
-          {prescriptions &&
-            prescriptions?.map((p) => (
-              <PrescriptionCard
+          {invoices &&
+            invoices?.map((p) => (
+              <InvoiceCard
                 key={p.id}
-                prescription={p}
+                invoice={p}
                 showAddress={showAddress}
                 showGender={showGender}
                 showPhone={showPhone}
@@ -221,8 +221,8 @@ const MiscPrescriptionsPage: PageWithLayoutProps = () => {
   );
 };
 
-MiscPrescriptionsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="healthcare">{page}</NestedLayout>;
+MiscsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="finance">{page}</NestedLayout>;
 };
 
-export default MiscPrescriptionsPage;
+export default MiscsPage;

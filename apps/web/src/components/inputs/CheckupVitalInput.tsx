@@ -42,7 +42,7 @@ const CheckupVitalInput = ({
           placeholder={
             vital?.unit ? `Đơn vị tính: ${vital.unit}` : 'Nhập giá trị'
           }
-          value={vital?.value}
+          value={vital?.value || ''}
           onChange={(num) => updateVital({ ...vital, value: num || undefined })}
           className="w-full"
           classNames={{

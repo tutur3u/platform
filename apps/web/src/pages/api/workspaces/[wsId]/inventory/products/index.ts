@@ -42,12 +42,17 @@ const fetchProducts = async (
     res,
   });
 
-  const { categoryIds, unique, hasUnit, query, page, itemsPerPage } = req.query;
+  const { categoryIds, unique, hasUnit, blacklist, query, page, itemsPerPage } =
+    req.query;
 
   if (unique) {
     const queryBuilder = supabase
       .from('workspace_products')
       .select('id, name, manufacturer, description, usage, category_id');
+
+    if (blacklist && typeof blacklist === 'string' && !hasUnit) {
+      queryBuilder.not('id', 'in', `(${blacklist})`);
+    }
 
     if (query) {
       queryBuilder.ilike('name', `%${query}%`);

@@ -32,12 +32,12 @@ const CheckupCard = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const patientApiPath = `/api/workspaces/${ws?.id}/users/${checkup.patient_id}`;
+  const userApiPath = `/api/workspaces/${ws?.id}/users/${checkup.user_id}`;
   const diagnosisApiPath = `/api/workspaces/${ws?.id}/healthcare/diagnoses/${checkup.diagnosis_id}`;
   const creatorApiPath = `/api/users/${checkup.creator_id}`;
 
-  const { data: patient } = useSWR<WorkspaceUser>(
-    ws?.id && checkup.patient_id ? patientApiPath : null
+  const { data: user } = useSWR<WorkspaceUser>(
+    ws?.id && checkup.user_id ? userApiPath : null
   );
 
   const { data: diagnosis } = useSWR<Diagnosis>(
@@ -60,16 +60,16 @@ const CheckupCard = ({
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-4 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
-            {checkup?.patient_id ? patient?.name : 'Khách vãng lai'}{' '}
-            {showGender && patient?.gender && (
+            {checkup?.user_id ? user?.name : 'Khách vãng lai'}{' '}
+            {showGender && user?.gender && (
               <span className="lowercase text-orange-300">
-                ({getGender(patient.gender)})
+                ({getGender(user.gender)})
               </span>
             )}
           </div>
-          {showPhone && checkup?.patient_id && (
+          {showPhone && checkup?.user_id && (
             <div className="line-clamp-1 font-semibold text-zinc-400/70">
-              {patient?.phone || 'Chưa có số điện thoại'}
+              {user?.phone || 'Chưa có số điện thoại'}
             </div>
           )}
         </div>
@@ -141,12 +141,12 @@ const CheckupCard = ({
         </div>
       )}
 
-      {showAddress && checkup?.patient_id && (
+      {showAddress && checkup?.user_id && (
         <>
           <Divider variant="dashed" className="w-full border-zinc-700" />
           <div className="m-2 h-full w-full px-2">
             <div className="flex h-full items-center justify-center rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-              {patient?.address || 'Chưa có địa chỉ'}
+              {user?.address || 'Chưa có địa chỉ'}
             </div>
           </div>
         </>

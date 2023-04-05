@@ -22,7 +22,12 @@ const ProductUnitSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?hasUnit=true`;
+  const apiPath = `/api/workspaces/${
+    ws?.id
+  }/inventory/products?hasUnit=true&blacklist=${blacklist
+    ?.filter((blId) => id !== blId && id !== '')
+    .join(',')}`;
+
   const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
 
   const data = [

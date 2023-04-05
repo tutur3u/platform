@@ -8,6 +8,7 @@
     "/login": ["auth", "login"],
     "/signup": ["auth", "signup"],
     "/recover": ["auth", "recover"],
+    "/reset-password": ["auth", "reset-password"],
     "/onboarding": ["onboarding", "invite"],
 
     "/settings": ["sidebar-tabs", "settings-tabs"],
@@ -45,13 +46,6 @@
     "/[wsId]/attendance": ["sidebar-tabs"],
 
     "/[wsId]/healthcare": ["sidebar-tabs", "healthcare-tabs"],
-
-    "/[wsId]/healthcare/prescriptions": ["sidebar-tabs", "healthcare-tabs"],
-    "/[wsId]/healthcare/prescriptions/new": ["sidebar-tabs", "healthcare-tabs"],
-    "/[wsId]/healthcare/prescriptions/[prescriptionId]": [
-      "sidebar-tabs",
-      "healthcare-tabs"
-    ],
 
     "/[wsId]/healthcare/checkups": ["sidebar-tabs", "healthcare-tabs"],
     "/[wsId]/healthcare/checkups/new": ["sidebar-tabs", "healthcare-tabs"],
@@ -140,6 +134,10 @@
       "sidebar-tabs",
       "finance-tabs"
     ],
+
+    "/[wsId]/finance/invoices": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/invoices/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/invoices/[invoiceId]": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]

@@ -3,13 +3,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId } = req.query;
+    const { invoiceId } = req.query;
 
-    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+    if (!invoiceId || typeof invoiceId !== 'string')
+      throw new Error('Invalid invoiceId');
 
     switch (req.method) {
-      case 'GET':
-        return await fetchCount(req, res, wsId);
+      case 'PUT': {
+        return await updateStatus(req, res, invoiceId);
+      }
 
       default:
         throw new Error(
@@ -26,25 +28,27 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default handler;
-
-const fetchCount = async (
+const updateStatus = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { data, error } = await supabase.rpc(
-    'get_healthcare_prescriptions_count',
-    {
-      ws_id: wsId,
-    }
-  );
+  const { completed } = req.body;
+
+  const { error } = await supabase
+    .from('finance_invoices')
+    .update({
+      completed_at: completed ? 'now()' : null,
+    })
+    .eq('id', invoiceId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({});
 };
+
+export default handler;

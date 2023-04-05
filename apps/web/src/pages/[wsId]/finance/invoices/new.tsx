@@ -3,41 +3,22 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, NumberInput, Textarea } from '@mantine/core';
+import { Divider, NumberInput, Switch, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import PatientSelector from '../../../../components/selectors/PatientSelector';
+import WorkspaceUserSelector from '../../../../components/selectors/WorkspaceUserSelector';
 import { Product } from '../../../../types/primitives/Product';
-import 'dayjs/locale/vi';
-import PrescriptionProductInput from '../../../../components/inputs/PrescriptionProductInput';
-import { useRouter } from 'next/router';
-import useSWR, { mutate } from 'swr';
-import { Prescription } from '../../../../types/primitives/Prescription';
-import PrescriptionEditModal from '../../../../components/loaders/prescriptions/PrescriptionEditModal';
-import PrescriptionDeleteModal from '../../../../components/loaders/prescriptions/PrescriptionDeleteModal';
+import InvoiceCreateModal from '../../../../components/loaders/invoices/InvoiceCreateModal';
+import InvoiceProductInput from '../../../../components/inputs/InvoiceProductInput';
+import { useLocalStorage } from '@mantine/hooks';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import 'dayjs/locale/vi';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const PrescriptionDetailsPage: PageWithLayoutProps = () => {
+const NewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
-
-  const router = useRouter();
-  const { wsId, prescriptionId } = router.query;
-
-  const apiPath =
-    wsId && prescriptionId
-      ? `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}`
-      : null;
-
-  const productsApiPath =
-    wsId && prescriptionId
-      ? `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}/products`
-      : null;
-
-  const { data: prescription } = useSWR<Prescription>(apiPath);
-  const { data: productPrices } = useSWR<Product[]>(productsApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -47,61 +28,39 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Khám bệnh', href: `/${ws.id}/healthcare` },
+            { content: 'Tài chính', href: `/${ws.id}/finance` },
             {
-              content: 'Đơn thuốc',
-              href: `/${ws.id}/healthcare/prescriptions`,
+              content: 'Hoá đơn',
+              href: `/${ws.id}/finance/invoices`,
             },
             {
-              content: prescription?.id || 'Đang tải...',
-              href: `/${ws.id}/healthcare/prescriptions/${prescription?.id}`,
+              content: 'Tạo mới',
+              href: `/${ws.id}/finance/invoices/new`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, prescription, setRootSegment]);
+  }, [ws, setRootSegment]);
 
-  const [patientId, setPatientId] = useState<string>('');
-  const [advice, setAdvice] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('');
+  const [notice, setNotice] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [diff, setDiff] = useState<number>(0);
 
-  const [completed, setCompleted] = useState(false);
-
-  useEffect(() => {
-    if (prescription) {
-      setPatientId(prescription?.patient_id || '');
-      setAdvice(prescription?.advice || '');
-      setNote(prescription?.note || '');
-      setDiff(prescription?.price_diff || 0);
-      setCompleted(!!prescription?.completed_at || false);
-    }
-  }, [prescription]);
-
-  const [products, setProducts] = useState<Product[] | undefined>([]);
-
-  useEffect(() => {
-    if (productPrices) setProducts(productPrices);
-  }, [productPrices]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const allProductsValid = () =>
-    products?.every(
+    products.every(
       (product) =>
-        (product?.id?.length || 0) > 0 &&
-        product?.unit_id &&
-        product?.amount &&
-        product?.price !== undefined
+        product.id.length > 0 && product?.amount && product?.price !== undefined
     );
 
-  const hasRequiredFields = () =>
-    products && products?.length > 0 && allProductsValid();
+  const hasRequiredFields = () => products.length > 0 && allProductsValid();
 
   const addEmptyProduct = () => {
-    if (!products) return;
     setProducts((products) => [
-      ...(products || []),
+      ...products,
       {
         id: '',
       },
@@ -109,7 +68,6 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
   };
 
   const updateProductId = (index: number, newId: string, id?: string) => {
-    if (!products) return;
     if (newId === id) return;
 
     const [newProductId, newUnitId] = newId.split('::');
@@ -133,7 +91,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
       if (oldIndex === -1) return;
 
       setProducts((products) => {
-        const newProducts = [...(products || [])];
+        const newProducts = [...products];
         newProducts[oldIndex].id = newProductId;
         newProducts[oldIndex].unit_id = newUnitId;
         newProducts[index].amount = 1;
@@ -141,7 +99,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
       });
     } else {
       setProducts((products) => {
-        const newProducts = [...(products || [])];
+        const newProducts = [...products];
         newProducts[index].id = newProductId;
         newProducts[index].unit_id = newUnitId;
         newProducts[index].amount = 1;
@@ -151,8 +109,6 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
   };
 
   const updateAmount = (id: string, amount: number) => {
-    if (!products) return;
-
     const [productId, unitId] = id.split('::');
 
     const index = products.findIndex(
@@ -161,26 +117,21 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
 
     if (index === -1) return;
 
-    if (amount <= 0) {
-      setProducts((products) => (products || []).filter((_, i) => i !== index));
-      return;
-    }
-
     setProducts((products) => {
-      const newProducts = [...(products || [])];
+      const newProducts = [...products];
       newProducts[index].amount = amount;
       return newProducts;
     });
   };
 
   const getUniqueProductIds = () => {
-    const unitIds = new Set<string>();
-    (products || []).forEach((price) => unitIds.add(price.id));
-    return Array.from(unitIds);
+    const ids = new Set<string>();
+    products.forEach((product) => ids.add(`${product.id}::${product.unit_id}`));
+    return Array.from(ids);
   };
 
   const removePrice = (index: number) =>
-    setProducts((products) => (products || []).filter((_, i) => i !== index));
+    setProducts((products) => products.filter((_, i) => i !== index));
 
   const updatePrice = useCallback(
     ({
@@ -192,8 +143,6 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
       unitId: string;
       price: number;
     }) => {
-      if (!products) return;
-
       const index = products.findIndex(
         (product) => product.id === productId && product.unit_id === unitId
       );
@@ -201,151 +150,85 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
       if (index === -1) return;
 
       setProducts((products) => {
-        if (!products) return [];
         const newProducts = [...products];
-
         if (
           newProducts?.[index] != undefined &&
           newProducts[index]?.price == undefined &&
           newProducts[index]?.price != price
         )
           newProducts[index].price = price;
-
         return newProducts;
       });
     },
     [products]
   );
 
-  const amount = (products || []).reduce(
+  const [diff, setDiff] = useState<number>(0);
+
+  const amount = products.reduce(
     (acc, product) => acc + (product?.amount || 0),
     0
   );
 
-  const price = (products || []).reduce(
+  const price = products.reduce(
     (acc, product) => acc + (product?.price || 0) * (product?.amount || 0),
     0
   );
 
-  const showEditModal = () => {
-    if (!prescription) return;
-    if (typeof prescriptionId !== 'string') return;
-    if (!ws?.id) return;
-    if (!productPrices || !products) return;
+  const [closeOrderAfterCreate, setCloseOrderAfterCreate] = useLocalStorage({
+    key: 'finance-invoices-closeOrderAfterCreate',
+    defaultValue: true,
+  });
 
+  const showCreateModal = () => {
+    if (!ws) return;
     openModal({
-      title: <div className="font-semibold">Cập nhật đơn thuốc</div>,
+      title: <div className="font-semibold">Tạo hoá đơn mới</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
       children: (
-        <PrescriptionEditModal
+        <InvoiceCreateModal
           wsId={ws.id}
-          prescription={{
-            id: prescriptionId,
-            patient_id: patientId,
-            advice: advice || '',
-            note: note || '',
-            price_diff: diff,
+          invoice={{
+            customer_id: userId,
             price,
-            completed_at: prescription.completed_at,
+            price_diff: diff,
+            completed_at: closeOrderAfterCreate ? 'now()' : undefined,
+            notice: notice || '',
+            note: note || '',
           }}
-          oldProducts={productPrices}
           products={products}
         />
       ),
     });
   };
 
-  const showDeleteModal = () => {
-    if (!prescription) return;
-    if (typeof prescriptionId !== 'string') return;
-    if (!ws?.id || !productPrices) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa đơn thuốc</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <PrescriptionDeleteModal
-          wsId={ws.id}
-          prescriptionId={prescriptionId}
-          products={productPrices}
-        />
-      ),
-    });
-  };
-
-  const toggleStatus = async () => {
-    if (!prescription) return;
-    if (typeof prescriptionId !== 'string') return;
-    if (!ws?.id) return;
-
-    try {
-      const res = await fetch(
-        `/api/workspaces/${ws.id}/healthcare/prescriptions/${prescriptionId}/status`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ completed: !completed }),
-        }
-      );
-
-      if (res.ok) {
-        mutate(`/api/workspaces/${ws.id}/prescriptions/${prescriptionId}`);
-        setCompleted((completed) => !completed);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   if (!ws) return null;
 
   return (
     <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
+      <HeaderX label="Hoá đơn – Tài chính" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-8">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <button
-            className={`w-fit rounded border px-4 py-1 font-semibold transition ${
-              hasRequiredFields()
-                ? completed
-                  ? 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300 hover:bg-zinc-300/20'
-                  : 'border-green-300/10 bg-green-300/10 text-green-300 hover:bg-green-300/20'
-                : 'cursor-not-allowed border-zinc-300/20 opacity-50'
-            }`}
-            onClick={hasRequiredFields() ? toggleStatus : undefined}
-          >
-            {completed ? 'Mở lại đơn thuốc' : 'Đóng đơn thuốc'}
-          </button>
-
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                prescription
-                  ? 'hover:bg-red-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={prescription ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
-
+          <Switch
+            label="Đóng đơn sau khi tạo"
+            checked={closeOrderAfterCreate}
+            onChange={(event) =>
+              setCloseOrderAfterCreate(event.currentTarget.checked)
+            }
+          />
+          <div className="flex items-end justify-end">
             <button
               className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
                 hasRequiredFields()
                   ? 'hover:bg-blue-300/20'
                   : 'cursor-not-allowed opacity-50'
               }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
+              onClick={hasRequiredFields() ? showCreateModal : undefined}
             >
-              Lưu thay đổi
+              Tạo mới
             </button>
           </div>
         </div>
@@ -358,21 +241,21 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
               <Divider className="my-2" variant="dashed" />
             </div>
 
-            <PatientSelector
-              patientId={patientId}
-              setPatientId={setPatientId}
+            <WorkspaceUserSelector
+              userId={userId}
+              setUserId={setUserId}
               className="col-span-full"
               required
             />
 
             <Divider className="col-span-full my-2" />
 
-            {advice != null ? (
+            {notice != null ? (
               <Textarea
                 label="Lời dặn"
-                placeholder="Nhập lời dặn cho đơn thuốc này (nếu có)"
-                value={advice}
-                onChange={(e) => setAdvice(e.currentTarget.value)}
+                placeholder="Nhập lời dặn cho hoá đơn này"
+                value={notice}
+                onChange={(e) => setNotice(e.currentTarget.value)}
                 className="md:col-span-2"
                 minRows={5}
                 classNames={{
@@ -382,7 +265,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
             ) : (
               <button
                 className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
-                onClick={() => setAdvice('')}
+                onClick={() => setNotice('')}
               >
                 + Thêm lời dặn
               </button>
@@ -391,7 +274,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
             {note != null ? (
               <Textarea
                 label="Ghi chú"
-                placeholder="Nhập ghi chú cho đơn thuốc này (nếu có)"
+                placeholder="Nhập ghi chú cho hoá đơn này"
                 value={note}
                 onChange={(e) => setNote(e.currentTarget.value)}
                 className="md:col-span-2"
@@ -409,7 +292,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
               </button>
             )}
 
-            {products && products?.length > 0 && (
+            {products?.length > 0 && (
               <div className="col-span-full">
                 <Divider className="my-2" />
                 <NumberInput
@@ -446,7 +329,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
                           currency: 'VND',
                         }).format(Math.abs(diff))}
                       </span>{' '}
-                      cho đơn thuốc này.
+                      cho hoá đơn này.
                     </div>
                   </>
                 )}
@@ -458,7 +341,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
             <div className="col-span-full">
               <div className="text-2xl font-semibold">
                 Sản phẩm{' '}
-                {products && products?.length > 0 && (
+                {products?.length > 0 && (
                   <>
                     (
                     <span className="text-blue-300">
@@ -516,9 +399,9 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
               </button>
             </div>
 
-            {products &&
-              products.map((p, idx) => (
-                <PrescriptionProductInput
+            <div className="mt-4 grid gap-4">
+              {products.map((p, idx) => (
+                <InvoiceProductInput
                   key={p.id + idx}
                   wsId={ws.id}
                   p={p}
@@ -531,6 +414,7 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
                   updateProductId={updateProductId}
                 />
               ))}
+            </div>
           </div>
         </div>
       </div>
@@ -538,8 +422,8 @@ const PrescriptionDetailsPage: PageWithLayoutProps = () => {
   );
 };
 
-PrescriptionDetailsPage.getLayout = function getLayout(page: ReactElement) {
+NewPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default PrescriptionDetailsPage;
+export default NewPage;

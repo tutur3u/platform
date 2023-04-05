@@ -5,17 +5,17 @@ import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 
 interface Props {
-  patientId: string;
-  setPatientId: (patientId: string) => void;
+  userId: string;
+  setUserId: (userId: string) => void;
 
   className?: string;
   notEmpty?: boolean;
   required?: boolean;
 }
 
-const PatientSelector = ({
-  patientId,
-  setPatientId,
+const WorkspaceUserSelector = ({
+  userId,
+  setUserId,
 
   className,
   notEmpty = false,
@@ -24,13 +24,13 @@ const PatientSelector = ({
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/users`;
-  const { data: patients } = useSWR<WorkspaceUser[]>(ws?.id ? apiPath : null);
+  const { data: users } = useSWR<WorkspaceUser[]>(ws?.id ? apiPath : null);
 
   const data = notEmpty
     ? [
-        ...(patients?.map((patient) => ({
-          label: patient.name,
-          value: patient.id,
+        ...(users?.map((user) => ({
+          label: user.name,
+          value: user.id,
         })) || []),
       ]
     : [
@@ -38,27 +38,26 @@ const PatientSelector = ({
           label: 'Khách vãng lai',
           value: '',
         },
-        ...(patients?.map((patient) => ({
-          label: patient.name,
-          value: patient.id,
+        ...(users?.map((user) => ({
+          label: user.name,
+          value: user.id,
         })) || []),
       ];
 
   useEffect(() => {
-    if (!patients) return;
+    if (!users) return;
 
-    if (patients.length === 1) setPatientId(patients[0].id);
-    else if (patientId && !patients?.find((p) => p.id === patientId))
-      setPatientId('');
-  }, [patientId, patients, setPatientId]);
+    if (users.length === 1) setUserId(users[0].id);
+    else if (userId && !users?.find((p) => p.id === userId)) setUserId('');
+  }, [userId, users, setUserId]);
 
   return (
     <Select
-      label="Bệnh nhân"
-      placeholder="Chọn bệnh nhân"
+      label="Người dùng"
+      placeholder="Chọn người dùng"
       data={data}
-      value={patientId || ''}
-      onChange={setPatientId}
+      value={userId}
+      onChange={setUserId}
       className={className}
       classNames={{
         input:
@@ -83,7 +82,7 @@ const PatientSelector = ({
           },
         },
       }}
-      disabled={!patients}
+      disabled={!users}
       searchable
       clearable
       required={required}
@@ -91,4 +90,4 @@ const PatientSelector = ({
   );
 };
 
-export default PatientSelector;
+export default WorkspaceUserSelector;

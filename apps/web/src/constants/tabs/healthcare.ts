@@ -8,10 +8,6 @@ export const healthcareTabs: NavTabs = {
       href: '/[wsId]/healthcare',
     },
     {
-      name: 'prescriptions',
-      href: '/[wsId]/healthcare/prescriptions',
-    },
-    {
       name: 'checkups',
       href: '/[wsId]/healthcare/checkups',
     },

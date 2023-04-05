@@ -156,7 +156,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật bệnh nhân</div>,
+      title: <div className="font-semibold">Cập nhật người dùng</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -192,7 +192,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa bệnh nhân</div>,
+      title: <div className="font-semibold">Xóa người dùng</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -240,7 +240,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
             </div>
 
             <TextInput
-              label="Tên bệnh nhân"
+              label="Tên người dùng"
               placeholder='Ví dụ: "Nguyễn Văn A"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
@@ -251,7 +251,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
             />
             <Select
               label="Giới tính"
-              placeholder="Chọn giới tính của bệnh nhân"
+              placeholder="Chọn giới tính của người dùng"
               value={gender}
               data={genders}
               onChange={(val) => setGender(val || '')}
@@ -263,7 +263,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
             <DatePickerInput
               label="Ngày sinh"
-              placeholder="Chọn ngày sinh của bệnh nhân"
+              placeholder="Chọn ngày sinh của người dùng"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
@@ -286,7 +286,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
             <TextInput
               label="CMND/CCCD"
-              placeholder="Nhập số CMND/CCCD của bệnh nhân"
+              placeholder="Nhập số CMND/CCCD của người dùng"
               value={nationalId}
               onChange={(e) => setNationalId(e.currentTarget.value)}
               className="md:col-span-2"
@@ -298,7 +298,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
             <TextInput
               label="Người giám hộ"
-              placeholder="Nhập tên người giám hộ của bệnh nhân"
+              placeholder="Nhập tên người giám hộ của người dùng"
               value={guardian}
               onChange={(e) => setGuardian(e.currentTarget.value)}
               className="md:col-span-2"
@@ -312,7 +312,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
             <Textarea
               label="Ghi chú"
-              placeholder="Ghi chú về bệnh nhân"
+              placeholder="Ghi chú về người dùng"
               value={note}
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
@@ -355,7 +355,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
             <Textarea
               label="Địa chỉ"
-              placeholder="Nhập địa chỉ của bệnh nhân"
+              placeholder="Nhập địa chỉ của người dùng"
               value={address}
               onChange={(e) => setAddress(e.currentTarget.value)}
               className="md:col-span-2"

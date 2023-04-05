@@ -30,10 +30,12 @@ const SettingItemCard = ({
         disabled ? 'cursor-not-allowed opacity-50' : ''
       } ${className}`}
     >
-      <div className="mb-1 text-2xl font-bold">{title}</div>
-      <div className="mb-4 whitespace-pre-line font-semibold text-zinc-500">
-        {description}
-      </div>
+      {title && <div className="mb-1 text-2xl font-bold">{title}</div>}
+      {description && (
+        <div className="mb-4 whitespace-pre-line font-semibold text-zinc-500">
+          {description}
+        </div>
+      )}
 
       <div className="h-full" />
 

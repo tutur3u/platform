@@ -13,8 +13,8 @@ export const wsUserDetailsTabs: NavTabs = {
       disabled: true,
     },
     {
-      name: 'prescriptions',
-      href: '/[wsId]/users/[userId]/prescriptions',
+      name: 'invoices',
+      href: '/[wsId]/users/[userId]/invoices',
       disabled: true,
     },
     {

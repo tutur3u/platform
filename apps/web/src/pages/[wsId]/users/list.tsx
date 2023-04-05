@@ -8,7 +8,7 @@ import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
 import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../components/common/PlusCardButton';
-import PatientCard from '../../../components/cards/PatientCard';
+import Card from '../../../components/cards/UserCard';
 import useSWR from 'swr';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
@@ -139,7 +139,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <PlusCardButton href={`/${ws.id}/users/new`} />
           {users &&
             users?.map((p) => (
-              <PatientCard
+              <Card
                 key={p.id}
                 user={p}
                 showAddress={showAddress}

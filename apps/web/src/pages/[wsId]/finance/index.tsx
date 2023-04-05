@@ -46,16 +46,22 @@ const FinancePage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/finance/transactions/categories/count`
     : null;
 
+  const invoicesCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/invoices/count`
+    : null;
+
   const { data: sum } = useSWR<number>(sumApi);
   const { data: walletsCount } = useSWR<number>(walletsCountApi);
   const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
+  const { data: invoicesCount } = useSWR<number>(invoicesCountApi);
 
   const { t } = useTranslation('finance-tabs');
 
   const walletsLabel = t('wallets');
   const transactionsLabel = t('transactions');
-  const transactionCategoriesLabel = t('transaction-categories');
+  const categoriesLabel = t('transaction-categories');
+  const invoicesLabel = t('invoices');
 
   return (
     <>
@@ -68,23 +74,30 @@ const FinancePage: PageWithLayoutProps = () => {
               style: 'currency',
               currency: 'VND',
             }).format(sum || 0)}
+            className="md:col-span-2"
           />
 
           <StatisticCard
             title={walletsLabel}
-            value={walletsCount?.toString()}
+            value={walletsCount}
             href={`/${ws?.id}/finance/wallets`}
           />
 
           <StatisticCard
             title={transactionsLabel}
-            value={transactionsCount?.toString()}
+            value={transactionsCount}
             href={`/${ws?.id}/finance/transactions`}
           />
 
           <StatisticCard
-            title={transactionCategoriesLabel}
-            value={categoriesCount?.toString()}
+            title={categoriesLabel}
+            value={categoriesCount}
+            href={`/${ws?.id}/finance/transactions/categories`}
+          />
+
+          <StatisticCard
+            title={invoicesLabel}
+            value={invoicesCount}
             href={`/${ws?.id}/finance/transactions/categories`}
           />
         </div>

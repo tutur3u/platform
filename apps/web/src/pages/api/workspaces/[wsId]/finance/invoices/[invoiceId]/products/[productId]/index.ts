@@ -1,24 +1,29 @@
-import { Product } from './../../../../../../../../types/primitives/Product';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { prescriptionId } = req.query;
+    const { invoiceId, productId, unitId } = req.query;
 
-    if (!prescriptionId || typeof prescriptionId !== 'string')
-      throw new Error('Invalid prescriptionId');
+    if (!invoiceId || typeof invoiceId !== 'string')
+      throw new Error('Invalid invoiceId');
+
+    if (!productId || typeof productId !== 'string')
+      throw new Error('Invalid productId');
+
+    if (!unitId || typeof unitId !== 'string')
+      throw new Error('Invalid unitId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchProducts(req, res, prescriptionId);
+        return await fetchProduct(req, res, invoiceId, productId, unitId);
 
-      case 'POST': {
-        return await addProducts(req, res, prescriptionId);
+      case 'PUT': {
+        return await updateProduct(req, res, invoiceId, productId, unitId);
       }
 
       case 'DELETE': {
-        return await deleteProducts(req, res, prescriptionId);
+        return await deleteProduct(req, res, invoiceId, productId, unitId);
       }
 
       default:
@@ -36,17 +41,22 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchProducts = async (
+const fetchProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string,
+  productId: string,
+  unitId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('healthcare_prescription_products')
-    .select('amount, price, id:product_id, unit_id')
-    .eq('prescription_id', prescriptionId);
+    .from('finance_invoice_products')
+    .select('amount, price')
+    .eq('invoice_id', invoiceId)
+    .eq('product_id', productId)
+    .eq('unit_id', unitId)
+    .single();
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
@@ -54,38 +64,42 @@ const fetchProducts = async (
   return res.status(200).json(data);
 };
 
-const addProducts = async (
+const updateProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string,
+  productId: string,
+  unitId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { products } = req.body as { products: Product[] };
+  const { amount, price } = req.body;
 
   const { error } = await supabase
-    .from('healthcare_prescription_products')
-    .insert(
-      products.map((p) => ({
-        price: p.price,
-        amount: p.amount,
-        product_id: p.id,
-        unit_id: p.unit_id,
-        prescription_id: prescriptionId,
-      }))
-    );
+    .from('finance_invoice_products')
+    .update({
+      product_id: productId,
+      unit_id: unitId,
+      amount,
+      price,
+    })
+    .eq('invoice_id', invoiceId)
+    .eq('product_id', productId)
+    .eq('unit_id', unitId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteProducts = async (
+const deleteProduct = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string,
+  productId: string,
+  unitId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -93,9 +107,11 @@ const deleteProducts = async (
   });
 
   const { error } = await supabase
-    .from('healthcare_prescription_products')
+    .from('finance_invoice_products')
     .delete()
-    .eq('prescription_id', prescriptionId);
+    .eq('invoice_id', invoiceId)
+    .eq('product_id', productId)
+    .eq('unit_id', unitId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

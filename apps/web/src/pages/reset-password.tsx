@@ -8,6 +8,7 @@ import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -16,15 +17,14 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (session)
+  if (!session)
     return {
       redirect: {
-        destination: '/onboarding',
+        destination: '/recover',
         permanent: false,
       },
       props: {
         initialSession: session,
-        user: session.user,
       },
     };
 
@@ -33,24 +33,28 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const PasswordRecoveryPage = () => {
+const ResetPasswordPage = () => {
   const supabaseClient = useSupabaseClient();
 
-  const handleRecovery = async ({ email }: AuthFormFields) => {
+  const router = useRouter();
+
+  const handleResetPassword = async ({ password }: AuthFormFields) => {
     try {
-      if (!email) throw new Error('Please fill in all fields');
+      if (!password) throw new Error('Please fill in all fields');
 
-      console.log('email', email);
-
-      await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://tuturuuu.com/reset-password',
+      const { error } = await supabaseClient.auth.updateUser({
+        password,
       });
+
+      if (error) throw new Error(error.message);
 
       showNotification({
         title: 'Success',
-        message: 'Password reset email sent',
+        message: 'Password reset successfully',
         color: 'green',
       });
+
+      router.push('/onboarding');
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -62,20 +66,16 @@ const PasswordRecoveryPage = () => {
     }
   };
 
-  const { t } = useTranslation('recover');
+  const { t } = useTranslation('reset-password');
 
-  const recoverPassword = t('recover-password');
-  const recoverPasswordDesc = t('recover-password-desc');
+  const resetPassword = t('reset-password');
+  const resetPasswordDesc = t('reset-password-desc');
 
-  const send = t('send');
-  const sending = t('sending');
-
-  const alreadyHaveAccount = t('already-have-account');
-  const login = t('login');
+  const resetting = t('resetting');
 
   return (
     <>
-      <HeaderX label={`Tuturuuu — ${recoverPassword}`} />
+      <HeaderX label={`Tuturuuu — ${resetPassword}`} />
       <Image
         src="/media/background/auth-featured-bg.jpg"
         alt="Featured background"
@@ -84,20 +84,15 @@ const PasswordRecoveryPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
       <AuthForm
-        title={recoverPassword}
-        description={recoverPasswordDesc}
-        submitLabel={send}
-        submittingLabel={sending}
-        secondaryAction={{
-          description: alreadyHaveAccount,
-          label: login,
-          href: '/login',
-        }}
-        onSubmit={handleRecovery}
-        recoveryMode
+        title={resetPassword}
+        description={resetPasswordDesc}
+        submitLabel={resetPassword}
+        submittingLabel={resetting}
+        onSubmit={handleResetPassword}
+        resetPasswordMode
       />
     </>
   );
 };
 
-export default PasswordRecoveryPage;
+export default ResetPasswordPage;
