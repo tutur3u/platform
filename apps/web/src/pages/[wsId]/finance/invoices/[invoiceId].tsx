@@ -513,21 +513,24 @@ const DetailsPage: PageWithLayoutProps = () => {
               </button>
             </div>
 
-            {products &&
-              products.map((p, idx) => (
-                <InvoiceProductInput
-                  key={p.id + idx}
-                  wsId={ws.id}
-                  p={p}
-                  idx={idx}
-                  isLast={idx === products.length - 1}
-                  getUniqueProductIds={getUniqueProductIds}
-                  removePrice={removePrice}
-                  updateAmount={updateAmount}
-                  updatePrice={updatePrice}
-                  updateProductId={updateProductId}
-                />
-              ))}
+            {products && (
+              <div className="mt-4 grid gap-4">
+                {products.map((p, idx) => (
+                  <InvoiceProductInput
+                    key={p.id + idx}
+                    wsId={ws.id}
+                    p={p}
+                    idx={idx}
+                    isLast={idx === products.length - 1}
+                    getUniqueProductIds={getUniqueProductIds}
+                    removePrice={removePrice}
+                    updateAmount={updateAmount}
+                    updatePrice={updatePrice}
+                    updateProductId={updateProductId}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
