@@ -208,7 +208,7 @@ const VitalGroupDetailsPage: PageWithLayoutProps = () => {
             {description != null ? (
               <Textarea
                 label="Mô tả"
-                placeholder="Nhập mô tả cho nhóm chỉ số này (nếu có)"
+                placeholder="Nhập mô tả cho nhóm chỉ số này"
                 value={description}
                 onChange={(e) => setDescription(e.currentTarget.value)}
                 className="md:col-span-2"
@@ -229,7 +229,7 @@ const VitalGroupDetailsPage: PageWithLayoutProps = () => {
             {note != null ? (
               <Textarea
                 label="Ghi chú"
-                placeholder="Nhập ghi chú cho nhóm chỉ số này (nếu có)"
+                placeholder="Nhập ghi chú cho nhóm chỉ số này"
                 value={note}
                 onChange={(e) => setNote(e.currentTarget.value)}
                 className="md:col-span-2"

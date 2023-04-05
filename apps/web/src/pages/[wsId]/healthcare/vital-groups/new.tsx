@@ -81,7 +81,7 @@ const NewVitalGroupPage: PageWithLayoutProps = () => {
   const showCreateModal = () => {
     if (!ws) return;
     openModal({
-      title: <div className="font-semibold">Tạo đơn thuốc mới</div>,
+      title: <div className="font-semibold">Tạo nhóm chỉ số mới</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -143,7 +143,7 @@ const NewVitalGroupPage: PageWithLayoutProps = () => {
             {description != null ? (
               <Textarea
                 label="Mô tả"
-                placeholder="Nhập mô tả cho nhóm chỉ số này (nếu có)"
+                placeholder="Nhập mô tả cho nhóm chỉ số này"
                 value={description}
                 onChange={(e) => setDescription(e.currentTarget.value)}
                 className="md:col-span-2"
@@ -164,7 +164,7 @@ const NewVitalGroupPage: PageWithLayoutProps = () => {
             {note != null ? (
               <Textarea
                 label="Ghi chú"
-                placeholder="Nhập ghi chú cho nhóm chỉ số này (nếu có)"
+                placeholder="Nhập ghi chú cho nhóm chỉ số này"
                 value={note}
                 onChange={(e) => setNote(e.currentTarget.value)}
                 className="md:col-span-2"

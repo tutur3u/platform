@@ -106,12 +106,12 @@ const WorkspaceUserCreateModal = ({ wsId, user, roles }: Props) => {
       ...progress,
       createdUser: 'loading',
     }));
-    const prescriptionId = await createWorkspaceUser();
-    if (!prescriptionId) return;
+    const invoiceId = await createWorkspaceUser();
+    if (!invoiceId) return;
 
-    setUserId(prescriptionId);
+    setUserId(invoiceId);
     setProgress((progress) => ({ ...progress, createdRoles: 'loading' }));
-    await createRoles(prescriptionId);
+    await createRoles(invoiceId);
   };
 
   const [started, setStarted] = useState(false);

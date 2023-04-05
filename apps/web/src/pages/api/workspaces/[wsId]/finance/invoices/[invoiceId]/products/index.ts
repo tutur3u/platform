@@ -1,24 +1,24 @@
+import { Product } from '../../../../../../../../types/primitives/Product';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Checkup } from '../../../../../../../types/primitives/Checkup';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { checkupId } = req.query;
+    const { invoiceId } = req.query;
 
-    if (!checkupId || typeof checkupId !== 'string')
-      throw new Error('Invalid checkupId');
+    if (!invoiceId || typeof invoiceId !== 'string')
+      throw new Error('Invalid invoiceId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchCheckup(req, res, checkupId);
+        return await fetchProducts(req, res, invoiceId);
 
-      case 'PUT': {
-        return await updateCheckup(req, res, checkupId);
+      case 'POST': {
+        return await addProducts(req, res, invoiceId);
       }
 
       case 'DELETE': {
-        return await deleteCheckup(req, res, checkupId);
+        return await deleteProducts(req, res, invoiceId);
       }
 
       default:
@@ -36,70 +36,54 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchCheckup = async (
+const fetchProducts = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  checkupId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('healthcare_checkups')
-    .select(
-      'id, user_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
-    )
-    .eq('id', checkupId)
-    .single();
+    .from('finance_invoice_products')
+    .select('amount, price, id:product_id, unit_id')
+    .eq('invoice_id', invoiceId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data as Checkup);
+  return res.status(200).json(data);
 };
 
-const updateCheckup = async (
+const addProducts = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  checkupId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const {
-    user_id,
-    diagnosis_id,
-    note,
-    checked,
-    checkup_at,
-    next_checked,
-    next_checkup_at,
-  } = req.body as Checkup;
+  const { products } = req.body as { products: Product[] };
 
-  const { error } = await supabase
-    .from('healthcare_checkups')
-    .update({
-      user_id,
-      diagnosis_id,
-      note,
-      checked,
-      checkup_at,
-      next_checked,
-      next_checkup_at,
-      completed_at:
-        checked && (next_checked || !next_checkup_at) ? 'now()' : null,
-    })
-    .eq('id', checkupId);
+  const { error } = await supabase.from('finance_invoice_products').insert(
+    products.map((p) => ({
+      price: p.price,
+      amount: p.amount,
+      product_id: p.id,
+      unit_id: p.unit_id,
+      invoice_id: invoiceId,
+    }))
+  );
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteCheckup = async (
+const deleteProducts = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  checkupId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -107,9 +91,9 @@ const deleteCheckup = async (
   });
 
   const { error } = await supabase
-    .from('healthcare_checkups')
+    .from('finance_invoice_products')
     .delete()
-    .eq('id', checkupId);
+    .eq('invoice_id', invoiceId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

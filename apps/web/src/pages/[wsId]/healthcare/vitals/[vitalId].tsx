@@ -70,7 +70,7 @@ const NewVitalPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật bệnh nhân</div>,
+      title: <div className="font-semibold">Cập nhật chỉ số</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -94,7 +94,7 @@ const NewVitalPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa bệnh nhân</div>,
+      title: <div className="font-semibold">Xóa chỉ số</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,

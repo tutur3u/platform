@@ -1,24 +1,24 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prescription } from '../../../../../../../types/primitives/Prescription';
+import { Invoice } from '../../../../../../../types/primitives/Invoice';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { prescriptionId } = req.query;
+    const { invoiceId } = req.query;
 
-    if (!prescriptionId || typeof prescriptionId !== 'string')
-      throw new Error('Invalid prescriptionId');
+    if (!invoiceId || typeof invoiceId !== 'string')
+      throw new Error('Invalid invoiceId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchPrescription(req, res, prescriptionId);
+        return await fetchInvoice(req, res, invoiceId);
 
       case 'PUT': {
-        return await updatePrescription(req, res, prescriptionId);
+        return await updateInvoice(req, res, invoiceId);
       }
 
       case 'DELETE': {
-        return await deletePrescription(req, res, prescriptionId);
+        return await deleteInvoice(req, res, invoiceId);
       }
 
       default:
@@ -36,19 +36,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchPrescription = async (
+const fetchInvoice = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('healthcare_prescriptions')
+    .from('finance_invoices')
     .select(
-      'id, patient_id, creator_id, price, price_diff, advice, note, completed_at, created_at'
+      'id, customer_id, creator_id, price, price_diff, notice, note, completed_at, created_at'
     )
-    .eq('id', prescriptionId)
+    .eq('id', invoiceId)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -57,38 +57,37 @@ const fetchPrescription = async (
   return res.status(200).json(data);
 };
 
-const updatePrescription = async (
+const updateInvoice = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { patient_id, price, price_diff, advice, note } =
-    req.body as Prescription;
+  const { customer_id, price, price_diff, notice, note } = req.body as Invoice;
 
   const { error } = await supabase
-    .from('healthcare_prescriptions')
+    .from('finance_invoices')
     .update({
-      patient_id: patient_id || null,
+      customer_id: customer_id || null,
       price,
       price_diff,
-      advice,
+      notice,
       note,
     })
-    .eq('id', prescriptionId);
+    .eq('id', invoiceId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deletePrescription = async (
+const deleteInvoice = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prescriptionId: string
+  invoiceId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -96,9 +95,9 @@ const deletePrescription = async (
   });
 
   const { error } = await supabase
-    .from('healthcare_prescriptions')
+    .from('finance_invoices')
     .delete()
-    .eq('id', prescriptionId);
+    .eq('id', invoiceId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

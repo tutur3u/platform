@@ -1,5 +1,6 @@
 import { Tooltip } from '@mantine/core';
 import { useAppearance } from '../../hooks/useAppearance';
+import { DEV_MODE } from '../../constants/common';
 
 interface SidebarButtonProps {
   onClick?: () => void;
@@ -28,8 +29,9 @@ export default function SidebarButton({
   disabled = false,
 }: SidebarButtonProps) {
   const { sidebar } = useAppearance();
-
   const isExpanded = sidebar === 'open';
+
+  if (disabled && !DEV_MODE) return null;
 
   return (
     <Tooltip

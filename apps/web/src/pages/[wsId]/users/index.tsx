@@ -54,12 +54,14 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             title="Người dùng"
             value={users}
             href={`/${ws?.id}/users/list`}
+            className="xl:col-span-2"
           />
 
           <StatisticCard
             title="Vai trò"
             value={roles}
             href={`/${ws?.id}/users/roles`}
+            className="xl:col-span-2"
           />
         </div>
       </div>

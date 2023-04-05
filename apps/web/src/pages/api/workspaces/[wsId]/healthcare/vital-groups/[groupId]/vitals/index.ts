@@ -45,13 +45,23 @@ const fetchVitals = async (
 
   const { data, error } = await supabase
     .from('vital_group_vitals')
-    .select('id:vital_id')
+    .select('id:vital_id, healthcare_vitals(name, unit)')
     .eq('group_id', groupId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data);
+  return res.status(200).json(
+    data.map((v) => ({
+      id: v.id,
+      name: Array.isArray(v.healthcare_vitals)
+        ? v?.healthcare_vitals?.[0]?.name
+        : v?.healthcare_vitals?.name,
+      unit: Array.isArray(v.healthcare_vitals)
+        ? v?.healthcare_vitals?.[0]?.unit
+        : v?.healthcare_vitals?.unit,
+    }))
+  );
 };
 
 const addVitals = async (

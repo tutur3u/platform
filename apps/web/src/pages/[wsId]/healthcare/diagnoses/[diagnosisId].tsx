@@ -70,7 +70,7 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật bệnh nhân</div>,
+      title: <div className="font-semibold">Cập nhật chẩn đoán</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -95,7 +95,7 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa bệnh nhân</div>,
+      title: <div className="font-semibold">Xóa chẩn đoán</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,

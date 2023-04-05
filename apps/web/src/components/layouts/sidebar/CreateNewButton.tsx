@@ -1,27 +1,26 @@
 import { Divider, Popover } from '@mantine/core';
 import SidebarButton from '../SidebarButton';
 import { openModal } from '@mantine/modals';
-import WorkspaceEditForm from '../../forms/WorkspaceEditForm';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import {
   BanknotesIcon,
-  BuildingOffice2Icon,
   CheckCircleIcon,
   ClipboardDocumentListIcon,
   PlusIcon,
+  ReceiptPercentIcon,
   Squares2X2Icon,
   UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import TeamEditForm from '../../forms/TeamEditForm';
+import SidebarLink from '../SidebarLink';
+import { useAppearance } from '../../../hooks/useAppearance';
 
-interface Props {
-  sidebarOpened: boolean;
-  hasWorkspace: boolean;
-}
+const CreateNewButton = () => {
+  const { sidebar } = useAppearance();
+  const isExpanded = sidebar === 'open';
 
-const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
   const [popover, setPopover] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -36,15 +35,15 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
     }
   }, []);
 
-  const { createWorkspace, createTeam } = useWorkspaces();
+  const { ws, createTeam } = useWorkspaces();
 
-  const showEditWorkspaceModal = () => {
-    openModal({
-      title: <div className="font-semibold">New workspace</div>,
-      centered: true,
-      children: <WorkspaceEditForm onSubmit={createWorkspace} />,
-    });
-  };
+  // const showEditWorkspaceModal = () => {
+  //   openModal({
+  //     title: <div className="font-semibold">New workspace</div>,
+  //     centered: true,
+  //     children: <WorkspaceEditForm onSubmit={createWorkspace} />,
+  //   });
+  // };
 
   const showTeamEditForm = () => {
     openModal({
@@ -58,7 +57,7 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
 
   const newLabel = t('new');
 
-  const newWs = t('new-ws');
+  // const newWs = t('new-ws');
   const newTeam = t('new-team');
   const newTask = t('new-task');
   const newNote = t('new-note');
@@ -81,15 +80,15 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
             onClick={() => setPopover((o) => !o)}
             isActive={popover}
             activeIcon={<PlusIcon className="w-5" />}
-            showLabel={sidebarOpened}
-            showTooltip={!sidebarOpened && !popover}
+            showLabel={isExpanded}
+            showTooltip={!isExpanded && !popover}
             className="w-full"
           />
         </div>
       </Popover.Target>
 
       <Popover.Dropdown className="mt-2 grid gap-1 p-1">
-        <SidebarButton
+        {/* <SidebarButton
           onClick={() => {
             setPopover(false);
             showEditWorkspaceModal();
@@ -99,9 +98,9 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
           left
         />
 
-        <Divider />
+        <Divider /> */}
 
-        {hasWorkspace && (
+        {ws && (
           <SidebarButton
             onClick={() => {
               setPopover(false);
@@ -112,37 +111,48 @@ const CreateNewButton = ({ sidebarOpened, hasWorkspace = false }: Props) => {
             left
           />
         )}
-        <SidebarButton
+
+        <SidebarLink
           onClick={() => setPopover(false)}
           activeIcon={<CheckCircleIcon className="w-5" />}
           label={newTask}
-          left
           disabled
+          left
         />
-        <SidebarButton
+
+        <SidebarLink
           onClick={() => setPopover(false)}
           activeIcon={<ClipboardDocumentListIcon className="w-5" />}
           label={newNote}
-          left
           disabled
+          left
         />
-        <SidebarButton
+
+        <SidebarLink
+          href={`/${ws?.id}/finance/transactions/new`}
           onClick={() => setPopover(false)}
           activeIcon={<BanknotesIcon className="w-5" />}
           label={newTransaction}
           left
-          disabled
         />
 
-        {hasWorkspace && (
+        <SidebarLink
+          href={`/${ws?.id}/finance/invoices/new`}
+          onClick={() => setPopover(false)}
+          activeIcon={<ReceiptPercentIcon className="w-5" />}
+          label="New Invoice"
+          left
+        />
+
+        {ws && (
           <>
             <Divider />
-            <SidebarButton
+            <SidebarLink
+              href={`/${ws.id}/members`}
               onClick={() => setPopover(false)}
               activeIcon={<UserPlusIcon className="w-5" />}
               label={invitePeople}
               left
-              disabled
             />
           </>
         )}

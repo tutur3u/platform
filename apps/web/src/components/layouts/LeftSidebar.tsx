@@ -193,11 +193,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 <Divider variant="dashed" className="my-2" />
               </div>
 
-              <CreateNewButton
-                sidebarOpened={sidebar === 'open'}
-                hasWorkspace={!!ws?.id}
-              />
-
+              <CreateNewButton />
               <Divider className="mt-2" />
 
               <div className="scrollbar-none my-2 h-full overflow-auto">

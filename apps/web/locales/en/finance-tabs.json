@@ -2,5 +2,6 @@
   "overview": "Overview",
   "wallets": "Wallets",
   "transactions": "Transactions",
-  "transaction-categories": "Transaction Categories"
+  "transaction-categories": "Categories",
+  "invoices": "Invoices"
 }

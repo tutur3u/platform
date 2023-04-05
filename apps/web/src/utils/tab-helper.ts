@@ -47,7 +47,7 @@ export const getNavTabs = (mode: Mode) => {
 };
 
 const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
-  const { wsId, teamId, userId, productId, patientId, walletId } = router.query;
+  const { wsId, teamId, productId, userId, walletId } = router.query;
 
   return tabs.map((tab) => {
     if (tab.href) {
@@ -56,7 +56,7 @@ const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
         .replace('[teamId]', teamId as string)
         .replace('[userId]', userId as string)
         .replace('[productId]', productId as string)
-        .replace('[patientId]', patientId as string)
+        .replace('[userId]', userId as string)
         .replace('[walletId]', walletId as string);
 
       return {

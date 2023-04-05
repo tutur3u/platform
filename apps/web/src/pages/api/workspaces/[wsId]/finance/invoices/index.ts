@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prescription } from '../../../../../../types/primitives/Prescription';
+import { Invoice } from '../../../../../../types/primitives/Invoice';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -10,10 +10,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchPrescriptions(req, res, wsId);
+        return await fetchInvoices(req, res, wsId);
 
       case 'POST':
-        return await createPrescription(req, res, wsId);
+        return await createInvoice(req, res, wsId);
 
       default:
         throw new Error(
@@ -32,7 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchPrescriptions = async (
+const fetchInvoices = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -45,9 +45,9 @@ const fetchPrescriptions = async (
   const { status, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
-    .from('healthcare_prescriptions')
+    .from('finance_invoices')
     .select(
-      'id, patient_id, creator_id, price, price_diff, note, advice, completed_at, created_at'
+      'id, customer_id, creator_id, price, price_diff, note, notice, completed_at, created_at'
     )
     .eq('ws_id', wsId)
     .order('created_at');
@@ -80,7 +80,7 @@ const fetchPrescriptions = async (
   return res.status(200).json(data);
 };
 
-const createPrescription = async (
+const createInvoice = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -96,16 +96,16 @@ const createPrescription = async (
 
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { patient_id, price, price_diff, advice, note, completed_at } =
-    req.body as Prescription;
+  const { customer_id, price, price_diff, notice, note, completed_at } =
+    req.body as Invoice;
 
   const { data, error } = await supabase
-    .from('healthcare_prescriptions')
+    .from('finance_invoices')
     .insert({
-      patient_id: patient_id || null,
+      customer_id: customer_id || null,
       price,
       price_diff,
-      advice,
+      notice,
       note,
       creator_id: user.id,
       completed_at: completed_at ? 'now()' : null,

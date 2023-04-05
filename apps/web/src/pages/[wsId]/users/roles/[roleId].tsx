@@ -67,7 +67,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật bệnh nhân</div>,
+      title: <div className="font-semibold">Cập nhật vai trò</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -90,7 +90,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa bệnh nhân</div>,
+      title: <div className="font-semibold">Xóa vai trò</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,

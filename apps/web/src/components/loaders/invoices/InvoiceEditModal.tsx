@@ -10,13 +10,13 @@ import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 import { Status } from '../status';
-import { Prescription } from '../../../types/primitives/Prescription';
+import { Invoice } from '../../../types/primitives/Invoice';
 import { Product } from '../../../types/primitives/Product';
 
 interface Props {
   wsId: string;
 
-  prescription: Prescription;
+  invoice: Invoice;
   oldProducts: Product[];
   products: Product[];
 }
@@ -28,12 +28,7 @@ interface Progress {
   addProducts: Status;
 }
 
-const PrescriptionEditModal = ({
-  wsId,
-  oldProducts,
-  prescription,
-  products,
-}: Props) => {
+const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -58,27 +53,25 @@ const PrescriptionEditModal = ({
   useEffect(() => {
     if (!hasSuccess) return;
 
-    mutate(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}`
-    );
-    mutate(`/api/prescriptions/${prescription.id}/products`);
+    mutate(`/api/workspaces/${wsId}/finance/invoices/${invoice.id}`);
+    mutate(`/api/invoices/${invoice.id}/products`);
 
     showNotification({
       title: 'Thành công',
-      message: 'Đã cập nhật đơn thuốc',
+      message: 'Đã cập nhật hoá đơn',
       color: 'green',
     });
-  }, [hasSuccess, wsId, prescription.id]);
+  }, [hasSuccess, wsId, invoice.id]);
 
   const updateDetails = async () => {
     const res = await fetch(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}`,
+      `/api/workspaces/${wsId}/finance/invoices/${invoice.id}`,
       {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(prescription),
+        body: JSON.stringify(invoice),
       }
     );
 
@@ -89,7 +82,7 @@ const PrescriptionEditModal = ({
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể cập nhật đơn thuốc',
+        message: 'Không thể cập nhật hoá đơn',
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updateDetails: 'error' }));
@@ -100,7 +93,7 @@ const PrescriptionEditModal = ({
   const updateProducts = async (products: Product[]) => {
     const updatePromises = products.map((product) => {
       return fetch(
-        `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}/products/${product.id}?unitId=${product.unit_id}`,
+        `/api/workspaces/${wsId}/finance/invoices/${invoice.id}/products/${product.id}?unitId=${product.unit_id}`,
         {
           method: 'PUT',
           headers: {
@@ -130,7 +123,7 @@ const PrescriptionEditModal = ({
   const removeProducts = async (products: Product[]) => {
     const removePromises = products.map((product) =>
       fetch(
-        `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}/products/${product.id}?unitId=${product.unit_id}`,
+        `/api/workspaces/${wsId}/finance/invoices/${invoice.id}/products/${product.id}?unitId=${product.unit_id}`,
         {
           method: 'DELETE',
         }
@@ -155,7 +148,7 @@ const PrescriptionEditModal = ({
 
   const addProducts = async (products: Product[]) => {
     const res = await fetch(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}/products`,
+      `/api/workspaces/${wsId}/finance/invoices/${invoice.id}/products`,
       {
         method: 'POST',
         headers: {
@@ -203,14 +196,12 @@ const PrescriptionEditModal = ({
   );
 
   const handleEdit = async () => {
-    if (!prescription.id) return;
+    if (!invoice.id) return;
 
     setProgress((progress) => ({ ...progress, updateDetails: 'loading' }));
     await updateDetails();
 
-    mutate(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}`
-    );
+    mutate(`/api/workspaces/${wsId}/finance/invoices/${invoice.id}`);
 
     setProgress((progress) => ({ ...progress, updateProducts: 'loading' }));
     if (productsToUpdate.length) await updateProducts(productsToUpdate);
@@ -226,9 +217,7 @@ const PrescriptionEditModal = ({
     if (productsToAdd.length) await addProducts(productsToAdd);
     else setProgress((progress) => ({ ...progress, addProducts: 'success' }));
 
-    mutate(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescription.id}/products`
-    );
+    mutate(`/api/workspaces/${wsId}/finance/invoices/${invoice.id}/products`);
   };
 
   const [started, setStarted] = useState(false);
@@ -353,12 +342,12 @@ const PrescriptionEditModal = ({
           </button>
         )}
 
-        {prescription.id && hasSuccess && (
+        {invoice.id && hasSuccess && (
           <button
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem đơn thuốc
+            Xem hoá đơn
           </button>
         )}
 
@@ -379,7 +368,7 @@ const PrescriptionEditModal = ({
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/healthcare/prescriptions`);
+              router.push(`/${wsId}/finance/invoices`);
               closeAllModals();
               return;
             }
@@ -403,4 +392,4 @@ const PrescriptionEditModal = ({
   );
 };
 
-export default PrescriptionEditModal;
+export default EditModal;

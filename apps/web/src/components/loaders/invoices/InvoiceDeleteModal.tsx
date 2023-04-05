@@ -14,45 +14,43 @@ import { Product } from '../../../types/primitives/Product';
 
 interface Props {
   wsId: string;
-  prescriptionId: string;
+  invoiceId: string;
   products: Product[];
 }
 
 interface Progress {
   removeProducts: Status;
-  removePrescription: Status;
+  remove: Status;
 }
 
-const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
+const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
     removeProducts: 'idle',
-    removePrescription: 'idle',
+    remove: 'idle',
   });
 
   const hasError =
-    progress.removeProducts === 'error' ||
-    progress.removePrescription === 'error';
+    progress.removeProducts === 'error' || progress.remove === 'error';
 
   const hasSuccess =
-    progress.removeProducts === 'success' &&
-    progress.removePrescription === 'success';
+    progress.removeProducts === 'success' && progress.remove === 'success';
 
   useEffect(() => {
     if (!hasSuccess) return;
 
     showNotification({
       title: 'Thành công',
-      message: 'Đã xoá đơn thuốc',
+      message: 'Đã xoá hoá đơn',
       color: 'green',
     });
-  }, [hasSuccess, prescriptionId]);
+  }, [hasSuccess, invoiceId]);
 
   const removeProducts = async (products: Product[]) => {
     const removePromises = products.map((p) =>
       fetch(
-        `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}/products/${p.id}?unitId=${p.unit_id}`,
+        `/api/workspaces/${wsId}/finance/invoices/${invoiceId}/products/${p.id}?unitId=${p.unit_id}`,
         {
           method: 'DELETE',
         }
@@ -75,9 +73,9 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
     }
   };
 
-  const removePrescription = async () => {
+  const remove = async () => {
     const res = await fetch(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}`,
+      `/api/workspaces/${wsId}/finance/invoices/${invoiceId}`,
       {
         method: 'DELETE',
       }
@@ -86,37 +84,33 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
     if (res.ok) {
       setProgress((progress) => ({
         ...progress,
-        removePrescription: 'success',
+        remove: 'success',
       }));
       const { id } = await res.json();
       return id;
     } else {
       showNotification({
         title: 'Lỗi',
-        message: 'Không thể xoá đơn thuốc',
+        message: 'Không thể xoá hoá đơn',
         color: 'red',
       });
-      setProgress((progress) => ({ ...progress, removePrescription: 'error' }));
+      setProgress((progress) => ({ ...progress, remove: 'error' }));
       return false;
     }
   };
 
   const handleDelete = async () => {
-    if (!prescriptionId) return;
+    if (!invoiceId) return;
 
     setProgress((progress) => ({ ...progress, removeProducts: 'loading' }));
     if (products.length) await removeProducts(products);
     else
       setProgress((progress) => ({ ...progress, removeProducts: 'success' }));
-    mutate(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}/products`
-    );
+    mutate(`/api/workspaces/${wsId}/finance/invoices/${invoiceId}/products`);
 
     setProgress((progress) => ({ ...progress, removeDetails: 'loading' }));
-    await removePrescription();
-    mutate(
-      `/api/workspaces/${wsId}/healthcare/prescriptions/${prescriptionId}`
-    );
+    await remove();
+    mutate(`/api/workspaces/${wsId}/finance/invoices/${invoiceId}`);
   };
 
   const [started, setStarted] = useState(false);
@@ -125,7 +119,7 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
     <>
       <Timeline
         active={
-          progress.removePrescription === 'success'
+          progress.remove === 'success'
             ? 2
             : progress.removeProducts === 'success'
             ? 1
@@ -161,16 +155,16 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title="Xoá đơn thuốc"
+          title="Xoá hoá đơn"
         >
-          {progress.removePrescription === 'success' ? (
-            <div className="text-green-300">Đã xoá đơn thuốc</div>
-          ) : progress.removePrescription === 'error' ? (
-            <div className="text-red-300">Không thể xoá đơn thuốc</div>
-          ) : progress.removePrescription === 'loading' ? (
-            <div className="text-blue-300">Đang xoá đơn thuốc</div>
+          {progress.remove === 'success' ? (
+            <div className="text-green-300">Đã xoá hoá đơn</div>
+          ) : progress.remove === 'error' ? (
+            <div className="text-red-300">Không thể xoá hoá đơn</div>
+          ) : progress.remove === 'loading' ? (
+            <div className="text-blue-300">Đang xoá hoá đơn</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá đơn thuốc</div>
+            <div className="text-zinc-400/80">Đang chờ xoá hoá đơn</div>
           )}
         </Timeline.Item>
 
@@ -179,7 +173,7 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
-          {progress.removePrescription === 'success' ? (
+          {progress.remove === 'success' ? (
             <div className="text-green-300">Đã hoàn tất</div>
           ) : hasError ? (
             <div className="text-red-300">Đã huỷ hoàn tất</div>
@@ -216,7 +210,7 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/healthcare/prescriptions`);
+              router.push(`/${wsId}/finance/invoices`);
               closeAllModals();
               return;
             }
@@ -240,4 +234,4 @@ const PrescriptionDeleteModal = ({ wsId, prescriptionId, products }: Props) => {
   );
 };
 
-export default PrescriptionDeleteModal;
+export default DeleteModal;

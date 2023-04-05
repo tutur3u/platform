@@ -1,14 +1,14 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Prescription } from '../../types/primitives/Prescription';
 import moment from 'moment';
 import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
 import useSWR from 'swr';
 import { getGender } from '../../utils/gender-helper';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { Invoice } from '../../types/primitives/Invoice';
 
 interface Props {
-  prescription: Prescription;
+  invoice: Invoice;
 
   showGender?: boolean;
   showPhone?: boolean;
@@ -20,8 +20,8 @@ interface Props {
   showCreator?: boolean;
 }
 
-const PrescriptionCard = ({
-  prescription,
+const Card = ({
+  invoice,
 
   showGender = false,
   showPhone = false,
@@ -34,20 +34,20 @@ const PrescriptionCard = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const patientApiPath = `/api/workspaces/${ws?.id}/users/${prescription.patient_id}`;
-  const { data: patient } = useSWR<WorkspaceUser>(
-    ws?.id && prescription.patient_id ? patientApiPath : null
+  const userApiPath = `/api/workspaces/${ws?.id}/users/${invoice.customer_id}`;
+  const { data: user } = useSWR<WorkspaceUser>(
+    ws?.id && invoice.customer_id ? userApiPath : null
   );
 
-  const creatorApiPath = `/api/users/${prescription.creator_id}`;
+  const creatorApiPath = `/api/users/${invoice.creator_id}`;
   const { data: creator } = useSWR(
-    showCreator && ws?.id && prescription.creator_id ? creatorApiPath : null
+    showCreator && ws?.id && invoice.creator_id ? creatorApiPath : null
   );
 
-  const itemsApiPath = `/api/workspaces/${ws?.id}/healthcare/prescriptions/${prescription.id}/items`;
+  const itemsApiPath = `/api/workspaces/${ws?.id}/finance/invoices/${invoice.id}/items`;
   const { data: items } = useSWR<{
     count: number;
-  }>(showAmount && ws?.id && prescription.id ? itemsApiPath : null);
+  }>(showAmount && ws?.id && invoice.id ? itemsApiPath : null);
 
   if (!ws) return null;
 
@@ -56,22 +56,22 @@ const PrescriptionCard = ({
 
   return (
     <Link
-      href={`/${ws.id}/healthcare/prescriptions/${prescription.id}`}
+      href={`/${ws.id}/finance/invoices/${invoice.id}`}
       className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-4 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
-            {prescription?.patient_id ? patient?.name : 'Khách vãng lai'}{' '}
-            {showGender && patient?.gender && (
+            {invoice?.customer_id ? user?.name : 'Khách vãng lai'}{' '}
+            {showGender && user?.gender && (
               <span className="lowercase text-orange-300">
-                ({getGender(patient.gender)})
+                ({getGender(user.gender)})
               </span>
             )}
           </div>
-          {showPhone && prescription?.patient_id && (
+          {showPhone && invoice?.customer_id && (
             <div className="line-clamp-1 font-semibold text-zinc-400/70">
-              {patient?.phone || 'Chưa có số điện thoại'}
+              {user?.phone || 'Chưa có số điện thoại'}
             </div>
           )}
         </div>
@@ -86,7 +86,7 @@ const PrescriptionCard = ({
           {showCreator && (
             <div className="line-clamp-2 w-full rounded border border-cyan-300/20 bg-cyan-300/10 px-4 py-0.5 font-semibold text-cyan-300">
               Người tạo -{' '}
-              {prescription.creator_id
+              {invoice.creator_id
                 ? creator?.display_name || 'Không có tên'
                 : 'Không xác định'}
             </div>
@@ -94,21 +94,20 @@ const PrescriptionCard = ({
 
           {showTime && (
             <div className="line-clamp-2 w-full rounded border border-zinc-300/20 bg-zinc-300/10 px-4 py-0.5 font-semibold text-zinc-300">
-              Tạo lúc{' '}
-              {moment(prescription?.created_at).format('HH:mm, DD/MM/YYYY')}
+              Tạo lúc {moment(invoice?.created_at).format('HH:mm, DD/MM/YYYY')}
             </div>
           )}
 
           {showStatus && (
             <div
               className={`line-clamp-2 w-full rounded border px-4 py-0.5 font-semibold ${
-                prescription?.completed_at
+                invoice?.completed_at
                   ? 'border-green-300/20 bg-green-300/10 text-green-300'
                   : 'border-red-300/20 bg-red-300/10 text-red-300'
               }`}
             >
-              {prescription?.completed_at
-                ? `Hoàn tất lúc ${moment(prescription?.completed_at).format(
+              {invoice?.completed_at
+                ? `Hoàn tất lúc ${moment(invoice?.completed_at).format(
                     'HH:mm, DD/MM/YYYY'
                   )}`
                 : 'Chờ đóng đơn'}
@@ -137,20 +136,18 @@ const PrescriptionCard = ({
               {Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
-              }).format(
-                (prescription?.price || 0) + (prescription?.price_diff || 0)
-              )}
+              }).format((invoice?.price || 0) + (invoice?.price_diff || 0))}
             </div>
           )}
         </div>
       )}
 
-      {showAddress && prescription?.patient_id && (
+      {showAddress && invoice?.customer_id && (
         <>
           <Divider variant="dashed" className="w-full border-zinc-700" />
           <div className="m-2 h-full w-full px-2">
             <div className="flex h-full items-center justify-center rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-              {patient?.address || 'Chưa có địa chỉ'}
+              {user?.address || 'Chưa có địa chỉ'}
             </div>
           </div>
         </>
@@ -159,4 +156,4 @@ const PrescriptionCard = ({
   );
 };
 
-export default PrescriptionCard;
+export default Card;

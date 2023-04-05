@@ -20,7 +20,7 @@ import PaginationIndicator from '../../../../components/pagination/PaginationInd
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const PatientsDiagnosesPage: PageWithLayoutProps = () => {
+const HealthcareDiagnosesPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -152,8 +152,8 @@ const PatientsDiagnosesPage: PageWithLayoutProps = () => {
   );
 };
 
-PatientsDiagnosesPage.getLayout = function getLayout(page: ReactElement) {
+HealthcareDiagnosesPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="healthcare">{page}</NestedLayout>;
 };
 
-export default PatientsDiagnosesPage;
+export default HealthcareDiagnosesPage;

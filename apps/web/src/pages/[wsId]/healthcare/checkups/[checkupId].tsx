@@ -9,7 +9,7 @@ import { Vital } from '../../../../types/primitives/Vital';
 import 'dayjs/locale/vi';
 import { VitalGroup } from '../../../../types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
-import PatientSelector from '../../../../components/selectors/PatientSelector';
+import WorkspaceUserSelector from '../../../../components/selectors/WorkspaceUserSelector';
 import DiagnosisSelector from '../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../components/inputs/CheckupVitalGroupInput';
 import { useRouter } from 'next/router';
@@ -93,7 +93,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
     if (checkupDiagnosis) setDiagnosis(checkupDiagnosis);
   }, [checkupDiagnosis]);
 
-  const [patientId, setPatientId] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
 
   const [checkupAt, setCheckupAt] = useState<Date | null>(new Date());
   const [nextCheckupAt, setNextCheckupAt] = useState<Date | null>(null);
@@ -105,7 +105,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (checkup) {
-      setPatientId(checkup?.patient_id || '');
+      setUserId(checkup?.user_id || '');
 
       setCheckupAt(
         checkup?.checkup_at ? moment(checkup.checkup_at).toDate() : null
@@ -139,7 +139,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
   const allGroupsValid = () => groups.every((group) => group.id.length > 0);
 
   const hasRequiredFields = () =>
-    patientId && patientId?.length > 0 && allVitalsValid() && allGroupsValid();
+    userId && userId?.length > 0 && allVitalsValid() && allGroupsValid();
 
   const addEmptyVital = () => {
     setVitals((vitals) => [
@@ -153,11 +153,11 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
   const [, setGroupVitals] = useState<
     {
       group_id: string;
-      vital_ids: string[];
+      vitals: Vital[];
     }[]
   >([]);
 
-  const addVitals = useCallback((groupId: string, vitalIds: string[]) => {
+  const addVitals = useCallback((groupId: string, vitals: Vital[]) => {
     setGroupVitals((groupVitals) => {
       const newGroupVitals = [...groupVitals];
       const index = newGroupVitals.findIndex(
@@ -166,16 +166,15 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
       if (index === -1) {
         newGroupVitals.push({
           group_id: groupId,
-          vital_ids: vitalIds,
+          vitals: vitals,
         });
-      } else newGroupVitals[index].vital_ids = vitalIds;
+      } else newGroupVitals[index].vitals = vitals;
 
       return newGroupVitals;
     });
 
-    setVitals((vitals) =>
-      vitals
-        .concat(vitalIds.map((id) => ({ id })))
+    setVitals((oldVitals) =>
+      [...oldVitals, ...vitals]
         .filter((vital) => vital.id.length > 0)
         .filter(
           (vital, index, self) =>
@@ -203,13 +202,13 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
       const newGroupVitals = [...groupVitals];
 
       newGroupVitals.forEach((groupVital) => {
-        groupVital.vital_ids = groupVital.vital_ids.filter(
-          (id) => vitals[index].id !== id
+        groupVital.vitals = groupVital.vitals.filter(
+          (vital) => vitals[index].id !== vital.id
         );
       });
 
       const newGroups = newGroupVitals.filter(
-        (groupVital) => groupVital.vital_ids.length > 0
+        (groupVital) => groupVital.vitals.length > 0
       );
 
       setGroups((groups) =>
@@ -251,7 +250,9 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
     if (!checkupGroups || !checkupVitals) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật đơn thuốc</div>,
+      title: (
+        <div className="font-semibold">Cập nhật đơn kiểm tra sức khoẻ</div>
+      ),
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -261,7 +262,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
           wsId={ws.id}
           checkup={{
             id: checkup.id,
-            patient_id: patientId,
+            user_id: userId,
             diagnosis_id: diagnosis?.id || null,
             checked: checked,
             checkup_at: checkupAt?.toISOString() || undefined,
@@ -284,7 +285,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
     if (!checkupGroups || !checkupVitals) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa đơn thuốc</div>,
+      title: <div className="font-semibold">Xóa đơn kiểm tra sức khoẻ</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -340,9 +341,9 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
               <Divider className="my-2" variant="dashed" />
             </div>
 
-            <PatientSelector
-              patientId={patientId}
-              setPatientId={setPatientId}
+            <WorkspaceUserSelector
+              userId={userId}
+              setUserId={setUserId}
               className="col-span-full"
               notEmpty
               required
@@ -433,7 +434,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
             {note != null ? (
               <Textarea
                 label="Ghi chú"
-                placeholder="Nhập ghi chú cho nhóm chỉ số này (nếu có)"
+                placeholder="Nhập ghi chú cho nhóm chỉ số này"
                 value={note}
                 onChange={(e) => setNote(e.currentTarget.value)}
                 className="md:col-span-2"

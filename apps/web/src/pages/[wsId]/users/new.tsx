@@ -24,7 +24,7 @@ import { UserRole } from '../../../types/primitives/UserRole';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const NewPatientPage: PageWithLayoutProps = () => {
+const NewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -314,8 +314,8 @@ const NewPatientPage: PageWithLayoutProps = () => {
   );
 };
 
-NewPatientPage.getLayout = function getLayout(page: ReactElement) {
+NewPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default NewPatientPage;
+export default NewPage;

@@ -103,6 +103,7 @@ const InventoryPage: PageWithLayoutProps = () => {
           title="Sản phẩm"
           value={products?.ws}
           href={`/${ws?.id}/inventory/products`}
+          className="md:col-span-2"
         />
 
         <StatisticCard
