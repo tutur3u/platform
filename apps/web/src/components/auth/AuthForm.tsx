@@ -22,6 +22,7 @@ interface AuthFormProps {
   disableForgotPassword?: boolean;
   hideForgotPassword?: boolean;
   recoveryMode?: boolean;
+  resetPasswordMode?: boolean;
   disabled?: boolean;
 
   onSubmit?: ({ email, password }: AuthFormFields) => Promise<void>;
@@ -38,6 +39,7 @@ const AuthForm = ({
   disableForgotPassword = true,
   hideForgotPassword = true,
   recoveryMode = false,
+  resetPasswordMode = false,
   disabled = false,
 
   onSubmit,
@@ -56,8 +58,8 @@ const AuthForm = ({
     validate: {
       email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
       password: (val) =>
-        val.length <= 6
-          ? 'Password should include at least 6 characters'
+        val.length <= 8
+          ? 'Password should include at least 8 characters'
           : null,
     },
   });
@@ -98,25 +100,27 @@ const AuthForm = ({
           </div>
 
           <div className="grid w-full gap-2">
-            <TextInput
-              id="email"
-              icon={<UserCircleIcon className="h-5" />}
-              label="Email"
-              placeholder="username@example.com"
-              value={form.values.email}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                form.setFieldValue('email', event.currentTarget.value)
-              }
-              error={form.errors.email && 'Invalid email'}
-              classNames={{
-                label: 'text-zinc-200/80 mb-1',
-                input:
-                  'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
-              }}
-              disabled={submitting}
-              withAsterisk={false}
-              required
-            />
+            {resetPasswordMode || (
+              <TextInput
+                id="email"
+                icon={<UserCircleIcon className="h-5" />}
+                label="Email"
+                placeholder="username@example.com"
+                value={form.values.email}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  form.setFieldValue('email', event.currentTarget.value)
+                }
+                error={form.errors.email && 'Invalid email'}
+                classNames={{
+                  label: 'text-zinc-200/80 mb-1',
+                  input:
+                    'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
+                }}
+                disabled={submitting}
+                withAsterisk={false}
+                required
+              />
+            )}
 
             {recoveryMode || (
               <PasswordInput
@@ -130,7 +134,7 @@ const AuthForm = ({
                 }
                 error={
                   form.errors.password &&
-                  'Password should include at least 6 characters'
+                  'Password should include at least 8 characters'
                 }
                 classNames={{
                   label: 'text-zinc-200/80 mb-1',

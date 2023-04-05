@@ -8,6 +8,7 @@ import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -33,22 +34,25 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   };
 };
 
-const PasswordRecoveryPage = () => {
+const ResetPasswordPage = () => {
   const supabaseClient = useSupabaseClient();
 
-  const handleRecovery = async ({ email }: AuthFormFields) => {
+  const router = useRouter();
+
+  const handleResetPassword = async ({ password }: AuthFormFields) => {
     try {
-      if (!email) throw new Error('Please fill in all fields');
+      if (!password) throw new Error('Please fill in all fields');
 
-      console.log('email', email);
-
-      await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://tuturuuu.com/reset-password',
+      const { error } = await supabaseClient.auth.updateUser({
+        password,
       });
 
+      console.log('password', password);
+
+      if (error) throw new Error(error.message);
       showNotification({
         title: 'Success',
-        message: 'Password reset email sent',
+        message: 'Password reset successfully',
         color: 'green',
       });
     } catch (e) {
@@ -60,6 +64,7 @@ const PasswordRecoveryPage = () => {
         });
       else alert(e);
     }
+    router.push('https://tuturuuu.com/onboarding');
   };
 
   const { t } = useTranslation('recover');
@@ -93,11 +98,11 @@ const PasswordRecoveryPage = () => {
           label: login,
           href: '/login',
         }}
-        onSubmit={handleRecovery}
-        recoveryMode
+        onSubmit={handleResetPassword}
+        resetPasswordMode
       />
     </>
   );
 };
 
-export default PasswordRecoveryPage;
+export default ResetPasswordPage;
