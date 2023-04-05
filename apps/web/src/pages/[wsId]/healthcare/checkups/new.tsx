@@ -179,7 +179,7 @@ const NewCheckupPage: PageWithLayoutProps = () => {
         <CheckupCreateModal
           wsId={ws.id}
           checkup={{
-            user_id: userId,
+            patient_id: userId,
             diagnosis_id: diagnosis?.id,
             checked,
             checkup_at: checkupAt?.toISOString(),

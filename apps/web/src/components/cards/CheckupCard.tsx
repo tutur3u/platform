@@ -32,12 +32,12 @@ const CheckupCard = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const userApiPath = `/api/workspaces/${ws?.id}/users/${checkup.user_id}`;
+  const userApiPath = `/api/workspaces/${ws?.id}/users/${checkup.patient_id}`;
   const diagnosisApiPath = `/api/workspaces/${ws?.id}/healthcare/diagnoses/${checkup.diagnosis_id}`;
   const creatorApiPath = `/api/users/${checkup.creator_id}`;
 
   const { data: user } = useSWR<WorkspaceUser>(
-    ws?.id && checkup.user_id ? userApiPath : null
+    ws?.id && checkup.patient_id ? userApiPath : null
   );
 
   const { data: diagnosis } = useSWR<Diagnosis>(
@@ -60,14 +60,14 @@ const CheckupCard = ({
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-4 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
-            {checkup?.user_id ? user?.name : 'Khách vãng lai'}{' '}
+            {checkup?.patient_id ? user?.name : 'Khách vãng lai'}{' '}
             {showGender && user?.gender && (
               <span className="lowercase text-orange-300">
                 ({getGender(user.gender)})
               </span>
             )}
           </div>
-          {showPhone && checkup?.user_id && (
+          {showPhone && checkup?.patient_id && (
             <div className="line-clamp-1 font-semibold text-zinc-400/70">
               {user?.phone || 'Chưa có số điện thoại'}
             </div>
@@ -141,7 +141,7 @@ const CheckupCard = ({
         </div>
       )}
 
-      {showAddress && checkup?.user_id && (
+      {showAddress && checkup?.patient_id && (
         <>
           <Divider variant="dashed" className="w-full border-zinc-700" />
           <div className="m-2 h-full w-full px-2">

@@ -47,7 +47,7 @@ const fetchCheckups = async (
   const queryBuilder = supabase
     .from('healthcare_checkups')
     .select(
-      'id, user_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
+      'id, patient_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
     )
     .eq('ws_id', wsId)
     .order('created_at');
@@ -94,7 +94,7 @@ const createCheckup = async (
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   const {
-    user_id,
+    patient_id,
     diagnosis_id,
     note,
     checked,
@@ -106,7 +106,7 @@ const createCheckup = async (
   const { data, error } = await supabase
     .from('healthcare_checkups')
     .insert({
-      user_id,
+      patient_id,
       diagnosis_id,
       note,
       checked,
