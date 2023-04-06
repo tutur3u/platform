@@ -60,20 +60,20 @@ const InvoiceProductInput = ({
   return (
     <SettingItemCard
       title={
-        price && p?.amount
+        price != null
           ? Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
-            }).format(Number(price * (p.amount || 0)))
+            }).format(Number(price * (p?.amount || 0)))
           : 'Chưa có giá'
       }
       description={
-        price && p?.amount
+        price != null
           ? `${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(Number(price))} x ${Intl.NumberFormat('vi-VN').format(
-              Number(p.amount || 0)
+              Number(p?.amount || 0)
             )}`
           : 'Chờ chọn sản phẩm và nhập số lượng'
       }

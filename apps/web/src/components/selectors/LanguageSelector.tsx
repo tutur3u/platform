@@ -24,12 +24,23 @@ const LanguageSelector = ({
     { label: 'Tiếng Việt', value: 'vi' },
   ];
 
+  const setCookie = (locale: string) => {
+    const date = new Date();
+    const expireMs = 365 * 24 * 60 * 60 * 1000; // 365 days
+    date.setTime(date.getTime() + expireMs);
+    document.cookie = `NEXT_LOCALE=${locale};expires=${date.toUTCString()};path=/`;
+  };
+
   return (
     <Select
       value={lang}
       icon={<GlobeAltIcon className="h-5 w-5" />}
       onChange={async (lang) => {
-        await setLanguage(lang || 'en');
+        const newLang = lang || 'en';
+
+        await setLanguage(newLang);
+        setCookie(newLang);
+
         if (onChange) onChange();
       }}
       data={data}

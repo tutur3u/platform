@@ -6,11 +6,15 @@ import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 import Providers from '../components/common/Providers';
 import Analytics from '../components/common/Analytics';
+import usePersistLocale from '../hooks/usePersistLocale';
 
 export default function Application({
   Component,
   pageProps,
 }: AppWithLayoutProps) {
+  // Make sure the locale is persisted in a cookie.
+  usePersistLocale();
+
   // Create a new supabase browser client on every first render.
   const [supabaseClient] = useState(() => createBrowserSupabaseClient());
 
