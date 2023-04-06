@@ -11,12 +11,14 @@ interface Props {
   setWallet: (wallet: Wallet | null) => void;
 
   blacklist?: string[];
+  className?: string;
 
-  softDisabled?: boolean;
   preventPreselected?: boolean;
+  disableQuery?: boolean;
+  clearable?: boolean;
+  hideLabel?: boolean;
   disabled?: boolean;
   required?: boolean;
-  className?: string;
 }
 
 const WalletSelector = ({
@@ -25,16 +27,20 @@ const WalletSelector = ({
   setWallet,
 
   blacklist = [],
-
   className,
 
   preventPreselected = false,
+  disableQuery = false,
+  clearable = false,
+  hideLabel = false,
   disabled = false,
   required = false,
 }: Props) => {
+  const router = useRouter();
+
   const {
     query: { walletId },
-  } = useRouter();
+  } = router;
 
   const { ws } = useWorkspaces();
 
@@ -48,39 +54,68 @@ const WalletSelector = ({
 
   const data = [
     ...(wallets?.map((wallet) => ({
-      label: wallet.name,
+      label: `${wallet.name} ${
+        wallet?.balance != null
+          ? `(${Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(wallet?.balance || 0)})`
+          : ''
+      }`,
       value: wallet.id,
       disabled: blacklist.includes(wallet.id),
     })) || []),
   ];
 
   useEffect(() => {
-    if (!wallets || !setWallet || wallet?.id) return;
+    if (!wallets) return;
 
-    const id = _walletId || walletId;
+    const id = _walletId || disableQuery ? null : walletId;
+    const currentWallet = wallets.find((v) => v.id === id) || null;
 
-    if (id && wallets.find((v) => v.id === id)) {
-      setWallet(wallets.find((v) => v.id === id) || null);
+    if (
+      id &&
+      wallets.find((v) => v.id === id) &&
+      (currentWallet?.balance !== wallet?.balance ||
+        currentWallet?.name !== wallet?.name)
+    ) {
+      setWallet(currentWallet);
+
+      // Remove walletId from query
+      router.replace(
+        {
+          query: {
+            ...router.query,
+            walletId: undefined,
+          },
+        },
+        undefined,
+        { shallow: true }
+      );
       return;
     }
 
-    if (preventPreselected) return;
+    if (preventPreselected || wallet?.id) return;
     setWallet(wallets?.[0]);
-  }, [_walletId, walletId, wallet, wallets, setWallet, preventPreselected]);
+  }, [
+    router,
+    _walletId,
+    walletId,
+    wallet,
+    wallets,
+    setWallet,
+    preventPreselected,
+    disableQuery,
+  ]);
 
   return (
     <Select
-      label="Nguồn tiền"
+      label={hideLabel ? undefined : 'Nguồn tiền'}
       placeholder="Chọn nguồn tiền"
       data={data}
       value={wallet?.id}
       onChange={(id) => setWallet(wallets?.find((v) => v.id === id) || null)}
       className={className}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item
@@ -101,6 +136,7 @@ const WalletSelector = ({
       }}
       disabled={!wallets || disabled}
       required={required}
+      clearable={clearable}
       searchable
     />
   );

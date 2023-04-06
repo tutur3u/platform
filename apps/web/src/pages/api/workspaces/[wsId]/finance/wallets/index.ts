@@ -43,13 +43,17 @@ const fetchWallets = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { blacklist, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('workspace_wallets')
     .select('id, name, balance, currency, created_at')
-    .order('created_at')
+    .order('created_at', { ascending: false })
     .eq('ws_id', wsId);
+
+  if (blacklist && typeof blacklist === 'string') {
+    queryBuilder.not('id', 'in', `(${blacklist})`);
+  }
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

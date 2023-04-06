@@ -46,7 +46,7 @@ const fetchCheckup = async (
   const { data, error } = await supabase
     .from('healthcare_checkups')
     .select(
-      'id, user_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
+      'id, patient_id, diagnosis_id, note, checked, checkup_at, next_checked, next_checkup_at, completed_at, creator_id, created_at'
     )
     .eq('id', checkupId)
     .single();
@@ -68,7 +68,7 @@ const updateCheckup = async (
   });
 
   const {
-    user_id,
+    patient_id,
     diagnosis_id,
     note,
     checked,
@@ -80,7 +80,7 @@ const updateCheckup = async (
   const { error } = await supabase
     .from('healthcare_checkups')
     .update({
-      user_id,
+      patient_id,
       diagnosis_id,
       note,
       checked,

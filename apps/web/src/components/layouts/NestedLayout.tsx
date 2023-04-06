@@ -45,7 +45,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           disableTabs ? 'h-16' : 'h-25'
         } fixed z-10 w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
       >
-        <div className="mx-4 flex items-center gap-2 py-4 md:mx-8 lg:mx-16 xl:mx-32">
+        <div className="flex items-center gap-2 py-4">
           {onFavorite && (
             <ActionIcon color="yellow" onClick={onFavorite}>
               {isFavorite ? (
@@ -57,7 +57,7 @@ const NestedLayout: FC<NestedLayoutProps> = ({
           )}
 
           {segments && segments.length > 0 ? (
-            <div className="scrollbar-none flex gap-x-2 overflow-x-auto">
+            <div className="scrollbar-none flex gap-2 overflow-x-auto px-4 md:px-8 lg:px-16 xl:px-32">
               {segments
                 .filter((_, index) =>
                   // If disableTabs is true, then we want to show all segments
@@ -122,10 +122,8 @@ const NestedLayout: FC<NestedLayoutProps> = ({
 
       <div
         className={`${
-          disableTabs
-            ? 'h-[calc(100vh-4rem)] pt-24'
-            : 'h-[calc(100vh-13rem)] pt-32'
-        } px-4 md:px-8 lg:px-16 xl:px-32`}
+          disableTabs ? 'pt-24' : 'pt-32'
+        } h-full px-4 md:px-8 lg:px-16 xl:px-32`}
       >
         {children}
       </div>

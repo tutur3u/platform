@@ -70,12 +70,17 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
   const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
 
   const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'finance-transactions-mode',
+    key: 'finance-wallet-transactions-mode',
     defaultValue: 'grid',
   });
 
   const [showAmount, setShowAmount] = useLocalStorage({
-    key: 'finance-wallets-showAmount',
+    key: 'finance-wallet-transactions-showAmount',
+    defaultValue: true,
+  });
+
+  const [showDatetime, setShowDatetime] = useLocalStorage({
+    key: 'finance-wallet-transactions-showDatetime',
     defaultValue: true,
   });
 
@@ -107,6 +112,11 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
+          <Switch
+            label="Hiển thị thời gian"
+            checked={showDatetime}
+            onChange={(event) => setShowDatetime(event.currentTarget.checked)}
+          />
         </div>
 
         <Divider className="mt-4" />
@@ -128,6 +138,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
                 key={c.id}
                 transaction={c}
                 showAmount={showAmount}
+                showDatetime={showDatetime}
                 redirectToWallets
               />
             ))}

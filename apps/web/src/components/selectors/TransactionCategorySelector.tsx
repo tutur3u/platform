@@ -11,13 +11,14 @@ interface Props {
   setCategory: (category: TransactionCategory | null) => void;
 
   blacklist?: string[];
+  className?: string;
 
-  softDisabled?: boolean;
   preventPreselected?: boolean;
+  showTransfer?: boolean;
+  hideLabel?: boolean;
   disabled?: boolean;
   required?: boolean;
   clearable?: boolean;
-  className?: string;
 }
 
 const TransactionCategorySelector = ({
@@ -26,10 +27,11 @@ const TransactionCategorySelector = ({
   setCategory,
 
   blacklist = [],
-
   className,
 
   preventPreselected = false,
+  showTransfer = false,
+  hideLabel = false,
   disabled = false,
   required = false,
   clearable = false,
@@ -51,6 +53,15 @@ const TransactionCategorySelector = ({
   const { data: categorys } = useSWR<TransactionCategory[]>(apiPath);
 
   const data = [
+    ...(showTransfer
+      ? [
+          {
+            label: 'Chuyển tiền',
+            value: 'transfer',
+            disabled: true,
+          },
+        ]
+      : []),
     ...(categorys?.map((category) => ({
       label: category.name,
       value: category.id,
@@ -81,19 +92,14 @@ const TransactionCategorySelector = ({
 
   return (
     <Select
-      label="Danh mục giao dịch"
-      placeholder="Chọn danh mục giao dịch"
+      label={hideLabel ? undefined : 'Danh mục giao dịch'}
+      placeholder="Không có danh mục giao dịch"
       data={data}
       value={category?.id}
       onChange={(id) =>
         setCategory(categorys?.find((v) => v.id === id) || null)
       }
       className={className}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item

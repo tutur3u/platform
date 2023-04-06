@@ -70,7 +70,12 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
   });
 
   const [showAmount, setShowAmount] = useLocalStorage({
-    key: 'finance-wallets-showAmount',
+    key: 'finance-transactions-showAmount',
+    defaultValue: true,
+  });
+
+  const [showDatetime, setShowDatetime] = useLocalStorage({
+    key: 'finance-transactions-showDatetime',
     defaultValue: true,
   });
 
@@ -112,6 +117,11 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
+          <Switch
+            label="Hiển thị thời gian"
+            checked={showDatetime}
+            onChange={(event) => setShowDatetime(event.currentTarget.checked)}
+          />
         </div>
 
         <Divider className="mt-4" />
@@ -134,6 +144,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
                 key={c.id}
                 transaction={c}
                 showAmount={showAmount}
+                showDatetime={showDatetime}
               />
             ))}
         </div>

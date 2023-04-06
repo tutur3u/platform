@@ -105,7 +105,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (checkup) {
-      setUserId(checkup?.user_id || '');
+      setUserId(checkup?.patient_id || '');
 
       setCheckupAt(
         checkup?.checkup_at ? moment(checkup.checkup_at).toDate() : null
@@ -262,7 +262,7 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
           wsId={ws.id}
           checkup={{
             id: checkup.id,
-            user_id: userId,
+            patient_id: userId,
             diagnosis_id: diagnosis?.id || null,
             checked: checked,
             checkup_at: checkupAt?.toISOString() || undefined,

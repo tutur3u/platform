@@ -3,7 +3,7 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, NumberInput, Select, Textarea } from '@mantine/core';
+import { Divider, NumberInput, Select, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -17,6 +17,10 @@ import { Transaction } from '../../../../types/primitives/Transaction';
 import useSWR from 'swr';
 import TransactionDeleteModal from '../../../../components/loaders/transactions/TransactionDeleteModal';
 import TransactionEditModal from '../../../../components/loaders/transactions/TransactionEditModal';
+import { DateTimePicker } from '@mantine/dates';
+import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
+import moment from 'moment';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -33,6 +37,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
       : null;
 
   const { data: transaction } = useSWR<Transaction>(apiPath);
+
+  const walletApiPath =
+    wsId && transaction?.wallet_id
+      ? `/api/workspaces/${wsId}/finance/wallets/${transaction?.wallet_id}`
+      : null;
+
+  const { data: transactionWallet } = useSWR<Wallet>(walletApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -59,6 +70,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   }, [ws, transaction, setRootSegment]);
 
   const [description, setDescription] = useState<string>('');
+  const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -67,6 +79,11 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   useEffect(() => {
     if (transaction) {
       setDescription(transaction?.description || '');
+      setTakenAt(
+        transaction?.taken_at
+          ? moment(transaction?.taken_at).toDate()
+          : new Date()
+      );
       setAmount(transaction?.amount || 0);
     }
   }, [transaction]);
@@ -77,6 +94,10 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
       category.is_expense === false ? Math.abs(oldAmount) : -Math.abs(oldAmount)
     );
   }, [category, amount]);
+
+  useEffect(() => {
+    if (transactionWallet) setWallet(transactionWallet);
+  }, [transactionWallet]);
 
   const hasRequiredFields = () => amount != 0 && wallet;
 
@@ -98,6 +119,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             id: transactionId,
             description,
             amount,
+            taken_at: takenAt.toISOString(),
             category_id: category?.id,
           }}
           redirectUrl={
@@ -135,29 +157,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const { lang } = useTranslation();
+
   return (
     <>
       <HeaderX label="Giao dịch – Tài chính" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-8">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
-            <WalletSelector
-              walletId={transaction?.wallet_id}
-              wallet={wallet}
-              setWallet={setWallet}
-              preventPreselected
-              disabled={!transaction}
-              required
-            />
-            <TransactionCategorySelector
-              categoryId={transaction?.category_id}
-              category={category}
-              setCategory={setCategory}
-              disabled={!transaction}
-              preventPreselected
-              clearable
-            />
-          </div>
+        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
             <button
               className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
@@ -191,47 +197,85 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </div>
 
           <SettingItemCard
+            title="Nguồn tiền"
+            description="Nguồn tiền mà giao dịch này được thực hiện."
+          >
+            <div className="grid gap-2">
+              <WalletSelector wallet={wallet} setWallet={setWallet} hideLabel />
+            </div>
+          </SettingItemCard>
+
+          <SettingItemCard
             title="Nội dung"
             description="Nội dung của giao dịch này."
+            disabled={!wallet}
           >
-            <Textarea
+            <TextInput
               placeholder="Nhập nội dung"
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              minRows={1}
-              maxRows={5}
               disabled={!wallet}
             />
           </SettingItemCard>
 
           <SettingItemCard
-            title="Số tiền"
-            description="Số tiền giao dịch này sẽ được thêm vào ví đã chọn."
+            title="Thời điểm giao dịch"
+            description="Thời điểm giao dịch này được thực hiện."
+            disabled={!wallet}
           >
-            <NumberInput
-              placeholder="Nhập số tiền"
-              value={amount}
-              onChange={(num) =>
-                category
-                  ? setAmount(
-                      Number(num) * (category?.is_expense === false ? 1 : -1)
-                    )
-                  : setAmount(Number(num))
-              }
+            <DateTimePicker
+              value={takenAt}
+              onChange={(date) => setTakenAt(date || new Date())}
               className="w-full"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
               disabled={!wallet}
+              valueFormat="HH:mm - dddd, DD/MM/YYYY"
+              locale={lang}
+            />
+          </SettingItemCard>
+
+          <SettingItemCard
+            title="Số tiền giao dịch"
+            description="Số tiền giao dịch này được thực hiện."
+            disabled={!wallet}
+          >
+            <div className="grid gap-2">
+              <NumberInput
+                placeholder="Nhập số tiền"
+                value={amount}
+                onChange={(num) =>
+                  category
+                    ? setAmount(
+                        Number(num) * (category?.is_expense === false ? 1 : -1)
+                      )
+                    : setAmount(Number(num))
+                }
+                className="w-full"
+                classNames={{
+                  input: 'bg-white/5 border-zinc-300/20 font-semibold',
+                }}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                formatter={(value) =>
+                  !Number.isNaN(parseFloat(value || ''))
+                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    : ''
+                }
+                disabled={!wallet}
+              />
+            </div>
+          </SettingItemCard>
+
+          <SettingItemCard
+            title="Danh mục giao dịch"
+            description="Loại giao dịch được thực hiện."
+          >
+            <TransactionCategorySelector
+              category={category}
+              setCategory={setCategory}
+              preventPreselected
+              hideLabel
             />
           </SettingItemCard>
 
@@ -240,7 +284,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
           >
             <Select
-              placeholder="Chờ chọn ví..."
+              placeholder="Chờ chọn nguồn tiền..."
               value={wallet?.currency}
               data={[
                 {

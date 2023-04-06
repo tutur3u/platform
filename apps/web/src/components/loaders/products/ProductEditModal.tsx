@@ -107,8 +107,6 @@ const ProductEditModal = ({
 
     if (res.ok) {
       setProgress((progress) => ({ ...progress, updateDetails: 'success' }));
-      const { id } = await res.json();
-      return id;
     } else {
       showNotification({
         title: 'Lỗi',
