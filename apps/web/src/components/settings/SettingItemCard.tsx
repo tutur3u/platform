@@ -37,8 +37,6 @@ const SettingItemCard = ({
         </div>
       )}
 
-      <div className="h-full" />
-
       {children}
 
       {(onSave || comingSoon) && (

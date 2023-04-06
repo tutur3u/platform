@@ -68,14 +68,18 @@ const createTransaction = async (
   const { description, amount, taken_at, category_id } =
     req.body as Transaction;
 
-  const { error } = await supabase.from('wallet_transactions').insert({
-    description,
-    amount,
-    category_id,
-    taken_at,
-    wallet_id: walletId,
-  });
+  const { data, error } = await supabase
+    .from('wallet_transactions')
+    .insert({
+      description,
+      amount,
+      category_id,
+      taken_at,
+      wallet_id: walletId,
+    })
+    .select('id')
+    .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({ message: 'Transaction created' });
+  return res.status(200).json({ id: data.id });
 };

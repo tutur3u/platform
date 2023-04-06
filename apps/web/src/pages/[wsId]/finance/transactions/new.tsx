@@ -3,7 +3,7 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, NumberInput, Select, Textarea } from '@mantine/core';
+import { Chip, Divider, NumberInput, Select, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -16,6 +16,7 @@ import TransactionCreateModal from '../../../../components/loaders/transactions/
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
+import WalletTransferCreateModal from '../../../../components/loaders/wallets/transfers/WalletTransferCreateModal';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -48,56 +49,89 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
 
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [originWallet, setOriginWallet] = useState<Wallet | null>(null);
+  const [destinationWallet, setDestinationWallet] = useState<Wallet | null>(
+    null
+  );
+
   const [category, setCategory] = useState<TransactionCategory | null>(null);
 
-  useEffect(() => {
-    if (!category) return;
-    setAmount((oldAmount) =>
-      category.is_expense === false ? Math.abs(oldAmount) : -Math.abs(oldAmount)
-    );
-  }, [category, amount]);
+  const [type, setType] = useState<'default' | 'transfer' | 'balance'>(
+    'default'
+  );
 
-  const hasRequiredFields = () => amount != 0 && wallet;
+  useEffect(() => {
+    if (!category || type !== 'default') return;
+    setAmount((oldAmount) =>
+      category?.is_expense === false
+        ? Math.abs(oldAmount)
+        : -Math.abs(oldAmount)
+    );
+  }, [category, type, amount]);
+
+  const hasRequiredFields = () =>
+    (type !== 'balance' ? amount != 0 : amount !== originWallet?.balance) &&
+    (type === 'transfer' ? originWallet && destinationWallet : originWallet);
 
   const showCreateModal = () => {
-    if (!ws || !wallet?.id) return;
+    if (!ws || !originWallet?.id || originWallet?.balance == null) return;
+    if (type === 'transfer' && !destinationWallet) return;
+
     openModal({
       title: <div className="font-semibold">Tạo giao dịch mới</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: (
-        <TransactionCreateModal
-          wsId={ws.id}
-          walletId={wallet.id}
-          transaction={{
-            description,
-            amount,
-            taken_at: takenAt.toISOString(),
-            category_id: category?.id,
-          }}
-          redirectUrl={`/${ws.id}/finance/transactions`}
-        />
-      ),
+      children:
+        type === 'transfer' && destinationWallet ? (
+          <WalletTransferCreateModal
+            wsId={ws.id}
+            originWallet={originWallet}
+            destinationWallet={destinationWallet}
+            transaction={{
+              description,
+              amount,
+              taken_at: takenAt.toISOString(),
+              category_id: category?.id,
+            }}
+            redirectUrl={`/${ws.id}/finance/wallets`}
+          />
+        ) : (
+          <TransactionCreateModal
+            wsId={ws.id}
+            walletId={originWallet.id}
+            transaction={{
+              description,
+              amount:
+                type === 'balance' ? amount - originWallet.balance : amount,
+              taken_at: takenAt.toISOString(),
+              category_id: category?.id,
+            }}
+            redirectUrl={`/${ws.id}/finance/transactions`}
+          />
+        ),
     });
   };
 
   const { lang } = useTranslation();
 
+  useEffect(() => {
+    if (type === 'balance') {
+      setAmount(originWallet?.balance || 0);
+      setDescription('Cân bằng số dư');
+    } else {
+      setAmount(0);
+      setDescription('');
+      setDestinationWallet(null);
+    }
+  }, [type, originWallet?.balance]);
+
   return (
     <>
       <HeaderX label="Giao dịch – Tài chính" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-8">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
-            <WalletSelector wallet={wallet} setWallet={setWallet} required />
-            <TransactionCategorySelector
-              category={category}
-              setCategory={setCategory}
-            />
-          </div>
+        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
             <button
               className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
@@ -116,31 +150,119 @@ const NewTransactionPage: PageWithLayoutProps = () => {
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
+            <Divider className="mt-2" variant="dashed" />
           </div>
 
-          <SettingItemCard
-            title="Nội dung"
-            description="Nội dung của giao dịch này."
-            disabled={!wallet}
+          <Chip.Group
+            value={type}
+            onChange={(value) =>
+              setType(value as 'default' | 'transfer' | 'balance')
+            }
           >
-            <Textarea
-              placeholder="Nhập nội dung"
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              minRows={1}
-              maxRows={5}
-              disabled={!wallet}
-            />
+            <div className="col-span-full flex flex-wrap gap-2">
+              <Chip variant="light" value="default">
+                Mặc định
+              </Chip>
+              <Chip variant="light" value="transfer">
+                Chuyển tiền
+              </Chip>
+              <Chip variant="light" value="balance">
+                Cân bằng số dư
+              </Chip>
+            </div>
+          </Chip.Group>
+
+          <SettingItemCard
+            title="Nguồn tiền gốc"
+            description={
+              type === 'transfer'
+                ? 'Nguồn tiền cần rút tiền để chuyển đến nguồn tiền đích.'
+                : 'Nguồn tiền mà giao dịch này được thực hiện.'
+            }
+          >
+            <div className="grid gap-2">
+              <WalletSelector
+                wallet={originWallet}
+                setWallet={(wallet) => {
+                  if (type === 'balance') setAmount(wallet?.balance || 0);
+                  setOriginWallet(wallet);
+                }}
+                blacklist={destinationWallet ? [destinationWallet.id] : []}
+                hideLabel
+              />
+
+              {type === 'transfer' && originWallet && amount ? (
+                <>
+                  <Divider variant="dashed" />
+                  <div className="text-zinc-400">
+                    Giao dịch này sẽ{' '}
+                    <span className="font-semibold text-zinc-200">
+                      {Intl.NumberFormat(lang, {
+                        style: 'currency',
+                        currency: originWallet.currency,
+                        signDisplay: 'always',
+                      }).format(amount * -1)}
+                    </span>{' '}
+                    với số dư hiện tại.
+                  </div>
+                </>
+              ) : null}
+            </div>
           </SettingItemCard>
+
+          {type === 'transfer' ? (
+            <SettingItemCard
+              title="Nguồn tiền đích"
+              description="Nguồn tiền cần nhận tiền từ nguồn tiền gốc."
+            >
+              <div className="grid gap-2">
+                <WalletSelector
+                  wallet={destinationWallet}
+                  setWallet={setDestinationWallet}
+                  blacklist={originWallet ? [originWallet.id] : []}
+                  preventPreselected
+                  disableQuery
+                  clearable
+                  hideLabel
+                />
+
+                {destinationWallet && amount ? (
+                  <>
+                    <Divider variant="dashed" />
+                    <div className="text-zinc-400">
+                      Giao dịch này sẽ{' '}
+                      <span className="font-semibold text-zinc-200">
+                        {Intl.NumberFormat(lang, {
+                          style: 'currency',
+                          currency: destinationWallet.currency,
+                          signDisplay: 'always',
+                        }).format(amount)}
+                      </span>{' '}
+                      với số dư hiện tại.
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </SettingItemCard>
+          ) : (
+            <SettingItemCard
+              title="Nội dung"
+              description="Nội dung của giao dịch này."
+              disabled={!originWallet}
+            >
+              <TextInput
+                placeholder="Nhập nội dung"
+                value={description}
+                onChange={(e) => setDescription(e.currentTarget.value)}
+                disabled={!originWallet}
+              />
+            </SettingItemCard>
+          )}
 
           <SettingItemCard
             title="Thời điểm giao dịch"
             description="Thời điểm giao dịch này được thực hiện."
-            disabled={!wallet}
+            disabled={!originWallet}
           >
             <DateTimePicker
               value={takenAt}
@@ -149,38 +271,92 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
-              disabled={!wallet}
+              disabled={!originWallet}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
             />
           </SettingItemCard>
 
           <SettingItemCard
-            title="Số tiền"
-            description="Số tiền giao dịch này sẽ được thêm vào ví đã chọn."
-            disabled={!wallet}
+            title={
+              type === 'balance'
+                ? 'Số tiền trong nguồn tiền'
+                : 'Số tiền giao dịch'
+            }
+            description={
+              type === 'balance'
+                ? 'Số tiền trong nguồn tiền sau khi giao dịch.'
+                : 'Số tiền giao dịch này được thực hiện.'
+            }
+            disabled={!originWallet}
           >
-            <NumberInput
-              placeholder="Nhập số tiền"
-              value={amount}
-              onChange={(num) =>
-                category
-                  ? setAmount(
-                      Number(num) * (category?.is_expense === false ? 1 : -1)
-                    )
-                  : setAmount(Number(num))
+            <div className="grid gap-2">
+              <NumberInput
+                placeholder="Nhập số tiền"
+                value={amount}
+                onChange={(num) =>
+                  category
+                    ? setAmount(
+                        Number(num) *
+                          (type === 'default'
+                            ? category?.is_expense === false
+                              ? 1
+                              : -1
+                            : 1)
+                      )
+                    : setAmount(Number(num))
+                }
+                className="w-full"
+                classNames={{
+                  input: 'bg-white/5 border-zinc-300/20 font-semibold',
+                }}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                formatter={(value) =>
+                  !Number.isNaN(parseFloat(value || ''))
+                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    : ''
+                }
+                disabled={!originWallet}
+              />
+
+              {type === 'balance' && originWallet?.balance != null && (
+                <>
+                  <Divider variant="dashed" />
+
+                  <div>
+                    Giao dịch này sẽ{' '}
+                    <span className="font-semibold text-zinc-200">
+                      {Intl.NumberFormat(lang, {
+                        style: 'currency',
+                        currency: originWallet.currency,
+                        signDisplay: 'always',
+                      }).format(amount - originWallet.balance)}
+                    </span>{' '}
+                    với số dư hiện tại trong nguồn tiền.
+                  </div>
+                </>
+              )}
+            </div>
+          </SettingItemCard>
+
+          <SettingItemCard
+            title="Danh mục giao dịch"
+            description="Loại giao dịch được thực hiện."
+          >
+            <TransactionCategorySelector
+              category={
+                type === 'transfer'
+                  ? {
+                      id: 'transfer',
+                    }
+                  : type === 'default'
+                  ? category
+                  : null
               }
-              className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-              disabled={!wallet}
+              showTransfer={type === 'transfer'}
+              disabled={type !== 'default'}
+              setCategory={setCategory}
+              hideLabel
             />
           </SettingItemCard>
 
@@ -189,8 +365,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
           >
             <Select
-              placeholder="Chờ chọn ví..."
-              value={wallet?.currency}
+              placeholder="Chờ chọn nguồn tiền..."
+              value={originWallet?.currency}
               data={[
                 {
                   label: 'Việt Nam Đồng (VND)',

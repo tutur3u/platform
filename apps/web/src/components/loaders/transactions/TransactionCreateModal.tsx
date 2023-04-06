@@ -43,7 +43,7 @@ const TransactionCreateModal = ({
       });
   }, [hasSuccess]);
 
-  const createTransaction = async () => {
+  const createTransaction = async (transaction: Transaction) => {
     const res = await fetch(
       `/api/workspaces/${wsId}/finance/wallets/${walletId}/transactions`,
       {
@@ -74,7 +74,7 @@ const TransactionCreateModal = ({
 
   const handleCreate = async () => {
     setProgress((progress) => ({ ...progress, created: 'loading' }));
-    const transactionId = await createTransaction();
+    const transactionId = await createTransaction(transaction);
     if (transactionId) setTransactionId(transactionId);
   };
 

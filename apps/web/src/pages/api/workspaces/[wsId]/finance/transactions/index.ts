@@ -43,7 +43,7 @@ const fetchTransactions = async (
   const queryBuilder = supabase
     .from('wallet_transactions')
     .select(
-      'id, description, amount, category_id, taken_at, workspace_wallets!inner(ws_id)'
+      'id, description, amount, category_id, wallet_id, taken_at, workspace_wallets!inner(ws_id)'
     )
     .order('taken_at', { ascending: false })
     .eq('workspace_wallets.ws_id', wsId);
