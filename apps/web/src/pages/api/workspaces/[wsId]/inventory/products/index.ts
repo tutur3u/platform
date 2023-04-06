@@ -124,9 +124,8 @@ const createProduct = async (
     res,
   });
 
-  const { name, manufacturer, description, usage, category_id } = JSON.parse(
-    req.body
-  ) as Product;
+  const { name, manufacturer, description, usage, category_id } =
+    req.body as Product;
 
   const { data, error } = await supabase
     .from('workspace_products')

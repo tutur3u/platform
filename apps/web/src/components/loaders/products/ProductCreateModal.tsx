@@ -51,6 +51,9 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
   const createProduct = async () => {
     const res = await fetch(`/api/workspaces/${wsId}/inventory/products`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(product),
     });
 
@@ -82,7 +85,7 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(prices),
+        body: JSON.stringify({ prices }),
       }
     );
 
