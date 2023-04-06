@@ -17,6 +17,10 @@ import { Transaction } from '../../../../types/primitives/Transaction';
 import useSWR from 'swr';
 import TransactionDeleteModal from '../../../../components/loaders/transactions/TransactionDeleteModal';
 import TransactionEditModal from '../../../../components/loaders/transactions/TransactionEditModal';
+import { DateTimePicker } from '@mantine/dates';
+import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
+import moment from 'moment';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -59,6 +63,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   }, [ws, transaction, setRootSegment]);
 
   const [description, setDescription] = useState<string>('');
+  const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -67,6 +72,11 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   useEffect(() => {
     if (transaction) {
       setDescription(transaction?.description || '');
+      setTakenAt(
+        transaction?.taken_at
+          ? moment(transaction?.taken_at).toDate()
+          : new Date()
+      );
       setAmount(transaction?.amount || 0);
     }
   }, [transaction]);
@@ -98,6 +108,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             id: transactionId,
             description,
             amount,
+            taken_at: takenAt.toISOString(),
             category_id: category?.id,
           }}
           redirectUrl={
@@ -134,6 +145,8 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
       ),
     });
   };
+
+  const { lang } = useTranslation();
 
   return (
     <>
@@ -204,6 +217,24 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
               minRows={1}
               maxRows={5}
               disabled={!wallet}
+            />
+          </SettingItemCard>
+
+          <SettingItemCard
+            title="Thời điểm giao dịch"
+            description="Thời điểm giao dịch này được thực hiện."
+            disabled={!wallet}
+          >
+            <DateTimePicker
+              value={takenAt}
+              onChange={(date) => setTakenAt(date || new Date())}
+              className="w-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              disabled={!wallet}
+              valueFormat="HH:mm - dddd, DD/MM/YYYY"
+              locale={lang}
             />
           </SettingItemCard>
 

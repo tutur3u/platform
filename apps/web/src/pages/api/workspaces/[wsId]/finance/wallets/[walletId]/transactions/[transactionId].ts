@@ -41,13 +41,14 @@ const updateTransaction = async (
     res,
   });
 
-  const { description, amount, category_id } = req.body;
+  const { description, amount, taken_at, category_id } = req.body;
 
   const { error } = await supabase
     .from('wallet_transactions')
     .update({
       description,
       amount,
+      taken_at,
       category_id,
     })
     .eq('id', transactionId);

@@ -13,6 +13,9 @@ import SettingItemCard from '../../../../components/settings/SettingItemCard';
 import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
 import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
 import TransactionCreateModal from '../../../../components/loaders/transactions/TransactionCreateModal';
+import { DateTimePicker } from '@mantine/dates';
+import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,6 +45,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [description, setDescription] = useState<string>('');
+  const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -71,6 +75,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           transaction={{
             description,
             amount,
+            taken_at: takenAt.toISOString(),
             category_id: category?.id,
           }}
           redirectUrl={`/${ws.id}/finance/transactions`}
@@ -78,6 +83,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
       ),
     });
   };
+
+  const { lang } = useTranslation();
 
   return (
     <>
@@ -115,6 +122,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           <SettingItemCard
             title="Nội dung"
             description="Nội dung của giao dịch này."
+            disabled={!wallet}
           >
             <Textarea
               placeholder="Nhập nội dung"
@@ -130,8 +138,27 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
+            title="Thời điểm giao dịch"
+            description="Thời điểm giao dịch này được thực hiện."
+            disabled={!wallet}
+          >
+            <DateTimePicker
+              value={takenAt}
+              onChange={(date) => setTakenAt(date || new Date())}
+              className="w-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              disabled={!wallet}
+              valueFormat="HH:mm - dddd, DD/MM/YYYY"
+              locale={lang}
+            />
+          </SettingItemCard>
+
+          <SettingItemCard
             title="Số tiền"
             description="Số tiền giao dịch này sẽ được thêm vào ví đã chọn."
+            disabled={!wallet}
           >
             <NumberInput
               placeholder="Nhập số tiền"

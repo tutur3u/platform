@@ -7,7 +7,6 @@ import { Checkbox, Divider, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { Vital } from '../../../../types/primitives/Vital';
 import CheckupCreateModal from '../../../../components/loaders/checkups/CheckupCreateModal';
-import 'dayjs/locale/vi';
 import { VitalGroup } from '../../../../types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
 import WorkspaceUserSelector from '../../../../components/selectors/WorkspaceUserSelector';
