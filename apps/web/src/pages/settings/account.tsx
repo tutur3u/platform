@@ -15,7 +15,6 @@ import NestedLayout from '../../components/layouts/NestedLayout';
 import LanguageSelector from '../../components/selectors/LanguageSelector';
 import { useRouter } from 'next/router';
 import {
-  useSession,
   useSessionContext,
   useSupabaseClient,
 } from '@supabase/auth-helpers-react';
@@ -70,13 +69,6 @@ const SettingPage: PageWithLayoutProps = () => {
   };
 
   const supabase = useSupabaseClient();
-  const session = useSession();
-
-  useEffect(() => {
-    if (session?.user?.email) {
-      setEmail(session?.user?.email);
-    }
-  }, [session]);
 
   const handleChangeEmail = async () => {
     try {
