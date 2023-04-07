@@ -176,8 +176,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             title="Nguồn tiền gốc"
             description={
               type === 'transfer'
-                ? 'Nguồn tiền cần rút tiền để chuyển đến nguồn tiền đích.'
-                : 'Nguồn tiền mà giao dịch này được thực hiện.'
+                ? 'Nguồn tiền cần rút tiền.'
+                : 'Nguồn tiền thực hiện giao dịch.'
             }
           >
             <div className="grid gap-2">
@@ -213,7 +213,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           {type === 'transfer' ? (
             <SettingItemCard
               title="Nguồn tiền đích"
-              description="Nguồn tiền cần nhận tiền từ nguồn tiền gốc."
+              description="Nguồn tiền cần nhận tiền."
             >
               <div className="grid gap-2">
                 <WalletSelector
@@ -279,9 +279,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
           <SettingItemCard
             title={
-              type === 'balance'
-                ? 'Số tiền trong nguồn tiền'
-                : 'Số tiền giao dịch'
+              type === 'balance' ? 'Tiền trong nguồn tiền' : 'Số tiền giao dịch'
             }
             description={
               type === 'balance'
@@ -310,7 +308,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 classNames={{
                   input: 'bg-white/5 border-zinc-300/20 font-semibold',
                 }}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
                 formatter={(value) =>
                   !Number.isNaN(parseFloat(value || ''))
                     ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -318,6 +316,189 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 }
                 disabled={!originWallet}
               />
+
+              {amount != 0 && (
+                <>
+                  <Divider variant="dashed" />
+
+                  <div>
+                    <div className="font-semibold text-zinc-200">
+                      Đề xuất thông minh
+                    </div>
+
+                    <div>
+                      Chuyển{' '}
+                      <span className="font-semibold text-blue-300">
+                        {Intl.NumberFormat(lang, {
+                          style: 'decimal',
+                        }).format(Math.abs(amount))}
+                      </span>{' '}
+                      thành những số tiền sau:
+                    </div>
+                  </div>
+
+                  {Math.abs(amount) <= 1000 * 1000 * 1000 && (
+                    <>
+                      <div className="font-semibold text-zinc-200">Lớn hơn</div>
+                      <div className="flex flex-wrap gap-2 font-semibold">
+                        {Math.abs(amount) <= 1000 * 1000 * 1000 && (
+                          <Chip
+                            onClick={() => setAmount(Math.abs(amount * 10))}
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 10))}
+                          </Chip>
+                        )}
+
+                        {Math.abs(amount) <= 1000 * 1000 * 100 && (
+                          <Chip
+                            checked={false}
+                            onClick={() => setAmount(Math.abs(amount * 100))}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 100))}
+                          </Chip>
+                        )}
+
+                        {Math.abs(amount) <= 1000 * 1000 * 10 && (
+                          <Chip
+                            onClick={() => setAmount(Math.abs(amount * 1000))}
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 1000))}
+                          </Chip>
+                        )}
+
+                        {Math.abs(amount) <= 1000 * 1000 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount * 1000 * 10))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 1000 * 10))}
+                          </Chip>
+                        )}
+
+                        {Math.abs(amount) <= 1000 * 100 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount * 1000 * 100))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 1000 * 100))}
+                          </Chip>
+                        )}
+
+                        {Math.abs(amount) <= 1000 * 10 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount * 1000 * 1000))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount * 1000 * 1000))}
+                          </Chip>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {Math.round(amount / 10) === amount / 10 && (
+                    <>
+                      <div className="font-semibold text-zinc-200">Nhỏ hơn</div>
+                      <div className="flex flex-wrap gap-2 font-semibold">
+                        {Math.round(amount / 1000 / 1000) ===
+                          amount / 1000 / 1000 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount / 1000 / 1000))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 1000 / 1000))}
+                          </Chip>
+                        )}
+
+                        {Math.round(amount / 1000 / 100) ===
+                          amount / 1000 / 100 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount / 1000 / 100))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 1000 / 100))}
+                          </Chip>
+                        )}
+
+                        {Math.round(amount / 1000 / 10) ===
+                          amount / 1000 / 10 && (
+                          <Chip
+                            onClick={() =>
+                              setAmount(Math.abs(amount / 1000 / 10))
+                            }
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 1000 / 10))}
+                          </Chip>
+                        )}
+
+                        {Math.round(amount / 1000) === amount / 1000 && (
+                          <Chip
+                            onClick={() => setAmount(Math.abs(amount / 1000))}
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 1000))}
+                          </Chip>
+                        )}
+
+                        {Math.round(amount / 100) === amount / 100 && (
+                          <Chip
+                            onClick={() => setAmount(Math.abs(amount / 100))}
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 100))}
+                          </Chip>
+                        )}
+
+                        {Math.round(amount / 10) === amount / 10 && (
+                          <Chip
+                            onClick={() => setAmount(Math.abs(amount / 10))}
+                            checked={false}
+                          >
+                            {Intl.NumberFormat(lang, {
+                              style: 'decimal',
+                            }).format(Math.abs(amount / 10))}
+                          </Chip>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
 
               {type === 'balance' && originWallet?.balance != null && (
                 <>
