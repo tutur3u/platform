@@ -13,8 +13,10 @@ import {
   HomeIcon,
   RectangleStackIcon,
   UserGroupIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { WorkspacePreset } from '../../../types/primitives/WorkspacePreset';
+import { useUser } from '@supabase/auth-helpers-react';
 
 interface Props {
   wsId: string;
@@ -24,6 +26,7 @@ interface Props {
 
 const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const { t } = useTranslation('sidebar-tabs');
+  const user = useUser();
 
   const home = t('home');
   const calendar = t('calendar');
@@ -36,6 +39,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const classes = t('classes');
   const finance = t('finance');
   const databases = t('databases');
+  const infrastructure = t('infrastructure');
   const activities = t('activities');
 
   return (
@@ -132,6 +136,15 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         showTooltip={!sidebarOpened}
         disabled
       />
+
+      {user?.email?.endsWith('@tuturuuu.com') && (
+        <SidebarLink
+          href={`/${wsId}/infrastructure`}
+          activeIcon={<WrenchScrewdriverIcon className="w-5" />}
+          label={infrastructure}
+          showTooltip={!sidebarOpened}
+        />
+      )}
 
       <SidebarLink
         href={`/${wsId}/activities`}

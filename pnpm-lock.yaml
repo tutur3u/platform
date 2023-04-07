@@ -59,8 +59,8 @@ importers:
         specifier: ^6.0.6
         version: 6.0.6(@mantine/core@6.0.6)(@mantine/hooks@6.0.6)(@tabler/icons-react@2.14.0)(@tiptap/extension-link@2.0.2)(@tiptap/react@2.0.2)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
-        specifier: ^0.5.9
-        version: 0.5.9(@supabase/supabase-js@2.15.0)
+        specifier: ^0.6.0
+        version: 0.6.0(@supabase/supabase-js@2.15.0)
       '@supabase/auth-helpers-react':
         specifier: ^0.3.1
         version: 0.3.1(@supabase/supabase-js@2.15.0)
@@ -216,8 +216,8 @@ importers:
         specifier: ^29.5.0
         version: 29.5.0
       lint-staged:
-        specifier: ^13.2.0
-        version: 13.2.0
+        specifier: ^13.2.1
+        version: 13.2.1
       next-translate-plugin:
         specifier: ^2.0.4
         version: 2.0.4(next-translate@2.0.4)
@@ -1541,8 +1541,8 @@ packages:
       '@sinonjs/commons': 2.0.0
     dev: true
 
-  /@supabase/auth-helpers-nextjs@0.5.9(@supabase/supabase-js@2.15.0):
-    resolution: {integrity: sha512-OBmltVuPNFbtznBAgQgOFaWh3dO6rRmU7i77TVzEkbViZoK2ylzlKPIORg9Wh+4ZgYbP2QMsI5GzEtAz+aNTvA==}
+  /@supabase/auth-helpers-nextjs@0.6.0(@supabase/supabase-js@2.15.0):
+    resolution: {integrity: sha512-f1e5blmpt9F/Bnb2hKreWHqf3zEhl29P357d5fnXzQ3Ph7DuW2Wha7uwQVTgE2QH3niqVpJpY0Pg0zBT5NmNWQ==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:
@@ -5100,8 +5100,8 @@ packages:
     resolution: {integrity: sha512-zFN/CTVmbcVef+WaDXT63dNzzkfRBKT1j464NJQkV7iSgJU0sLBus9W0HBwnXK13/hf168pbrx/V/bjEHOXNHA==}
     dev: false
 
-  /lint-staged@13.2.0:
-    resolution: {integrity: sha512-GbyK5iWinax5Dfw5obm2g2ccUiZXNGtAS4mCbJ0Lv4rq6iEtfBSjOYdcbOtAIFtM114t0vdpViDDetjVTSd8Vw==}
+  /lint-staged@13.2.1:
+    resolution: {integrity: sha512-8gfzinVXoPfga5Dz/ZOn8I2GOhf81Wvs+KwbEXQn/oWZAvCVS2PivrXfVbFJc93zD16uC0neS47RXHIjXKYZQw==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
     dependencies:

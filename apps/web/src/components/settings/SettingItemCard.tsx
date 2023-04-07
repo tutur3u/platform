@@ -1,4 +1,5 @@
 import { Divider } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   title: string;
@@ -24,6 +25,10 @@ const SettingItemCard = ({
   className,
   children,
 }: Props) => {
+  const { t } = useTranslation('common');
+
+  const comingSoonLabel = t('coming-soon');
+
   return (
     <div
       className={`flex flex-col rounded border border-zinc-800/80 bg-[#19191d] p-4 ${
@@ -44,7 +49,7 @@ const SettingItemCard = ({
           <Divider className="my-4" />
           {comingSoon ? (
             <div className="flex cursor-not-allowed items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300/30">
-              Coming soon
+              {comingSoonLabel}
             </div>
           ) : (
             <div

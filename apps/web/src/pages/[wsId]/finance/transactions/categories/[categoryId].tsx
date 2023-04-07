@@ -137,7 +137,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-4 md:grid-cols-2">
+        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">Thông tin cơ bản</div>
             <Divider className="my-2" variant="dashed" />
@@ -176,6 +176,13 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
               disabled={!category}
             />
           </SettingItemCard>
+
+          <SettingItemCard
+            title="Biểu tượng đại diện"
+            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên danh mục giao dịch."
+            disabled
+            comingSoon
+          />
         </div>
       </div>
     </>

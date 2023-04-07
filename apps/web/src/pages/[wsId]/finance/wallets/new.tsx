@@ -169,6 +169,13 @@ const NewWalletPage: PageWithLayoutProps = () => {
               maxRows={5}
             />
           </SettingItemCard>
+
+          <SettingItemCard
+            title="Biểu tượng đại diện"
+            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền."
+            disabled
+            comingSoon
+          />
         </div>
       </div>
     </>

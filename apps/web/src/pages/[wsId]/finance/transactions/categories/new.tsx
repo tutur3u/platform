@@ -27,10 +27,13 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
             },
             { content: 'Tài chính', href: `/${ws.id}/finance` },
             {
-              content: 'Giao dịch',
-              href: `/${ws.id}/finance/transactions`,
+              content: 'Danh mục giao dịch',
+              href: `/${ws.id}/finance/transactions/categories`,
             },
-            { content: 'Tạo mới', href: `/${ws.id}/finance/transactions/new` },
+            {
+              content: 'Tạo mới',
+              href: `/${ws.id}/finance/transactions/categories/new`,
+            },
           ]
         : []
     );
@@ -87,7 +90,7 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-4 md:grid-cols-2">
+        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">Thông tin cơ bản</div>
             <Divider className="my-2" variant="dashed" />
@@ -124,6 +127,13 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
               ]}
             />
           </SettingItemCard>
+
+          <SettingItemCard
+            title="Biểu tượng đại diện"
+            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên danh mục giao dịch."
+            disabled
+            comingSoon
+          />
         </div>
       </div>
     </>
