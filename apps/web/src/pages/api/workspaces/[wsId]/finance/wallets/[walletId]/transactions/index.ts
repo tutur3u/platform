@@ -46,13 +46,28 @@ const fetchTransactions = async (
   const { data, error } = await supabase
     .from('wallet_transactions')
     .select(
-      'id, amount, created_at, taken_at, description, wallet_id, category_id'
+      'id, amount, created_at, taken_at, description, wallet_id, category_id, transaction_categories(name)'
     )
     .order('taken_at', { ascending: false })
     .eq('wallet_id', walletId);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json([
+    ...data.map((transaction) => ({
+      id: transaction.id,
+      amount: transaction.amount,
+      created_at: transaction.created_at,
+      taken_at: transaction.taken_at,
+      description:
+        transaction?.description || transaction?.transaction_categories
+          ? Array.isArray(transaction?.transaction_categories)
+            ? transaction?.transaction_categories?.[0]?.name
+            : transaction?.transaction_categories?.name
+          : '',
+      wallet_id: transaction.wallet_id,
+      category_id: transaction.category_id,
+    })),
+  ] as Transaction[]);
 };
 
 const createTransaction = async (

@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Transaction } from '../../../../../../../types/primitives/Transaction';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -47,13 +48,26 @@ const getTransaction = async (
   const { data, error } = await supabase
     .from('wallet_transactions')
     .select(
-      'id, description, amount, taken_at, created_at, wallet_id, category_id'
+      'id, description, amount, taken_at, created_at, wallet_id, category_id, transaction_categories(name)'
     )
     .eq('id', transactionId)
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({
+    id: data.id,
+    amount: data.amount,
+    created_at: data.created_at,
+    taken_at: data.taken_at,
+    description:
+      data?.description || data?.transaction_categories
+        ? Array.isArray(data?.transaction_categories)
+          ? data?.transaction_categories?.[0]?.name
+          : data?.transaction_categories?.name
+        : '',
+    wallet_id: data.wallet_id,
+    category_id: data.category_id,
+  } as Transaction);
 };
 
 const updateTransaction = async (
@@ -66,7 +80,8 @@ const updateTransaction = async (
     res,
   });
 
-  const { description, amount, taken_at, category_id } = req.body;
+  const { description, amount, taken_at, category_id, wallet_id } =
+    req.body as Transaction;
 
   const { error } = await supabase
     .from('wallet_transactions')
@@ -75,6 +90,7 @@ const updateTransaction = async (
       amount,
       taken_at,
       category_id,
+      wallet_id,
     })
     .eq('id', transactionId);
 

@@ -6,7 +6,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 
 interface Props {
-  categoryId?: string;
+  categoryId?: string | null;
   category: TransactionCategory | null;
   setCategory: (category: TransactionCategory | null) => void;
 
@@ -50,7 +50,7 @@ const TransactionCategorySelector = ({
         .join(',')}`
     : null;
 
-  const { data: categorys } = useSWR<TransactionCategory[]>(apiPath);
+  const { data: categories } = useSWR<TransactionCategory[]>(apiPath);
 
   const data = [
     ...(showTransfer
@@ -62,7 +62,7 @@ const TransactionCategorySelector = ({
           },
         ]
       : []),
-    ...(categorys?.map((category) => ({
+    ...(categories?.map((category) => ({
       label: category.name,
       value: category.id,
       disabled: blacklist.includes(category.id),
@@ -70,22 +70,22 @@ const TransactionCategorySelector = ({
   ];
 
   useEffect(() => {
-    if (!categorys || !setCategory || category?.id) return;
+    if (!categories || !setCategory || category?.id) return;
 
     const id = _categoryId || categoryId;
 
-    if (id && categorys.find((v) => v.id === id)) {
-      setCategory(categorys.find((v) => v.id === id) || null);
+    if (id && categories.find((v) => v.id === id)) {
+      setCategory(categories.find((v) => v.id === id) || null);
       return;
     }
 
     if (preventPreselected) return;
-    setCategory(categorys?.[0]);
+    setCategory(categories?.[0]);
   }, [
     _categoryId,
     categoryId,
     category,
-    categorys,
+    categories,
     setCategory,
     preventPreselected,
   ]);
@@ -97,7 +97,7 @@ const TransactionCategorySelector = ({
       data={data}
       value={category?.id}
       onChange={(id) =>
-        setCategory(categorys?.find((v) => v.id === id) || null)
+        setCategory(categories?.find((v) => v.id === id) || null)
       }
       className={className}
       styles={{
@@ -118,7 +118,7 @@ const TransactionCategorySelector = ({
           },
         },
       }}
-      disabled={!categorys || disabled}
+      disabled={!categories || disabled}
       required={required}
       clearable={clearable}
       searchable

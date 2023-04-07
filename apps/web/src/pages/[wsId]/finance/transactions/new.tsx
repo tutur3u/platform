@@ -15,8 +15,9 @@ import { TransactionCategory } from '../../../../types/primitives/TransactionCat
 import TransactionCreateModal from '../../../../components/loaders/transactions/TransactionCreateModal';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
-import 'dayjs/locale/vi';
 import WalletTransferCreateModal from '../../../../components/loaders/wallets/transfers/WalletTransferCreateModal';
+import 'dayjs/locale/vi';
+import ThousandMultiplierChips from '../../../../components/chips/ThousandMultiplierChips';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -176,8 +177,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             title="Nguồn tiền gốc"
             description={
               type === 'transfer'
-                ? 'Nguồn tiền cần rút tiền để chuyển đến nguồn tiền đích.'
-                : 'Nguồn tiền mà giao dịch này được thực hiện.'
+                ? 'Nguồn tiền cần rút tiền.'
+                : 'Nguồn tiền thực hiện giao dịch.'
             }
           >
             <div className="grid gap-2">
@@ -213,7 +214,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           {type === 'transfer' ? (
             <SettingItemCard
               title="Nguồn tiền đích"
-              description="Nguồn tiền cần nhận tiền từ nguồn tiền gốc."
+              description="Nguồn tiền cần nhận tiền."
             >
               <div className="grid gap-2">
                 <WalletSelector
@@ -279,9 +280,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
           <SettingItemCard
             title={
-              type === 'balance'
-                ? 'Số tiền trong nguồn tiền'
-                : 'Số tiền giao dịch'
+              type === 'balance' ? 'Tiền trong nguồn tiền' : 'Số tiền giao dịch'
             }
             description={
               type === 'balance'
@@ -310,7 +309,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 classNames={{
                   input: 'bg-white/5 border-zinc-300/20 font-semibold',
                 }}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
                 formatter={(value) =>
                   !Number.isNaN(parseFloat(value || ''))
                     ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -318,6 +317,13 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 }
                 disabled={!originWallet}
               />
+
+              {amount != 0 && (
+                <ThousandMultiplierChips
+                  amount={amount}
+                  setAmount={setAmount}
+                />
+              )}
 
               {type === 'balance' && originWallet?.balance != null && (
                 <>

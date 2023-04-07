@@ -16,6 +16,14 @@ import InvoiceEditModal from '../../../../components/loaders/invoices/InvoiceEdi
 import InvoiceDeleteModal from '../../../../components/loaders/invoices/InvoiceDeleteModal';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import { DateTimePicker } from '@mantine/dates';
+import useTranslation from 'next-translate/useTranslation';
+import moment from 'moment';
+import { Transaction } from '../../../../types/primitives/Transaction';
+import WalletSelector from '../../../../components/selectors/WalletSelector';
+import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
+import { Wallet } from '../../../../types/primitives/Wallet';
+import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -38,6 +46,13 @@ const DetailsPage: PageWithLayoutProps = () => {
 
   const { data: invoice } = useSWR<Invoice>(apiPath);
   const { data: productPrices } = useSWR<Product[]>(productsApiPath);
+
+  const transactionApiPath =
+    wsId && invoice?.transaction_id
+      ? `/api/workspaces/${wsId}/finance/transactions/${invoice?.transaction_id}`
+      : null;
+
+  const { data: transaction } = useSWR<Transaction>(transactionApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -63,7 +78,14 @@ const DetailsPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, invoice, setRootSegment]);
 
+  const [walletId, setWalletId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [category, setCategory] = useState<TransactionCategory | null>(null);
+
   const [userId, setUserId] = useState<string>('');
+  const [takenAt, setTakenAt] = useState<Date | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [diff, setDiff] = useState<number>(0);
@@ -85,6 +107,16 @@ const DetailsPage: PageWithLayoutProps = () => {
   useEffect(() => {
     if (productPrices) setProducts(productPrices);
   }, [productPrices]);
+
+  useEffect(() => {
+    if (!transaction) return;
+
+    if (transaction?.taken_at)
+      setTakenAt(moment(transaction?.taken_at).toDate());
+
+    if (transaction?.wallet_id) setWalletId(transaction?.wallet_id);
+    if (transaction?.category_id) setCategoryId(transaction?.category_id);
+  }, [transaction]);
 
   const allProductsValid = () =>
     products?.every(
@@ -228,7 +260,8 @@ const DetailsPage: PageWithLayoutProps = () => {
     if (!invoice) return;
     if (typeof invoiceId !== 'string') return;
     if (!ws?.id) return;
-    if (!productPrices || !products) return;
+    if (!productPrices || !products || !transaction) return;
+    if (!walletId || !categoryId || !takenAt) return;
 
     openModal({
       title: <div className="font-semibold">Cập nhật hoá đơn</div>,
@@ -247,6 +280,12 @@ const DetailsPage: PageWithLayoutProps = () => {
             price_diff: diff,
             price,
             completed_at: invoice.completed_at,
+          }}
+          transaction={{
+            id: transaction.id,
+            wallet_id: walletId,
+            category_id: categoryId,
+            taken_at: takenAt.toISOString(),
           }}
           oldProducts={productPrices}
           products={products}
@@ -301,6 +340,8 @@ const DetailsPage: PageWithLayoutProps = () => {
       console.log(err);
     }
   };
+
+  const { lang } = useTranslation();
 
   if (!ws) return null;
 
@@ -362,6 +403,19 @@ const DetailsPage: PageWithLayoutProps = () => {
               required
             />
 
+            <DateTimePicker
+              value={takenAt}
+              label="Thời điểm giao dịch"
+              onChange={(date) => setTakenAt(date || new Date())}
+              className="col-span-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              valueFormat="HH:mm - dddd, DD/MM/YYYY"
+              locale={lang}
+              disabled={!transaction?.taken_at}
+            />
+
             <Divider className="col-span-full my-2" />
 
             {notice != null ? (
@@ -406,9 +460,37 @@ const DetailsPage: PageWithLayoutProps = () => {
               </button>
             )}
 
+            <Divider className="col-span-full my-2" />
+
+            <WalletSelector
+              walletId={walletId}
+              wallet={wallet}
+              setWallet={(w) => {
+                setWallet(w);
+                setWalletId(w?.id || '');
+              }}
+              className="col-span-full"
+              disabled={!transaction?.wallet_id}
+              preventPreselected
+              hideBalance
+              required
+            />
+
+            <TransactionCategorySelector
+              categoryId={categoryId}
+              category={category}
+              setCategory={(c) => {
+                setCategory(c);
+                setCategoryId(c?.id || '');
+              }}
+              className="col-span-full"
+              preventPreselected
+              required
+              disabled={!transaction?.category_id}
+            />
+
             {products && products?.length > 0 && (
               <div className="col-span-full">
-                <Divider className="my-2" />
                 <NumberInput
                   label="Số tiền khách cần đưa"
                   placeholder="Nhập số tiền khách cần đưa"
@@ -464,13 +546,17 @@ const DetailsPage: PageWithLayoutProps = () => {
                       }).format(products?.length || 0)}{' '}
                       SP
                     </span>{' '}
-                    |{' '}
-                    <span className="text-purple-300">
-                      x
-                      {Intl.NumberFormat('vi-VN', {
-                        style: 'decimal',
-                      }).format(amount || 0)}
-                    </span>{' '}
+                    {amount != 0 && (
+                      <>
+                        |{' '}
+                        <span className="text-purple-300">
+                          x
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'decimal',
+                          }).format(amount)}
+                        </span>{' '}
+                      </>
+                    )}
                     |{' '}
                     <span className="text-green-300">
                       {Intl.NumberFormat('vi-VN', {
@@ -478,27 +564,29 @@ const DetailsPage: PageWithLayoutProps = () => {
                         currency: 'VND',
                       }).format(price)}
                     </span>
-                    {diff > 0 ? ' + ' : ' - '}{' '}
-                    {diff != null && (
-                      <span className="text-red-300">
-                        {Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        }).format(Math.abs(diff))}
-                      </span>
+                    {diff != null && diff != 0 && (
+                      <>
+                        {diff > 0 ? ' + ' : ' - '}{' '}
+                        <span className="text-red-300">
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(Math.abs(diff))}
+                        </span>
+                        {' = '}
+                        <span className="text-yellow-300">
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(
+                            products.reduce(
+                              (a, b) => a + (b?.amount || 0) * (b?.price || 0),
+                              0
+                            ) + (diff || 0)
+                          )}
+                        </span>
+                      </>
                     )}
-                    {' = '}
-                    <span className="text-yellow-300">
-                      {Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      }).format(
-                        products.reduce(
-                          (a, b) => a + (b?.amount || 0) * (b?.price || 0),
-                          0
-                        ) + (diff || 0)
-                      )}
-                    </span>
                     )
                   </>
                 )}

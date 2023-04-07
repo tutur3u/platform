@@ -43,7 +43,6 @@ const fetchMembers = async (req: NextApiRequest, res: NextApiResponse) => {
     .order('created_at');
 
   if (error) return res.status(401).json({ error: error.message });
-  console.log(data);
   return res.status(200).json(data);
 };
 

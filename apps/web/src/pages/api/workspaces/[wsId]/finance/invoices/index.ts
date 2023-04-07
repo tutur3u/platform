@@ -47,7 +47,7 @@ const fetchInvoices = async (
   const queryBuilder = supabase
     .from('finance_invoices')
     .select(
-      'id, customer_id, creator_id, price, price_diff, note, notice, completed_at, created_at'
+      'id, customer_id, creator_id, price, price_diff, note, notice, transaction_id, completed_at, created_at'
     )
     .eq('ws_id', wsId)
     .order('created_at');
@@ -96,8 +96,15 @@ const createInvoice = async (
 
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { customer_id, price, price_diff, notice, note, completed_at } =
-    req.body as Invoice;
+  const {
+    customer_id,
+    price,
+    price_diff,
+    notice,
+    note,
+    completed_at,
+    transaction_id,
+  } = req.body as Invoice;
 
   const { data, error } = await supabase
     .from('finance_invoices')
@@ -110,6 +117,7 @@ const createInvoice = async (
       creator_id: user.id,
       completed_at: completed_at ? 'now()' : null,
       ws_id: wsId,
+      transaction_id,
     })
     .select('id')
     .single();

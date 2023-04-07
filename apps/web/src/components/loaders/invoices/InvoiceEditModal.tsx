@@ -12,26 +12,37 @@ import { mutate } from 'swr';
 import { Status } from '../status';
 import { Invoice } from '../../../types/primitives/Invoice';
 import { Product } from '../../../types/primitives/Product';
+import { Transaction } from '../../../types/primitives/Transaction';
 
 interface Props {
   wsId: string;
 
+  transaction: Transaction;
   invoice: Invoice;
+
   oldProducts: Product[];
   products: Product[];
 }
 
 interface Progress {
+  updateTransaction: Status;
   updateDetails: Status;
   updateProducts: Status;
   removeProducts: Status;
   addProducts: Status;
 }
 
-const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
+const EditModal = ({
+  wsId,
+  oldProducts,
+  transaction,
+  invoice,
+  products,
+}: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
+    updateTransaction: 'idle',
     updateDetails: 'idle',
     updateProducts: 'idle',
     removeProducts: 'idle',
@@ -39,12 +50,14 @@ const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
   });
 
   const hasError =
+    progress.updateTransaction === 'error' ||
     progress.updateDetails === 'error' ||
     progress.updateProducts === 'error' ||
     progress.removeProducts === 'error' ||
     progress.addProducts === 'error';
 
   const hasSuccess =
+    progress.updateTransaction === 'success' &&
     progress.updateDetails === 'success' &&
     progress.updateProducts === 'success' &&
     progress.removeProducts === 'success' &&
@@ -62,6 +75,35 @@ const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
       color: 'green',
     });
   }, [hasSuccess, wsId, invoice.id]);
+
+  const updateTransaction = async (transaction: Transaction) => {
+    const res = await fetch(
+      `/api/workspaces/${wsId}/finance/transactions/${transaction.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction),
+      }
+    );
+
+    if (res.ok) {
+      setProgress((progress) => ({
+        ...progress,
+        updateTransaction: 'success',
+      }));
+      return true;
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể cập nhật giao dịch',
+        color: 'red',
+      });
+      setProgress((progress) => ({ ...progress, updateTransaction: 'error' }));
+      return false;
+    }
+  };
 
   const updateDetails = async () => {
     const res = await fetch(
@@ -198,6 +240,9 @@ const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
   const handleEdit = async () => {
     if (!invoice.id) return;
 
+    setProgress((progress) => ({ ...progress, updateTransaction: 'loading' }));
+    if (!(await updateTransaction(transaction))) return;
+
     setProgress((progress) => ({ ...progress, updateDetails: 'loading' }));
     await updateDetails();
 
@@ -227,12 +272,14 @@ const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
       <Timeline
         active={
           progress.addProducts === 'success'
-            ? 4
+            ? 5
             : progress.removeProducts === 'success'
-            ? 3
+            ? 4
             : progress.updateProducts === 'success'
-            ? 2
+            ? 3
             : progress.updateDetails === 'success'
+            ? 2
+            : progress.updateTransaction === 'success'
             ? 1
             : 0
         }
@@ -241,6 +288,21 @@ const EditModal = ({ wsId, oldProducts, invoice, products }: Props) => {
         color={started ? 'green' : 'gray'}
         className="mt-2"
       >
+        <Timeline.Item
+          bullet={<PlusIcon className="h-5 w-5" />}
+          title="Cập nhật giao dịch"
+        >
+          {progress.updateTransaction === 'success' ? (
+            <div className="text-green-300">Đã cập nhật giao dịch</div>
+          ) : progress.updateTransaction === 'error' ? (
+            <div className="text-red-300">Không thể cập nhật giao dịch</div>
+          ) : progress.updateTransaction === 'loading' ? (
+            <div className="text-blue-300">Đang cập nhật giao dịch</div>
+          ) : (
+            <div className="text-zinc-400/80">Đang chờ cập nhật giao dịch</div>
+          )}
+        </Timeline.Item>
+
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
           title="Cập nhật thông tin cơ bản"

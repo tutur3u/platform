@@ -36,7 +36,11 @@ const ProductSelector = ({
   return (
     <Select
       label="Sản phẩm"
-      placeholder="Chọn sản phẩm"
+      placeholder={
+        products && products.length === 0
+          ? 'Chưa có sản phẩm nào'
+          : 'Chọn sản phẩm'
+      }
       data={data}
       value={productId}
       onChange={setProductId}

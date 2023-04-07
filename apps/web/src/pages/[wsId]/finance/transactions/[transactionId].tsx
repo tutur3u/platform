@@ -3,7 +3,7 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, NumberInput, Select, TextInput } from '@mantine/core';
+import { Button, Divider, NumberInput, Select, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -21,6 +21,8 @@ import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import moment from 'moment';
+import { EyeIcon } from '@heroicons/react/24/outline';
+import ThousandMultiplierChips from '../../../../components/chips/ThousandMultiplierChips';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -121,10 +123,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             amount,
             taken_at: takenAt.toISOString(),
             category_id: category?.id,
+            wallet_id: wallet?.id,
           }}
           redirectUrl={
             redirectToWallets === 'true'
-              ? `/${ws.id}/finance/wallets/${transaction.wallet_id}/transactions`
+              ? `/${ws.id}/finance/wallets/${
+                  wallet?.id || transaction?.wallet_id
+                }/transactions`
               : `/${ws.id}/finance/transactions`
           }
         />
@@ -200,8 +205,26 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             title="Nguồn tiền"
             description="Nguồn tiền mà giao dịch này được thực hiện."
           >
-            <div className="grid gap-2">
-              <WalletSelector wallet={wallet} setWallet={setWallet} hideLabel />
+            <div className="flex gap-2">
+              <WalletSelector
+                walletId={transaction?.wallet_id}
+                wallet={wallet}
+                setWallet={setWallet}
+                className="w-full"
+                preventPreselected
+                hideLabel
+              />
+              {ws?.id && wallet?.id && (
+                <Button
+                  variant="light"
+                  className="bg-blue-300/10"
+                  onClick={() =>
+                    router.push(`/${ws.id}/finance/wallets/${wallet.id}`)
+                  }
+                >
+                  <EyeIcon className="h-5 w-5" />
+                </Button>
+              )}
             </div>
           </SettingItemCard>
 
@@ -264,6 +287,14 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
                 }
                 disabled={!wallet}
               />
+
+              {amount != 0 && (
+                <ThousandMultiplierChips
+                  amount={amount}
+                  setAmount={setAmount}
+                  hidden={!transaction?.amount || amount === transaction.amount}
+                />
+              )}
             </div>
           </SettingItemCard>
 

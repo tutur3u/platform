@@ -98,7 +98,7 @@ const FinancePage: PageWithLayoutProps = () => {
           <StatisticCard
             title={invoicesLabel}
             value={invoicesCount}
-            href={`/${ws?.id}/finance/transactions/categories`}
+            href={`/${ws?.id}/finance/invoices`}
           />
         </div>
       </div>

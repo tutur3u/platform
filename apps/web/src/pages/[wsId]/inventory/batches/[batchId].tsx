@@ -181,7 +181,6 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
       const oldIndex = products.findIndex(
         (p) => p.id === oldProductId && p.unit_id === oldUnitId
       );
-      console.log('oldIndex', oldIndex);
       if (oldIndex === -1) return;
 
       setProducts((products) => {
@@ -190,7 +189,6 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
         newProducts[oldIndex].id = newProductId;
         newProducts[oldIndex].unit_id = newUnitId;
 
-        console.log(newProducts);
         return newProducts;
       });
     } else {
