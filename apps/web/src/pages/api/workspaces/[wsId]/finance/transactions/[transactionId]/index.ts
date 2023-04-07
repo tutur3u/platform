@@ -60,11 +60,12 @@ const getTransaction = async (
     created_at: data.created_at,
     taken_at: data.taken_at,
     description:
-      data?.description || data?.transaction_categories
+      data?.description ||
+      (data?.transaction_categories
         ? Array.isArray(data?.transaction_categories)
           ? data?.transaction_categories?.[0]?.name
           : data?.transaction_categories?.name
-        : '',
+        : ''),
     wallet_id: data.wallet_id,
     category_id: data.category_id,
   } as Transaction);

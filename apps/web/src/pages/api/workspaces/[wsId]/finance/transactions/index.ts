@@ -82,11 +82,12 @@ const fetchTransactions = async (
       created_at: transaction.created_at,
       taken_at: transaction.taken_at,
       description:
-        transaction?.description || transaction?.transaction_categories
+        transaction?.description ||
+        (transaction?.transaction_categories
           ? Array.isArray(transaction?.transaction_categories)
             ? transaction?.transaction_categories?.[0]?.name
             : transaction?.transaction_categories?.name
-          : '',
+          : ''),
       wallet_id: transaction.wallet_id,
       category_id: transaction.category_id,
     })),
