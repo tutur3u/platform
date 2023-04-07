@@ -79,7 +79,7 @@ const InvoiceProductInput = ({
       }
     >
       <div className="flex gap-2">
-        <div className="grid w-full gap-2 xl:grid-cols-2">
+        <div className={`grid w-full gap-2 ${p?.id ? 'xl:grid-cols-2' : ''}`}>
           <ProductUnitSelector
             id={`${p.id}::${p.unit_id}`}
             setId={(id) =>
@@ -93,28 +93,30 @@ const InvoiceProductInput = ({
             className="w-full"
           />
 
-          <NumberInput
-            label="Số lượng (Tồn kho: 999,999,999,999)"
-            placeholder="Số lượng"
-            value={p.amount}
-            onChange={(e) =>
-              p.id && p.unit_id
-                ? updateAmount(`${p.id}::${p.unit_id}`, Number(e))
-                : undefined
-            }
-            className="w-full"
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-            min={0}
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-            formatter={(value) =>
-              !Number.isNaN(parseFloat(value || ''))
-                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                : ''
-            }
-            disabled={!p.id || !p.unit_id}
-          />
+          {p?.id && (
+            <NumberInput
+              label="Số lượng (Tồn kho: 999,999,999,999)"
+              placeholder="Số lượng"
+              value={p.amount}
+              onChange={(e) =>
+                p.id && p.unit_id
+                  ? updateAmount(`${p.id}::${p.unit_id}`, Number(e))
+                  : undefined
+              }
+              className="w-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              min={0}
+              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+              formatter={(value) =>
+                !Number.isNaN(parseFloat(value || ''))
+                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                  : ''
+              }
+              disabled={!p.id || !p.unit_id}
+            />
+          )}
         </div>
 
         <button

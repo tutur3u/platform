@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Transaction } from '../../../../../../../../types/primitives/Transaction';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -41,7 +42,8 @@ const updateTransaction = async (
     res,
   });
 
-  const { description, amount, taken_at, category_id } = req.body;
+  const { description, amount, taken_at, wallet_id, category_id } =
+    req.body as Transaction;
 
   const { error } = await supabase
     .from('wallet_transactions')
@@ -50,6 +52,7 @@ const updateTransaction = async (
       amount,
       taken_at,
       category_id,
+      wallet_id,
     })
     .eq('id', transactionId);
 

@@ -8,5 +8,6 @@ export interface Invoice {
   creator_id?: string;
   ws_id?: string;
   completed_at?: string;
+  transaction_id?: string;
   created_at?: string;
 }

@@ -13,6 +13,13 @@ import { useLocalStorage } from '@mantine/hooks';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import 'dayjs/locale/vi';
+import WalletSelector from '../../../../components/selectors/WalletSelector';
+import { Wallet } from '../../../../types/primitives/Wallet';
+import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
+import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
+import { DateTimePicker } from '@mantine/dates';
+import 'dayjs/locale/vi';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -44,9 +51,24 @@ const NewPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const [walletId, setWalletId] = useLocalStorage<string>({
+    key: 'invoice-new-wallet-id',
+    defaultValue: '',
+  });
+
+  const [categoryId, setCategoryId] = useLocalStorage<string>({
+    key: 'invoice-new-category-id',
+    defaultValue: '',
+  });
+
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [category, setCategory] = useState<TransactionCategory | null>(null);
+
   const [userId, setUserId] = useState<string>('');
+  const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [notice, setNotice] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [diff, setDiff] = useState<number>(0);
 
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -163,8 +185,6 @@ const NewPage: PageWithLayoutProps = () => {
     [products]
   );
 
-  const [diff, setDiff] = useState<number>(0);
-
   const amount = products.reduce(
     (acc, product) => acc + (product?.amount || 0),
     0
@@ -199,11 +219,19 @@ const NewPage: PageWithLayoutProps = () => {
             notice: notice || '',
             note: note || '',
           }}
+          transaction={{
+            wallet_id: walletId,
+            category_id: categoryId,
+            amount: price + diff,
+            taken_at: takenAt.toISOString(),
+          }}
           products={products}
         />
       ),
     });
   };
+
+  const { lang } = useTranslation();
 
   if (!ws) return null;
 
@@ -246,6 +274,18 @@ const NewPage: PageWithLayoutProps = () => {
               setUserId={setUserId}
               className="col-span-full"
               required
+            />
+
+            <DateTimePicker
+              value={takenAt}
+              label="Thời điểm giao dịch"
+              onChange={(date) => setTakenAt(date || new Date())}
+              className="col-span-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              valueFormat="HH:mm - dddd, DD/MM/YYYY"
+              locale={lang}
             />
 
             <Divider className="col-span-full my-2" />
@@ -292,17 +332,40 @@ const NewPage: PageWithLayoutProps = () => {
               </button>
             )}
 
+            <Divider className="col-span-full my-2" />
+
+            <WalletSelector
+              walletId={walletId}
+              wallet={wallet}
+              setWallet={(w) => {
+                setWallet(w);
+                setWalletId(w?.id || '');
+              }}
+              className="col-span-full"
+              preventPreselected
+              hideBalance
+              required
+            />
+
+            <TransactionCategorySelector
+              categoryId={categoryId}
+              category={category}
+              setCategory={(c) => {
+                setCategory(c);
+                setCategoryId(c?.id || '');
+              }}
+              className="col-span-full"
+              preventPreselected
+              required
+            />
+
             {products?.length > 0 && (
               <div className="col-span-full">
-                <Divider className="my-2" />
                 <NumberInput
                   label="Số tiền khách cần đưa"
                   placeholder="Nhập số tiền khách cần đưa"
                   value={price + (diff || 0)}
                   onChange={(e) => setDiff((e || 0) - price)}
-                  classNames={{
-                    input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                  }}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
                   formatter={(value) =>
                     !Number.isNaN(parseFloat(value || ''))
@@ -321,8 +384,7 @@ const NewPage: PageWithLayoutProps = () => {
                     </button>
                     <Divider className="my-2" />
                     <div className="my-2 rounded border border-orange-300/10 bg-orange-300/10 p-2 text-center font-semibold text-orange-300">
-                      Khách hàng của bạn sẽ{' '}
-                      {diff > 0 ? 'trả thêm' : 'được giảm'}{' '}
+                      Khách hàng sẽ {diff > 0 ? 'trả thêm' : 'được giảm'}{' '}
                       <span className="text-orange-100 underline decoration-orange-100 underline-offset-4">
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
@@ -350,13 +412,17 @@ const NewPage: PageWithLayoutProps = () => {
                       }).format(products?.length || 0)}{' '}
                       SP
                     </span>{' '}
-                    |{' '}
-                    <span className="text-purple-300">
-                      x
-                      {Intl.NumberFormat('vi-VN', {
-                        style: 'decimal',
-                      }).format(amount || 0)}
-                    </span>{' '}
+                    {amount != 0 && (
+                      <>
+                        |{' '}
+                        <span className="text-purple-300">
+                          x
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'decimal',
+                          }).format(amount)}
+                        </span>{' '}
+                      </>
+                    )}
                     |{' '}
                     <span className="text-green-300">
                       {Intl.NumberFormat('vi-VN', {
@@ -364,27 +430,29 @@ const NewPage: PageWithLayoutProps = () => {
                         currency: 'VND',
                       }).format(price)}
                     </span>
-                    {diff > 0 ? ' + ' : ' - '}{' '}
-                    {diff != null && (
-                      <span className="text-red-300">
-                        {Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        }).format(Math.abs(diff))}
-                      </span>
+                    {diff != null && diff != 0 && (
+                      <>
+                        {diff > 0 ? ' + ' : ' - '}{' '}
+                        <span className="text-red-300">
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(Math.abs(diff))}
+                        </span>
+                        {' = '}
+                        <span className="text-yellow-300">
+                          {Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(
+                            products.reduce(
+                              (a, b) => a + (b?.amount || 0) * (b?.price || 0),
+                              0
+                            ) + (diff || 0)
+                          )}
+                        </span>
+                      </>
                     )}
-                    {' = '}
-                    <span className="text-yellow-300">
-                      {Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      }).format(
-                        products.reduce(
-                          (a, b) => a + (b?.amount || 0) * (b?.price || 0),
-                          0
-                        ) + (diff || 0)
-                      )}
-                    </span>
                     )
                   </>
                 )}

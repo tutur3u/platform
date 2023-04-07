@@ -89,7 +89,6 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
       .order('created_at', { ascending: false });
 
     const { data, error } = await queryBuilder;
-    console.log(data);
 
     if (error) return res.status(401).json({ error: error.message });
     return res.status(200).json(data);

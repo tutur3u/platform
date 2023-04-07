@@ -12,31 +12,39 @@ import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { Invoice } from '../../../types/primitives/Invoice';
 import { Product } from '../../../types/primitives/Product';
+import { Transaction } from '../../../types/primitives/Transaction';
 
 interface Props {
   wsId: string;
   invoice: Partial<Invoice>;
+  transaction: Partial<Transaction>;
   products: Product[];
 }
 
 interface Progress {
-  created: Status;
+  createdTransaction: Status;
+  createdInvoice: Status;
   createdProducts: Status;
 }
 
-const CreateModal = ({ wsId, invoice, products }: Props) => {
+const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
-    created: 'idle',
+    createdTransaction: 'idle',
+    createdInvoice: 'idle',
     createdProducts: 'idle',
   });
 
   const hasError =
-    progress.created === 'error' || progress.createdProducts === 'error';
+    progress.createdTransaction === 'error' ||
+    progress.createdInvoice === 'error' ||
+    progress.createdProducts === 'error';
 
   const hasSuccess =
-    progress.created === 'success' && progress.createdProducts === 'success';
+    progress.createdTransaction === 'success' &&
+    progress.createdInvoice === 'success' &&
+    progress.createdProducts === 'success';
 
   useEffect(() => {
     if (hasSuccess)
@@ -47,19 +55,54 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
       });
   }, [hasSuccess]);
 
-  const create = async () => {
+  const createTransaction = async (transaction: Transaction) => {
+    if (!transaction?.wallet_id) {
+      setProgress((progress) => ({ ...progress, createdTransaction: 'error' }));
+      return;
+    }
+
+    const res = await fetch(
+      `/api/workspaces/${wsId}/finance/wallets/${transaction.wallet_id}/transactions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction),
+      }
+    );
+
+    if (res.ok) {
+      setProgress((progress) => ({
+        ...progress,
+        createdTransaction: 'success',
+      }));
+      const { id } = await res.json();
+      return id;
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo giao dịch',
+        color: 'red',
+      });
+      setProgress((progress) => ({ ...progress, createdTransaction: 'error' }));
+      return false;
+    }
+  };
+
+  const createInvoice = async (transactionId: string) => {
     const res = await fetch(`/api/workspaces/${wsId}/finance/invoices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(invoice),
+      body: JSON.stringify({ ...invoice, transaction_id: transactionId }),
     });
 
     if (res.ok) {
       setProgress((progress) => ({
         ...progress,
-        created: 'success',
+        createdInvoice: 'success',
       }));
       const { id } = await res.json();
       return id;
@@ -71,7 +114,7 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
       });
       setProgress((progress) => ({
         ...progress,
-        created: 'error',
+        createdInvoice: 'error',
       }));
       return false;
     }
@@ -110,12 +153,18 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
 
   const [invoiceId, setId] = useState<string | null>(null);
 
-  const handleCreate = async () => {
+  const handleCreateInvoice = async () => {
+    setProgress((progress) => ({ ...progress, createdTransaction: 'loading' }));
+
+    const transactionId = await createTransaction(transaction);
+    if (!transactionId) return;
+
     setProgress((progress) => ({
       ...progress,
-      created: 'loading',
+      createdInvoice: 'loading',
     }));
-    const invoiceId = await create();
+
+    const invoiceId = await createInvoice(transactionId);
     if (!invoiceId) return;
 
     setId(invoiceId);
@@ -130,8 +179,10 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
       <Timeline
         active={
           progress.createdProducts === 'success'
+            ? 3
+            : progress.createdInvoice === 'success'
             ? 2
-            : progress.created === 'success'
+            : progress.createdTransaction === 'success'
             ? 1
             : 0
         }
@@ -142,13 +193,28 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
+          title="Tạo giao dịch"
+        >
+          {progress.createdTransaction === 'success' ? (
+            <div className="text-green-300">Đã tạo giao dịch</div>
+          ) : progress.createdTransaction === 'error' ? (
+            <div className="text-red-300">Không thể tạo giao dịch</div>
+          ) : progress.createdTransaction === 'loading' ? (
+            <div className="text-blue-300">Đang tạo giao dịch</div>
+          ) : (
+            <div className="text-zinc-400/80">Đang chờ tạo giao dịch</div>
+          )}
+        </Timeline.Item>
+
+        <Timeline.Item
+          bullet={<PlusIcon className="h-5 w-5" />}
           title="Tạo hoá đơn"
         >
-          {progress.created === 'success' ? (
+          {progress.createdInvoice === 'success' ? (
             <div className="text-green-300">Đã tạo hoá đơn</div>
-          ) : progress.created === 'error' ? (
+          ) : progress.createdInvoice === 'error' ? (
             <div className="text-red-300">Không thể tạo hoá đơn</div>
-          ) : progress.created === 'loading' ? (
+          ) : progress.createdInvoice === 'loading' ? (
             <div className="text-blue-300">Đang tạo hoá đơn</div>
           ) : (
             <div className="text-zinc-400/80">Đang chờ tạo hoá đơn</div>
@@ -159,7 +225,7 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
           bullet={<BanknotesIcon className="h-5 w-5" />}
           title={`Thêm sản phẩm (${products?.length || 0})`}
         >
-          {progress.created === 'success' ? (
+          {progress.createdInvoice === 'success' ? (
             progress.createdProducts === 'success' ? (
               <div className="text-green-300">
                 Đã thêm {products.length} sản phẩm
@@ -173,7 +239,7 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
             ) : (
               <div className="text-zinc-400/80">Đang chờ thêm sản phẩm</div>
             )
-          ) : progress.created === 'error' ? (
+          ) : progress.createdInvoice === 'error' ? (
             <div className="text-red-300">Đã huỷ thêm sản phẩm</div>
           ) : (
             <div className="text-zinc-400/80">Đang chờ thêm hoá đơn</div>
@@ -239,7 +305,7 @@ const CreateModal = ({ wsId, invoice, products }: Props) => {
 
             if (!started) {
               setStarted(true);
-              handleCreate();
+              handleCreateInvoice();
             }
           }}
         >

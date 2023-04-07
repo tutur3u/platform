@@ -6,7 +6,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 
 interface Props {
-  walletId?: string;
+  walletId?: string | null;
   wallet: Wallet | null;
   setWallet: (wallet: Wallet | null) => void;
 
@@ -17,6 +17,7 @@ interface Props {
   disableQuery?: boolean;
   clearable?: boolean;
   hideLabel?: boolean;
+  hideBalance?: boolean;
   disabled?: boolean;
   required?: boolean;
 }
@@ -33,6 +34,7 @@ const WalletSelector = ({
   disableQuery = false,
   clearable = false,
   hideLabel = false,
+  hideBalance = false,
   disabled = false,
   required = false,
 }: Props) => {
@@ -54,9 +56,9 @@ const WalletSelector = ({
 
   const data = [
     ...(wallets?.map((wallet) => ({
-      label: `${wallet.name} ${
-        wallet?.balance != null
-          ? `(${Intl.NumberFormat('vi-VN', {
+      label: `${wallet.name}${
+        wallet?.balance != null && !hideBalance
+          ? ` (${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(wallet?.balance || 0)})`
@@ -68,17 +70,16 @@ const WalletSelector = ({
   ];
 
   useEffect(() => {
-    if (!wallets) return;
+    if (!wallets || (wallet?.id && wallet?.id === _walletId)) return;
 
     const id = _walletId || disableQuery ? null : walletId;
-    const currentWallet = wallets.find((v) => v.id === id) || null;
 
-    if (
-      id &&
-      wallets.find((v) => v.id === id) &&
-      (currentWallet?.balance !== wallet?.balance ||
-        currentWallet?.name !== wallet?.name)
-    ) {
+    const currentWallet =
+      wallets.find((w) => w.id === id || w.id === _walletId) || null;
+
+    if (currentWallet && currentWallet.id === wallet?.id) return;
+
+    if (currentWallet) {
       setWallet(currentWallet);
 
       // Remove walletId from query
@@ -92,6 +93,7 @@ const WalletSelector = ({
         undefined,
         { shallow: true }
       );
+
       return;
     }
 

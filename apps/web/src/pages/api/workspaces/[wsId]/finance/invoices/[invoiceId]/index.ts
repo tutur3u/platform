@@ -46,7 +46,7 @@ const fetchInvoice = async (
   const { data, error } = await supabase
     .from('finance_invoices')
     .select(
-      'id, customer_id, creator_id, price, price_diff, notice, note, completed_at, created_at'
+      'id, customer_id, creator_id, price, price_diff, notice, note, transaction_id, completed_at, created_at'
     )
     .eq('id', invoiceId)
     .single();
@@ -54,7 +54,7 @@ const fetchInvoice = async (
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data);
+  return res.status(200).json(data as Invoice);
 };
 
 const updateInvoice = async (
@@ -67,7 +67,8 @@ const updateInvoice = async (
     res,
   });
 
-  const { customer_id, price, price_diff, notice, note } = req.body as Invoice;
+  const { customer_id, price, price_diff, notice, note, transaction_id } =
+    req.body as Invoice;
 
   const { error } = await supabase
     .from('finance_invoices')
@@ -77,7 +78,8 @@ const updateInvoice = async (
       price_diff,
       notice,
       note,
-    })
+      transaction_id,
+    } as Invoice)
     .eq('id', invoiceId);
 
   if (error) return res.status(401).json({ error: error.message });
