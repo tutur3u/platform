@@ -14,9 +14,14 @@ import { DatePickerInput } from '@mantine/dates';
 import NestedLayout from '../../components/layouts/NestedLayout';
 import LanguageSelector from '../../components/selectors/LanguageSelector';
 import { useRouter } from 'next/router';
-import { useSessionContext } from '@supabase/auth-helpers-react';
+import {
+  useSession,
+  useSessionContext,
+  useSupabaseClient,
+} from '@supabase/auth-helpers-react';
 import useTranslation from 'next-translate/useTranslation';
 import SettingItemCard from '../../components/settings/SettingItemCard';
+import { showNotification } from '@mantine/notifications';
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
@@ -41,12 +46,14 @@ const SettingPage: PageWithLayoutProps = () => {
   const [displayName, setDisplayName] = useState('');
   const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     if (user) {
       setDisplayName(user?.display_name || '');
       setUsername(user?.handle || '');
       setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
+      setEmail(user?.email || '');
     }
   }, [user]);
 
@@ -60,6 +67,37 @@ const SettingPage: PageWithLayoutProps = () => {
     });
 
     setSaving(false);
+  };
+
+  const supabase = useSupabaseClient();
+  const session = useSession();
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setEmail(session?.user?.email);
+    }
+  }, [session]);
+
+  const handleChangeEmail = async () => {
+    try {
+      await supabase.auth.updateUser({
+        email,
+      });
+
+      showNotification({
+        title: 'Change email',
+        message:
+          'A confirmation email has been sent to your current and new email address. Please confirm your new email address to complete the change.',
+        color: 'green',
+      });
+    } catch (e) {
+      if (e instanceof Error)
+        showNotification({
+          title: 'Error',
+          message: e.message,
+          color: 'red',
+        });
+    }
   };
 
   const router = useRouter();
@@ -135,14 +173,16 @@ const SettingPage: PageWithLayoutProps = () => {
       <SettingItemCard
         title="Email"
         description="Your email address that you used to login with."
-        comingSoon
+        saving={saving}
+        onSave={handleChangeEmail}
       >
         <TextInput
           placeholder="example@tuturuuu.com"
-          value={user?.email || ''}
+          value={email || ''}
           icon={<EnvelopeIcon className="h-5 w-5" />}
-          readOnly
-          disabled
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setEmail(event.currentTarget.value)
+          }
         />
       </SettingItemCard>
 
