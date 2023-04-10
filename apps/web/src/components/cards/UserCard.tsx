@@ -26,7 +26,7 @@ const PatientCard = ({
       className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
-        <div className="flex h-full flex-col items-center justify-center p-4 text-center">
+        <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
             {user.name}{' '}
             {showGender && user.gender && (

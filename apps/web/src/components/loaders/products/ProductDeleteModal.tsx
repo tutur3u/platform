@@ -1,40 +1,29 @@
 import { Timeline } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import {
-  BanknotesIcon,
-  CheckBadgeIcon,
-  PlusIcon,
-} from '@heroicons/react/24/solid';
+import { BanknotesIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
-import { mutate } from 'swr';
 
 interface Props {
   wsId: string;
   productId: string;
-  unitIds: string[];
 }
 
 interface Progress {
-  removePrices: Status;
   removeDetails: Status;
 }
 
-const ProductDeleteModal = ({ wsId, productId, unitIds }: Props) => {
+const ProductDeleteModal = ({ wsId, productId }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
-    removePrices: 'idle',
     removeDetails: 'idle',
   });
 
-  const hasError =
-    progress.removePrices === 'error' || progress.removeDetails === 'error';
-
-  const hasSuccess =
-    progress.removePrices === 'success' && progress.removeDetails === 'success';
+  const hasError = progress.removeDetails === 'error';
+  const hasSuccess = progress.removeDetails === 'success';
 
   useEffect(() => {
     if (!hasSuccess) return;
@@ -45,32 +34,6 @@ const ProductDeleteModal = ({ wsId, productId, unitIds }: Props) => {
       color: 'green',
     });
   }, [hasSuccess, productId]);
-
-  const removePrices = async (unitIds: string[]) => {
-    const removePromises = unitIds.map((uid) =>
-      fetch(
-        `/api/workspaces/${wsId}/inventory/products/${productId}/prices/${uid}`,
-        {
-          method: 'DELETE',
-        }
-      )
-    );
-
-    const res = await Promise.all(removePromises);
-
-    if (res.every((res) => res.ok)) {
-      setProgress((progress) => ({ ...progress, removePrices: 'success' }));
-      return true;
-    } else {
-      showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá các đơn giá',
-        color: 'red',
-      });
-      setProgress((progress) => ({ ...progress, removePrices: 'error' }));
-      return false;
-    }
-  };
 
   const removeDetails = async () => {
     const res = await fetch(
@@ -98,14 +61,8 @@ const ProductDeleteModal = ({ wsId, productId, unitIds }: Props) => {
   const handleDelete = async () => {
     if (!productId) return;
 
-    setProgress((progress) => ({ ...progress, removePrices: 'loading' }));
-    if (unitIds.length) await removePrices(unitIds);
-    else setProgress((progress) => ({ ...progress, removePrices: 'success' }));
-    mutate(`/api/workspaces/${wsId}/inventory/products/${productId}/prices`);
-
     setProgress((progress) => ({ ...progress, removeDetails: 'loading' }));
     await removeDetails();
-    mutate(`/api/workspaces/${wsId}/inventory/products/${productId}`);
   };
 
   const [started, setStarted] = useState(false);
@@ -113,41 +70,12 @@ const ProductDeleteModal = ({ wsId, productId, unitIds }: Props) => {
   return (
     <>
       <Timeline
-        active={
-          progress.removeDetails === 'success'
-            ? 2
-            : progress.removePrices === 'success'
-            ? 1
-            : 0
-        }
+        active={progress.removeDetails === 'success' ? 1 : 0}
         bulletSize={32}
         lineWidth={4}
         color={started ? 'green' : 'gray'}
         className="mt-2"
       >
-        <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
-          title={`Xoá đơn giá (${unitIds?.length || 0})`}
-        >
-          {progress.removePrices === 'success' ? (
-            <div className="text-green-300">
-              Đã xoá {unitIds?.length || 0} đơn giá
-            </div>
-          ) : progress.removePrices === 'error' ? (
-            <div className="text-red-300">
-              Không thể xoá {unitIds?.length || 0} đơn giá
-            </div>
-          ) : progress.removePrices === 'loading' ? (
-            <div className="text-blue-300">
-              Đang xoá {unitIds?.length || 0} đơn giá
-            </div>
-          ) : (
-            <div className="text-zinc-400/80">
-              Đang chờ xoá {unitIds?.length || 0} đơn giá
-            </div>
-          )}
-        </Timeline.Item>
-
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
           title="Xoá thông tin sản phẩm"

@@ -52,7 +52,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
     defaultValue: '',
   });
 
-  const [price, setPrice] = useState<number>();
+  const [price, setPrice] = useState<number | ''>();
 
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -81,11 +81,16 @@ const NewBatchPage: PageWithLayoutProps = () => {
         <BatchCreateModal
           wsId={ws.id}
           batch={{
-            price,
+            price: Number(price),
             warehouse_id: warehouseId,
             supplier_id: supplierId,
           }}
-          products={products}
+          products={
+            products.map((product) => ({
+              ...product,
+              warehouse_id: warehouseId,
+            })) || []
+          }
         />
       ),
     });
@@ -184,14 +189,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-8">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
-            <WarehouseSelector
-              warehouseId={warehouseId}
-              setWarehouseId={setWarehouseId}
-              required
-            />
-          </div>
+        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
             <button
               className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
@@ -214,6 +212,12 @@ const NewBatchPage: PageWithLayoutProps = () => {
               <Divider className="my-2" variant="dashed" />
             </div>
 
+            <WarehouseSelector
+              warehouseId={warehouseId}
+              setWarehouseId={setWarehouseId}
+              required
+            />
+
             <SupplierSelector
               supplierId={supplierId}
               setSupplierId={setSupplierId}
@@ -224,7 +228,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
               label="Giá nhập lô"
               placeholder="Nhập giá lô hàng"
               value={price}
-              onChange={(val) => setPrice(Number(val))}
+              onChange={setPrice}
               className="w-full"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',

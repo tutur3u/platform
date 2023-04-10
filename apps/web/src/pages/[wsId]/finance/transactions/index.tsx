@@ -5,7 +5,6 @@ import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-w
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import PlusCardButton from '../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
 import { Transaction } from '../../../../types/primitives/Transaction';
 import useSWR from 'swr';
@@ -16,8 +15,11 @@ import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
-import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import SidebarLink from '../../../../components/layouts/SidebarLink';
+import moment from 'moment';
+import MiniPlusButton from '../../../../components/common/MiniPlusButton';
+import 'moment/locale/vi';
+import PlusCardButton from '../../../../components/common/PlusCardButton';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -57,12 +59,12 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/finance/transactions?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/finance/transactions/count`
+  //   : null;
 
   const { data: transactions } = useSWR<Transaction[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'finance-transactions-mode',
@@ -80,6 +82,38 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
   });
 
   if (!ws) return null;
+
+  const transactionsByDate = transactions?.reduce((acc, cur) => {
+    const date = moment(cur.taken_at).toDate();
+    const localeDate = date.toLocaleDateString();
+
+    if (!acc[localeDate]) acc[localeDate] = [];
+    acc[localeDate].push(cur);
+
+    return acc;
+  }, {} as Record<string, Transaction[]>);
+
+  const getRelativeDate = (date: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const dateObj = new Date(date);
+
+    if (dateObj.toDateString() === today.toDateString()) return 'Hôm nay';
+    if (dateObj.toDateString() === yesterday.toDateString()) return 'Hôm qua';
+    if (dateObj.toDateString() === tomorrow.toDateString()) return 'Ngày mai';
+
+    // Capitalize the first letter of the day
+    return moment(date)
+      .format('dddd, DD/MM/YYYY')
+      .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
+  };
 
   return (
     <>
@@ -124,29 +158,45 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
           />
         </div>
 
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={count}
-        />
+        <Divider className="my-4" />
 
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
-          {transactions &&
-            transactions?.map((c) => (
-              <TransactionCard
-                key={c.id}
-                transaction={c}
-                showAmount={showAmount}
-                showDatetime={showDatetime}
-              />
-            ))}
+        <div className="grid gap-8">
+          {transactionsByDate &&
+          Object.entries(transactionsByDate).length > 0 ? (
+            Object.entries(transactionsByDate).map(([date, transactions]) => (
+              <div key={date}>
+                <h3 className="col-span-full flex gap-2 text-lg font-semibold text-gray-300">
+                  <div>{getRelativeDate(date)}</div>
+                  <MiniPlusButton
+                    href={`/${ws.id}/finance/transactions/new?date=${date}`}
+                  />
+                </h3>
+
+                <div
+                  className={`mt-2 grid gap-4 ${
+                    mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+                  }`}
+                >
+                  {transactions.map((c) => (
+                    <TransactionCard
+                      key={c.id}
+                      transaction={c}
+                      showAmount={showAmount}
+                      showDatetime={showDatetime}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div
+              className={`mt-2 grid gap-4 ${
+                mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+              }`}
+            >
+              <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
+            </div>
+          )}
         </div>
       </div>
     </>

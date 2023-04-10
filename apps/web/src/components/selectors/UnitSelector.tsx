@@ -28,7 +28,12 @@ const UnitSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = customApiPath ?? `/api/workspaces/${ws?.id}/inventory/units`;
+  const apiPath =
+    customApiPath ??
+    `/api/workspaces/${ws?.id}/inventory/units?blacklist=${blacklist
+      ?.filter((id) => id !== unitId && id !== '')
+      .join(',')}`;
+
   const { data: units } = useSWR<ProductUnit[]>(ws?.id ? apiPath : null);
 
   const data = [

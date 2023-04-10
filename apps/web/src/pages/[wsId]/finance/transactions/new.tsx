@@ -18,10 +18,15 @@ import useTranslation from 'next-translate/useTranslation';
 import WalletTransferCreateModal from '../../../../components/loaders/wallets/transfers/WalletTransferCreateModal';
 import 'dayjs/locale/vi';
 import ThousandMultiplierChips from '../../../../components/chips/ThousandMultiplierChips';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const NewTransactionPage: PageWithLayoutProps = () => {
+  const {
+    query: { date: dateQuery },
+  } = useRouter();
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -47,8 +52,11 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [description, setDescription] = useState<string>('');
-  const [takenAt, setTakenAt] = useState<Date>(new Date());
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>('');
+
+  const [takenAt, setTakenAt] = useState<Date>(
+    dateQuery ? new Date(dateQuery as string) : new Date()
+  );
 
   const [originWallet, setOriginWallet] = useState<Wallet | null>(null);
   const [destinationWallet, setDestinationWallet] = useState<Wallet | null>(
@@ -63,10 +71,13 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (!category || type !== 'default') return;
+
     setAmount((oldAmount) =>
-      category?.is_expense === false
-        ? Math.abs(oldAmount)
-        : -Math.abs(oldAmount)
+      oldAmount !== ''
+        ? category?.is_expense === false
+          ? Math.abs(oldAmount)
+          : -Math.abs(oldAmount)
+        : ''
     );
   }, [category, type, amount]);
 
@@ -92,7 +103,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             destinationWallet={destinationWallet}
             transaction={{
               description,
-              amount,
+              amount: amount || 0,
               taken_at: takenAt.toISOString(),
               category_id: category?.id,
             }}
@@ -104,8 +115,11 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             walletId={originWallet.id}
             transaction={{
               description,
-              amount:
-                type === 'balance' ? amount - originWallet.balance : amount,
+              amount: amount
+                ? type === 'balance'
+                  ? amount - originWallet.balance
+                  : amount
+                : 0,
               taken_at: takenAt.toISOString(),
               category_id: category?.id,
             }}
@@ -119,10 +133,10 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (type === 'balance') {
-      setAmount(originWallet?.balance || 0);
+      setAmount(originWallet?.balance || '');
       setDescription('Cân bằng số dư');
     } else {
-      setAmount(0);
+      setAmount('');
       setDescription('');
       setDestinationWallet(null);
     }
@@ -294,16 +308,18 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 placeholder="Nhập số tiền"
                 value={amount}
                 onChange={(num) =>
-                  category
+                  num === ''
+                    ? setAmount(num)
+                    : category
                     ? setAmount(
-                        Number(num) *
+                        num *
                           (type === 'default'
                             ? category?.is_expense === false
                               ? 1
                               : -1
                             : 1)
                       )
-                    : setAmount(Number(num))
+                    : setAmount(num)
                 }
                 className="w-full"
                 classNames={{
@@ -318,30 +334,32 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 disabled={!originWallet}
               />
 
-              {amount != 0 && (
+              {amount != '' && amount != 0 && (
                 <ThousandMultiplierChips
                   amount={amount}
                   setAmount={setAmount}
                 />
               )}
 
-              {type === 'balance' && originWallet?.balance != null && (
-                <>
-                  <Divider variant="dashed" />
+              {type === 'balance' &&
+                originWallet?.balance != null &&
+                amount != '' && (
+                  <>
+                    <Divider variant="dashed" />
 
-                  <div>
-                    Giao dịch này sẽ{' '}
-                    <span className="font-semibold text-zinc-200">
-                      {Intl.NumberFormat(lang, {
-                        style: 'currency',
-                        currency: originWallet.currency,
-                        signDisplay: 'always',
-                      }).format(amount - originWallet.balance)}
-                    </span>{' '}
-                    với số dư hiện tại trong nguồn tiền.
-                  </div>
-                </>
-              )}
+                    <div>
+                      Giao dịch này sẽ{' '}
+                      <span className="font-semibold text-zinc-200">
+                        {Intl.NumberFormat(lang, {
+                          style: 'currency',
+                          currency: originWallet.currency,
+                          signDisplay: 'always',
+                        }).format(amount - originWallet.balance)}
+                      </span>{' '}
+                      với số dư hiện tại trong nguồn tiền.
+                    </div>
+                  </>
+                )}
             </div>
           </SettingItemCard>
 

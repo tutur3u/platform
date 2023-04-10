@@ -41,13 +41,17 @@ const fetchUnits = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { query, page, itemsPerPage, blacklist } = req.query;
 
   const queryBuilder = supabase
     .from('inventory_units')
     .select('id, name')
     .eq('ws_id', wsId)
     .order('created_at');
+
+  if (blacklist && typeof blacklist === 'string') {
+    queryBuilder.not('id', 'in', `(${blacklist})`);
+  }
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

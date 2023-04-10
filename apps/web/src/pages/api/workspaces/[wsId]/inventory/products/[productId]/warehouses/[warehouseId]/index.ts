@@ -1,24 +1,25 @@
-import { ProductPrice } from './../../../../../../../../types/primitives/ProductPrice';
+import { ProductPrice } from '../../../../../../../../../types/primitives/ProductPrice';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { productId } = req.query;
+    const { wsId, productId, warehouseId } = req.query;
+
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     if (!productId || typeof productId !== 'string')
       throw new Error('Invalid productId');
 
+    if (!warehouseId || typeof warehouseId !== 'string')
+      throw new Error('Invalid warehouseId');
+
     switch (req.method) {
       case 'GET':
-        return await fetchPrices(req, res, productId);
+        return await fetchPrices(req, res, productId, warehouseId);
 
       case 'POST': {
-        return await addPrices(req, res, productId);
-      }
-
-      case 'DELETE': {
-        return await deletePrices(req, res, productId);
+        return await addPrices(req, res, wsId, productId, warehouseId);
       }
 
       default:
@@ -39,25 +40,29 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 const fetchPrices = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  productId: string
+  productId: string,
+  warehouseId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
     .from('inventory_products')
-    .select('product_id, unit_id ,amount, price')
-    .eq('product_id', productId);
+    .select('product_id, unit_id, warehouse_id, amount, min_amount, price')
+    .eq('product_id', productId)
+    .eq('warehouse_id', warehouseId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data);
+  return res.status(200).json(data as ProductPrice[]);
 };
 
 const addPrices = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  productId: string
+  wsId: string,
+  productId: string,
+  warehouseId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -68,30 +73,13 @@ const addPrices = async (
 
   const { error } = await supabase.from('inventory_products').insert(
     prices.map((p: ProductPrice) => ({
-      price: p.price,
+      min_amount: p?.min_amount || 0,
+      warehouse_id: warehouseId,
       product_id: productId,
       unit_id: p.unit_id,
+      price: p.price,
     }))
   );
-
-  if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({});
-};
-
-const deletePrices = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  productId: string
-) => {
-  const supabase = createServerSupabaseClient({
-    req,
-    res,
-  });
-
-  const { error } = await supabase
-    .from('inventory_products')
-    .delete()
-    .eq('product_id', productId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
