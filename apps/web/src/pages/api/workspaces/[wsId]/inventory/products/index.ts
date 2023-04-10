@@ -78,15 +78,17 @@ const fetchProducts = async (
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   } else {
-    const queryBuilder = supabase.rpc('get_inventory_products', {
-      _ws_id: wsId,
-      _category_ids: categoryIds
-        ? typeof categoryIds === 'string'
-          ? categoryIds.split(',')
-          : categoryIds
-        : null,
-      _has_unit: hasUnit ? hasUnit === 'true' : null,
-    });
+    const queryBuilder = supabase
+      .rpc('get_inventory_products', {
+        _ws_id: wsId,
+        _category_ids: categoryIds
+          ? typeof categoryIds === 'string'
+            ? categoryIds.split(',')
+            : categoryIds
+          : null,
+        _has_unit: hasUnit ? hasUnit === 'true' : null,
+      })
+      .order('created_at', { ascending: false });
 
     if (query) {
       queryBuilder.ilike('name', `%${query}%`);

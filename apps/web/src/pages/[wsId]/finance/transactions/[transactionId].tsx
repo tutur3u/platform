@@ -79,6 +79,10 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   const [category, setCategory] = useState<TransactionCategory | null>(null);
 
   useEffect(() => {
+    if (category && description === category.name) setDescription('');
+  }, [category, description]);
+
+  useEffect(() => {
     if (transaction) {
       setDescription(transaction?.description || '');
       setTakenAt(
@@ -303,6 +307,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             description="Loại giao dịch được thực hiện."
           >
             <TransactionCategorySelector
+              categoryId={transaction?.category_id}
               category={category}
               setCategory={setCategory}
               preventPreselected

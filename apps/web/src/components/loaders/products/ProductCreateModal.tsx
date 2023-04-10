@@ -1,12 +1,7 @@
 import { Timeline } from '@mantine/core';
 import { Product } from '../../../types/primitives/Product';
-import { ProductPrice } from '../../../types/primitives/ProductPrice';
 import { useEffect, useState } from 'react';
-import {
-  BanknotesIcon,
-  CheckBadgeIcon,
-  PlusIcon,
-} from '@heroicons/react/24/solid';
+import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import Link from 'next/link';
@@ -16,28 +11,21 @@ import { Status } from '../status';
 interface Props {
   wsId: string;
   product: Partial<Product>;
-  prices: ProductPrice[];
 }
 
 interface Progress {
   createdProduct: Status;
-  createdPrices: Status;
 }
 
-const ProductCreateModal = ({ wsId, product, prices }: Props) => {
+const ProductCreateModal = ({ wsId, product }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
     createdProduct: 'idle',
-    createdPrices: 'idle',
   });
 
-  const hasError =
-    progress.createdProduct === 'error' || progress.createdPrices === 'error';
-
-  const hasSuccess =
-    progress.createdProduct === 'success' &&
-    progress.createdPrices === 'success';
+  const hasError = progress.createdProduct === 'error';
+  const hasSuccess = progress.createdProduct === 'success';
 
   useEffect(() => {
     if (hasSuccess)
@@ -72,47 +60,12 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
     }
   };
 
-  const createPrices = async (productId: string) => {
-    if (prices.length === 0) {
-      setProgress((progress) => ({ ...progress, createdPrices: 'success' }));
-      return true;
-    }
-
-    const res = await fetch(
-      `/api/workspaces/${wsId}/inventory/products/${productId}/prices`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prices }),
-      }
-    );
-
-    if (res.ok) {
-      setProgress((progress) => ({ ...progress, createdPrices: 'success' }));
-      return true;
-    } else {
-      showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo đơn giá',
-        color: 'red',
-      });
-      setProgress((progress) => ({ ...progress, createdPrices: 'error' }));
-      return false;
-    }
-  };
-
   const [productId, setProductId] = useState<string | null>(null);
 
   const handleCreate = async () => {
     setProgress((progress) => ({ ...progress, createdProduct: 'loading' }));
     const productId = await createProduct();
-    if (!productId) return;
-
     setProductId(productId);
-    setProgress((progress) => ({ ...progress, createdPrices: 'loading' }));
-    await createPrices(productId);
   };
 
   const [started, setStarted] = useState(false);
@@ -120,13 +73,7 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
   return (
     <>
       <Timeline
-        active={
-          progress.createdPrices === 'success'
-            ? 2
-            : progress.createdProduct === 'success'
-            ? 1
-            : 0
-        }
+        active={progress.createdProduct === 'success' ? 1 : 0}
         bulletSize={32}
         lineWidth={4}
         color={started ? 'green' : 'gray'}
@@ -148,36 +95,11 @@ const ProductCreateModal = ({ wsId, product, prices }: Props) => {
         </Timeline.Item>
 
         <Timeline.Item
-          bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm đơn giá (${prices?.length || 0})`}
-        >
-          {progress.createdProduct === 'success' ? (
-            progress.createdPrices === 'success' ? (
-              <div className="text-green-300">
-                Đã thêm {prices.length} đơn giá
-              </div>
-            ) : progress.createdPrices === 'error' ? (
-              <div className="text-red-300">Không thể thêm đơn giá</div>
-            ) : progress.createdPrices === 'loading' ? (
-              <div className="text-blue-300">
-                Đang thêm {prices.length} đơn giá
-              </div>
-            ) : (
-              <div className="text-zinc-400/80">Đang chờ thêm đơn giá</div>
-            )
-          ) : progress.createdProduct === 'error' ? (
-            <div className="text-red-300">Đã huỷ thêm đơn giá</div>
-          ) : (
-            <div className="text-zinc-400/80">Đang chờ thêm sản phẩm</div>
-          )}
-        </Timeline.Item>
-
-        <Timeline.Item
           title="Hoàn tất"
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
-          {progress.createdPrices === 'success' ? (
+          {progress.createdProduct === 'success' ? (
             <div className="text-green-300">Đã hoàn tất</div>
           ) : hasError ? (
             <div className="text-red-300">Đã huỷ hoàn tất</div>

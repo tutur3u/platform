@@ -11,6 +11,7 @@ import { productDetailsTabs } from '../constants/tabs/product-details';
 import { teamTabs } from '../constants/tabs/team';
 import { wsUserDetailsTabs } from '../constants/tabs/workspace-user-details';
 import { walletDetailsTabs } from '../constants/tabs/wallet-details';
+import { infrastructureTabs } from '../constants/tabs/infrastructure';
 
 export const getNavTabs = (mode: Mode) => {
   switch (mode) {
@@ -31,6 +32,9 @@ export const getNavTabs = (mode: Mode) => {
 
     case 'finance':
       return financeTabs;
+
+    case 'infrastructure':
+      return infrastructureTabs;
 
     case 'wallet_details':
       return walletDetailsTabs;

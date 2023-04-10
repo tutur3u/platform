@@ -126,7 +126,12 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
           wsId={ws.id}
           oldProducts={batchProducts}
           oldBatch={batch}
-          products={products}
+          products={
+            products.map((product) => ({
+              ...product,
+              warehouse_id: warehouseId,
+            })) || []
+          }
           batch={{
             id: batchId,
             price,

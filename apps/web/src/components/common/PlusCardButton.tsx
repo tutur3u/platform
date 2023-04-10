@@ -13,7 +13,7 @@ const PlusCardButton = ({ href, onClick }: Props) => {
         href={href}
         className="group flex items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 p-4 transition hover:bg-zinc-800"
       >
-        <PlusIcon className="h-6 w-6 text-zinc-500 transition group-hover:text-zinc-300" />
+        <PlusIcon className="h-6 w-6 text-zinc-400 transition group-hover:text-zinc-300" />
       </Link>
     );
 
@@ -22,7 +22,7 @@ const PlusCardButton = ({ href, onClick }: Props) => {
       onClick={onClick}
       className="group flex items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 p-4 transition hover:bg-zinc-800"
     >
-      <PlusIcon className="h-6 w-6 text-zinc-500 transition group-hover:text-zinc-300" />
+      <PlusIcon className="h-6 w-6 text-zinc-400 transition group-hover:text-zinc-300" />
     </button>
   );
 };

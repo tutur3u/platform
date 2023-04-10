@@ -40,11 +40,13 @@ const PromotionCard = ({
       href={href}
       className="group flex flex-col items-center justify-start rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
     >
-      <div className="p-4">
+      <div className="p-2">
         <div className="line-clamp-1 font-semibold tracking-wide">{name}</div>
-        {showDescription && <div className="line-clamp-1 font-semibold text-zinc-400/70">
-          {description}
-        </div>}
+        {showDescription && (
+          <div className="line-clamp-1 font-semibold text-zinc-400/70">
+            {description}
+          </div>
+        )}
       </div>
 
       <Divider className="w-full border-zinc-700" />
@@ -54,9 +56,9 @@ const PromotionCard = ({
           {isPercent
             ? `${value}%`
             : Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(value)}{' '}
+                style: 'currency',
+                currency: 'VND',
+              }).format(value)}{' '}
         </div>
         {showLimits && maxPerDay && (
           <div className="flex h-full items-center justify-center gap-1 rounded border border-orange-300/20 bg-orange-300/10 p-2 font-semibold text-orange-300">
@@ -79,20 +81,27 @@ const PromotionCard = ({
           </div>
         )}
       </div>
-      {(showStartDate || showEndDate) && <>
-        <Divider className="w-full border-zinc-700" />
-        <div className={`grid w-full gap-2 p-2 ${showStartDate && showEndDate ? 'md:grid-cols-2' : ''}`}>
-          {showStartDate && startDate != null && (
-            <div className="gap-1 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
-              {startDate.toLocaleDateString('vi-VN')}
-            </div>
-          )}
-          {showEndDate && endDate != null && (
-            <div className="gap-1 rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300">
-              {endDate.toLocaleDateString('vi-VN')}
-            </div>
-          )}
-        </div></>}
+      {(showStartDate || showEndDate) && (
+        <>
+          <Divider className="w-full border-zinc-700" />
+          <div
+            className={`grid w-full gap-2 p-2 ${
+              showStartDate && showEndDate ? 'md:grid-cols-2' : ''
+            }`}
+          >
+            {showStartDate && startDate != null && (
+              <div className="gap-1 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+                {startDate.toLocaleDateString('vi-VN')}
+              </div>
+            )}
+            {showEndDate && endDate != null && (
+              <div className="gap-1 rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300">
+                {endDate.toLocaleDateString('vi-VN')}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </Link>
   );
 };

@@ -4,15 +4,18 @@ import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, NumberInput, TextInput, Textarea } from '@mantine/core';
+import { Divider, TextInput, Textarea } from '@mantine/core';
 import CategorySelector from '../../../../../components/selectors/CategorySelector';
-import { ProductPrice } from '../../../../../types/primitives/ProductPrice';
-import UnitSelector from '../../../../../components/selectors/UnitSelector';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { Product } from '../../../../../types/primitives/Product';
 import { useRouter } from 'next/router';
+import { openModal } from '@mantine/modals';
+import ProductEditModal from '../../../../../components/loaders/products/ProductEditModal';
+import ProductDeleteModal from '../../../../../components/loaders/products/ProductDeleteModal';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import { ProductWarehouse } from '../../../../../types/primitives/ProductWarehouse';
+import WarehouseProductsInput from '../../../../../components/inputs/WarehouseProductsInput';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -28,13 +31,11 @@ const ProductOriginPage: PageWithLayoutProps = () => {
       ? `/api/workspaces/${wsId}/inventory/products/${productId}`
       : null;
 
-  const pricesApiPath =
-    wsId && productId
-      ? `/api/workspaces/${wsId}/inventory/products/${productId}/prices`
-      : null;
+  const warehousesApiPath =
+    wsId && productId ? `/api/workspaces/${wsId}/inventory/warehouses` : null;
 
   const { data: product } = useSWR<Product>(productApiPath);
-  const { data: productPrices } = useSWR<ProductPrice[]>(pricesApiPath);
+  const { data: warehouses } = useSWR<ProductWarehouse[]>(warehousesApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -79,89 +80,62 @@ const ProductOriginPage: PageWithLayoutProps = () => {
       setDescription(product?.description || '');
       setUsage(product?.usage || '');
     }
-  }, [product, productPrices]);
+  }, [product]);
 
-  const [prices, setPrices] = useState<ProductPrice[]>([]);
-
-  useEffect(() => {
-    if (productPrices) setPrices(productPrices);
-  }, [productPrices]);
-
-  const allPricesHaveUnitId = () =>
-    prices.every((price) => price.unit_id.length > 0);
+  const hasData = () => !!product;
 
   const hasRequiredFields = () =>
-    name.length > 0 && categoryId.length > 0 && allPricesHaveUnitId();
+    name.length > 0 && categoryId.length > 0 && hasData();
 
-  const addEmptyPrice = () => {
-    if (!product && !productPrices) return;
+  const showEditModal = () => {
+    if (!product) return;
     if (typeof productId !== 'string') return;
+    if (!ws?.id) return;
 
-    setPrices((prices) => [
-      ...prices,
-      {
-        product_id: productId,
-        unit_id: '',
-        amount: 0,
-        price: 0,
-      },
-    ]);
-  };
-
-  const updateUnitId = (index: number, unitId: string) => {
-    setPrices((prices) => {
-      const newPrices = [...prices];
-      newPrices[index].unit_id = unitId;
-      return newPrices;
+    openModal({
+      title: <div className="font-semibold">Cập nhật sản phẩm</div>,
+      centered: true,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      withCloseButton: false,
+      children: (
+        <ProductEditModal
+          wsId={ws.id}
+          oldProduct={product}
+          product={{
+            id: productId,
+            category_id: categoryId,
+            name,
+            manufacturer,
+            description,
+            usage,
+          }}
+        />
+      ),
     });
   };
 
-  const updatePrice = (index: number, price: number) => {
-    setPrices((prices) => {
-      const newPrices = [...prices];
-      newPrices[index].price = price;
-      return newPrices;
+  const showDeleteModal = () => {
+    if (!product) return;
+    if (typeof productId !== 'string') return;
+    if (!ws?.id) return;
+
+    openModal({
+      title: <div className="font-semibold">Xóa sản phẩm</div>,
+      centered: true,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      withCloseButton: false,
+      children: <ProductDeleteModal wsId={ws.id} productId={productId} />,
     });
   };
-
-  const getUniqueUnitIds = () => {
-    const unitIds = new Set<string>();
-    prices.forEach((price) => unitIds.add(price.unit_id));
-    return Array.from(unitIds);
-  };
-
-  const removePrice = (index: number) =>
-    setPrices((prices) => prices.filter((_, i) => i !== index));
 
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-8">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
-            <CategorySelector
-              categoryId={categoryId}
-              setCategoryId={setCategoryId}
-              required
-            />
-          </div>
-          <div className="flex items-end justify-end">
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              //   onClick={hasRequiredFields() ? showLoaderModal : undefined}
-            >
-              Lưu
-            </button>
-          </div>
-        </div>
-
-        <Divider className="my-4" />
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
+      <div className="flex min-h-full w-full flex-col pb-8">
+        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
+          <div className="grid h-fit gap-x-4 gap-y-2">
             <div className="col-span-full">
               <div className="text-2xl font-semibold">Thông tin cơ bản</div>
               <Divider className="my-2" variant="dashed" />
@@ -178,6 +152,12 @@ const ProductOriginPage: PageWithLayoutProps = () => {
               required
               disabled={!product}
             />
+            <CategorySelector
+              categoryId={categoryId}
+              setCategoryId={setCategoryId}
+              required
+            />
+
             <TextInput
               label="Đơn vị sản xuất"
               placeholder='Ví dụ: "Công ty TNHH ABC"'
@@ -189,86 +169,72 @@ const ProductOriginPage: PageWithLayoutProps = () => {
               disabled={!product}
             />
 
-            <div className="hidden xl:col-span-2 xl:block" />
-
             <Textarea
               label="Mô tả"
               placeholder="Giới thiệu sản phẩm, đặc điểm nổi bật, ..."
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
-              className="md:col-span-2"
               minRows={5}
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
               disabled={!product}
             />
-
-            <div className="hidden xl:col-span-2 xl:block" />
 
             <Textarea
               label="Cách dùng"
               placeholder="Hướng dẫn cách sử dụng sản phẩm"
               value={usage}
               onChange={(e) => setUsage(e.currentTarget.value)}
-              className="md:col-span-2"
               minRows={5}
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
               disabled={!product}
             />
+
+            <div className="flex gap-2">
+              <button
+                className={`w-fit rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition ${
+                  product
+                    ? 'hover:bg-red-300/20'
+                    : 'cursor-not-allowed opacity-50'
+                }`}
+                onClick={product ? showDeleteModal : undefined}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+
+              <button
+                className={`w-full rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
+                  hasRequiredFields()
+                    ? 'hover:bg-green-300/20'
+                    : 'cursor-not-allowed opacity-50'
+                }`}
+                onClick={hasRequiredFields() ? showEditModal : undefined}
+              >
+                Lưu thay đổi
+              </button>
+            </div>
           </div>
 
-          <div className="grid h-fit gap-x-4 gap-y-2">
+          <div className="grid h-fit gap-4 xl:col-span-3">
             <div className="col-span-full">
               <div className="text-2xl font-semibold">Đơn giá</div>
               <Divider className="mb-4 mt-2" variant="dashed" />
-
-              <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={addEmptyPrice}
-              >
-                + Thêm đơn giá
-              </button>
             </div>
 
-            {prices.map((p, idx) => (
-              <div
-                key={p.product_id + p.unit_id + idx}
-                className="flex items-end gap-2"
-              >
-                <UnitSelector
-                  unitId={p.unit_id}
-                  setUnitId={(id) => updateUnitId(idx, id)}
-                  blacklist={getUniqueUnitIds()}
-                  className="w-full"
+            {ws &&
+              product &&
+              warehouses &&
+              warehouses.map((w) => (
+                <WarehouseProductsInput
+                  key={w.id}
+                  wsId={ws.id}
+                  productId={product.id}
+                  warehouse={w}
                 />
-                <NumberInput
-                  label="Giá bán"
-                  placeholder="Giá"
-                  value={p.price}
-                  onChange={(e) => updatePrice(idx, Number(e))}
-                  className="w-full"
-                  classNames={{
-                    input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                  }}
-                  min={0}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                  formatter={(value) =>
-                    !Number.isNaN(parseFloat(value || ''))
-                      ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                      : ''
-                  }
-                />
-                <button
-                  className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
-                  onClick={() => removePrice(idx)}
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>

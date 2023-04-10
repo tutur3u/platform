@@ -6,6 +6,7 @@ export type Mode =
   | 'healthcare'
   | 'inventory'
   | 'finance'
+  | 'infrastructure'
   | 'wallet_details'
   | 'product_details'
   | 'user_details';

@@ -44,7 +44,7 @@ const fetchProducts = async (
 
   const { data, error } = await supabase
     .from('inventory_batch_products')
-    .select('amount, price, id:product_id, unit_id')
+    .select('amount, price, id:product_id, unit_id, warehouse_id')
     .eq('batch_id', batchId);
 
   if (error) return res.status(500).json({ error: error.message });
@@ -72,6 +72,7 @@ const addProducts = async (
       product_id: p.id,
       unit_id: p.unit_id,
       batch_id: batchId,
+      warehouse_id: p.warehouse_id,
     }))
   );
 
