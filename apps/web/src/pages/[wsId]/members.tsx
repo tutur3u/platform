@@ -17,6 +17,9 @@ import { User } from '../../types/primitives/User';
 import SelectUserForm from '../../components/forms/SelectUserForm';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
+
+export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceMembersPage = () => {
   const router = useRouter();

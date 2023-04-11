@@ -7,6 +7,9 @@ import NestedLayout from '../../components/layouts/NestedLayout';
 import { useSegments } from '../../hooks/useSegments';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import HeaderX from '../../components/metadata/HeaderX';
+import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
+
+export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceSettingsPage = () => {
   const router = useRouter();
