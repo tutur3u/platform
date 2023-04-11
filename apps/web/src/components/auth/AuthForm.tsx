@@ -85,6 +85,8 @@ const AuthForm = ({
   const tos = t('tos');
   const privacy = t('privacy');
 
+  const forgotPasswordLabel = t('login:forgot-password');
+
   return (
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
@@ -161,7 +163,7 @@ const AuthForm = ({
                     : 'text-zinc-200/50 hover:text-zinc-200'
                 } w-fit place-self-end transition`}
               >
-                {t('login:forgot-password')}
+                {forgotPasswordLabel}
               </Link>
             )}
           </div>

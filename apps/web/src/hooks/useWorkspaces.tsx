@@ -105,7 +105,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const user = useUser();
 
   const { data: workspaces, error: workspacesError } = useSWR<Workspace[]>(
-    user ? '/api/workspaces' : null
+    user ? '/api/workspaces/current' : null
   );
 
   const workspacesLoading = !workspaces && !workspacesError;
@@ -129,7 +129,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const updateWsId = async () => {
-      const res = await fetch('/api/workspaces');
+      const res = await fetch('/api/workspaces/current');
       const data = await res.json();
 
       setCachedWsId(data?.current?.[0]?.id);
@@ -171,7 +171,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     try {
-      const res = await fetch('/api/workspaces', {
+      const res = await fetch('/api/workspaces/current', {
         method: 'POST',
         body: JSON.stringify({
           name: ws?.name || '',
@@ -180,7 +180,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to create workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/current');
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
@@ -209,7 +209,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to update workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/current');
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({
@@ -237,7 +237,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
       if (!res.ok) throw new Error('Failed to delete workspace');
       if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/current');
     } catch (e) {
       if (options?.onError) options.onError();
       showNotification({

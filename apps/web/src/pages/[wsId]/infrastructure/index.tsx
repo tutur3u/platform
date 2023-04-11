@@ -2,14 +2,14 @@ import { ReactElement, useEffect } from 'react';
 import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import NestedLayout from '../../../components/layouts/NestedLayout';
-import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
+import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
 
-export const getServerSideProps = enforceHasWorkspaces;
+export const getServerSideProps = enforceRootWorkspace;
 
-const FinancePage: PageWithLayoutProps = () => {
+const InfrastructureOverviewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -45,8 +45,8 @@ const FinancePage: PageWithLayoutProps = () => {
   );
 };
 
-FinancePage.getLayout = function getLayout(page: ReactElement) {
+InfrastructureOverviewPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="infrastructure">{page}</NestedLayout>;
 };
 
-export default FinancePage;
+export default InfrastructureOverviewPage;

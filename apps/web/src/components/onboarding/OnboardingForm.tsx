@@ -53,7 +53,7 @@ const OnboardingForm = () => {
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
-      const res = await fetch('/api/workspaces');
+      const res = await fetch('/api/workspaces/current');
       const data = await res.json();
 
       if (data?.length > 0) router.push(`/${data?.[0]?.id}`);

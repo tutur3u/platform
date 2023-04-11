@@ -1,9 +1,14 @@
 import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
-import { useUser as useSupabaseUser } from '@supabase/auth-helpers-react';
+import {
+  Session,
+  useSupabaseClient,
+  useUser as useSupabaseUser,
+} from '@supabase/auth-helpers-react';
 import { DEV_MODE } from '../constants/common';
 import { User } from '../types/primitives/User';
+import { useRouter } from 'next/router';
 
 const UserDataContext = createContext({
   user: undefined as User | undefined,
@@ -18,15 +23,23 @@ export const UserDataProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const sbUser = useSupabaseUser();
+  const router = useRouter();
 
-  const apiPath = sbUser ? '/api/user' : null;
-  const { data: user, error: userError } = useSWR<User>(apiPath);
+  const supabase = useSupabaseClient();
+  const supabaseUser = useSupabaseUser();
+
+  const apiPath = supabaseUser ? '/api/user' : null;
+
+  const { data: user, error: userError } = useSWR<User>(apiPath, {
+    onError: () => router.push('/login'),
+  });
 
   const isLoading = !user && !userError;
 
   useEffect(() => {
     const setupLocalEnv = async () => {
+      if (!DEV_MODE) return;
+
       // Dynamically import the local environment helper.
       const { setup } = await import('../utils/dev/local-environment-helper');
 
@@ -34,8 +47,39 @@ export const UserDataProvider = ({
       await setup();
     };
 
-    if (DEV_MODE && user) setupLocalEnv();
-  }, [user]);
+    const syncData = async (session: Session | null) => {
+      if (!session) return;
+
+      mutate('/api/user');
+      mutate('/api/workspaces/current');
+      mutate('/api/workspaces/invited');
+
+      await setupLocalEnv();
+    };
+
+    const removeData = async () => {
+      mutate('/api/user', null);
+      mutate('/api/workspaces/current', null);
+      mutate('/api/workspaces/invited', null);
+      router.push('/login');
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const isAuthenticated =
+        event === 'SIGNED_IN' ||
+        event === 'INITIAL_SESSION' ||
+        event === 'TOKEN_REFRESHED';
+
+      const isSignedOut = event === 'SIGNED_OUT';
+
+      if (isAuthenticated) await syncData(session);
+      else if (isSignedOut) await removeData();
+    });
+
+    return () => subscription?.unsubscribe();
+  }, [supabase.auth, router]);
 
   useEffect(() => {
     if (userError) {

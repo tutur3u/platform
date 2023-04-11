@@ -10,7 +10,10 @@ export const infrastructureTabs: NavTabs = {
     {
       name: 'users',
       href: '/[wsId]/infrastructure/users',
-      disabled: true,
+    },
+    {
+      name: 'workspaces',
+      href: '/[wsId]/infrastructure/workspaces',
     },
     {
       name: 'storage',

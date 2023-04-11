@@ -20,7 +20,7 @@ const Error404Page: PageWithLayoutProps = () => {
       <p className="text-xl font-semibold text-zinc-300">{msg}</p>
 
       <Link
-        href="/"
+        href="/onboarding"
         className="mt-4 block w-fit rounded-lg bg-blue-300/20 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
       >
         {backToHome}

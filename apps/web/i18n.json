@@ -140,6 +140,11 @@
     "/[wsId]/finance/invoices/[invoiceId]": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
+    "/[wsId]/infrastructure/users": ["sidebar-tabs", "infrastructure-tabs"],
+    "/[wsId]/infrastructure/workspaces": [
+      "sidebar-tabs",
+      "infrastructure-tabs"
+    ],
 
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
