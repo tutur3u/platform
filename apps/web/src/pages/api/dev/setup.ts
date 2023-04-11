@@ -33,8 +33,12 @@ const setupLocalEnvironment = async (
 
   const { data, error } = await supabaseService
     .from('workspace_invites')
-    .insert(
+    .upsert(
       [
+        {
+          ws_id: '00000000-0000-0000-0000-000000000000',
+          user_id: user.id,
+        },
         {
           ws_id: '00000000-0000-0000-0000-000000000001',
           user_id: user.id,

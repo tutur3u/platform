@@ -81,7 +81,7 @@ const WorkspaceSettingsPage = () => {
               : []
           );
 
-          mutate('/api/workspaces');
+          mutate('/api/workspaces/current');
           mutate(`/api/workspaces/${wsId}`);
         },
         onCompleted: () => setIsSaving(false),
@@ -104,7 +104,7 @@ const WorkspaceSettingsPage = () => {
 
     await deleteWorkspace(ws.id, {
       onSuccess: () => {
-        mutate('/api/workspaces');
+        mutate('/api/workspaces/current');
         router.push('/onboarding');
       },
       onCompleted: () => setIsDeleting(false),

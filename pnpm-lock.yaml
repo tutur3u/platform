@@ -113,8 +113,8 @@ importers:
         specifier: ^13.3.0
         version: 13.3.0(@babel/core@7.21.4)(react-dom@18.2.0)(react@18.2.0)
       next-translate:
-        specifier: ^2.0.4
-        version: 2.0.4(next@13.3.0)(react@18.2.0)
+        specifier: ^2.0.5
+        version: 2.0.5(next@13.3.0)(react@18.2.0)
       nextjs-google-analytics:
         specifier: ^2.3.3
         version: 2.3.3(next@13.3.0)(react@18.2.0)
@@ -219,8 +219,8 @@ importers:
         specifier: ^13.2.1
         version: 13.2.1
       next-translate-plugin:
-        specifier: ^2.0.4
-        version: 2.0.4(next-translate@2.0.4)
+        specifier: ^2.0.5
+        version: 2.0.5(next-translate@2.0.5)
       postcss:
         specifier: ^8.4.21
         version: 8.4.21
@@ -5415,19 +5415,19 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: false
 
-  /next-translate-plugin@2.0.4(next-translate@2.0.4):
-    resolution: {integrity: sha512-4uay8TOL88IApF9nns4CGDZYJ5zlR1vdNp4K7S13zp3L+Ecqyf0MNl1nSZu5zWqH5zGW4lGqZRD1SP7Ct3mOYA==}
+  /next-translate-plugin@2.0.5(next-translate@2.0.5):
+    resolution: {integrity: sha512-H5Wecew+EQvrcCfnUiWwev8jS8ICH2Mw1SwWY8v8gXQfCpZ/ubpx+dinMhNZt+1BzqtEke53GHWov6gMvDB8tw==}
     engines: {node: '>=14.15.0'}
     requiresBuild: true
     peerDependencies:
       next-translate: '>= 2.0.0-canary.1'
     dependencies:
-      next-translate: 2.0.4(next@13.3.0)(react@18.2.0)
+      next-translate: 2.0.5(next@13.3.0)(react@18.2.0)
       typescript: 4.5.2
     dev: true
 
-  /next-translate@2.0.4(next@13.3.0)(react@18.2.0):
-    resolution: {integrity: sha512-X+85LLkCDeT1L9VuSSnyXem2mxEkWxiqmdqS574QLtM+br6HaKoN7bUVi+9bSc/R0cTSzHs3PcMICPvSQvLn8Q==}
+  /next-translate@2.0.5(next@13.3.0)(react@18.2.0):
+    resolution: {integrity: sha512-1aNweJUV9/edW2haexIqk66m/uiWRbZqC4K4bJxQRUjcOqNElJ3ZOBNeY50PYgY3Gb8tTFYkD3g+lqKtx6izYw==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       next: '>= 10.0.0'

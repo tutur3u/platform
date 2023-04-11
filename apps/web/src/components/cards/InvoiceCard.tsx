@@ -20,7 +20,7 @@ interface Props {
   showCreator?: boolean;
 }
 
-const Card = ({
+const InvoiceCard = ({
   invoice,
 
   showGender = false,
@@ -156,4 +156,4 @@ const Card = ({
   );
 };
 
-export default Card;
+export default InvoiceCard;

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../../utils/supabase/client';
 import { verifyRootAccess } from '../../../utils/serverless/verify-root-access';
+import { supabaseAdmin } from '../../../utils/supabase/client';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -8,7 +8,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchUsers(req, res);
+        return await fetchCount(req, res);
 
       default:
         throw new Error(
@@ -27,38 +27,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchUsers = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchCount = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = supabaseAdmin();
   if (!supabase) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { query, page, itemsPerPage } = req.query;
-
-  const queryBuilder = supabase
+  const { count, error } = await supabase
     .from('workspaces')
-    .select('*')
-    .order('created_at');
-
-  if (query) {
-    queryBuilder.ilike('name', `%${query}%`);
-  }
-
-  if (
-    page &&
-    itemsPerPage &&
-    typeof page === 'string' &&
-    typeof itemsPerPage === 'string'
-  ) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(itemsPerPage);
-
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error } = await queryBuilder;
+    .select('id', { count: 'exact', head: true });
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json(count);
 };

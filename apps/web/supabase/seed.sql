@@ -8,6 +8,7 @@ insert into public.handles (value)
 values ('user1'),
     ('user2'),
     ('user3'),
+    ('tuturuuu'),
     ('prototype-all'),
     ('prototype-general'),
     ('prototype-pharmacy'),
@@ -35,6 +36,12 @@ values (
 -- Populate workspaces
 insert into public.workspaces (id, name, handle, preset)
 values (
+        '00000000-0000-0000-0000-000000000000',
+        'Tuturuuu',
+        'tuturuuu',
+        'GENERAL'
+    ),
+    (
         '00000000-0000-0000-0000-000000000001',
         'Prototype All',
         'prototype-all',

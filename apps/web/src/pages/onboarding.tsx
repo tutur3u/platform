@@ -47,7 +47,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const OnboardingPage = () => {
   useEffect(() => {
-    mutate('/api/workspaces');
+    mutate('/api/workspaces/current');
   }, []);
 
   return (

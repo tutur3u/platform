@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { WorkspacePreset } from '../../../types/primitives/WorkspacePreset';
 import { useUser } from '@supabase/auth-helpers-react';
+import { ROOT_WORKSPACE_ID } from '../../../constants/common';
 
 interface Props {
   wsId: string;
@@ -41,6 +42,8 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const databases = t('databases');
   const infrastructure = t('infrastructure');
   const activities = t('activities');
+
+  const isRootWs = wsId === ROOT_WORKSPACE_ID;
 
   return (
     <div className="mx-2 mb-2 flex flex-col gap-1">
@@ -137,7 +140,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         disabled
       />
 
-      {user?.email?.endsWith('@tuturuuu.com') && (
+      {isRootWs && user?.email?.endsWith('@tuturuuu.com') && (
         <SidebarLink
           href={`/${wsId}/infrastructure`}
           activeIcon={<WrenchScrewdriverIcon className="w-5" />}

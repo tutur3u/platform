@@ -1,10 +1,19 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
+import { ROOT_WORKSPACE_ID } from '../../constants/common';
 
-export const enforceHasWorkspaces = async (ctx: GetServerSidePropsContext) => {
+export const enforceRootWorkspace = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
 
   const { wsId } = ctx.query;
+
+  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+
+  if (!isRootWorkspace) {
+    return {
+      notFound: true,
+    };
+  }
 
   const {
     data: { session },
@@ -21,7 +30,7 @@ export const enforceHasWorkspaces = async (ctx: GetServerSidePropsContext) => {
   const { data, error } = await supabase
     .from('workspaces')
     .select('id')
-    .eq('id', wsId)
+    .eq('id', ROOT_WORKSPACE_ID)
     .single();
 
   if (!data || error) {

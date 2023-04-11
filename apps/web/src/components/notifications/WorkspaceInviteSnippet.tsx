@@ -40,7 +40,7 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
 
     if (response.ok) {
       mutate('/api/workspaces/invites');
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/current');
       showNotification({
         title: acceptInviteSuccessTitle,
         message: acceptInviteSuccessMessage,

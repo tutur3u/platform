@@ -54,7 +54,7 @@ const LoginPage = () => {
       const { mutate } = await import('swr');
 
       mutate('/api/user');
-      mutate('/api/workspaces');
+      mutate('/api/workspaces/current');
 
       // If there is a redirectedFrom URL, redirect to it
       // Otherwise, redirect to the homepage
