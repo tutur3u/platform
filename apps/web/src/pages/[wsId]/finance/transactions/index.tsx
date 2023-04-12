@@ -183,7 +183,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
         <div className="mt-8 grid gap-8">
           {transactionsByDate &&
-          Object.entries(transactionsByDate).length > 0 ? (
+            Object.entries(transactionsByDate).length > 0 &&
             Object.entries(transactionsByDate).map(([date, transactions]) => (
               <div key={date} className="group">
                 <h3 className="col-span-full flex gap-2 text-lg font-semibold text-gray-300">
@@ -211,16 +211,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
                   ))}
                 </div>
               </div>
-            ))
-          ) : (
-            <div
-              className={`mt-2 grid gap-4 ${
-                mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-              }`}
-            >
-              <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
-            </div>
-          )}
+            ))}
         </div>
       </div>
     </>

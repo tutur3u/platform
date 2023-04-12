@@ -75,26 +75,26 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
     }
   };
 
-  const updatePrice = (id: string, price: number | null) => {
+  const updatePrice = (id: string, price: number | '') => {
     const index = prices.findIndex((price) => price.unit_id === id);
 
     if (index === -1) return;
 
     setPrices((prices) => {
       const newPrices = [...prices];
-      newPrices[index].price = price;
+      newPrices[index].price = price === '' ? null : price;
       return newPrices;
     });
   };
 
-  const updateMinAmount = (id: string, amount: number | null) => {
+  const updateMinAmount = (id: string, amount: number | '') => {
     const index = prices.findIndex((price) => price.unit_id === id);
 
     if (index === -1) return;
 
     setPrices((prices) => {
       const newPrices = [...prices];
-      newPrices[index].min_amount = amount;
+      newPrices[index].min_amount = amount === '' ? null : amount;
       return newPrices;
     });
   };
@@ -141,7 +141,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
           <ProductPriceInput
             key={p.product_id + p.unit_id + idx}
             price={p}
-            minAmount={p?.min_amount || null}
+            minAmount={p?.min_amount || ''}
             getUniqueUnitIds={getUniqueUnitIds}
             removePrice={() => removePrice(idx)}
             updatePrice={(unitId, price) => updatePrice(unitId, price)}

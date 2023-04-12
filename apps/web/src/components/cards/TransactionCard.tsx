@@ -64,11 +64,13 @@ const TransactionCard = ({
           <div className="w-full">
             {showAmount && (
               <div className="m-2 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-                {Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: 'VND',
-                  signDisplay: 'always',
-                }).format(transaction?.amount || 0)}{' '}
+                {transaction?.amount === 0
+                  ? 'Miễn phí'
+                  : Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                      signDisplay: 'always',
+                    }).format(transaction?.amount || 0)}{' '}
               </div>
             )}
 
