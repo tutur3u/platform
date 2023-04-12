@@ -378,7 +378,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                   : null
               }
               showTransfer={type === 'transfer'}
-              disabled={type !== 'default'}
+              disabled={type === 'transfer'}
               setCategory={setCategory}
               hideLabel
             />

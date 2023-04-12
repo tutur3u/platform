@@ -81,6 +81,11 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     defaultValue: true,
   });
 
+  const [showWallet, setShowWallet] = useLocalStorage({
+    key: 'finance-transactions-showWallet',
+    defaultValue: true,
+  });
+
   if (!ws) return null;
 
   const transactionsByDate = transactions?.reduce((acc, cur) => {
@@ -156,19 +161,36 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             checked={showDatetime}
             onChange={(event) => setShowDatetime(event.currentTarget.checked)}
           />
+          <Switch
+            label="Hiển thị ví"
+            checked={showWallet}
+            onChange={(event) => setShowWallet(event.currentTarget.checked)}
+          />
         </div>
 
         <Divider className="my-4" />
 
-        <div className="grid gap-8">
+        <div
+          className={`grid gap-x-4 gap-y-2 ${
+            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+          }`}
+        >
+          <h3 className="col-span-full text-lg font-semibold text-gray-300">
+            Giao dịch mới
+          </h3>
+          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
+        </div>
+
+        <div className="mt-8 grid gap-8">
           {transactionsByDate &&
           Object.entries(transactionsByDate).length > 0 ? (
             Object.entries(transactionsByDate).map(([date, transactions]) => (
-              <div key={date}>
+              <div key={date} className="group">
                 <h3 className="col-span-full flex gap-2 text-lg font-semibold text-gray-300">
                   <div>{getRelativeDate(date)}</div>
                   <MiniPlusButton
                     href={`/${ws.id}/finance/transactions/new?date=${date}`}
+                    className="opacity-0 group-hover:opacity-100"
                   />
                 </h3>
 
@@ -180,9 +202,11 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
                   {transactions.map((c) => (
                     <TransactionCard
                       key={c.id}
+                      wsId={ws.id}
                       transaction={c}
                       showAmount={showAmount}
                       showDatetime={showDatetime}
+                      showWallet={showWallet}
                     />
                   ))}
                 </div>

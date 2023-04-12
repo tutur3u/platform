@@ -180,7 +180,20 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
 
         <Divider className="my-4" />
 
-        <div className="grid gap-8">
+        <div
+          className={`grid gap-x-4 gap-y-2 ${
+            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+          }`}
+        >
+          <h3 className="col-span-full text-lg font-semibold text-gray-300">
+            Giao dịch mới
+          </h3>
+          <PlusCardButton
+            href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
+          />
+        </div>
+
+        <div className="mt-8 grid gap-8">
           {transactionsByDate &&
           Object.entries(transactionsByDate).length > 0 ? (
             Object.entries(transactionsByDate).map(([date, transactions]) => (
