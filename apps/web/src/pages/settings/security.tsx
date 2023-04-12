@@ -5,6 +5,9 @@ import { useRouter } from 'next/router';
 import { useSegments } from '../../hooks/useSegments';
 import HeaderX from '../../components/metadata/HeaderX';
 import NestedLayout from '../../components/layouts/NestedLayout';
+import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+
+export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();

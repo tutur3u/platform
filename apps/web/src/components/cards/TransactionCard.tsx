@@ -3,23 +3,39 @@ import Link from 'next/link';
 import { Transaction } from '../../types/primitives/Transaction';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import moment from 'moment';
+import { Wallet } from '../../types/primitives/Wallet';
+import useSWR from 'swr';
 
 interface Props {
+  wsId?: string;
   transaction: Transaction;
   showAmount?: boolean;
   showDatetime?: boolean;
+  showWallet?: boolean;
   disableLink?: boolean;
   redirectToWallets?: boolean;
 }
 
 const TransactionCard = ({
+  wsId,
   transaction,
   showAmount = false,
   showDatetime = false,
+  showWallet = false,
   disableLink = false,
   redirectToWallets = false,
 }: Props) => {
   const { ws } = useWorkspaces();
+
+  const apiPath =
+    wsId && showWallet && transaction?.wallet_id
+      ? `/api/workspaces/${wsId}/finance/wallets/${transaction?.wallet_id}`
+      : null;
+
+  const { data: wallet } = useSWR<Wallet>(apiPath);
+
+  const showExtra = showAmount || showDatetime || showWallet;
+
   if (!ws) return null;
 
   return (
@@ -41,7 +57,7 @@ const TransactionCard = ({
         </div>
       </div>
 
-      {(showAmount || showDatetime) && (
+      {showExtra && (
         <>
           <Divider variant="dashed" className="w-full border-zinc-700" />
 
@@ -53,6 +69,12 @@ const TransactionCard = ({
                   currency: 'VND',
                   signDisplay: 'always',
                 }).format(transaction?.amount || 0)}{' '}
+              </div>
+            )}
+
+            {showWallet && (
+              <div className="m-2 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+                {wallet?.name || 'Ví không tên'}
               </div>
             )}
 

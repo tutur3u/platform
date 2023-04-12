@@ -21,6 +21,9 @@ import {
 import useTranslation from 'next-translate/useTranslation';
 import SettingItemCard from '../../components/settings/SettingItemCard';
 import { showNotification } from '@mantine/notifications';
+import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+
+export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();

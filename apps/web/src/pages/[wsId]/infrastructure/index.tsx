@@ -6,6 +6,8 @@ import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
+import StatisticCard from '../../../components/cards/StatisticCard';
+import useSWR from 'swr';
 
 export const getServerSideProps = enforceRootWorkspace;
 
@@ -17,6 +19,8 @@ const InfrastructureOverviewPage: PageWithLayoutProps = () => {
 
   const infrastructureLabel = t('infrastructure');
   const overviewLabel = t('overview');
+  const usersLabel = t('users');
+  const workspacesLabel = t('workspaces');
 
   useEffect(() => {
     setRootSegment(
@@ -35,11 +39,28 @@ const InfrastructureOverviewPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [infrastructureLabel, overviewLabel, ws, setRootSegment]);
 
+  const usersCountApi = ws?.id ? `/api/users/count` : null;
+
+  const workspacesCountApi = ws?.id ? `/api/workspaces/count` : null;
+
+  const { data: users } = useSWR<number>(usersCountApi);
+  const { data: workspaces } = useSWR<number>(workspacesCountApi);
+
   return (
     <>
       <HeaderX label={`${overviewLabel} – ${infrastructureLabel}`} />
-      <div className="flex min-h-full w-full flex-col pb-8">
-        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4"></div>
+      <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatisticCard
+          title={usersLabel}
+          value={users}
+          href={`/${ws?.id}/infrastructure/users`}
+        />
+
+        <StatisticCard
+          title={workspacesLabel}
+          value={workspaces}
+          href={`/${ws?.id}/infrastructure/workspaces`}
+        />
       </div>
     </>
   );
