@@ -85,7 +85,7 @@ const AuthForm = ({
   const tos = t('tos');
   const privacy = t('privacy');
 
-  const forgotPasswordLabel = t('login:forgot-password');
+  const forgotPasswordLabel = t('forgot-password');
 
   return (
     <>

@@ -82,8 +82,10 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   }, [category, type, amount]);
 
   const hasRequiredFields = () =>
-    (type !== 'balance' ? amount != 0 : amount !== originWallet?.balance) &&
-    (type === 'transfer' ? originWallet && destinationWallet : originWallet);
+    (type !== 'balance' ? true : amount != originWallet?.balance) &&
+    (type === 'transfer'
+      ? originWallet && destinationWallet && amount
+      : originWallet);
 
   const showCreateModal = () => {
     if (!ws || !originWallet?.id || originWallet?.balance == null) return;
@@ -305,7 +307,9 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           >
             <div className="grid gap-2">
               <NumberInput
-                placeholder="Nhập số tiền"
+                placeholder={Intl.NumberFormat(lang, {
+                  style: 'decimal',
+                }).format(0)}
                 value={amount}
                 onChange={(num) =>
                   num === ''

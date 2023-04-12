@@ -5,11 +5,11 @@ import { ProductPrice } from '../../types/primitives/ProductPrice';
 
 interface Props {
   price: ProductPrice;
-  minAmount: number | null;
+  minAmount: number | '';
   isLast: boolean;
 
-  updatePrice: (unitId: string, price: number | null) => void;
-  updateMinAmount: (unitId: string, amount: number | null) => void;
+  updatePrice: (unitId: string, price: number | '') => void;
+  updateMinAmount: (unitId: string, amount: number | '') => void;
 
   updateUnitId: (unitId: string, oldUnitId: string) => void;
   removePrice: () => void;
@@ -40,9 +40,9 @@ const ProductPriceInput = ({
         <NumberInput
           label="Giá bán"
           placeholder="Nhập giá bán"
-          value={price.price || ''}
+          value={price.price ?? ''}
           onChange={(num) =>
-            price.unit_id ? updatePrice(price.unit_id, num || null) : null
+            price.unit_id ? updatePrice(price.unit_id, num) : null
           }
           className="w-full"
           classNames={{
@@ -62,7 +62,7 @@ const ProductPriceInput = ({
           placeholder="0"
           value={minAmount || ''}
           onChange={(num) =>
-            price.unit_id ? updateMinAmount(price.unit_id, num || null) : null
+            price.unit_id ? updateMinAmount(price.unit_id, num) : null
           }
           className="w-full"
           classNames={{
@@ -83,7 +83,7 @@ const ProductPriceInput = ({
           placeholder="Đang tải..."
           value={0}
           onChange={(num) =>
-            price.unit_id ? updatePrice(price.unit_id, num || null) : null
+            price.unit_id ? updatePrice(price.unit_id, num) : null
           }
           className="w-full"
           classNames={{

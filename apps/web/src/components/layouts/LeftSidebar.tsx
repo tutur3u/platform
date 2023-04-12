@@ -213,7 +213,7 @@ function LeftSidebar({ className }: SidebarProps) {
             </>
           )}
 
-          {ws ? (
+          {ws?.id ? (
             <div className={`m-2 ${ws || 'h-full'}`}>
               <SidebarLink
                 href={`/${ws.id}/notifications`}

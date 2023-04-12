@@ -195,13 +195,14 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
 
         <div className="mt-8 grid gap-8">
           {transactionsByDate &&
-          Object.entries(transactionsByDate).length > 0 ? (
+            Object.entries(transactionsByDate).length > 0 &&
             Object.entries(transactionsByDate).map(([date, transactions]) => (
-              <div key={date}>
+              <div key={date} className="group">
                 <h3 className="col-span-full flex gap-2 text-lg font-semibold text-gray-300">
                   <div>{getRelativeDate(date)}</div>
                   <MiniPlusButton
-                    href={`/${ws.id}/finance/transactions/new?date=${date}&walletId=${walletId}`}
+                    href={`/${ws.id}/finance/transactions/new?date=${date}`}
+                    className="opacity-0 group-hover:opacity-100"
                   />
                 </h3>
 
@@ -213,6 +214,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
                   {transactions.map((c) => (
                     <TransactionCard
                       key={c.id}
+                      wsId={ws.id}
                       transaction={c}
                       showAmount={showAmount}
                       showDatetime={showDatetime}
@@ -220,18 +222,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
                   ))}
                 </div>
               </div>
-            ))
-          ) : (
-            <div
-              className={`mt-2 grid gap-4 ${
-                mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-              }`}
-            >
-              <PlusCardButton
-                href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
-              />
-            </div>
-          )}
+            ))}
         </div>
       </div>
     </>
