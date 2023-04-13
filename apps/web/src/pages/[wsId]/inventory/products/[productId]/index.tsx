@@ -16,6 +16,7 @@ import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import { ProductWarehouse } from '../../../../../types/primitives/ProductWarehouse';
 import WarehouseProductsInput from '../../../../../components/inputs/WarehouseProductsInput';
 import { TrashIcon } from '@heroicons/react/24/solid';
+import SidebarLink from '../../../../../components/layouts/SidebarLink';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -237,8 +238,13 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
                   ))}
                 </div>
               ) : (
-                <div className="flex min-h-full items-center justify-center rounded border border-zinc-300/10 bg-zinc-900 p-4 text-center text-2xl font-semibold text-zinc-500">
-                  Chưa có kho hàng nào
+                <div className="flex min-h-full flex-col items-center justify-center gap-2 rounded border border-zinc-300/10 bg-zinc-900 p-4 text-center text-2xl font-semibold text-zinc-500">
+                  <div>Chưa có kho chứa nào</div>
+                  <SidebarLink
+                    label="Tạo kho chứa mới"
+                    href={`/${ws.id}/inventory/warehouses/new`}
+                    className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+                  />
                 </div>
               ))}
           </div>

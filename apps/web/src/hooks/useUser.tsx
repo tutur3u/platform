@@ -68,7 +68,7 @@ export const UserDataProvider = ({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (initialized) return;
 
       const isAuthenticated =
@@ -80,8 +80,8 @@ export const UserDataProvider = ({
 
       if (isAuthenticated) {
         setInitialized(true);
-        await syncData(session);
-      } else if (isSignedOut) await removeData();
+        syncData(session);
+      } else if (isSignedOut) removeData();
     });
 
     return () => subscription?.unsubscribe();

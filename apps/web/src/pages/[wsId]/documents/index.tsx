@@ -47,7 +47,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
         ? [
             {
               content: workspace?.name || 'Unnamed Workspace',
-              href: `/workspaces/${ws.id}`,
+              href: `/${ws.id}`,
             },
             { content: documentsLabel, href: `/documents` },
           ]
