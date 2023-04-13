@@ -36,7 +36,7 @@ const CategoryCreateModal = ({ wsId, category }: Props) => {
       });
   }, [hasSuccess]);
 
-  const createCategory = async () => {
+  const createCategory = async (category: Partial<ProductCategory>) => {
     const res = await fetch(`/api/workspaces/${wsId}/inventory/categories`, {
       method: 'POST',
       headers: {
@@ -64,7 +64,7 @@ const CategoryCreateModal = ({ wsId, category }: Props) => {
 
   const handleCreate = async () => {
     setProgress((progress) => ({ ...progress, created: 'loading' }));
-    const categoryId = await createCategory();
+    const categoryId = await createCategory(category);
     if (categoryId) setCategoryId(categoryId);
   };
 

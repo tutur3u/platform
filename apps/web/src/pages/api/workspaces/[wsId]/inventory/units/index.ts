@@ -47,7 +47,7 @@ const fetchUnits = async (
     .from('inventory_units')
     .select('id, name')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (blacklist && typeof blacklist === 'string') {
     queryBuilder.not('id', 'in', `(${blacklist})`);

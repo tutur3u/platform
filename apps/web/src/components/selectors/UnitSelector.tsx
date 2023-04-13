@@ -1,7 +1,8 @@
 import { Select } from '@mantine/core';
 import { ProductUnit } from '../../types/primitives/ProductUnit';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { showNotification } from '@mantine/notifications';
 
 interface Props {
   unitId: string;
@@ -9,10 +10,12 @@ interface Props {
   blacklist?: string[];
 
   customApiPath?: string;
-
-  required?: boolean;
-  disabled?: boolean;
   className?: string;
+
+  disabled?: boolean;
+  required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
 }
 
 const UnitSelector = ({
@@ -21,10 +24,12 @@ const UnitSelector = ({
   blacklist,
 
   customApiPath,
-
-  required = false,
-  disabled = false,
   className,
+
+  disabled = false,
+  required = false,
+  searchable = true,
+  creatable = true,
 }: Props) => {
   const { ws } = useWorkspaces();
 
@@ -43,6 +48,43 @@ const UnitSelector = ({
       disabled: blacklist?.includes(unit.id),
     })) || []),
   ];
+
+  const create = async ({
+    unit,
+  }: {
+    wsId: string;
+    unit: Partial<ProductUnit>;
+  }): Promise<ProductUnit | null> => {
+    const res = await fetch(apiPath, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(unit),
+    });
+
+    if (res.ok) {
+      const { id } = await res.json();
+
+      if (!id || typeof id !== 'string') {
+        showNotification({
+          title: 'Lỗi',
+          message: 'Không thể tạo đơn vị tính',
+          color: 'red',
+        });
+        return null;
+      }
+
+      return { ...unit, id };
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo đơn vị tính',
+        color: 'red',
+      });
+      return null;
+    }
+  };
 
   return (
     <Select
@@ -75,9 +117,36 @@ const UnitSelector = ({
           },
         },
       }}
+      getCreateLabel={(query) => (
+        <div>
+          + Tạo <span className="font-semibold">{query}</span>
+        </div>
+      )}
+      onCreate={(query) => {
+        if (!ws?.id) return null;
+
+        create({
+          wsId: ws.id,
+          unit: {
+            name: query,
+          },
+        }).then((item) => {
+          if (!item) return null;
+
+          mutate(apiPath, [...(units || []), item]);
+          setUnitId(item.id);
+
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      }}
+      nothingFound="Không tìm thấy đơn vị tính nào"
       disabled={!units || disabled}
       required={required}
-      searchable
+      searchable={searchable}
+      creatable={!!ws?.id && creatable}
     />
   );
 };

@@ -76,7 +76,7 @@ const TransactionCard = ({
 
             {showWallet && (
               <div className="m-2 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
-                {wallet?.name || 'Ví không tên'}
+                {wallet?.name || 'Nguồn tiền không tên'}
               </div>
             )}
 

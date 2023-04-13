@@ -11,7 +11,7 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
   const { data, error } = await supabase
     .from('workspaces')
     .select('id, name, workspace_members!inner(ws_id), preset')
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
 

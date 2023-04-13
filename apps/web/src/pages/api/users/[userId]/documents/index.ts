@@ -47,7 +47,9 @@ const fetchDocuments = async (
     .select('id, name, content, project_id, projects!inner(ws_id), created_at');
 
   if (wsId) queryBuilder.eq('projects.ws_id', wsId);
-  const { data, error } = await queryBuilder.order('created_at');
+  const { data, error } = await queryBuilder.order('created_at', {
+    ascending: false,
+  });
 
   if (error) return res.status(401).json({ error: error.message });
 

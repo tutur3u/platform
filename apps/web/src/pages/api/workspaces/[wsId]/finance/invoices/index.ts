@@ -50,7 +50,7 @@ const fetchInvoices = async (
       'id, customer_id, creator_id, price, price_diff, note, notice, transaction_id, completed_at, created_at'
     )
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (status === 'completed') queryBuilder.not('completed_at', 'is', null);
   else if (status === 'incomplete') queryBuilder.is('completed_at', null);

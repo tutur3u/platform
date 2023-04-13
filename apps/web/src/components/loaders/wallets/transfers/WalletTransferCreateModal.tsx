@@ -119,13 +119,13 @@ const WalletTransferCreateModal = ({
     const withdrawPromise = createTransaction(originWallet.id, {
       ...transaction,
       amount: -(transaction?.amount || 0),
-      description: `Rút tiền từ ví ${originWallet.name}`,
+      description: `Rút tiền từ nguồn tiền ${originWallet.name}`,
     });
 
     const depositPromise = createTransaction(destinationWallet.id, {
       ...transaction,
       amount: transaction?.amount || 0,
-      description: `Nhận tiền từ ví ${originWallet.name}`,
+      description: `Nhận tiền từ nguồn tiền ${originWallet.name}`,
     });
 
     const [withdrawId, depositId] = await Promise.all([

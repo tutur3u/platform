@@ -46,7 +46,7 @@ const fetchPromotions = async (
     .from('product_promotions')
     .select('id, name')
     .eq('project_id', projectId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);

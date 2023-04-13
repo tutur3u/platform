@@ -48,7 +48,7 @@ const fetchVitalGroups = async (
     .from('healthcare_vital_groups')
     .select('id, name, description, note')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

@@ -218,22 +218,28 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
             </div>
           </div>
 
-          <div className="grid h-fit gap-4 xl:col-span-3">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Đơn giá</div>
-              <Divider className="mb-4 mt-2" variant="dashed" />
-            </div>
+          <div className="xl:col-span-3">
+            <div className="text-2xl font-semibold">Đơn giá</div>
+            <Divider className="mb-4 mt-2" variant="dashed" />
 
             {ws &&
               product &&
               warehouses &&
-              warehouses.map((w) => (
-                <WarehouseProductsInput
-                  key={w.id}
-                  wsId={ws.id}
-                  productId={product.id}
-                  warehouse={w}
-                />
+              (warehouses.length > 0 ? (
+                <div className="grid h-fit gap-4">
+                  {warehouses.map((w) => (
+                    <WarehouseProductsInput
+                      key={w.id}
+                      wsId={ws.id}
+                      productId={product.id}
+                      warehouse={w}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-full items-center justify-center rounded border border-zinc-300/10 bg-zinc-900 p-4 text-center text-2xl font-semibold text-zinc-500">
+                  Chưa có kho hàng nào
+                </div>
               ))}
           </div>
         </div>

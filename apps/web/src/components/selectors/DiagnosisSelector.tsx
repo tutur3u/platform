@@ -1,15 +1,20 @@
 import { Select } from '@mantine/core';
 import { Diagnosis } from '../../types/primitives/Diagnosis';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { showNotification } from '@mantine/notifications';
 
 interface Props {
   diagnosis: Diagnosis | null;
   setDiagnosis: (diagnosis: Diagnosis | null) => void;
 
   className?: string;
+
+  disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
 }
 
 const DiagnosisSelector = ({
@@ -17,7 +22,11 @@ const DiagnosisSelector = ({
   setDiagnosis,
 
   className,
+
+  disabled = false,
   required = false,
+  searchable = true,
+  creatable = true,
 }: Props) => {
   const { ws } = useWorkspaces();
 
@@ -39,6 +48,43 @@ const DiagnosisSelector = ({
       if (!found) setDiagnosis(null);
     }
   }, [diagnosis, diagnoses, setDiagnosis]);
+
+  const create = async ({
+    diagnosis,
+  }: {
+    wsId: string;
+    diagnosis: Partial<Diagnosis>;
+  }): Promise<Diagnosis | null> => {
+    const res = await fetch(apiPath, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(diagnosis),
+    });
+
+    if (res.ok) {
+      const { id } = await res.json();
+
+      if (!id || typeof id !== 'string') {
+        showNotification({
+          title: 'Lỗi',
+          message: 'Không thể tạo chẩn đoán',
+          color: 'red',
+        });
+        return null;
+      }
+
+      return { ...diagnosis, id };
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo chẩn đoán',
+        color: 'red',
+      });
+      return null;
+    }
+  };
 
   return (
     <Select
@@ -73,10 +119,36 @@ const DiagnosisSelector = ({
           },
         },
       }}
-      disabled={!diagnoses}
-      searchable
-      clearable
+      getCreateLabel={(query) => (
+        <div>
+          + Tạo <span className="font-semibold">{query}</span>
+        </div>
+      )}
+      onCreate={(query) => {
+        if (!ws?.id) return null;
+
+        create({
+          wsId: ws.id,
+          diagnosis: {
+            name: query,
+          },
+        }).then((item) => {
+          if (!item) return null;
+
+          mutate(apiPath, [...(diagnoses || []), item]);
+          setDiagnosis(item);
+
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      }}
+      nothingFound="Không tìm thấy chẩn đoán nào"
+      disabled={!diagnoses || disabled}
       required={required}
+      searchable={searchable}
+      creatable={!!ws?.id && creatable}
     />
   );
 };

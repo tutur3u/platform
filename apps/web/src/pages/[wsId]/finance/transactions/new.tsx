@@ -16,9 +16,10 @@ import TransactionCreateModal from '../../../../components/loaders/transactions/
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import WalletTransferCreateModal from '../../../../components/loaders/wallets/transfers/WalletTransferCreateModal';
-import 'dayjs/locale/vi';
 import ThousandMultiplierChips from '../../../../components/chips/ThousandMultiplierChips';
 import { useRouter } from 'next/router';
+import { mutate } from 'swr';
+import 'dayjs/locale/vi';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -48,6 +49,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
         : []
     );
 
+    mutate(`/api/workspaces/${ws?.id}/finance/wallets`);
+
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
@@ -57,6 +60,24 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   const [takenAt, setTakenAt] = useState<Date>(
     dateQuery ? new Date(dateQuery as string) : new Date()
   );
+
+  useEffect(() => {
+    if (!dateQuery) return;
+
+    const date = new Date(dateQuery as string);
+    const now = new Date();
+
+    setTakenAt(
+      new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds()
+      )
+    );
+  }, [dateQuery]);
 
   const [originWallet, setOriginWallet] = useState<Wallet | null>(null);
   const [destinationWallet, setDestinationWallet] = useState<Wallet | null>(
