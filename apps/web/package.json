@@ -42,7 +42,7 @@
     "@tiptap/extension-superscript": "2.0.2",
     "@tiptap/extension-text-align": "2.0.2",
     "@tiptap/extension-underline": "2.0.2",
-    "@tiptap/pm": "2.0.2",
+    "@tiptap/pm": "2.0.3",
     "@tiptap/react": "2.0.2",
     "@tiptap/starter-kit": "2.0.2",
     "@vercel/analytics": "^0.1.11",
