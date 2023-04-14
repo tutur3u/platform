@@ -43,7 +43,7 @@
     "@tiptap/extension-text-align": "2.0.2",
     "@tiptap/extension-underline": "2.0.2",
     "@tiptap/pm": "2.0.2",
-    "@tiptap/react": "2.0.2",
+    "@tiptap/react": "2.0.3",
     "@tiptap/starter-kit": "2.0.2",
     "@vercel/analytics": "^0.1.11",
     "dayjs": "^1.11.7",
