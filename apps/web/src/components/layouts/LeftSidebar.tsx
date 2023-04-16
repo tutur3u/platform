@@ -112,7 +112,7 @@ function LeftSidebar({ className }: SidebarProps) {
                   <div
                     className={`${
                       isRootWs
-                        ? 'border-purple-300/20 bg-purple-300/10'
+                        ? 'border-yellow-300/20 bg-yellow-300/10'
                         : 'border-zinc-700/50 bg-zinc-800/50'
                     } rounded border p-2 transition`}
                   >
@@ -128,7 +128,7 @@ function LeftSidebar({ className }: SidebarProps) {
                           href={`/${ws.id}`}
                           className={`${
                             isRootWs
-                              ? 'text-purple-300 hover:text-purple-200'
+                              ? 'text-yellow-200 hover:text-yellow-100'
                               : 'text-zinc-300 hover:text-zinc-100'
                           } line-clamp-1 transition`}
                         >
@@ -158,7 +158,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                         <div
                                           className={
                                             isRootWs
-                                              ? 'text-purple-300'
+                                              ? 'text-yellow-200'
                                               : 'text-blue-300'
                                           }
                                         >
@@ -167,13 +167,15 @@ function LeftSidebar({ className }: SidebarProps) {
                                       )}
                                     </div>
                                   }
-                                  color={isRootWs ? '#373043' : '#182a3d'}
+                                  color={isRootWs ? '#2d291c' : '#182a3d'}
                                 >
                                   <Avatar
-                                    color={isRootWs ? 'grape' : 'blue'}
+                                    color={isRootWs ? 'yellow' : 'blue'}
                                     radius="xl"
                                     classNames={{
-                                      root: 'bg-zinc-800/50 border-black/40',
+                                      root: `bg-zinc-800/50 ${
+                                        isRootWs && 'border-yellow-200/30'
+                                      }`,
                                     }}
                                   >
                                     {getInitials(
@@ -189,10 +191,10 @@ function LeftSidebar({ className }: SidebarProps) {
                                     {(members?.length || 0) - 3} {moreMembers}
                                   </div>
                                 }
-                                color={isRootWs ? '#373043' : '#182a3d'}
+                                color={isRootWs ? '#2d291c' : '#182a3d'}
                               >
                                 <Avatar
-                                  color={isRootWs ? 'grape' : 'blue'}
+                                  color={isRootWs ? 'yellow' : 'blue'}
                                   radius="xl"
                                 >
                                   +{(members?.length || 0) - 3}
@@ -202,15 +204,23 @@ function LeftSidebar({ className }: SidebarProps) {
                           </Avatar.Group>
                         </Tooltip.Group>
 
-                        {isRootWs || (
-                          <Link
-                            href={`/${ws.id}/members`}
-                            className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
-                          >
-                            <div>{invite}</div>
-                            <UserPlusIcon className="w-4" />
-                          </Link>
-                        )}
+                        <Link
+                          href={`/${ws.id}/members`}
+                          className={`${
+                            isRootWs
+                              ? 'bg-yellow-300/10 text-yellow-200'
+                              : 'bg-purple-300/10 text-purple-300'
+                          } ${
+                            router.pathname === `/[wsId]/members`
+                              ? 'pointer-events-none cursor-default opacity-50'
+                              : isRootWs
+                              ? 'hover:bg-yellow-300/20'
+                              : 'hover:bg-purple-300/20'
+                          } font-semiboldtransition flex items-center gap-1 rounded-full px-4 py-0.5`}
+                        >
+                          <div>{invite}</div>
+                          <UserPlusIcon className="w-4" />
+                        </Link>
                       </div>
                     )}
                   </div>

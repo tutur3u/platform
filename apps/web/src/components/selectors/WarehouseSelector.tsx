@@ -5,8 +5,11 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 
 interface Props {
-  warehouseId: string;
-  setWarehouseId: (warehouseId: string) => void;
+  warehouseId: string | undefined;
+  setWarehouseId?: (warehouseId: string) => void;
+
+  blacklist?: string[];
+  className?: string;
 
   disabled?: boolean;
   required?: boolean;
@@ -18,6 +21,9 @@ const WarehouseSelector = ({
   warehouseId,
   setWarehouseId,
 
+  blacklist,
+  className,
+
   disabled = false,
   required = false,
   searchable = true,
@@ -25,7 +31,9 @@ const WarehouseSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/warehouses`;
+  const apiPath = `/api/workspaces/${ws?.id}/inventory/warehouses?blacklist=${
+    blacklist?.filter((id) => id !== warehouseId && id !== '')?.join(',') || ''
+  }`;
   const { data: warehouses } = useSWR<ProductWarehouse[]>(
     ws?.id ? apiPath : null
   );
@@ -81,6 +89,7 @@ const WarehouseSelector = ({
       data={data}
       value={warehouseId}
       onChange={setWarehouseId}
+      className={className}
       classNames={{
         input:
           'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
@@ -121,7 +130,7 @@ const WarehouseSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(warehouses || []), item]);
-          setWarehouseId(item.id);
+          if (setWarehouseId) setWarehouseId(item.id);
 
           return {
             label: item.name,

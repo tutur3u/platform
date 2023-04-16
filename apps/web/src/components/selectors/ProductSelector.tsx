@@ -6,6 +6,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 interface Props {
   productId: string;
   setProductId: (productId: string) => void;
+
   blacklist?: string[];
 
   required?: boolean;
@@ -15,6 +16,7 @@ interface Props {
 const ProductSelector = ({
   productId,
   setProductId,
+
   blacklist,
 
   required = false,
@@ -29,7 +31,7 @@ const ProductSelector = ({
     ...(products?.map((product) => ({
       label: product.name,
       value: product.id,
-      disabled: blacklist?.includes(product.id) || !product.unit,
+      disabled: blacklist?.includes(product.id),
     })) || []),
   ];
 

@@ -1,17 +1,26 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Product } from '../../types/primitives/Product';
-import ProductUnitSelector from '../selectors/ProductUnitSelector';
 import { NumberInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import SettingItemCard from '../settings/SettingItemCard';
+import ProductSelector from '../selectors/ProductSelector';
+import UnitSelector from '../selectors/UnitSelector';
+import WarehouseSelector from '../selectors/WarehouseSelector';
 
 interface Props {
   wsId: string;
-  p: Product;
-  idx: number;
+  product: Product;
   isLast: boolean;
-  updateProductId: (idx: number, id: string, oldId?: string) => void;
-  updateAmount: (id: string, amount: number) => void;
+
+  getUniqueProductIds: () => string[];
+  getUniqueWarehouseIds: () => string[];
+  getUniqueUnitIds: () => string[];
+
+  updateProductId: (id: string) => void;
+  updateWarehouseId: (id: string) => void;
+  updateUnitId: (id: string) => void;
+
+  updateAmount: (id: string, amount: number | '') => void;
   updatePrice: ({
     productId,
     unitId,
@@ -19,23 +28,28 @@ interface Props {
   }: {
     productId: string;
     unitId: string;
-    price: number;
+    price: number | '';
   }) => void;
-  removePrice: (idx: number) => void;
-  getUniqueProductIds: () => string[];
+  removePrice: () => void;
 }
 
 const InvoiceProductInput = ({
   wsId,
-  p,
-  idx,
+  product: p,
+
+  getUniqueProductIds,
+  getUniqueWarehouseIds,
+  getUniqueUnitIds,
+
   updateProductId,
+  updateWarehouseId,
+  updateUnitId,
+
   updateAmount,
   updatePrice,
-  getUniqueProductIds,
   removePrice,
 }: Props) => {
-  const [price, setPrice] = useState<number | null>(null);
+  const [price, setPrice] = useState<number | ''>('');
 
   useEffect(() => {
     if (p.id && p.unit_id) {
@@ -60,7 +74,7 @@ const InvoiceProductInput = ({
   return (
     <SettingItemCard
       title={
-        price != null
+        price != ''
           ? Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
@@ -79,49 +93,58 @@ const InvoiceProductInput = ({
       }
     >
       <div className="flex gap-2">
-        <div className={`grid w-full gap-2 ${p?.id ? 'xl:grid-cols-2' : ''}`}>
-          <ProductUnitSelector
-            id={`${p.id}::${p.unit_id}`}
-            setId={(id) =>
-              updateProductId(
-                idx,
-                id,
-                p.id && p.unit_id ? `${p.id}::${p.unit_id}` : undefined
-              )
-            }
+        <div className={`grid w-full gap-2 ${p?.id ? 'xl:grid-cols-3' : ''}`}>
+          <ProductSelector
+            productId={p.id}
+            setProductId={(id) => updateProductId(id)}
             blacklist={getUniqueProductIds()}
             className="w-full"
           />
 
-          {p?.id && (
-            <NumberInput
-              label="Số lượng (Tồn kho: 999,999,999,999)"
-              placeholder="Số lượng"
-              value={p.amount}
-              onChange={(e) =>
-                p.id && p.unit_id
-                  ? updateAmount(`${p.id}::${p.unit_id}`, Number(e))
-                  : undefined
-              }
-              className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              min={0}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-              disabled={!p.id || !p.unit_id}
-            />
+          {p.id && (
+            <>
+              <WarehouseSelector
+                warehouseId={p.warehouse_id}
+                setWarehouseId={(id) => updateWarehouseId(id)}
+                blacklist={getUniqueWarehouseIds()}
+                className="w-full"
+              />
+              <UnitSelector
+                unitId={p.unit_id}
+                setUnitId={(id) => updateUnitId(id)}
+                blacklist={getUniqueUnitIds()}
+                className="w-full"
+              />
+
+              <NumberInput
+                label="Số lượng (Tồn kho: 999,999,999,999)"
+                placeholder="Số lượng"
+                value={p.amount}
+                onChange={(val) =>
+                  p.id && p.unit_id
+                    ? updateAmount(`${p.id}::${p.unit_id}`, val)
+                    : undefined
+                }
+                className="w-full"
+                classNames={{
+                  input: 'bg-white/5 border-zinc-300/20 font-semibold',
+                }}
+                min={0}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                formatter={(value) =>
+                  !Number.isNaN(parseFloat(value || ''))
+                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    : ''
+                }
+                disabled={!p.id || !p.unit_id}
+              />
+            </>
           )}
         </div>
 
         <button
           className="mt-[1.6125rem] h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
-          onClick={() => removePrice(idx)}
+          onClick={removePrice}
         >
           <TrashIcon className="h-5 w-5" />
         </button>

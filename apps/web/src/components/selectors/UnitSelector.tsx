@@ -5,8 +5,8 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 
 interface Props {
-  unitId: string;
-  setUnitId: (unitId: string) => void;
+  unitId?: string;
+  setUnitId?: (unitId: string) => void;
   blacklist?: string[];
 
   customApiPath?: string;
@@ -35,9 +35,9 @@ const UnitSelector = ({
 
   const apiPath =
     customApiPath ??
-    `/api/workspaces/${ws?.id}/inventory/units?blacklist=${blacklist
-      ?.filter((id) => id !== unitId && id !== '')
-      .join(',')}`;
+    `/api/workspaces/${ws?.id}/inventory/units?blacklist=${
+      blacklist?.filter((id) => id !== unitId && id !== '')?.join(',') || ''
+    }`;
 
   const { data: units } = useSWR<ProductUnit[]>(ws?.id ? apiPath : null);
 
@@ -134,7 +134,7 @@ const UnitSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(units || []), item]);
-          setUnitId(item.id);
+          if (setUnitId) setUnitId(item.id);
 
           return {
             label: item.name,

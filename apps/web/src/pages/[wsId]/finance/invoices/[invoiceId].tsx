@@ -182,7 +182,7 @@ const DetailsPage: PageWithLayoutProps = () => {
     }
   };
 
-  const updateAmount = (id: string, amount: number) => {
+  const updateAmount = (id: string, amount: number | '') => {
     if (!products) return;
 
     const [productId, unitId] = id.split('::');
@@ -219,7 +219,7 @@ const DetailsPage: PageWithLayoutProps = () => {
     }: {
       productId: string;
       unitId: string;
-      price: number;
+      price: number | '';
     }) => {
       if (!products) return;
 
@@ -607,7 +607,7 @@ const DetailsPage: PageWithLayoutProps = () => {
                   <InvoiceProductInput
                     key={p.id + idx}
                     wsId={ws.id}
-                    p={p}
+                    product={p}
                     idx={idx}
                     isLast={idx === products.length - 1}
                     getUniqueProductIds={getUniqueProductIds}

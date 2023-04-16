@@ -7,13 +7,12 @@ import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import WarehouseSelector from '../../../../components/selectors/WarehouseSelector';
 import { Product } from '../../../../types/primitives/Product';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import SupplierSelector from '../../../../components/selectors/SupplierSelector';
 import { openModal } from '@mantine/modals';
 import BatchCreateModal from '../../../../components/loaders/batches/BatchCreateModal';
-import ProductUnitSelector from '../../../../components/selectors/ProductUnitSelector';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
+import BatchProductInput from '../../../../components/inputs/BatchProductInput';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -144,7 +143,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
     }
   };
 
-  const updatePrice = (id: string, price: number) => {
+  const updatePrice = (id: string, price: number | '') => {
     const [productId, unitId] = id.split('::');
 
     const index = products.findIndex(
@@ -160,7 +159,7 @@ const NewBatchPage: PageWithLayoutProps = () => {
     });
   };
 
-  const updateAmount = (id: string, amount: number) => {
+  const updateAmount = (id: string, amount: number | '') => {
     const [productId, unitId] = id.split('::');
 
     const index = products.findIndex(
@@ -257,87 +256,18 @@ const NewBatchPage: PageWithLayoutProps = () => {
             </div>
 
             {products.map((p, idx) => (
-              <div
+              <BatchProductInput
                 key={p.id + idx}
-                className="grid items-end gap-2 xl:grid-cols-2"
-              >
-                <div className="flex w-full items-end gap-2">
-                  <ProductUnitSelector
-                    id={`${p.id}::${p.unit_id}`}
-                    setId={(id) =>
-                      updateProductId(
-                        idx,
-                        id,
-                        p.id && p.unit_id ? `${p.id}::${p.unit_id}` : undefined
-                      )
-                    }
-                    blacklist={getUniqueProductIds()}
-                    className="w-full"
-                  />
-                  <button
-                    className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4 xl:hidden"
-                    onClick={() => removePrice(idx)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="flex w-full items-end gap-2">
-                  <NumberInput
-                    label="Số lượng"
-                    placeholder="Số lượng nhập"
-                    value={p.amount}
-                    onChange={(e) =>
-                      p.id && p.unit_id
-                        ? updateAmount(`${p.id}::${p.unit_id}`, Number(e))
-                        : undefined
-                    }
-                    className="w-full"
-                    classNames={{
-                      input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                    }}
-                    min={0}
-                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value || ''))
-                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                        : ''
-                    }
-                    disabled={!p.id || !p.unit_id}
-                  />
-                  <NumberInput
-                    label="Giá nhập"
-                    placeholder="Giá nhập sản phẩm"
-                    value={p.price}
-                    onChange={(e) =>
-                      p.id && p.unit_id
-                        ? updatePrice(`${p.id}::${p.unit_id}`, Number(e))
-                        : undefined
-                    }
-                    className="w-full"
-                    classNames={{
-                      input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                    }}
-                    min={0}
-                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value || ''))
-                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                        : ''
-                    }
-                    disabled={!p.id || !p.unit_id}
-                  />
-                  <button
-                    className="pointer-events-none h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 opacity-0 transition hover:bg-red-300/20 md:px-4 xl:pointer-events-auto xl:opacity-100"
-                    onClick={() => removePrice(idx)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-                {idx !== products.length - 1 && (
-                  <Divider className="mt-2 w-full xl:hidden" />
-                )}
-              </div>
+                product={p}
+                getUniqueProductIds={getUniqueProductIds}
+                updateProductId={(newId, oldId) =>
+                  updateProductId(idx, newId, oldId)
+                }
+                updatePrice={updatePrice}
+                updateAmount={updateAmount}
+                removePrice={() => removePrice(idx)}
+                isLast={idx === products.length - 1}
+              />
             ))}
           </div>
         </div>

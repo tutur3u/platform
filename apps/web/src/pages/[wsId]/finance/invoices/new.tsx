@@ -130,7 +130,7 @@ const NewPage: PageWithLayoutProps = () => {
     }
   };
 
-  const updateAmount = (id: string, amount: number) => {
+  const updateAmount = (id: string, amount: number | '') => {
     const [productId, unitId] = id.split('::');
 
     const index = products.findIndex(
@@ -148,7 +148,7 @@ const NewPage: PageWithLayoutProps = () => {
 
   const getUniqueProductIds = () => {
     const ids = new Set<string>();
-    products.forEach((product) => ids.add(`${product.id}::${product.unit_id}`));
+    products.forEach((product) => ids.add(product.id));
     return Array.from(ids);
   };
 
@@ -163,7 +163,7 @@ const NewPage: PageWithLayoutProps = () => {
     }: {
       productId: string;
       unitId: string;
-      price: number;
+      price: number | '';
     }) => {
       const index = products.findIndex(
         (product) => product.id === productId && product.unit_id === unitId
@@ -472,7 +472,7 @@ const NewPage: PageWithLayoutProps = () => {
                 <InvoiceProductInput
                   key={p.id + idx}
                   wsId={ws.id}
-                  p={p}
+                  product={p}
                   idx={idx}
                   isLast={idx === products.length - 1}
                   getUniqueProductIds={getUniqueProductIds}
