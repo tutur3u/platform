@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
@@ -9,6 +9,7 @@ import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
+import AuthEmailSent from '../components/auth/AuthEmailSent';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -38,6 +39,9 @@ const PasswordRecoveryPage = () => {
   const router = useRouter();
   const user = useUser();
 
+  const [isEmailSent, setIsEmailSent] = useState(false);
+  const [email, setEmail] = useState('');
+
   useEffect(() => {
     if (user) router.push('/reset-password');
   }, [router, user]);
@@ -52,11 +56,14 @@ const PasswordRecoveryPage = () => {
         redirectTo: 'https://tuturuuu.com/reset-password',
       });
 
-      showNotification({
-        title: 'Success',
-        message: 'Password reset email sent',
-        color: 'green',
-      });
+      setEmail(email);
+      setIsEmailSent(true);
+
+      // showNotification({
+      //   title: 'Success',
+      //   message: 'Password reset email sent',
+      //   color: 'green',
+      // });
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -79,6 +86,9 @@ const PasswordRecoveryPage = () => {
   const alreadyHaveAccount = t('already-have-account');
   const login = t('login');
 
+  const emailSentP1 = t('auth:email-sent-p1');
+  const emailSentP2 = t('auth:email-sent-p2');
+
   return (
     <>
       <HeaderX label={`Tuturuuu — ${recoverPassword}`} />
@@ -89,19 +99,29 @@ const PasswordRecoveryPage = () => {
         height={1080}
         className="fixed inset-0 h-screen w-screen object-cover"
       />
-      <AuthForm
-        title={recoverPassword}
-        description={recoverPasswordDesc}
-        submitLabel={send}
-        submittingLabel={sending}
-        secondaryAction={{
-          description: alreadyHaveAccount,
-          label: login,
-          href: '/login',
-        }}
-        onSubmit={handleRecovery}
-        recoveryMode
-      />
+      {isEmailSent && (
+        <AuthEmailSent
+          emailSentP1={emailSentP1}
+          emailSentP2={emailSentP2}
+          email={email}
+        />
+      )}
+
+      {!isEmailSent && (
+        <AuthForm
+          title={recoverPassword}
+          description={recoverPasswordDesc}
+          submitLabel={send}
+          submittingLabel={sending}
+          secondaryAction={{
+            description: alreadyHaveAccount,
+            label: login,
+            href: '/login',
+          }}
+          onSubmit={handleRecovery}
+          recoveryMode
+        />
+      )}
     </>
   );
 };
