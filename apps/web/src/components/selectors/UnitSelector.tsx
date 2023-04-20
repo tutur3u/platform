@@ -9,7 +9,7 @@ interface Props {
   setUnitId?: (unitId: string) => void;
   blacklist?: string[];
 
-  customApiPath?: string;
+  customApiPath?: string | null;
   className?: string;
 
   disabled?: boolean;
@@ -94,24 +94,6 @@ const UnitSelector = ({
       value={unitId}
       onChange={setUnitId}
       className={className}
-      styles={{
-        item: {
-          // applies styles to selected item
-          '&[data-selected]': {
-            '&, &:hover': {
-              backgroundColor: '#6b686b',
-              color: '#fff',
-              fontWeight: 600,
-            },
-          },
-
-          // applies styles to hovered item
-          '&:hover': {
-            backgroundColor: '#454345',
-            color: '#fff',
-          },
-        },
-      }}
       getCreateLabel={(query) => (
         <div>
           + Tạo <span className="font-semibold">{query}</span>

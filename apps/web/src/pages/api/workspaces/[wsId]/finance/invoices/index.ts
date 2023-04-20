@@ -47,7 +47,7 @@ const fetchInvoices = async (
   const queryBuilder = supabase
     .from('finance_invoices')
     .select(
-      'id, customer_id, creator_id, price, price_diff, note, notice, transaction_id, completed_at, created_at'
+      'id, customer_id, creator_id, price, total_diff, note, notice, transaction_id, completed_at, created_at'
     )
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
@@ -99,7 +99,7 @@ const createInvoice = async (
   const {
     customer_id,
     price,
-    price_diff,
+    total_diff,
     notice,
     note,
     completed_at,
@@ -111,7 +111,7 @@ const createInvoice = async (
     .insert({
       customer_id: customer_id || null,
       price,
-      price_diff,
+      total_diff,
       notice,
       note,
       creator_id: user.id,

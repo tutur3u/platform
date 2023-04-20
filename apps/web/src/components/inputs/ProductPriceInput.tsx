@@ -45,9 +45,6 @@ const ProductPriceInput = ({
             price.unit_id ? updatePrice(price.unit_id, num) : null
           }
           className="w-full"
-          classNames={{
-            input: 'bg-white/5 border-zinc-300/20 font-semibold',
-          }}
           min={0}
           parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
           formatter={(value) =>
@@ -65,9 +62,6 @@ const ProductPriceInput = ({
             price.unit_id ? updateMinAmount(price.unit_id, num) : null
           }
           className="w-full"
-          classNames={{
-            input: 'bg-white/5 border-zinc-300/20 font-semibold',
-          }}
           min={0}
           parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
           formatter={(value) =>
@@ -86,9 +80,6 @@ const ProductPriceInput = ({
             price.unit_id ? updatePrice(price.unit_id, num) : null
           }
           className="w-full"
-          classNames={{
-            input: 'bg-white/5 border-zinc-300/20 font-semibold',
-          }}
           min={0}
           parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
           formatter={(value) =>

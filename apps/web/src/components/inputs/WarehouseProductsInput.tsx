@@ -117,7 +117,13 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
   const removePrice = (index: number) => {
     setPrices((prices) => prices.filter((_, idx) => idx !== index));
-    setPricesChanged(true);
+
+    setPricesChanged(
+      !(
+        prices.filter((_, idx) => idx !== index).length === 0 &&
+        productPrices?.length === 0
+      )
+    );
   };
 
   const showEditModal = () => {

@@ -306,9 +306,6 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               value={takenAt}
               onChange={(date) => setTakenAt(date || new Date())}
               className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!originWallet}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
@@ -422,9 +419,6 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                   value: 'VND',
                 },
               ]}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled
               required
             />

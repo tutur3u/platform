@@ -104,9 +104,6 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
               placeholder="Nhập tên danh mục giao dịch"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
           </SettingItemCard>
 
@@ -118,9 +115,6 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
               placeholder="Chọn loại giao dịch"
               value={isExpense ? 'expense' : 'income'}
               onChange={(e) => setIsExpense(e === 'expense')}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               data={[
                 { label: 'Chi tiêu', value: 'expense' },
                 { label: 'Thu nhập', value: 'income' },

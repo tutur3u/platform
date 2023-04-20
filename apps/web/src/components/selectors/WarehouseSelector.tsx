@@ -8,6 +8,7 @@ interface Props {
   warehouseId: string | undefined;
   setWarehouseId?: (warehouseId: string) => void;
 
+  customApiPath?: string | null;
   blacklist?: string[];
   className?: string;
 
@@ -21,6 +22,7 @@ const WarehouseSelector = ({
   warehouseId,
   setWarehouseId,
 
+  customApiPath,
   blacklist,
   className,
 
@@ -31,9 +33,13 @@ const WarehouseSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/warehouses?blacklist=${
-    blacklist?.filter((id) => id !== warehouseId && id !== '')?.join(',') || ''
-  }`;
+  const apiPath =
+    customApiPath ??
+    `/api/workspaces/${ws?.id}/inventory/warehouses?blacklist=${
+      blacklist?.filter((id) => id !== warehouseId && id !== '')?.join(',') ||
+      ''
+    }`;
+
   const { data: warehouses } = useSWR<ProductWarehouse[]>(
     ws?.id ? apiPath : null
   );

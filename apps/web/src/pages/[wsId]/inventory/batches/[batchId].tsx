@@ -245,9 +245,6 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
               value={price}
               onChange={setPrice}
               className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               min={0}
               parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
               formatter={(value) =>

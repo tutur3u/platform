@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
@@ -89,101 +89,21 @@ const NewPage: PageWithLayoutProps = () => {
     ]);
   };
 
-  const updateProductId = (index: number, newId: string, id?: string) => {
-    if (newId === id) return;
-
-    const [newProductId, newUnitId] = newId.split('::');
-
-    if (
-      products.some(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      )
-    )
-      return;
-
-    // If the id is provided, it means that the user is changing the id
-    // of an existing product. In this case, we need to find the index of the
-    // product with the old id and replace it with the new one.
-    if (id) {
-      const oldIndex = products.findIndex(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      );
-      if (oldIndex === -1) return;
-
-      setProducts((products) => {
-        const newProducts = [...products];
-        newProducts[oldIndex].id = newProductId;
-        newProducts[oldIndex].unit_id = newUnitId;
-        newProducts[index].amount = 1;
-        return newProducts;
-      });
-    } else {
-      setProducts((products) => {
-        const newProducts = [...products];
-        newProducts[index].id = newProductId;
-        newProducts[index].unit_id = newUnitId;
-        newProducts[index].amount = 1;
-        return newProducts;
-      });
-    }
-  };
-
-  const updateAmount = (id: string, amount: number | '') => {
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
-    );
-
-    if (index === -1) return;
-
-    setProducts((products) => {
-      const newProducts = [...products];
-      newProducts[index].amount = amount;
-      return newProducts;
-    });
-  };
-
-  const getUniqueProductIds = () => {
+  const getUniqueWarehouseIds = () => {
     const ids = new Set<string>();
-    products.forEach((product) => ids.add(product.id));
+    (products || []).forEach((product) =>
+      ids.add(`${product.id}::${product.unit_id}`)
+    );
     return Array.from(ids);
   };
 
   const removePrice = (index: number) =>
-    setProducts((products) => products.filter((_, i) => i !== index));
+    setProducts((products) => (products || []).filter((_, i) => i !== index));
 
-  const updatePrice = useCallback(
-    ({
-      productId,
-      unitId,
-      price,
-    }: {
-      productId: string;
-      unitId: string;
-      price: number | '';
-    }) => {
-      const index = products.findIndex(
-        (product) => product.id === productId && product.unit_id === unitId
-      );
-
-      if (index === -1) return;
-
-      setProducts((products) => {
-        const newProducts = [...products];
-        if (
-          newProducts?.[index] != undefined &&
-          newProducts[index]?.price == undefined &&
-          newProducts[index]?.price != price
-        )
-          newProducts[index].price = price;
-        return newProducts;
-      });
-    },
-    [products]
-  );
+  const updateProduct = (index: number, product: Product) =>
+    setProducts((products) =>
+      products.map((p, i) => (i === index ? product : p))
+    );
 
   const amount = products.reduce(
     (acc, product) => acc + (product?.amount || 0),
@@ -214,7 +134,7 @@ const NewPage: PageWithLayoutProps = () => {
           invoice={{
             customer_id: userId,
             price,
-            price_diff: diff,
+            total_diff: diff,
             completed_at: closeOrderAfterCreate ? 'now()' : undefined,
             notice: notice || '',
             note: note || '',
@@ -282,7 +202,7 @@ const NewPage: PageWithLayoutProps = () => {
               onChange={(date) => setTakenAt(date || new Date())}
               className="col-span-full"
               classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+                input: 'bg-[#25262b]',
               }}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
@@ -473,13 +393,10 @@ const NewPage: PageWithLayoutProps = () => {
                   key={p.id + idx}
                   wsId={ws.id}
                   product={p}
-                  idx={idx}
                   isLast={idx === products.length - 1}
-                  getUniqueProductIds={getUniqueProductIds}
-                  removePrice={removePrice}
-                  updateAmount={updateAmount}
-                  updatePrice={updatePrice}
-                  updateProductId={updateProductId}
+                  getUniqueWarehouseIds={getUniqueWarehouseIds}
+                  removePrice={() => removePrice(idx)}
+                  updateProduct={(product) => updateProduct(idx, product)}
                 />
               ))}
             </div>

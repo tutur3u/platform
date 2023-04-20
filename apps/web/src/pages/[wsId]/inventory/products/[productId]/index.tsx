@@ -147,9 +147,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Paracetamol 500mg"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
               disabled={!product}
             />
@@ -164,9 +161,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Công ty TNHH ABC"'
               value={manufacturer}
               onChange={(e) => setManufacturer(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 
@@ -176,9 +170,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 
@@ -188,9 +179,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               value={usage}
               onChange={(e) => setUsage(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 

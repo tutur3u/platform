@@ -87,9 +87,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Paracetamol 500mg"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
             <CategorySelector
@@ -103,9 +100,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Công ty TNHH ABC"'
               value={manufacturer}
               onChange={(e) => setManufacturer(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Textarea
@@ -114,9 +108,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Textarea
@@ -125,9 +116,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               value={usage}
               onChange={(e) => setUsage(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <div className="flex gap-2">
