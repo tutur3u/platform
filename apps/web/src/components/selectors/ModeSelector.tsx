@@ -28,11 +28,6 @@ const ModeSelector = ({ mode, setMode }: Props) => {
       data={data}
       value={mode}
       onChange={setMode}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item

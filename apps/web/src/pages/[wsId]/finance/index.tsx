@@ -34,6 +34,14 @@ const FinancePage: PageWithLayoutProps = () => {
 
   const sumApi = ws?.id ? `/api/workspaces/${ws.id}/finance/wallets/sum` : null;
 
+  const incomeApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/wallets/income`
+    : null;
+
+  const expenseApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/wallets/expense`
+    : null;
+
   const walletsCountApi = ws?.id
     ? `/api/workspaces/${ws.id}/finance/wallets/count`
     : null;
@@ -51,6 +59,8 @@ const FinancePage: PageWithLayoutProps = () => {
     : null;
 
   const { data: sum } = useSWR<number>(sumApi);
+  const { data: income } = useSWR<number>(incomeApi);
+  const { data: expense } = useSWR<number>(expenseApi);
   const { data: walletsCount } = useSWR<number>(walletsCountApi);
   const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
@@ -70,11 +80,32 @@ const FinancePage: PageWithLayoutProps = () => {
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Tổng tiền"
+            color="blue"
             value={Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(sum || 0)}
             className="md:col-span-2"
+          />
+
+          <StatisticCard
+            title="Tổng thu"
+            color="green"
+            value={Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'exceptZero',
+            }).format(income || 0)}
+          />
+
+          <StatisticCard
+            title="Tổng chi"
+            color="red"
+            value={Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'exceptZero',
+            }).format(expense || 0)}
           />
 
           <StatisticCard

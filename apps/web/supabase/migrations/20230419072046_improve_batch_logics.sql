@@ -90,3 +90,11 @@ END IF;
 RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
+-- Make sure public.inventory_products.amount always >= 0
+ALTER TABLE public.inventory_products DROP CONSTRAINT IF EXISTS inventory_products_amount_check;
+ALTER TABLE public.inventory_products
+ADD CONSTRAINT inventory_products_amount_check CHECK (amount >= 0);
+-- Make sure public.inventory_batch_products.amount always >= 0
+ALTER TABLE public.inventory_batch_products DROP CONSTRAINT IF EXISTS inventory_batch_products_amount_check;
+ALTER TABLE public.inventory_batch_products
+ADD CONSTRAINT inventory_batch_products_amount_check CHECK (amount >= 0);
