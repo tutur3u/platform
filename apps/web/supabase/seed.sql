@@ -1,3 +1,209 @@
+-- Populate auth users
+INSERT INTO "auth"."users" (
+        "instance_id",
+        "id",
+        "aud",
+        "role",
+        "email",
+        "encrypted_password",
+        "email_confirmed_at",
+        "invited_at",
+        "confirmation_token",
+        "confirmation_sent_at",
+        "recovery_token",
+        "recovery_sent_at",
+        "email_change_token_new",
+        "email_change",
+        "email_change_sent_at",
+        "last_sign_in_at",
+        "raw_app_meta_data",
+        "raw_user_meta_data",
+        "is_super_admin",
+        "created_at",
+        "updated_at",
+        "phone",
+        "phone_confirmed_at",
+        "phone_change",
+        "phone_change_token",
+        "phone_change_sent_at",
+        "email_change_token_current",
+        "email_change_confirm_status",
+        "banned_until",
+        "reauthentication_token",
+        "reauthentication_sent_at",
+        "is_sso_user"
+    )
+VALUES (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000001',
+        'authenticated',
+        'authenticated',
+        'local@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-18 23:31:13.017218+00',
+        NULL,
+        '',
+        '2023-02-18 23:31:12.757017+00',
+        '',
+        NULL,
+        '',
+        '',
+        NULL,
+        '2023-02-18 23:31:13.01781+00',
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        NULL,
+        '2023-02-18 23:31:12.752281+00',
+        '2023-02-18 23:31:13.019418+00',
+        NULL,
+        NULL,
+        '',
+        '',
+        NULL,
+        '',
+        0,
+        NULL,
+        '',
+        NULL,
+        'f'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000002',
+        'authenticated',
+        'authenticated',
+        'user1@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-19 00:01:51.351735+00',
+        NULL,
+        '',
+        '2023-02-19 00:01:51.147035+00',
+        '',
+        NULL,
+        '',
+        '',
+        NULL,
+        '2023-02-19 00:01:51.352369+00',
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        NULL,
+        '2023-02-19 00:01:51.142802+00',
+        '2023-02-19 00:01:51.353896+00',
+        NULL,
+        NULL,
+        '',
+        '',
+        NULL,
+        '',
+        0,
+        NULL,
+        '',
+        NULL,
+        'f'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000003',
+        'authenticated',
+        'authenticated',
+        'user2@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-18 23:36:54.88495+00',
+        NULL,
+        '',
+        '2023-02-18 23:36:54.67958+00',
+        '',
+        NULL,
+        '',
+        '',
+        NULL,
+        '2023-02-18 23:36:54.885592+00',
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        NULL,
+        '2023-02-18 23:36:54.674532+00',
+        '2023-02-18 23:36:54.887312+00',
+        NULL,
+        NULL,
+        '',
+        '',
+        NULL,
+        '',
+        0,
+        NULL,
+        '',
+        NULL,
+        'f'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000004',
+        'authenticated',
+        'authenticated',
+        'user3@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-18 23:36:56.08865+00',
+        NULL,
+        '',
+        '2023-02-18 23:36:55.827566+00',
+        '',
+        NULL,
+        '',
+        '',
+        NULL,
+        '2023-02-18 23:48:04.159175+00',
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        NULL,
+        '2023-02-18 23:36:55.823901+00',
+        '2023-02-18 23:48:04.16081+00',
+        NULL,
+        NULL,
+        '',
+        '',
+        NULL,
+        '',
+        0,
+        NULL,
+        '',
+        NULL,
+        'f'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000005',
+        'authenticated',
+        'authenticated',
+        'user4@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-18 23:30:49.554834+00',
+        NULL,
+        '',
+        '2023-02-18 23:30:49.330541+00',
+        '',
+        NULL,
+        '',
+        '',
+        NULL,
+        '2023-02-18 23:48:24.578005+00',
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        NULL,
+        '2023-02-18 23:30:49.322994+00',
+        '2023-02-18 23:48:24.579303+00',
+        NULL,
+        NULL,
+        '',
+        '',
+        NULL,
+        '',
+        0,
+        NULL,
+        '',
+        NULL,
+        'f'
+    );
+-- Populate workspace presets
 insert into public.workspace_presets (name)
 values ('ALL'),
     ('GENERAL'),
@@ -5,34 +211,48 @@ values ('ALL'),
     ('EDUCATION');
 -- Populate handles
 insert into public.handles (value)
-values ('user1'),
+values ('local'),
+    ('user1'),
     ('user2'),
     ('user3'),
+    ('user4'),
     ('tuturuuu'),
     ('prototype-all'),
     ('prototype-general'),
     ('prototype-pharmacy'),
     ('prototype-school');
--- Populate users
-insert into public.users (id, handle, display_name, email)
-values (
-        '00000000-0000-0000-0000-000000000001',
-        'user1',
-        'Random User 1',
-        'user1@tuturuuu.com'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000002',
-        'user2',
-        'Random User 2',
-        'user2@tuturuuu.com'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000003',
-        'user3',
-        'Random User 3',
-        'user3@tuturuuu.com'
-    );
+-- Update user handles
+update public.users
+set handle = 'local'
+where id = '00000000-0000-0000-0000-000000000001';
+update public.users
+set handle = 'user1'
+where id = '00000000-0000-0000-0000-000000000002';
+update public.users
+set handle = 'user2'
+where id = '00000000-0000-0000-0000-000000000003';
+update public.users
+set handle = 'user3'
+where id = '00000000-0000-0000-0000-000000000004';
+update public.users
+set handle = 'user4'
+where id = '00000000-0000-0000-0000-000000000005';
+-- Update user display names
+update public.users
+set display_name = 'Local'
+where id = '00000000-0000-0000-0000-000000000001';
+update public.users
+set display_name = 'User 1'
+where id = '00000000-0000-0000-0000-000000000002';
+update public.users
+set display_name = 'User 2'
+where id = '00000000-0000-0000-0000-000000000003';
+update public.users
+set display_name = 'User 3'
+where id = '00000000-0000-0000-0000-000000000004';
+update public.users
+set display_name = 'User 4'
+where id = '00000000-0000-0000-0000-000000000005';
 -- Populate workspaces
 insert into public.workspaces (id, name, handle, preset)
 values (
@@ -69,6 +289,22 @@ values (
 insert into public.workspace_members (user_id, ws_id)
 values (
         '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000000'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        '00000000-0000-0000-0000-000000000000'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        '00000000-0000-0000-0000-000000000000'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001'
     ),
     (
@@ -82,22 +318,6 @@ values (
     (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000002'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000002',
-        '00000000-0000-0000-0000-000000000002'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000003',
-        '00000000-0000-0000-0000-000000000002'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000001',
-        '00000000-0000-0000-0000-000000000003'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000002',
-        '00000000-0000-0000-0000-000000000003'
     ),
     (
         '00000000-0000-0000-0000-000000000003',
@@ -110,9 +330,35 @@ values (
     (
         '00000000-0000-0000-0000-000000000002',
         '00000000-0000-0000-0000-000000000004'
+    );
+-- Populate workspace_invites with remaining users
+insert into public.workspace_invites (user_id, ws_id)
+values (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000000'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000003'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000004'
     ),
     (
         '00000000-0000-0000-0000-000000000003',
+        '00000000-0000-0000-0000-000000000004'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
         '00000000-0000-0000-0000-000000000004'
     );
 -- Populate workspace_teams

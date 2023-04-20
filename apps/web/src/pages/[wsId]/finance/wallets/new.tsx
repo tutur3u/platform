@@ -159,6 +159,13 @@ const NewWalletPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
+            title="Loại nguồn tiền"
+            description="Quyết định cách thức sử dụng nguồn tiền này."
+            disabled
+            comingSoon
+          />
+
+          <SettingItemCard
             title="Biểu tượng đại diện"
             description="Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền."
             disabled
