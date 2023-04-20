@@ -174,7 +174,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                     radius="xl"
                                     classNames={{
                                       root: isRootWs
-                                        ? 'border-yellow-200/30'
+                                        ? 'border-yellow-900/20'
                                         : '',
                                     }}
                                   >
@@ -196,6 +196,11 @@ function LeftSidebar({ className }: SidebarProps) {
                                 <Avatar
                                   color={isRootWs ? 'yellow' : 'blue'}
                                   radius="xl"
+                                  classNames={{
+                                    root: isRootWs
+                                      ? 'border-yellow-900/20'
+                                      : '',
+                                  }}
                                 >
                                   +{(members?.length || 0) - 3}
                                 </Avatar>
@@ -212,11 +217,11 @@ function LeftSidebar({ className }: SidebarProps) {
                               : 'bg-purple-300/10 text-purple-300'
                           } ${
                             router.pathname === `/[wsId]/members`
-                              ? 'pointer-events-none cursor-default opacity-50'
+                              ? 'pointer-events-none cursor-default select-none opacity-0'
                               : isRootWs
                               ? 'hover:bg-yellow-300/20'
                               : 'hover:bg-purple-300/20'
-                          } font-semiboldtransition flex items-center gap-1 rounded-full px-4 py-0.5`}
+                          } flex items-center gap-1 rounded-full px-4 py-0.5 font-semibold transition`}
                         >
                           <div>{invite}</div>
                           <UserPlusIcon className="w-4" />

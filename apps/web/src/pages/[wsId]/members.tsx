@@ -183,7 +183,7 @@ const WorkspaceMembersPage = () => {
         Pending invitations ({memberInvites?.length || 0})
       </h1>
 
-      <div className="flex max-w-lg flex-col gap-4">
+      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
         {memberInvites?.map((member) => (
           <div
             key={member.id}

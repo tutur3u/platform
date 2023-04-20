@@ -6,7 +6,6 @@ import {
   useSupabaseClient,
   useUser as useSupabaseUser,
 } from '@supabase/auth-helpers-react';
-import { DEV_MODE } from '../constants/common';
 import { User } from '../types/primitives/User';
 import { useRouter } from 'next/router';
 
@@ -39,24 +38,12 @@ export const UserDataProvider = ({
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const setupLocalEnv = async () => {
-      if (!DEV_MODE) return;
-
-      // Dynamically import the local environment helper.
-      const { setup } = await import('../utils/dev/local-environment-helper');
-
-      // Setup the local environment.
-      await setup();
-    };
-
     const syncData = async (session: Session | null) => {
       if (!session) return;
 
       mutate('/api/user');
       mutate('/api/workspaces/current');
       mutate('/api/workspaces/invited');
-
-      await setupLocalEnv();
     };
 
     const removeData = async () => {
