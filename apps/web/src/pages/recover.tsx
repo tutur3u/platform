@@ -99,15 +99,14 @@ const PasswordRecoveryPage = () => {
         height={1080}
         className="fixed inset-0 h-screen w-screen object-cover"
       />
-      {isEmailSent && (
+
+      {isEmailSent ? (
         <AuthEmailSent
           emailSentP1={emailSentP1}
           emailSentP2={emailSentP2}
           email={email}
         />
-      )}
-
-      {!isEmailSent && (
+      ) : (
         <AuthForm
           title={recoverPassword}
           description={recoverPasswordDesc}
