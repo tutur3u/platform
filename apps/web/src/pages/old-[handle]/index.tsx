@@ -22,7 +22,7 @@ import { getInitials } from '../../utils/name-helper';
 import useSWR, { mutate } from 'swr';
 import { useDebouncedValue } from '@mantine/hooks';
 import HeaderX from '../../components/metadata/HeaderX';
-import SidebarLayout from '../../components/layouts/SidebarLayout';
+import NestedLayout from '../../components/layouts/NestedLayout';
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // Create authenticated Supabase Client
@@ -320,7 +320,7 @@ const ProfilePage: PageWithLayoutProps<ProfilePageParams> = ({
 };
 
 ProfilePage.getLayout = function getLayout(page: ReactElement) {
-  return <SidebarLayout>{page}</SidebarLayout>;
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
 export default ProfilePage;

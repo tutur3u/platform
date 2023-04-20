@@ -273,6 +273,9 @@ function LeftSidebar({ className }: SidebarProps) {
                       : workspaceInvites?.length || 0}
                   </div>
                 }
+                classNames={{
+                  root: 'hidden md:block',
+                }}
               />
             </div>
           ) : (
@@ -302,7 +305,9 @@ function LeftSidebar({ className }: SidebarProps) {
               }
               showLabel={sidebar === 'open'}
               showTooltip={sidebar === 'closed'}
-              className="w-full"
+              classNames={{
+                root: 'w-full',
+              }}
             />
           </div>
 

@@ -158,7 +158,7 @@ const NewPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Hoá đơn – Tài chính" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-8">
+      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <Switch
             label="Đóng đơn sau khi tạo"

@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import SidebarLayout from '../../../components/layouts/SidebarLayout';
+import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../hooks/useSegments';
 import UnderConstructionTag from '../../../components/common/UnderConstructionTag';
 
@@ -32,7 +32,7 @@ const ClassesPage: PageWithLayoutProps = () => {
 };
 
 ClassesPage.getLayout = function getLayout(page: ReactElement) {
-  return <SidebarLayout>{page}</SidebarLayout>;
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
 export default ClassesPage;

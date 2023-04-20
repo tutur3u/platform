@@ -56,19 +56,21 @@ const OnboardingForm = () => {
       const res = await fetch('/api/workspaces/current');
       const data = await res.json();
 
-      if (data?.length > 0) router.push(`/${data?.[0]?.id}`);
+      // If there is a redirectedFrom URL, redirect to it
+      // Otherwise, redirect to the homepage
+      const { nextUrl, withWorkspace } = router.query;
+
+      if (data?.length > 0) {
+        const url =
+          withWorkspace === 'true'
+            ? `/${data?.[0]?.id}/` + nextUrl
+            : nextUrl?.toString();
+
+        if (url) router.push(url);
+      }
     };
 
     if (!profileCompleted) return;
-
-    // If there is a redirectedFrom URL, redirect to it
-    // Otherwise, redirect to the homepage
-    const { redirectedFrom: nextUrl } = router.query;
-
-    if (nextUrl) {
-      router.push(nextUrl.toString());
-      return;
-    }
 
     fetchWorkspaces();
   }, [router, workspaces, profileCompleted]);

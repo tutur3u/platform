@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import SidebarLayout from '../../../components/layouts/SidebarLayout';
+import NestedLayout from '../../../components/layouts/NestedLayout';
 import UnderConstructionTag from '../../../components/common/UnderConstructionTag';
 
 export const getServerSideProps = enforceHasWorkspaces;
@@ -31,10 +31,10 @@ const HistoryPage: PageWithLayoutProps = () => {
 
   //   if (!DEV_MODE)
   return (
-    <>
+    <div className="h-full">
       <HeaderX label="Classes" />
       <UnderConstructionTag />
-    </>
+    </div>
   );
 
   //   return (
@@ -46,7 +46,7 @@ const HistoryPage: PageWithLayoutProps = () => {
 };
 
 HistoryPage.getLayout = function getLayout(page: ReactElement) {
-  return <SidebarLayout>{page}</SidebarLayout>;
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
 export default HistoryPage;

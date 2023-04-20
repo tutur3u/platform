@@ -48,7 +48,7 @@ const TeamMembersPage = () => {
   const user = useUser();
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <HeaderX label={`Members – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (

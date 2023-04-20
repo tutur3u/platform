@@ -80,7 +80,7 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
     <div
       className={`rounded-lg border p-8 ${
         gray
-          ? 'border-zinc-300/20 bg-zinc-300/10'
+          ? 'border-zinc-300/10 bg-zinc-900'
           : 'border-blue-300/20 bg-blue-300/10'
       }`}
     >

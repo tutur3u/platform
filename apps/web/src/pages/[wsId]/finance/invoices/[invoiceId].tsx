@@ -259,7 +259,7 @@ const DetailsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-8">
+      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <button
             className={`w-fit rounded border px-4 py-1 font-semibold transition ${

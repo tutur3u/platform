@@ -12,7 +12,9 @@ interface SidebarButtonProps {
   showTooltip?: boolean;
   enableOffset?: boolean;
   left?: boolean;
-  className?: string;
+  classNames?: {
+    root?: string;
+  };
   disabled?: boolean;
 }
 
@@ -25,7 +27,7 @@ export default function SidebarButton({
   showLabel = true,
   showTooltip = false,
   left = false,
-  className,
+  classNames,
   disabled = false,
 }: SidebarButtonProps) {
   const { sidebar } = useAppearance();
@@ -50,7 +52,7 @@ export default function SidebarButton({
             : isActive
             ? 'cursor-pointer bg-zinc-300/10 text-zinc-100'
             : 'cursor-pointer text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
-        } ${className}`}
+        } ${classNames?.root}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
         {showLabel && (

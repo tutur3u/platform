@@ -18,8 +18,12 @@ interface SidebarLinkProps {
   defaultActive?: boolean;
   defaultHighlight?: boolean;
   left?: boolean;
-  className?: string;
+  classNames?: {
+    root?: string;
+    innerRoot?: string;
+  };
   exactMatch?: boolean;
+  disableAutoClose?: boolean;
   disabled?: boolean;
 }
 
@@ -36,8 +40,9 @@ export default function SidebarLink({
   defaultActive = true,
   defaultHighlight = true,
   left = false,
-  className,
+  classNames,
   exactMatch = false,
+  disableAutoClose = false,
   disabled = false,
 }: SidebarLinkProps) {
   const router = useRouter();
@@ -65,9 +70,10 @@ export default function SidebarLink({
       onClick={(e) => {
         if (disabled) e.preventDefault();
         if (onClick) onClick();
-        if (window && window.innerWidth <= 768) setSidebar('closed');
+        if (!disableAutoClose && window && window.innerWidth <= 768)
+          setSidebar('closed');
       }}
-      className="font-semibold"
+      className={`font-semibold ${classNames?.root}`}
     >
       <Tooltip
         label={label}
@@ -76,17 +82,17 @@ export default function SidebarLink({
         disabled={!showTooltip}
       >
         <div
-          className={`flex items-center gap-2 rounded ${
+          className={`flex items-center gap-2 rounded p-2 ${
             disabled
-              ? 'cursor-not-allowed p-2 text-zinc-300/50'
+              ? 'cursor-not-allowed text-zinc-300/50'
               : defaultHighlight
               ? defaultActive && isActive
-                ? 'bg-zinc-300/10 p-2 text-zinc-100'
-                : 'p-2 text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
+                ? 'bg-zinc-300/10 text-zinc-100'
+                : 'text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
               : ''
-          } ${
-            left || isExpanded ? 'justify-start' : 'justify-center'
-          } ${className}`}
+          } ${left && isExpanded ? 'justify-start' : 'justify-center'} ${
+            classNames?.innerRoot
+          }`}
         >
           {showIcon && (
             <div className="flex-none">
