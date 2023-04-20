@@ -48,7 +48,7 @@ const fetchUserRoles = async (
     .from('workspace_user_roles')
     .select('id, name, created_at')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (blacklist && typeof blacklist === 'string') {
     queryBuilder.not('id', 'in', `(${blacklist})`);

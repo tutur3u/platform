@@ -40,7 +40,7 @@ const fetchLists = async (req: NextApiRequest, res: NextApiResponse) => {
     .from('task_lists')
     .select('id, name, board_id')
     .eq('board_id', boardId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);

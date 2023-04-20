@@ -47,7 +47,7 @@ const fetchCategories = async (
     .from('product_categories')
     .select('id, name')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

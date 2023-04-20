@@ -82,7 +82,10 @@ const BatchCreateModal = ({ wsId, batch, products }: Props) => {
       `/api/workspaces/${wsId}/inventory/batches/${batchId}/products`,
       {
         method: 'POST',
-        body: JSON.stringify(products),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ products }),
       }
     );
 

@@ -332,9 +332,6 @@ const WalletImportPage: PageWithLayoutProps = () => {
                 setFile(null);
               }}
               data={supportedApplications}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
           </SettingItemCard>
@@ -356,9 +353,6 @@ const WalletImportPage: PageWithLayoutProps = () => {
                 supportedApplications.find((app) => app.value === application)
                   ?.formats || []
               }
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!application}
               required
             />
@@ -390,9 +384,6 @@ const WalletImportPage: PageWithLayoutProps = () => {
                       },
                     ]
               }
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!application || !format}
               required
             />
@@ -432,9 +423,6 @@ const WalletImportPage: PageWithLayoutProps = () => {
                 { value: ',', label: 'Dấu phẩy (,)' },
                 { value: '.', label: 'Dấu chấm (.)' },
               ]}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!file}
               required
             />

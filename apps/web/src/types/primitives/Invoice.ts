@@ -1,7 +1,7 @@
 export interface Invoice {
   id: string;
   price?: number;
-  price_diff?: number;
+  total_diff?: number;
   note?: string;
   notice?: string;
   customer_id?: string;

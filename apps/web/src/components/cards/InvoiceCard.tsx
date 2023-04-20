@@ -136,7 +136,7 @@ const InvoiceCard = ({
               {Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
-              }).format((invoice?.price || 0) + (invoice?.price_diff || 0))}
+              }).format((invoice?.price || 0) + (invoice?.total_diff || 0))}
             </div>
           )}
         </div>

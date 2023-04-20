@@ -47,7 +47,7 @@ const fetchDiagnoses = async (
     .from('healthcare_diagnoses')
     .select('id, name, description, note')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

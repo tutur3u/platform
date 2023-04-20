@@ -18,6 +18,7 @@ import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import WarehouseMultiSelector from '../../../../components/selectors/WarehouseMultiSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -47,7 +48,9 @@ const ProductsPage: PageWithLayoutProps = () => {
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
-  const [categoryIds, setCategoryIds] = useState<string[]>(['']);
+
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [warehouseIds, setWarehouseIds] = useState<string[]>([]);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'inventory-products-items-per-page',
@@ -55,11 +58,11 @@ const ProductsPage: PageWithLayoutProps = () => {
   });
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${
-        ws?.id
-      }/inventory/products?categoryIds=${categoryIds.join(
-        ','
-      )}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${ws?.id}/inventory/products?categoryIds=${
+        categoryIds.length > 0 ? categoryIds.join(',') : ''
+      }&warehouseIds=${
+        warehouseIds.length > 0 ? warehouseIds.join(',') : ''
+      }&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
   const countApi = ws?.id
@@ -99,6 +102,9 @@ const ProductsPage: PageWithLayoutProps = () => {
 
   if (!ws) return null;
 
+  const enablePrice =
+    warehouseIds.length > 0 && warehouseIds[0] !== '' && showPrice;
+
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
@@ -126,6 +132,10 @@ const ProductsPage: PageWithLayoutProps = () => {
             categoryIds={categoryIds}
             setCategoryIds={setCategoryIds}
           />
+          <WarehouseMultiSelector
+            warehouseIds={warehouseIds}
+            setWarehouseIds={setWarehouseIds}
+          />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị số lượng"
@@ -144,8 +154,9 @@ const ProductsPage: PageWithLayoutProps = () => {
           />
           <Switch
             label="Hiển thị giá tiền"
-            checked={showPrice}
+            checked={enablePrice}
             onChange={(event) => setShowPrice(event.currentTarget.checked)}
+            disabled={!enablePrice}
           />
         </div>
 
@@ -164,14 +175,14 @@ const ProductsPage: PageWithLayoutProps = () => {
         >
           <PlusCardButton href={`/${ws.id}/inventory/products/new`} />
           {products &&
-            products?.map((p: Product) => (
+            products?.map((p: Product, idx) => (
               <ProductCard
-                key={`${p.id}-${p.unit}`}
+                key={`${p.id}-${p.unit}-${idx}`}
                 product={p}
                 showSupplier={showSupplier}
                 showCategory={showCategory}
                 showAmount={showAmount}
-                showPrice={showPrice}
+                showPrice={enablePrice}
               />
             ))}
         </div>

@@ -36,7 +36,7 @@ const fetchBoards = async (req: NextApiRequest, res: NextApiResponse) => {
   const { data, error } = await supabase
     .from('task_board_members')
     .select('task_boards(id, name)')
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data.map((board) => board.task_boards));

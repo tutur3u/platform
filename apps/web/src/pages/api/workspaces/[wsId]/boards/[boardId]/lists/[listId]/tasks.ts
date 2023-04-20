@@ -46,7 +46,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
       .eq('list_id', listId)
       .order('priority', { ascending: false })
       .order('end_date', { ascending: false })
-      .order('created_at');
+      .order('created_at', { ascending: false });
 
     if (todos === 'true') query.eq('completed', false);
     if (completed === 'true') query.eq('completed', true);

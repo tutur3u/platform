@@ -57,7 +57,7 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
 
   useEffect(() => {
     if (!diagnosis) return;
-    setName(diagnosis.name);
+    setName(diagnosis?.name || '');
     setDescription(diagnosis?.description || '');
     setNote(diagnosis?.note || '');
   }, [diagnosis]);

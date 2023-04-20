@@ -87,9 +87,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Paracetamol 500mg"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
             <CategorySelector
@@ -103,9 +100,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Công ty TNHH ABC"'
               value={manufacturer}
               onChange={(e) => setManufacturer(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Textarea
@@ -114,9 +108,6 @@ const NewProductPage: PageWithLayoutProps = () => {
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Textarea
@@ -125,24 +116,22 @@ const NewProductPage: PageWithLayoutProps = () => {
               value={usage}
               onChange={(e) => setUsage(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <div className="flex gap-2">
               <button
-                className={`w-full rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
+                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition ${
                   hasRequiredFields()
-                    ? 'hover:bg-green-300/20'
+                    ? 'hover:bg-blue-300/20'
                     : 'cursor-not-allowed opacity-50'
                 }`}
                 onClick={hasRequiredFields() ? showCreateModal : undefined}
               >
-                Tạo sản phẩm
+                Tạo mới
               </button>
             </div>
           </div>
+
           <div className="xl:col-span-3">
             <div className="col-span-full">
               <div className="text-2xl font-semibold">Đơn giá</div>

@@ -156,9 +156,6 @@ const NewPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Nguyễn Văn A"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
             <Select
@@ -167,18 +164,12 @@ const NewPage: PageWithLayoutProps = () => {
               value={gender}
               data={genders}
               onChange={(val) => setGender(val || '')}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
 
             <DatePickerInput
               label="Ngày sinh"
               placeholder="Chọn ngày sinh"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               value={birthday}
               onChange={setBirthday}
               locale="vi"
@@ -191,9 +182,6 @@ const NewPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Kinh"'
               value={ethnicity}
               onChange={(e) => setEthnicity(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <TextInput
@@ -202,9 +190,6 @@ const NewPage: PageWithLayoutProps = () => {
               value={nationalId}
               onChange={(e) => setNationalId(e.currentTarget.value)}
               className="md:col-span-2"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               icon={<IdentificationIcon className="h-5 w-5" />}
             />
 
@@ -214,9 +199,6 @@ const NewPage: PageWithLayoutProps = () => {
               value={guardian}
               onChange={(e) => setGuardian(e.currentTarget.value)}
               className="md:col-span-2"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               icon={<ShieldCheckIcon className="h-5 w-5" />}
             />
 
@@ -229,9 +211,6 @@ const NewPage: PageWithLayoutProps = () => {
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
           </div>
 
@@ -246,9 +225,6 @@ const NewPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "0987654321"'
               value={phone}
               onChange={(e) => setPhone(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               icon={<PhoneIcon className="h-5 w-5" />}
             />
 
@@ -257,9 +233,6 @@ const NewPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "nguyenvana@gmail.com"'
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               icon={<EnvelopeIcon className="h-5 w-5" />}
             />
 
@@ -272,9 +245,6 @@ const NewPage: PageWithLayoutProps = () => {
               onChange={(e) => setAddress(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Divider className="col-span-full my-2" />

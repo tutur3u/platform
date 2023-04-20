@@ -47,7 +47,7 @@ const fetchCategories = async (
   const queryBuilder = supabase
     .from('transaction_categories')
     .select('id, name, is_expense')
-    .order('created_at')
+    .order('created_at', { ascending: false })
     .eq('ws_id', wsId);
 
   if (query) {
@@ -87,12 +87,16 @@ const createCategory = async (
 
   const { name, is_expense } = req.body as TransactionCategory;
 
-  const { error } = await supabase.from('transaction_categories').insert({
-    name,
-    is_expense,
-    ws_id: wsId,
-  });
+  const { data: category, error } = await supabase
+    .from('transaction_categories')
+    .insert({
+      name,
+      is_expense,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({});
+  return res.status(200).json({ id: category.id });
 };

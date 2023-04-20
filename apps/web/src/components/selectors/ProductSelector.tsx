@@ -6,6 +6,8 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 interface Props {
   productId: string;
   setProductId: (productId: string) => void;
+
+  warehouseId?: string;
   blacklist?: string[];
 
   required?: boolean;
@@ -15,6 +17,8 @@ interface Props {
 const ProductSelector = ({
   productId,
   setProductId,
+
+  warehouseId,
   blacklist,
 
   required = false,
@@ -22,14 +26,14 @@ const ProductSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?unique=true`;
+  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?unique=true&warehouse_id=${warehouseId}`;
   const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
 
   const data = [
     ...(products?.map((product) => ({
       label: product.name,
       value: product.id,
-      disabled: blacklist?.includes(product.id) || !product.unit,
+      disabled: blacklist?.includes(product.id),
     })) || []),
   ];
 
@@ -45,11 +49,6 @@ const ProductSelector = ({
       value={productId}
       onChange={setProductId}
       className={className}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item

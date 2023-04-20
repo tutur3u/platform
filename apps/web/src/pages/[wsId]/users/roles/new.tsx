@@ -97,9 +97,6 @@ const NewRolePage: PageWithLayoutProps = () => {
               placeholder="Nhập tên vai trò"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
           </SettingItemCard>

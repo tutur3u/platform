@@ -8,6 +8,9 @@ import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '../../../components/cards/StatisticCard';
+import { Divider } from '@mantine/core';
+import { Transaction } from '../../../types/primitives/Transaction';
+import TransactionCard from '../../../components/cards/TransactionCard';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -34,6 +37,14 @@ const FinancePage: PageWithLayoutProps = () => {
 
   const sumApi = ws?.id ? `/api/workspaces/${ws.id}/finance/wallets/sum` : null;
 
+  const incomeApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/wallets/income`
+    : null;
+
+  const expenseApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/wallets/expense`
+    : null;
+
   const walletsCountApi = ws?.id
     ? `/api/workspaces/${ws.id}/finance/wallets/count`
     : null;
@@ -51,6 +62,8 @@ const FinancePage: PageWithLayoutProps = () => {
     : null;
 
   const { data: sum } = useSWR<number>(sumApi);
+  const { data: income } = useSWR<number>(incomeApi);
+  const { data: expense } = useSWR<number>(expenseApi);
   const { data: walletsCount } = useSWR<number>(walletsCountApi);
   const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
@@ -63,6 +76,17 @@ const FinancePage: PageWithLayoutProps = () => {
   const categoriesLabel = t('transaction-categories');
   const invoicesLabel = t('invoices');
 
+  const page = 1;
+  const itemsPerPage = 8;
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions?page=${page}&itemsPerPage=${itemsPerPage}`
+    : null;
+
+  const { data: transactions } = useSWR<Transaction[]>(apiPath);
+
+  if (!ws) return null;
+
   return (
     <>
       <HeaderX label="Tổng quan – Tài chính" />
@@ -70,11 +94,32 @@ const FinancePage: PageWithLayoutProps = () => {
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Tổng tiền"
+            color="blue"
             value={Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(sum || 0)}
             className="md:col-span-2"
+          />
+
+          <StatisticCard
+            title="Tổng thu"
+            color="green"
+            value={Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'exceptZero',
+            }).format(income || 0)}
+          />
+
+          <StatisticCard
+            title="Tổng chi"
+            color="red"
+            value={Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'exceptZero',
+            }).format(expense || 0)}
           />
 
           <StatisticCard
@@ -100,6 +145,29 @@ const FinancePage: PageWithLayoutProps = () => {
             value={invoicesCount}
             href={`/${ws?.id}/finance/invoices`}
           />
+
+          <div className="col-span-full">
+            <Divider className="mb-4" />
+            <div className="text-lg font-semibold md:text-2xl">
+              Giao dịch gần đây
+            </div>
+          </div>
+
+          {transactions && transactions.length > 0 ? (
+            transactions.map((c) => (
+              <TransactionCard
+                key={c.id}
+                wsId={ws.id}
+                transaction={c}
+                showAmount
+                showDatetime
+              />
+            ))
+          ) : (
+            <div className="col-span-full -mt-2 text-zinc-400">
+              Chưa có giao dịch nào
+            </div>
+          )}
         </div>
       </div>
     </>

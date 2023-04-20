@@ -1,22 +1,45 @@
 import { Select } from '@mantine/core';
 import { ProductWarehouse } from '../../types/primitives/ProductWarehouse';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { showNotification } from '@mantine/notifications';
 
 interface Props {
-  warehouseId: string;
-  setWarehouseId: (warehouseId: string) => void;
+  warehouseId: string | undefined;
+  setWarehouseId?: (warehouseId: string) => void;
+
+  customApiPath?: string | null;
+  blacklist?: string[];
+  className?: string;
+
+  disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
 }
 
 const WarehouseSelector = ({
   warehouseId,
   setWarehouseId,
-  required,
+
+  customApiPath,
+  blacklist,
+  className,
+
+  disabled = false,
+  required = false,
+  searchable = true,
+  creatable = true,
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/warehouses`;
+  const apiPath =
+    customApiPath ??
+    `/api/workspaces/${ws?.id}/inventory/warehouses?blacklist=${
+      blacklist?.filter((id) => id !== warehouseId && id !== '')?.join(',') ||
+      ''
+    }`;
+
   const { data: warehouses } = useSWR<ProductWarehouse[]>(
     ws?.id ? apiPath : null
   );
@@ -28,6 +51,43 @@ const WarehouseSelector = ({
     })) || []),
   ];
 
+  const create = async ({
+    warehouse,
+  }: {
+    wsId: string;
+    warehouse: Partial<ProductWarehouse>;
+  }): Promise<ProductWarehouse | null> => {
+    const res = await fetch(apiPath, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(warehouse),
+    });
+
+    if (res.ok) {
+      const { id } = await res.json();
+
+      if (!id || typeof id !== 'string') {
+        showNotification({
+          title: 'Lỗi',
+          message: 'Không thể tạo kho hàng',
+          color: 'red',
+        });
+        return null;
+      }
+
+      return { ...warehouse, id };
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo kho hàng',
+        color: 'red',
+      });
+      return null;
+    }
+  };
+
   return (
     <Select
       label="Kho chứa"
@@ -35,11 +95,7 @@ const WarehouseSelector = ({
       data={data}
       value={warehouseId}
       onChange={setWarehouseId}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
+      className={className}
       styles={{
         item: {
           // applies styles to selected item
@@ -58,9 +114,36 @@ const WarehouseSelector = ({
           },
         },
       }}
-      disabled={!warehouses}
-      searchable
+      getCreateLabel={(query) => (
+        <div>
+          + Tạo <span className="font-semibold">{query}</span>
+        </div>
+      )}
+      onCreate={(query) => {
+        if (!ws?.id) return null;
+
+        create({
+          wsId: ws.id,
+          warehouse: {
+            name: query,
+          },
+        }).then((item) => {
+          if (!item) return null;
+
+          mutate(apiPath, [...(warehouses || []), item]);
+          if (setWarehouseId) setWarehouseId(item.id);
+
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      }}
+      nothingFound="Không tìm thấy kho hàng nào"
+      disabled={!warehouses || disabled}
       required={required}
+      searchable={searchable}
+      creatable={!!ws?.id && creatable}
     />
   );
 };
