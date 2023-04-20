@@ -1,69 +1,41 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
 import { Product } from '../../types/primitives/Product';
-import ProductSelector from '../selectors/ProductSelector';
-import WarehouseSelector from '../selectors/WarehouseSelector';
-import UnitSelector from '../selectors/UnitSelector';
+import ProductUnitSelector from '../selectors/ProductUnitSelector';
 
 interface Props {
+  warehouseId: string;
   product: Product;
   isLast: boolean;
 
-  getUniqueProductIds: () => string[];
-  updateProductId: (id: string, oldId?: string) => void;
-  updateAmount: (id: string, amount: number | '') => void;
-  updatePrice: (id: string, price: number | '') => void;
+  getUniqueUnitIds: () => string[];
+  updateProduct: (product: Product) => void;
   removePrice: () => void;
 }
 
 const BatchProductInput = ({
+  warehouseId,
   product,
   isLast,
-  getUniqueProductIds,
-  updateProductId,
-  updateAmount,
-  updatePrice,
+  getUniqueUnitIds,
+  updateProduct,
   removePrice,
 }: Props) => {
   return (
     <div className="grid items-end gap-2 xl:grid-cols-2">
       <div className="flex w-full items-end gap-2">
-        <ProductSelector
-          productId={product.id}
-          setProductId={(id) =>
-            updateProductId(
-              id,
-              product.id && product.unit_id
-                ? `${product.id}::${product.unit_id}`
-                : undefined
-            )
+        <ProductUnitSelector
+          warehouseId={warehouseId}
+          product={product}
+          setProduct={(p) =>
+            updateProduct({
+              ...product,
+              ...p,
+            })
           }
-          //   id={`${product.id}::${product.unit_id}`}
-          //   setId={(id) =>
-          //     updateProductId(
-          //       id,
-          //       product.id && product.unit_id
-          //         ? `${product.id}::${product.unit_id}`
-          //         : undefined
-          //     )
-          //   }
-          blacklist={getUniqueProductIds()}
+          blacklist={getUniqueUnitIds()}
           className="w-full"
         />
-        <WarehouseSelector
-          warehouseId={product.warehouse_id}
-          //   id={`${product.id}::${product.unit_id}`}
-          //   setId={(id) =>
-          //     updateProductId(
-          //       id,
-          //       product.id && product.unit_id
-          //         ? `${product.id}::${product.unit_id}`
-          //         : undefined
-          //     )
-          //   }
-          className="w-full"
-        />
-        <UnitSelector unitId={product.unit_id} className="w-full" />
         <button
           className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4 xl:hidden"
           onClick={removePrice}
@@ -79,7 +51,10 @@ const BatchProductInput = ({
           value={product.amount}
           onChange={(val) =>
             product.id && product.unit_id
-              ? updateAmount(`${product.id}::${product.unit_id}`, val)
+              ? updateProduct({
+                  ...product,
+                  amount: val,
+                })
               : undefined
           }
           className="w-full"
@@ -101,7 +76,10 @@ const BatchProductInput = ({
           value={product.price}
           onChange={(val) =>
             product.id && product.unit_id
-              ? updatePrice(`${product.id}::${product.unit_id}`, val)
+              ? updateProduct({
+                  ...product,
+                  price: val,
+                })
               : undefined
           }
           className="w-full"

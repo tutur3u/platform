@@ -4,8 +4,11 @@ import useSWR from 'swr';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 
 interface Props {
-  id: string;
-  setId: (id: string) => void;
+  warehouseId: string;
+  product: Product | null;
+
+  setProduct: (product: Product | null) => void;
+
   blacklist?: string[];
 
   required?: boolean;
@@ -13,8 +16,11 @@ interface Props {
 }
 
 const ProductUnitSelector = ({
-  id,
-  setId,
+  warehouseId,
+  product,
+
+  setProduct,
+
   blacklist,
 
   required = false,
@@ -22,19 +28,15 @@ const ProductUnitSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${
-    ws?.id
-  }/inventory/products?hasUnit=true&blacklist=${blacklist
-    ?.filter((blId) => id !== blId && id !== '')
-    .join(',')}`;
+  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?hasUnit=true&warehouseIds=${warehouseId}`;
 
   const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
 
   const data = [
-    ...(products?.map((product) => ({
-      label: `[${product.unit || 'Chưa có đơn vị'}] ${product.name}`,
-      value: `${product.id}::${product.unit_id}`,
-      disabled: blacklist?.includes(`${product.id}::${product.unit_id}`),
+    ...(products?.map((p) => ({
+      label: `[${p.unit || 'Chưa có đơn vị'}] ${p.name}`,
+      value: `${p.id}::${p.unit_id}`,
+      disabled: blacklist?.includes(`${p.id}::${p.unit_id}`),
     })) || []),
   ];
 
@@ -47,8 +49,20 @@ const ProductUnitSelector = ({
           : 'Chọn sản phẩm'
       }
       data={data}
-      value={id}
-      onChange={setId}
+      value={`${product?.id}::${product?.unit_id}`}
+      onChange={(value) => {
+        if (!value) {
+          setProduct(null);
+          return;
+        }
+
+        const [id, unitId] = value.split('::');
+
+        setProduct({
+          id,
+          unit_id: unitId,
+        });
+      }}
       className={className}
       classNames={{
         input:

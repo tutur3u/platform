@@ -62,7 +62,7 @@ const CategoryMultiSelector = ({
       placeholder="Chọn danh mục"
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
-      value={categoryIds}
+      value={categoryIds.length > 0 ? categoryIds : ['']}
       onChange={handleIdsChange}
       className={className}
       classNames={{

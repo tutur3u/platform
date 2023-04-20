@@ -7,6 +7,7 @@ interface Props {
   productId: string;
   setProductId: (productId: string) => void;
 
+  warehouseId?: string;
   blacklist?: string[];
 
   required?: boolean;
@@ -17,6 +18,7 @@ const ProductSelector = ({
   productId,
   setProductId,
 
+  warehouseId,
   blacklist,
 
   required = false,
@@ -24,7 +26,7 @@ const ProductSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?unique=true`;
+  const apiPath = `/api/workspaces/${ws?.id}/inventory/products?unique=true&warehouse_id=${warehouseId}`;
   const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
 
   const data = [

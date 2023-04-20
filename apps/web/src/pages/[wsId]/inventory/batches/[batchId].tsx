@@ -8,8 +8,6 @@ import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import WarehouseSelector from '../../../../components/selectors/WarehouseSelector';
 import { Product } from '../../../../types/primitives/Product';
-import { TrashIcon } from '@heroicons/react/24/solid';
-import ProductUnitSelector from '../../../../components/selectors/ProductUnitSelector';
 import SupplierSelector from '../../../../components/selectors/SupplierSelector';
 import { openModal } from '@mantine/modals';
 import { ProductBatch } from '../../../../types/primitives/ProductBatch';
@@ -18,6 +16,7 @@ import BatchDeleteModal from '../../../../components/loaders/batches/BatchDelete
 import BatchEditModal from '../../../../components/loaders/batches/BatchEditModal';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import BatchProductInput from '../../../../components/inputs/BatchProductInput';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -76,7 +75,7 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
     defaultValue: '',
   });
 
-  const [price, setPrice] = useState<number>();
+  const [price, setPrice] = useState<number | ''>('');
 
   useEffect(() => {
     if (batch) {
@@ -134,7 +133,7 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
           }
           batch={{
             id: batchId,
-            price,
+            price: Number(price),
             supplier_id: supplierId,
             warehouse_id: warehouseId,
           }}
@@ -173,74 +172,19 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
     ]);
   };
 
-  const updateProductId = (index: number, newId: string, id?: string) => {
-    if (newId === id) return;
-
-    const [oldProductId, oldUnitId] = id?.split('::') || ['', ''];
-    const [newProductId, newUnitId] = newId.split('::');
-
-    // If the id is provided, it means that the user is changing the id
-    // of an existing product. In this case, we need to find the index of the
-    // product with the old id and replace it with the new one.
-    if (id) {
-      const oldIndex = products.findIndex(
-        (p) => p.id === oldProductId && p.unit_id === oldUnitId
-      );
-      if (oldIndex === -1) return;
-
-      setProducts((products) => {
-        const newProducts = [...products];
-
-        newProducts[oldIndex].id = newProductId;
-        newProducts[oldIndex].unit_id = newUnitId;
-
-        return newProducts;
-      });
-    } else {
-      setProducts((products) => {
-        const newProducts = [...products];
-        newProducts[index].id = newProductId;
-        newProducts[index].unit_id = newUnitId;
-        return newProducts;
-      });
-    }
-  };
-
-  const updatePrice = (id: string, price: number) => {
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
+  const updateProduct = (index: number, product: Product) =>
+    setProducts((products) =>
+      products.map((p, i) => (i === index ? product : p))
     );
 
-    if (index === -1) return;
-
-    setProducts((products) => {
-      const newProducts = [...products];
-      newProducts[index].price = price;
-      return newProducts;
-    });
-  };
-
-  const updateAmount = (id: string, amount: number) => {
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
-    );
-
-    if (index === -1) return;
-
-    setProducts((products) => {
-      const newProducts = [...products];
-      newProducts[index].amount = amount;
-      return newProducts;
-    });
-  };
-
-  const getUniqueProductIds = () => {
+  const getUniqueIds = () => {
     const ids = new Set<string>();
-    products.forEach((p) => ids.add(`${p.id}::${p.unit_id}`));
+
+    products.forEach((product) => {
+      if (product.id && product.unit_id)
+        ids.add(`${product.id}::${product.unit_id}`);
+    });
+
     return Array.from(ids);
   };
 
@@ -248,14 +192,7 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-8">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
-            <WarehouseSelector
-              warehouseId={warehouseId}
-              setWarehouseId={setWarehouseId}
-              required
-            />
-          </div>
+        <div className="grid gap-x-8 gap-y-4">
           <div className="flex items-end justify-end gap-2">
             <button
               className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
@@ -289,6 +226,13 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
               <Divider className="my-2" variant="dashed" />
             </div>
 
+            <WarehouseSelector
+              warehouseId={warehouseId}
+              setWarehouseId={setWarehouseId}
+              disabled
+              required
+            />
+
             <SupplierSelector
               supplierId={supplierId}
               setSupplierId={setSupplierId}
@@ -296,28 +240,10 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
             />
 
             <NumberInput
-              label="Số lượng sản phẩm"
-              placeholder="0"
-              value={products.reduce((acc, p) => acc + (p?.amount || 0), 0)}
-              className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
-              min={0}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-              disabled
-            />
-
-            <NumberInput
               label="Giá nhập lô"
               placeholder="Nhập giá lô hàng"
               value={price}
-              onChange={(val) => setPrice(Number(val))}
+              onChange={setPrice}
               className="w-full"
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
@@ -346,87 +272,15 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
             </div>
 
             {products.map((p, idx) => (
-              <div
-                key={p.id + p.unit_id + idx}
-                className="grid items-end gap-2 xl:grid-cols-2"
-              >
-                <div className="flex w-full items-end gap-2">
-                  <ProductUnitSelector
-                    id={`${p.id}::${p.unit_id}`}
-                    setId={(id) =>
-                      updateProductId(
-                        idx,
-                        id,
-                        p.id && p.unit_id ? `${p.id}::${p.unit_id}` : undefined
-                      )
-                    }
-                    blacklist={getUniqueProductIds()}
-                    className="w-full"
-                  />
-                  <button
-                    className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4 xl:hidden"
-                    onClick={() => removePrice(idx)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="flex w-full items-end gap-2">
-                  <NumberInput
-                    label="Số lượng"
-                    placeholder="Số lượng nhập"
-                    value={p.amount}
-                    onChange={(e) =>
-                      p.id && p.unit_id
-                        ? updateAmount(`${p.id}::${p.unit_id}`, Number(e))
-                        : undefined
-                    }
-                    className="w-full"
-                    classNames={{
-                      input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                    }}
-                    min={0}
-                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value || ''))
-                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                        : ''
-                    }
-                    disabled={!p.id || !p.unit_id}
-                  />
-                  <NumberInput
-                    label="Giá nhập"
-                    placeholder="Giá nhập sản phẩm"
-                    value={p.price}
-                    onChange={(e) =>
-                      p.id && p.unit_id
-                        ? updatePrice(`${p.id}::${p.unit_id}`, Number(e))
-                        : undefined
-                    }
-                    className="w-full"
-                    classNames={{
-                      input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                    }}
-                    min={0}
-                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value || ''))
-                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                        : ''
-                    }
-                    disabled={!p.id || !p.unit_id}
-                  />
-                  <button
-                    className="pointer-events-none h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 opacity-0 transition hover:bg-red-300/20 md:px-4 xl:pointer-events-auto xl:opacity-100"
-                    onClick={() => removePrice(idx)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-                {idx !== products.length - 1 && (
-                  <Divider className="mt-2 w-full xl:hidden" />
-                )}
-              </div>
+              <BatchProductInput
+                warehouseId={warehouseId}
+                key={p.id + idx}
+                product={p}
+                getUniqueUnitIds={getUniqueIds}
+                updateProduct={(product) => updateProduct(idx, product)}
+                removePrice={() => removePrice(idx)}
+                isLast={idx === products.length - 1}
+              />
             ))}
           </div>
         </div>

@@ -62,7 +62,7 @@ const WarehouseMultiSelector = ({
       placeholder="Chọn kho chứa"
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
-      value={warehouseIds}
+      value={warehouseIds.length > 0 ? warehouseIds : ['']}
       onChange={handleIdsChange}
       className={className}
       classNames={{

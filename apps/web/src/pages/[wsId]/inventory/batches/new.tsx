@@ -41,19 +41,22 @@ const NewBatchPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [price, setPrice] = useState<number | ''>();
+
   const [warehouseId, setWarehouseId] = useLocalStorage({
     key: 'warehouse-id',
     defaultValue: '',
   });
 
+  useEffect(() => {
+    if (warehouseId) setProducts([]);
+  }, [warehouseId]);
+
   const [supplierId, setSupplierId] = useLocalStorage({
     key: 'supplier-id',
     defaultValue: '',
   });
-
-  const [price, setPrice] = useState<number | ''>();
-
-  const [products, setProducts] = useState<Product[]>([]);
 
   const allProductsValid = () =>
     products.every(
@@ -65,7 +68,12 @@ const NewBatchPage: PageWithLayoutProps = () => {
     );
 
   const hasRequiredFields = () =>
-    warehouseId && supplierId && products.length > 0 && allProductsValid();
+    price != null &&
+    price != '' &&
+    warehouseId &&
+    supplierId &&
+    products.length > 0 &&
+    allProductsValid();
 
   const showLoaderModal = () => {
     if (!ws?.id || !hasRequiredFields()) return;
@@ -104,81 +112,20 @@ const NewBatchPage: PageWithLayoutProps = () => {
     ]);
   };
 
-  const updateProductId = (index: number, newId: string, id?: string) => {
-    if (newId === id) return;
-
-    const [newProductId, newUnitId] = newId.split('::');
-
-    if (
-      products.some(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      )
-    )
-      return;
-
-    // If the id is provided, it means that the user is changing the id
-    // of an existing product. In this case, we need to find the index of the
-    // product with the old id and replace it with the new one.
-    if (id) {
-      const oldIndex = products.findIndex(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      );
-      if (oldIndex === -1) return;
-
-      setProducts((products) => {
-        const newProducts = [...products];
-        newProducts[oldIndex].id = newProductId;
-        newProducts[oldIndex].unit_id = newUnitId;
-        return newProducts;
-      });
-    } else {
-      setProducts((products) => {
-        const newProducts = [...products];
-        newProducts[index].id = newProductId;
-        newProducts[index].unit_id = newUnitId;
-        return newProducts;
-      });
-    }
-  };
-
-  const updatePrice = (id: string, price: number | '') => {
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
+  const updateProduct = (index: number, product: Product) =>
+    setProducts((products) =>
+      products.map((p, i) => (i === index ? product : p))
     );
 
-    if (index === -1) return;
+  const getUniqueIds = () => {
+    const ids = new Set<string>();
 
-    setProducts((products) => {
-      const newProducts = [...products];
-      newProducts[index].price = price;
-      return newProducts;
+    products.forEach((product) => {
+      if (product.id && product.unit_id)
+        ids.add(`${product.id}::${product.unit_id}`);
     });
-  };
 
-  const updateAmount = (id: string, amount: number | '') => {
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
-    );
-
-    if (index === -1) return;
-
-    setProducts((products) => {
-      const newProducts = [...products];
-      newProducts[index].amount = amount;
-      return newProducts;
-    });
-  };
-
-  const getUniqueProductIds = () => {
-    const unitIds = new Set<string>();
-    products.forEach((price) => unitIds.add(price.id));
-    return Array.from(unitIds);
+    return Array.from(ids);
   };
 
   const removePrice = (index: number) =>
@@ -243,32 +190,37 @@ const NewBatchPage: PageWithLayoutProps = () => {
           </div>
 
           <div className="grid h-fit gap-x-4 gap-y-2 lg:col-span-3">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Sản phẩm</div>
-              <Divider className="mb-4 mt-2" variant="dashed" />
+            {warehouseId ? (
+              <>
+                <div className="col-span-full">
+                  <div className="text-2xl font-semibold">Sản phẩm</div>
+                  <Divider className="mb-4 mt-2" variant="dashed" />
 
-              <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={addEmptyProduct}
-              >
-                + Thêm sản phẩm
-              </button>
-            </div>
+                  <button
+                    className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                    onClick={addEmptyProduct}
+                  >
+                    + Thêm sản phẩm
+                  </button>
+                </div>
 
-            {products.map((p, idx) => (
-              <BatchProductInput
-                key={p.id + idx}
-                product={p}
-                getUniqueProductIds={getUniqueProductIds}
-                updateProductId={(newId, oldId) =>
-                  updateProductId(idx, newId, oldId)
-                }
-                updatePrice={updatePrice}
-                updateAmount={updateAmount}
-                removePrice={() => removePrice(idx)}
-                isLast={idx === products.length - 1}
-              />
-            ))}
+                {products.map((p, idx) => (
+                  <BatchProductInput
+                    warehouseId={warehouseId}
+                    key={p.id + idx}
+                    product={p}
+                    getUniqueUnitIds={getUniqueIds}
+                    updateProduct={(product) => updateProduct(idx, product)}
+                    removePrice={() => removePrice(idx)}
+                    isLast={idx === products.length - 1}
+                  />
+                ))}
+              </>
+            ) : (
+              <div className="col-span-full h-full w-full rounded border border-zinc-300/10 bg-zinc-800 p-4 text-center">
+                Chọn kho chứa để thêm sản phẩm
+              </div>
+            )}
           </div>
         </div>
       </div>

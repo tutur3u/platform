@@ -81,7 +81,7 @@ const ProductPriceInput = ({
         <NumberInput
           label="Tồn kho"
           placeholder="Đang tải..."
-          value={0}
+          value={price ? price.amount || 0 : ''}
           onChange={(num) =>
             price.unit_id ? updatePrice(price.unit_id, num) : null
           }
