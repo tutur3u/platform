@@ -173,9 +173,9 @@ function LeftSidebar({ className }: SidebarProps) {
                                     color={isRootWs ? 'yellow' : 'blue'}
                                     radius="xl"
                                     classNames={{
-                                      root: `bg-zinc-800/50 ${
-                                        isRootWs && 'border-yellow-200/30'
-                                      }`,
+                                      root: isRootWs
+                                        ? 'border-yellow-200/30'
+                                        : '',
                                     }}
                                   >
                                     {getInitials(
