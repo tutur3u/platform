@@ -8,7 +8,7 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 
 ### Apps
 
-- `web`: a [Next.js](https://nextjs.org/) app that contains all public information about Tuturuuu, including the landing page, pricing plans, branding-related resources and Tuturuuu's services through a web application interface. On production, this app is located at [**tuturuuu.com**](https://tuturuuu.com).
+- `app`: a [Next.js](https://nextjs.org/) app that contains all public information about Tuturuuu, including the landing page, pricing plans, branding-related resources and Tuturuuu's services through a web application interface. On production, this app is located at [**tuturuuu.com**](https://tuturuuu.com).
 
 ### Packages
 
@@ -29,24 +29,57 @@ This turborepo has some additional tools already setup for you:
 Before proceeding to the Build and Develop sections, you should have pnpm installed on your local machine.
 The most common way to install it is using npm:
 
-```
+```bash
 npm install -g pnpm
 ```
 
-More information can be found at the [pnpm installation](https://pnpm.io/installation) page.
+> More information can be found at the [pnpm installation](https://pnpm.io/installation) page.
+
+After installing pnpm, you can install all dependencies by running the following command:
+
+```bash
+pnpm install
+```
 
 ### Build
 
 To build all apps and packages, run the following command:
 
-```
+```bash
 pnpm run build
 ```
 
 ### Develop
 
-To develop all apps and packages, run the following command:
+To develop all apps and packages (without requiring a local setup), run the following command:
 
-```
+```bash
 pnpm run dev
 ```
+
+#### Better Development Experience
+
+In case you want to run all local development servers, run the following command:
+
+```bash
+pnpm run devx
+```
+
+Running `devx` will:
+
+1. Stop the currently running supabase instance (if there is any)
+2. Install all dependencies
+3. Start a new supabase instance
+4. Start all Next.js apps in development mode
+
+> In case you don't want to run a local supabase instance, you can run `pnpm run dev` instead.
+
+### Test
+
+To run all tests, run the following command:
+
+```bash
+pnpm test
+```
+
+> Note: Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.
