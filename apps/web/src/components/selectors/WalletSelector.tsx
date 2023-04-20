@@ -1,9 +1,10 @@
 import { Select } from '@mantine/core';
 import { Wallet } from '../../types/primitives/Wallet';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
+import { showNotification } from '@mantine/notifications';
 
 interface Props {
   walletId?: string | null;
@@ -18,8 +19,11 @@ interface Props {
   clearable?: boolean;
   hideLabel?: boolean;
   hideBalance?: boolean;
+
   disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
 }
 
 const WalletSelector = ({
@@ -35,8 +39,11 @@ const WalletSelector = ({
   clearable = false,
   hideLabel = false,
   hideBalance = false,
+
   disabled = false,
   required = false,
+  searchable = true,
+  creatable = true,
 }: Props) => {
   const router = useRouter();
 
@@ -110,6 +117,45 @@ const WalletSelector = ({
     disableQuery,
   ]);
 
+  const create = async ({
+    wallet,
+  }: {
+    wsId: string;
+    wallet: Partial<Wallet>;
+  }): Promise<Wallet | null> => {
+    if (!apiPath) return null;
+
+    const res = await fetch(apiPath, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(wallet),
+    });
+
+    if (res.ok) {
+      const { id } = await res.json();
+
+      if (!id || typeof id !== 'string') {
+        showNotification({
+          title: 'Lỗi',
+          message: 'Không thể tạo nguồn tiền',
+          color: 'red',
+        });
+        return null;
+      }
+
+      return { ...wallet, id };
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo nguồn tiền',
+        color: 'red',
+      });
+      return null;
+    }
+  };
+
   return (
     <Select
       label={hideLabel ? undefined : 'Nguồn tiền'}
@@ -136,10 +182,39 @@ const WalletSelector = ({
           },
         },
       }}
+      getCreateLabel={(query) => (
+        <div>
+          + Tạo <span className="font-semibold">{query}</span>
+        </div>
+      )}
+      onCreate={(query) => {
+        if (!ws?.id) return null;
+
+        create({
+          wsId: ws.id,
+          wallet: {
+            name: query,
+            currency: 'VND',
+            balance: 0,
+          },
+        }).then((item) => {
+          if (!item) return null;
+
+          mutate(apiPath, [...(wallets || []), item]);
+          setWallet(item);
+
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      }}
+      nothingFound="Không tìm thấy nguồn tiền nào"
       disabled={!wallets || disabled}
       required={required}
+      searchable={searchable}
+      creatable={!!ws?.id && creatable}
       clearable={clearable}
-      searchable
     />
   );
 };

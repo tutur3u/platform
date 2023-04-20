@@ -1,5 +1,5 @@
 import { showNotification } from '@mantine/notifications';
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
   Session,
@@ -36,6 +36,8 @@ export const UserDataProvider = ({
 
   const isLoading = !user && !userError;
 
+  const [initialized, setInitialized] = useState(false);
+
   useEffect(() => {
     const setupLocalEnv = async () => {
       if (!DEV_MODE) return;
@@ -66,7 +68,9 @@ export const UserDataProvider = ({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (initialized) return;
+
       const isAuthenticated =
         event === 'SIGNED_IN' ||
         event === 'INITIAL_SESSION' ||
@@ -74,12 +78,14 @@ export const UserDataProvider = ({
 
       const isSignedOut = event === 'SIGNED_OUT';
 
-      if (isAuthenticated) await syncData(session);
-      else if (isSignedOut) await removeData();
+      if (isAuthenticated) {
+        setInitialized(true);
+        syncData(session);
+      } else if (isSignedOut) removeData();
     });
 
     return () => subscription?.unsubscribe();
-  }, [supabase.auth, router]);
+  }, [supabase.auth, router, initialized]);
 
   useEffect(() => {
     if (userError) {

@@ -1,6 +1,6 @@
 export interface Diagnosis {
   id: string;
-  name: string;
+  name?: string;
   description?: string;
   note?: string;
   ws_id?: string;

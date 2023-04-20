@@ -52,16 +52,16 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Người dùng"
+            color="blue"
             value={users}
             href={`/${ws?.id}/users/list`}
-            className="xl:col-span-2"
           />
 
           <StatisticCard
             title="Vai trò"
+            color="green"
             value={roles}
             href={`/${ws?.id}/users/roles`}
-            className="xl:col-span-2"
           />
         </div>
       </div>

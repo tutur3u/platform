@@ -22,12 +22,15 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
   const { data: productPrices } = useSWR<ProductPrice[]>(pricesApiPath);
   const [prices, setPrices] = useState<ProductPrice[]>([]);
 
+  const [pricesChanged, setPricesChanged] = useState(false);
+
   useEffect(() => {
     if (productPrices) setPrices(productPrices);
   }, [productPrices, setPrices]);
 
   const resetPrices = () => {
     setPrices(productPrices ?? []);
+    setPricesChanged(false);
   };
 
   const allPricesValid = () =>
@@ -45,6 +48,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
       amount: 0,
     };
 
+    if (!pricesChanged) setPricesChanged(true);
     setPrices((prices) => [...prices, newPrice]);
   };
 
@@ -73,6 +77,8 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
         return newPrices;
       });
     }
+
+    setPricesChanged(true);
   };
 
   const updatePrice = (id: string, price: number | '') => {
@@ -85,6 +91,8 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
       newPrices[index].price = price === '' ? null : price;
       return newPrices;
     });
+
+    setPricesChanged(true);
   };
 
   const updateMinAmount = (id: string, amount: number | '') => {
@@ -97,6 +105,8 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
       newPrices[index].min_amount = amount === '' ? null : amount;
       return newPrices;
     });
+
+    setPricesChanged(true);
   };
 
   const getUniqueUnitIds = () => {
@@ -107,6 +117,13 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
   const removePrice = (index: number) => {
     setPrices((prices) => prices.filter((_, idx) => idx !== index));
+
+    setPricesChanged(
+      !(
+        prices.filter((_, idx) => idx !== index).length === 0 &&
+        productPrices?.length === 0
+      )
+    );
   };
 
   const showEditModal = () => {
@@ -126,6 +143,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
           warehouseId={warehouse.id}
           oldPrices={productPrices}
           prices={prices}
+          onSuccess={() => setPricesChanged(false)}
         />
       ),
     });
@@ -169,7 +187,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
           + Thêm đơn giá
         </button>
 
-        {productId && (
+        {productId && pricesChanged && (
           <div className="mt-4 flex flex-col gap-2 md:flex-row">
             <button
               className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-2 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"

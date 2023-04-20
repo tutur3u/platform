@@ -56,11 +56,6 @@ const UserRoleSelector = ({
       value={role?.id}
       onChange={(id) => setRole(roles?.find((r) => r.id === id) || null)}
       className={className}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item

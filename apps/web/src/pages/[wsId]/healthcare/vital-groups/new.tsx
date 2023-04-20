@@ -133,9 +133,6 @@ const NewVitalGroupPage: PageWithLayoutProps = () => {
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               className="md:col-span-2"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
             />
 
             <Divider className="col-span-full my-2" />

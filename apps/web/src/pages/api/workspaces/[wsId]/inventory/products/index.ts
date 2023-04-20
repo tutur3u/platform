@@ -42,13 +42,28 @@ const fetchProducts = async (
     res,
   });
 
-  const { categoryIds, unique, hasUnit, blacklist, query, page, itemsPerPage } =
-    req.query;
+  const {
+    warehouseIds,
+    categoryIds,
+    unique,
+    hasUnit,
+    blacklist,
+    query,
+    page,
+    itemsPerPage,
+  } = req.query;
 
   if (unique) {
     const queryBuilder = supabase
       .from('workspace_products')
-      .select('id, name, manufacturer, description, usage, category_id');
+      .select(
+        'id, name, manufacturer, description, usage, category_id, inventory_products!inner(warehouse_id)'
+      )
+      .eq('ws_id', wsId);
+
+    if (warehouseIds && typeof warehouseIds === 'string') {
+      queryBuilder.eq('inventory_products.warehouse_id', warehouseIds);
+    }
 
     if (blacklist && typeof blacklist === 'string' && !hasUnit) {
       queryBuilder.not('id', 'in', `(${blacklist})`);
@@ -80,12 +95,17 @@ const fetchProducts = async (
   } else {
     const queryBuilder = supabase
       .rpc('get_inventory_products', {
-        _ws_id: wsId,
         _category_ids: categoryIds
           ? typeof categoryIds === 'string'
             ? categoryIds.split(',')
             : categoryIds
           : null,
+        _warehouse_ids: warehouseIds
+          ? typeof warehouseIds === 'string'
+            ? warehouseIds.split(',')
+            : warehouseIds
+          : null,
+        _ws_id: wsId,
         _has_unit: hasUnit ? hasUnit === 'true' : null,
       })
       .order('created_at', { ascending: false });

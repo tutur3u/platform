@@ -40,7 +40,7 @@ const fetchMembers = async (req: NextApiRequest, res: NextApiResponse) => {
     .from('task_board_members')
     .select('...users(id, display_name, handle)')
     .eq('board_id', boardId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);

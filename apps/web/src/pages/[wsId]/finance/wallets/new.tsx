@@ -104,9 +104,6 @@ const NewWalletPage: PageWithLayoutProps = () => {
               placeholder="Nhập tên nguồn tiền"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
           </SettingItemCard>
@@ -120,9 +117,6 @@ const NewWalletPage: PageWithLayoutProps = () => {
               value={balance}
               onChange={(num) => setBalance(Number(num))}
               className="w-full"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               min={0}
               parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
               formatter={(value) =>
@@ -147,9 +141,6 @@ const NewWalletPage: PageWithLayoutProps = () => {
                   value: 'VND',
                 },
               ]}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
             />
           </SettingItemCard>
@@ -162,9 +153,6 @@ const NewWalletPage: PageWithLayoutProps = () => {
               placeholder="Nhập mô tả"
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               minRows={3}
               maxRows={5}
             />

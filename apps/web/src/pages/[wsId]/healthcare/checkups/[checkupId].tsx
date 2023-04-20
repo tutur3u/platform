@@ -358,9 +358,6 @@ const CheckupDetailsPage: PageWithLayoutProps = () => {
               onChange={setCheckupAt}
               className="md:col-span-2"
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               locale="vi"
             />
 

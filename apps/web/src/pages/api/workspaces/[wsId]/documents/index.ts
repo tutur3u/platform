@@ -45,7 +45,7 @@ const fetchDocuments = async (
     .from('workspace_documents')
     .select('id, name, content, created_at')
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json(data);

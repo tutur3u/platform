@@ -83,11 +83,11 @@ const TeamSettingsPage = () => {
           ? [
               {
                 content: ws.name || 'Unnamed Workspace',
-                href: `/workspaces/${ws.id}`,
+                href: `/${ws.id}`,
               },
               {
                 content: 'Teams',
-                href: `/workspaces/${ws.id}/teams`,
+                href: `/${ws.id}/teams`,
               },
               {
                 content: name || 'Untitled Team',

@@ -1,16 +1,21 @@
 import { Select } from '@mantine/core';
 import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { showNotification } from '@mantine/notifications';
 
 interface Props {
   userId: string;
   setUserId: (userId: string) => void;
 
   className?: string;
+
   notEmpty?: boolean;
+  disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
 }
 
 const WorkspaceUserSelector = ({
@@ -18,8 +23,12 @@ const WorkspaceUserSelector = ({
   setUserId,
 
   className,
+
   notEmpty = false,
+  disabled = false,
   required = false,
+  searchable = true,
+  creatable = true,
 }: Props) => {
   const { ws } = useWorkspaces();
 
@@ -51,6 +60,43 @@ const WorkspaceUserSelector = ({
     else if (userId && !users?.find((p) => p.id === userId)) setUserId('');
   }, [userId, users, setUserId]);
 
+  const create = async ({
+    warehouse,
+  }: {
+    wsId: string;
+    warehouse: Partial<WorkspaceUser>;
+  }): Promise<WorkspaceUser | null> => {
+    const res = await fetch(apiPath, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(warehouse),
+    });
+
+    if (res.ok) {
+      const { id } = await res.json();
+
+      if (!id || typeof id !== 'string') {
+        showNotification({
+          title: 'Lỗi',
+          message: 'Không thể tạo người dùng',
+          color: 'red',
+        });
+        return null;
+      }
+
+      return { ...warehouse, id };
+    } else {
+      showNotification({
+        title: 'Lỗi',
+        message: 'Không thể tạo người dùng',
+        color: 'red',
+      });
+      return null;
+    }
+  };
+
   return (
     <Select
       label="Người dùng"
@@ -59,11 +105,6 @@ const WorkspaceUserSelector = ({
       value={userId}
       onChange={setUserId}
       className={className}
-      classNames={{
-        input:
-          'bg-[#3f3a3a]/30 border-zinc-300/20 focus:border-zinc-300/20 border-zinc-300/20 font-semibold',
-        dropdown: 'bg-[#323030]',
-      }}
       styles={{
         item: {
           // applies styles to selected item
@@ -82,10 +123,36 @@ const WorkspaceUserSelector = ({
           },
         },
       }}
-      disabled={!users}
-      searchable
-      clearable
+      getCreateLabel={(query) => (
+        <div>
+          + Tạo <span className="font-semibold">{query}</span>
+        </div>
+      )}
+      onCreate={(query) => {
+        if (!ws?.id) return null;
+
+        create({
+          wsId: ws.id,
+          warehouse: {
+            name: query,
+          },
+        }).then((item) => {
+          if (!item) return null;
+
+          mutate(apiPath, [...(users || []), item]);
+          setUserId(item.id);
+
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      }}
+      nothingFound="Không tìm thấy người dùng nào"
+      disabled={!users || disabled}
       required={required}
+      searchable={searchable}
+      creatable={!!ws?.id && creatable}
     />
   );
 };

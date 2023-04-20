@@ -16,6 +16,7 @@ import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import { ProductWarehouse } from '../../../../../types/primitives/ProductWarehouse';
 import WarehouseProductsInput from '../../../../../components/inputs/WarehouseProductsInput';
 import { TrashIcon } from '@heroicons/react/24/solid';
+import SidebarLink from '../../../../../components/layouts/SidebarLink';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -146,9 +147,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Paracetamol 500mg"'
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               required
               disabled={!product}
             />
@@ -163,9 +161,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               placeholder='Ví dụ: "Công ty TNHH ABC"'
               value={manufacturer}
               onChange={(e) => setManufacturer(e.currentTarget.value)}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 
@@ -175,9 +170,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 
@@ -187,9 +179,6 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               value={usage}
               onChange={(e) => setUsage(e.currentTarget.value)}
               minRows={5}
-              classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
-              }}
               disabled={!product}
             />
 
@@ -218,22 +207,33 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
             </div>
           </div>
 
-          <div className="grid h-fit gap-4 xl:col-span-3">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Đơn giá</div>
-              <Divider className="mb-4 mt-2" variant="dashed" />
-            </div>
+          <div className="xl:col-span-3">
+            <div className="text-2xl font-semibold">Đơn giá</div>
+            <Divider className="mb-4 mt-2" variant="dashed" />
 
             {ws &&
               product &&
               warehouses &&
-              warehouses.map((w) => (
-                <WarehouseProductsInput
-                  key={w.id}
-                  wsId={ws.id}
-                  productId={product.id}
-                  warehouse={w}
-                />
+              (warehouses.length > 0 ? (
+                <div className="grid h-fit gap-4">
+                  {warehouses.map((w) => (
+                    <WarehouseProductsInput
+                      key={w.id}
+                      wsId={ws.id}
+                      productId={product.id}
+                      warehouse={w}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-full flex-col items-center justify-center gap-2 rounded border border-zinc-300/10 bg-zinc-900 p-4 text-center text-2xl font-semibold text-zinc-500">
+                  <div>Chưa có kho chứa nào</div>
+                  <SidebarLink
+                    label="Tạo kho chứa mới"
+                    href={`/${ws.id}/inventory/warehouses/new`}
+                    className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+                  />
+                </div>
               ))}
           </div>
         </div>

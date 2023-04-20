@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
@@ -97,12 +97,12 @@ const DetailsPage: PageWithLayoutProps = () => {
       setUserId(invoice?.customer_id || '');
       setNotice(invoice?.notice || '');
       setNote(invoice?.note || '');
-      setDiff(invoice?.price_diff || 0);
+      setDiff(invoice?.total_diff || 0);
       setCompleted(!!invoice?.completed_at || false);
     }
   }, [invoice]);
 
-  const [products, setProducts] = useState<Product[] | undefined>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     if (productPrices) setProducts(productPrices);
@@ -136,71 +136,12 @@ const DetailsPage: PageWithLayoutProps = () => {
       ...(products || []),
       {
         id: '',
+        amount: 1,
       },
     ]);
   };
 
-  const updateProductId = (index: number, newId: string, id?: string) => {
-    if (!products) return;
-    if (newId === id) return;
-
-    const [newProductId, newUnitId] = newId.split('::');
-
-    if (
-      products.some(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      )
-    )
-      return;
-
-    // If the id is provided, it means that the user is changing the id
-    // of an existing product. In this case, we need to find the index of the
-    // product with the old id and replace it with the new one.
-    if (id) {
-      const oldIndex = products.findIndex(
-        (product) =>
-          product.id === newProductId && (product?.unit_id || '') === newUnitId
-      );
-      if (oldIndex === -1) return;
-
-      setProducts((products) => {
-        const newProducts = [...(products || [])];
-        newProducts[oldIndex].id = newProductId;
-        newProducts[oldIndex].unit_id = newUnitId;
-        newProducts[index].amount = 1;
-        return newProducts;
-      });
-    } else {
-      setProducts((products) => {
-        const newProducts = [...(products || [])];
-        newProducts[index].id = newProductId;
-        newProducts[index].unit_id = newUnitId;
-        newProducts[index].amount = 1;
-        return newProducts;
-      });
-    }
-  };
-
-  const updateAmount = (id: string, amount: number) => {
-    if (!products) return;
-
-    const [productId, unitId] = id.split('::');
-
-    const index = products.findIndex(
-      (product) => product.id === productId && product.unit_id === unitId
-    );
-
-    if (index === -1) return;
-
-    setProducts((products) => {
-      const newProducts = [...(products || [])];
-      newProducts[index].amount = amount;
-      return newProducts;
-    });
-  };
-
-  const getUniqueProductIds = () => {
+  const getUniqueWarehouseIds = () => {
     const ids = new Set<string>();
     (products || []).forEach((product) =>
       ids.add(`${product.id}::${product.unit_id}`)
@@ -211,40 +152,10 @@ const DetailsPage: PageWithLayoutProps = () => {
   const removePrice = (index: number) =>
     setProducts((products) => (products || []).filter((_, i) => i !== index));
 
-  const updatePrice = useCallback(
-    ({
-      productId,
-      unitId,
-      price,
-    }: {
-      productId: string;
-      unitId: string;
-      price: number;
-    }) => {
-      if (!products) return;
-
-      const index = products.findIndex(
-        (product) => product.id === productId && product.unit_id === unitId
-      );
-
-      if (index === -1) return;
-
-      setProducts((products) => {
-        if (!products) return [];
-        const newProducts = [...products];
-
-        if (
-          newProducts?.[index] != undefined &&
-          newProducts[index]?.price == undefined &&
-          newProducts[index]?.price != price
-        )
-          newProducts[index].price = price;
-
-        return newProducts;
-      });
-    },
-    [products]
-  );
+  const updateProduct = (index: number, product: Product) =>
+    setProducts((products) =>
+      products.map((p, i) => (i === index ? product : p))
+    );
 
   const amount = (products || []).reduce(
     (acc, product) => acc + (product?.amount || 0),
@@ -277,7 +188,7 @@ const DetailsPage: PageWithLayoutProps = () => {
             customer_id: userId,
             notice: notice || '',
             note: note || '',
-            price_diff: diff,
+            total_diff: diff,
             price,
             completed_at: invoice.completed_at,
           }}
@@ -409,7 +320,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               onChange={(date) => setTakenAt(date || new Date())}
               className="col-span-full"
               classNames={{
-                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+                input: 'bg-[#25262b]',
               }}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
@@ -607,14 +518,12 @@ const DetailsPage: PageWithLayoutProps = () => {
                   <InvoiceProductInput
                     key={p.id + idx}
                     wsId={ws.id}
-                    p={p}
-                    idx={idx}
+                    product={p}
                     isLast={idx === products.length - 1}
-                    getUniqueProductIds={getUniqueProductIds}
-                    removePrice={removePrice}
-                    updateAmount={updateAmount}
-                    updatePrice={updatePrice}
-                    updateProductId={updateProductId}
+                    getUniqueWarehouseIds={getUniqueWarehouseIds}
+                    removePrice={() => removePrice(idx)}
+                    updateProduct={(product) => updateProduct(idx, product)}
+                    hideStock
                   />
                 ))}
               </div>

@@ -14,6 +14,9 @@ interface Props {
 
   oldPrices: ProductPrice[];
   prices: ProductPrice[];
+
+  onSuccess?: () => void;
+  onError?: () => void;
 }
 
 interface Progress {
@@ -29,6 +32,9 @@ const InventoryProductEditModal = ({
 
   oldPrices,
   prices,
+
+  onSuccess,
+  onError,
 }: Props) => {
   const [progress, setProgress] = useState<Progress>({
     updatePrices: 'idle',
@@ -280,7 +286,14 @@ const InventoryProductEditModal = ({
               : 'border-blue-300/10 bg-blue-300/10 text-blue-300 hover:bg-blue-300/20'
           }`}
           onClick={() => {
-            if (hasError || hasSuccess) {
+            if (hasError) {
+              if (onError) onError();
+              closeAllModals();
+              return;
+            }
+
+            if (hasSuccess) {
+              if (onSuccess) onSuccess();
               closeAllModals();
               return;
             }

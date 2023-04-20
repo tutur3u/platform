@@ -106,7 +106,7 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
           )}
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị tiền trong ví"
+            label="Hiển thị số tiền"
             checked={showPrice}
             onChange={(event) => setShowPrice(event.currentTarget.checked)}
           />

@@ -28,6 +28,7 @@ import useTranslation from 'next-translate/useTranslation';
 import CreateNewButton from './sidebar/CreateNewButton';
 import SidebarLinkList from './sidebar/SidebarLinkList';
 import SidebarTeamList from './sidebar/SidebarTeamList';
+import { ROOT_WORKSPACE_ID } from '../../constants/common';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
@@ -58,6 +59,8 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const settings = t('common:settings');
   const logout = t('common:logout');
+
+  const isRootWs = ws?.id === ROOT_WORKSPACE_ID;
 
   return (
     <>
@@ -106,18 +109,28 @@ function LeftSidebar({ className }: SidebarProps) {
                   offset={16}
                   disabled={sidebar === 'open'}
                 >
-                  <div className="rounded border border-zinc-700/50 bg-zinc-800/50 p-2 transition">
-                    <div className="">
+                  <div
+                    className={`${
+                      isRootWs
+                        ? 'border-yellow-300/20 bg-yellow-300/10'
+                        : 'border-zinc-700/50 bg-zinc-800/50'
+                    } rounded border p-2 transition`}
+                  >
+                    <div>
                       <div
-                        className={`mb-1 flex ${
+                        className={`flex ${
                           sidebar === 'closed'
                             ? 'items-center justify-center'
-                            : 'justify-between gap-2 font-semibold'
+                            : 'mb-1 justify-between gap-2 font-semibold'
                         }`}
                       >
                         <Link
                           href={`/${ws.id}`}
-                          className="line-clamp-1 text-zinc-300 transition hover:text-zinc-100"
+                          className={`${
+                            isRootWs
+                              ? 'text-yellow-200 hover:text-yellow-100'
+                              : 'text-zinc-300 hover:text-zinc-100'
+                          } line-clamp-1 transition`}
                         >
                           {sidebar === 'closed' ? (
                             <BuildingOffice2Icon className="w-5" />
@@ -128,65 +141,88 @@ function LeftSidebar({ className }: SidebarProps) {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <Tooltip.Group>
-                        <Avatar.Group
-                          spacing="sm"
-                          color="blue"
-                          className={sidebar === 'closed' ? 'hidden' : ''}
-                        >
-                          {members &&
-                            members.slice(0, 3).map((member) => (
+                    {sidebar === 'closed' || (
+                      <div className="flex items-center justify-between">
+                        <Tooltip.Group>
+                          <Avatar.Group spacing="sm" color="blue">
+                            {members &&
+                              members.slice(0, 3).map((member) => (
+                                <Tooltip
+                                  key={member.id}
+                                  label={
+                                    <div className="font-semibold">
+                                      <div>
+                                        {member?.display_name || member?.email}
+                                      </div>
+                                      {member?.handle && (
+                                        <div
+                                          className={
+                                            isRootWs
+                                              ? 'text-yellow-200'
+                                              : 'text-blue-300'
+                                          }
+                                        >
+                                          @{member.handle}
+                                        </div>
+                                      )}
+                                    </div>
+                                  }
+                                  color={isRootWs ? '#2d291c' : '#182a3d'}
+                                >
+                                  <Avatar
+                                    color={isRootWs ? 'yellow' : 'blue'}
+                                    radius="xl"
+                                    classNames={{
+                                      root: `bg-zinc-800/50 ${
+                                        isRootWs && 'border-yellow-200/30'
+                                      }`,
+                                    }}
+                                  >
+                                    {getInitials(
+                                      member?.display_name || member?.email
+                                    )}
+                                  </Avatar>
+                                </Tooltip>
+                              ))}
+                            {(members?.length || 0) > 3 && (
                               <Tooltip
-                                key={member.id}
                                 label={
                                   <div className="font-semibold">
-                                    <div>
-                                      {member?.display_name || member?.email}
-                                    </div>
-                                    {member?.handle && (
-                                      <div className="text-blue-300">
-                                        @{member.handle}
-                                      </div>
-                                    )}
+                                    {(members?.length || 0) - 3} {moreMembers}
                                   </div>
                                 }
-                                color="#182a3d"
+                                color={isRootWs ? '#2d291c' : '#182a3d'}
                               >
-                                <Avatar color="blue" radius="xl">
-                                  {getInitials(
-                                    member?.display_name || member?.email
-                                  )}
+                                <Avatar
+                                  color={isRootWs ? 'yellow' : 'blue'}
+                                  radius="xl"
+                                >
+                                  +{(members?.length || 0) - 3}
                                 </Avatar>
                               </Tooltip>
-                            ))}
-                          {(members?.length || 0) > 3 && (
-                            <Tooltip
-                              label={
-                                <div className="font-semibold">
-                                  {(members?.length || 0) - 3} {moreMembers}
-                                </div>
-                              }
-                              color="#182a3d"
-                            >
-                              <Avatar color="blue" radius="xl">
-                                +{(members?.length || 0) - 3}
-                              </Avatar>
-                            </Tooltip>
-                          )}
-                        </Avatar.Group>
-                      </Tooltip.Group>
+                            )}
+                          </Avatar.Group>
+                        </Tooltip.Group>
 
-                      {sidebar === 'closed' || (
                         <Link
                           href={`/${ws.id}/members`}
-                          className="flex items-center gap-1 rounded-full bg-purple-300/10 px-4 py-0.5 font-semibold text-purple-300 transition hover:bg-purple-300/20"
+                          className={`${
+                            isRootWs
+                              ? 'bg-yellow-300/10 text-yellow-200'
+                              : 'bg-purple-300/10 text-purple-300'
+                          } ${
+                            router.pathname === `/[wsId]/members`
+                              ? 'pointer-events-none cursor-default opacity-50'
+                              : isRootWs
+                              ? 'hover:bg-yellow-300/20'
+                              : 'hover:bg-purple-300/20'
+                          } font-semiboldtransition flex items-center gap-1 rounded-full px-4 py-0.5`}
                         >
                           <div>{invite}</div>
                           <UserPlusIcon className="w-4" />
                         </Link>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </Tooltip>
 

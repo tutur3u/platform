@@ -46,7 +46,7 @@ const fetchInvoice = async (
   const { data, error } = await supabase
     .from('finance_invoices')
     .select(
-      'id, customer_id, creator_id, price, price_diff, notice, note, transaction_id, completed_at, created_at'
+      'id, customer_id, creator_id, price, total_diff, notice, note, transaction_id, completed_at, created_at'
     )
     .eq('id', invoiceId)
     .single();
@@ -67,7 +67,7 @@ const updateInvoice = async (
     res,
   });
 
-  const { customer_id, price, price_diff, notice, note, transaction_id } =
+  const { customer_id, price, total_diff, notice, note, transaction_id } =
     req.body as Invoice;
 
   const { error } = await supabase
@@ -75,7 +75,7 @@ const updateInvoice = async (
     .update({
       customer_id: customer_id || null,
       price,
-      price_diff,
+      total_diff,
       notice,
       note,
       transaction_id,

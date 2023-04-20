@@ -119,5 +119,5 @@ const createWallet = async (
       return res.status(401).json({ error: transactionError.message });
   }
 
-  return res.status(200).json({});
+  return res.status(200).json({ id: wallet.id });
 };

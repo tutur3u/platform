@@ -62,6 +62,7 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Kiểm tra sức khoẻ"
+            color="blue"
             value={checkups}
             href={`/${ws?.id}/healthcare/checkups`}
           />

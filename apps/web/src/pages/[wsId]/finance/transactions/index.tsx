@@ -162,7 +162,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             onChange={(event) => setShowDatetime(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị ví"
+            label="Hiển thị nguồn tiền"
             checked={showWallet}
             onChange={(event) => setShowWallet(event.currentTarget.checked)}
           />

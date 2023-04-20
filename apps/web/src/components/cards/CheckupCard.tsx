@@ -135,7 +135,7 @@ const CheckupCard = ({
               {Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
-              }).format((checkup?.price || 0) + (checkup?.price_diff || 0))}
+              }).format((checkup?.price || 0) + (checkup?.total_diff || 0))}
             </div>
           )} */}
         </div>

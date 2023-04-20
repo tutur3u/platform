@@ -33,7 +33,10 @@ const fetchUsers = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { query, page, itemsPerPage } = req.query;
 
-  const queryBuilder = supabase.from('users').select('*').order('created_at');
+  const queryBuilder = supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

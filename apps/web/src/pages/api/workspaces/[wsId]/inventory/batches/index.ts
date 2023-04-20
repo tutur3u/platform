@@ -49,7 +49,7 @@ const fetchBatches = async (
       'id, price, warehouse_id, supplier_id, created_at, inventory_warehouses!inner(id)'
     )
     .eq('inventory_warehouses.ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

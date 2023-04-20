@@ -50,7 +50,7 @@ const fetchWorkspaceUsers = async (
       'id, name, gender, birthday, ethnicity, national_id, guardian, note, phone, email, address'
     )
     .eq('ws_id', wsId)
-    .order('created_at');
+    .order('created_at', { ascending: false });
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);

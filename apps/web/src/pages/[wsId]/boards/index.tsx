@@ -27,7 +27,7 @@ const WorkspaceBoardsPage = () => {
         ? [
             {
               content: ws.name || 'Unnamed Workspace',
-              href: `/workspaces/${ws.id}`,
+              href: `/${ws.id}`,
             },
             { content: 'Boards', href: `/${ws.id}/boards` },
           ]
