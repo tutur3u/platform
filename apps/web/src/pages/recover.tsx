@@ -39,8 +39,7 @@ const PasswordRecoveryPage = () => {
   const router = useRouter();
   const user = useUser();
 
-  const [isEmailSent, setIsEmailSent] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) router.push('/reset-password');
@@ -57,7 +56,6 @@ const PasswordRecoveryPage = () => {
       });
 
       setEmail(email);
-      setIsEmailSent(true);
 
       // showNotification({
       //   title: 'Success',
@@ -86,9 +84,6 @@ const PasswordRecoveryPage = () => {
   const alreadyHaveAccount = t('already-have-account');
   const login = t('login');
 
-  const emailSentP1 = t('auth:email-sent-p1');
-  const emailSentP2 = t('auth:email-sent-p2');
-
   return (
     <>
       <HeaderX label={`Tuturuuu — ${recoverPassword}`} />
@@ -100,12 +95,8 @@ const PasswordRecoveryPage = () => {
         className="fixed inset-0 h-screen w-screen object-cover"
       />
 
-      {isEmailSent ? (
-        <AuthEmailSent
-          emailSentP1={emailSentP1}
-          emailSentP2={emailSentP2}
-          email={email}
-        />
+      {email ? (
+        <AuthEmailSent email={email} />
       ) : (
         <AuthForm
           title={recoverPassword}

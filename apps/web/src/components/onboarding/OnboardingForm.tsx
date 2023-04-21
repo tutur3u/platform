@@ -5,11 +5,6 @@ import LoadingIndicator from '../common/LoadingIndicator';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
-import { DEV_MODE } from '../../constants/common';
-import {
-  DEFAULT_DISPLAY_NAME,
-  DEFAULT_USERNAME,
-} from '../../constants/development';
 import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
@@ -38,8 +33,8 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
     setProfileCompleted(hasDisplayName && hasUsername);
     if (hasDisplayName && hasUsername) return;
 
-    setDisplayName(user?.display_name || DEV_MODE ? DEFAULT_DISPLAY_NAME : '');
-    setUsername(user?.handle || DEV_MODE ? DEFAULT_USERNAME : '');
+    setDisplayName(user?.display_name || '');
+    setUsername(user?.handle || '');
   }, [user]);
 
   const updateProfile = async () => {
