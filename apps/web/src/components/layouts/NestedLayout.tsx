@@ -64,7 +64,7 @@ const NestedLayout: FC<Props> = ({
         <nav
           className={`${
             disableTabs ? 'h-16' : 'h-25'
-          } fixed z-10 w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
+          } fixed z-[9999] w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
         >
           <div className="flex items-center gap-2 py-3">
             {onFavorite && (

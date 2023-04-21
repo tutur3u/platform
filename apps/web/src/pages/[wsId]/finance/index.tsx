@@ -1,4 +1,4 @@
-import { ReactElement, useEffect } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import NestedLayout from '../../../components/layouts/NestedLayout';
@@ -11,6 +11,9 @@ import StatisticCard from '../../../components/cards/StatisticCard';
 import { Divider } from '@mantine/core';
 import { Transaction } from '../../../types/primitives/Transaction';
 import TransactionCard from '../../../components/cards/TransactionCard';
+import DateRangePicker from '../../../components/calendar/DateRangePicker';
+import { DateRange } from '../../../utils/date-helper';
+import moment from 'moment';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -35,38 +38,50 @@ const FinancePage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
+  const [dateRange, setDateRange] = useState<DateRange>([null, null]);
+
+  const startDate = dateRange?.[0]
+    ? moment(dateRange[0]).format('YYYY-MM-DD')
+    : '';
+
+  const endDate = dateRange?.[1]
+    ? moment(dateRange[1]).format('YYYY-MM-DD')
+    : '';
+
+  const dateRangeQuery = `?startDate=${startDate}&endDate=${endDate}`;
+
   const sumApi = ws?.id ? `/api/workspaces/${ws.id}/finance/wallets/sum` : null;
 
   const incomeApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/wallets/income`
+    ? `/api/workspaces/${ws.id}/finance/wallets/income${dateRangeQuery}`
     : null;
 
   const expenseApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/wallets/expense`
+    ? `/api/workspaces/${ws.id}/finance/wallets/expense${dateRangeQuery}`
     : null;
 
   const walletsCountApi = ws?.id
     ? `/api/workspaces/${ws.id}/finance/wallets/count`
     : null;
 
-  const transactionsCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions/count`
-    : null;
-
   const categoriesCountApi = ws?.id
     ? `/api/workspaces/${ws.id}/finance/transactions/categories/count`
     : null;
 
+  const transactionsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions/count${dateRangeQuery}`
+    : null;
+
   const invoicesCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/invoices/count`
+    ? `/api/workspaces/${ws.id}/finance/invoices/count${dateRangeQuery}`
     : null;
 
   const { data: sum } = useSWR<number>(sumApi);
   const { data: income } = useSWR<number>(incomeApi);
   const { data: expense } = useSWR<number>(expenseApi);
   const { data: walletsCount } = useSWR<number>(walletsCountApi);
-  const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
+  const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: invoicesCount } = useSWR<number>(invoicesCountApi);
 
   const { t } = useTranslation('finance-tabs');
@@ -92,6 +107,16 @@ const FinancePage: PageWithLayoutProps = () => {
       <HeaderX label="Tổng quan – Tài chính" />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <DateRangePicker
+            defaultUnit="month"
+            defaultOption="present"
+            value={dateRange}
+            onChange={setDateRange}
+          />
+        </div>
+
+        <Divider className="my-4" />
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Tổng tiền"
             color="blue"
@@ -129,15 +154,15 @@ const FinancePage: PageWithLayoutProps = () => {
           />
 
           <StatisticCard
-            title={transactionsLabel}
-            value={transactionsCount}
-            href={`/${ws?.id}/finance/transactions`}
-          />
-
-          <StatisticCard
             title={categoriesLabel}
             value={categoriesCount}
             href={`/${ws?.id}/finance/transactions/categories`}
+          />
+
+          <StatisticCard
+            title={transactionsLabel}
+            value={transactionsCount}
+            href={`/${ws?.id}/finance/transactions`}
           />
 
           <StatisticCard
