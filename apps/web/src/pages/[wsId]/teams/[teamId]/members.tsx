@@ -90,7 +90,7 @@ const TeamMembersPage = () => {
               <p className="font-semibold lg:text-lg xl:text-xl">
                 {member.display_name}
               </p>
-              <p className="text-zinc-400">{member.email}</p>
+              <p className="text-blue-300">@{member.handle}</p>
 
               {member?.created_at ? (
                 <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">

@@ -149,7 +149,7 @@ const WorkspaceMembersPage = () => {
               <p className="font-semibold lg:text-lg xl:text-xl">
                 {member.display_name}
               </p>
-              <p className="text-zinc-400">{member.email}</p>
+              <p className="text-blue-300">@{member.handle}</p>
 
               <button
                 className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
@@ -192,7 +192,7 @@ const WorkspaceMembersPage = () => {
             <p className="font-semibold lg:text-lg xl:text-xl">
               {member.display_name}
             </p>
-            <p className="text-zinc-400">{member.email}</p>
+            <p className="text-blue-300">@{member.handle}</p>
 
             <button
               className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
