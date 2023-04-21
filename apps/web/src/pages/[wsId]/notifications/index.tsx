@@ -35,7 +35,7 @@ const NotificationsPage = () => {
   const desc = t('no-notifications-desc');
 
   return (
-    <div className="min-h-full pb-8">
+    <div className="min-h-full pb-20">
       <HeaderX label="Thông báo" />
       {wsLoading ? (
         <div className="flex items-center justify-center">

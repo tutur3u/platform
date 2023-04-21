@@ -273,12 +273,15 @@ function LeftSidebar({ className }: SidebarProps) {
                       : workspaceInvites?.length || 0}
                   </div>
                 }
+                classNames={{
+                  root: 'hidden md:block',
+                }}
               />
             </div>
           ) : (
             <div className={`mx-2 h-full`}>
               <SidebarLink
-                href={`/onboarding`}
+                href={`/onboarding?nextUrl=&withWorkspace=true`}
                 onClick={() => setUserPopover(false)}
                 activeIcon={<HomeIcon className="w-5" />}
                 label={home}
@@ -302,7 +305,9 @@ function LeftSidebar({ className }: SidebarProps) {
               }
               showLabel={sidebar === 'open'}
               showTooltip={sidebar === 'closed'}
-              className="w-full"
+              classNames={{
+                root: 'w-full',
+              }}
             />
           </div>
 

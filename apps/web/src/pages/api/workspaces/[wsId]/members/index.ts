@@ -10,7 +10,7 @@ const fetchMembers = async (
 
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('created_at, users(id, handle, display_name, avatar_url, email)')
+    .select('created_at, users(id, handle, display_name, avatar_url)')
     .eq('ws_id', wsId);
 
   if (error) return res.status(500).json({ error: error.message });

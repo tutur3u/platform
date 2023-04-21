@@ -115,7 +115,7 @@ const WorkspaceSettingsPage = () => {
   };
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <HeaderX label={`Settings – ${ws?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (

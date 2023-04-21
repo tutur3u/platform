@@ -6,8 +6,8 @@
     "/": ["home"],
 
     "/login": ["auth", "login"],
-    "/signup": ["auth", "signup"],
-    "/recover": ["auth", "recover"],
+    "/signup": ["auth", "signup", "auth-email-sent"],
+    "/recover": ["auth", "recover", "auth-email-sent"],
     "/reset-password": ["auth", "reset-password"],
     "/onboarding": ["onboarding", "invite"],
 
@@ -104,10 +104,10 @@
     "/[wsId]/classes": ["sidebar-tabs"],
 
     "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/import": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
-    "/[wsId]/finance/wallets/import": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs"

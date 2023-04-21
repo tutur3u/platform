@@ -39,7 +39,7 @@ const WorkspaceHomePage = () => {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <HeaderX label={`Home – ${data?.name || 'Unnamed Workspace'}`} />
 
       {wsId && (

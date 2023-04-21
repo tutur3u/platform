@@ -42,7 +42,7 @@ const fetchCategories = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { query, page, itemsPerPage, isExpense } = req.query;
 
   const queryBuilder = supabase
     .from('transaction_categories')
@@ -52,6 +52,10 @@ const fetchCategories = async (
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);
+  }
+
+  if (isExpense !== undefined && isExpense !== '') {
+    queryBuilder.eq('is_expense', isExpense);
   }
 
   if (

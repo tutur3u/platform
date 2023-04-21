@@ -74,7 +74,7 @@ const NewProductPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="flex min-h-full w-full flex-col pb-8">
+      <div className="flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2">
             <div className="col-span-full">

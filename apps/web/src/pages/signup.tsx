@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
-import React from 'react';
+import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
@@ -9,6 +9,8 @@ import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import { mutate } from 'swr';
+import AuthEmailSent from '../components/auth/AuthEmailSent';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -36,7 +38,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const SignupPage = () => {
   const supabaseClient = useSupabaseClient();
-  const router = useRouter();
+
+  const [email, setEmail] = useState<string | null>(null);
 
   const handleSignup = async ({ email, password }: AuthFormFields) => {
     try {
@@ -51,15 +54,10 @@ const SignupPage = () => {
         password,
       });
 
-      const { mutate } = await import('swr');
+      setEmail(email);
 
       mutate('/api/user');
       mutate('/api/workspaces/current');
-
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { redirectedFrom: nextUrl } = router.query;
-      router.push(nextUrl ? nextUrl.toString() : '/onboarding');
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -67,7 +65,12 @@ const SignupPage = () => {
           message: e?.message || 'Something went wrong',
           color: 'red',
         });
-      else alert(e);
+      else
+        showNotification({
+          title: 'Error',
+          message: `${e}` || 'Something went wrong',
+          color: 'red',
+        });
     }
   };
 
@@ -93,20 +96,25 @@ const SignupPage = () => {
         height={1080}
         className="fixed inset-0 h-screen w-screen object-cover"
       />
-      <AuthForm
-        title={getStarted}
-        description={getStartedDesc}
-        submitLabel={signup}
-        submittingLabel={signingUp}
-        secondaryAction={{
-          description: alreadyHaveAccount,
-          label: login,
-          href: '/login',
-        }}
-        onSubmit={handleSignup}
-        disableForgotPassword={false}
-        hideForgotPassword
-      />
+
+      {email ? (
+        <AuthEmailSent email={email} />
+      ) : (
+        <AuthForm
+          title={getStarted}
+          description={getStartedDesc}
+          submitLabel={signup}
+          submittingLabel={signingUp}
+          secondaryAction={{
+            description: alreadyHaveAccount,
+            label: login,
+            href: '/login',
+          }}
+          onSubmit={handleSignup}
+          disableForgotPassword={false}
+          hideForgotPassword
+        />
+      )}
     </>
   );
 };

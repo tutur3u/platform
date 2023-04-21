@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import OnboardingForm from '../components/onboarding/OnboardingForm';
-import { mutate } from 'swr';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -46,20 +45,25 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const OnboardingPage = () => {
-  useEffect(() => {
-    mutate('/api/workspaces/current');
-  }, []);
+  const {
+    query: { nextUrl, withWorkspace },
+  } = useRouter();
+
+  const forceHideBackground = nextUrl != null && withWorkspace === 'true';
 
   return (
     <>
-      <Image
-        src="/media/background/auth-featured-bg.jpg"
-        alt="Featured background"
-        width={1619}
-        height={1080}
-        className="fixed inset-0 h-screen w-screen object-cover"
-      />
-      <OnboardingForm />
+      {forceHideBackground ? null : (
+        <Image
+          src="/media/background/auth-featured-bg.jpg"
+          alt="Featured background"
+          width={1619}
+          height={1080}
+          className="fixed inset-0 h-screen w-screen object-cover"
+        />
+      )}
+
+      <OnboardingForm forceLoading={forceHideBackground} />
     </>
   );
 };

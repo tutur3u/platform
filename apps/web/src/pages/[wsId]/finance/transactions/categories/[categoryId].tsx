@@ -55,18 +55,19 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
   }, [ws, category, setRootSegment]);
 
   const [name, setName] = useState<string>('');
-  const [isExpense, setIsExpense] = useState<boolean>(true);
+  const [isExpense, setIsExpense] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!category) return;
-    setName(category.name || '');
-    setIsExpense(category.is_expense || true);
+
+    setName(category?.name || '');
+    setIsExpense(category?.is_expense ?? null);
   }, [category]);
 
   const hasRequiredFields = () => name.length > 0;
 
   const showEditModal = () => {
-    if (!category) return;
+    if (!category || isExpense === null) return;
     if (typeof categoryId !== 'string') return;
     if (!ws?.id) return;
 
@@ -109,7 +110,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Giao dịch – Tài chính" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-8">
+      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
             <button

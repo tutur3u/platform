@@ -1,0 +1,11 @@
+{
+  "name": "tailwind-config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "devDependencies": {
+    "tailwindcss": "^3.3.1",
+    "tailwind-scrollbar": "^3.0.0",
+    "tailwindcss-themer": "^3.0.1"
+  }
+}

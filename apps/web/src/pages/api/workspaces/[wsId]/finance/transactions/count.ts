@@ -38,10 +38,14 @@ const fetchCount = async (
     res,
   });
 
+  const { startDate, endDate } = req.query;
+
   const { data, error } = await supabase.rpc(
     'get_workspace_transactions_count',
     {
       ws_id: wsId,
+      start_date: startDate || null,
+      end_date: endDate || null,
     }
   );
 

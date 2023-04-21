@@ -334,6 +334,10 @@ values (
 -- Populate workspace_invites with remaining users
 insert into public.workspace_invites (user_id, ws_id)
 values (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000003'
+    ),
+    (
         '00000000-0000-0000-0000-000000000005',
         '00000000-0000-0000-0000-000000000000'
     ),

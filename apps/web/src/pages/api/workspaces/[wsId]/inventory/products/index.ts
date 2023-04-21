@@ -57,9 +57,19 @@ const fetchProducts = async (
     const queryBuilder = supabase
       .from('workspace_products')
       .select(
-        'id, name, manufacturer, description, usage, category_id, inventory_products!inner(warehouse_id)'
+        'id, name, manufacturer, description, usage, category_id, inventory_products!inner(warehouse_id)',
+        {
+          count: 'exact',
+        }
       )
       .eq('ws_id', wsId);
+
+    if (query) {
+      queryBuilder.textSearch(
+        'name_manufacturer_usage_description',
+        `${query}`
+      );
+    }
 
     if (warehouseIds && typeof warehouseIds === 'string') {
       queryBuilder.eq('inventory_products.warehouse_id', warehouseIds);
@@ -69,10 +79,6 @@ const fetchProducts = async (
       queryBuilder.not('id', 'in', `(${blacklist})`);
     }
 
-    if (query) {
-      queryBuilder.ilike('name', `%${query}%`);
-    }
-
     if (
       page &&
       itemsPerPage &&
@@ -88,31 +94,33 @@ const fetchProducts = async (
       queryBuilder.range(start, end).limit(parsedSize);
     }
 
-    const { data, error } = await queryBuilder;
+    const { count, data, error } = await queryBuilder;
 
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json(data);
+    return res.status(200).json({ data, count });
   } else {
     const queryBuilder = supabase
-      .rpc('get_inventory_products', {
-        _category_ids: categoryIds
-          ? typeof categoryIds === 'string'
-            ? categoryIds.split(',')
-            : categoryIds
-          : null,
-        _warehouse_ids: warehouseIds
-          ? typeof warehouseIds === 'string'
-            ? warehouseIds.split(',')
-            : warehouseIds
-          : null,
-        _ws_id: wsId,
-        _has_unit: hasUnit ? hasUnit === 'true' : null,
-      })
+      .rpc(
+        'get_inventory_products',
+        {
+          _category_ids: categoryIds
+            ? typeof categoryIds === 'string'
+              ? categoryIds.split(',')
+              : categoryIds
+            : null,
+          _warehouse_ids: warehouseIds
+            ? typeof warehouseIds === 'string'
+              ? warehouseIds.split(',')
+              : warehouseIds
+            : null,
+          _ws_id: wsId,
+          _has_unit: hasUnit ? hasUnit === 'true' : null,
+        },
+        {
+          count: 'exact',
+        }
+      )
       .order('created_at', { ascending: false });
-
-    if (query) {
-      queryBuilder.ilike('name', `%${query}%`);
-    }
 
     if (
       page &&
@@ -129,10 +137,10 @@ const fetchProducts = async (
       queryBuilder.range(start, end).limit(parsedSize);
     }
 
-    const { data, error } = await queryBuilder;
+    const { count, data, error } = await queryBuilder;
 
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json(data);
+    return res.status(200).json({ data, count });
   }
 };
 

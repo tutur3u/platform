@@ -4,6 +4,6 @@ export interface Transaction {
   description?: string;
   category_id?: string;
   wallet_id?: string;
-  taken_at?: string;
+  taken_at?: string | null;
   created_at?: string;
 }

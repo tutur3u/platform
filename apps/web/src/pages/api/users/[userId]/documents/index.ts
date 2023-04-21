@@ -55,7 +55,6 @@ const fetchDocuments = async (
 
   // Filter out projects.ws_id
   const filteredData = data.map((doc) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { projects, ...rest } = doc;
     return rest;
   });

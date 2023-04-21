@@ -18,6 +18,7 @@ interface Props {
   showTransfer?: boolean;
   hideLabel?: boolean;
 
+  isExpense?: boolean;
   disabled?: boolean;
   required?: boolean;
   clearable?: boolean;
@@ -37,6 +38,7 @@ const TransactionCategorySelector = ({
   showTransfer = false,
   hideLabel = false,
 
+  isExpense,
   disabled = false,
   required = false,
   clearable = false,
@@ -54,7 +56,7 @@ const TransactionCategorySelector = ({
         ws?.id
       }/finance/transactions/categories?blacklist=${blacklist
         .filter((id) => id !== category?.id && id !== '')
-        .join(',')}`
+        .join(',')}${isExpense !== undefined ? `&isExpense=${isExpense}` : ''}`
     : null;
 
   const { data: categories } = useSWR<TransactionCategory[]>(apiPath);

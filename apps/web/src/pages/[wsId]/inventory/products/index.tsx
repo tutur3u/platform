@@ -65,15 +65,9 @@ const ProductsPage: PageWithLayoutProps = () => {
       }&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/inventory/products/count`
-    : null;
-
-  const { data: products } = useSWR<Product[]>(apiPath);
-  const { data: count } = useSWR<{
-    ws: number;
-    inventory: number;
-  }>(countApi);
+  const { data: productsData } = useSWR<{ data: Product[]; count: number }>(
+    apiPath
+  );
 
   const [showAmount, setShowAmount] = useLocalStorage({
     key: 'inventory-products-showAmount',
@@ -108,7 +102,7 @@ const ProductsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="flex min-h-full w-full flex-col pb-8">
+      <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
             label="Tìm kiếm"
@@ -165,7 +159,7 @@ const ProductsPage: PageWithLayoutProps = () => {
           activePage={activePage}
           setActivePage={setPage}
           itemsPerPage={itemsPerPage}
-          totalItems={(count?.ws || 0) + (count?.inventory || 0)}
+          totalItems={productsData?.count}
         />
 
         <div
@@ -174,8 +168,8 @@ const ProductsPage: PageWithLayoutProps = () => {
           }`}
         >
           <PlusCardButton href={`/${ws.id}/inventory/products/new`} />
-          {products &&
-            products?.map((p: Product, idx) => (
+          {productsData &&
+            productsData.data?.map((p: Product, idx) => (
               <ProductCard
                 key={`${p.id}-${p.unit}-${idx}`}
                 product={p}

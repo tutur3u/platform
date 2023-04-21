@@ -82,7 +82,9 @@ const CreateNewButton = () => {
             activeIcon={<PlusIcon className="w-5" />}
             showLabel={isExpanded}
             showTooltip={!isExpanded && !popover}
-            className="w-full"
+            classNames={{
+              root: 'w-full',
+            }}
           />
         </div>
       </Popover.Target>

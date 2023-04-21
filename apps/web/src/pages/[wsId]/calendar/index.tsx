@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { DEV_MODE } from '../../../constants/common';
 import Calendar from '../../../components/calendar/Calendar';
-import SidebarLayout from '../../../components/layouts/SidebarLayout';
+import NestedLayout from '../../../components/layouts/NestedLayout';
 import UnderConstructionTag from '../../../components/common/UnderConstructionTag';
 
 const CalendarPage: PageWithLayoutProps = () => {
@@ -34,7 +34,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 };
 
 CalendarPage.getLayout = function getLayout(page: ReactElement) {
-  return <SidebarLayout>{page}</SidebarLayout>;
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
 export default CalendarPage;

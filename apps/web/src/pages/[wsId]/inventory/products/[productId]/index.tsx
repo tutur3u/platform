@@ -134,7 +134,7 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="flex min-h-full w-full flex-col pb-8">
+      <div className="flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2">
             <div className="col-span-full">
@@ -231,7 +231,9 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
                   <SidebarLink
                     label="Tạo kho chứa mới"
                     href={`/${ws.id}/inventory/warehouses/new`}
-                    className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+                    classNames={{
+                      root: 'border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent',
+                    }}
                   />
                 </div>
               ))}

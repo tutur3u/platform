@@ -123,7 +123,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Giao dịch – Tài chính" />
-      <div className="flex min-h-full w-full flex-col pb-8">
+      <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
             label="Tìm kiếm"
@@ -147,7 +147,9 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             <SidebarLink
               href={`/${ws.id}/finance/import`}
               label="Nhập dữ liệu từ tệp"
-              className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+              classNames={{
+                root: 'border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent',
+              }}
             />
           )}
           <Divider variant="dashed" className="col-span-full" />

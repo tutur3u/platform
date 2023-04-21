@@ -45,7 +45,7 @@ const TeamOverviewPage = () => {
   }, [setRootSegment, teamId, wsId, ws, team?.name]);
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <HeaderX label={`Overview – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (
