@@ -77,7 +77,7 @@ const FinancePage: PageWithLayoutProps = () => {
   const invoicesLabel = t('invoices');
 
   const page = 1;
-  const itemsPerPage = 8;
+  const itemsPerPage = 16;
 
   const apiPath = ws?.id
     ? `/api/workspaces/${ws.id}/finance/transactions?page=${page}&itemsPerPage=${itemsPerPage}`

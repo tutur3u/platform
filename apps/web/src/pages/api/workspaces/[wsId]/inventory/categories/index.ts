@@ -45,7 +45,7 @@ const fetchCategories = async (
 
   const queryBuilder = supabase
     .from('product_categories')
-    .select('id, name')
+    .select('id, name', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
@@ -68,10 +68,10 @@ const fetchCategories = async (
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error } = await queryBuilder;
+  const { count, data, error } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({ data, count });
 };
 
 const createCategory = async (

@@ -18,9 +18,10 @@ const CategoryMultiSelector = ({
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/categories`;
-  const { data: categories } = useSWR<ProductCategory[]>(
-    ws?.id ? apiPath : null
-  );
+  const { data: categories } = useSWR<{
+    data: ProductCategory[];
+    count: number;
+  }>(ws?.id ? apiPath : null);
 
   const data = [
     {
@@ -28,7 +29,7 @@ const CategoryMultiSelector = ({
       value: '',
       group: 'Chung',
     },
-    ...(categories?.map((category) => ({
+    ...(categories?.data.map((category) => ({
       label: category.name,
       value: category.id,
       group: 'Danh mục',

@@ -90,7 +90,7 @@
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
     "tailwind-config": "workspace:*",
-    "supabase": "^1.50.10",
+    "supabase": "^1.50.11",
     "tailwindcss": "^3.3.1",
     "tsconfig": "workspace:*",
     "typescript": "^5.0.4"

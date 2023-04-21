@@ -104,10 +104,10 @@
     "/[wsId]/classes": ["sidebar-tabs"],
 
     "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/import": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
-    "/[wsId]/finance/wallets/import": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs"
