@@ -395,6 +395,7 @@ const DetailsPage: PageWithLayoutProps = () => {
                 setCategoryId(c?.id || '');
               }}
               className="col-span-full"
+              isExpense={false}
               preventPreselected
               required
               disabled={!transaction?.category_id}

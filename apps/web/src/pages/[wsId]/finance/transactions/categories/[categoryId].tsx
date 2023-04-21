@@ -55,18 +55,19 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
   }, [ws, category, setRootSegment]);
 
   const [name, setName] = useState<string>('');
-  const [isExpense, setIsExpense] = useState<boolean>(true);
+  const [isExpense, setIsExpense] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!category) return;
-    setName(category.name || '');
-    setIsExpense(category.is_expense || true);
+
+    setName(category?.name || '');
+    setIsExpense(category?.is_expense ?? null);
   }, [category]);
 
   const hasRequiredFields = () => name.length > 0;
 
   const showEditModal = () => {
-    if (!category) return;
+    if (!category || isExpense === null) return;
     if (typeof categoryId !== 'string') return;
     if (!ws?.id) return;
 

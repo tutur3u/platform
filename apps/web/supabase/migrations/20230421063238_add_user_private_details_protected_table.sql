@@ -55,3 +55,32 @@ end;
 $function$;
 alter table "public"."users" drop column "birthday";
 alter table "public"."users" drop column "email";
+drop trigger if exists "create_profile_for_new_user_tr" on "auth"."users";
+drop trigger if exists "update_user_private_details" on "auth"."users";
+drop function if exists "public"."create_profile_for_new_user"();
+drop function if exists "public"."update_user_private_details"();
+set check_function_bodies = off;
+CREATE OR REPLACE FUNCTION public.sync_user_details() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $function$
+DECLARE BEGIN IF (TG_OP = 'INSERT') THEN
+INSERT INTO public.users (id)
+VALUES (NEW.id);
+INSERT INTO public.user_private_details (user_id, email, new_email)
+VALUES (NEW.id, NEW.email, NEW.email_change);
+ELSIF (NEW.email <> OLD.email) THEN
+UPDATE public.user_private_details
+SET email = NEW.email
+WHERE user_id = NEW.id;
+END IF;
+IF (NEW.email_change <> OLD.email_change) THEN
+UPDATE public.user_private_details
+SET new_email = NEW.email_change
+WHERE user_id = NEW.id;
+END IF;
+RETURN NEW;
+END;
+$function$;
+CREATE TRIGGER sync_user_details
+AFTER
+INSERT
+    OR
+UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION sync_user_details();

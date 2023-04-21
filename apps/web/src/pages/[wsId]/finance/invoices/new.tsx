@@ -275,6 +275,7 @@ const NewPage: PageWithLayoutProps = () => {
                 setCategoryId(c?.id || '');
               }}
               className="col-span-full"
+              isExpense={false}
               preventPreselected
               required
             />
