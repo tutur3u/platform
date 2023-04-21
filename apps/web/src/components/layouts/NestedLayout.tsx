@@ -91,7 +91,7 @@ const NestedLayout: FC<Props> = ({
                     <Fragment key={`segment-${s.content}-${s.href}`}>
                       <Link
                         href={s.href}
-                        className="min-w-max rounded px-2 py-0.5 font-semibold transition hover:bg-zinc-300/10"
+                        className="min-w-max rounded px-2 py-0.5 font-semibold transition md:hover:bg-zinc-300/10"
                       >
                         {s?.content || ''}
                       </Link>
