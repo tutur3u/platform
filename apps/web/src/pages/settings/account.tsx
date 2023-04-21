@@ -19,11 +19,8 @@ import {
   useSupabaseClient,
 } from '@supabase/auth-helpers-react';
 import useTranslation from 'next-translate/useTranslation';
-import SettingItemCard from '../../components/settings/SettingItemCard';
 import { showNotification } from '@mantine/notifications';
-import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
-
-export const getServerSideProps = enforceAuthenticated;
+import SettingItemTab from '../../components/settings/SettingItemTab';
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
@@ -43,7 +40,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { user, updateUser } = useUser();
 
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [displayName, setDisplayName] = useState('');
   const [handle, setUsername] = useState('');
@@ -60,7 +57,7 @@ const SettingPage: PageWithLayoutProps = () => {
   }, [user]);
 
   const handleSave = async () => {
-    setSaving(true);
+    setIsSaving(true);
 
     await updateUser?.({
       display_name: displayName,
@@ -68,7 +65,7 @@ const SettingPage: PageWithLayoutProps = () => {
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
-    setSaving(false);
+    setIsSaving(false);
   };
 
   const supabase = useSupabaseClient();
@@ -107,95 +104,107 @@ const SettingPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('settings');
 
   const logOut = t('common:logout');
+  const save = t('common:save');
+  const saving = t('common:saving');
 
   return (
-    <div className="grid gap-4 pb-8 lg:grid-cols-2 xl:grid-cols-3">
+    <div className="md:max-w-md">
       <HeaderX label="Settings" />
 
-      <SettingItemCard
-        title="Display name"
-        description="Please enter your name as you would like it to be displayed on your profile."
-        saving={saving}
-        onSave={handleSave}
-      >
-        <TextInput
-          placeholder="John Doe"
-          value={displayName}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            setDisplayName(event.currentTarget.value)
-          }
-        />
-      </SettingItemCard>
-
-      <SettingItemCard
-        title="Handle"
-        description="This is your custom URL namespace within Tuturuuu."
-        saving={saving}
-        onSave={handleSave}
-      >
-        <TextInput
-          placeholder="tuturuuu"
-          // replace all characters that are not a-z, 0-9, or _
-          value={handle.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            const handle = event.currentTarget.value.replace(
-              /[^a-z0-9_]/gi,
-              ''
-            );
-
-            // Limit to 20 characters
-            if (handle.length > 20) return;
-            setUsername(handle.toLowerCase());
-          }}
-          icon={<AtSymbolIcon className="h-5 w-5" />}
-        />
-      </SettingItemCard>
-
-      <SettingItemCard
-        title="Birthday"
-        description="Your birthday will only be used for social features."
-        saving={saving}
-        onSave={handleSave}
-      >
-        <DatePickerInput
-          placeholder="Your birthday"
-          icon={<CakeIcon className="h-5 w-5" />}
-          value={birthday}
-          onChange={setBirthday}
-        />
-      </SettingItemCard>
-
-      <SettingItemCard
-        title="Email"
-        description="Your email address that you used to login with."
-        saving={saving}
-        onSave={handleChangeEmail}
-      >
-        <TextInput
-          placeholder="example@tuturuuu.com"
-          value={email || ''}
-          icon={<EnvelopeIcon className="h-5 w-5" />}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            setEmail(event.currentTarget.value)
-          }
-        />
-      </SettingItemCard>
-
-      <SettingItemCard
-        title="Language"
-        description="Change the language of the website."
-      >
-        <LanguageSelector fullWidth />
-      </SettingItemCard>
-
-      <SettingItemCard title={logOut} description="Log out of your account.">
-        <div
-          onClick={handleLogout}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+      <div className="flex flex-col gap-5">
+        <SettingItemTab
+          title="Display name"
+          description="Please enter your name as you would like it to be displayed on your profile."
         >
-          {logOut}
+          <TextInput
+            placeholder="John Doe"
+            value={displayName}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setDisplayName(event.currentTarget.value)
+            }
+          />
+        </SettingItemTab>
+
+        <SettingItemTab
+          title="Handle"
+          description="This is your custom URL namespace within Tuturuuu."
+        >
+          <TextInput
+            placeholder="tuturuuu"
+            // replace all characters that are not a-z, 0-9, or _
+            value={handle.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              const handle = event.currentTarget.value.replace(
+                /[^a-z0-9_]/gi,
+                ''
+              );
+
+              // Limit to 20 characters
+              if (handle.length > 20) return;
+              setUsername(handle.toLowerCase());
+            }}
+            icon={<AtSymbolIcon className="h-5 w-5" />}
+          />
+        </SettingItemTab>
+
+        <SettingItemTab
+          title="Birthday"
+          description="Your birthday will only be used for social features."
+        >
+          <DatePickerInput
+            placeholder="Your birthday"
+            icon={<CakeIcon className="h-5 w-5" />}
+            value={birthday}
+            onChange={setBirthday}
+          />
+        </SettingItemTab>
+
+        <SettingItemTab
+          title="Language"
+          description="Change the language of the website."
+        >
+          <LanguageSelector fullWidth />
+        </SettingItemTab>
+
+        <div
+          onClick={handleSave}
+          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+        >
+          {isSaving ? saving : save}
         </div>
-      </SettingItemCard>
+
+        <SettingItemTab
+          title="Email"
+          description="Your email address that you used to login with."
+        >
+          <div className="flex gap-4">
+            <TextInput
+              placeholder="example@tuturuuu.com"
+              value={email || ''}
+              icon={<EnvelopeIcon className="h-5 w-5" />}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setEmail(event.currentTarget.value)
+              }
+              className="w-3/4"
+            />
+            <div
+              onClick={handleChangeEmail}
+              className="col-span-full flex w-1/4 cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-1 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+            >
+              {save}
+            </div>
+          </div>
+        </SettingItemTab>
+
+        <SettingItemTab title={logOut} description="Log out of your account.">
+          <div
+            onClick={handleLogout}
+            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+          >
+            {logOut}
+          </div>
+        </SettingItemTab>
+      </div>
     </div>
   );
 };
