@@ -162,7 +162,9 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
             <SidebarLink
               href={`/${ws.id}/finance/import`}
               label="Nhập dữ liệu từ tệp"
-              className="border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent"
+              classNames={{
+                root: 'border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent',
+              }}
             />
           )}
           <Divider variant="dashed" className="col-span-full" />

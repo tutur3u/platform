@@ -2,10 +2,6 @@
   "name": "tutur3u",
   "version": "1.1.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "build": "turbo run build",
     "buildx": "pnpm i && turbo run build",
@@ -22,6 +18,7 @@
     "sb:new": "cd apps/web && pnpm sb:new"
   },
   "devDependencies": {
+    "eslint": "^8.38.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^2.8.7",
     "prettier-plugin-tailwindcss": "^0.2.7",

@@ -535,7 +535,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                 itemComponent={AutoCompleteItem}
                 data={suggestions}
                 onItemSubmit={(item) => {
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   const { value, ...user } = item as UserWithValue;
 
                   // Update assignees

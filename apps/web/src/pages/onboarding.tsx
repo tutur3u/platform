@@ -49,9 +49,11 @@ const OnboardingPage = () => {
     query: { nextUrl, withWorkspace },
   } = useRouter();
 
+  const forceHideBackground = nextUrl != null && withWorkspace === 'true';
+
   return (
     <>
-      {(nextUrl && withWorkspace) || (
+      {forceHideBackground ? null : (
         <Image
           src="/media/background/auth-featured-bg.jpg"
           alt="Featured background"
@@ -61,7 +63,7 @@ const OnboardingPage = () => {
         />
       )}
 
-      <OnboardingForm />
+      <OnboardingForm forceLoading={forceHideBackground} />
     </>
   );
 };

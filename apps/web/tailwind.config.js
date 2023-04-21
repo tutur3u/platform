@@ -1,9 +1,7 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind config is required for editor support
+
+const sharedConfig = require('tailwind-config/tailwind.config.js');
+
 module.exports = {
-  content: ['./src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: true,
-  variants: {
-    width: ['responsive', 'hover', 'focus'],
-  },
-  plugins: [require('tailwind-scrollbar'), require('tailwindcss-themer')],
+  presets: [sharedConfig],
 };

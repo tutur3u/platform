@@ -14,7 +14,11 @@ import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 
-const OnboardingForm = () => {
+interface Props {
+  forceLoading?: boolean;
+}
+
+const OnboardingForm = ({ forceLoading = false }: Props) => {
   const router = useRouter();
 
   const { user, updateUser } = useUser();
@@ -61,10 +65,12 @@ const OnboardingForm = () => {
       const { nextUrl, withWorkspace } = router.query;
 
       if (data?.length > 0) {
+        const defaultUrl = `/${data?.[0]?.id}`;
+
         const url =
           withWorkspace === 'true'
-            ? `/${data?.[0]?.id}/` + nextUrl
-            : nextUrl?.toString();
+            ? `/${defaultUrl}/` + nextUrl
+            : nextUrl?.toString() || `/${defaultUrl}`;
 
         if (url) router.push(url);
       }
@@ -95,7 +101,8 @@ const OnboardingForm = () => {
     <>
       <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
         <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
-          {!user ||
+          {forceLoading ||
+          !user ||
           !workspaces ||
           (workspaces && workspaces?.length > 0 && profileCompleted) ? (
             <div className="flex h-full w-full items-center justify-center">
