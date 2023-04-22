@@ -25,7 +25,7 @@ const SettingPage: PageWithLayoutProps = () => {
   }, [setRootSegment]);
 
   return (
-    <div className="grid gap-4 pb-8 md:grid-cols-2">
+    <div className="grid gap-4 pb-20 md:grid-cols-2">
       <HeaderX label="Settings" />
 
       <SettingItemCard

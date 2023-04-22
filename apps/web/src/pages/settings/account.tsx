@@ -23,6 +23,7 @@ import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
 import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
 import { mutate } from 'swr';
+import SettingItemCard from '../../components/settings/SettingItemCard';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -68,6 +69,8 @@ const SettingPage: PageWithLayoutProps = () => {
       handle,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
+
+    if (user?.email !== email) handleChangeEmail();
 
     setIsSaving(false);
   };
@@ -121,10 +124,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const saving = t('common:saving');
 
   return (
-    <div className="md:max-w-md">
+    <div className="pb-20 md:max-w-lg">
       <HeaderX label="Settings" />
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <SettingItemTab
           title="Display name"
           description="Please enter your name as you would like it to be displayed on your profile."
@@ -169,51 +172,52 @@ const SettingPage: PageWithLayoutProps = () => {
             icon={<CakeIcon className="h-5 w-5" />}
             value={birthday}
             onChange={setBirthday}
+            classNames={{
+              input: 'bg-[#25262b]',
+            }}
           />
         </SettingItemTab>
-        
+
         <SettingItemTab
-        title="Email"
-        description="Your email address that you used to login with."
-        saving={changingEmail}
-        onSave={user?.email !== email ? handleChangeEmail : undefined}
-      >
-        <div className="grid gap-2">
-          <TextInput
-            placeholder="example@tuturuuu.com"
-            label={
-              user?.new_email
-                ? user?.email === email
-                  ? 'Current email'
-                  : 'New email'
-                : undefined
-            }
-            value={email || ''}
-            icon={<EnvelopeIcon className="h-5 w-5" />}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setEmail(event.currentTarget.value)
-            }
-          />
+          title="Email"
+          description="Your email address that you used to login with."
+        >
+          <div className="grid gap-2">
+            <TextInput
+              placeholder="example@tuturuuu.com"
+              label={
+                user?.new_email
+                  ? user?.email === email
+                    ? 'Current email'
+                    : 'New email'
+                  : undefined
+              }
+              value={email || ''}
+              icon={<EnvelopeIcon className="h-5 w-5" />}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setEmail(event.currentTarget.value)
+              }
+            />
 
-          {user?.email === email && user?.new_email && (
-            <>
-              <TextInput
-                value={user.new_email}
-                label="New email"
-                icon={<EnvelopeIcon className="h-5 w-5" />}
-                disabled
-              />
+            {user?.email === email && user?.new_email && (
+              <>
+                <TextInput
+                  value={user.new_email}
+                  label="New email"
+                  icon={<EnvelopeIcon className="h-5 w-5" />}
+                  disabled
+                />
 
-              <Divider variant="dashed" className="mt-1" />
+                <Divider variant="dashed" className="mt-1" />
 
-              <div className="text-zinc-400">
-                Once you have confirmed the change on both emails, your new
-                email address will be automatically applied.
-              </div>
-            </>
-          )}
-        </div>
-      </SettingItemTab>
+                <div className="text-zinc-400">
+                  Once you have confirmed the change on both emails, your new
+                  email address will be automatically applied.
+                </div>
+              </>
+            )}
+          </div>
+        </SettingItemTab>
 
         <SettingItemTab
           title="Language"
@@ -221,36 +225,13 @@ const SettingPage: PageWithLayoutProps = () => {
         >
           <LanguageSelector fullWidth />
         </SettingItemTab>
-      <SettingItemCard title={logOut} description="Log out of your account.">
+
         <div
           onClick={handleSave}
           className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
         >
           {isSaving ? saving : save}
         </div>
-
-        <SettingItemTab
-          title="Email"
-          description="Your email address that you used to login with."
-        >
-          <div className="flex gap-4">
-            <TextInput
-              placeholder="example@tuturuuu.com"
-              value={email || ''}
-              icon={<EnvelopeIcon className="h-5 w-5" />}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                setEmail(event.currentTarget.value)
-              }
-              className="w-3/4"
-            />
-            <div
-              onClick={handleChangeEmail}
-              className="col-span-full flex w-1/4 cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-1 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
-            >
-              {save}
-            </div>
-          </div>
-        </SettingItemTab>
 
         <SettingItemTab title={logOut} description="Log out of your account.">
           <div
