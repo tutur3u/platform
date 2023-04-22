@@ -18,7 +18,7 @@
     "sb:new": "cd apps/web && pnpm sb:new"
   },
   "devDependencies": {
-    "eslint": "^8.38.0",
+    "eslint": "^8.39.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^2.8.7",
     "prettier-plugin-tailwindcss": "^0.2.7",
