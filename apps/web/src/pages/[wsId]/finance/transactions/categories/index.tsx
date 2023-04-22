@@ -3,7 +3,7 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Divider, TextInput } from '@mantine/core';
+import { Divider, Switch, TextInput } from '@mantine/core';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
@@ -69,6 +69,11 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
     defaultValue: 'grid',
   });
 
+  const [showAmount, setShowAmount] = useLocalStorage({
+    key: 'finance-transactions-categories-showAmount',
+    defaultValue: true,
+  });
+
   if (!ws) return null;
 
   return (
@@ -94,15 +99,12 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
               setItemsPerPage(size);
             }}
           />
-          {ws && (
-            <SidebarLink
-              href={`/${ws.id}/finance/import`}
-              label="Nhập dữ liệu từ tệp"
-              classNames={{
-                root: 'border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent',
-              }}
-            />
-          )}
+          <Divider variant="dashed" className="col-span-full" />
+          <Switch
+            label="Hiển thị số giao dịch"
+            checked={showAmount}
+            onChange={(event) => setShowAmount(event.currentTarget.checked)}
+          />
         </div>
 
         <Divider className="mt-4" />
@@ -127,6 +129,9 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
                 key={c.id}
                 href={`/${ws.id}/finance/transactions/categories/${c.id}`}
                 name={c.name}
+                amountFetchPath={`/api/workspaces/${ws.id}/finance/transactions/categories/${c.id}/amount`}
+                amountTrailing="giao dịch"
+                showAmount={showAmount}
               />
             ))}
         </div>
