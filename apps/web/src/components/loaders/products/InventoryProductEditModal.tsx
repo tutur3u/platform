@@ -1,6 +1,6 @@
 import { Timeline } from '@mantine/core';
 import { ProductPrice } from '../../../types/primitives/ProductPrice';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BanknotesIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
@@ -51,20 +51,6 @@ const InventoryProductEditModal = ({
     progress.updatePrices === 'success' &&
     progress.removePrices === 'success' &&
     progress.addPrices === 'success';
-
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    mutate(
-      `/api/workspaces/${wsId}/inventory/products/${productId}/warehouses/${warehouseId}`
-    );
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật sản phẩm',
-      color: 'green',
-    });
-  }, [hasSuccess, wsId, productId, warehouseId]);
 
   const updatePrices = async (prices: ProductPrice[]) => {
     const updatePromises = prices.map((price) =>
@@ -172,6 +158,10 @@ const InventoryProductEditModal = ({
     setProgress((progress) => ({ ...progress, addPrices: 'loading' }));
     if (pricesToAdd.length) addPrices(pricesToAdd);
     else setProgress((progress) => ({ ...progress, addPrices: 'success' }));
+
+    mutate(
+      `/api/workspaces/${wsId}/inventory/products/${productId}/warehouses/${warehouseId}`
+    );
   };
 
   const [started, setStarted] = useState(false);

@@ -1,6 +1,6 @@
 import { Timeline } from '@mantine/core';
 import { Product } from '../../../types/primitives/Product';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
@@ -26,15 +26,6 @@ const ProductCreateModal = ({ wsId, product }: Props) => {
 
   const hasError = progress.createdProduct === 'error';
   const hasSuccess = progress.createdProduct === 'success';
-
-  useEffect(() => {
-    if (hasSuccess)
-      showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo sản phẩm',
-        color: 'green',
-      });
-  }, [hasSuccess]);
 
   const createProduct = async () => {
     const res = await fetch(`/api/workspaces/${wsId}/inventory/products`, {

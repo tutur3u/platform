@@ -27,12 +27,13 @@ const CategorySelector = ({
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/categories`;
-  const { data: categories } = useSWR<ProductCategory[]>(
-    ws?.id ? apiPath : null
-  );
+  const { data: categories } = useSWR<{
+    data: ProductCategory[];
+    count: number;
+  }>(ws?.id ? apiPath : null);
 
   const data = [
-    ...(categories?.map((category) => ({
+    ...(categories?.data.map((category) => ({
       label: category.name,
       value: category.id,
     })) || []),
@@ -41,8 +42,8 @@ const CategorySelector = ({
   useEffect(() => {
     if (!categories) return;
 
-    if (categories.length === 1) setCategoryId(categories[0].id);
-    else if (categoryId && !categories?.find((p) => p.id === categoryId))
+    if (categories.data.length === 1) setCategoryId(categories.data[0].id);
+    else if (categoryId && !categories?.data.find((p) => p.id === categoryId))
       setCategoryId('');
   }, [categoryId, categories, setCategoryId]);
 
@@ -124,7 +125,7 @@ const CategorySelector = ({
         }).then((item) => {
           if (!item) return null;
 
-          mutate(apiPath, [...(categories || []), item]);
+          mutate(apiPath, [...(categories?.data || []), item]);
           setCategoryId(item.id);
 
           return {

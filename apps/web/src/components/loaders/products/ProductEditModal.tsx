@@ -1,12 +1,12 @@
 import { Timeline } from '@mantine/core';
 import { Product } from '../../../types/primitives/Product';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
-import { mutate } from 'swr';
 import { Status } from '../status';
+import { mutate } from 'swr';
 
 interface Props {
   wsId: string;
@@ -33,18 +33,6 @@ const ProductEditModal = ({
 
   const hasError = progress.updateDetails === 'error';
   const hasSuccess = progress.updateDetails === 'success';
-
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    mutate(`/api/workspaces/${wsId}/inventory/products/${product.id}`);
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật sản phẩm',
-      color: 'green',
-    });
-  }, [hasSuccess, wsId, product.id]);
 
   const updateDetails = async () => {
     // If the product is not changed, skip this step
@@ -95,7 +83,9 @@ const ProductEditModal = ({
     if (!product.id) return;
 
     setProgress((progress) => ({ ...progress, updateDetails: 'loading' }));
-    updateDetails();
+    await updateDetails();
+
+    mutate(`/api/workspaces/${wsId}/inventory/products/${product.id}`);
   };
 
   const [started, setStarted] = useState(false);
