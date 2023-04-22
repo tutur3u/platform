@@ -179,7 +179,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
       setDescription('');
       setDestinationWallet(null);
     }
-  }, [type, originWallet?.balance]);
+  }, [type, originWallet?.balance, queryAmount]);
 
   return (
     <>

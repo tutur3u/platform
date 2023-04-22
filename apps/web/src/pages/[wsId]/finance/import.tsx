@@ -547,7 +547,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
                         key={`wallet-${idx}`}
                         wallet={w}
                         disableLink
-                        showPrice
+                        showBalance
                       />
                     ))}
                 </div>

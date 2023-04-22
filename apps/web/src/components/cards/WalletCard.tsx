@@ -18,7 +18,6 @@ const WalletCard = ({
   showAmount = false,
 }: Props) => {
   const { ws } = useWorkspaces();
-  if (!ws) return null;
 
   const countApi =
     showAmount && ws?.id && wallet?.id
@@ -26,6 +25,8 @@ const WalletCard = ({
       : null;
 
   const { data: count } = useSWR<number>(countApi);
+
+  if (!ws) return null;
 
   return (
     <Link
