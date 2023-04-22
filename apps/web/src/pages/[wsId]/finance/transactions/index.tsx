@@ -92,11 +92,14 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     const date = moment(cur.taken_at).toDate();
     const localeDate = date.toLocaleDateString();
 
-    if (!acc[localeDate]) acc[localeDate] = [];
-    acc[localeDate].push(cur);
+    if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
+
+    acc[localeDate].transactions.push(cur);
+
+    acc[localeDate].total += cur?.amount || 0;
 
     return acc;
-  }, {} as Record<string, Transaction[]>);
+  }, {} as Record<string, { transactions: Transaction[]; total: number }>);
 
   const getRelativeDate = (date: string) => {
     const now = new Date();
@@ -178,22 +181,48 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
         <div className="mt-8 grid gap-8">
           {transactionsByDate &&
             Object.entries(transactionsByDate).length > 0 &&
-            Object.entries(transactionsByDate).map(([date, transactions]) => (
-              <div key={date} className="group">
-                <h3 className="col-span-full flex gap-2 text-lg font-semibold text-gray-300">
-                  <div>{getRelativeDate(date)}</div>
-                  <MiniPlusButton
-                    href={`/${ws.id}/finance/transactions/new?date=${date}`}
-                    className="opacity-0 group-hover:opacity-100"
-                  />
+            Object.entries(transactionsByDate).map(([date, data]) => (
+              <div
+                key={date}
+                className="group rounded-lg border border-zinc-300/10 bg-zinc-900 p-4"
+              >
+                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-gray-300 md:flex-row">
+                  <div className="flex gap-2">
+                    <div>{getRelativeDate(date)}</div>
+                    <MiniPlusButton
+                      href={`/${ws.id}/finance/transactions/new?date=${date}`}
+                      className="opacity-0 group-hover:opacity-100"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
+                      {data.transactions.length} giao dịch
+                    </div>
+                    <div
+                      className={`rounded px-2 py-0.5 text-base ${
+                        data.total < 0
+                          ? 'bg-red-300/10 text-red-300'
+                          : 'bg-green-300/10 text-green-300'
+                      }`}
+                    >
+                      {Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                        signDisplay: 'exceptZero',
+                      }).format(data.total)}
+                    </div>
+                  </div>
                 </h3>
 
+                <Divider variant="dashed" className="mb-4 mt-2" />
+
                 <div
-                  className={`mt-2 grid gap-4 ${
+                  className={`grid gap-4 ${
                     mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
                   }`}
                 >
-                  {transactions.map((c) => (
+                  {data.transactions.map((c) => (
                     <TransactionCard
                       key={c.id}
                       wsId={ws.id}

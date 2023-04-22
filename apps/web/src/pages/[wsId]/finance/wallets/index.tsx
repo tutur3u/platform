@@ -69,9 +69,14 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
     defaultValue: 'grid',
   });
 
-  const [showPrice, setShowPrice] = useLocalStorage({
-    key: 'finance-wallets-showPrice',
+  const [showBalance, setShowBalance] = useLocalStorage({
+    key: 'finance-wallets-showBalance',
     defaultValue: true,
+  });
+
+  const [showAmount, setShowAmount] = useLocalStorage({
+    key: 'finance-wallets-showAmount',
+    defaultValue: false,
   });
 
   return (
@@ -109,8 +114,13 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
           <Divider variant="dashed" className="col-span-full" />
           <Switch
             label="Hiển thị số tiền"
-            checked={showPrice}
-            onChange={(event) => setShowPrice(event.currentTarget.checked)}
+            checked={showBalance}
+            onChange={(event) => setShowBalance(event.currentTarget.checked)}
+          />
+          <Switch
+            label="Hiển thị số giao dịch"
+            checked={showAmount}
+            onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
         </div>
 
@@ -130,7 +140,12 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
           <PlusCardButton href={`/${ws?.id}/finance/wallets/new`} />
           {wallets &&
             wallets?.map((w: Wallet) => (
-              <WalletCard key={w.id} wallet={w} showPrice={showPrice} />
+              <WalletCard
+                key={w.id}
+                wallet={w}
+                showBalance={showBalance}
+                showAmount={showAmount}
+              />
             ))}
         </div>
       </div>

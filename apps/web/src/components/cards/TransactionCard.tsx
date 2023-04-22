@@ -63,7 +63,13 @@ const TransactionCard = ({
 
           <div className="w-full">
             {showAmount && (
-              <div className="m-2 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
+              <div
+                className={`m-2 rounded border p-2 font-semibold ${
+                  (transaction?.amount || 0) < 0
+                    ? 'border-red-300/20 bg-red-300/10 text-red-300'
+                    : 'border-green-300/20 bg-green-300/10 text-green-300'
+                }`}
+              >
                 {transaction?.amount === 0
                   ? 'Miễn phí'
                   : Intl.NumberFormat('vi-VN', {

@@ -2,20 +2,30 @@ import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import { Wallet } from '../../types/primitives/Wallet';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import useSWR from 'swr';
 
 interface Props {
   wallet: Wallet;
   disableLink?: boolean;
-  showPrice?: boolean;
+  showBalance?: boolean;
+  showAmount?: boolean;
 }
 
 const WalletCard = ({
   wallet,
   disableLink = false,
-  showPrice = false,
+  showBalance = false,
+  showAmount = false,
 }: Props) => {
   const { ws } = useWorkspaces();
   if (!ws) return null;
+
+  const countApi =
+    showAmount && ws?.id && wallet?.id
+      ? `/api/workspaces/${ws.id}/finance/wallets/${wallet.id}/transactions/count`
+      : null;
+
+  const { data: count } = useSWR<number>(countApi);
 
   return (
     <Link
@@ -30,19 +40,26 @@ const WalletCard = ({
         </div>
       </div>
 
-      {showPrice && (
-        <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
-          <div className="w-full">
-            <div className="m-2 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-              {Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(wallet?.balance || 0)}{' '}
-            </div>
-          </div>
-        </>
+      {(showBalance || showAmount) && (
+        <Divider variant="dashed" className="w-full border-zinc-700" />
       )}
+
+      <div className="w-full">
+        {showBalance && (
+          <div className="m-2 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
+            {Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(wallet?.balance || 0)}{' '}
+          </div>
+        )}
+
+        {showAmount && (
+          <div className="m-2 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">
+            {count} giao dịch
+          </div>
+        )}
+      </div>
     </Link>
   );
 };
