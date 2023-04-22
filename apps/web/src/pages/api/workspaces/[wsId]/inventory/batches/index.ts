@@ -51,9 +51,9 @@ const fetchBatches = async (
     .eq('inventory_warehouses.ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (query) {
-    queryBuilder.ilike('name', `%${query}%`);
-  }
+  // if (query) {
+  //   queryBuilder.ilike('id', `%${query}%`);
+  // }
 
   if (
     page &&

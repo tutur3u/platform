@@ -15,6 +15,8 @@ import TransactionCard from '../../../components/cards/TransactionCard';
 import GeneralItemCard from '../../../components/cards/GeneralItemCard';
 import { read } from 'xlsx';
 import useTranslation from 'next-translate/useTranslation';
+import FinanceImportModal from '../../../components/loaders/finance/FinanceImportModal';
+import { openModal } from '@mantine/modals';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -269,19 +271,43 @@ const WalletImportPage: PageWithLayoutProps = () => {
   }, [file, format, delimiter, thousandsSeparator]);
 
   const hasRequiredFields = () =>
-    application && format && application?.length > 0 && format?.length > 0;
+    application &&
+    format &&
+    application?.length > 0 &&
+    format?.length > 0 &&
+    file &&
+    (wallets?.length || 0) > 0 &&
+    (transactions?.length || 0) > 0 &&
+    (categories?.length || 0) > 0;
 
-  //   const showLoaderModal = () => {
-  //     if (!ws) return;
-  //     openModal({
-  //       title: <div className="font-semibold">Tạo nguồn tiền mới</div>,
-  //       centered: true,
-  //       closeOnEscape: false,
-  //       closeOnClickOutside: false,
-  //       withCloseButton: false,
-  //       children: <WalletCreateModal wsId={ws.id} wallet={{ name, currency }} />,
-  //     });
-  //   };
+  const showLoaderModal = () => {
+    if (!ws || !hasRequiredFields()) return;
+
+    if (!wallets || wallets.length === 0) return;
+    if (!transactions || transactions.length === 0) return;
+    if (!categories || categories.length === 0) return;
+
+    openModal({
+      title: <div className="font-semibold">Nhập dữ liệu</div>,
+      centered: true,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      withCloseButton: false,
+      children: (
+        <FinanceImportModal
+          wsId={ws.id}
+          wallets={wallets}
+          categories={categories}
+          transactions={transactions.map((t) => ({
+            ...t,
+            taken_at: t?.taken_at
+              ? t.taken_at.split('/').reverse().join('-')
+              : null,
+          }))}
+        />
+      ),
+    });
+  };
 
   const { t } = useTranslation('finance-tabs');
 
@@ -290,7 +316,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Nguồn tiền – Tài chính" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-8">
+      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
             <button
@@ -299,7 +325,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
                   ? 'hover:bg-blue-300/20'
                   : 'cursor-not-allowed opacity-50'
               }`}
-              //   onClick={hasRequiredFields() ? showLoaderModal : undefined}
+              onClick={hasRequiredFields() ? showLoaderModal : undefined}
             >
               Nhập dữ liệu
             </button>

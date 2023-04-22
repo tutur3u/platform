@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 7803",
@@ -69,7 +69,7 @@
     "@types/cookie": "^0.5.1",
     "@types/jest": "^29.5.1",
     "@types/js-cookie": "^3.0.3",
-    "@types/node": "^18.15.12",
+    "@types/node": "^18.15.13",
     "@types/react": "^18.0.37",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.0.11",
@@ -89,10 +89,10 @@
     "lint-staged": "^13.2.1",
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
-    "supabase": "^1.50.9",
-    "tailwind-scrollbar": "^3.0.0",
+    "tailwind-config": "workspace:*",
+    "supabase": "^1.50.11",
     "tailwindcss": "^3.3.1",
-    "tailwindcss-themer": "^3.0.1",
-    "tsconfig": "workspace:*"
+    "tsconfig": "workspace:*",
+    "typescript": "^5.0.4"
   }
 }

@@ -14,14 +14,27 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (userError) return res.status(401).json({ error: userError.message });
 
-  const { data, error } = await supabase
+  const publicPromise = supabase
     .from('users')
-    .select('id, email, display_name, handle, birthday, created_at')
+    .select('id, display_name, handle, created_at')
     .eq('id', user?.id)
     .single();
 
+  const privatePromise = supabase
+    .from('user_private_details')
+    .select('email, new_email, birthday')
+    .eq('user_id', user?.id)
+    .single();
+
+  const [{ data, error }, { data: privateData, error: privateError }] =
+    await Promise.all([publicPromise, privatePromise]);
+
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+
+  if (privateError)
+    return res.status(401).json({ error: privateError.message });
+
+  return res.status(200).json({ ...data, ...privateData });
 };
 
 const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -40,13 +53,22 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { display_name, handle, birthday } = req.body;
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('users')
-    .update({ display_name, handle, birthday })
+    .update({ display_name, handle })
     .eq('id', user.id);
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+
+  const { error: privateError } = await supabase
+    .from('user_private_details')
+    .update({ birthday })
+    .eq('user_id', user.id);
+
+  if (privateError)
+    return res.status(401).json({ error: privateError.message });
+
+  return res.status(200).json({});
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {

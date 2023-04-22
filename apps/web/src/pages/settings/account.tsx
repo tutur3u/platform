@@ -1,6 +1,6 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { TextInput } from '@mantine/core';
+import { Divider, TextInput } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -21,6 +21,10 @@ import {
 import useTranslation from 'next-translate/useTranslation';
 import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
+import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+import { mutate } from 'swr';
+
+export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
@@ -70,14 +74,21 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const supabase = useSupabaseClient();
 
+  const [changingEmail, setChangingEmail] = useState(false);
+
   const handleChangeEmail = async () => {
     try {
-      await supabase.auth.updateUser({
+      setChangingEmail(true);
+
+      const { error } = await supabase.auth.updateUser({
         email,
       });
 
+      if (error) throw new Error(error.message);
+      mutate('/api/user');
+
       showNotification({
-        title: 'Change email',
+        title: 'Email changed successfully',
         message:
           'A confirmation email has been sent to your current and new email address. Please confirm your new email address to complete the change.',
         color: 'green',
@@ -85,10 +96,12 @@ const SettingPage: PageWithLayoutProps = () => {
     } catch (e) {
       if (e instanceof Error)
         showNotification({
-          title: 'Error',
-          message: e.message,
+          title: 'Failed to change email',
+          message: e.message || e.toString(),
           color: 'red',
         });
+    } finally {
+      setChangingEmail(false);
     }
   };
 
@@ -158,6 +171,49 @@ const SettingPage: PageWithLayoutProps = () => {
             onChange={setBirthday}
           />
         </SettingItemTab>
+        
+        <SettingItemTab
+        title="Email"
+        description="Your email address that you used to login with."
+        saving={changingEmail}
+        onSave={user?.email !== email ? handleChangeEmail : undefined}
+      >
+        <div className="grid gap-2">
+          <TextInput
+            placeholder="example@tuturuuu.com"
+            label={
+              user?.new_email
+                ? user?.email === email
+                  ? 'Current email'
+                  : 'New email'
+                : undefined
+            }
+            value={email || ''}
+            icon={<EnvelopeIcon className="h-5 w-5" />}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setEmail(event.currentTarget.value)
+            }
+          />
+
+          {user?.email === email && user?.new_email && (
+            <>
+              <TextInput
+                value={user.new_email}
+                label="New email"
+                icon={<EnvelopeIcon className="h-5 w-5" />}
+                disabled
+              />
+
+              <Divider variant="dashed" className="mt-1" />
+
+              <div className="text-zinc-400">
+                Once you have confirmed the change on both emails, your new
+                email address will be automatically applied.
+              </div>
+            </>
+          )}
+        </div>
+      </SettingItemTab>
 
         <SettingItemTab
           title="Language"
@@ -165,7 +221,7 @@ const SettingPage: PageWithLayoutProps = () => {
         >
           <LanguageSelector fullWidth />
         </SettingItemTab>
-
+      <SettingItemCard title={logOut} description="Log out of your account.">
         <div
           onClick={handleSave}
           className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"

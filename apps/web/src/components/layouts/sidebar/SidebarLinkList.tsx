@@ -53,6 +53,9 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         label={home}
         showTooltip={!sidebarOpened}
         exactMatch
+        classNames={{
+          root: 'hidden md:block',
+        }}
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
@@ -113,6 +116,9 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<ArchiveBoxIcon className="w-5" />}
         label={inventory}
         showTooltip={!sidebarOpened}
+        classNames={{
+          root: 'hidden md:block',
+        }}
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'EDUCATION') && (
@@ -130,6 +136,9 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<BanknotesIcon className="w-5" />}
         label={finance}
         showTooltip={!sidebarOpened}
+        classNames={{
+          root: 'hidden md:block',
+        }}
       />
 
       <SidebarLink

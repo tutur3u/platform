@@ -58,7 +58,7 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Tổng quan – Khám bệnh" />
-      <div className="flex min-h-full w-full flex-col pb-8">
+      <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
             title="Kiểm tra sức khoẻ"

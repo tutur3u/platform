@@ -45,7 +45,7 @@ const TeamCalendarPage = () => {
   ]);
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <HeaderX label={`Calendar – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (

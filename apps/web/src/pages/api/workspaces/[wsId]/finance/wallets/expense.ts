@@ -38,8 +38,12 @@ const fetchExpense = async (
     res,
   });
 
+  const { startDate, endDate } = req.query;
+
   const { data, error } = await supabase.rpc('get_workspace_wallets_expense', {
     ws_id: wsId,
+    start_date: startDate || null,
+    end_date: endDate || null,
   });
 
   if (error) return res.status(401).json({ error: error.message });
