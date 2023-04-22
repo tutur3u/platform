@@ -27,10 +27,12 @@ const ProductSelector = ({
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/products?unique=true&warehouse_id=${warehouseId}`;
-  const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
+  const { data: products } = useSWR<{ data: Product[]; count: number }>(
+    ws?.id ? apiPath : null
+  );
 
   const data = [
-    ...(products?.map((product) => ({
+    ...(products?.data.map((product) => ({
       label: product.name,
       value: product.id,
       disabled: blacklist?.includes(product.id),
@@ -41,7 +43,7 @@ const ProductSelector = ({
     <Select
       label="Sản phẩm"
       placeholder={
-        products && products.length === 0
+        products && products.data.length === 0
           ? 'Chưa có sản phẩm nào'
           : 'Chọn sản phẩm'
       }

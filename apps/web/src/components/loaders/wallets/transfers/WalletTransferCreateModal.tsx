@@ -116,6 +116,8 @@ const WalletTransferCreateModal = ({
       createdDepositTransaction: 'loading',
     }));
 
+    if (!originWallet?.id || !destinationWallet?.id) return;
+
     const withdrawPromise = createTransaction(originWallet.id, {
       ...transaction,
       amount: -(transaction?.amount || 0),

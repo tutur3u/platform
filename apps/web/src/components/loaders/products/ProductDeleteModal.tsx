@@ -1,5 +1,5 @@
 import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BanknotesIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
@@ -24,16 +24,6 @@ const ProductDeleteModal = ({ wsId, productId }: Props) => {
 
   const hasError = progress.removeDetails === 'error';
   const hasSuccess = progress.removeDetails === 'success';
-
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá sản phẩm',
-      color: 'green',
-    });
-  }, [hasSuccess, productId]);
 
   const removeDetails = async () => {
     const res = await fetch(

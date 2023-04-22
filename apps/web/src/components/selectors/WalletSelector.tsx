@@ -71,8 +71,8 @@ const WalletSelector = ({
             }).format(wallet?.balance || 0)})`
           : ''
       }`,
-      value: wallet.id,
-      disabled: blacklist.includes(wallet.id),
+      value: wallet?.id || '',
+      disabled: !wallet?.id || blacklist.includes(wallet.id),
     })) || []),
   ];
 

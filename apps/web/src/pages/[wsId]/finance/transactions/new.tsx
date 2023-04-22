@@ -25,7 +25,12 @@ export const getServerSideProps = enforceHasWorkspaces;
 
 const NewTransactionPage: PageWithLayoutProps = () => {
   const {
-    query: { date: dateQuery },
+    query: {
+      date: dateQuery,
+      targetWalletId,
+      type: queryType,
+      amount: queryAmount,
+    },
   } = useRouter();
 
   const { setRootSegment } = useSegments();
@@ -55,7 +60,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [description, setDescription] = useState<string>('');
-  const [amount, setAmount] = useState<number | ''>('');
+  const [amount, setAmount] = useState<number | ''>(Number(queryAmount) || '');
 
   const [takenAt, setTakenAt] = useState<Date>(
     dateQuery ? new Date(dateQuery as string) : new Date()
@@ -86,8 +91,19 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
   const [category, setCategory] = useState<TransactionCategory | null>(null);
 
+  const parseType = (type?: string) => {
+    switch (type) {
+      case 'transfer':
+      case 'balance':
+        return type;
+
+      default:
+        return 'default';
+    }
+  };
+
   const [type, setType] = useState<'default' | 'transfer' | 'balance'>(
-    'default'
+    parseType(queryType?.toString()) ?? 'default'
   );
 
   useEffect(() => {
@@ -159,11 +175,11 @@ const NewTransactionPage: PageWithLayoutProps = () => {
       setAmount(originWallet?.balance || '');
       setDescription('Cân bằng số dư');
     } else {
-      setAmount('');
+      setAmount(Number(queryAmount) || '');
       setDescription('');
       setDestinationWallet(null);
     }
-  }, [type, originWallet?.balance]);
+  }, [type, originWallet?.balance, queryAmount]);
 
   return (
     <>
@@ -225,7 +241,15 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                   if (type === 'balance') setAmount(wallet?.balance || 0);
                   setOriginWallet(wallet);
                 }}
-                blacklist={destinationWallet ? [destinationWallet.id] : []}
+                blacklist={
+                  type !== 'transfer'
+                    ? []
+                    : destinationWallet?.id
+                    ? [destinationWallet.id]
+                    : targetWalletId
+                    ? [targetWalletId.toString()]
+                    : []
+                }
                 hideLabel
               />
 
@@ -255,9 +279,10 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             >
               <div className="grid gap-2">
                 <WalletSelector
+                  walletId={targetWalletId?.toString()}
                   wallet={destinationWallet}
                   setWallet={setDestinationWallet}
-                  blacklist={originWallet ? [originWallet.id] : []}
+                  blacklist={originWallet?.id ? [originWallet.id] : undefined}
                   preventPreselected
                   disableQuery
                   clearable
@@ -309,6 +334,9 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               disabled={!originWallet}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
+              classNames={{
+                root: 'bg-[#25262b]',
+              }}
             />
           </SettingItemCard>
 

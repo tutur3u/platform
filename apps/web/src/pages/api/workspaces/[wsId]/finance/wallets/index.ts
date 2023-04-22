@@ -90,7 +90,16 @@ const createWallet = async (
     res,
   });
 
-  const { name, description, balance, currency } = req.body as Wallet;
+  const {
+    name,
+    description,
+    balance,
+    currency,
+    type,
+    statement_date,
+    payment_date,
+    limit,
+  } = req.body as Wallet;
 
   const { data: wallet, error: walletError } = await supabase
     .from('workspace_wallets')
@@ -98,12 +107,28 @@ const createWallet = async (
       name,
       description,
       currency,
+      type,
       ws_id: wsId,
     })
     .select('id')
     .single();
 
-  if (!wallet) return res.status(401).json({ error: walletError.message });
+  if (!wallet || walletError)
+    return res.status(401).json({ error: walletError?.message });
+
+  const { error: creditError } = await (statement_date &&
+  payment_date &&
+  limit &&
+  wallet.id
+    ? supabase.from('credit_wallets').insert({
+        wallet_id: wallet.id,
+        statement_date,
+        payment_date,
+        limit,
+      })
+    : Promise.resolve({ error: null }));
+
+  if (creditError) return res.status(401).json({ error: creditError.message });
 
   if (balance && balance != 0) {
     const { error: transactionError } = await supabase
@@ -111,7 +136,6 @@ const createWallet = async (
       .insert({
         description: 'Initial deposit',
         amount: balance,
-        is_expense: false,
         wallet_id: wallet.id,
       } as Transaction);
 
