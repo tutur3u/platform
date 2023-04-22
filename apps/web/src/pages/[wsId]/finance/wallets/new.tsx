@@ -50,8 +50,18 @@ const NewWalletPage: PageWithLayoutProps = () => {
   const [description, setDescription] = useState<string>('');
   const [balance, setBalance] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('VND');
+  const [type, setType] = useState<string>('STANDARD');
 
-  const hasRequiredFields = () => name.length > 0;
+  const [statementDate, setStatementDate] = useState<number>(0);
+  const [paymentDate, setPaymentDate] = useState<number>(0);
+  const [limit, setLimit] = useState<number | ''>('');
+
+  const hasRequiredFields = () =>
+    (name.length > 0 && type === 'STANDARD') ||
+    (type === 'CREDIT' &&
+      (limit || 0) > 0 &&
+      statementDate > 0 &&
+      paymentDate > 0);
 
   const showLoaderModal = () => {
     if (!ws) return;
@@ -64,7 +74,16 @@ const NewWalletPage: PageWithLayoutProps = () => {
       children: (
         <WalletCreateModal
           wsId={ws.id}
-          wallet={{ name, description, balance, currency }}
+          wallet={{
+            name,
+            description,
+            balance,
+            currency,
+            type,
+            limit: limit === '' ? undefined : limit,
+            statement_date: statementDate,
+            payment_date: paymentDate,
+          }}
         />
       ),
     });
@@ -109,8 +128,12 @@ const NewWalletPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Số tiền ban đầu"
-            description="Số tiền hiện có trong nguồn tiền này."
+            title={type === 'STANDARD' ? 'Số tiền hiện có' : 'Số tiền khả dụng'}
+            description={
+              type === 'STANDARD'
+                ? 'Số tiền hiện có trong nguồn tiền này.'
+                : 'Số tiền có thể sử dụng trong nguồn tiền này.'
+            }
           >
             <NumberInput
               placeholder="Nhập số tiền"
@@ -125,6 +148,23 @@ const NewWalletPage: PageWithLayoutProps = () => {
                   : ''
               }
             />
+
+            {type === 'CREDIT' && (limit || 0) - balance != 0 && (
+              <div
+                className={`mt-2 text-sm ${
+                  (limit || 0) - balance > 0 ? 'text-red-300' : 'text-green-300'
+                }`}
+              >
+                Bạn đang {(limit || 0) - balance > 0 ? 'nợ' : 'dư'}{' '}
+                <span className="font-semibold">
+                  {Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: currency,
+                  }).format(Math.abs((limit || 0) - balance))}
+                </span>{' '}
+                trong nguồn tiền này.
+              </div>
+            )}
           </SettingItemCard>
 
           <SettingItemCard
@@ -161,9 +201,80 @@ const NewWalletPage: PageWithLayoutProps = () => {
           <SettingItemCard
             title="Loại nguồn tiền"
             description="Quyết định cách thức sử dụng nguồn tiền này."
-            disabled
-            comingSoon
-          />
+          >
+            <div className="grid gap-2">
+              <Select
+                placeholder="Chọn loại nguồn tiền"
+                value={type}
+                onChange={(e) => {
+                  setType(e || 'STANDARD');
+                  if (e === 'CREDIT') {
+                    setLimit(balance);
+                  } else {
+                    setLimit('');
+                  }
+                }}
+                data={[
+                  {
+                    label: 'Tiêu chuẩn',
+                    value: 'STANDARD',
+                  },
+                  {
+                    label: 'Tín dụng',
+                    value: 'CREDIT',
+                  },
+                ]}
+                required
+              />
+
+              {type === 'CREDIT' && (
+                <>
+                  <NumberInput
+                    label="Hạn mức tín dụng"
+                    placeholder="Nhập hạn mức tín dụng"
+                    value={limit}
+                    onChange={(num) => {
+                      setLimit(Number(num));
+                      setBalance(Number(num));
+                    }}
+                    min={0}
+                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+                    formatter={(value) =>
+                      !Number.isNaN(parseFloat(value || ''))
+                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                        : ''
+                    }
+                  />
+
+                  <div className="flex w-full gap-4">
+                    <Select
+                      label="Ngày sao kê"
+                      placeholder="Chọn ngày sao kê"
+                      value={statementDate.toString()}
+                      onChange={(e) => setStatementDate(Number(e))}
+                      data={Array.from({ length: 28 }, (_, i) => ({
+                        label: `${i + 1}`,
+                        value: `${i + 1}`,
+                      }))}
+                      className="w-full"
+                    />
+
+                    <Select
+                      label="Ngày thanh toán"
+                      placeholder="Chọn ngày thanh toán"
+                      value={paymentDate.toString()}
+                      onChange={(e) => setPaymentDate(Number(e))}
+                      data={Array.from({ length: 28 }, (_, i) => ({
+                        label: `${i + 1}`,
+                        value: `${i + 1}`,
+                      }))}
+                      className="w-full"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </SettingItemCard>
 
           <SettingItemCard
             title="Biểu tượng đại diện"

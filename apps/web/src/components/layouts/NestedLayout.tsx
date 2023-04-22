@@ -57,7 +57,7 @@ const NestedLayout: FC<Props> = ({
       />
 
       <main
-        className={`scrollbar-none fixed inset-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateLeftMargin(
+        className={`fixed inset-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateLeftMargin(
           sidebar
         )} transition-all duration-300`}
       >
