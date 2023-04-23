@@ -27,6 +27,14 @@ export const enforceRootWorkspace = async (ctx: GetServerSidePropsContext) => {
       },
     };
 
+  if (!session.user?.email || !session.user.email.endsWith('@tuturuuu.com'))
+    return {
+      redirect: {
+        destination: '/onboarding',
+        permanent: false,
+      },
+    };
+
   const { data, error } = await supabase
     .from('workspaces')
     .select('id')

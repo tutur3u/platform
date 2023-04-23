@@ -57,7 +57,7 @@ const WorkspaceTeamsPage = () => {
       });
 
       const data = await res.json();
-      router.push(`/teams/${data.id}`);
+      router.push(`/${wsId}/teams/${data.id}`);
     } else {
       showNotification({
         title: 'Error',
