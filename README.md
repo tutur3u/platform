@@ -47,7 +47,7 @@ pnpm install
 To build all apps and packages, run the following command:
 
 ```bash
-pnpm run build
+pnpm build
 ```
 
 ### Develop
@@ -55,7 +55,7 @@ pnpm run build
 To develop all apps and packages (without requiring a local setup), run the following command:
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
 #### Better Development Experience
@@ -63,7 +63,7 @@ pnpm run dev
 In case you want to run all local development servers, run the following command:
 
 ```bash
-pnpm run devx
+pnpm devx
 ```
 
 Running `devx` will:
