@@ -1,52 +1,35 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import NestedLayout from '../../components/layouts/NestedLayout';
-import { useSegments } from '../../hooks/useSegments';
+import NestedLayout from '../../../components/layouts/NestedLayout';
+import { useSegments } from '../../../hooks/useSegments';
 import { Textarea } from '@mantine/core';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { GetServerSidePropsContext } from 'next';
+import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
-export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createServerSupabaseClient(ctx);
+export const getServerSideProps = enforceRootWorkspace;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // If user is not logged in, redirect to login page
-  if (!session)
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
-    };
-
-  // If user's email does not end with @tuturuuu.com, redirect to home page
-  if (!session.user?.email || !session.user.email.endsWith('@tuturuuu.com'))
-    return {
-      redirect: {
-        destination: '/onboarding',
-        permanent: false,
-      },
-    };
-
-  return {
-    props: {
-      initialSession: session,
-      user: session.user,
-    },
-  };
-};
-
-const GPTPage = () => {
+const WorkspaceAIPlaygroundPage = () => {
+  const { t } = useTranslation('sidebar-tabs');
+  const { ws } = useWorkspaces();
   const { setRootSegment } = useSegments();
 
+  const aiLabel = t('ai');
+
   useEffect(() => {
-    setRootSegment({
-      content: 'Tuturuuu AI',
-      href: '/ai',
-    });
-  }, [setRootSegment]);
+    setRootSegment(
+      ws
+        ? [
+            {
+              content: ws?.name || 'Tổ chức không tên',
+              href: `/${ws.id}`,
+            },
+            { content: aiLabel, href: `/${ws.id}/ai` },
+          ]
+        : []
+    );
+
+    return () => setRootSegment([]);
+  }, [aiLabel, ws, setRootSegment]);
 
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
@@ -142,8 +125,8 @@ const GPTPage = () => {
   );
 };
 
-GPTPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceAIPlaygroundPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default GPTPage;
+export default WorkspaceAIPlaygroundPage;

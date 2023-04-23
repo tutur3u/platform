@@ -9,6 +9,9 @@
     "eslint-plugin-react": "7.32.2",
     "eslint-config-turbo": "latest"
   },
+  "devDependencies": {
+    "next": "^13.3.1"
+  },
   "publishConfig": {
     "access": "public"
   }

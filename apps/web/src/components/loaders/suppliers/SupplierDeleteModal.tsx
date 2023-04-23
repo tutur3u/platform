@@ -36,9 +36,12 @@ const SupplierDeleteModal = ({ wsId, supplierId }: Props) => {
   }, [hasSuccess, supplierId]);
 
   const removeDetails = async () => {
-    const res = await fetch(`/api/workspaces/${wsId}/inventory/suppliers/${supplierId}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(
+      `/api/workspaces/${wsId}/inventory/suppliers/${supplierId}`,
+      {
+        method: 'DELETE',
+      }
+    );
 
     if (res.ok) {
       setProgress((progress) => ({ ...progress, removed: 'success' }));

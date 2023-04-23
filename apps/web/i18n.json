@@ -146,6 +146,7 @@
       "infrastructure-tabs"
     ],
 
+    "/[wsId]/ai": ["sidebar-tabs"],
     "/[wsId]/activities": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
