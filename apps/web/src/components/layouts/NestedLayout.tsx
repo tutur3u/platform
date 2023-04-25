@@ -8,7 +8,7 @@ import { StarIcon } from '@heroicons/react/24/solid';
 import LoadingIndicator from '../common/LoadingIndicator';
 import useTranslation from 'next-translate/useTranslation';
 import { getTabs } from '../../utils/tab-helper';
-import { Mode } from '../../types/Tab';
+import { Mode, Tab } from '../../types/Tab';
 import { DEV_MODE } from '../../constants/common';
 import BottomNavigationBar from './BottomNavigationBar';
 import { SidebarState, useAppearance } from '../../hooks/useAppearance';
@@ -40,7 +40,14 @@ const NestedLayout: FC<Props> = ({
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
 
-  const disableTabs = noTabs || tabs.length === 0;
+  const deduplicate = (arr: Tab[]) =>
+    arr.filter((_, index) => index === arr.findIndex((a) => a.href === _.href));
+
+  const filteredTabs = deduplicate(
+    tabs.filter((tab) => DEV_MODE || !tab.disabled)
+  );
+
+  const disableTabs = noTabs || filteredTabs.length === 0;
 
   const generateSidebarWidth = (state: SidebarState) =>
     state === 'closed' ? 'w-0 md:w-16' : 'w-full md:w-64';
@@ -109,41 +116,39 @@ const NestedLayout: FC<Props> = ({
           </div>
           {disableTabs || (
             <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
-              {tabs
-                .filter((tab) => DEV_MODE || !tab.disabled)
-                .map((tab) => {
-                  if (tab.disabled)
-                    return (
-                      <div
-                        key={`tab-${tab.href}`}
-                        className="group flex-none cursor-not-allowed rounded-t-lg border-b-2 border-transparent pb-2 text-zinc-500/80 opacity-50"
-                      >
-                        <div
-                          className={`select-none rounded px-4 py-1 text-center font-semibold`}
-                        >
-                          {tab.name}
-                        </div>
-                      </div>
-                    );
-
+              {filteredTabs.map((tab) => {
+                if (tab.disabled)
                   return (
-                    <Link
+                    <div
                       key={`tab-${tab.href}`}
-                      href={tab.href}
-                      className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
-                        segments &&
-                        segments.length > 0 &&
-                        segments.slice(-1)[0].href === tab.href
-                          ? 'border-zinc-300 text-zinc-300'
-                          : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
-                      }`}
+                      className="group flex-none cursor-not-allowed rounded-t-lg border-b-2 border-transparent pb-2 text-zinc-500/80 opacity-50"
                     >
-                      <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">
+                      <div
+                        className={`select-none rounded px-4 py-1 text-center font-semibold`}
+                      >
                         {tab.name}
                       </div>
-                    </Link>
+                    </div>
                   );
-                })}
+
+                return (
+                  <Link
+                    key={`tab-${tab.href}`}
+                    href={tab.href}
+                    className={`group flex-none rounded-t-lg border-b-2 pb-2 ${
+                      segments &&
+                      segments.length > 0 &&
+                      segments.slice(-1)[0].href === tab.href
+                        ? 'border-zinc-300 text-zinc-300'
+                        : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
+                    }`}
+                  >
+                    <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">
+                      {tab.name}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </nav>

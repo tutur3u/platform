@@ -5,5 +5,6 @@ export interface Workspace {
   handle?: string;
   name?: string;
   preset?: WorkspacePreset;
+  sort_key?: number;
   created_at?: string;
 }

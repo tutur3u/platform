@@ -23,7 +23,6 @@ import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
 import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
 import { mutate } from 'swr';
-import SettingItemCard from '../../components/settings/SettingItemCard';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -70,19 +69,15 @@ const SettingPage: PageWithLayoutProps = () => {
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
-    if (user?.email !== email) handleChangeEmail();
+    if (user?.email !== email) await handleChangeEmail();
 
     setIsSaving(false);
   };
 
   const supabase = useSupabaseClient();
 
-  const [changingEmail, setChangingEmail] = useState(false);
-
   const handleChangeEmail = async () => {
     try {
-      setChangingEmail(true);
-
       const { error } = await supabase.auth.updateUser({
         email,
       });
@@ -103,8 +98,6 @@ const SettingPage: PageWithLayoutProps = () => {
           message: e.message || e.toString(),
           color: 'red',
         });
-    } finally {
-      setChangingEmail(false);
     }
   };
 
@@ -127,10 +120,10 @@ const SettingPage: PageWithLayoutProps = () => {
     <div className="pb-20 md:max-w-lg">
       <HeaderX label="Settings" />
 
-      <div className="flex flex-col gap-4">
+      <div className="grid gap-2">
         <SettingItemTab
           title="Display name"
-          description="Please enter your name as you would like it to be displayed on your profile."
+          description="This name will be displayed on your profile."
         >
           <TextInput
             placeholder="John Doe"

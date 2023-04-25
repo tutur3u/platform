@@ -12,6 +12,14 @@ export const settingsTabs: NavTabs = {
       href: '/settings/appearance',
     },
     {
+      name: 'security',
+      href: '/settings/security',
+    },
+    {
+      name: 'workspaces',
+      href: '/settings/workspaces',
+    },
+    {
       name: 'notifications',
       href: '/settings/notifications',
       disabled: true,

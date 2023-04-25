@@ -42,7 +42,7 @@ const NotificationsPage = () => {
           <LoadingIndicator className="h-8" />
         </div>
       ) : (workspaceInvites?.length || 0) > 0 ? (
-        <div className="mb-16 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mb-16 grid gap-4 xl:grid-cols-2">
           {workspaceInvites?.map((ws) => (
             <WorkspaceInviteSnippet key={ws.id} ws={ws} gray />
           ))}
