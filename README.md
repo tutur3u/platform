@@ -13,7 +13,8 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 ### Packages
 
 - `ui`: a stub React component library with [Tailwind CSS](https://tailwindcss.com/) shared by the `web` application.
-- `eslint-config-custom`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
+- `eslint-config-custom`: `ESLint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
+- `tailwind-config`: `Tailwind CSS` configurations.
 - `tsconfig`: `tsconfig.json`s used throughout the monorepo.
 
 ### Utilities
