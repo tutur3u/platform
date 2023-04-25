@@ -34,6 +34,10 @@ const WorkspaceHomePage = () => {
       ],
       [data?.id]
     );
+
+    return () => {
+      setRootSegment([]);
+    };
   }, [setRootSegment, data]);
 
   if (isLoading) return <div>Loading...</div>;

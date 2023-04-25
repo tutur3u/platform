@@ -15,6 +15,7 @@
     "/settings/account": ["sidebar-tabs", "settings-tabs"],
     "/settings/appearance": ["sidebar-tabs", "settings-tabs"],
     "/settings/security": ["sidebar-tabs", "settings-tabs"],
+    "/settings/workspaces": ["sidebar-tabs", "settings-tabs"],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs"],

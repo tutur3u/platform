@@ -11,14 +11,15 @@ export default function SettingItemTab({
 }: SettingItemTabProps) {
   return (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="grid">
         <div className="text-2xl font-bold">{title}</div>
         {description && (
           <div className="whitespace-pre-line font-semibold text-zinc-500">
             {description}
           </div>
         )}
-        {children}
+
+        <div className="my-2">{children}</div>
       </div>
     </>
   );
