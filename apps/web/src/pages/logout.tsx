@@ -1,7 +1,12 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { GetServerSidePropsContext } from 'next';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
+import HeaderX from '../components/metadata/HeaderX';
+import Image from 'next/image';
+import LanguageSelector from '../components/selectors/LanguageSelector';
+import { Button, Divider } from '@mantine/core';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createServerSupabaseClient(ctx);
@@ -25,6 +30,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const LogOutPage = () => {
   const router = useRouter();
+
+  const { t } = useTranslation('logout');
   const { supabaseClient } = useSessionContext();
 
   const handleLogout = async () => {
@@ -32,15 +39,52 @@ const LogOutPage = () => {
     router.push('/');
   };
 
+  const logoutLabel = t('logout');
+  const description = t('description');
+
   return (
-    <div className="h-screen w-screen p-4 md:p-8">
-      <button
-        className="flex h-full w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-4 text-3xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20 md:text-6xl"
-        onClick={handleLogout}
-      >
-        Log out
-      </button>
-    </div>
+    <>
+      <HeaderX label={`Tuturuuu — ${logoutLabel}`} />
+      <Image
+        src="/media/background/auth-featured-bg.jpg"
+        alt="Featured background"
+        width={1619}
+        height={1080}
+        className="fixed inset-0 h-screen w-screen object-cover"
+      />
+
+      <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
+        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+          <div className="text-center">
+            <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
+              {logoutLabel}
+            </div>
+
+            <div className="text-xl font-semibold text-zinc-200">
+              {description}
+            </div>
+          </div>
+
+          <div className="grid w-full gap-2 text-center">
+            <Button
+              className="bg-red-300/10"
+              variant="light"
+              color="red"
+              onClick={(e) => {
+                e.preventDefault();
+                handleLogout();
+              }}
+            >
+              {logoutLabel}
+            </Button>
+          </div>
+
+          <Divider className="w-full border-zinc-300/10" variant="dashed" />
+
+          <LanguageSelector fullWidth transparent />
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -5,6 +5,7 @@
     "*": ["common"],
     "/": ["home"],
 
+    "/logout": ["logout"],
     "/login": ["auth", "login"],
     "/signup": ["auth", "signup", "auth-email-sent"],
     "/recover": ["auth", "recover", "auth-email-sent"],
