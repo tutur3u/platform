@@ -85,7 +85,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   const [gender, setGender] = useState('');
 
   const [birthday, setBirthday] = useState<Date | null>(null);
-  const [ethnicity, setEthnicityity] = useState('');
+  const [ethnicity, setEthnicity] = useState('');
 
   const [nationalId, setNationalId] = useState('');
   const [guardian, setGuardian] = useState('');
@@ -101,7 +101,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
       setName(user?.name || '');
       setGender(user?.gender || '');
       setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
-      setEthnicityity(user?.ethnicity || '');
+      setEthnicity(user?.ethnicity || '');
       setNationalId(user?.national_id || '');
       setGuardian(user?.guardian || '');
       setNote(user?.note || '');
@@ -264,31 +264,42 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               monthLabelFormat={(date) => moment(date).format('MMMM, YYYY')}
               monthsListFormat="MMMM"
               valueFormat="DD/MM/YYYY"
-            />
-            <TextInput
-              label="Dân tộc"
-              placeholder='Ví dụ: "Kinh"'
-              value={ethnicity}
-              onChange={(e) => setEthnicityity(e.currentTarget.value)}
+              className={ws?.preset !== 'PHARMACY' ? 'md:col-span-2' : ''}
+              classNames={{
+                input: 'bg-[#25262b]',
+              }}
             />
 
-            <TextInput
-              label="CMND/CCCD"
-              placeholder="Nhập số CMND/CCCD của người dùng"
-              value={nationalId}
-              onChange={(e) => setNationalId(e.currentTarget.value)}
-              className="md:col-span-2"
-              icon={<IdentificationIcon className="h-5 w-5" />}
-            />
+            {ws?.preset === 'PHARMACY' && (
+              <TextInput
+                label="Dân tộc"
+                placeholder='Ví dụ: "Kinh"'
+                value={ethnicity}
+                onChange={(e) => setEthnicity(e.currentTarget.value)}
+              />
+            )}
 
-            <TextInput
-              label="Người giám hộ"
-              placeholder="Nhập tên người giám hộ của người dùng"
-              value={guardian}
-              onChange={(e) => setGuardian(e.currentTarget.value)}
-              className="md:col-span-2"
-              icon={<ShieldCheckIcon className="h-5 w-5" />}
-            />
+            {ws?.preset === 'PHARMACY' && (
+              <TextInput
+                label="CMND/CCCD"
+                placeholder="Nhập số CMND/CCCD của người dùng"
+                value={nationalId}
+                onChange={(e) => setNationalId(e.currentTarget.value)}
+                className="md:col-span-2"
+                icon={<IdentificationIcon className="h-5 w-5" />}
+              />
+            )}
+
+            {ws?.preset === 'PHARMACY' && (
+              <TextInput
+                label="Người giám hộ"
+                placeholder="Nhập tên người giám hộ của người dùng"
+                value={guardian}
+                onChange={(e) => setGuardian(e.currentTarget.value)}
+                className="md:col-span-2"
+                icon={<ShieldCheckIcon className="h-5 w-5" />}
+              />
+            )}
 
             <div className="hidden xl:col-span-2 xl:block" />
 
