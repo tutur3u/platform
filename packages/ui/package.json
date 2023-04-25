@@ -19,7 +19,7 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.38",
+    "@types/react": "^18.2.0",
     "eslint": "^8.39.0",
     "eslint-config-custom": "workspace:*",
     "postcss": "^8.4.23",
