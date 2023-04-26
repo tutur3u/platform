@@ -13,7 +13,8 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 ### Packages
 
 - `ui`: a stub React component library with [Tailwind CSS](https://tailwindcss.com/) shared by the `web` application.
-- `eslint-config-custom`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
+- `eslint-config-custom`: `ESLint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
+- `tailwind-config`: `Tailwind CSS` configurations.
 - `tsconfig`: `tsconfig.json`s used throughout the monorepo.
 
 ### Utilities
@@ -42,12 +43,18 @@ After installing pnpm, you can install all dependencies by running the following
 pnpm install
 ```
 
+or
+
+```bash
+pnpm i
+```
+
 ### Build
 
 To build all apps and packages, run the following command:
 
 ```bash
-pnpm run build
+pnpm build
 ```
 
 ### Develop
@@ -55,7 +62,7 @@ pnpm run build
 To develop all apps and packages (without requiring a local setup), run the following command:
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
 #### Better Development Experience
@@ -63,7 +70,7 @@ pnpm run dev
 In case you want to run all local development servers, run the following command:
 
 ```bash
-pnpm run devx
+pnpm devx
 ```
 
 Running `devx` will:
