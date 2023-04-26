@@ -43,6 +43,12 @@ After installing pnpm, you can install all dependencies by running the following
 pnpm install
 ```
 
+or
+
+```bash
+pnpm i
+```
+
 ### Build
 
 To build all apps and packages, run the following command:
