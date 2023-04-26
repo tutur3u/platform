@@ -175,7 +175,6 @@ const NewTransactionPage: PageWithLayoutProps = () => {
       setAmount(originWallet?.balance || '');
       setDescription('Cân bằng số dư');
     } else {
-      setAmount(Number(queryAmount) || '');
       setDescription('');
       setDestinationWallet(null);
     }
@@ -246,8 +245,6 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                     ? []
                     : destinationWallet?.id
                     ? [destinationWallet.id]
-                    : targetWalletId
-                    ? [targetWalletId.toString()]
                     : []
                 }
                 hideLabel

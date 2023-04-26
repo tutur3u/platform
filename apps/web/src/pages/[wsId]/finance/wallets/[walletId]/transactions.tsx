@@ -15,7 +15,6 @@ import ModeSelector, {
   Mode,
 } from '../../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
-import SidebarLink from '../../../../../components/layouts/SidebarLink';
 import { Wallet } from '../../../../../types/primitives/Wallet';
 import { useRouter } from 'next/router';
 import moment from 'moment';

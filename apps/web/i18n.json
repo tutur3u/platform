@@ -5,6 +5,7 @@
     "*": ["common"],
     "/": ["home"],
 
+    "/logout": ["logout"],
     "/login": ["auth", "login"],
     "/signup": ["auth", "signup", "auth-email-sent"],
     "/recover": ["auth", "recover", "auth-email-sent"],
@@ -115,7 +116,10 @@
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
-      "finance-tabs",
+      "wallet-details-tabs"
+    ],
+    "/[wsId]/finance/wallets/[walletId]/settings": [
+      "sidebar-tabs",
       "wallet-details-tabs"
     ],
 

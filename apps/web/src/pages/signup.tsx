@@ -3,7 +3,6 @@ import { GetServerSidePropsContext } from 'next';
 import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
-import { useRouter } from 'next/router';
 import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';

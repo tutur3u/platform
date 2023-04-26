@@ -19,7 +19,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return await fetchPrices(req, res, productId, warehouseId);
 
       case 'POST': {
-        return await addPrices(req, res, wsId, productId, warehouseId);
+        return await addPrices(req, res, productId, warehouseId);
       }
 
       default:
@@ -60,7 +60,6 @@ const fetchPrices = async (
 const addPrices = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  wsId: string,
   productId: string,
   warehouseId: string
 ) => {

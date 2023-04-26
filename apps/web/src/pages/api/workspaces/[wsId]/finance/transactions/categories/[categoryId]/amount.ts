@@ -44,11 +44,12 @@ const fetchAmount = async (
 
   const { count, error } = await supabase
     .from('wallet_transactions')
-    .select('id', {
+    .select('id, workspace_wallets!inner(ws_id)', {
       head: true,
       count: 'exact',
     })
-    .eq('category_id', categoryId);
+    .eq('category_id', categoryId)
+    .eq('workspace_wallets.ws_id', wsId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({ count });

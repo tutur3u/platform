@@ -105,7 +105,7 @@ const updateWallet = async (
     .eq('id', walletId);
 
   const creditCardPromise =
-    statement_date && payment_date && limit
+    statement_date || payment_date || limit
       ? supabase
           .from('credit_wallets')
           .upsert({

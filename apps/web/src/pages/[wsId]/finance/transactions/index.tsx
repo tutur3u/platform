@@ -15,7 +15,6 @@ import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
-import SidebarLink from '../../../../components/layouts/SidebarLink';
 import moment from 'moment';
 import MiniPlusButton from '../../../../components/common/MiniPlusButton';
 import 'moment/locale/vi';
@@ -92,35 +91,44 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     const date = moment(cur.taken_at).toDate();
     const localeDate = date.toLocaleDateString();
 
-    if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
+    if (!acc[localeDate])
+      acc[localeDate] = { transactions: [], total: 0, date };
 
     acc[localeDate].transactions.push(cur);
 
     acc[localeDate].total += cur?.amount || 0;
 
     return acc;
-  }, {} as Record<string, { transactions: Transaction[]; total: number }>);
+  }, {} as Record<string, { transactions: Transaction[]; total: number; date: Date }>);
 
-  const getRelativeDate = (date: string) => {
+  const getRelativeDate = (date: Date) => {
+    const dateStr = date.toDateString();
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStr = today.toDateString();
+
+    if (dateStr === todayStr) return 'Hôm nay';
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+
+    if (dateStr === yesterdayStr) return 'Hôm qua';
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toDateString();
 
-    const dateObj = new Date(date);
+    if (dateStr === tomorrowStr) return 'Ngày mai';
 
-    if (dateObj.toDateString() === today.toDateString()) return 'Hôm nay';
-    if (dateObj.toDateString() === yesterday.toDateString()) return 'Hôm qua';
-    if (dateObj.toDateString() === tomorrow.toDateString()) return 'Ngày mai';
-
-    // Capitalize the first letter of the day
-    return moment(date)
-      .format('dddd, DD/MM/YYYY')
-      .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
+    return (
+      moment(date)
+        // Format the date to a string
+        .format('dddd, DD/MM/YYYY')
+        // Capitalize the first letter of the day
+        .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase())
+    );
   };
 
   return (
@@ -188,7 +196,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
               >
                 <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-gray-300 md:flex-row">
                   <div className="flex gap-2">
-                    <div>{getRelativeDate(date)}</div>
+                    <div>{getRelativeDate(data.date)}</div>
                     <MiniPlusButton
                       href={`/${ws.id}/finance/transactions/new?date=${date}`}
                       className="opacity-0 group-hover:opacity-100"

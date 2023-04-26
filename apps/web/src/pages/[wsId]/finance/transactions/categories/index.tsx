@@ -17,7 +17,6 @@ import ModeSelector, {
 } from '../../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
-import SidebarLink from '../../../../../components/layouts/SidebarLink';
 
 export const getServerSideProps = enforceHasWorkspaces;
 

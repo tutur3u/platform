@@ -10,7 +10,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'POST':
-        return await createTransactions(req, res, wsId);
+        return await createTransactions(req, res);
 
       default:
         throw new Error(
@@ -31,8 +31,7 @@ export default handler;
 
 const createTransactions = async (
   req: NextApiRequest,
-  res: NextApiResponse,
-  wsId: string
+  res: NextApiResponse
 ) => {
   const supabase = createServerSupabaseClient({
     req,
