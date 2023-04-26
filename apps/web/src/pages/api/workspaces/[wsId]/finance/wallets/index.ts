@@ -116,9 +116,9 @@ const createWallet = async (
   if (!wallet || walletError)
     return res.status(401).json({ error: walletError?.message });
 
-  const { error: creditError } = await (statement_date &&
-  payment_date &&
-  limit &&
+  const { error: creditError } = await ((statement_date ||
+    payment_date ||
+    limit) &&
   wallet.id
     ? supabase.from('credit_wallets').insert({
         wallet_id: wallet.id,

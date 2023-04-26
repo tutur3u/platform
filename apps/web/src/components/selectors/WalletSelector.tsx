@@ -77,19 +77,22 @@ const WalletSelector = ({
   ];
 
   useEffect(() => {
-    if (!wallets || (wallet?.id && wallet?.id === _walletId)) return;
+    if (!wallets) return;
 
-    const id = _walletId || disableQuery ? null : walletId;
+    const id = wallet?.id || _walletId || (disableQuery ? null : walletId);
 
     const currentWallet =
       wallets.find((w) => w.id === id || w.id === _walletId) || null;
 
-    if (currentWallet && currentWallet.id === wallet?.id) return;
-
-    if (currentWallet) {
+    if (
+      currentWallet &&
+      (currentWallet.id !== wallet?.id ||
+        currentWallet.currency !== wallet?.currency ||
+        currentWallet.name !== wallet?.name ||
+        currentWallet.balance !== wallet?.balance)
+    ) {
       setWallet(currentWallet);
 
-      // Remove walletId from query
       router.replace(
         {
           query: {

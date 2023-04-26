@@ -116,7 +116,10 @@
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
-      "finance-tabs",
+      "wallet-details-tabs"
+    ],
+    "/[wsId]/finance/wallets/[walletId]/settings": [
+      "sidebar-tabs",
       "wallet-details-tabs"
     ],
 

@@ -1,24 +1,21 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useEffect } from 'react';
 import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import {
-  Divider,
-  NumberInput,
-  Select,
-  TextInput,
-  Textarea,
-} from '@mantine/core';
-import { openModal } from '@mantine/modals';
+import { Divider } from '@mantine/core';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
-import SettingItemCard from '../../../../../components/settings/SettingItemCard';
 import { useRouter } from 'next/router';
 import { Wallet } from '../../../../../types/primitives/Wallet';
 import useSWR from 'swr';
-import WalletDeleteModal from '../../../../../components/loaders/wallets/WalletDeleteModal';
-import WalletEditModal from '../../../../../components/loaders/wallets/WalletEditModal';
+import TransactionCard from '../../../../../components/cards/TransactionCard';
+import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
+import PlusCardButton from '../../../../../components/common/PlusCardButton';
+import { Mode } from '../../../../../components/selectors/ModeSelector';
+import { Transaction } from '../../../../../types/primitives/Transaction';
+import moment from 'moment';
+import { useLocalStorage } from '@mantine/hooks';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -64,323 +61,212 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [wsId, walletId, ws, wallet, setRootSegment]);
 
-  const [name, setName] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [balance, setBalance] = useState<number>(0);
-  const [currency, setCurrency] = useState<string>('VND');
-  const [type, setType] = useState<string>('STANDARD');
+  const activePage = 1;
+  const itemsPerPage = 100;
 
-  const [statementDate, setStatementDate] = useState<number>(0);
-  const [paymentDate, setPaymentDate] = useState<number>(0);
-  const [limit, setLimit] = useState<number | ''>('');
+  const transactionsApiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/finance/transactions?walletIds=${walletId}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
 
-  useEffect(() => {
-    if (!wallet) return;
-    setName(wallet?.name || '');
-    setDescription(wallet?.description || '');
-    setBalance(wallet?.balance || 0);
-    setCurrency(wallet?.currency || 'VND');
-    setType(wallet?.type || 'STANDARD');
-    setStatementDate(wallet?.statement_date || 0);
-    setPaymentDate(wallet?.payment_date || 0);
-    setLimit(wallet?.limit || '');
-  }, [wallet]);
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/finance/transactions/count`
+  //   : null;
 
-  const hasRequiredFields = () => name.length > 0;
+  const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
+  // const { data: count } = useSWR<number>(countApi);
 
-  const showEditModal = () => {
-    if (!wallet) return;
-    if (typeof walletId !== 'string') return;
-    if (!ws?.id) return;
+  const [mode] = useLocalStorage<Mode>({
+    key: 'finance-wallet-transactions-mode',
+    defaultValue: 'grid',
+  });
 
-    openModal({
-      title: <div className="font-semibold">Cập nhật nguồn tiền</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WalletEditModal
-          wsId={ws.id}
-          oldWallet={wallet}
-          wallet={{
-            id: walletId,
-            name,
-            description,
-            balance,
-            currency,
-            type,
-            limit: limit === '' ? undefined : limit,
-            statement_date: statementDate,
-            payment_date: paymentDate,
-          }}
-        />
-      ),
-    });
-  };
+  if (!ws) return null;
 
-  const showDeleteModal = () => {
-    if (!wallet) return;
-    if (typeof walletId !== 'string') return;
-    if (!ws?.id) return;
+  const transactionsByDate = transactions?.reduce((acc, cur) => {
+    const date = moment(cur.taken_at).toDate();
+    const localeDate = date.toLocaleDateString();
 
-    openModal({
-      title: <div className="font-semibold">Xóa nguồn tiền</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <WalletDeleteModal wsId={ws.id} walletId={walletId} />,
-    });
+    if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
+
+    acc[localeDate].transactions.push(cur);
+
+    acc[localeDate].total += cur?.amount || 0;
+
+    return acc;
+  }, {} as Record<string, { transactions: Transaction[]; total: number }>);
+
+  const getRelativeDate = (date: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const dateObj = new Date(date);
+
+    if (dateObj.toDateString() === today.toDateString()) return 'Hôm nay';
+    if (dateObj.toDateString() === yesterday.toDateString()) return 'Hôm qua';
+    if (dateObj.toDateString() === tomorrow.toDateString()) return 'Ngày mai';
+
+    // Capitalize the first letter of the day
+    return moment(date)
+      .format('dddd, DD/MM/YYYY')
+      .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
   };
 
   return (
     <>
       <HeaderX label="Nguồn tiền – Tài chính" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                wallet ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={wallet ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
+        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div
+            className={`rounded border border-orange-300/10 bg-orange-300/10 p-4 text-orange-300 ${
+              wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
+            }`}
+          >
+            <div className="line-clamp-1 text-2xl font-semibold">
+              Tên nguồn tiền
+            </div>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              Lưu thay đổi
-            </button>
+            <div className="line-clamp-1 text-orange-300/70">
+              {wallet?.name}
+            </div>
           </div>
+
+          {wallet?.type === 'CREDIT' && (
+            <>
+              <div className="rounded border border-purple-300/10 bg-purple-300/10 p-4 text-purple-300">
+                <div className="line-clamp-1 text-2xl font-semibold">
+                  Hạn mức
+                </div>
+                <div className="line-clamp-2 text-purple-300/70">
+                  {Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: wallet?.currency || 'VND',
+                  }).format(wallet?.limit || 0)}
+                </div>
+              </div>
+              <div className="rounded border border-red-300/10 bg-red-300/10 p-4 text-red-300">
+                <div className="line-clamp-1 text-2xl font-semibold">
+                  Dư nợ hiện tại
+                </div>
+                <div className="line-clamp-2 text-red-300/70">
+                  {Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: wallet?.currency || 'VND',
+                  }).format((wallet?.limit || 0) - (wallet?.balance || 0))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <div
+            className={`rounded border border-green-300/10 bg-green-300/10 p-4 text-green-300 ${
+              wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
+            }`}
+          >
+            <div className="line-clamp-1 text-2xl font-semibold">
+              {wallet?.type === 'STANDARD'
+                ? 'Số tiền hiện có'
+                : 'Số tiền khả dụng'}
+            </div>
+            <div className="line-clamp-2 text-green-300/70">
+              {Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: wallet?.currency || 'VND',
+              }).format(wallet?.balance || 0)}
+            </div>
+          </div>
+
+          {wallet?.statement_date && wallet?.payment_date ? (
+            <div className="col-span-full text-zinc-400">
+              Nguồn tiền này sẽ được lên sao kê vào{' '}
+              <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
+                ngày {wallet?.statement_date}
+              </span>{' '}
+              hàng tháng và hạn thanh toán vào{' '}
+              <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
+                ngày {wallet?.payment_date}
+              </span>{' '}
+              của tháng sau.
+            </div>
+          ) : null}
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
 
-          <SettingItemCard
-            title="Tên nguồn tiền"
-            description="Tên nguồn tiền sẽ được hiển thị trên bảng điều khiển."
-          >
-            <TextInput
-              placeholder="Nhập tên nguồn tiền"
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-              required
-            />
-          </SettingItemCard>
+        <div
+          className={`grid gap-x-4 gap-y-2 ${
+            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+          }`}
+        >
+          <h3 className="col-span-full text-lg font-semibold text-gray-300">
+            Giao dịch mới
+          </h3>
+          <PlusCardButton
+            href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
+          />
+        </div>
 
-          <SettingItemCard
-            title={type === 'STANDARD' ? 'Số tiền hiện có' : 'Số tiền khả dụng'}
-            description={
-              type === 'STANDARD'
-                ? 'Số tiền hiện có trong nguồn tiền này.'
-                : 'Số tiền có thể sử dụng trong nguồn tiền này.'
-            }
-          >
-            <NumberInput
-              placeholder="Nhập số tiền"
-              value={balance}
-              onChange={(num) => setBalance(Number(num))}
-              className="w-full"
-              min={0}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-            />
+        <div className="mt-8 grid gap-8">
+          {transactionsByDate &&
+            Object.entries(transactionsByDate).length > 0 &&
+            Object.entries(transactionsByDate).map(([date, data]) => (
+              <div
+                key={date}
+                className="group rounded-lg border border-zinc-300/10 bg-zinc-900 p-4"
+              >
+                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-gray-300 md:flex-row">
+                  <div className="flex gap-2">
+                    <div>{getRelativeDate(date)}</div>
+                    <MiniPlusButton
+                      href={`/${ws.id}/finance/transactions/new?date=${date}`}
+                      className="opacity-0 group-hover:opacity-100"
+                    />
+                  </div>
 
-            {type === 'CREDIT' && (
-              <>
-                {(limit || 0) - balance != 0 && (
-                  <div
-                    className={`mt-2 text-sm ${
-                      (limit || 0) - balance > 0
-                        ? 'text-red-300'
-                        : 'text-green-300'
-                    }`}
-                  >
-                    Bạn {balance != wallet?.balance ? 'sẽ' : 'đang'}{' '}
-                    {(limit || 0) - balance > 0 ? 'nợ' : 'dư'}{' '}
-                    <span className="font-semibold">
+                  <div className="flex gap-2">
+                    <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
+                      {data.transactions.length} giao dịch
+                    </div>
+                    <div
+                      className={`rounded px-2 py-0.5 text-base ${
+                        data.total < 0
+                          ? 'bg-red-300/10 text-red-300'
+                          : 'bg-green-300/10 text-green-300'
+                      }`}
+                    >
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
-                        currency: currency,
-                      }).format(Math.abs((limit || 0) - balance))}
-                    </span>{' '}
-                    trong nguồn tiền này.
+                        currency: 'VND',
+                        signDisplay: 'exceptZero',
+                      }).format(data.total)}
+                    </div>
                   </div>
-                )}
+                </h3>
 
-                {(balance !== wallet?.balance || balance < (limit || 0)) && (
-                  <Divider className="my-2" variant="dashed" />
-                )}
+                <Divider variant="dashed" className="mb-4 mt-2" />
 
-                <div className="grid w-full gap-2 font-semibold">
-                  {balance !== wallet?.balance ? (
-                    <button
-                      onClick={() => setBalance(wallet?.balance || 0)}
-                      className="w-full rounded border border-zinc-300/10 bg-zinc-300/10 p-2 text-zinc-300 transition hover:bg-zinc-300/20"
-                    >
-                      Huỷ thanh toán
-                    </button>
-                  ) : (
-                    balance < (limit || 0) && (
-                      <>
-                        <button
-                          onClick={() => setBalance(limit || 0)}
-                          className="w-full rounded border border-blue-300/10 bg-blue-300/10 p-2 text-blue-300 transition hover:bg-blue-300/20"
-                        >
-                          Thanh toán ngay
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            router.push(
-                              `/${
-                                ws?.id
-                              }/finance/transactions/new?targetWalletId=${walletId}&type=transfer&amount=${
-                                (limit || 0) - balance
-                              }`
-                            )
-                          }
-                          className="w-full rounded border border-purple-300/10 bg-purple-300/10 p-2 text-purple-300 transition hover:bg-purple-300/20"
-                        >
-                          Thanh toán bằng nguồn tiền khác
-                        </button>
-                      </>
-                    )
-                  )}
+                <div
+                  className={`grid gap-4 ${
+                    mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+                  }`}
+                >
+                  {data.transactions.map((c) => (
+                    <TransactionCard
+                      key={c.id}
+                      wsId={ws.id}
+                      transaction={c}
+                      showAmount={true}
+                      showDatetime={false}
+                    />
+                  ))}
                 </div>
-              </>
-            )}
-          </SettingItemCard>
-
-          <SettingItemCard
-            title="Đơn vị tiền tệ"
-            description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
-          >
-            <Select
-              placeholder="Chọn đơn vị tiền tệ"
-              value={currency}
-              onChange={(e) => setCurrency(e || 'VND')}
-              data={[
-                {
-                  label: 'Việt Nam Đồng (VND)',
-                  value: 'VND',
-                },
-              ]}
-              required
-            />
-          </SettingItemCard>
-
-          <SettingItemCard
-            title="Mô tả"
-            description="Mô tả ngắn gọn về nguồn tiền này."
-          >
-            <Textarea
-              placeholder="Nhập mô tả"
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              minRows={3}
-              maxRows={5}
-            />
-          </SettingItemCard>
-
-          <SettingItemCard
-            title="Loại nguồn tiền"
-            description="Quyết định cách thức sử dụng nguồn tiền này."
-          >
-            <div className="grid gap-2">
-              <Select
-                placeholder="Chọn loại nguồn tiền"
-                value={type}
-                onChange={(e) => {
-                  setType(e || 'STANDARD');
-                  if (e === 'CREDIT') {
-                    setLimit(balance);
-                  } else {
-                    setLimit('');
-                  }
-                }}
-                data={[
-                  {
-                    label: 'Tiêu chuẩn',
-                    value: 'STANDARD',
-                  },
-                  {
-                    label: 'Tín dụng',
-                    value: 'CREDIT',
-                  },
-                ]}
-                required
-              />
-
-              {type === 'CREDIT' && (
-                <>
-                  <NumberInput
-                    label="Hạn mức tín dụng"
-                    placeholder="Nhập hạn mức tín dụng"
-                    value={limit}
-                    onChange={(num) => setLimit(Number(num))}
-                    min={0}
-                    parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value || ''))
-                        ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                        : ''
-                    }
-                  />
-
-                  <div className="flex w-full gap-4">
-                    <Select
-                      label="Ngày sao kê"
-                      placeholder="Chọn ngày sao kê"
-                      value={statementDate.toString()}
-                      onChange={(e) => setStatementDate(Number(e))}
-                      data={Array.from({ length: 28 }, (_, i) => ({
-                        label: `${i + 1}`,
-                        value: `${i + 1}`,
-                      }))}
-                      className="w-full"
-                    />
-
-                    <Select
-                      label="Ngày thanh toán"
-                      placeholder="Chọn ngày thanh toán"
-                      value={paymentDate.toString()}
-                      onChange={(e) => setPaymentDate(Number(e))}
-                      data={Array.from({ length: 28 }, (_, i) => ({
-                        label: `${i + 1}`,
-                        value: `${i + 1}`,
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </SettingItemCard>
-
-          <SettingItemCard
-            title="Biểu tượng đại diện"
-            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền."
-            disabled
-            comingSoon
-          />
+              </div>
+            ))}
         </div>
       </div>
     </>
