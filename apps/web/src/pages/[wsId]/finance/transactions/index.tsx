@@ -15,7 +15,6 @@ import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
-import SidebarLink from '../../../../components/layouts/SidebarLink';
 import moment from 'moment';
 import MiniPlusButton from '../../../../components/common/MiniPlusButton';
 import 'moment/locale/vi';

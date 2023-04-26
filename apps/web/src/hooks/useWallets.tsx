@@ -7,7 +7,7 @@ import { showNotification } from '@mantine/notifications';
 const WalletContext = createContext({
   createWallet: (wsId: string, wallet: Wallet) => console.log(wsId, wallet),
   updateWallet: (wsId: string, wallet: Wallet) => console.log(wsId, wallet),
-  deleteWallet: (wsId: string, wallet: Wallet) => console.log(wallet),
+  deleteWallet: (wsId: string, wallet: Wallet) => console.log(wsId, wallet),
 });
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {

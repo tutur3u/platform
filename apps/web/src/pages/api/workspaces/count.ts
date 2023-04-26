@@ -27,7 +27,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchCount = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchCount = async (_: NextApiRequest, res: NextApiResponse) => {
   const supabase = supabaseAdmin();
   if (!supabase) return res.status(401).json({ error: 'Unauthorized' });
 

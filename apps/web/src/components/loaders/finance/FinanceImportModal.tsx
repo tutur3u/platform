@@ -1,13 +1,8 @@
 import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
-import {
-  BanknotesIcon,
-  CheckBadgeIcon,
-  PlusIcon,
-} from '@heroicons/react/24/solid';
+import { useState } from 'react';
+import { BanknotesIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { TransactionCategory } from '../../../types/primitives/TransactionCategory';
