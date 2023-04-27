@@ -157,7 +157,9 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
                   {Intl.NumberFormat('vi-VN', {
                     style: 'currency',
                     currency: wallet?.currency || 'VND',
-                  }).format((wallet?.limit || 0) - (wallet?.balance || 0))}
+                  }).format(
+                    Math.max((wallet?.limit || 0) - (wallet?.balance || 0), 0)
+                  )}
                 </div>
               </div>
             </>

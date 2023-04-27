@@ -84,11 +84,11 @@
     "genversion": "^3.1.1",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
-    "lint-staged": "^13.2.1",
+    "lint-staged": "^13.2.2",
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
     "tailwind-config": "workspace:*",
-    "supabase": "^1.50.13",
+    "supabase": "^1.50.15",
     "tailwindcss": "^3.3.2",
     "tsconfig": "workspace:*",
     "typescript": "^5.0.4"
