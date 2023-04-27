@@ -10,6 +10,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "stop": "cd apps/web && pnpm stop",
     "sb:start": "cd apps/web && pnpm sb:start",
     "sb:stop": "cd apps/web && pnpm sb:stop",
     "sb:sync": "cd apps/web && pnpm sb:sync",
