@@ -255,7 +255,7 @@ function LeftSidebar({ className }: SidebarProps) {
           )}
 
           {ws?.id ? (
-            <div className={`m-2 ${ws || 'h-full'}`}>
+            <div className={`mx-2 ${ws || 'h-full'}`}>
               <SidebarLink
                 href={`/${ws.id}/notifications`}
                 onClick={() => setUserPopover(false)}
@@ -290,7 +290,7 @@ function LeftSidebar({ className }: SidebarProps) {
             </div>
           )}
 
-          <Divider className="mb-2 hidden md:block" />
+          <Divider className="my-2 hidden md:block" />
 
           <div className="mx-2 hidden md:block">
             <SidebarButton

@@ -174,7 +174,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<ClockIcon className="w-5" />}
         label={activities}
         showTooltip={!sidebarOpened}
-        disabled
       />
     </div>
   );

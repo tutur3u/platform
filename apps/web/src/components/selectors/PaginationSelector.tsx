@@ -1,4 +1,4 @@
-import { Squares2X2Icon } from '@heroicons/react/24/solid';
+import { ListBulletIcon } from '@heroicons/react/24/solid';
 import { Select } from '@mantine/core';
 
 export type Mode = 'list' | 'grid';
@@ -52,7 +52,7 @@ const PaginationSelector = ({ items, setItems }: Props) => {
     <Select
       label="Số mục trên trang"
       placeholder="Chọn số mục trên trang"
-      icon={<Squares2X2Icon className="h-5" />}
+      icon={<ListBulletIcon className="h-5" />}
       data={data}
       value={items.toString()}
       onChange={(value) => {
