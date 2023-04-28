@@ -29,18 +29,24 @@ export const getServerSideProps = enforceAuthenticated;
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
 
+  const { t } = useTranslation('settings-account');
+
+  const settings = t('common:settings');
+
+  const account = t('account');
+
   useEffect(() => {
     setRootSegment([
       {
-        content: 'Settings',
+        content: settings,
         href: '/settings',
       },
       {
-        content: 'Account',
+        content: account,
         href: '/settings/account',
       },
     ]);
-  }, [setRootSegment]);
+  }, [settings, account, setRootSegment]);
 
   const { user, updateUser } = useUser();
 
@@ -110,20 +116,32 @@ const SettingPage: PageWithLayoutProps = () => {
     router.push('/login');
   };
 
-  const { t } = useTranslation('settings');
-
   const logOut = t('common:logout');
   const save = t('common:save');
   const saving = t('common:saving');
 
+  const displayNameLabel = t('display-name');
+  const displayNameDescription = t('display-name-description');
+  const handleDescription = t('handle-description');
+  const birthdayLabel = t('birthday');
+  const birthdayDescription = t('birthday-description');
+  const birthdayPlaceholder = t('birthday-placeholder');
+  const emailDescription = t('email-description');
+  const newEmail = t('new-email');
+  const currentEmail = t('current-email');
+  const changeEmailDescription = t('change-email-description');
+  const languageLabel = t('language');
+  const languageDescription = t('language-description');
+  const logoutDescription = t('logout-description');
+
   return (
     <div className="pb-20 md:max-w-lg">
-      <HeaderX label="Settings" />
+      <HeaderX label={settings} />
 
       <div className="grid gap-2">
         <SettingItemTab
-          title="Display name"
-          description="This name will be displayed on your profile."
+          title={displayNameLabel}
+          description={displayNameDescription}
         >
           <TextInput
             placeholder="John Doe"
@@ -134,10 +152,7 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
-        <SettingItemTab
-          title="Handle"
-          description="This is your custom URL namespace within Tuturuuu."
-        >
+        <SettingItemTab title="Handle" description={handleDescription}>
           <TextInput
             placeholder="tuturuuu"
             // replace all characters that are not a-z, 0-9, or _
@@ -156,12 +171,9 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
-        <SettingItemTab
-          title="Birthday"
-          description="Your birthday will only be used for social features."
-        >
+        <SettingItemTab title={birthdayLabel} description={birthdayDescription}>
           <DatePickerInput
-            placeholder="Your birthday"
+            placeholder={birthdayPlaceholder}
             icon={<CakeIcon className="h-5 w-5" />}
             value={birthday}
             onChange={setBirthday}
@@ -171,18 +183,15 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
-        <SettingItemTab
-          title="Email"
-          description="Your email address that you used to login with."
-        >
+        <SettingItemTab title="Email" description={emailDescription}>
           <div className="grid gap-2">
             <TextInput
               placeholder="example@tuturuuu.com"
               label={
                 user?.new_email
                   ? user?.email === email
-                    ? 'Current email'
-                    : 'New email'
+                    ? currentEmail
+                    : newEmail
                   : undefined
               }
               value={email || ''}
@@ -196,27 +205,17 @@ const SettingPage: PageWithLayoutProps = () => {
               <>
                 <TextInput
                   value={user.new_email}
-                  label="New email"
+                  label={newEmail}
                   icon={<EnvelopeIcon className="h-5 w-5" />}
                   disabled
                 />
 
                 <Divider variant="dashed" className="mt-1" />
 
-                <div className="text-zinc-400">
-                  Once you have confirmed the change on both emails, your new
-                  email address will be automatically applied.
-                </div>
+                <div className="text-zinc-400">{changeEmailDescription}</div>
               </>
             )}
           </div>
-        </SettingItemTab>
-
-        <SettingItemTab
-          title="Language"
-          description="Change the language of the website."
-        >
-          <LanguageSelector fullWidth />
         </SettingItemTab>
 
         <div
@@ -226,7 +225,11 @@ const SettingPage: PageWithLayoutProps = () => {
           {isSaving ? saving : save}
         </div>
 
-        <SettingItemTab title={logOut} description="Log out of your account.">
+        <SettingItemTab title={languageLabel} description={languageDescription}>
+          <LanguageSelector fullWidth />
+        </SettingItemTab>
+
+        <SettingItemTab title={logOut} description={logoutDescription}>
           <div
             onClick={handleLogout}
             className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
