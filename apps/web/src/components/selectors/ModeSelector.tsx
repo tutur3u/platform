@@ -9,16 +9,20 @@ interface Props {
 }
 
 const ModeSelector = ({ mode, setMode }: Props) => {
-  const data = [
-    // {
-    //   label: 'Dạng danh sách',
-    //   value: 'list',
-    // },
-    {
-      label: 'Dạng lưới',
-      value: 'grid',
-    },
-  ];
+  const data =
+    mode === 'list'
+      ? [
+          {
+            label: 'Dạng danh sách',
+            value: 'list',
+          },
+        ]
+      : [
+          {
+            label: 'Dạng lưới',
+            value: 'grid',
+          },
+        ];
 
   return (
     <Select

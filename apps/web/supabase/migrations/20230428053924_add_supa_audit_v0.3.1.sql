@@ -211,3 +211,77 @@ begin execute statement_row;
 execute statement_stmt;
 end;
 $$;
+alter table audit.record_version
+add column ws_id uuid generated always as (
+        (
+            case
+                when record ? 'ws_id' then (record->>'ws_id')::uuid
+                when old_record ? 'ws_id' then (old_record->>'ws_id')::uuid
+                else null
+            end
+        )
+    ) stored;
+alter table "audit"."record_version"
+alter column "auth_uid" drop default;
+alter table "audit"."record_version" enable row level security;
+alter table "audit"."record_version"
+add constraint "record_version_auth_uid_fkey" FOREIGN KEY (auth_uid) REFERENCES users(id) not valid;
+alter table "audit"."record_version" validate constraint "record_version_auth_uid_fkey";
+create policy "Enable read access for related users or workspace users" on "audit"."record_version" as permissive for
+select to authenticated using (
+        (
+            (auth_uid = auth.uid())
+            OR (
+                EXISTS (
+                    SELECT 1
+                    FROM workspace_members m
+                    WHERE (m.user_id = record_version.auth_uid)
+                )
+            )
+            OR (
+                EXISTS (
+                    SELECT 1
+                    FROM workspaces w
+                    WHERE (
+                            (
+                                w.id = ((record_version.record->>'ws_id'::text))::uuid
+                            )
+                            OR (
+                                w.id = ((record_version.old_record->>'ws_id'::text))::uuid
+                            )
+                        )
+                )
+            )
+        )
+    );
+grant usage on schema audit to postgres,
+    anon,
+    authenticated,
+    service_role;
+grant all privileges on all tables in schema audit to postgres,
+    anon,
+    authenticated,
+    service_role;
+grant all privileges on all functions in schema audit to postgres,
+    anon,
+    authenticated,
+    service_role;
+grant all privileges on all sequences in schema audit to postgres,
+    anon,
+    authenticated,
+    service_role;
+alter default privileges in schema audit
+grant all on tables to postgres,
+    anon,
+    authenticated,
+    service_role;
+alter default privileges in schema audit
+grant all on functions to postgres,
+    anon,
+    authenticated,
+    service_role;
+alter default privileges in schema audit
+grant all on sequences to postgres,
+    anon,
+    authenticated,
+    service_role;
