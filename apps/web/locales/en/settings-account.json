@@ -1,7 +1,7 @@
 {
   "account": "Account",
   "display-name": "Display name",
-  "display-name-description": "Please enter your name as you would like it to be displayed on your profile.",
+  "display-name-description": "Enter your name as you would like it to be displayed on your profile.",
   "handle-description": "This is your custom URL namespace within Tuturuuu.",
   "birthday": "Birthday",
   "birthday-description": "Your birthday will only be used for social features.",
