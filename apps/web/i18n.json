@@ -13,10 +13,14 @@
     "/onboarding": ["onboarding", "invite"],
 
     "/settings": ["sidebar-tabs", "settings-tabs"],
-    "/settings/account": ["sidebar-tabs", "settings-tabs"],
-    "/settings/appearance": ["sidebar-tabs", "settings-tabs"],
-    "/settings/security": ["sidebar-tabs", "settings-tabs"],
-    "/settings/workspaces": ["sidebar-tabs", "settings-tabs"],
+    "/settings/account": ["sidebar-tabs", "settings-tabs", "settings-account"],
+    "/settings/appearance": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-appearance"
+    ],
+    "/settings/security": ["sidebar-tabs", "settings-tabs", "settings-security"],
+    "/settings/workspaces": ["sidebar-tabs", "settings-tabs", "settings-workspaces"],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs"],

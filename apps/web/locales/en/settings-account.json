@@ -1,0 +1,16 @@
+{
+  "account": "Account",
+  "display-name": "Display name",
+  "display-name-description": "Enter your name as you would like it to be displayed on your profile.",
+  "handle-description": "This is your custom URL namespace within Tuturuuu.",
+  "birthday": "Birthday",
+  "birthday-description": "Your birthday will only be used for social features.",
+  "birthday-placeholder": "Your birthday",
+  "email-description": "Your email address that you used to login with.",
+  "current-email": "Current email",
+  "new-email": "New email",
+  "change-email-description": "Once you have confirmed the change on both emails, your newemail address will be automatically applied.",
+  "language": "Language",
+  "language-description": "Change the language of the website.",
+  "logout-description": "Log out of your account."
+}
