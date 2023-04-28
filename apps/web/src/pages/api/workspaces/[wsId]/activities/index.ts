@@ -57,6 +57,7 @@ const fetchActivities = async (
         count: 'exact',
       }
     )
+    .order('ts', { ascending: false })
     .eq('ws_id', wsId);
 
   if (ops && typeof ops === 'string') {

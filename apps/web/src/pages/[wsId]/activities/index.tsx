@@ -103,7 +103,7 @@ const HistoryPage: PageWithLayoutProps = () => {
           }`}
           variant="contained"
           classNames={{
-            content: 'border-t border-zinc-300/10',
+            content: 'border-t border-zinc-300/10 bg-zinc-900 pt-4 rounded-b',
             control: 'rounded bg-zinc-800/70 transition hover:bg-zinc-800/70',
             item: 'rounded',
           }}
