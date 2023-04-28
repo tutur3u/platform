@@ -15,7 +15,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { t } = useTranslation('settings-security');
 
-  const settings = t('settings');
+  const settings = t('common:settings');
   const security = t('security');
 
   useEffect(() => {
