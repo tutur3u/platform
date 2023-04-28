@@ -23,6 +23,14 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(wss || []);
 
+  const { t } = useTranslation('settings-workspaces');
+
+  const settings = t('common:settings');
+  const workspacesLabel = t('workspaces');
+  const workspacesDescription = t('workspaces-description');
+
+  
+
   useEffect(() => {
     setWorkspaces(wss || []);
   }, [wss]);
@@ -52,11 +60,11 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
   useEffect(() => {
     setRootSegment([
       {
-        content: 'Settings',
+        content: settings,
         href: '/settings',
       },
       {
-        content: 'Workspaces',
+        content: workspacesLabel,
         href: '/settings/workspaces',
       },
     ]);
@@ -64,11 +72,10 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
     return () => {
       setRootSegment([]);
     };
-  }, [setRootSegment]);
+  }, [workspacesLabel, settings, setRootSegment]);
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const { t } = useTranslation('settings');
 
   const save = t('common:save');
   const saving = t('common:saving');
@@ -111,8 +118,8 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
 
       <div className="grid">
         <SettingItemTab
-          title="Workspaces"
-          description="Workspaces that you have access to will be listed here."
+          title={workspacesLabel}
+          description={workspacesDescription}
         >
           <DragDropContext onDragEnd={onDragEnd}>
             <StrictModeDroppable droppableId="droppable">

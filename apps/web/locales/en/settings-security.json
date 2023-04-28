@@ -1,0 +1,8 @@
+{
+  "settings": "Settings",
+  "security": "security",
+  "security-description": "Manage your account security",
+  "change-email": "Change email",
+  "change-password": "Change password",
+  "delete-account": "Delete account"
+}

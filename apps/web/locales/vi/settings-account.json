@@ -1,0 +1,16 @@
+{
+  "account": "Tài khoản",
+  "display-name": "Tên hiển thị",
+  "display-name-description": "Vui lòng nhập tên bạn muốn hiển thị trên hồ sơ của mình",
+  "handle-description": "Đây là URL tự chọn của bạn trong Tuturuuu",
+  "birthday": "Ngày sinh",
+  "birthday-description": "Ngày sinh của bạn sẽ chỉ được dùng cho các tính năng xã hội",
+  "birthday-placeholder": "Ngày sinh của bạn",
+  "email-description": "Email bạn dùng để đăng nhập",
+  "current-email": "Email hiện tại",
+  "new-email": "Email mới",
+  "change-email-description": "Sau khi bạn xác nhận ở cả hai email, email mới của bạn sẽ được tự động cập nhật",
+  "language": "Ngôn ngữ",
+  "language-description": "Thay đổi ngôn ngữ của trang web",
+  "logout-description": "Đăng xuất khỏi tài khoản của bạn"
+}
