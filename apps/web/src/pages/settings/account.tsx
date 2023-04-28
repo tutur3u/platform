@@ -218,16 +218,16 @@ const SettingPage: PageWithLayoutProps = () => {
           </div>
         </SettingItemTab>
 
-        <SettingItemTab title={languageLabel} description={languageDescription}>
-          <LanguageSelector fullWidth />
-        </SettingItemTab>
-
         <div
           onClick={handleSave}
           className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
         >
           {isSaving ? saving : save}
         </div>
+
+        <SettingItemTab title={languageLabel} description={languageDescription}>
+          <LanguageSelector fullWidth />
+        </SettingItemTab>
 
         <SettingItemTab title={logOut} description={logoutDescription}>
           <div
