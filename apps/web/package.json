@@ -70,7 +70,7 @@
     "@types/cookie": "^0.5.1",
     "@types/jest": "^29.5.1",
     "@types/js-cookie": "^3.0.3",
-    "@types/node": "^18.16.1",
+    "@types/node": "^18.16.2",
     "@types/react": "^18.2.0",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.2.1",
