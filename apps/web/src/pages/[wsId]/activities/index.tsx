@@ -110,7 +110,11 @@ const HistoryPage: PageWithLayoutProps = () => {
         >
           {logsData &&
             logsData.data?.map((log) => (
-              <AuditLogCard key={`log-${log.id}`} data={log} />
+              <AuditLogCard
+                data={log}
+                key={`log-${log.id}`}
+                isExpanded={selectedLog === `log-${log.id}`}
+              />
             ))}
         </Accordion>
       </div>

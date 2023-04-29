@@ -1,41 +1,35 @@
-import moment from 'moment';
-import { Accordion, JsonInput } from '@mantine/core';
+import { Accordion } from '@mantine/core';
 import { AuditLog } from '../../types/primitives/AuditLog';
-import { getLabel } from '../../utils/audit-helper';
 import { User } from '../../types/primitives/User';
 import useSWR from 'swr';
+import AuditDescription from '../audit/AuditDescription';
+import AuditLabel from '../audit/AuditLabel';
 
 interface Props {
   data: AuditLog;
+  isExpanded: boolean;
 }
 
-const AuditLogCard = ({ data }: Props) => {
+const AuditLogCard = ({ data, isExpanded }: Props) => {
   const userId = data?.auth_uid || null;
   const userApi = userId ? `/api/users/${userId}` : null;
 
-  const { data: user } = useSWR<User>(userApi);
-
-  const label = getLabel(data);
-
-  const fullLabel = `${
-    userId ? (user ? user.display_name : '...') : 'Hệ thống'
-  } ${label}`;
+  const { data: user, error } = useSWR<User>(userApi);
+  const isLoading = (userId && !user && !error) || false;
 
   return (
     <Accordion.Item value={`log-${data.id}`}>
       <Accordion.Control>
-        <div className="font-semibold tracking-wide">{fullLabel}</div>
-        <div className="line-clamp-1 pb-1 font-semibold text-zinc-400/70">
-          {moment(data.ts).fromNow()}
-        </div>
-      </Accordion.Control>
-      <Accordion.Panel>
-        <JsonInput
-          value={JSON.stringify(data, null, 2)}
-          formatOnBlur
-          autosize
-          disabled
+        <AuditLabel
+          data={data}
+          isLoading={isLoading}
+          hasActor={!!userId}
+          actor={user}
         />
+      </Accordion.Control>
+
+      <Accordion.Panel>
+        <AuditDescription data={data} isExpanded={isExpanded} />
       </Accordion.Panel>
     </Accordion.Item>
   );

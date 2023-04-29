@@ -14,10 +14,10 @@ const getLeadingLabel = (op: Operation) => {
 const getTrailingLabel = (data: AuditLog) => {
   switch (data.table_name) {
     case 'workspace_members':
-      return 'thành viên vào không gian làm việc';
+      return 'thành viên';
 
     case 'workspace_invites':
-      return 'lời mời';
+      return 'lời mời tham gia';
 
     case 'workspace_teams':
       return 'nhóm';
