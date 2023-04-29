@@ -32,12 +32,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <>
+            <p>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
-            </>
+            </p>
           )}
 
           {data.op === 'UPDATE' &&
@@ -55,12 +55,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -117,12 +117,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -179,12 +179,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -287,12 +287,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -375,12 +375,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -653,12 +653,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -778,12 +778,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         )}
 
         {data.op === 'DELETE' && data?.old_record?.name != null && (
-          <>
-            • {t('deleted')}{' '}
+          <p>
+            • {t('removed')}{' '}
             <span className="font-semibold text-zinc-200">
               {data.old_record.name}
             </span>
-          </>
+          </p>
         )}
       </div>
     );
@@ -793,12 +793,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <>
+            <p>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
-            </>
+            </p>
           )}
 
           {data.op === 'UPDATE' &&
@@ -816,12 +816,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <>
-              • {t('deleted')}{' '}
+            <p>
+              • {t('removed')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
-            </>
+            </p>
           )}
         </p>
       </div>
@@ -839,7 +839,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
           {user != null && (
-            <>
+            <p>
               •{' '}
               {data.op === 'INSERT'
                 ? data.table_name === 'workspace_members'
@@ -857,7 +857,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 {user?.handle ? `@${user.handle}` : t('no_handle')}
               </span>
               )
-            </>
+            </p>
           )}
         </p>
       </div>
