@@ -1,4 +1,18 @@
 {
-  "members": "Thành viên",
-  "select_members": "Chọn thành viên"
+  "description": "Quản lý thành viên trong không gian làm việc.",
+  "invite_member": "Mời thành viên",
+  "member_since": "Đã tham gia",
+  "pending_invitations": "Lời mời đang chờ",
+  "invited": "Đã mời",
+  "leave": "Rời khỏi",
+  "remove_member": "Xóa thành viên",
+  "member_removed": "Thành viên đã bị xóa",
+  "revoke_invitation": "Thu hồi lời mời",
+  "invitation_revoked": "Lời mời đã bị thu hồi",
+  "invitation_to": "Lời mời đến",
+  "has_been_revoked": "đã bị thu hồi",
+  "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
+  "error": "Lỗi",
+  "revoke_error": "Đã xảy ra lỗi khi thu hồi lời mời",
+  "remove_error": "Đã xảy ra lỗi khi xóa thành viên"
 }

@@ -31,17 +31,16 @@
     ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
-    "/[wsId]": ["sidebar-tabs", "workspace-tabs"],
-    "/[wsId]/members": ["sidebar-tabs", "workspace-tabs"],
-    "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs"],
+    "/[wsId]": ["sidebar-tabs", "workspace-tabs", "ws-home"],
+    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
+    "/[wsId]/members": ["sidebar-tabs", "workspace-tabs", "ws-members"],
+    "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
 
     "/[wsId]/calendar": ["sidebar-tabs"],
     "/[wsId]/tasks": ["sidebar-tabs"],
 
     "/[wsId]/documents": ["sidebar-tabs", "documents"],
     "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
-
-    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs"],
 
     "/[wsId]/teams/[teamId]": ["sidebar-tabs", "team-tabs"],
     "/[wsId]/teams/[teamId]/members": ["sidebar-tabs", "team-tabs"],
@@ -258,7 +257,7 @@
       "view-mode",
       "pagination",
       "crud-ops",
-      "ws-members",
+      "ws-member-selector",
       "ws-activities"
     ],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]

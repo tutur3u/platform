@@ -1,0 +1,12 @@
+{
+  "description": "Manage the settings of your workspace.",
+  "basic_info": "Basic Information",
+  "basic_info_description": "Manage the basic information of your workspace.",
+  "name": "Workspace Name",
+  "name_placeholder": "Enter workspace name",
+  "created_at": "This workspace was created ",
+  "security": "Security",
+  "security_description": "Manage the security of your workspace.",
+  "delete": "Delete Workspace",
+  "deleting": "Deleting Workspace"
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Sắp xếp công việc thành các nhóm và theo dõi tiến độ một cách dễ dàng.",
+  "new_team": "Nhóm mới",
+  "team": "Nhóm",
+  "team_created": "Nhóm đã được tạo",
+  "error_creating_team": "Lỗi khi tạo nhóm",
+  "created_successfully": "đã được tạo thành công.",
+  "could_not_create": "không thể được tạo.",
+  "created": "Đã tạo"
+}

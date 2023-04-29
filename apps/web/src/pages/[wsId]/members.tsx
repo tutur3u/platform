@@ -18,10 +18,17 @@ import SelectUserForm from '../../components/forms/SelectUserForm';
 import HeaderX from '../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
+import useTranslation from 'next-translate/useTranslation';
+import 'moment/locale/vi';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceMembersPage = () => {
+  const { t, lang } = useTranslation('ws-members');
+
+  const loadingLabel = t('common:loading');
+  const membersLabel = t('workspace-tabs:members');
+
   const router = useRouter();
   const { wsId } = router.query;
 
@@ -34,17 +41,17 @@ const WorkspaceMembersPage = () => {
       wsId
         ? [
             {
-              content: ws?.name ?? 'Loading...',
+              content: ws?.name ?? loadingLabel,
               href: `/${wsId}`,
             },
             {
-              content: 'Members',
+              content: membersLabel,
               href: `/${wsId}/members`,
             },
           ]
         : []
     );
-  }, [setRootSegment, wsId, ws?.name]);
+  }, [setRootSegment, wsId, loadingLabel, membersLabel, ws?.name]);
 
   const user = useUser();
 
@@ -64,33 +71,31 @@ const WorkspaceMembersPage = () => {
       mutate(`/api/workspaces/${wsId}/members`);
       mutate(`/api/workspaces/${wsId}/members/invites`);
       showNotification({
-        title: invited ? 'Invitation revoked' : 'Member removed',
+        title: invited ? t('invitation_revoked') : t('member_removed'),
         message: invited
-          ? `Invitation to ${
+          ? `${t('invitation_to')} ${
               (member?.handle && `@${member?.handle}`) ||
               member?.display_name ||
               member?.email
-            } has been revoked`
-          : `${
-              member?.display_name || member?.email
-            } has been removed from this workspace`,
+            } ${t('has_been_revoked')}`
+          : `${member?.display_name || member?.email} ${t('has_been_removed')}`,
         color: 'teal',
       });
 
       if (member.id === user?.id) router.push('/');
     } else {
       showNotification({
-        title: invited
-          ? 'Could not revoke invitation'
-          : 'Could not remove member',
-        message: 'Something went wrong',
+        title: t('error'),
+        message: invited
+          ? t('revoke_error')
+          : `${t('remove_error')} ${member?.display_name || member?.email}`,
       });
     }
   };
 
   const showSelectUserForm = () => {
     openModal({
-      title: <div className="font-semibold">Invite a member</div>,
+      title: <div className="font-semibold">{t('invite_member')}</div>,
       centered: true,
       children: <SelectUserForm wsId={wsId as string} />,
     });
@@ -98,18 +103,18 @@ const WorkspaceMembersPage = () => {
 
   return (
     <div className="pb-20">
-      <HeaderX label={`Members – ${ws?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`${membersLabel} – ${ws?.name}`} />
 
       {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
-              Members{' '}
+              {membersLabel}{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
                 {members?.length || 0}
               </span>
             </h1>
-            <p className="text-zinc-400">Manage members of your workspace.</p>
+            <p className="text-zinc-400">{t('description')}</p>
           </div>
           <Divider className="my-4" />
         </>
@@ -120,7 +125,7 @@ const WorkspaceMembersPage = () => {
           onClick={showSelectUserForm}
           className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
         >
-          Invite member
+          {t('invite_member')}
           <UserPlusIcon className="h-4 w-4" />
         </button>
       )}
@@ -156,11 +161,11 @@ const WorkspaceMembersPage = () => {
                 onClick={() => deleteMember(member, false)}
               >
                 {user?.id === member.id ? (
-                  <Tooltip label="Leave">
+                  <Tooltip label={t('leave')}>
                     <ArrowRightOnRectangleIcon className="h-6 w-6" />
                   </Tooltip>
                 ) : (
-                  <Tooltip label="Remove member">
+                  <Tooltip label={t('remove_member')}>
                     <XMarkIcon className="h-6 w-6" />
                   </Tooltip>
                 )}
@@ -168,9 +173,9 @@ const WorkspaceMembersPage = () => {
 
               {member?.created_at ? (
                 <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
-                  Member since{' '}
+                  {t('member_since')}{' '}
                   <span className="font-semibold text-zinc-400">
-                    {moment(member.created_at).fromNow()}
+                    {moment(member.created_at).locale(lang).fromNow()}
                   </span>
                   .
                 </div>
@@ -180,7 +185,7 @@ const WorkspaceMembersPage = () => {
       </div>
 
       <h1 className="mb-4 text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
-        Pending invitations ({memberInvites?.length || 0})
+        {t('pending_invitations')} ({memberInvites?.length || 0})
       </h1>
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
@@ -198,14 +203,14 @@ const WorkspaceMembersPage = () => {
               className="absolute right-4 top-4 font-semibold text-zinc-400 transition duration-150 hover:text-red-400"
               onClick={() => deleteMember(member, true)}
             >
-              <Tooltip label="Revoke invitation">
+              <Tooltip label={t('revoke_invitation')}>
                 <XMarkIcon className="h-6 w-6" />
               </Tooltip>
             </button>
 
             {member?.created_at ? (
               <div className="mt-2 border-t border-zinc-800 pt-2 text-zinc-500">
-                Invited{' '}
+                {t('invited')}{' '}
                 <span className="font-semibold text-zinc-400">
                   {moment(member.created_at).fromNow()}
                 </span>

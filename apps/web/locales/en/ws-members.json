@@ -1,4 +1,18 @@
 {
-  "members": "Members",
-  "select_members": "Select members"
+  "description": "Manage members of your workspace.",
+  "invite_member": "Invite member",
+  "member_since": "Member since",
+  "pending_invitations": "Pending invitations",
+  "invited": "Invited",
+  "leave": "Leave",
+  "remove_member": "Remove member",
+  "member_removed": "Member removed",
+  "revoke_invitation": "Revoke invitation",
+  "invitation_revoked": "Invitation revoked",
+  "invitation_to": "Invitation to",
+  "has_been_revoked": "has been revoked",
+  "has_been_removed": "has been removed from this workspace",
+  "error": "Error",
+  "revoke_error": "An error occurred while revoking the invitation",
+  "remove_error": "An error occurred while removing the member"
 }

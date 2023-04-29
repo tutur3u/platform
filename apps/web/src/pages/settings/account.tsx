@@ -225,9 +225,13 @@ const SettingPage: PageWithLayoutProps = () => {
           {isSaving ? saving : save}
         </div>
 
+        <Divider variant="dashed" className="my-2" />
+
         <SettingItemTab title={languageLabel} description={languageDescription}>
           <LanguageSelector fullWidth />
         </SettingItemTab>
+
+        <Divider className="my-2" />
 
         <SettingItemTab title={logOut} description={logoutDescription}>
           <div

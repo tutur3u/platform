@@ -6,10 +6,16 @@ import HeaderX from '../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
 import { useSegments } from '../../hooks/useSegments';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceHomePage = () => {
+  const { t } = useTranslation('ws-home');
+
+  const loadingLabel = t('common:loading');
+  const homeLabel = t('workspace-tabs:home');
+
   const router = useRouter();
 
   const { wsId } = router.query;
@@ -24,11 +30,11 @@ const WorkspaceHomePage = () => {
     setRootSegment(
       [
         {
-          content: data?.name ?? 'Loading...',
+          content: data?.name ?? loadingLabel,
           href: `/${data?.id}`,
         },
         {
-          content: 'Home',
+          content: homeLabel,
           href: `/${data?.id}`,
         },
       ],
@@ -38,24 +44,24 @@ const WorkspaceHomePage = () => {
     return () => {
       setRootSegment([]);
     };
-  }, [setRootSegment, data]);
+  }, [setRootSegment, data?.id, data?.name, homeLabel, loadingLabel]);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div>{loadingLabel}</div>;
 
   return (
     <div className="pb-20">
-      <HeaderX label={`Home – ${data?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`${homeLabel} – ${data?.name}`} />
 
       {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Home</h1>
+            <h1 className="text-2xl font-bold">{homeLabel}</h1>
             <p className="text-zinc-400">
-              A quick summary of the{' '}
+              {t('description_p1')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data?.name || 'Unnamed Workspace'}
               </span>{' '}
-              workspace and its progress.
+              {t('description_p2')}
             </p>
           </div>
           <Divider className="my-4" />
