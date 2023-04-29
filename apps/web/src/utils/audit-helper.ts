@@ -1,10 +1,11 @@
 import { Translate } from 'next-translate';
 import { AuditLog, Operation } from '../types/primitives/AuditLog';
 
-const getLeadingLabel = (t: Translate, op: Operation) => {
+const getLeadingLabel = (t: Translate, op: Operation, table: string) => {
   switch (op) {
     case 'INSERT':
-      return t('created');
+      if (table === 'workspace_members') return t('added');
+      else return t('created');
     case 'UPDATE':
       return t('updated');
     case 'DELETE':
@@ -26,7 +27,7 @@ const getTrailingLabel = (t: Translate, data: AuditLog) =>
   t(`trailing_label_${data.table_name}`, { count: getAmount(data) });
 
 export const getLabel = (t: Translate, data: AuditLog) => {
-  const leadingLabel = getLeadingLabel(t, data.op);
+  const leadingLabel = getLeadingLabel(t, data.op, data.table_name);
   const trailingLabel = getTrailingLabel(t, data);
 
   const label = `${leadingLabel} ${trailingLabel}`;

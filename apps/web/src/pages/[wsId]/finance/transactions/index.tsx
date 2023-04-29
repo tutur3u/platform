@@ -227,7 +227,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
                 <div
                   className={`grid gap-4 ${
-                    mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+                    mode === 'grid' && 'lg:grid-cols-2 xl:grid-cols-3'
                   }`}
                 >
                   {data.transactions.map((c) => (

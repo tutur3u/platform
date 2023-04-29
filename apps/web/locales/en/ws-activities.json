@@ -12,6 +12,7 @@
   "member": "member",
   "expense": "expense",
   "income": "income",
+  "name": "Name:",
   "set_name_to": "Set name to",
   "to": "to",
   "set_wallet_name_to": "Set wallet name to",
