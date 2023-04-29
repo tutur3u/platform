@@ -48,9 +48,19 @@
     "/[wsId]/teams/[teamId]/settings": ["sidebar-tabs", "team-tabs"],
 
     "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
-    "/[wsId]/users/list": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/list": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "workspace-users-tabs"
+    ],
 
-    "/[wsId]/users/roles": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/roles": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "workspace-users-tabs"
+    ],
     "/[wsId]/users/roles/new": ["sidebar-tabs", "workspace-users-tabs"],
     "/[wsId]/users/roles/[roleId]": ["sidebar-tabs", "workspace-users-tabs"],
 
@@ -61,25 +71,45 @@
 
     "/[wsId]/healthcare": ["sidebar-tabs", "healthcare-tabs"],
 
-    "/[wsId]/healthcare/checkups": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/checkups": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "healthcare-tabs"
+    ],
     "/[wsId]/healthcare/checkups/new": ["sidebar-tabs", "healthcare-tabs"],
     "/[wsId]/healthcare/checkups/[checkupId]": [
       "sidebar-tabs",
       "healthcare-tabs"
     ],
 
-    "/[wsId]/healthcare/diagnoses": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/diagnoses": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "healthcare-tabs"
+    ],
     "/[wsId]/healthcare/diagnoses/new": ["sidebar-tabs", "healthcare-tabs"],
     "/[wsId]/healthcare/diagnoses/[diagnosisId]": [
       "sidebar-tabs",
       "healthcare-tabs"
     ],
 
-    "/[wsId]/healthcare/vitals": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vitals": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "healthcare-tabs"
+    ],
     "/[wsId]/healthcare/vitals/new": ["sidebar-tabs", "healthcare-tabs"],
     "/[wsId]/healthcare/vitals/[vitalId]": ["sidebar-tabs", "healthcare-tabs"],
 
-    "/[wsId]/healthcare/vital-groups": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/vital-groups": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "healthcare-tabs"
+    ],
     "/[wsId]/healthcare/vital-groups/new": ["sidebar-tabs", "healthcare-tabs"],
     "/[wsId]/healthcare/vital-groups/[groupId]": [
       "sidebar-tabs",
@@ -88,30 +118,60 @@
 
     "/[wsId]/inventory": ["sidebar-tabs", "inventory-tabs"],
 
-    "/[wsId]/inventory/products": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/products": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/products/new": ["sidebar-tabs"],
     "/[wsId]/inventory/products/[productId]": [
       "sidebar-tabs",
       "product-details-tabs"
     ],
 
-    "/[wsId]/inventory/categories": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/categories": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
     "/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/batches": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/batches": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/batches/new": ["sidebar-tabs"],
     "/[wsId]/inventory/batches/[batchId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/warehouses": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/warehouses": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
     "/[wsId]/inventory/warehouses/[warehouseId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/units": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/units": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/units/new": ["sidebar-tabs"],
     "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/suppliers": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory/suppliers": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "inventory-tabs"
+    ],
     "/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
     "/[wsId]/inventory/suppliers/[supplierId]": ["sidebar-tabs"],
 
@@ -120,7 +180,12 @@
     "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/import": ["sidebar-tabs", "finance-tabs"],
 
-    "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/wallets": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "finance-tabs"
+    ],
     "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
@@ -128,6 +193,8 @@
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
+      "view-mode",
+      "pagination",
       "wallet-details-tabs"
     ],
     "/[wsId]/finance/wallets/[walletId]/settings": [
@@ -135,14 +202,24 @@
       "wallet-details-tabs"
     ],
 
-    "/[wsId]/finance/transactions": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "finance-tabs"
+    ],
     "/[wsId]/finance/transactions/new": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
       "finance-tabs"
     ],
 
-    "/[wsId]/finance/transactions/categories": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/categories": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "finance-tabs"
+    ],
     "/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
       "finance-tabs"
@@ -152,14 +229,26 @@
       "finance-tabs"
     ],
 
-    "/[wsId]/finance/invoices": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/invoices": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "finance-tabs"
+    ],
     "/[wsId]/finance/invoices/new": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/invoices/[invoiceId]": ["sidebar-tabs", "finance-tabs"],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
-    "/[wsId]/infrastructure/users": ["sidebar-tabs", "infrastructure-tabs"],
+    "/[wsId]/infrastructure/users": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "infrastructure-tabs"
+    ],
     "/[wsId]/infrastructure/workspaces": [
       "sidebar-tabs",
+      "view-mode",
+      "pagination",
       "infrastructure-tabs"
     ],
 
