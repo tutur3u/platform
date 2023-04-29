@@ -1,5 +1,6 @@
 import { Squares2X2Icon } from '@heroicons/react/24/solid';
 import { Select } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 
 export type Mode = 'list' | 'grid';
 
@@ -9,25 +10,27 @@ interface Props {
 }
 
 const ModeSelector = ({ mode, setMode }: Props) => {
+  const { t } = useTranslation('view-mode');
+
   const data =
     mode === 'list'
       ? [
           {
-            label: 'Dạng danh sách',
+            label: t('list_view'),
             value: 'list',
           },
         ]
       : [
           {
-            label: 'Dạng lưới',
+            label: t('grid_view'),
             value: 'grid',
           },
         ];
 
   return (
     <Select
-      label="Chế độ xem"
-      placeholder="Chọn chế độ xem"
+      label={t('view_mode')}
+      placeholder={t('select_view_mode')}
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
       value={mode}

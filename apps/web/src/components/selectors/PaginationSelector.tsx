@@ -1,5 +1,6 @@
 import { ListBulletIcon } from '@heroicons/react/24/solid';
 import { Select } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 
 export type Mode = 'list' | 'grid';
 
@@ -9,49 +10,45 @@ interface Props {
 }
 
 const PaginationSelector = ({ items, setItems }: Props) => {
+  const { t } = useTranslation('pagination');
+
   const data = [
     {
-      label: '1 mục',
       value: '1',
     },
     {
-      label: '3 mục',
       value: '3',
     },
     {
-      label: '7 mục',
       value: '7',
     },
     {
-      label: '11 mục',
       value: '11',
     },
     {
-      label: '15 mục',
       value: '15',
     },
     {
-      label: '35 mục',
       value: '35',
     },
     {
-      label: '55 mục',
       value: '55',
     },
     {
-      label: '75 mục',
       value: '75',
     },
     {
-      label: '95 mục',
       value: '95',
     },
-  ];
+  ].map((item) => ({
+    ...item,
+    label: `${item.value} ${t('items')}`,
+  }));
 
   return (
     <Select
-      label="Số mục trên trang"
-      placeholder="Chọn số mục trên trang"
+      label={t('items_per_page')}
+      placeholder={t('select_items_per_page')}
       icon={<ListBulletIcon className="h-5" />}
       data={data}
       value={items.toString()}

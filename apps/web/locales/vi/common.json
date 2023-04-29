@@ -17,5 +17,10 @@
   "settings": "Cài đặt",
   "logout": "Đăng xuất",
   "save": "Lưu",
-  "saving": "Đang lưu..."
+  "saving": "Đang lưu...",
+  "loading": "Đang tải...",
+  "default": "Mặc định",
+  "all": "Tất cả",
+  "general": "Chung",
+  "other": "Khác"
 }

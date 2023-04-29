@@ -17,5 +17,10 @@
   "settings": "Settings",
   "logout": "Logout",
   "save": "Save",
-  "saving": "Saving..."
+  "saving": "Saving...",
+  "loading": "Loading...",
+  "default": "Default",
+  "all": "All",
+  "general": "General",
+  "other": "Other"
 }

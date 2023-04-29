@@ -8,10 +8,17 @@ import { useSegments } from '../../hooks/useSegments';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import HeaderX from '../../components/metadata/HeaderX';
 import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
+import useTranslation from 'next-translate/useTranslation';
+import 'moment/locale/vi';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceSettingsPage = () => {
+  const { t, lang } = useTranslation('ws-settings');
+
+  const loadingLabel = t('common:loading');
+  const settingsLabel = t('common:settings');
+
   const router = useRouter();
   const { wsId } = router.query;
 
@@ -30,22 +37,22 @@ const WorkspaceSettingsPage = () => {
       wsId
         ? [
             {
-              content: ws?.name ?? 'Loading...',
+              content: ws?.name ?? loadingLabel,
               href: `/${wsId}`,
             },
             {
-              content: 'Settings',
+              content: settingsLabel,
               href: `/${wsId}/settings`,
             },
           ]
         : []
     );
-  }, [setRootSegment, wsId, ws?.name]);
+  }, [setRootSegment, wsId, loadingLabel, settingsLabel, ws?.name]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div>{loadingLabel}</div>;
 
   const isSystemWs = wsId === '00000000-0000-0000-0000-000000000000';
 
@@ -114,17 +121,20 @@ const WorkspaceSettingsPage = () => {
     });
   };
 
+  const localizedMoment = ws?.created_at
+    ? moment(ws.created_at).locale(lang)
+    : null;
+  const relativeTime = localizedMoment?.fromNow() || t('common:loading');
+
   return (
     <div className="pb-20">
-      <HeaderX label={`Settings – ${ws?.name || 'Unnamed Workspace'}`} />
+      <HeaderX label={`${settingsLabel} – ${ws?.name}`} />
 
       {wsId && (
         <>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="text-zinc-400">
-              Manage the settings of your project.
-            </p>
+            <h1 className="text-2xl font-bold">{settingsLabel}</h1>
+            <p className="text-zinc-400">{t('description')}</p>
           </div>
           <Divider className="my-4" />
         </>
@@ -132,15 +142,15 @@ const WorkspaceSettingsPage = () => {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <div className="mb-1 text-2xl font-bold">Basic Information</div>
+          <div className="mb-1 text-2xl font-bold">{t('basic_info')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
-            Manage the basic information of your workspace.
+            {t('basic_info_description')}
           </div>
 
           <div className="grid max-w-xs gap-2">
             <TextInput
-              label="Workspace Name"
-              placeholder={ws?.name || name || 'Workspace Name'}
+              label={t('name')}
+              placeholder={ws?.name || name || t('name_placeholder')}
               value={name}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setName(e.currentTarget.value)
@@ -150,11 +160,8 @@ const WorkspaceSettingsPage = () => {
           </div>
 
           <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
-            This workspace was created{' '}
-            <span className="font-semibold text-zinc-300">
-              {moment(ws.created_at).fromNow()}
-            </span>
-            .
+            {t('created_at')}{' '}
+            <span className="font-semibold text-zinc-300">{relativeTime}</span>.
           </div>
 
           <div className="h-full" />
@@ -169,16 +176,16 @@ const WorkspaceSettingsPage = () => {
               isSystemWs || isSaving || name === ws?.name
                 ? 'cursor-not-allowed opacity-50'
                 : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
+            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition lg:text-xl`}
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? t('common:saving') : t('common:save')}
           </button>
         </div>
 
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
-          <div className="mb-1 text-2xl font-bold">Security</div>
+          <div className="mb-1 text-2xl font-bold">{t('security')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
-            Manage the security of your workspace.
+            {t('security_description')}
           </div>
 
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
@@ -188,9 +195,9 @@ const WorkspaceSettingsPage = () => {
                 isSystemWs
                   ? 'cursor-not-allowed opacity-50'
                   : 'hover:border-red-300/30 hover:bg-red-300/20'
-              } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition`}
+              } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition lg:text-xl`}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Workspace'}
+              {isDeleting ? t('deleting') : t('delete')}
             </button>
           </div>
         </div>

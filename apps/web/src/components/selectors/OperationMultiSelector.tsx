@@ -58,7 +58,7 @@ const OperationMultiSelector = ({ ops, setOps, className }: Props) => {
   return (
     <MultiSelect
       label={t('ops')}
-      placeholder={t('select-ops')}
+      placeholder={t('select_ops')}
       icon={<WrenchScrewdriverIcon className="h-5" />}
       data={data}
       value={ops.length > 0 ? ops : ['']}

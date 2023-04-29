@@ -1,0 +1,7 @@
+{
+  "ops": "Operations",
+  "select_ops": "Select Operations",
+  "insert": "Create",
+  "update": "Update",
+  "delete": "Delete"
+}
