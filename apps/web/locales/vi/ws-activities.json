@@ -1,0 +1,126 @@
+{
+  "created": "đã tạo",
+  "updated": "đã cập nhật",
+  "deleted": "đã xóa",
+  "added": "Đã thêm",
+  "invited": "Đã mời",
+  "removed": "Đã xóa",
+  "revoked_invite": "Đã thu hồi lời mời",
+  "no_display_name": "Không có tên hiển thị",
+  "no_handle": "Không có tên người dùng",
+  "member": "thành viên",
+  "expense": "chi tiêu",
+  "income": "thu nhập",
+  "set_name_to": "Thiết lập tên thành",
+  "to": "sang",
+  "set_wallet_name_to": "Thiết lập tên nguồn tiền thành",
+  "rename_from": "Đổi tên từ",
+  "set_wallet_type_to": "Thiết lập loại nguồn tiền thành",
+  "change_type_from": "Thay đổi loại từ",
+  "set_wallet_currency_to": "Thiết lập đơn vị tiền tệ thành",
+  "change_currency_from": "Thay đổi đơn vị tiền tệ từ",
+  "set_wallet_balance_to": "Thiết lập số dư nguồn tiền thành",
+  "set_expense_type_to": "Thiết lập loại chi tiêu thành",
+  "change_expense_type_from": "Thay đổi loại chi tiêu từ",
+  "set_unit_to": "Thiết lập đơn vị tính thành",
+  "change_unit_from": "Thay đổi đơn vị tính từ",
+  "set_manufacturer_to": "Thiết lập nhà sản xuất thành",
+  "change_manufacturer_from": "Thay đổi nhà sản xuất từ",
+  "set_usage_to": "Thiết lập cách sử dụng thành",
+  "change_usage_from": "Thay đổi cách sử dụng từ",
+  "set_description_to": "Thiết lập mô tả thành",
+  "change_description_from": "Thay đổi mô tả từ",
+  "set_note_to": "Thiết lập ghi chú thành",
+  "change_note_from": "Thay đổi ghi chú từ",
+  "set_email_to": "Thiết lập email thành",
+  "change_email_from": "Thay đổi email từ",
+  "set_phone_to": "Thiết lập số điện thoại thành",
+  "change_phone_from": "Thay đổi số điện thoại từ",
+  "set_gender_to": "Thiết lập giới tính thành",
+  "change_gender_from": "Thay đổi giới tính thành",
+  "set_address_to": "Thiết lập địa chỉ thành",
+  "change_address_from": "Thay đổi địa chỉ từ",
+  "set_balance_to": "Thiết lập số dư thành",
+  "change_balance_from": "Thay đổi số dư từ",
+  "set_birthday_to": "Thiết lập ngày sinh thành",
+  "change_birthday_from": "Thay đổi ngày sinh từ",
+  "set_guardian_to": "Thiết lập người giám hộ thành",
+  "change_guardian_from": "Thay đổi người giám hộ từ",
+  "set_ethnicity_to": "Thiết lập dân tộc thành",
+  "change_ethnicity_from": "Thay đổi dân tộc từ",
+  "set_national_id_to": "Thiết lập CMND/CCCD thành",
+  "change_national_id_from": "Thay đổi CMND/CCCD từ",
+  "trailing_label_workspace_members": {
+    "one": "{{count}} thành viên",
+    "other": "{{count}} thành viên"
+  },
+  "trailing_label_workspace_invites": {
+    "one": "{{count}} lời mời lời mời tham gia",
+    "other": "{{count}} lời mời lời mời tham gia"
+  },
+  "trailing_label_workspace_teams": {
+    "one": "{{count}} nhóm",
+    "other": "{{count}} nhóm"
+  },
+  "trailing_label_workspace_documents": {
+    "one": "{{count}} tài liệu",
+    "other": "{{count}} tài liệu"
+  },
+  "trailing_label_workspace_boards": {
+    "one": "{{count}} bảng công việc",
+    "other": "{{count}} bảng công việc"
+  },
+  "trailing_label_workspace_wallets": {
+    "one": "{{count}} nguồn tiền",
+    "other": "{{count}} nguồn tiền"
+  },
+  "trailing_label_product_categories": {
+    "one": "{{count}} danh mục sản phẩm",
+    "other": "{{count}} danh mục sản phẩm"
+  },
+  "trailing_label_inventory_units": {
+    "one": "{{count}} đơn vị tính",
+    "other": "{{count}} đơn vị tính"
+  },
+  "trailing_label_workspace_products": {
+    "one": "{{count}} sản phẩm",
+    "other": "{{count}} sản phẩm"
+  },
+  "trailing_label_inventory_suppliers": {
+    "one": "{{count}} nhà cung cấp",
+    "other": "{{count}} nhà cung cấp"
+  },
+  "trailing_label_inventory_warehouses": {
+    "one": "{{count}} kho chứa",
+    "other": "{{count}} kho chứa"
+  },
+  "trailing_label_transaction_categories": {
+    "one": "{{count}} danh mục giao dịch",
+    "other": "{{count}} danh mục giao dịch"
+  },
+  "trailing_label_healthcare_vitals": {
+    "one": "{{count}} chỉ số sức khỏe",
+    "other": "{{count}} chỉ số sức khỏe"
+  },
+  "trailing_label_healthcare_diagnoses": {
+    "one": "{{count}} chuẩn đoán",
+    "other": "{{count}} chuẩn đoán"
+  },
+  "trailing_label_healthcare_vital_groups": {
+    "one": "{{count}} nhóm chỉ số sức khỏe",
+    "other": "{{count}} nhóm chỉ số sức khỏe"
+  },
+  "trailing_label_workspace_users": {
+    "one": "{{count}} người dùng",
+    "other": "{{count}} người dùng"
+  },
+  "trailing_label_workspace_user_roles": {
+    "one": "{{count}} vai trò người dùng",
+    "other": "{{count}} vai trò người dùng"
+  },
+  "trailing_label_workspaces": {
+    "0": "không gian làm việc",
+    "one": "{{count}} không gian làm việc",
+    "other": "{{count}} không gian làm việc"
+  }
+}

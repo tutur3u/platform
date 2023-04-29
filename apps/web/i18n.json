@@ -19,8 +19,16 @@
       "settings-tabs",
       "settings-appearance"
     ],
-    "/settings/security": ["sidebar-tabs", "settings-tabs", "settings-security"],
-    "/settings/workspaces": ["sidebar-tabs", "settings-tabs", "settings-workspaces"],
+    "/settings/security": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-security"
+    ],
+    "/settings/workspaces": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-workspaces"
+    ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs"],
@@ -156,7 +164,14 @@
     ],
 
     "/[wsId]/ai": ["sidebar-tabs"],
-    "/[wsId]/activities": ["sidebar-tabs"],
+    "/[wsId]/activities": [
+      "sidebar-tabs",
+      "view-mode",
+      "pagination",
+      "crud-ops",
+      "ws-members",
+      "ws-activities"
+    ],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { AuditLog } from '../../types/primitives/AuditLog';
 import { DEV_MODE } from '../../constants/common';
 import AuditSmartContent from './AuditSmartContent';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   data: AuditLog;
@@ -10,6 +11,8 @@ interface Props {
 }
 
 const AuditDescription = ({ data, isExpanded }: Props) => {
+  const { t } = useTranslation('ws-activities');
+
   const [activeTab, setActiveTab] = useState<string | null>('default');
 
   if (!DEV_MODE)
@@ -23,7 +26,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
       color="gray"
     >
       <Tabs.List>
-        <Tabs.Tab value="default">Default</Tabs.Tab>
+        <Tabs.Tab value="default">{t('common:default')}</Tabs.Tab>
         <Tabs.Tab value="json">JSON</Tabs.Tab>
       </Tabs.List>
 

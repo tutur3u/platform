@@ -61,13 +61,11 @@ const fetchActivities = async (
     .eq('ws_id', wsId);
 
   if (ops && typeof ops === 'string') {
-    const operations = ops.split(',');
-    queryBuilder.in('op', operations);
+    queryBuilder.in('op', ops.split(','));
   }
 
   if (userIds && typeof userIds === 'string') {
-    const ids = userIds.split(',');
-    queryBuilder.eq('auth_uid', ids);
+    queryBuilder.in('auth_uid', userIds.split(','));
   }
 
   if (

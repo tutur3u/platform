@@ -15,12 +15,17 @@ import useSWR from 'swr';
 import OperationMultiSelector from '../../../components/selectors/OperationMultiSelector';
 import WorkspaceMemberMultiSelector from '../../../components/selectors/WorkspaceMemberMultiSelector';
 import { AuditLog } from '../../../types/primitives/AuditLog';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const HistoryPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('sidebar-tabs');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const activitiesLabel = t('activities');
 
   useEffect(() => {
     setRootSegment(
@@ -30,13 +35,13 @@ const HistoryPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Lịch sử', href: `/${ws.id}/activities` },
+            { content: activitiesLabel, href: `/${ws.id}/activities` },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, activitiesLabel, setRootSegment]);
 
   const [activePage, setPage] = useState(1);
 
@@ -69,7 +74,7 @@ const HistoryPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Tổng quan – Tài chính" />
+      <HeaderX label={activitiesLabel} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ModeSelector mode={mode} setMode={setMode} />
@@ -98,7 +103,7 @@ const HistoryPage: PageWithLayoutProps = () => {
         <Accordion
           value={selectedLog}
           onChange={setSelectedLog}
-          className={`grid gap-4 ${
+          className={`grid gap-2 ${
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
           variant="contained"

@@ -24,7 +24,7 @@ const WorkspaceMemberMultiSelector = ({
 
   const data = [
     {
-      label: t('all'),
+      label: t('common:all'),
       value: '',
       group: t('common:general'),
     },
@@ -59,7 +59,7 @@ const WorkspaceMemberMultiSelector = ({
   return (
     <MultiSelect
       label={t('members')}
-      placeholder={t('select-members')}
+      placeholder={t('select_members')}
       icon={<UserCircleIcon className="h-5" />}
       data={data}
       value={userIds.length > 0 ? userIds : ['']}

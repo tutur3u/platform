@@ -2,6 +2,7 @@ import { JsonInput, Loader } from '@mantine/core';
 import { AuditLog } from '../../types/primitives/AuditLog';
 import { User } from '../../types/primitives/User';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   data: AuditLog;
@@ -9,6 +10,8 @@ interface Props {
 }
 
 const AuditSmartContent = ({ data, isExpanded }: Props) => {
+  const { t, lang } = useTranslation('ws-activities');
+
   const userId = data?.record?.user_id || data?.old_record?.user_id || null;
   const userApi = userId ? `/api/users/${userId}` : null;
 
@@ -30,7 +33,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -38,15 +41,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -55,7 +56,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -71,7 +72,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <p>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -80,23 +81,21 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.is_expense != null && (
             <p>
-              • Thiết lập loại chi phí thành{' '}
+              • {t('set_expense_type_to')}{' '}
               <span className="font-semibold text-zinc-200">
-                {data.record.is_expense ? 'Chi phí' : 'Thu nhập'}
+                {data.record.is_expense ? t('expense') : t('income')}
               </span>
             </p>
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <p>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -104,15 +103,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.is_expense != null &&
-            data?.old_record?.is_expense != null &&
             data?.record?.is_expense != data?.old_record?.is_expense && (
               <p>
-                • Đổi loại chi phí từ{' '}
+                • {t('change_expense_type_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.is_expense ? 'Chi phí' : 'Thu nhập'}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.is_expense ? 'Chi phí' : 'Thu nhập'}
                 </span>
@@ -121,7 +118,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -137,7 +134,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <p>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -146,7 +143,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.unit != null && (
             <p>
-              • Thiết lập đơn vị thành{' '}
+              • {t('set_unit_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.unit}
               </span>
@@ -154,15 +151,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <p>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -170,15 +165,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.unit != null &&
-            data?.old_record?.unit != null &&
             data?.record?.unit != data?.old_record?.unit && (
               <p>
-                • Đổi đơn vị từ{' '}
+                • {t('change_unit_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.unit}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.unit}
                 </span>
@@ -187,7 +180,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -203,7 +196,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <p>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -212,7 +205,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.manufacturer != null && (
             <p>
-              • Thiết lập đơn vị sản xuất thành{' '}
+              • {t('set_manufacturer_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.manufacturer}
               </span>
@@ -221,7 +214,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.usage != null && (
             <p>
-              • Thiết lập cách sử dụng thành{' '}
+              • {t('set_usage_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.usage}
               </span>
@@ -230,7 +223,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.description != null && (
             <p>
-              • Thiết lập mô tả thành{' '}
+              • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.description}
               </span>
@@ -238,15 +231,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <p>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -254,15 +245,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.manufacturer != null &&
-            data?.old_record?.manufacturer != null &&
             data?.record?.manufacturer != data?.old_record?.manufacturer && (
               <p>
-                • Đổi đơn vị sản xuất từ{' '}
+                • {t('change_manufacturer_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.manufacturer}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.manufacturer}
                 </span>
@@ -270,15 +259,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.usage != null &&
-            data?.old_record?.usage != null &&
             data?.record?.usage != data?.old_record?.usage && (
               <p>
-                • Đổi cách sử dụng từ{' '}
+                • {t('change_usage_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.usage}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.usage}
                 </span>
@@ -286,15 +273,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.description != null &&
-            data?.old_record?.description != null &&
             data?.record?.description != data?.old_record?.description && (
               <p>
-                • Đổi mô tả từ{' '}
+                • {t('change_description_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.description}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.description}
                 </span>
@@ -303,7 +288,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -322,7 +307,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <p>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -331,7 +316,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.note != null && (
             <p>
-              • Thiết lập ghi chú thành{' '}
+              • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.note}
               </span>
@@ -340,7 +325,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.description != null && (
             <p>
-              • Thiết lập mô tả thành{' '}
+              • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.description}
               </span>
@@ -348,15 +333,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <p>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -364,15 +347,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.note != null &&
-            data?.old_record?.note != null &&
             data?.record?.note != data?.old_record?.note && (
               <p>
-                • Đổi ghi chú từ{' '}
+                • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.note}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.note}
                 </span>
@@ -380,15 +361,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.description != null &&
-            data?.old_record?.description != null &&
             data?.record?.description != data?.old_record?.description && (
               <p>
-                • Đổi mô tả từ{' '}
+                • {t('change_description_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.description}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.description}
                 </span>
@@ -397,7 +376,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -413,7 +392,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <p>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -422,7 +401,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.note != null && (
             <p>
-              • Thiết lập ghi chú thành{' '}
+              • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.note}
               </span>
@@ -431,7 +410,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.email != null && (
             <p>
-              • Thiết lập email thành{' '}
+              • {t('set_email_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.email}
               </span>
@@ -440,7 +419,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.phone != null && (
             <p>
-              • Thiết lập số điện thoại thành{' '}
+              • {t('set_phone_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.phone}
               </span>
@@ -449,7 +428,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.gender != null && (
             <p>
-              • Thiết lập giới tính thành{' '}
+              • {t('set_gender_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.gender}
               </span>
@@ -458,7 +437,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.address != null && (
             <p>
-              • Thiết lập địa chỉ thành{' '}
+              • {t('set_address_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.address}
               </span>
@@ -467,9 +446,9 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.balance != null && (
             <p>
-              • Thiết lập số dư thành{' '}
+              • {t('set_balance_to')}{' '}
               <span className="font-semibold text-zinc-200">
-                {Intl.NumberFormat('vi-VN', {
+                {Intl.NumberFormat(lang, {
                   style: 'currency',
                   currency: 'VND',
                 }).format(data.record.balance)}
@@ -479,7 +458,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.birthday != null && (
             <p>
-              • Thiết lập ngày sinh thành{' '}
+              • {t('set_birthday_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.birthday}
               </span>
@@ -488,7 +467,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.guardian != null && (
             <p>
-              • Thiết lập người giám hộ thành{' '}
+              • {t('set_guardian_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.guardian}
               </span>
@@ -497,7 +476,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.ethnicity != null && (
             <p>
-              • Thiết lập dân tộc thành{' '}
+              • {t('set_ethnicity_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.ethnicity}
               </span>
@@ -506,7 +485,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'INSERT' && data?.record?.national_id != null && (
             <p>
-              • Thiết lập CMND/CCCD thành{' '}
+              • {t('set_national_id_to')}
               <span className="font-semibold text-zinc-200">
                 {data.record.national_id}
               </span>
@@ -514,15 +493,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null &&
             data?.record?.name != data?.old_record?.name && (
               <p>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -530,15 +507,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.note != null &&
-            data?.old_record?.note != null &&
             data?.record?.note != data?.old_record?.note && (
               <p>
-                • Đổi ghi chú từ{' '}
+                • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.note}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.note}
                 </span>
@@ -546,15 +521,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.email != null &&
-            data?.old_record?.email != null &&
             data?.record?.email != data?.old_record?.email && (
               <p>
-                • Đổi email từ{' '}
+                • {t('change_email_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.email}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.email}
                 </span>
@@ -562,15 +535,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.phone != null &&
-            data?.old_record?.phone != null &&
             data?.record?.phone != data?.old_record?.phone && (
               <p>
-                • Đổi số điện thoại từ{' '}
+                • {t('change_phone_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.phone}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.phone}
                 </span>
@@ -578,15 +549,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.gender != null &&
-            data?.old_record?.gender != null &&
             data?.record?.gender != data?.old_record?.gender && (
               <p>
-                • Đổi giới tính từ{' '}
+                • {t('change_gender_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.gender}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.gender}
                 </span>
@@ -594,15 +563,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.address != null &&
-            data?.old_record?.address != null &&
             data?.record?.address != data?.old_record?.address && (
               <p>
-                • Đổi địa chỉ từ{' '}
+                • {t('change_address_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.address}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.address}
                 </span>
@@ -610,20 +577,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.balance != null &&
-            data?.old_record?.balance != null &&
             data?.record?.balance != data?.old_record?.balance && (
               <p>
-                • Đổi số dư từ{' '}
+                • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-200">
-                  {Intl.NumberFormat('vi-VN', {
+                  {Intl.NumberFormat(lang, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.old_record.balance)}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
-                  {Intl.NumberFormat('vi-VN', {
+                  {Intl.NumberFormat(lang, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.record.balance)}
@@ -632,15 +597,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.birthday != null &&
-            data?.old_record?.birthday != null &&
             data?.record?.birthday != data?.old_record?.birthday && (
               <p>
-                • Đổi ngày sinh từ{' '}
+                • {t('change_birthday_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.birthday}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.birthday}
                 </span>
@@ -648,15 +611,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.guardian != null &&
-            data?.old_record?.guardian != null &&
             data?.record?.guardian != data?.old_record?.guardian && (
               <p>
-                • Đổi người giám hộ từ{' '}
+                • {t('change_guardian_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.guardian}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.guardian}
                 </span>
@@ -664,15 +625,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.ethnicity != null &&
-            data?.old_record?.ethnicity != null &&
             data?.record?.ethnicity != data?.old_record?.ethnicity && (
               <p>
-                • Đổi dân tộc từ{' '}
+                • {t('change_ethnicity_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.ethnicity}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.ethnicity}
                 </span>
@@ -680,15 +639,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.national_id != null &&
-            data?.old_record?.national_id != null &&
             data?.record?.national_id != data?.old_record?.national_id && (
               <p>
-                • Đổi CMND/CCCD từ{' '}
+                • {t('change_national_id_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.national_id}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.email}
                 </span>
@@ -697,7 +654,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa{' '}
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -714,7 +671,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           <>
             {data?.record?.name != null && (
               <p>
-                • Thiết lập tên nguồn tiền thành{' '}
+                • {t('set_wallet_name_to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -723,7 +680,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
             {data?.record?.type != null && (
               <p>
-                • Thiết lập loại nguồn tiền thành{' '}
+                • {t('set_wallet_type_to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.type}
                 </span>
@@ -732,7 +689,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
             {data?.record?.currency != null && (
               <p>
-                • Thiết lập loại tiền tệ thành{' '}
+                • {t('set_wallet_currency_to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.currency}
                 </span>
@@ -741,9 +698,9 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
             {data?.record?.balance != null && (
               <p>
-                • Thiết lập số dư nguồn tiền thành{' '}
+                • {t('set_wallet_balance_to')}{' '}
                 <span className="font-semibold text-zinc-200">
-                  {Intl.NumberFormat('vi-VN', {
+                  {Intl.NumberFormat(lang, {
                     style: 'currency',
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
@@ -757,80 +714,72 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           <>
             {JSON.stringify(data?.record) ===
             JSON.stringify(data?.old_record) ? (
-              <p>• Không có thay đổi</p>
+              <p>• {t('no_change')}</p>
             ) : null}
 
-            {data?.record?.name != null &&
-              data?.old_record?.name != null &&
-              data?.record?.name != data?.old_record?.name && (
-                <p>
-                  • Đổi tên từ{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.old_record.name}
-                  </span>{' '}
-                  sang{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.record.name}
-                  </span>
-                </p>
-              )}
+            {data?.record?.name != data?.old_record?.name && (
+              <p>
+                • {t('rename_from')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.old_record.name}
+                </span>{' '}
+                {t('to')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.record.name}
+                </span>
+              </p>
+            )}
 
-            {data?.record?.type != null &&
-              data?.old_record?.type != null &&
-              data?.record?.type != data?.old_record?.type && (
-                <p>
-                  • Đổi loại từ{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.old_record.type}
-                  </span>{' '}
-                  sang{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.record.type}
-                  </span>
-                </p>
-              )}
+            {data?.record?.type != data?.old_record?.type && (
+              <p>
+                • {t('change_type_from')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.old_record.type}
+                </span>{' '}
+                {t('to')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.record.type}
+                </span>
+              </p>
+            )}
 
-            {data?.record?.currency != null &&
-              data?.old_record?.currency != null &&
-              data?.record?.currency != data?.old_record?.currency && (
-                <p>
-                  • Đổi loại tiền tệ từ{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.old_record.currency}
-                  </span>{' '}
-                  sang{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {data.record.currency}
-                  </span>
-                </p>
-              )}
+            {data?.record?.currency != data?.old_record?.currency && (
+              <p>
+                • {t('change_currency_from')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.old_record.currency}
+                </span>{' '}
+                {t('to')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {data.record.currency}
+                </span>
+              </p>
+            )}
 
-            {data?.record?.balance != null &&
-              data?.old_record?.balance != null &&
-              data?.record?.balance != data?.old_record?.balance && (
-                <p>
-                  • Đổi số dư từ{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: data?.old_record?.currency || 'USD',
-                    }).format(data.old_record.balance)}
-                  </span>{' '}
-                  sang{' '}
-                  <span className="font-semibold text-zinc-200">
-                    {Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: data?.record?.currency || 'USD',
-                    }).format(data.record.balance)}
-                  </span>
-                </p>
-              )}
+            {data?.record?.balance != data?.old_record?.balance && (
+              <p>
+                • {t('change_balance_from')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {Intl.NumberFormat(lang, {
+                    style: 'currency',
+                    currency: data?.old_record?.currency || 'USD',
+                  }).format(data.old_record.balance)}
+                </span>{' '}
+                {t('to')}{' '}
+                <span className="font-semibold text-zinc-200">
+                  {Intl.NumberFormat(lang, {
+                    style: 'currency',
+                    currency: data?.record?.currency || 'USD',
+                  }).format(data.record.balance)}
+                </span>
+              </p>
+            )}
           </>
         )}
 
         {data.op === 'DELETE' && data?.old_record?.name != null && (
           <>
-            • Xóa{' '}
+            • {t('deleted')}{' '}
             <span className="font-semibold text-zinc-200">
               {data.old_record.name}
             </span>
@@ -845,7 +794,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         <p className="text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <>
-              • Thiết lập tên thành{' '}
+              • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.record.name}
               </span>
@@ -853,14 +802,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != null &&
-            data?.old_record?.name != null && (
+            data?.record?.name != data?.old_record?.name && (
               <>
-                • Đổi tên từ{' '}
+                • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.old_record.name}
                 </span>{' '}
-                sang{' '}
+                {t('to')}{' '}
                 <span className="font-semibold text-zinc-200">
                   {data.record.name}
                 </span>
@@ -869,7 +817,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
             <>
-              • Xóa
+              • {t('deleted')}{' '}
               <span className="font-semibold text-zinc-200">
                 {data.old_record.name}
               </span>
@@ -895,18 +843,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               •{' '}
               {data.op === 'INSERT'
                 ? data.table_name === 'workspace_members'
-                  ? 'Đã thêm'
-                  : 'Đã mời'
+                  ? t('added')
+                  : t('invited')
                 : data.table_name === 'workspace_members'
-                ? 'Đã xóa'
-                : 'Đã rút lại lời mời'}{' '}
-              thành viên{' '}
-              <span className="text-zinc-200">
-                {user.display_name || 'Unknown'}
+                ? t('removed')
+                : t('revoked_invite')}{' '}
+              {t('member')}{' '}
+              <span className="font-semibold text-zinc-200">
+                {user.display_name || t('no_display_name')}
               </span>{' '}
               (
               <span className="font-semibold text-blue-300">
-                {user?.handle ? `@${user.handle}` : 'không có tên người dùng'}
+                {user?.handle ? `@${user.handle}` : t('no_handle')}
               </span>
               )
             </>
