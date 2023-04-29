@@ -714,7 +714,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           <>
             {JSON.stringify(data?.record) ===
             JSON.stringify(data?.old_record) ? (
-              <p>• {t('no_change')}</p>
+              <p>• {t('no_changes')}</p>
             ) : null}
 
             {data?.record?.name != data?.old_record?.name && (

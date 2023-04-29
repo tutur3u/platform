@@ -116,7 +116,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           : -Math.abs(oldAmount)
         : ''
     );
-  }, [category, type, amount]);
+  }, [category, type]);
 
   const hasRequiredFields = () =>
     (type !== 'balance' ? true : amount != originWallet?.balance) &&
@@ -154,11 +154,12 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             walletId={originWallet.id}
             transaction={{
               description,
-              amount: amount
-                ? type === 'balance'
-                  ? amount - originWallet.balance
-                  : amount
-                : 0,
+              amount:
+                amount !== ''
+                  ? type === 'balance'
+                    ? amount - originWallet.balance
+                    : amount
+                  : 0,
               taken_at: takenAt.toISOString(),
               category_id: category?.id,
             }}
