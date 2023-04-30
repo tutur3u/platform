@@ -19,8 +19,16 @@
       "settings-tabs",
       "settings-appearance"
     ],
-    "/settings/security": ["sidebar-tabs", "settings-tabs", "settings-security"],
-    "/settings/workspaces": ["sidebar-tabs", "settings-tabs", "settings-workspaces"],
+    "/settings/security": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-security"
+    ],
+    "/settings/workspaces": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-workspaces"
+    ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs"],
@@ -109,8 +117,18 @@
 
     "/[wsId]/classes": ["sidebar-tabs"],
 
-    "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/import": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "finance-overview",
+      "date-helper"
+    ],
+    "/[wsId]/finance/import": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "finance-overview",
+      "finance-import"
+    ],
 
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
     "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
