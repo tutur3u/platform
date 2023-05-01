@@ -319,7 +319,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={`${t('finance-tabs:wallet')} - ${finance}`} />
+      <HeaderX label={`${importData} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
@@ -477,7 +477,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
             <Divider className="my-4" />
             <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SettingItemCard
-                title={`${t('finance-tabs:wallets')} (${wallets?.length || 0})`}
+                title={`${t('ss')} (${wallets?.length || 0})`}
                 description={
                   file && wallets
                     ? `${t('done-input')} ${wallets.length} ${t(
@@ -522,7 +522,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
                   file && categories
                     ? `${t('done-input')} ${categories.length} ${t(
                         'finance-tabs:transaction-categories'
-                      )}`
+                      ).toLowerCase()}s`
                     : t('wait-input')
                 }
                 disabled={!file || !categories}
@@ -536,10 +536,12 @@ const WalletImportPage: PageWithLayoutProps = () => {
             <Divider className="my-4" />
             <Tabs defaultValue="wallets" color="white">
               <Tabs.List>
-                <Tabs.Tab value="wallets">{t('wallets')}</Tabs.Tab>
-                <Tabs.Tab value="transactions">{t('transactions')}</Tabs.Tab>
+                <Tabs.Tab value="wallets">{t('finance-tabs:wallets')}</Tabs.Tab>
+                <Tabs.Tab value="transactions">
+                  {t('finance-tabs:transactions')}
+                </Tabs.Tab>
                 <Tabs.Tab value="categories">
-                  {t('transaction-categories')}
+                  {t('finance-tabs:transaction-categories')}
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -566,6 +568,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
                         transaction={c}
                         disableLink
                         showAmount
+                        showWallet
                       />
                     ))}
                 </div>
