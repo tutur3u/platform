@@ -127,11 +127,12 @@
       "sidebar-tabs",
       "finance-tabs",
       "finance-overview",
-      "finance-import"
+      "finance-import",
+      "transaction-card"
     ],
 
-    "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
+    "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs", "wallets"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs"

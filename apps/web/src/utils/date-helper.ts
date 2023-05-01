@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { Translate } from 'next-translate';
 
 export type DateRangeOption = 'present' | 'past' | 'future';
 export type DateRangeUnit =
@@ -102,20 +103,25 @@ export const getDateRange = (
   return [start.toDate(), end.toDate()];
 };
 
-export const dateRangeUnits: {
+export const getDateRangeUnits = (
+  t: Translate
+): {
   label: string;
   value: DateRangeUnit;
-}[] = [
-  { label: 'Ngày', value: 'day' },
-  { label: 'Tuần', value: 'week' },
-  { label: 'Tháng', value: 'month' },
-  { label: 'Năm', value: 'year' },
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Tùy chỉnh', value: 'custom' },
-];
+}[] => {
+  return [
+    { label: t('date-helper:day'), value: 'day' },
+    { label: t('date-helper:week'), value: 'week' },
+    { label: t('date-helper:month'), value: 'month' },
+    { label: t('date-helper:year'), value: 'year' },
+    { label: t('date-helper:all'), value: 'all' },
+    { label: t('date-helper:custom'), value: 'custom' },
+  ];
+};
 
 export const getDateRangeOptions = (
-  unit: DateRangeUnit
+  unit: DateRangeUnit,
+  t: Translate
 ): {
   label: string;
   value: DateRangeOption;
@@ -123,34 +129,34 @@ export const getDateRangeOptions = (
   switch (unit) {
     case 'day':
       return [
-        { label: 'Hôm nay', value: 'present' },
-        { label: 'Ngày hôm qua', value: 'past' },
-        { label: 'Ngày mai', value: 'future' },
+        { label: t('date-helper:today'), value: 'present' },
+        { label: t('date-helper:yesterday'), value: 'past' },
+        { label: t('date-helper:tomorrow'), value: 'future' },
       ];
 
     case 'week':
       return [
-        { label: 'Tuần này', value: 'present' },
-        { label: 'Tuần trước', value: 'past' },
-        { label: 'Tuần sau', value: 'future' },
+        { label: t('date-helper:this-week'), value: 'present' },
+        { label: t('date-helper:last-week'), value: 'past' },
+        { label: t('date-helper:next-week'), value: 'future' },
       ];
 
     case 'month':
       return [
-        { label: 'Tháng này', value: 'present' },
-        { label: 'Tháng trước', value: 'past' },
-        { label: 'Tháng sau', value: 'future' },
+        { label: t('date-helper:this-month'), value: 'present' },
+        { label: t('date-helper:last-month'), value: 'past' },
+        { label: t('date-helper:next-month'), value: 'future' },
       ];
 
     case 'year':
       return [
-        { label: 'Năm nay', value: 'present' },
-        { label: 'Năm trước', value: 'past' },
-        { label: 'Năm sau', value: 'future' },
+        { label: t('date-helper:this-year'), value: 'present' },
+        { label: t('date-helper:last-year'), value: 'past' },
+        { label: t('date-helper:next-year'), value: 'future' },
       ];
 
     case 'all':
-      return [{ label: 'Tất cả', value: 'present' }];
+      return [{ label: t('date-helper:all'), value: 'present' }];
 
     default:
       return [];
