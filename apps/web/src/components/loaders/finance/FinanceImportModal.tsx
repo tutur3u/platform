@@ -8,6 +8,7 @@ import { Status } from '../status';
 import { TransactionCategory } from '../../../types/primitives/TransactionCategory';
 import { Wallet } from '../../../types/primitives/Wallet';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -30,6 +31,8 @@ const FinanceImportModal = ({
   transactions,
 }: Props) => {
   const router = useRouter();
+
+  const { t } = useTranslation('finance-import-modal');
 
   const [progress, setProgress] = useState<Progress>({
     createdWallets: 'idle',
@@ -66,8 +69,8 @@ const FinanceImportModal = ({
       return (await res.json()) as Wallet[];
     } else {
       showNotification({
-        title: 'Đã xảy ra lỗi',
-        message: 'Không thể nhập ví',
+        title: t('error'),
+        message: t('error-message-wallet'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, createdWallets: 'error' }));
@@ -103,8 +106,8 @@ const FinanceImportModal = ({
       return (await res.json()) as TransactionCategory[];
     } else {
       showNotification({
-        title: 'Đã xảy ra lỗi',
-        message: 'Không thể nhập danh mục',
+        title: t('error'),
+        message: t('error-message-category'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, createdCategories: 'error' }));
@@ -167,8 +170,8 @@ const FinanceImportModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Đã xảy ra lỗi',
-        message: 'Không thể nhập giao dịch',
+        title: t('error'),
+        message: t('error-message-transaction'),
         color: 'red',
       });
       setProgress((progress) => ({
@@ -224,86 +227,108 @@ const FinanceImportModal = ({
       >
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm ví (${wallets?.length || 0})`}
+          title={`${t('add')} ${t('wallets')} (${wallets?.length || 0})`}
         >
           {progress.createdWallets === 'success' ? (
-            <div className="text-green-300">Đã thêm {wallets.length} ví</div>
+            <div className="text-green-300">
+              {t('added')} {wallets.length} {t('wallets')}
+            </div>
           ) : progress.createdWallets === 'error' ? (
-            <div className="text-red-300">Không thể thêm ví</div>
+            <div className="text-red-300">
+              {t('cannot-add')} {t('wallets')}
+            </div>
           ) : progress.createdWallets === 'loading' ? (
-            <div className="text-blue-300">Đang thêm {wallets.length} ví</div>
-          ) : (
-            <div className="text-zinc-400/80">Đang chờ thêm ví</div>
-          )}
-        </Timeline.Item>
-
-        <Timeline.Item
-          bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm danh mục giao dịch (${categories?.length || 0})`}
-        >
-          {progress.createdWallets === 'success' ? (
-            progress.createdCategories === 'success' ? (
-              <div className="text-green-300">
-                Đã thêm {categories.length} danh mục giao dịch
-              </div>
-            ) : progress.createdCategories === 'error' ? (
-              <div className="text-red-300">
-                Không thể thêm danh mục giao dịch
-              </div>
-            ) : progress.createdCategories === 'loading' ? (
-              <div className="text-blue-300">
-                Đang thêm {categories.length} danh mục giao dịch
-              </div>
-            ) : (
-              <div className="text-zinc-400/80">
-                Đang chờ thêm danh mục giao dịch
-              </div>
-            )
-          ) : progress.createdCategories === 'error' ? (
-            <div className="text-red-300">Đã huỷ thêm danh mục giao dịch</div>
+            <div className="text-blue-300">
+              {t('adding')} {wallets.length} {t('wallets')}
+            </div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ thêm danh mục giao dịch
+              {t('pending')} {t('wallets')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm giao dịch (${transactions?.length || 0})`}
+          title={`${t('add')} ${t('transaction-categories')} (${
+            categories?.length || 0
+          })`}
         >
-          {progress.createdCategories === 'success' ? (
-            progress.createdTransactions === 'success' ? (
+          {progress.createdWallets === 'success' ? (
+            progress.createdCategories === 'success' ? (
               <div className="text-green-300">
-                Đã thêm {transactions.length} giao dịch
+                {t('added')} {categories.length} {t('transaction-categories')}
               </div>
-            ) : progress.createdTransactions === 'error' ? (
-              <div className="text-red-300">Không thể thêm giao dịch</div>
-            ) : progress.createdTransactions === 'loading' ? (
+            ) : progress.createdCategories === 'error' ? (
+              <div className="text-red-300">
+                {t('cannot-add')} {t('transaction-categories')}
+              </div>
+            ) : progress.createdCategories === 'loading' ? (
               <div className="text-blue-300">
-                Đang thêm {transactions.length} giao dịch
+                {t('adding')} {categories.length} {t('transaction-categories')}
               </div>
             ) : (
-              <div className="text-zinc-400/80">Đang chờ thêm giao dịch</div>
+              <div className="text-zinc-400/80">
+                {t('pending')} {t('transaction-categories')}
+              </div>
             )
-          ) : progress.createdTransactions === 'error' ? (
-            <div className="text-red-300">Đã huỷ thêm giao dịch</div>
+          ) : progress.createdCategories === 'error' ? (
+            <div className="text-red-300">
+              {t('canceled')} {t('transaction-categories')}
+            </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ thêm giao dịch</div>
+            <div className="text-zinc-400/80">
+              {t('pending')} {t('transaction-categories')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          bullet={<BanknotesIcon className="h-5 w-5" />}
+          title={`${t('add')} ${t('transactions')} (${
+            transactions?.length || 0
+          })`}
+        >
+          {progress.createdCategories === 'success' ? (
+            progress.createdTransactions === 'success' ? (
+              <div className="text-green-300">
+                {t('added')} {transactions.length} {t('transactions')}
+              </div>
+            ) : progress.createdTransactions === 'error' ? (
+              <div className="text-red-300">
+                {t('cannot-add')} {t('transactions')}
+              </div>
+            ) : progress.createdTransactions === 'loading' ? (
+              <div className="text-blue-300">
+                {t('adding')} {transactions.length} {t('transactions')}
+              </div>
+            ) : (
+              <div className="text-zinc-400/80">
+                {t('pending')} {t('transactions')}
+              </div>
+            )
+          ) : progress.createdTransactions === 'error' ? (
+            <div className="text-red-300">
+              {t('canceled')} {t('transactions')}
+            </div>
+          ) : (
+            <div className="text-zinc-400/80">
+              {t('pending')} {t('transactions')}
+            </div>
+          )}
+        </Timeline.Item>
+
+        <Timeline.Item
+          title={t('complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.createdTransactions === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('pending-completion')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -314,7 +339,7 @@ const FinanceImportModal = ({
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -347,12 +372,12 @@ const FinanceImportModal = ({
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('creating')
+            : t('start')}
         </button>
       </div>
     </>

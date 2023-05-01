@@ -128,7 +128,8 @@
       "finance-tabs",
       "finance-overview",
       "finance-import",
-      "transaction-card"
+      "transaction-card",
+      "finance-import-modal"
     ],
 
     "/[wsId]/finance/wallets": ["sidebar-tabs", "finance-tabs", "wallets"],

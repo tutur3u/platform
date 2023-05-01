@@ -1,0 +1,23 @@
+{
+  "wallets": "wallets",
+  "transaction-categories": "transaction categories",
+  "transactions": "transactions",
+  "add": "Add",
+  "added": "Added",
+  "cannot-add": "Cannot add",
+  "adding": "Adding",
+  "pending": "Pending to add",
+  "canceled": "Canceled adding",
+  "completed": "Completed adding",
+  "cancel-completed": "Cancel completed",
+  "pending-completion": "Pending completion",
+  "cancel": "Cancel",
+  "return": "Return",
+  "complete": "Complete",
+  "creating": "Creating",
+  "start": "Start",
+  "error": "Error",
+  "error-message-transaction": "Cannot import transaction",
+  "error-message-category": "Cannot import category",
+  "error-message-wallet": "Cannot import wallet"
+}

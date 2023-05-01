@@ -294,7 +294,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
     if (!categories || categories.length === 0) return;
 
     openModal({
-      title: <div className="font-semibold">Nhập dữ liệu</div>,
+      title: <div className="font-semibold">{importData}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -477,7 +477,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
             <Divider className="my-4" />
             <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SettingItemCard
-                title={`${t('ss')} (${wallets?.length || 0})`}
+                title={`${t('finance-tabs:wallets')} (${wallets?.length || 0})`}
                 description={
                   file && wallets
                     ? `${t('done-input')} ${wallets.length} ${t(
