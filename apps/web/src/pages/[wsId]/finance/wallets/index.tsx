@@ -18,6 +18,7 @@ import WalletCard from '../../../../components/cards/WalletCard';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import SidebarLink from '../../../../components/layouts/SidebarLink';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -25,17 +26,22 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('wallets');
+  const finance = t('finance');
+  const wallet = t('wallet');
+  const unnamedWorkspace = t('unnamed-ws');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Nguồn tiền',
+              content: wallet,
               href: `/${ws.id}/finance/wallets`,
             },
           ]
@@ -43,7 +49,7 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, wallet, unnamedWorkspace]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -81,14 +87,14 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${wallet} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
-            label="Tìm kiếm"
+            label={t('search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
+            placeholder={t('search-placeholder')}
             icon={<MagnifyingGlassIcon className="h-5" />}
             classNames={{
               input: 'bg-white/5 border-zinc-300/20 font-semibold',
@@ -105,7 +111,7 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
           {ws && (
             <SidebarLink
               href={`/${ws.id}/finance/import`}
-              label="Nhập dữ liệu từ tệp"
+              label={t('import')}
               classNames={{
                 root: 'border border-zinc-300/10 bg-zinc-400/5 text-center hover:bg-transparent',
               }}
@@ -113,12 +119,12 @@ const FinanceWalletsPage: PageWithLayoutProps = () => {
           )}
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số tiền"
+            label={t('show-balance')}
             checked={showBalance}
             onChange={(event) => setShowBalance(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị số giao dịch"
+            label={t('show-amount')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
