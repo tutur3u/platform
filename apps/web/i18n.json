@@ -140,7 +140,9 @@
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
-      "wallet-details-tabs"
+      "wallet-details-tabs",
+      "transactions",
+      "transaction-card"
     ],
     "/[wsId]/finance/wallets/[walletId]/settings": [
       "sidebar-tabs",

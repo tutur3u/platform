@@ -21,12 +21,21 @@ import moment from 'moment';
 import 'moment/locale/vi';
 import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
 import PlusCardButton from '../../../../../components/common/PlusCardButton';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WalletTransactionsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const { lang } = useTranslation();
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const wallets = t('wallets');
+  const unnamedWorkspace = t('unnamed-ws');
+  const unnamedWallet = t('unnamed-wallet');
+  const transaction = t('transactions');
 
   const router = useRouter();
   const { wsId, walletId } = router.query;
@@ -43,20 +52,20 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
       ws && wallet
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${wsId}`,
             },
-            { content: 'Tài chính', href: `/${wsId}/finance` },
+            { content: finance, href: `/${wsId}/finance` },
             {
-              content: 'Nguồn tiền',
+              content: wallets,
               href: `/${wsId}/finance/wallets`,
             },
             {
-              content: wallet?.name || 'Nguồn tiền không tên',
+              content: wallet?.name || unnamedWallet,
               href: `/${wsId}/finance/wallets/${walletId}`,
             },
             {
-              content: 'Giao dịch',
+              content: transaction,
               href: `/${wsId}/finance/wallets/${walletId}/transactions`,
             },
           ]
@@ -64,7 +73,18 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [wsId, walletId, ws, wallet, setRootSegment]);
+  }, [
+    wsId,
+    walletId,
+    ws,
+    wallet,
+    setRootSegment,
+    finance,
+    wallets,
+    transaction,
+    unnamedWallet,
+    unnamedWorkspace,
+  ]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -127,26 +147,29 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
 
     const dateObj = new Date(date);
 
-    if (dateObj.toDateString() === today.toDateString()) return 'Hôm nay';
-    if (dateObj.toDateString() === yesterday.toDateString()) return 'Hôm qua';
-    if (dateObj.toDateString() === tomorrow.toDateString()) return 'Ngày mai';
+    if (dateObj.toDateString() === today.toDateString()) return t('today');
+    if (dateObj.toDateString() === yesterday.toDateString())
+      return t('yesterday');
+    if (dateObj.toDateString() === tomorrow.toDateString())
+      return t('tomorrow');
 
     // Capitalize the first letter of the day
     return moment(date)
+      .locale(lang)
       .format('dddd, DD/MM/YYYY')
       .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
   };
 
   return (
     <>
-      <HeaderX label="Giao dịch – Nguồn tiền" />
+      <HeaderX label={`${transaction} - ${wallets}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
-            label="Tìm kiếm"
+            label={t('search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
+            placeholder={t('search-placeholder')}
             icon={<MagnifyingGlassIcon className="h-5" />}
             classNames={{
               input: 'bg-white/5 border-zinc-300/20 font-semibold',
@@ -162,12 +185,12 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số tiền"
+            label={t('show-amount')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị thời gian"
+            label={t('show-datetime')}
             checked={showDatetime}
             onChange={(event) => setShowDatetime(event.currentTarget.checked)}
           />
@@ -181,7 +204,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
           }`}
         >
           <h3 className="col-span-full text-lg font-semibold text-gray-300">
-            Giao dịch mới
+            {t('new-transaction')}
           </h3>
           <PlusCardButton
             href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
@@ -207,7 +230,8 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
 
                   <div className="flex gap-2">
                     <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
-                      {data.transactions.length} giao dịch
+                      {data.transactions.length}{' '}
+                      {t('transaction').toLowerCase()}
                     </div>
                     <div
                       className={`rounded px-2 py-0.5 text-base ${

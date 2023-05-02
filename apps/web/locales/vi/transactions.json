@@ -1,0 +1,15 @@
+{
+  "finance": "Tài chính",
+  "wallets": "Nguồn tiền",
+  "unnamed-ws": "Không gian làm việc không tên",
+  "unnamed-wallet": "Nguồn tiền không tên",
+  "transactions": "Giao dịch",
+  "today": "Hôm nay",
+  "yesterday": "Hôm qua",
+  "tomorrow": "Ngày mai", 
+  "search": "Tìm kiếm",
+  "search-placeholder": "Nhập từ khoá để tìm kiếm",
+  "show-amount": "Hiển thị số tiền",
+  "show-datetime": "Hiển thị thời gian",
+  "new-transaction": "Giao dịch mới"
+}
