@@ -17,7 +17,8 @@
     "sb:sync": "pnpm supabase db remote commit",
     "sb:reset": "pnpm supabase db reset",
     "sb:diff": "pnpm supabase db diff -f new_migration",
-    "sb:new": "pnpm supabase migration new new_migration"
+    "sb:new": "pnpm supabase migration new new_migration",
+    "sb:status": "pnpm supabase status"
   },
   "dependencies": {
     "@emotion/react": "^11.10.8",
@@ -77,8 +78,8 @@
     "@types/react-resizable": "^3.0.4",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@types/uuid": "^9.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.59.1",
-    "@typescript-eslint/parser": "^5.59.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.2",
+    "@typescript-eslint/parser": "^5.59.2",
     "autoprefixer": "^10.4.14",
     "eslint": "8.39.0",
     "eslint-config-custom": "workspace:*",
@@ -89,7 +90,7 @@
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
     "tailwind-config": "workspace:*",
-    "supabase": "^1.52.2",
+    "supabase": "^1.52.3",
     "tailwindcss": "^3.3.2",
     "tsconfig": "workspace:*",
     "typescript": "^5.0.4"
