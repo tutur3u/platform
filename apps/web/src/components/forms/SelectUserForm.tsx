@@ -105,6 +105,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
 
     if (response.ok) {
       mutate(`/api/workspaces/${wsId}/members`);
+      mutate(`/api/workspaces/${wsId}/members/invites`);
       setValue('');
       setSelectedUser(null);
       closeAllModals();
@@ -145,6 +146,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
             setSelectedUser(user);
           }}
           data-autofocus
+          withinPortal
         />
       ) : (
         <Group className="rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4">

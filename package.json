@@ -16,7 +16,8 @@
     "sb:sync": "cd apps/web && pnpm sb:sync",
     "sb:reset": "cd apps/web && pnpm sb:reset",
     "sb:diff": "cd apps/web && pnpm sb:diff",
-    "sb:new": "cd apps/web && pnpm sb:new"
+    "sb:new": "cd apps/web && pnpm sb:new",
+    "sb:status": "cd apps/web && pnpm sb:status"
   },
   "devDependencies": {
     "eslint": "^8.39.0",
