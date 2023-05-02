@@ -33,17 +33,17 @@ const CategorySelector = ({
   }>(ws?.id ? apiPath : null);
 
   const data = [
-    ...(categories?.data.map((category) => ({
+    ...(categories?.data?.map((category) => ({
       label: category.name,
       value: category.id,
     })) || []),
   ];
 
   useEffect(() => {
-    if (!categories) return;
+    if (!categories?.data) return;
 
-    if (categories.data.length === 1) setCategoryId(categories.data[0].id);
-    else if (categoryId && !categories?.data.find((p) => p.id === categoryId))
+    if (categories?.data?.length === 1) setCategoryId(categories.data[0].id);
+    else if (categoryId && !categories?.data?.find((p) => p.id === categoryId))
       setCategoryId('');
   }, [categoryId, categories, setCategoryId]);
 

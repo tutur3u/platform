@@ -124,5 +124,13 @@
     "0": "workspace",
     "one": "{{count}} workspace",
     "other": "{{count}} workspaces"
+  },
+  "trailing_label_finance_invoices": {
+    "one": "{{count}} invoice",
+    "other": "{{count}} invoices"
+  },
+  "trailing_label_healthcare_checkups": {
+    "one": "{{count}} checkup",
+    "other": "{{count}} checkups"
   }
 }
