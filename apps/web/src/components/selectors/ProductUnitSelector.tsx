@@ -30,10 +30,12 @@ const ProductUnitSelector = ({
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/products?hasUnit=true&warehouseIds=${warehouseId}`;
 
-  const { data: products } = useSWR<Product[]>(ws?.id ? apiPath : null);
+  const { data: products } = useSWR<{ data: Product[]; count: number }>(
+    ws?.id ? apiPath : null
+  );
 
   const data = [
-    ...(products?.map((p) => ({
+    ...(products?.data?.map((p) => ({
       label: `[${p.unit || 'Chưa có đơn vị'}] ${p.name}`,
       value: `${p.id}::${p.unit_id}`,
       disabled: blacklist?.includes(`${p.id}::${p.unit_id}`),
@@ -44,7 +46,7 @@ const ProductUnitSelector = ({
     <Select
       label="Sản phẩm"
       placeholder={
-        products && products.length === 0
+        products && products?.data?.length === 0
           ? 'Chưa có sản phẩm nào'
           : 'Chọn sản phẩm'
       }

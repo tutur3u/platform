@@ -273,11 +273,15 @@ const NewCheckupPage: PageWithLayoutProps = () => {
               onChange={(event) => setChecked(event.currentTarget.checked)}
             />
 
-            <Checkbox
-              label="Đã tái khám"
-              checked={nextChecked}
-              onChange={(event) => setNextChecked(event.currentTarget.checked)}
-            />
+            {nextCheckupAt && (
+              <Checkbox
+                label="Đã tái khám"
+                checked={nextChecked}
+                onChange={(event) =>
+                  setNextChecked(event.currentTarget.checked)
+                }
+              />
+            )}
 
             <Divider className="col-span-full my-2" />
 

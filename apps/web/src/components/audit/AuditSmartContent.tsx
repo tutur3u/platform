@@ -41,7 +41,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -96,7 +96,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -165,7 +165,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -215,7 +215,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     return (
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
-          {data.op === 'INSERT' && data?.record?.name != null && (
+          {data.op === 'INSERT' && data?.record?.name && (
             <p>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -224,7 +224,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.manufacturer != null && (
+          {data.op === 'INSERT' && data?.record?.manufacturer && (
             <p>
               • {t('set_manufacturer_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -233,7 +233,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.usage != null && (
+          {data.op === 'INSERT' && data?.record?.usage && (
             <p>
               • {t('set_usage_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -242,7 +242,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.description != null && (
+          {data.op === 'INSERT' && data?.record?.description && (
             <p>
               • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -252,7 +252,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -273,7 +273,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            data?.record?.manufacturer != data?.old_record?.manufacturer && (
+            (data?.record?.manufacturer||'') != (data?.old_record?.manufacturer||'') && (
               <p>
                 • {t('change_manufacturer_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -287,7 +287,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.usage != data?.old_record?.usage && (
+            (data?.record?.usage||'') != (data?.old_record?.usage||'') && (
               <p>
                 • {t('change_usage_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -334,7 +334,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     return (
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
-          {data.op === 'INSERT' && data?.record?.name != null && (
+          {data.op === 'INSERT' && data?.record?.name  && (
             <p>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -343,7 +343,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.note != null && (
+          {data.op === 'INSERT' && data?.record?.note  && (
             <p>
               • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -352,7 +352,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.description != null && (
+          {data.op === 'INSERT' && data?.record?.description  && (
             <p>
               • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -362,7 +362,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -530,7 +530,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name != data?.old_record?.name ? (
+            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -756,12 +756,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
         {data.op === 'UPDATE' && (
           <>
-            {JSON.stringify(data?.record) ===
-            JSON.stringify(data?.old_record) ? (
-              <p>• {t('no_changes')}</p>
-            ) : null}
-
-            {data?.record?.name != data?.old_record?.name ? (
+            {(data?.record?.name || '') != (data?.old_record?.name || '') ? (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -825,6 +820,11 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 </span>
               </p>
             )}
+
+            {JSON.stringify(data?.record) ===
+            JSON.stringify(data?.old_record) ? (
+              <p>• {t('no_changes')}</p>
+            ) : null}
           </>
         )}
 
@@ -853,7 +853,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.name != data?.old_record?.name && (
+            (data?.record?.name || '') != (data?.old_record?.name || '') && (
               <p>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-200">

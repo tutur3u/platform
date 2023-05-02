@@ -124,5 +124,13 @@
     "0": "không gian làm việc",
     "one": "{{count}} không gian làm việc",
     "other": "{{count}} không gian làm việc"
+  },
+  "trailing_label_finance_invoices": {
+    "one": "{{count}} hóa đơn",
+    "other": "{{count}} hóa đơn"
+  },
+  "trailing_label_healthcare_checkups": {
+    "one": "{{count}} đơn khám sức khỏe",
+    "other": "{{count}} đơn khám sức khỏe"
   }
 }
