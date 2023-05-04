@@ -16,12 +16,21 @@ import { Mode } from '../../../../../components/selectors/ModeSelector';
 import { Transaction } from '../../../../../types/primitives/Transaction';
 import moment from 'moment';
 import { useLocalStorage } from '@mantine/hooks';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WalletDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const { lang } = useTranslation();
+  const { t } = useTranslation('wallet');
+  const finance = t('finance');
+  const wallets = t('wallet');
+  const unnamedWorkspace = t('unnamed-ws');
+  const unnamedWallet = t('unnamed-wallet');
+  const info = t('info');
 
   const router = useRouter();
   const { wsId, walletId } = router.query;
@@ -38,20 +47,20 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
       ws && wallet
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${wsId}`,
             },
-            { content: 'Tài chính', href: `/${wsId}/finance` },
+            { content: finance, href: `/${wsId}/finance` },
             {
-              content: 'Nguồn tiền',
+              content: wallets,
               href: `/${wsId}/finance/wallets`,
             },
             {
-              content: wallet?.name || 'Nguồn tiền không tên',
+              content: wallet?.name || unnamedWallet,
               href: `/${wsId}/finance/wallets/${walletId}`,
             },
             {
-              content: 'Thông tin',
+              content: info,
               href: `/${wsId}/finance/wallets/${walletId}`,
             },
           ]
@@ -59,7 +68,18 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [wsId, walletId, ws, wallet, setRootSegment]);
+  }, [
+    wsId,
+    walletId,
+    ws,
+    wallet,
+    setRootSegment,
+    finance,
+    wallets,
+    info,
+    unnamedWorkspace,
+    unnamedWallet,
+  ]);
 
   const activePage = 1;
   const itemsPerPage = 100;
@@ -107,19 +127,22 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
     const dateObj = new Date(date);
 
-    if (dateObj.toDateString() === today.toDateString()) return 'Hôm nay';
-    if (dateObj.toDateString() === yesterday.toDateString()) return 'Hôm qua';
-    if (dateObj.toDateString() === tomorrow.toDateString()) return 'Ngày mai';
+    if (dateObj.toDateString() === today.toDateString()) return t('today');
+    if (dateObj.toDateString() === yesterday.toDateString())
+      return t('yesterday');
+    if (dateObj.toDateString() === tomorrow.toDateString())
+      return t('tomorrow');
 
     // Capitalize the first letter of the day
     return moment(date)
+      .locale(lang)
       .format('dddd, DD/MM/YYYY')
       .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
   };
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${wallets} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div
@@ -128,7 +151,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
             }`}
           >
             <div className="line-clamp-1 text-2xl font-semibold">
-              Tên nguồn tiền
+              {t('wallet-name')}
             </div>
 
             <div className="line-clamp-1 text-orange-300/70">
@@ -140,7 +163,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
             <>
               <div className="rounded border border-purple-300/10 bg-purple-300/10 p-4 text-purple-300">
                 <div className="line-clamp-1 text-2xl font-semibold">
-                  Hạn mức
+                  {t('credit-limit')}
                 </div>
                 <div className="line-clamp-2 text-purple-300/70">
                   {Intl.NumberFormat('vi-VN', {
@@ -151,7 +174,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
               </div>
               <div className="rounded border border-red-300/10 bg-red-300/10 p-4 text-red-300">
                 <div className="line-clamp-1 text-2xl font-semibold">
-                  Dư nợ hiện tại
+                  {t('outstanding-balance')}
                 </div>
                 <div className="line-clamp-2 text-red-300/70">
                   {Intl.NumberFormat('vi-VN', {
@@ -172,8 +195,8 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           >
             <div className="line-clamp-1 text-2xl font-semibold">
               {wallet?.type === 'STANDARD'
-                ? 'Số tiền hiện có'
-                : 'Số tiền khả dụng'}
+                ? t('balance')
+                : t('available-credit')}
             </div>
             <div className="line-clamp-2 text-green-300/70">
               {Intl.NumberFormat('vi-VN', {
@@ -185,15 +208,15 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
           {wallet?.statement_date && wallet?.payment_date ? (
             <div className="col-span-full text-zinc-400">
-              Nguồn tiền này sẽ được lên sao kê vào{' '}
+              {t('statement-date-message')}{' '}
               <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
-                ngày {wallet?.statement_date}
+                {wallet?.statement_date}
               </span>{' '}
-              hàng tháng và hạn thanh toán vào{' '}
+              {t('payment-due-date-message')}{' '}
               <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
-                ngày {wallet?.payment_date}
+                {wallet?.payment_date}
               </span>{' '}
-              của tháng sau.
+              {t('next-month')}
             </div>
           ) : null}
         </div>
@@ -206,7 +229,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           }`}
         >
           <h3 className="col-span-full text-lg font-semibold text-gray-300">
-            Giao dịch mới
+            {t('new-transaction')}
           </h3>
           <PlusCardButton
             href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
@@ -232,7 +255,8 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
                   <div className="flex gap-2">
                     <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
-                      {data.transactions.length} giao dịch
+                      {data.transactions.length}{' '}
+                      {t('transaction').toLowerCase()}
                     </div>
                     <div
                       className={`rounded px-2 py-0.5 text-base ${
