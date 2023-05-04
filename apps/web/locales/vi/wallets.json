@@ -2,6 +2,7 @@
   "finance": "Tài chính",
   "wallet": "Nguồn tiền",
   "unnamed-ws": "Không gian làm việc không tên",
+  "unnamed-wallet": "Nguồn tiền không tên",
   "search": "Tìm kiếm",
   "search-placeholder": "Nhập từ khoá để tìm kiếm",
   "import": "Nhập dữ liệu từ tệp",
@@ -21,7 +22,7 @@
   "loan-message": "Bạn đang nợ",
   "extra-amount-message": "Bạn đang dư",
   "in-this-wallet": "trong nguồn tiền này.",
-  "currency": "Đơn tiền tệ",
+  "currency": "Đơn vị tiền tệ",
   "currency-description": "Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền.",
   "currency-placeholder": "Chọn đơn vị tiền tệ",
   "description": "Mô tả",
@@ -39,5 +40,13 @@
   "payment-due-date": "Ngày thanh toán",
   "payment-due-date-placeholder": "Chọn ngày thanh toán",
   "icon": "Biểu tượng đại diện",
-  "icon-description": "Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền."
+  "icon-description": "Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền.",
+  "settings": "Cài đặt",
+  "update-wallet": "Cập nhật nguồn tiền",
+  "delete-wallet": "Xóa nguồn tiền",
+  "delete": "Xóa",
+  "save-changes": "Lưu thay đổi",
+  "cancel-payment": "Hủy thanh toán",
+  "pay-now": "Thanh toán ngay",
+  "pay-by-another-wallet": "Thanh toán bằng nguồn tiền khác"
 }

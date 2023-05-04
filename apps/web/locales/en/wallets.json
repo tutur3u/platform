@@ -2,6 +2,7 @@
   "finance": "Finance",
   "wallet": "Wallet",
   "unnamed-ws": "Untitled workspace",
+  "unnamed-wallet": "Untitled wallet",
   "search": "Search",
   "search-placeholder": "Enter keywords to search",
   "import": "Import data",
@@ -39,5 +40,13 @@
   "payment-due-date": "Payment due date",
   "payment-due-date-placeholder": "Select payment due date",
   "icon": "Icon",
-  "icon-description": "An icon will be displayed along with the name of the wallet."
+  "icon-description": "An icon will be displayed along with the name of the wallet.",
+  "settings": "Settings",
+  "update-wallet": "Update wallet",
+  "delete-wallet": "Delete wallet",
+  "delete": "Delete",
+  "save-changes": "Save changes",
+  "cancel-payment": "Cancel payment",
+  "pay-now": "Pay now",
+  "pay-by-another-wallet": "Pay by another wallet"
 }
