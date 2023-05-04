@@ -87,13 +87,9 @@ Running `devx` will:
 There are 5 seed accounts that are already set up on running the local development stack (formatted as email:password):
 
 1. local@tuturuuu.com:password123
-
 2. user1@tuturuuu.com:password123
-
 3. user2@tuturuuu.com:password123
-
 4. user3@tuturuuu.com:password123
-
 5. user4@tuturuuu.com:password123
 
 
