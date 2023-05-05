@@ -5,6 +5,10 @@ const nextConfig = nextTranslate({
   reactStrictMode: true,
   transpilePackages: ['ui'],
 
+  experimental: {
+    appDir: false,
+  },
+
   rewrites() {
     return [
       {
