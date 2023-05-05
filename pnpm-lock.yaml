@@ -101,7 +101,7 @@ importers:
         specifier: 2.0.3
         version: 2.0.3(@tiptap/pm@2.0.3)
       '@vercel/analytics':
-        specifier: ^1.0.1
+        specifier: ^1.0.0
         version: 1.0.1
       dayjs:
         specifier: ^1.11.7
