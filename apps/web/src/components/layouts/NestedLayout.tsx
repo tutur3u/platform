@@ -85,7 +85,10 @@ const NestedLayout: FC<Props> = ({
             )}
 
             {segments && segments.length > 0 ? (
-              <div className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded border border-zinc-800 bg-zinc-900 p-1 md:mx-8 lg:mx-16 xl:mx-32">
+              <div
+                id="segments"
+                className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded border border-zinc-800 bg-zinc-900 p-1 md:mx-8 lg:mx-16 xl:mx-32"
+              >
                 {segments
                   .filter((_, index) =>
                     // If disableTabs is true, then we want to show all segments

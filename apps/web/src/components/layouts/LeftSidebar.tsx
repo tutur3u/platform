@@ -74,7 +74,7 @@ function LeftSidebar({ className }: SidebarProps) {
               : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
-          <div className="relative mx-4 mb-2 flex items-center justify-between pb-1">
+          <div className="relative mx-4 flex items-center justify-between pb-1">
             <Logo
               alwaysShowLabel={sidebar === 'open'}
               showLabel={sidebar !== 'closed'}
