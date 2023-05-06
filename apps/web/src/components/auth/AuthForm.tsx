@@ -88,141 +88,139 @@ const AuthForm = ({
   const forgotPasswordLabel = t('forgot-password');
 
   return (
-    <>
-      <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
-        <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
-              {title}
-            </div>
-
-            <div className="text-xl font-semibold text-zinc-200">
-              {description}
-            </div>
+    <div className="absolute inset-0 mx-2 my-4 flex items-center justify-center md:mx-8 md:my-16 lg:mx-32">
+      <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-lg border border-zinc-300/10 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+        <div className="text-center">
+          <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
+            {title}
           </div>
 
-          <div className="grid w-full gap-2">
-            {resetPasswordMode || (
-              <TextInput
-                id="email"
-                icon={<UserCircleIcon className="h-5" />}
-                label="Email"
-                placeholder="username@example.com"
-                value={form.values.email}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  form.setFieldValue('email', event.currentTarget.value)
-                }
-                error={form.errors.email && 'Invalid email'}
-                classNames={{
-                  label: 'text-zinc-200/80 mb-1',
-                  input:
-                    'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
-                }}
-                disabled={submitting}
-                withAsterisk={false}
-                required
-              />
-            )}
-
-            {recoveryMode || (
-              <PasswordInput
-                id="password"
-                icon={<LockClosedIcon className="h-5" />}
-                label={t('password')}
-                placeholder="••••••••"
-                value={form.values.password}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  form.setFieldValue('password', event.currentTarget.value)
-                }
-                error={
-                  form.errors.password &&
-                  'Password should include at least 8 characters'
-                }
-                classNames={{
-                  label: 'text-zinc-200/80 mb-1',
-                  innerInput: 'placeholder-zinc-200/30',
-                  input: !submitting
-                    ? 'bg-zinc-300/10 border-zinc-300/10'
-                    : 'font-semibold',
-                  visibilityToggle: 'text-zinc-200/30 hover:text-zinc-200/50',
-                }}
-                disabled={submitting}
-                withAsterisk={false}
-                required
-              />
-            )}
-
-            {disableForgotPassword || (
-              <Link
-                href="/recover"
-                className={`${
-                  hideForgotPassword && 'pointer-events-none opacity-0'
-                } ${
-                  submitting
-                    ? 'cursor-not-allowed text-zinc-200/30'
-                    : 'text-zinc-200/50 hover:text-zinc-200'
-                } w-fit place-self-end transition`}
-              >
-                {forgotPasswordLabel}
-              </Link>
-            )}
+          <div className="text-xl font-semibold text-zinc-200">
+            {description}
           </div>
-
-          <div className="grid w-full gap-2 text-center">
-            <Button
-              className="bg-blue-300/10"
-              variant="light"
-              loading={submitting}
-              onClick={(e) => {
-                e.preventDefault();
-                handleSubmit();
-              }}
-              disabled={isFormInvalid || disabled}
-            >
-              {ctaText}
-            </Button>
-
-            {secondaryAction && (
-              <div>
-                {secondaryAction.description && (
-                  <>
-                    <span className="text-zinc-200/30">
-                      {secondaryAction.description}
-                    </span>{' '}
-                  </>
-                )}
-                <Link
-                  href={secondaryAction.href}
-                  className="font-semibold text-zinc-200/50 transition hover:text-zinc-200"
-                >
-                  {secondaryAction.label}
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <Divider className="w-full border-zinc-300/10" variant="dashed" />
-          <div className="text-center text-sm font-semibold text-zinc-400">
-            {noticeP1}{' '}
-            <Link
-              href="/terms"
-              className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
-            >
-              {tos}
-            </Link>{' '}
-            {and}{' '}
-            <Link
-              href="/privacy"
-              className="text-zinc-300 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-100 hover:decoration-zinc-100"
-            >
-              {privacy}
-            </Link>{' '}
-            {noticeP2}
-          </div>
-          <LanguageSelector fullWidth transparent />
         </div>
+
+        <div className="grid w-full gap-2">
+          {resetPasswordMode || (
+            <TextInput
+              id="email"
+              icon={<UserCircleIcon className="h-5" />}
+              label="Email"
+              placeholder="username@example.com"
+              value={form.values.email}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('email', event.currentTarget.value)
+              }
+              error={form.errors.email && 'Invalid email'}
+              classNames={{
+                label: 'text-zinc-200/80 mb-1',
+                input:
+                  'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
+              }}
+              disabled={submitting}
+              withAsterisk={false}
+              required
+            />
+          )}
+
+          {recoveryMode || (
+            <PasswordInput
+              id="password"
+              icon={<LockClosedIcon className="h-5" />}
+              label={t('password')}
+              placeholder="••••••••"
+              value={form.values.password}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('password', event.currentTarget.value)
+              }
+              error={
+                form.errors.password &&
+                'Password should include at least 8 characters'
+              }
+              classNames={{
+                label: 'text-zinc-200/80 mb-1',
+                innerInput: 'placeholder-zinc-200/30',
+                input: !submitting
+                  ? 'bg-zinc-300/10 border-zinc-300/10'
+                  : 'font-semibold',
+                visibilityToggle: 'text-zinc-200/30 hover:text-zinc-200/50',
+              }}
+              disabled={submitting}
+              withAsterisk={false}
+              required
+            />
+          )}
+
+          {disableForgotPassword || (
+            <Link
+              href="/recover"
+              className={`${
+                hideForgotPassword && 'pointer-events-none opacity-0'
+              } ${
+                submitting
+                  ? 'cursor-not-allowed text-zinc-200/30'
+                  : 'text-zinc-200/50 hover:text-zinc-200'
+              } w-fit place-self-end transition`}
+            >
+              {forgotPasswordLabel}
+            </Link>
+          )}
+        </div>
+
+        <div className="grid w-full gap-2 text-center">
+          <Button
+            className="bg-blue-300/10"
+            variant="light"
+            loading={submitting}
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+            disabled={isFormInvalid || disabled}
+          >
+            {ctaText}
+          </Button>
+
+          {secondaryAction && (
+            <div>
+              {secondaryAction.description && (
+                <>
+                  <span className="text-zinc-200/30">
+                    {secondaryAction.description}
+                  </span>{' '}
+                </>
+              )}
+              <Link
+                href={secondaryAction.href}
+                className="font-semibold text-zinc-200/50 transition hover:text-zinc-200"
+              >
+                {secondaryAction.label}
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <Divider className="w-full border-zinc-300/10" variant="dashed" />
+        <div className="text-center text-sm font-semibold text-zinc-300/70">
+          {noticeP1}{' '}
+          <Link
+            href="/terms"
+            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+          >
+            {tos}
+          </Link>{' '}
+          {and}{' '}
+          <Link
+            href="/privacy"
+            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+          >
+            {privacy}
+          </Link>{' '}
+          {noticeP2}
+        </div>
+        <LanguageSelector fullWidth transparent />
       </div>
-    </>
+    </div>
   );
 };
 

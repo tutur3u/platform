@@ -20,7 +20,7 @@
     "sb:status": "cd apps/web && pnpm sb:status"
   },
   "devDependencies": {
-    "eslint": "^8.39.0",
+    "eslint": "^8.40.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.2.8",
@@ -29,5 +29,5 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@8.3.1"
+  "packageManager": "pnpm@8.4.0"
 }

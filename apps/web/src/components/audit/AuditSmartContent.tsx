@@ -273,7 +273,8 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.manufacturer||'') != (data?.old_record?.manufacturer||'') && (
+            (data?.record?.manufacturer || '') !=
+              (data?.old_record?.manufacturer || '') && (
               <p>
                 • {t('change_manufacturer_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -287,7 +288,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.usage||'') != (data?.old_record?.usage||'') && (
+            (data?.record?.usage || '') != (data?.old_record?.usage || '') && (
               <p>
                 • {t('change_usage_from')}{' '}
                 <span className="font-semibold text-zinc-200">
@@ -334,7 +335,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     return (
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
         <p className="text-zinc-400">
-          {data.op === 'INSERT' && data?.record?.name  && (
+          {data.op === 'INSERT' && data?.record?.name && (
             <p>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -343,7 +344,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.note  && (
+          {data.op === 'INSERT' && data?.record?.note && (
             <p>
               • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-200">
@@ -352,7 +353,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             </p>
           )}
 
-          {data.op === 'INSERT' && data?.record?.description  && (
+          {data.op === 'INSERT' && data?.record?.description && (
             <p>
               • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-200">

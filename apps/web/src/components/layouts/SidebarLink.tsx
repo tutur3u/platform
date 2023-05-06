@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
+import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 
 interface SidebarLinkProps {
   href?: string;
@@ -70,8 +71,7 @@ export default function SidebarLink({
       onClick={(e) => {
         if (disabled) e.preventDefault();
         if (onClick) onClick();
-        if (!disableAutoClose && window && window.innerWidth <= 768)
-          setSidebar('closed');
+        closeSidebarOnMobile({ window, setSidebar, disableAutoClose });
       }}
       className={`font-semibold ${classNames?.root}`}
     >
