@@ -8,7 +8,7 @@ import {
   DateRange,
   DateRangeOption,
   DateRangeUnit,
-  dateRangeUnits,
+  getDateRangeUnits,
   getDateRange,
   getDateRangeOptions,
 } from '../../utils/date-helper';
@@ -32,6 +32,14 @@ const DateRangePicker = ({
   const [unit, setUnit] = useState<DateRangeUnit>(defaultUnit);
   const [option, setOption] = useState<DateRangeOption>(defaultOption);
 
+  const { t } = useTranslation('date-helper');
+  const timeUnit = t('time-unit');
+  const timeUnitPlaceholder = t('time-unit-placeholder');
+  const timeRange = t('time-range');
+  const timeRangePlaceholder = t('time-range-placeholder');
+
+  const dateRangeUnits = getDateRangeUnits(t);
+
   useEffect(() => {
     if (unit === 'custom') {
       onChange?.([null, null]);
@@ -45,8 +53,8 @@ const DateRangePicker = ({
   return (
     <>
       <Select
-        label="Đơn vị thời gian"
-        placeholder="Chọn đơn vị thời gian"
+        label={timeUnit}
+        placeholder={timeUnitPlaceholder}
         value={unit}
         onChange={(value) => {
           setUnit((value || 'day') as DateRangeUnit);
@@ -58,8 +66,8 @@ const DateRangePicker = ({
       {unit === 'custom' ? (
         <DatePickerInput
           type="range"
-          label="Khoảng thời gian"
-          placeholder="Chọn khoảng thời gian"
+          label={timeRange}
+          placeholder={timeRangePlaceholder}
           value={value}
           onChange={onChange}
           classNames={{
@@ -70,11 +78,11 @@ const DateRangePicker = ({
         />
       ) : (
         <Select
-          label="Khoảng thời gian"
-          placeholder="Chọn khoảng thời gian"
+          label={timeRange}
+          placeholder={timeRangePlaceholder}
           value={option}
           onChange={(value) => setOption((value || 'today') as DateRangeOption)}
-          data={getDateRangeOptions(unit)}
+          data={getDateRangeOptions(unit, t)}
           icon={<CalendarDaysIcon className="h-5" />}
         />
       )}

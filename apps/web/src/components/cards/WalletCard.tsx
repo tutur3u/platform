@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Wallet } from '../../types/primitives/Wallet';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wallet: Wallet;
@@ -18,6 +19,8 @@ const WalletCard = ({
   showAmount = false,
 }: Props) => {
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('finance-tabs');
 
   const countApi =
     showAmount && ws?.id && wallet?.id
@@ -57,7 +60,7 @@ const WalletCard = ({
 
         {showAmount && (
           <div className="m-2 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">
-            {count} giao dịch
+            {`${count} ${t('transactions').toLowerCase()}`}
           </div>
         )}
       </div>

@@ -1,0 +1,15 @@
+{
+  "finance": "Finance",
+  "wallets": "Wallet",
+  "unnamed-ws": "Untitled workspace",
+  "unnamed-wallet": "Untitled wallet",
+  "transactions": "Transactions",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "tomorrow": "Tomorrow",
+  "search": "Search",
+  "search-placeholder": "Enter keywords to search",
+  "show-amount": "Show amount",
+  "show-datetime": "Show datetime",
+  "new-transaction": "New transaction"
+}

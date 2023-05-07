@@ -5,6 +5,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import moment from 'moment';
 import { Wallet } from '../../types/primitives/Wallet';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId?: string;
@@ -26,6 +27,8 @@ const TransactionCard = ({
   redirectToWallets = false,
 }: Props) => {
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('transaction-card');
 
   const apiPath =
     wsId && showWallet && transaction?.wallet_id
@@ -52,7 +55,7 @@ const TransactionCard = ({
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
-            {transaction.description || 'Không có mô tả'}
+            {transaction.description || t('no-description')}
           </div>
         </div>
       </div>
@@ -71,7 +74,7 @@ const TransactionCard = ({
                 }`}
               >
                 {transaction?.amount === 0
-                  ? 'Miễn phí'
+                  ? t('free')
                   : Intl.NumberFormat('vi-VN', {
                       style: 'currency',
                       currency: 'VND',
@@ -82,7 +85,7 @@ const TransactionCard = ({
 
             {showWallet && (
               <div className="m-2 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
-                {wallet?.name || 'Nguồn tiền không tên'}
+                {wallet?.name || t('unnamed-wallet')}
               </div>
             )}
 

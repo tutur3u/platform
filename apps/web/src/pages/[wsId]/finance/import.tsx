@@ -24,17 +24,23 @@ const WalletImportPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('finance-import');
+
+  const unnamedWorkspace = t('unnamed-workspace');
+  const finance = t('finance-overview:finance');
+  const importData = t('import-data');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Nhập dữ liệu',
+              content: importData,
               href: `/${ws.id}/finance/import`,
             },
           ]
@@ -42,7 +48,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, unnamedWorkspace, finance, importData]);
 
   const supportedApplications = [
     {
@@ -288,7 +294,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
     if (!categories || categories.length === 0) return;
 
     openModal({
-      title: <div className="font-semibold">Nhập dữ liệu</div>,
+      title: <div className="font-semibold">{importData}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -309,13 +315,11 @@ const WalletImportPage: PageWithLayoutProps = () => {
     });
   };
 
-  const { t } = useTranslation('finance-tabs');
-
   if (!ws) return null;
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${importData} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
@@ -327,7 +331,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showLoaderModal : undefined}
             >
-              Nhập dữ liệu
+              {importData}
             </button>
           </div>
         </div>
@@ -335,16 +339,16 @@ const WalletImportPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{`${t('basic-info')}`}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Ứng dụng"
-            description="Chọn ứng dụng được hỗ trợ để nhập dữ liệu nguồn tiền, giao dịch và danh mục từ ứng dụng này."
+            title={`${t('application')}`}
+            description={`${t('application-description')}`}
           >
             <Select
-              placeholder="Chọn ứng dụng"
+              placeholder={`${t('application-placeholder')}`}
               value={application}
               onChange={(a) => {
                 setApplication(a);
@@ -363,12 +367,12 @@ const WalletImportPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Định dạng"
-            description="Chọn định dạng được hỗ trợ để nhập dữ liệu nguồn tiền, giao dịch và danh mục từ ứng dụng này."
+            title={`${t('format')}`}
+            description={`${t('format-description')}`}
             disabled={!application}
           >
             <Select
-              placeholder="Chọn định dạng"
+              placeholder={`${t('format-placeholder')}`}
               value={format}
               onChange={(e) => {
                 setFormat(e);
@@ -385,12 +389,12 @@ const WalletImportPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Dấu phân cách"
-            description="Chọn dấu phân cách được hỗ trợ để sử lý tệp dữ liệu."
+            title={`${t('delimiter')}`}
+            description={`${t('delimiter-description')}`}
             disabled={!application || !format}
           >
             <Select
-              placeholder="Chọn dấu phân cách"
+              placeholder={`${t('delimiter-placeholder')}`}
               value={delimiter}
               onChange={(e) => {
                 setDelimiter(e || '');
@@ -398,15 +402,15 @@ const WalletImportPage: PageWithLayoutProps = () => {
               data={
                 format === 'csv'
                   ? [
-                      { value: ',', label: 'Dấu phẩy (,)' },
-                      { value: ';', label: 'Dấu chấm phẩy (;)' },
-                      { value: '|', label: 'Dấu gạch dọc (|)' },
-                      { value: '\t', label: 'Dấu tab (\\t)' },
+                      { value: ',', label: `${t('comma')} (,)` },
+                      { value: ';', label: `${t('semicolon')} (;)` },
+                      { value: '|', label: `${t('vertical-bar')} (|)` },
+                      { value: '\t', label: `${t('tab')} (\\t)` },
                     ]
                   : [
                       {
                         value: '',
-                        label: 'Tự động',
+                        label: `${t('auto')}`,
                       },
                     ]
               }
@@ -416,14 +420,14 @@ const WalletImportPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Tệp dữ liệu"
-            description="Chọn tệp dữ liệu chứa dữ liệu cần nhập."
+            title={`${t('file')}`}
+            description={`${t('file-description')}`}
             disabled={
               !application || !format || (format === 'csv' && !delimiter)
             }
           >
             <FileInput
-              placeholder="Chọn tệp"
+              placeholder={`${t('file-placeholder')}`}
               value={file}
               onChange={(f) => setFile(f)}
               accept={format === 'csv' ? '.csv' : '.xlsx'}
@@ -434,20 +438,20 @@ const WalletImportPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Dấu phân cách hàng nghìn"
-            description="Sử dụng dấu phân cách hàng nghìn để định dạng số tiền trong tệp dữ liệu."
+            title={`${t('thousands-separator')}`}
+            description={`${t('thousands-separator-description')}`}
             disabled={!file}
           >
             <Select
-              placeholder="Chọn dấu phân cách hàng nghìn"
+              placeholder={`${t('thousands-separator-placeholder')}`}
               value={thousandsSeparator}
               onChange={(e) => {
                 setThousandsSeparator(e || '');
               }}
               data={[
-                { value: '', label: 'Không có' },
-                { value: ',', label: 'Dấu phẩy (,)' },
-                { value: '.', label: 'Dấu chấm (.)' },
+                { value: '', label: `${t('none')}` },
+                { value: ',', label: `${t('semicolon')} (;)` },
+                { value: '.', label: `${t('colon')} (.)` },
               ]}
               disabled={!file}
               required
@@ -455,14 +459,14 @@ const WalletImportPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Trực quan hóa dữ liệu"
-            description="Hiển thị dữ liệu dưới dạng thẻ trực quan sau khi chọn tệp (sử dụng nhiều tài nguyên trình duyệt hơn)."
+            title={`${t('data-visualization')}`}
+            description={`${t('data-visualization-description')}`}
             disabled={!file}
           >
             <Switch
               checked={visualize}
               onChange={(e) => setVisualize(e.target.checked)}
-              label="Trực quan hóa"
+              label={`${t('visualize')}`}
               disabled={!file}
             />
           </SettingItemCard>
@@ -473,53 +477,53 @@ const WalletImportPage: PageWithLayoutProps = () => {
             <Divider className="my-4" />
             <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SettingItemCard
-                title={`${t('wallets')} (${wallets?.length || 0})`}
+                title={`${t('finance-tabs:wallets')} (${wallets?.length || 0})`}
                 description={
                   file && wallets
-                    ? `Đã nhập ${wallets.length} ${t(
-                        'wallets'
-                      ).toLowerCase()} với tổng số dư là ${Intl.NumberFormat(
-                        'vi-VN',
-                        {
-                          style: 'currency',
-                          currency: 'VND',
-                        }
-                      ).format(
+                    ? `${t('done-input')} ${wallets.length} ${t(
+                        'finance-tabs:wallets'
+                      ).toLowerCase()} ${t(
+                        'with-total-balance'
+                      )} ${Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                      }).format(
                         wallets.reduce((a, b) => a + (b?.balance || 0), 0)
                       )}`
-                    : 'Chờ nhập dữ liệu'
+                    : t('wait-input')
                 }
                 disabled={!file || !wallets}
               />
               <SettingItemCard
-                title={`${t('transactions')} (${transactions?.length || 0})`}
+                title={`${t('finance-tabs:transactions')} (${
+                  transactions?.length || 0
+                })`}
                 description={
                   file && transactions
-                    ? `Đã nhập ${transactions.length} ${t(
-                        'transactions'
-                      ).toLowerCase()} với tổng số tiền là ${Intl.NumberFormat(
-                        'vi-VN',
-                        {
-                          style: 'currency',
-                          currency: 'VND',
-                        }
-                      ).format(
+                    ? `${t('done-input')} ${transactions.length} ${t(
+                        'finance-tabs:transactions'
+                      ).toLowerCase()} ${t(
+                        'with-total-balance'
+                      )} ${Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                      }).format(
                         transactions.reduce((a, b) => a + (b?.amount || 0), 0)
                       )}`
-                    : 'Chờ nhập dữ liệu'
+                    : t('wait-input')
                 }
                 disabled={!file || !transactions}
               />
               <SettingItemCard
-                title={`${t('transaction-categories')} (${
+                title={`${t('finance-tabs:transaction-categories')} (${
                   categories?.length || 0
                 })`}
                 description={
                   file && categories
-                    ? `Đã nhập ${categories.length} ${t(
-                        'transaction-categories'
-                      )}`
-                    : 'Chờ nhập dữ liệu'
+                    ? `${t('done-input')} ${categories.length} ${t(
+                        'finance-tabs:transaction-categories'
+                      ).toLowerCase()}s`
+                    : t('wait-input')
                 }
                 disabled={!file || !categories}
               />
@@ -532,10 +536,12 @@ const WalletImportPage: PageWithLayoutProps = () => {
             <Divider className="my-4" />
             <Tabs defaultValue="wallets" color="white">
               <Tabs.List>
-                <Tabs.Tab value="wallets">{t('wallets')}</Tabs.Tab>
-                <Tabs.Tab value="transactions">{t('transactions')}</Tabs.Tab>
+                <Tabs.Tab value="wallets">{t('finance-tabs:wallets')}</Tabs.Tab>
+                <Tabs.Tab value="transactions">
+                  {t('finance-tabs:transactions')}
+                </Tabs.Tab>
                 <Tabs.Tab value="categories">
-                  {t('transaction-categories')}
+                  {t('finance-tabs:transaction-categories')}
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -562,6 +568,7 @@ const WalletImportPage: PageWithLayoutProps = () => {
                         transaction={c}
                         disableLink
                         showAmount
+                        showWallet
                       />
                     ))}
                 </div>

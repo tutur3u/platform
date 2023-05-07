@@ -21,6 +21,11 @@ const FinancePage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('finance-overview');
+
+  const finance = t('finance');
+  const overview = t('overview');
+
   useEffect(() => {
     setRootSegment(
       ws
@@ -29,14 +34,14 @@ const FinancePage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
-            { content: 'Tổng quan', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
+            { content: overview, href: `/${ws.id}/finance` },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, overview]);
 
   const [dateRange, setDateRange] = useState<DateRange>([null, null]);
 
@@ -84,12 +89,16 @@ const FinancePage: PageWithLayoutProps = () => {
   const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
   const { data: invoicesCount } = useSWR<number>(invoicesCountApi);
 
-  const { t } = useTranslation('finance-tabs');
+  const walletsLabel = t('finance-tabs:wallets');
+  const transactionsLabel = t('finance-tabs:transactions');
+  const categoriesLabel = t('finance-tabs:transaction-categories');
+  const invoicesLabel = t('finance-tabs:invoices');
 
-  const walletsLabel = t('wallets');
-  const transactionsLabel = t('transactions');
-  const categoriesLabel = t('transaction-categories');
-  const invoicesLabel = t('invoices');
+  const totalBalance = t('total-balance');
+  const totalIncome = t('total-income');
+  const totalExpense = t('total-expense');
+  const recentTransactions = t('recent-transactions');
+  const noTransaction = t('no-transaction');
 
   const page = 1;
   const itemsPerPage = 16;
@@ -104,7 +113,7 @@ const FinancePage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Tổng quan – Tài chính" />
+      <HeaderX label={`${overview} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DateRangePicker
@@ -118,7 +127,7 @@ const FinancePage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
-            title="Tổng tiền"
+            title={totalBalance}
             color="blue"
             value={Intl.NumberFormat('vi-VN', {
               style: 'currency',
@@ -128,7 +137,7 @@ const FinancePage: PageWithLayoutProps = () => {
           />
 
           <StatisticCard
-            title="Tổng thu"
+            title={totalIncome}
             color="green"
             value={Intl.NumberFormat('vi-VN', {
               style: 'currency',
@@ -138,7 +147,7 @@ const FinancePage: PageWithLayoutProps = () => {
           />
 
           <StatisticCard
-            title="Tổng chi"
+            title={totalExpense}
             color="red"
             value={Intl.NumberFormat('vi-VN', {
               style: 'currency',
@@ -174,7 +183,7 @@ const FinancePage: PageWithLayoutProps = () => {
           <div className="col-span-full">
             <Divider className="mb-4" />
             <div className="text-lg font-semibold md:text-2xl">
-              Giao dịch gần đây
+              {recentTransactions}
             </div>
           </div>
 
@@ -190,7 +199,7 @@ const FinancePage: PageWithLayoutProps = () => {
             ))
           ) : (
             <div className="col-span-full -mt-2 text-zinc-400">
-              Chưa có giao dịch nào
+              {noTransaction}
             </div>
           )}
         </div>

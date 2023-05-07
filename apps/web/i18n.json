@@ -221,31 +221,48 @@
 
     "/[wsId]/classes": ["sidebar-tabs"],
 
-    "/[wsId]/finance": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/import": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "finance-overview",
+      "date-helper"
+    ],
+    "/[wsId]/finance/import": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "finance-overview",
+      "finance-import",
+      "transaction-card",
+      "finance-import-modal"
+    ],
 
     "/[wsId]/finance/wallets": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "wallets"
     ],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
-      "wallet-details-tabs"
+      "wallet-details-tabs",
+      "wallet"
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
-      "wallet-details-tabs"
+      "wallet-details-tabs",
+      "transactions",
+      "transaction-card"
     ],
     "/[wsId]/finance/wallets/[walletId]/settings": [
       "sidebar-tabs",
-      "wallet-details-tabs"
+      "wallet-details-tabs",
+      "wallets"
     ],
 
     "/[wsId]/finance/transactions": [
