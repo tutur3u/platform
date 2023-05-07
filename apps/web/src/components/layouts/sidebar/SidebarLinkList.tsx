@@ -8,7 +8,6 @@ import {
   CheckCircleIcon,
   CircleStackIcon,
   ClipboardDocumentListIcon,
-  ClockIcon,
   FingerPrintIcon,
   HomeIcon,
   RectangleStackIcon,
@@ -43,7 +42,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const databases = t('databases');
   const ai = t('ai');
   const infrastructure = t('infrastructure');
-  const activities = t('activities');
 
   const isRootWs = wsId === ROOT_WORKSPACE_ID;
 
@@ -168,13 +166,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
           showTooltip={!sidebarOpened}
         />
       )}
-
-      <SidebarLink
-        href={`/${wsId}/activities`}
-        activeIcon={<ClockIcon className="w-5" />}
-        label={activities}
-        showTooltip={!sidebarOpened}
-      />
     </div>
   );
 };

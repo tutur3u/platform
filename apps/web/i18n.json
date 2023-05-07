@@ -34,6 +34,16 @@
     "/[wsId]": ["sidebar-tabs", "workspace-tabs", "ws-home"],
     "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
     "/[wsId]/members": ["sidebar-tabs", "workspace-tabs", "ws-members"],
+    "/[wsId]/activities": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "search",
+      "view-mode",
+      "pagination",
+      "crud-ops",
+      "ws-member-selector",
+      "ws-activities"
+    ],
     "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
 
     "/[wsId]/calendar": ["sidebar-tabs"],
@@ -294,15 +304,6 @@
     ],
 
     "/[wsId]/ai": ["sidebar-tabs"],
-    "/[wsId]/activities": [
-      "sidebar-tabs",
-      "search",
-      "view-mode",
-      "pagination",
-      "crud-ops",
-      "ws-member-selector",
-      "ws-activities"
-    ],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
 }

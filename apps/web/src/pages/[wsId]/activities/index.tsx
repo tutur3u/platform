@@ -19,7 +19,7 @@ import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const HistoryPage: PageWithLayoutProps = () => {
+const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('sidebar-tabs');
 
   const { setRootSegment } = useSegments();
@@ -127,8 +127,8 @@ const HistoryPage: PageWithLayoutProps = () => {
   );
 };
 
-HistoryPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout>{page}</NestedLayout>;
+WorkspaceActivitiesPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="workspace">{page}</NestedLayout>;
 };
 
-export default HistoryPage;
+export default WorkspaceActivitiesPage;
