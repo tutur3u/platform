@@ -19,12 +19,20 @@ import { Wallet } from '../../../../../types/primitives/Wallet';
 import useSWR from 'swr';
 import WalletDeleteModal from '../../../../../components/loaders/wallets/WalletDeleteModal';
 import WalletEditModal from '../../../../../components/loaders/wallets/WalletEditModal';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WalletSettingsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('wallets');
+  const finance = t('finance');
+  const wallets = t('wallet');
+  const unnamedWorkspace = t('unnamed-ws');
+  const unnamedWallet = t('unnamed-wallet');
+  const settings = t('settings');
 
   const router = useRouter();
   const { wsId, walletId } = router.query;
@@ -41,20 +49,20 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
       ws && wallet
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${wsId}`,
             },
-            { content: 'Tài chính', href: `/${wsId}/finance` },
+            { content: finance, href: `/${wsId}/finance` },
             {
-              content: 'Nguồn tiền',
+              content: wallets,
               href: `/${wsId}/finance/wallets`,
             },
             {
-              content: wallet?.name || 'Nguồn tiền không tên',
+              content: wallet?.name || unnamedWallet,
               href: `/${wsId}/finance/wallets/${walletId}`,
             },
             {
-              content: 'Cài đặt',
+              content: settings,
               href: `/${wsId}/finance/wallets/${walletId}/settings`,
             },
           ]
@@ -62,7 +70,18 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [wsId, walletId, ws, wallet, setRootSegment]);
+  }, [
+    wsId,
+    walletId,
+    ws,
+    wallet,
+    setRootSegment,
+    finance,
+    wallets,
+    settings,
+    unnamedWorkspace,
+    unnamedWallet,
+  ]);
 
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -94,7 +113,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật nguồn tiền</div>,
+      title: <div className="font-semibold">{t('update-wallet')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -125,7 +144,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa nguồn tiền</div>,
+      title: <div className="font-semibold">{t('delete-wallet')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -136,7 +155,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${wallets} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
@@ -146,7 +165,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
               }`}
               onClick={wallet ? showDeleteModal : undefined}
             >
-              Xoá
+              {t('delete')}
             </button>
 
             <button
@@ -157,7 +176,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showEditModal : undefined}
             >
-              Lưu thay đổi
+              {t('save-changes')}
             </button>
           </div>
         </div>
@@ -165,16 +184,16 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Tên nguồn tiền"
-            description="Tên nguồn tiền sẽ được hiển thị trên bảng điều khiển."
+            title={t('wallet-name')}
+            description={t('wallet-name-description')}
           >
             <TextInput
-              placeholder="Nhập tên nguồn tiền"
+              placeholder={t('wallet-name-placeholder')}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required
@@ -182,15 +201,15 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title={type === 'STANDARD' ? 'Số tiền hiện có' : 'Số tiền khả dụng'}
+            title={type === 'STANDARD' ? t('balance') : t('available-credit')}
             description={
               type === 'STANDARD'
-                ? 'Số tiền hiện có trong nguồn tiền này.'
-                : 'Số tiền có thể sử dụng trong nguồn tiền này.'
+                ? t('balance-description')
+                : t('available-credit-description')
             }
           >
             <NumberInput
-              placeholder="Nhập số tiền"
+              placeholder={t('input-amount')}
               value={balance}
               onChange={(num) => setBalance(Number(num))}
               className="w-full"
@@ -235,7 +254,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                       onClick={() => setBalance(wallet?.balance || 0)}
                       className="w-full rounded border border-zinc-300/10 bg-zinc-300/10 p-2 text-zinc-300 transition hover:bg-zinc-300/20"
                     >
-                      Huỷ thanh toán
+                      {t('cancel-payment')}
                     </button>
                   ) : (
                     balance < (limit || 0) && (
@@ -244,7 +263,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                           onClick={() => setBalance(limit || 0)}
                           className="w-full rounded border border-blue-300/10 bg-blue-300/10 p-2 text-blue-300 transition hover:bg-blue-300/20"
                         >
-                          Thanh toán ngay
+                          {t('pay-now')}
                         </button>
 
                         <button
@@ -259,7 +278,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                           }
                           className="w-full rounded border border-purple-300/10 bg-purple-300/10 p-2 text-purple-300 transition hover:bg-purple-300/20"
                         >
-                          Thanh toán bằng nguồn tiền khác
+                          {t('pay-by-another-wallet')}
                         </button>
                       </>
                     )
@@ -270,11 +289,11 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Đơn vị tiền tệ"
-            description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
+            title={t('currency')}
+            description={t('currency-description')}
           >
             <Select
-              placeholder="Chọn đơn vị tiền tệ"
+              placeholder={t('currency-placeholder')}
               value={currency}
               onChange={(e) => setCurrency(e || 'VND')}
               data={[
@@ -288,11 +307,11 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Mô tả"
-            description="Mô tả ngắn gọn về nguồn tiền này."
+            title={t('description')}
+            description={t('description-description')}
           >
             <Textarea
-              placeholder="Nhập mô tả"
+              placeholder={t('description-placeholder')}
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               minRows={3}
@@ -301,12 +320,12 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Loại nguồn tiền"
-            description="Quyết định cách thức sử dụng nguồn tiền này."
+            title={t('type')}
+            description={t('type-description')}
           >
             <div className="grid gap-2">
               <Select
-                placeholder="Chọn loại nguồn tiền"
+                placeholder={t('type-placeholder')}
                 value={type}
                 onChange={(e) => {
                   setType(e || 'STANDARD');
@@ -318,11 +337,11 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                 }}
                 data={[
                   {
-                    label: 'Tiêu chuẩn',
+                    label: t('standard'),
                     value: 'STANDARD',
                   },
                   {
-                    label: 'Tín dụng',
+                    label: t('credit'),
                     value: 'CREDIT',
                   },
                 ]}
@@ -332,8 +351,8 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
               {type === 'CREDIT' && (
                 <>
                   <NumberInput
-                    label="Hạn mức tín dụng"
-                    placeholder="Nhập hạn mức tín dụng"
+                    label={t('credit-limit')}
+                    placeholder={t('credit-limit-placeholder')}
                     value={limit}
                     onChange={(num) => setLimit(Number(num))}
                     min={0}
@@ -347,8 +366,8 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
 
                   <div className="flex w-full gap-4">
                     <Select
-                      label="Ngày sao kê"
-                      placeholder="Chọn ngày sao kê"
+                      label={t('statement-date')}
+                      placeholder={t('statement-date-placeholder')}
                       value={statementDate.toString()}
                       onChange={(e) => setStatementDate(Number(e))}
                       data={Array.from({ length: 28 }, (_, i) => ({
@@ -359,8 +378,8 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                     />
 
                     <Select
-                      label="Ngày thanh toán"
-                      placeholder="Chọn ngày thanh toán"
+                      label={t('payment-due-date')}
+                      placeholder={t('payment-due-date-placeholder')}
                       value={paymentDate.toString()}
                       onChange={(e) => setPaymentDate(Number(e))}
                       data={Array.from({ length: 28 }, (_, i) => ({
@@ -376,8 +395,8 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Biểu tượng đại diện"
-            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên nguồn tiền."
+            title={t('icon')}
+            description={t('icon-description')}
             disabled
             comingSoon
           />

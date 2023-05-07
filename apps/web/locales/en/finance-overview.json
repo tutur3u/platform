@@ -1,0 +1,9 @@
+{
+  "finance": "Finance",
+  "overview": "Overview",
+  "total-balance": "Total balance",
+  "total-expense": "Total expense",
+  "total-income": "Total income",
+  "recent-transactions": "Recent transactions",
+  "no-transaction": "You have no transactions"
+}

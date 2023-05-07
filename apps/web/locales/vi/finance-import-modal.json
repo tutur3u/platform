@@ -1,0 +1,23 @@
+{
+  "wallets": "ví",
+  "transaction-categories": "danh mục giao dịch",
+  "transactions": "giao dịch",
+  "add": "Thêm",
+  "added": "Đã thêm",
+  "cannot-add": "Không thể thêm",
+  "adding": "Đang thêm",
+  "pending": "Đang chờ thêm",
+  "canceled": "Đã huỷ thêm",
+  "completed": "Đã hoàn tất",
+  "cancel-completed": "Đã huỷ hoàn tất",
+  "pending-completion": "Đang chờ hoàn tất",
+  "cancel": "Huỷ",
+  "return": "Quay lại",
+  "complete": "Hoàn tất",
+  "creating": "Đang tạo",
+  "start": "Bắt đầu",
+  "error": "Đã xảy ra lỗi",
+  "error-message-transaction": "Không thể nhập giao dịch",
+  "error-message-category": "Không thể nhập danh mục",
+  "error-message-wallet": "Không thể nhập ví"
+}
