@@ -1,23 +1,26 @@
 import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 import { Status } from '../../status';
-import { UserRole } from '../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../types/primitives/UserGroup';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
-  role: UserRole;
+  group: UserGroup;
 }
 
 interface Progress {
   updated: Status;
 }
 
-const UserRoleEditModal = ({ wsId, role }: Props) => {
+const UserGroupEditModal = ({ wsId, group }: Props) => {
+  const { t } = useTranslation('ws-users-groups-details');
+
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -27,26 +30,17 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
   const hasError = progress.updated === 'error';
   const hasSuccess = progress.updated === 'success';
 
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    mutate(`/api/workspaces/${wsId}/users/roles/${role.id}`);
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật vai trò',
-      color: 'green',
-    });
-  }, [hasSuccess, role.id, wsId]);
-
   const updateDetails = async () => {
-    const res = await fetch(`/api/workspaces/${wsId}/users/roles/${role.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(role),
-    });
+    const res = await fetch(
+      `/api/workspaces/${wsId}/users/groups/${group.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(group),
+      }
+    );
 
     if (res.ok) {
       setProgress((progress) => ({ ...progress, updated: 'success' }));
@@ -54,8 +48,8 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật vai trò',
+        title: t('common:error'),
+        message: t('cant-update'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updated: 'error' }));
@@ -64,10 +58,11 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
   };
 
   const handleEdit = async () => {
-    if (!role.id) return;
+    if (!group.id) return;
 
     setProgress((progress) => ({ ...progress, updated: 'loading' }));
-    updateDetails();
+    await updateDetails();
+    mutate(`/api/workspaces/${wsId}/users/groups/${group.id}`);
   };
 
   const [started, setStarted] = useState(false);
@@ -83,34 +78,30 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật thông tin cơ bản"
+          title={t('update-user-group')}
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã cập nhật thông tin cơ bản</div>
+            <div className="text-green-300">{t('updated-success')}</div>
           ) : progress.updated === 'error' ? (
-            <div className="text-red-300">
-              Không thể cập nhật thông tin cơ bản
-            </div>
+            <div className="text-red-300">{t('cant-update')}</div>
           ) : progress.updated === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật thông tin cơ bản</div>
+            <div className="text-blue-300">{t('updating')}</div>
           ) : (
-            <div className="text-zinc-400/80">
-              Đang chờ cập nhật thông tin cơ bản
-            </div>
+            <div className="text-zinc-400/80">{t('update-pending')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('completion-cancelled')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('completion-pending')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -121,16 +112,16 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('common:cancel')}
           </button>
         )}
 
-        {role.id && hasSuccess && (
+        {group.id && hasSuccess && (
           <button
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem vai trò
+            {t('view-group')}
           </button>
         )}
 
@@ -151,7 +142,7 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/users/roles`);
+              router.push(`/${wsId}/users/groups`);
               closeAllModals();
               return;
             }
@@ -163,16 +154,16 @@ const UserRoleEditModal = ({ wsId, role }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:back')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:processing')
+            : t('common:start')}
         </button>
       </div>
     </>
   );
 };
 
-export default UserRoleEditModal;
+export default UserGroupEditModal;

@@ -8,11 +8,19 @@ import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import UserRoleCreateModal from '../../../../components/loaders/users/roles/UserRoleCreateModal';
+import UserGroupCreateModal from '../../../../components/loaders/users/groups/UserGroupCreateModal';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const NewRolePage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('ws-users-groups-details');
+
+  const usersLabel = t('sidebar-tabs:users');
+  const groupsLabel = t('workspace-users-tabs:groups');
+  const createNewGroupLabel = t('create-new-group');
+  const untitledLabel = t('common:untitled');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -21,24 +29,31 @@ const NewRolePage: PageWithLayoutProps = () => {
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || untitledLabel,
               href: `/${ws.id}`,
             },
-            { content: 'Người dùng', href: `/${ws.id}/users` },
+            { content: usersLabel, href: `/${ws.id}/users` },
             {
-              content: 'Vai trò',
-              href: `/${ws.id}/users/roles`,
+              content: groupsLabel,
+              href: `/${ws.id}/users/groups`,
             },
             {
-              content: 'Tạo mới',
-              href: `/${ws.id}/users/roles/new`,
+              content: createNewGroupLabel,
+              href: `/${ws.id}/users/groups/new`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [
+    ws,
+    usersLabel,
+    groupsLabel,
+    untitledLabel,
+    createNewGroupLabel,
+    setRootSegment,
+  ]);
 
   const [name, setName] = useState<string>('');
 
@@ -47,15 +62,15 @@ const NewRolePage: PageWithLayoutProps = () => {
   const showLoaderModal = () => {
     if (!ws) return;
     openModal({
-      title: <div className="font-semibold">Tạo vai trò mới</div>,
+      title: <div className="font-semibold">{createNewGroupLabel}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
       children: (
-        <UserRoleCreateModal
+        <UserGroupCreateModal
           wsId={ws.id}
-          role={{
+          group={{
             name,
           }}
         />
@@ -65,7 +80,7 @@ const NewRolePage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${createNewGroupLabel} – ${usersLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
@@ -77,7 +92,7 @@ const NewRolePage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showLoaderModal : undefined}
             >
-              Tạo mới
+              {t('common:create')}
             </button>
           </div>
         </div>
@@ -85,16 +100,16 @@ const NewRolePage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Tên vai trò"
-            description="Tên vai trò sẽ được hiển thị trên bảng điều khiển."
+            title={t('name')}
+            description={t('name-description')}
           >
             <TextInput
-              placeholder="Nhập tên vai trò"
+              placeholder={t('enter-name')}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required

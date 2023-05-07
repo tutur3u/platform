@@ -15,10 +15,16 @@ import PaginationSelector from '../../../components/selectors/PaginationSelector
 import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
 import WorkspaceUserCard from '../../../components/cards/WorkspaceUserCard';
 import GeneralSearchBar from '../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceUsersPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const usersLabel = t('sidebar-tabs:users');
+  const listLabel = t('workspace-users-tabs:list');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -30,9 +36,9 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Users', href: `/${ws.id}/users` },
+            { content: usersLabel, href: `/${ws.id}/users` },
             {
-              content: 'List',
+              content: listLabel,
               href: `/${ws.id}/users/list`,
             },
           ]
@@ -40,7 +46,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, usersLabel, listLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -83,7 +89,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Danh sách – Người dùng" />
+      <HeaderX label={`${listLabel} – ${usersLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -98,17 +104,17 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số điện thoại"
+            label={t('ws-users-list-configs:show-phone')}
             checked={showPhone}
             onChange={(event) => setShowPhone(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị giới tính"
+            label={t('ws-users-list-configs:show-gender')}
             checked={showGender}
             onChange={(event) => setShowGender(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị địa chỉ"
+            label={t('ws-users-list-configs:show-address')}
             checked={showAddress}
             onChange={(event) => setShowAddress(event.currentTarget.checked)}
           />

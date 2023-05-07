@@ -7,10 +7,16 @@ import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import StatisticCard from '../../../components/cards/StatisticCard';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceUsersPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const usersLabel = t('sidebar-tabs:users');
+  const overviewLabel = t('workspace-users-tabs:overview');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -22,9 +28,9 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Users', href: `/${ws.id}/users` },
+            { content: usersLabel, href: `/${ws.id}/users` },
             {
-              content: 'Overview',
+              content: overviewLabel,
               href: `/${ws.id}/users`,
             },
           ]
@@ -32,36 +38,36 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, usersLabel, overviewLabel, setRootSegment]);
 
   const usersCountApi = ws?.id ? `/api/workspaces/${ws.id}/users/count` : null;
 
-  const rolesCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/users/roles/count`
+  const groupsCountApi = ws?.id
+    ? `/api/workspaces/${ws.id}/users/groups/count`
     : null;
 
   const { data: users } = useSWR<number>(usersCountApi);
-  const { data: roles } = useSWR<number>(rolesCountApi);
+  const { data: groups } = useSWR<number>(groupsCountApi);
 
   if (!ws) return null;
 
   return (
     <>
-      <HeaderX label="Tổng quan – Người dùng" />
+      <HeaderX label={`${overviewLabel} – ${usersLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatisticCard
-            title="Người dùng"
+            title={usersLabel}
             color="blue"
             value={users}
             href={`/${ws?.id}/users/list`}
           />
 
           <StatisticCard
-            title="Vai trò"
+            title={t('workspace-users-tabs:groups')}
             color="green"
-            value={roles}
-            href={`/${ws?.id}/users/roles`}
+            value={groups}
+            href={`/${ws?.id}/users/groups`}
           />
         </div>
       </div>

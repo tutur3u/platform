@@ -11,12 +11,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
-import { UserRole } from '../../../types/primitives/UserRole';
+import { UserGroup } from '../../../types/primitives/UserGroup';
 
 interface Props {
   wsId: string;
   user: Partial<WorkspaceUser>;
-  roles: UserRole[];
+  groups: UserGroup[];
 }
 
 interface Progress {
@@ -24,7 +24,7 @@ interface Progress {
   createdRoles: Status;
 }
 
-const WorkspaceUserCreateModal = ({ wsId, user, roles }: Props) => {
+const WorkspaceUserCreateModal = ({ wsId, user, groups }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -72,17 +72,17 @@ const WorkspaceUserCreateModal = ({ wsId, user, roles }: Props) => {
   };
 
   const createRoles = async (userId: string) => {
-    if (roles.length === 0) {
+    if (groups.length === 0) {
       setProgress((progress) => ({ ...progress, createdRoles: 'success' }));
       return true;
     }
 
-    const res = await fetch(`/api/workspaces/${wsId}/users/${userId}/roles`, {
+    const res = await fetch(`/api/workspaces/${wsId}/users/${userId}/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ roles }),
+      body: JSON.stringify({ groups }),
     });
 
     if (res.ok) {
@@ -148,18 +148,18 @@ const WorkspaceUserCreateModal = ({ wsId, user, roles }: Props) => {
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm vai trò (${roles?.length || 0})`}
+          title={`Thêm vai trò (${groups?.length || 0})`}
         >
           {progress.createdUser === 'success' ? (
             progress.createdRoles === 'success' ? (
               <div className="text-green-300">
-                Đã thêm {roles.length} vai trò
+                Đã thêm {groups.length} vai trò
               </div>
             ) : progress.createdRoles === 'error' ? (
               <div className="text-red-300">Không thể thêm vai trò</div>
             ) : progress.createdRoles === 'loading' ? (
               <div className="text-blue-300">
-                Đang thêm {roles.length} vai trò
+                Đang thêm {groups.length} vai trò
               </div>
             ) : (
               <div className="text-zinc-400/80">Đang chờ thêm vai trò</div>

@@ -1,23 +1,26 @@
 import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../../status';
-import { UserRole } from '../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../types/primitives/UserGroup';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
-  role: Partial<UserRole>;
+  group: Partial<UserGroup>;
 }
 
 interface Progress {
   created: Status;
 }
 
-const UserRoleCreateModal = ({ wsId, role }: Props) => {
+const UserGroupCreateModal = ({ wsId, group }: Props) => {
+  const { t } = useTranslation('ws-users-groups-details');
+
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -27,22 +30,13 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
   const hasError = progress.created === 'error';
   const hasSuccess = progress.created === 'success';
 
-  useEffect(() => {
-    if (hasSuccess)
-      showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo vai trò',
-        color: 'green',
-      });
-  }, [hasSuccess]);
-
-  const createUserRole = async () => {
-    const res = await fetch(`/api/workspaces/${wsId}/users/roles`, {
+  const createUserGroup = async () => {
+    const res = await fetch(`/api/workspaces/${wsId}/users/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(role),
+      body: JSON.stringify(group),
     });
 
     if (res.ok) {
@@ -51,8 +45,8 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo vai trò',
+        title: t('common:error'),
+        message: t('cant-create'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -60,12 +54,12 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
     }
   };
 
-  const [categoryId, setUserRoleId] = useState<string | null>(null);
+  const [categoryId, setUserGroupId] = useState<string | null>(null);
 
   const handleCreate = async () => {
     setProgress((progress) => ({ ...progress, created: 'loading' }));
-    const categoryId = await createUserRole();
-    if (categoryId) setUserRoleId(categoryId);
+    const categoryId = await createUserGroup();
+    if (categoryId) setUserGroupId(categoryId);
   };
 
   const [started, setStarted] = useState(false);
@@ -81,30 +75,30 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo vai trò"
+          title={t('create-user-group')}
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo vai trò</div>
+            <div className="text-green-300">{t('created-success')}</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo vai trò</div>
+            <div className="text-red-300">{t('cant-create')}</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo vai trò</div>
+            <div className="text-blue-300">{t('creating')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo vai trò</div>
+            <div className="text-zinc-400/80">{t('creation-pending')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('completion-cancelled')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('completion-pending')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -115,17 +109,17 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('common:cancel')}
           </button>
         )}
 
         {categoryId && (hasError || hasSuccess) && (
           <Link
-            href={`/${wsId}/roles/${categoryId}`}
+            href={`/${wsId}/groups/${categoryId}`}
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem vai trò
+            {t('view-group')}
           </Link>
         )}
 
@@ -146,7 +140,7 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/users/roles`);
+              router.push(`/${wsId}/users/groups`);
               closeAllModals();
               return;
             }
@@ -158,16 +152,16 @@ const UserRoleCreateModal = ({ wsId, role }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:back')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:processing')
+            : t('common:start')}
         </button>
       </div>
     </>
   );
 };
 
-export default UserRoleCreateModal;
+export default UserGroupCreateModal;

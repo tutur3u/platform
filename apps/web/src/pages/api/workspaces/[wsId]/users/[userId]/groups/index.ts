@@ -1,24 +1,24 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { UserRole } from '../../../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../../../../types/primitives/UserGroup';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { roleId } = req.query;
+    const { userId } = req.query;
 
-    if (!roleId || typeof roleId !== 'string')
-      throw new Error('Invalid roleId');
+    if (!userId || typeof userId !== 'string')
+      throw new Error('Invalid userId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchUserRole(req, res, roleId);
+        return await fetchRoles(req, res, userId);
 
-      case 'PUT': {
-        return await updateUserRole(req, res, roleId);
+      case 'POST': {
+        return await addRoles(req, res, userId);
       }
 
       case 'DELETE': {
-        return await deleteUserRole(req, res, roleId);
+        return await deleteRoles(req, res, userId);
       }
 
       default:
@@ -36,52 +36,59 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchUserRole = async (
+const fetchRoles = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  roleId: string
+  userId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
-    .from('workspace_user_roles')
-    .select('id, name, created_at')
-    .eq('id', roleId)
-    .single();
+    .from('workspace_user_groups_users')
+    .select('id:group_id, workspace_user_groups(name), created_at')
+    .eq('user_id', userId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data);
+  return res.status(200).json(
+    data.map((p) => ({
+      id: p.id,
+      name: Array.isArray(p.workspace_user_groups)
+        ? p?.workspace_user_groups?.[0]?.name
+        : p?.workspace_user_groups?.name,
+      created_at: p.created_at,
+    }))
+  );
 };
 
-const updateUserRole = async (
+const addRoles = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  roleId: string
+  userId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { name } = req.body as UserRole;
+  const { groups } = req.body as { groups: UserGroup[] };
 
-  const { error } = await supabase
-    .from('workspace_user_roles')
-    .update({
-      name,
-    })
-    .eq('id', roleId);
+  const { error } = await supabase.from('workspace_user_groups_users').insert(
+    groups.map((p) => ({
+      group_id: p.id,
+      user_id: userId,
+    }))
+  );
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteUserRole = async (
+const deleteRoles = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  roleId: string
+  userId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -89,9 +96,9 @@ const deleteUserRole = async (
   });
 
   const { error } = await supabase
-    .from('workspace_user_roles')
+    .from('workspace_user_groups_users')
     .delete()
-    .eq('id', roleId);
+    .eq('user_id', userId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

@@ -52,18 +52,28 @@
       "search",
       "view-mode",
       "pagination",
+      "ws-users-list-configs",
       "workspace-users-tabs"
     ],
 
-    "/[wsId]/users/roles": [
+    "/[wsId]/users/groups": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
+      "ws-users-groups-configs",
       "workspace-users-tabs"
     ],
-    "/[wsId]/users/roles/new": ["sidebar-tabs", "workspace-users-tabs"],
-    "/[wsId]/users/roles/[roleId]": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/groups/new": [
+      "sidebar-tabs",
+      "workspace-users-tabs",
+      "ws-users-groups-details"
+    ],
+    "/[wsId]/users/groups/[groupId]": [
+      "sidebar-tabs",
+      "workspace-users-tabs",
+      "ws-users-groups-details"
+    ],
 
     "/[wsId]/users/new": ["sidebar-tabs"],
     "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],

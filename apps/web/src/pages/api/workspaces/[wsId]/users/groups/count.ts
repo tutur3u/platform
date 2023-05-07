@@ -3,17 +3,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { userId, roleId } = req.query;
+    const { wsId } = req.query;
 
-    if (!userId || typeof userId !== 'string')
-      throw new Error('Invalid userId');
-
-    if (!roleId || typeof roleId !== 'string')
-      throw new Error('Invalid roleId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
-      case 'DELETE':
-        return await deleteRole(req, res, userId, roleId);
+      case 'GET':
+        return await fetchCount(req, res, wsId);
 
       default:
         throw new Error(
@@ -30,25 +26,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const deleteRole = async (
+export default handler;
+
+const fetchCount = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  userId: string,
-  roleId: string
+  wsId: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { error } = await supabase
-    .from('workspace_user_roles_users')
-    .delete()
-    .eq('user_id', userId)
-    .eq('role_id', roleId);
+  const { data, error } = await supabase.rpc(
+    'get_workspace_user_groups_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json({});
+  return res.status(200).json(data);
 };
-
-export default handler;

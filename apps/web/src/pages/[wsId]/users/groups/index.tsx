@@ -13,14 +13,20 @@ import useSWR from 'swr';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
-import { UserRole } from '../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../types/primitives/UserGroup';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceUsersPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const usersLabel = t('sidebar-tabs:users');
+  const groupsLabel = t('workspace-users-tabs:groups');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -32,33 +38,35 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Users', href: `/${ws.id}/users` },
+            { content: usersLabel, href: `/${ws.id}/users` },
             {
-              content: 'Roles',
-              href: `/${ws.id}/users/roles`,
+              content: groupsLabel,
+              href: `/${ws.id}/users/groups`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, usersLabel, groupsLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'users-roles-items-per-page',
+    key: 'users-groups-items-per-page',
     defaultValue: 15,
   });
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/users/roles?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${ws?.id}/users/groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id ? `/api/workspaces/${ws.id}/users/roles/count` : null;
+  const countApi = ws?.id
+    ? `/api/workspaces/${ws.id}/users/groups/count`
+    : null;
 
-  const { data: roles } = useSWR<UserRole[]>(apiPath);
+  const { data: groups } = useSWR<UserGroup[]>(apiPath);
   const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
@@ -67,7 +75,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
   });
 
   const [showUsers, setShowUsers] = useLocalStorage({
-    key: 'workspace-users-roles-showUsers',
+    key: 'workspace-users-groups-showUsers',
     defaultValue: true,
   });
 
@@ -75,7 +83,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Vai trò – Người dùng" />
+      <HeaderX label={`${groupsLabel} – ${usersLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -90,7 +98,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số người dùng"
+            label={t('ws-users-groups-configs:show-users')}
             checked={showUsers}
             onChange={(event) => setShowUsers(event.currentTarget.checked)}
           />
@@ -109,13 +117,13 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href={`/${ws.id}/users/roles/new`} />
-          {roles &&
-            roles?.map((r) => (
+          <PlusCardButton href={`/${ws.id}/users/groups/new`} />
+          {groups &&
+            groups?.map((r) => (
               <GeneralItemCard
                 key={r.id}
                 name={r.name}
-                href={`/${ws.id}/users/roles/${r.id}`}
+                href={`/${ws.id}/users/groups/${r.id}`}
                 showAmount={showUsers}
               />
             ))}

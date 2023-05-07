@@ -12,8 +12,8 @@ export const workspaceUsersTabs: NavTabs = {
       href: '/[wsId]/users/list',
     },
     {
-      name: 'roles',
-      href: '/[wsId]/users/roles',
+      name: 'groups',
+      href: '/[wsId]/users/groups',
     },
   ],
 };

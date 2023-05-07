@@ -26,7 +26,8 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     data.table_name === 'inventory_units' ||
     data.table_name === 'inventory_suppliers' ||
     data.table_name === 'inventory_warehouses' ||
-    data.table_name === 'workspace_user_roles'
+    data.table_name === 'workspace_user_roles' ||
+    data.table_name === 'workspace_user_groups'
   )
     return (
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">

@@ -120,6 +120,10 @@
     "one": "{{count}} vai trò người dùng",
     "other": "{{count}} vai trò người dùng"
   },
+  "trailing_label_workspace_user_groups": {
+    "one": "{{count}} nhóm người dùng",
+    "other": "{{count}} nhóm người dùng"
+  },
   "trailing_label_workspaces": {
     "0": "không gian làm việc",
     "one": "{{count}} không gian làm việc",

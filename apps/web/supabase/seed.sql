@@ -994,7 +994,7 @@ values (
         '00000000-0000-0000-0000-000000000003'
     );
 -- Populate workspace user roles
-insert into public.workspace_user_roles (id, name, ws_id)
+insert into public.workspace_user_groups (id, name, ws_id)
 values (
         '00000000-0000-0000-0000-000000000001',
         'Bệnh nhân',

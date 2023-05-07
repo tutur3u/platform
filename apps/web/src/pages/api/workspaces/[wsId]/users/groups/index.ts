@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { UserRole } from '../../../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../../../types/primitives/UserGroup';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -10,10 +10,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchUserRoles(req, res, wsId);
+        return await fetchUserGroups(req, res, wsId);
 
       case 'POST':
-        return await createUserRole(req, res, wsId);
+        return await createUserGroup(req, res, wsId);
 
       default:
         throw new Error(
@@ -32,7 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchUserRoles = async (
+const fetchUserGroups = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -45,7 +45,7 @@ const fetchUserRoles = async (
   const { blacklist, query, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
-    .from('workspace_user_roles')
+    .from('workspace_user_groups')
     .select('id, name, created_at')
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
@@ -79,7 +79,7 @@ const fetchUserRoles = async (
   return res.status(200).json(data);
 };
 
-const createUserRole = async (
+const createUserGroup = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -89,10 +89,10 @@ const createUserRole = async (
     res,
   });
 
-  const { name } = req.body as UserRole;
+  const { name } = req.body as UserGroup;
 
   const { data, error } = await supabase
-    .from('workspace_user_roles')
+    .from('workspace_user_groups')
     .insert({
       name,
       ws_id: wsId,
