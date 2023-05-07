@@ -120,6 +120,10 @@
     "one": "{{count}} user role",
     "other": "{{count}} user roles"
   },
+  "trailing_label_workspace_user_groups": {
+    "one": "{{count}} user group",
+    "other": "{{count}} user groups"
+  },
   "trailing_label_workspaces": {
     "0": "workspace",
     "one": "{{count}} workspace",

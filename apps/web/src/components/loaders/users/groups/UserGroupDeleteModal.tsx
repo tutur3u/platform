@@ -1,21 +1,24 @@
 import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../../status';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
-  roleId: string;
+  groupId: string;
 }
 
 interface Progress {
   removed: Status;
 }
 
-const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
+const UserGroupDeleteModal = ({ wsId, groupId }: Props) => {
+  const { t } = useTranslation('ws-users-groups-details');
+
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -25,18 +28,8 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
   const hasError = progress.removed === 'error';
   const hasSuccess = progress.removed === 'success';
 
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá vai trò',
-      color: 'green',
-    });
-  }, [hasSuccess, roleId]);
-
   const removeDetails = async () => {
-    const res = await fetch(`/api/workspaces/${wsId}/users/roles/${roleId}`, {
+    const res = await fetch(`/api/workspaces/${wsId}/users/groups/${groupId}`, {
       method: 'DELETE',
     });
 
@@ -46,8 +39,8 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá vai trò',
+        title: t('common:error'),
+        message: t('cant-delete'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removed: 'error' }));
@@ -56,7 +49,7 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
   };
 
   const handleDelete = async () => {
-    if (!roleId) return;
+    if (!groupId) return;
 
     setProgress((progress) => ({ ...progress, removed: 'loading' }));
     removeDetails();
@@ -75,30 +68,30 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Xoá vai trò"
+          title={t('delete-user-group')}
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã xoá vai trò</div>
+            <div className="text-green-300">{t('deleted-success')}</div>
           ) : progress.removed === 'error' ? (
-            <div className="text-red-300">Không thể xoá vai trò</div>
+            <div className="text-red-300">{t('cant-delete')}</div>
           ) : progress.removed === 'loading' ? (
-            <div className="text-blue-300">Đang xoá vai trò</div>
+            <div className="text-blue-300">{t('deleting')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá vai trò</div>
+            <div className="text-zinc-400/80">{t('deletion-pending')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('completion-cancelled')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('completion-pending')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -109,7 +102,7 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('common:cancel')}
           </button>
         )}
 
@@ -130,7 +123,7 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/users/roles`);
+              router.push(`/${wsId}/users/groups`);
               closeAllModals();
               return;
             }
@@ -142,16 +135,16 @@ const UserRoleDeleteModal = ({ wsId, roleId }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:back')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:processing')
+            : t('common:start')}
         </button>
       </div>
     </>
   );
 };
 
-export default UserRoleDeleteModal;
+export default UserGroupDeleteModal;

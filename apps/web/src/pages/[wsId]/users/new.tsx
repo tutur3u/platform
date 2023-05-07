@@ -19,8 +19,8 @@ import { genders } from '../../../utils/gender-helper';
 import { useSegments } from '../../../hooks/useSegments';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import moment from 'moment';
-import UserRoleSelector from '../../../components/selectors/UserRoleSelector';
-import { UserRole } from '../../../types/primitives/UserRole';
+import UserGroupSelector from '../../../components/selectors/UserGroupSelector';
+import { UserGroup } from '../../../types/primitives/UserGroup';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -63,37 +63,37 @@ const NewPage: PageWithLayoutProps = () => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
-  const [roles, setRoles] = useState<UserRole[]>([]);
-  const allRolesValid = () => roles.every((role) => role.id.length > 0);
+  const [groups, setGroups] = useState<UserGroup[]>([]);
+  const allGroupsValid = () => groups.every((group) => group.id.length > 0);
 
-  const hasRequiredFields = () => name.length > 0 && allRolesValid();
+  const hasRequiredFields = () => name.length > 0 && allGroupsValid();
 
   const getUniqueUnitIds = () => {
-    const roleIds = new Set<string>();
-    roles.forEach((r) => roleIds.add(r.id));
-    return Array.from(roleIds);
+    const groupIds = new Set<string>();
+    groups.forEach((r) => groupIds.add(r.id));
+    return Array.from(groupIds);
   };
 
-  const addEmptyRole = () => {
-    setRoles((roles) => [
-      ...roles,
+  const addEmptyGroup = () => {
+    setGroups((groups) => [
+      ...groups,
       {
         id: '',
       },
     ]);
   };
 
-  const updateRole = (index: number, role: UserRole | null) => {
-    setRoles((roles) => {
-      const newRoles = [...roles];
-      if (!role) newRoles.splice(index, 1);
-      else newRoles[index] = role;
-      return newRoles;
+  const updateGroup = (index: number, group: UserGroup | null) => {
+    setGroups((groups) => {
+      const newGroups = [...groups];
+      if (!group) newGroups.splice(index, 1);
+      else newGroups[index] = group;
+      return newGroups;
     });
   };
 
-  const removeRole = (index: number) =>
-    setRoles((roles) => roles.filter((_, i) => i !== index));
+  const removeGroup = (index: number) =>
+    setGroups((groups) => groups.filter((_, i) => i !== index));
 
   const showCreateModal = () => {
     if (!ws) return;
@@ -118,7 +118,7 @@ const NewPage: PageWithLayoutProps = () => {
             email,
             address,
           }}
-          roles={roles}
+          groups={groups}
         />
       ),
     });
@@ -266,22 +266,22 @@ const NewPage: PageWithLayoutProps = () => {
 
               <button
                 className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={addEmptyRole}
+                onClick={addEmptyGroup}
               >
                 + Thêm vai trò
               </button>
 
-              {roles.map((r, idx) => (
-                <div key={`role-${idx}`} className="flex items-end gap-2">
-                  <UserRoleSelector
-                    role={r}
-                    setRole={(r) => updateRole(idx, r)}
+              {groups.map((r, idx) => (
+                <div key={`group-${idx}`} className="flex items-end gap-2">
+                  <UserGroupSelector
+                    group={r}
+                    setGroup={(r) => updateGroup(idx, r)}
                     blacklist={getUniqueUnitIds()}
                     className="w-full"
                   />
                   <button
                     className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
-                    onClick={() => removeRole(idx)}
+                    onClick={() => removeGroup(idx)}
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>

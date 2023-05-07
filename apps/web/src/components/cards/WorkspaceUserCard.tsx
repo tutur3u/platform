@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
 import { getGender } from '../../utils/gender-helper';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   user: WorkspaceUser;
@@ -17,6 +18,8 @@ const WorkspaceUserCard = ({
   showPhone = false,
   showAddress = false,
 }: Props) => {
+  const { t } = useTranslation('ws-users-list-configs');
+
   const { ws } = useWorkspaces();
   if (!ws) return null;
 
@@ -37,7 +40,7 @@ const WorkspaceUserCard = ({
           </div>
           {showPhone && (
             <div className="line-clamp-1 font-semibold text-zinc-400/70">
-              {user?.phone || 'Chưa có số điện thoại'}
+              {user?.phone || t('no-phone')}
             </div>
           )}
         </div>
@@ -48,7 +51,7 @@ const WorkspaceUserCard = ({
           <Divider variant="dashed" className="w-full border-zinc-700" />
           <div className="m-2 h-full w-full px-2">
             <div className="flex h-full items-center justify-center rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-              {user?.address || 'Chưa có địa chỉ'}
+              {user?.address || t('no-address')}
             </div>
           </div>
         </>

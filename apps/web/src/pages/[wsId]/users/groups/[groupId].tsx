@@ -8,75 +8,82 @@ import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import UserRoleEditModal from '../../../../components/loaders/users/roles/UserRoleEditModal';
-import UserRoleDeleteModal from '../../../../components/loaders/users/roles/UserRoleDeleteModal';
+import UserGroupEditModal from '../../../../components/loaders/users/groups/UserGroupEditModal';
+import UserGroupDeleteModal from '../../../../components/loaders/users/groups/UserGroupDeleteModal';
 import { useRouter } from 'next/router';
-import { UserRole } from '../../../../types/primitives/UserRole';
+import { UserGroup } from '../../../../types/primitives/UserGroup';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const RoleDetailsPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('ws-users-groups-details');
+
+  const usersLabel = t('sidebar-tabs:users');
+  const groupsLabel = t('workspace-users-tabs:groups');
+  const untitledLabel = t('common:untitled');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
   const router = useRouter();
-  const { wsId, roleId } = router.query;
+  const { wsId, groupId } = router.query;
 
   const apiPath =
-    wsId && roleId ? `/api/workspaces/${wsId}/users/roles/${roleId}` : null;
+    wsId && groupId ? `/api/workspaces/${wsId}/users/groups/${groupId}` : null;
 
-  const { data: role } = useSWR<UserRole>(apiPath);
+  const { data: group } = useSWR<UserGroup>(apiPath);
 
   useEffect(() => {
     setRootSegment(
-      ws && role
+      ws && group
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || untitledLabel,
               href: `/${ws.id}`,
             },
-            { content: 'Người dùng', href: `/${ws.id}/users` },
+            { content: usersLabel, href: `/${ws.id}/users` },
             {
-              content: 'Vai trò',
-              href: `/${ws.id}/users/roles`,
+              content: groupsLabel,
+              href: `/${ws.id}/users/groups`,
             },
             {
-              content: role?.name || 'Vai trò không tên',
-              href: `/${ws.id}/users/roles/${role.id}`,
+              content: group?.name || untitledLabel,
+              href: `/${ws.id}/users/groups/${group.id}`,
             },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, role, setRootSegment]);
+  }, [ws, group, usersLabel, groupsLabel, untitledLabel, setRootSegment]);
 
   const [name, setName] = useState<string>('');
 
   useEffect(() => {
-    if (!role) return;
-    setName(role?.name || '');
-  }, [role]);
+    if (!group) return;
+    setName(group?.name || '');
+  }, [group]);
 
   const hasRequiredFields = () => name.length > 0;
 
   const showEditModal = () => {
-    if (!role) return;
-    if (typeof roleId !== 'string') return;
+    if (!group) return;
+    if (typeof groupId !== 'string') return;
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật vai trò</div>,
+      title: <div className="font-semibold">{t('update-user-group')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
       children: (
-        <UserRoleEditModal
+        <UserGroupEditModal
           wsId={ws.id}
-          role={{
-            id: roleId,
+          group={{
+            id: groupId,
             name,
           }}
         />
@@ -85,33 +92,33 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
   };
 
   const showDeleteModal = () => {
-    if (!role) return;
-    if (typeof roleId !== 'string') return;
+    if (!group) return;
+    if (typeof groupId !== 'string') return;
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa vai trò</div>,
+      title: <div className="font-semibold">{t('delete-user-group')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: <UserRoleDeleteModal wsId={ws.id} roleId={roleId} />,
+      children: <UserGroupDeleteModal wsId={ws.id} groupId={groupId} />,
     });
   };
 
   return (
     <>
-      <HeaderX label="Nguồn tiền – Tài chính" />
+      <HeaderX label={`${groupsLabel} – ${usersLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
             <button
               className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                role ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
+                group ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
               }`}
-              onClick={role ? showDeleteModal : undefined}
+              onClick={group ? showDeleteModal : undefined}
             >
-              Xoá
+              {t('common:delete')}
             </button>
 
             <button
@@ -122,7 +129,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showEditModal : undefined}
             >
-              Lưu thay đổi
+              {t('common:save')}
             </button>
           </div>
         </div>
@@ -130,16 +137,16 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Tên vai trò"
-            description="Tên vai trò sẽ được hiển thị trên bảng điều khiển."
+            title={t('name')}
+            description={t('name-description')}
           >
             <TextInput
-              placeholder="Nhập tên vai trò"
+              placeholder={t('enter-name')}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required

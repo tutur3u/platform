@@ -4,9 +4,8 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Switch, TextInput } from '@mantine/core';
+import { Divider, Switch } from '@mantine/core';
 import WarehouseMultiSelector from '../../../../components/selectors/WarehouseMultiSelector';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
 import { ProductBatch } from '../../../../types/primitives/ProductBatch';
@@ -18,10 +17,17 @@ import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const BatchesPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const inventoryLabel = t('sidebar-tabs:inventory');
+  const batchesLabel = t('inventory-tabs:batches');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -33,9 +39,9 @@ const BatchesPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Kho hàng', href: `/${ws.id}/inventory` },
+            { content: inventoryLabel, href: `/${ws.id}/inventory` },
             {
-              content: 'Lô hàng',
+              content: batchesLabel,
               href: `/${ws.id}/inventory/batches`,
             },
           ]
@@ -43,7 +49,7 @@ const BatchesPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, inventoryLabel, batchesLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -74,8 +80,8 @@ const BatchesPage: PageWithLayoutProps = () => {
     defaultValue: true,
   });
 
-  const [showBatches, setShowBatches] = useLocalStorage({
-    key: 'inventory-batches-showBatches',
+  const [showWarehouse, setShowWarehouse] = useLocalStorage({
+    key: 'inventory-batches-showWarehouse',
     defaultValue: true,
   });
 
@@ -88,19 +94,10 @@ const BatchesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Lô hàng – Kho hàng" />
+      <HeaderX label={`${batchesLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
@@ -115,14 +112,14 @@ const BatchesPage: PageWithLayoutProps = () => {
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị sản phẩm"
+            label={t('inventory-batches-configs:show-products')}
             checked={showProducts}
             onChange={(event) => setShowProducts(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị kho chứa"
-            checked={showBatches}
-            onChange={(event) => setShowBatches(event.currentTarget.checked)}
+            label={t('inventory-batches-configs:show-warehouse')}
+            checked={showWarehouse}
+            onChange={(event) => setShowWarehouse(event.currentTarget.checked)}
           />
         </div>
 

@@ -70,7 +70,7 @@ const NestedLayout: FC<Props> = ({
       >
         <nav
           className={`${
-            disableTabs ? 'h-16' : 'h-25'
+            disableTabs ? 'h-[3.8rem]' : 'h-25'
           } fixed z-[9999] w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
         >
           <div className="flex items-center gap-2 py-3">
@@ -87,7 +87,7 @@ const NestedLayout: FC<Props> = ({
             {segments && segments.length > 0 ? (
               <div
                 id="segments"
-                className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded border border-zinc-800 bg-zinc-900 p-1 md:mx-8 lg:mx-16 xl:mx-32"
+                className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded p-1 md:mx-8 lg:mx-16 xl:mx-32"
               >
                 {segments
                   .filter((_, index) =>
@@ -101,7 +101,7 @@ const NestedLayout: FC<Props> = ({
                     <Fragment key={`segment-${s.content}-${s.href}`}>
                       <Link
                         href={s.href}
-                        className="min-w-max rounded px-2 py-0.5 font-semibold transition md:hover:bg-zinc-300/10"
+                        className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold transition md:hover:border-zinc-300/10 md:hover:bg-zinc-300/10"
                       >
                         {s?.content || ''}
                       </Link>
@@ -117,6 +117,7 @@ const NestedLayout: FC<Props> = ({
               <LoadingIndicator className="h-4 w-4" />
             )}
           </div>
+
           {disableTabs || (
             <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
               {filteredTabs.map((tab) => {

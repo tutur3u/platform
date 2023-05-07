@@ -27,7 +27,7 @@ const SettingPage: PageWithLayoutProps = () => {
     <div className="grid gap-4 pb-20 lg:grid-cols-2">
       <HeaderX label="Settings" />
 
-      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+      <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
         <div className="mb-1 text-2xl font-bold">Notifications</div>
         <div className="mb-4 font-semibold text-zinc-500">
           Manage your notification preferences

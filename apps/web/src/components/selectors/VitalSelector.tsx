@@ -24,7 +24,6 @@ const VitalSelector = ({
   setVital,
 
   blacklist = [],
-
   className,
 
   disabled = false,

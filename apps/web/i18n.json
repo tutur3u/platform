@@ -49,19 +49,31 @@
     "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
     "/[wsId]/users/list": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "ws-users-list-configs",
       "workspace-users-tabs"
     ],
 
-    "/[wsId]/users/roles": [
+    "/[wsId]/users/groups": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "ws-users-groups-configs",
       "workspace-users-tabs"
     ],
-    "/[wsId]/users/roles/new": ["sidebar-tabs", "workspace-users-tabs"],
-    "/[wsId]/users/roles/[roleId]": ["sidebar-tabs", "workspace-users-tabs"],
+    "/[wsId]/users/groups/new": [
+      "sidebar-tabs",
+      "workspace-users-tabs",
+      "ws-users-groups-details"
+    ],
+    "/[wsId]/users/groups/[groupId]": [
+      "sidebar-tabs",
+      "workspace-users-tabs",
+      "ws-users-groups-details"
+    ],
 
     "/[wsId]/users/new": ["sidebar-tabs"],
     "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],
@@ -72,6 +84,7 @@
 
     "/[wsId]/healthcare/checkups": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
@@ -84,6 +97,7 @@
 
     "/[wsId]/healthcare/diagnoses": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
@@ -96,6 +110,7 @@
 
     "/[wsId]/healthcare/vitals": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
@@ -105,6 +120,7 @@
 
     "/[wsId]/healthcare/vital-groups": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
@@ -115,12 +131,20 @@
       "healthcare-tabs"
     ],
 
-    "/[wsId]/inventory": ["sidebar-tabs", "inventory-tabs"],
+    "/[wsId]/inventory": [
+      "sidebar-tabs",
+      "inventory-tabs",
+      "inventory-overview"
+    ],
 
     "/[wsId]/inventory/products": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "category-multi-selector",
+      "warehouse-multi-selector",
+      "inventory-products-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/products/new": ["sidebar-tabs"],
@@ -131,8 +155,10 @@
 
     "/[wsId]/inventory/categories": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "inventory-categories-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
@@ -140,8 +166,11 @@
 
     "/[wsId]/inventory/batches": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "warehouse-multi-selector",
+      "inventory-batches-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/batches/new": ["sidebar-tabs"],
@@ -149,8 +178,10 @@
 
     "/[wsId]/inventory/warehouses": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "inventory-warehouses-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
@@ -158,8 +189,10 @@
 
     "/[wsId]/inventory/units": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "inventory-units-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/units/new": ["sidebar-tabs"],
@@ -167,8 +200,10 @@
 
     "/[wsId]/inventory/suppliers": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
+      "inventory-suppliers-configs",
       "inventory-tabs"
     ],
     "/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
@@ -181,6 +216,7 @@
 
     "/[wsId]/finance/wallets": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "finance-tabs"
@@ -192,6 +228,7 @@
     ],
     "/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "wallet-details-tabs"
@@ -203,6 +240,7 @@
 
     "/[wsId]/finance/transactions": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "finance-tabs"
@@ -215,6 +253,7 @@
 
     "/[wsId]/finance/transactions/categories": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "finance-tabs"
@@ -230,6 +269,7 @@
 
     "/[wsId]/finance/invoices": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "finance-tabs"
@@ -240,12 +280,14 @@
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
     "/[wsId]/infrastructure/users": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "infrastructure-tabs"
     ],
     "/[wsId]/infrastructure/workspaces": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "infrastructure-tabs"
@@ -254,6 +296,7 @@
     "/[wsId]/ai": ["sidebar-tabs"],
     "/[wsId]/activities": [
       "sidebar-tabs",
+      "search",
       "view-mode",
       "pagination",
       "crud-ops",

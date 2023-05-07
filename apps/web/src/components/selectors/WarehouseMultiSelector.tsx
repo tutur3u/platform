@@ -3,6 +3,7 @@ import { MultiSelect } from '@mantine/core';
 import useSWR from 'swr';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { ProductWarehouse } from '../../types/primitives/ProductWarehouse';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   warehouseIds: string[];
@@ -15,6 +16,7 @@ const WarehouseMultiSelector = ({
   setWarehouseIds,
   className,
 }: Props) => {
+  const { t } = useTranslation('warehouse-multi-selector');
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/warehouses`;
@@ -24,14 +26,14 @@ const WarehouseMultiSelector = ({
 
   const data = [
     {
-      label: 'Tất cả',
+      label: t('common:all'),
       value: '',
-      group: 'Chung',
+      group: t('common:general'),
     },
     ...(warehouses?.map((warehouse) => ({
       label: warehouse.name,
       value: warehouse.id,
-      group: 'Kho chứa',
+      group: t('warehouses'),
     })) || []),
   ];
 
@@ -58,8 +60,8 @@ const WarehouseMultiSelector = ({
 
   return (
     <MultiSelect
-      label="Kho chứa"
-      placeholder="Chọn kho chứa"
+      label={t('warehouse')}
+      placeholder={t('select-warehouses')}
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
       value={warehouseIds.length > 0 ? warehouseIds : ['']}

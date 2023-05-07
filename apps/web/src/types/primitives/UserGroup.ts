@@ -1,4 +1,4 @@
-export interface UserRole {
+export interface UserGroup {
   id: string;
   name?: string;
   ws_id?: string;

@@ -3,8 +3,7 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Divider, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Divider, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { Transaction } from '../../../../../types/primitives/Transaction';
 import useSWR from 'swr';
@@ -21,6 +20,7 @@ import moment from 'moment';
 import 'moment/locale/vi';
 import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
 import PlusCardButton from '../../../../../components/common/PlusCardButton';
+import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -142,16 +142,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
       <HeaderX label="Giao dịch – Nguồn tiền" />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
