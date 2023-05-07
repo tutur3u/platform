@@ -47,6 +47,8 @@ const ProjectDocumentEditor = () => {
   const { t } = useTranslation('documents');
 
   const documentsLabel = t('documents');
+  const untitledDocumentLabel = t('untitled-document');
+  const loadingLabel = t('loading');
 
   useEffect(() => {
     setRootSegment(
@@ -58,13 +60,21 @@ const ProjectDocumentEditor = () => {
             },
             { content: documentsLabel, href: `/${ws.id}/documents` },
             {
-              content: doc ? doc?.name || 'Untitled Document' : 'Loading...',
+              content: doc ? doc?.name || untitledDocumentLabel : loadingLabel,
               href: `/${ws.id}/documents/${docId}`,
             },
           ]
         : []
     );
-  }, [ws, docId, doc, documentsLabel, setRootSegment]);
+  }, [
+    ws,
+    docId,
+    doc,
+    documentsLabel,
+    untitledDocumentLabel,
+    loadingLabel,
+    setRootSegment,
+  ]);
 
   const [name, setName] = useState<string | null>();
   const [content, setContent] = useState<string | null>();
@@ -150,11 +160,11 @@ const ProjectDocumentEditor = () => {
     if (!docId || !ws) return;
 
     openConfirmModal({
-      title: <div className="font-semibold">Delete Document</div>,
-      children: 'Are you sure you want to delete this document?',
+      title: <div className="font-semibold">{t('delete-document')}</div>,
+      children: t('delete-document-confirmation'),
       labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
+        confirm: t('delete'),
+        cancel: t('cancel'),
       },
       centered: true,
       onConfirm: () => {
@@ -188,7 +198,7 @@ const ProjectDocumentEditor = () => {
               )}
 
               <TextInput
-                placeholder="Untitled Document"
+                placeholder={untitledDocumentLabel}
                 defaultValue={name || ''}
                 onChange={(e) => {
                   setSaving(true);
@@ -220,7 +230,7 @@ const ProjectDocumentEditor = () => {
               {
                 label: (
                   <div className="flex items-center gap-2">
-                    <EyeIcon className="inline-block h-5" /> Preview
+                    <EyeIcon className="inline-block h-5" /> {t('preview')}
                   </div>
                 ),
                 value: 'preview',
@@ -228,7 +238,7 @@ const ProjectDocumentEditor = () => {
               {
                 label: (
                   <div className="flex items-center gap-2">
-                    <PencilIcon className="inline-block h-5" /> Edit
+                    <PencilIcon className="inline-block h-5" /> {t('edit')}
                   </div>
                 ),
                 value: 'edit',
