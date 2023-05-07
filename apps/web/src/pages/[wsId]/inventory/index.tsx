@@ -7,10 +7,16 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import StatisticCard from '../../../components/cards/StatisticCard';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const InventoryPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('inventory-tabs');
+
+  const inventoryLabel = t('sidebar-tabs:inventory');
+  const overviewLabel = t('overview');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -22,9 +28,9 @@ const InventoryPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Kho hàng', href: `/${ws.id}/inventory` },
+            { content: inventoryLabel, href: `/${ws.id}/inventory` },
             {
-              content: 'Tổng quan',
+              content: overviewLabel,
               href: `/${ws.id}/inventory`,
             },
           ]
@@ -32,7 +38,7 @@ const InventoryPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, inventoryLabel, overviewLabel, setRootSegment]);
 
   const productsCountApi = ws?.id
     ? `/api/workspaces/${ws.id}/inventory/products/count`
@@ -71,7 +77,7 @@ const InventoryPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Tổng quan – Kho hàng" />
+      <HeaderX label={`${overviewLabel} – ${inventoryLabel}`} />
       <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* <Link
           href="/warehouse/attention"
@@ -100,7 +106,7 @@ const InventoryPage: PageWithLayoutProps = () => {
         <Divider className="col-span-full" variant="dashed" /> */}
 
         <StatisticCard
-          title="Sản phẩm"
+          title={t('products')}
           color="blue"
           value={products?.ws}
           href={`/${ws?.id}/inventory/products`}
@@ -108,37 +114,37 @@ const InventoryPage: PageWithLayoutProps = () => {
         />
 
         <StatisticCard
-          title="Sản phẩm có đơn giá"
+          title={t('inventory-overview:products-with-prices')}
           value={products?.inventory}
           href={`/${ws?.id}/inventory/products`}
         />
 
         <StatisticCard
-          title="Danh mục sản phẩm"
+          title={t('product-categories')}
           value={categories}
           href={`/${ws?.id}/inventory/categories`}
         />
 
         <StatisticCard
-          title="Lô hàng"
+          title={t('batches')}
           value={batches}
           href={`/${ws?.id}/inventory/batches`}
         />
 
         <StatisticCard
-          title="Kho chứa"
+          title={t('warehouses')}
           value={warehouses}
           href={`/${ws?.id}/inventory/warehouses`}
         />
 
         <StatisticCard
-          title="Đơn vị tính"
+          title={t('units')}
           value={units}
           href={`/${ws?.id}/inventory/units`}
         />
 
         <StatisticCard
-          title="Nhà cung cấp"
+          title={t('suppliers')}
           value={suppliers}
           href={`/${ws?.id}/inventory/suppliers`}
         />

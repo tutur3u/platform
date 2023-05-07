@@ -1,4 +1,5 @@
 import { Pagination } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   totalItems: number | undefined;
@@ -13,6 +14,8 @@ const PaginationIndicator = ({
   setActivePage,
   itemsPerPage,
 }: Props) => {
+  const { t } = useTranslation('pagination');
+
   const totalPages = Math.ceil((totalItems || 0) / itemsPerPage);
 
   return (
@@ -20,26 +23,26 @@ const PaginationIndicator = ({
       <div className="py-1 text-zinc-400">
         {totalItems != null ? (
           totalItems === 0 ? (
-            'Không có kết quả nào.'
+            t('no_results')
           ) : (
             <>
-              Đang hiển thị{' '}
+              {t('showing_from')}{' '}
               <span className="font-semibold text-zinc-200">
                 {activePage * itemsPerPage - itemsPerPage + 1}
               </span>{' '}
-              đến{' '}
+              {t('to')}{' '}
               <span className="font-semibold text-zinc-200">
                 {activePage * itemsPerPage > totalItems
                   ? totalItems
                   : activePage * itemsPerPage}
               </span>{' '}
-              trên tổng số{' '}
+              {t('of')}{' '}
               <span className="font-semibold text-zinc-200">{totalItems}</span>{' '}
-              kết quả.
+              {t('results')}
             </>
           )
         ) : (
-          'Đang tải...'
+          t('common:loading')
         )}
       </div>
 

@@ -21,8 +21,8 @@ import moment from 'moment';
 import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
 import WorkspaceUserEditModal from '../../../../components/loaders/users/WorkspaceUserEditModal';
 import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
-import { UserRole } from '../../../../types/primitives/UserRole';
-import UserRoleSelector from '../../../../components/selectors/UserRoleSelector';
+import { UserGroup } from '../../../../types/primitives/UserGroup';
+import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -51,11 +51,11 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   const apiPath =
     wsId && userId ? `/api/workspaces/${wsId}/users/${userId}` : null;
 
-  const rolesApiPath =
-    wsId && userId ? `/api/workspaces/${wsId}/users/${userId}/roles` : null;
+  const groupsApiPath =
+    wsId && userId ? `/api/workspaces/${wsId}/users/${userId}/groups` : null;
 
   const { data: user } = useSWR<WorkspaceUser>(apiPath);
-  const { data: userRoles } = useSWR<UserRole[]>(rolesApiPath);
+  const { data: userGroups } = useSWR<UserGroup[]>(groupsApiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -111,47 +111,47 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     }
   }, [user]);
 
-  const [roles, setRoles] = useState<UserRole[]>([]);
+  const [groups, setGroups] = useState<UserGroup[]>([]);
 
   useEffect(() => {
-    if (userRoles) setRoles(userRoles);
-  }, [userRoles]);
+    if (userGroups) setGroups(userGroups);
+  }, [userGroups]);
 
-  const allRolesValid = () => roles.every((role) => role.id.length > 0);
+  const allGroupsValid = () => groups.every((group) => group.id.length > 0);
 
   const hasData = () => !!user;
   const hasRequiredFields = () =>
-    name.length > 0 && allRolesValid() && hasData();
+    name.length > 0 && allGroupsValid() && hasData();
 
   const getUniqueUnitIds = () => {
-    const roleIds = new Set<string>();
-    roles.forEach((r) => roleIds.add(r.id));
-    return Array.from(roleIds);
+    const groupIds = new Set<string>();
+    groups.forEach((r) => groupIds.add(r.id));
+    return Array.from(groupIds);
   };
 
-  const addEmptyRole = () => {
-    setRoles((roles) => [
-      ...roles,
+  const addEmptyGroup = () => {
+    setGroups((groups) => [
+      ...groups,
       {
         id: '',
       },
     ]);
   };
 
-  const updateRole = (index: number, role: UserRole | null) => {
-    setRoles((roles) => {
-      const newRoles = [...roles];
-      if (!role) newRoles.splice(index, 1);
-      else newRoles[index] = role;
-      return newRoles;
+  const updateGroup = (index: number, group: UserGroup | null) => {
+    setGroups((groups) => {
+      const newGroups = [...groups];
+      if (!group) newGroups.splice(index, 1);
+      else newGroups[index] = group;
+      return newGroups;
     });
   };
 
-  const removeRole = (index: number) =>
-    setRoles((roles) => roles.filter((_, i) => i !== index));
+  const removeGroup = (index: number) =>
+    setGroups((groups) => groups.filter((_, i) => i !== index));
 
   const showEditModal = () => {
-    if (!user || !userRoles) return;
+    if (!user || !userGroups) return;
     if (typeof userId !== 'string') return;
     if (!ws?.id) return;
 
@@ -179,8 +179,8 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
             email,
             address,
           }}
-          oldRoles={userRoles}
-          roles={roles}
+          oldGroups={userGroups}
+          groups={groups}
         />
       ),
     });
@@ -198,7 +198,11 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
       closeOnClickOutside: false,
       withCloseButton: false,
       children: (
-        <WorkspaceUserDeleteModal wsId={ws.id} userId={userId} roles={roles} />
+        <WorkspaceUserDeleteModal
+          wsId={ws.id}
+          userId={userId}
+          groups={groups}
+        />
       ),
     });
   };
@@ -354,22 +358,22 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
 
               <button
                 className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={addEmptyRole}
+                onClick={addEmptyGroup}
               >
                 + Thêm vai trò
               </button>
 
-              {roles.map((r, idx) => (
-                <div key={`role-${idx}`} className="flex items-end gap-2">
-                  <UserRoleSelector
-                    role={r}
-                    setRole={(r) => updateRole(idx, r)}
+              {groups.map((r, idx) => (
+                <div key={`group-${idx}`} className="flex items-end gap-2">
+                  <UserGroupSelector
+                    group={r}
+                    setGroup={(r) => updateGroup(idx, r)}
                     blacklist={getUniqueUnitIds()}
                     className="w-full"
                   />
                   <button
                     className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
-                    onClick={() => removeRole(idx)}
+                    onClick={() => removeGroup(idx)}
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>

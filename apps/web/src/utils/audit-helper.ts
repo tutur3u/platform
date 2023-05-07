@@ -1,92 +1,36 @@
+import { Translate } from 'next-translate';
 import { AuditLog, Operation } from '../types/primitives/AuditLog';
 
-const getLeadingLabel = (op: Operation) => {
+const getLeadingLabel = (t: Translate, op: Operation, table: string) => {
   switch (op) {
     case 'INSERT':
-      return 'đã thêm';
+      if (table === 'workspace_members') return t('added');
+      else return t('created');
     case 'UPDATE':
-      return 'đã cập nhật';
+      return t('updated');
     case 'DELETE':
-      return 'đã xóa';
-  }
-};
-
-const getTrailingLabel = (data: AuditLog) => {
-  switch (data.table_name) {
-    case 'workspace_members':
-      return 'thành viên vào không gian làm việc';
-
-    case 'workspace_invites':
-      return 'lời mời';
-
-    case 'workspace_teams':
-      return 'nhóm';
-
-    case 'workspace_documents':
-      return 'tài liệu';
-
-    case 'workspace_boards':
-      return 'bảng công việc';
-
-    case 'workspace_wallets':
-      return 'nguồn tiền';
-
-    case 'product_categories':
-      return 'danh mục sản phẩm';
-
-    case 'inventory_units':
-      return 'đơn vị tính';
-
-    case 'workspace_products':
-      return 'sản phẩm';
-
-    case 'inventory_suppliers':
-      return 'nhà cung cấp';
-
-    case 'inventory_warehouses':
-      return 'kho chứa';
-
-    case 'transaction_categories':
-      return 'danh mục giao dịch';
-
-    case 'healthcare_vitals':
-      return 'chỉ số sức khỏe';
-
-    case 'healthcare_diagnoses':
-      return 'chuẩn đoán';
-
-    case 'healthcare_vital_groups':
-      return 'nhóm chỉ số sức khỏe';
-
-    case 'workspace_users':
-      return 'người dùng';
-
-    case 'workspace_user_roles':
-      return 'vai trò người dùng';
-
-    case 'workspaces':
-      return 'không gian làm việc';
-
-    default:
-      return JSON.stringify(data);
+      return t('deleted');
   }
 };
 
 const getAmount = (data: AuditLog) => {
   switch (data.table_name) {
     case 'workspaces':
-      return '';
-  }
+      return 0;
 
-  return 1;
+    default:
+      return 1;
+  }
 };
 
-export const getLabel = (data: AuditLog) => {
-  const leadingLabel = getLeadingLabel(data.op);
-  const trailingLabel = getTrailingLabel(data);
-  const amount = getAmount(data);
+const getTrailingLabel = (t: Translate, data: AuditLog) =>
+  t(`trailing_label_${data.table_name}`, { count: getAmount(data) });
 
-  const label = `${leadingLabel} ${amount} ${trailingLabel}`;
+export const getLabel = (t: Translate, data: AuditLog) => {
+  const leadingLabel = getLeadingLabel(t, data.op, data.table_name);
+  const trailingLabel = getTrailingLabel(t, data);
+
+  const label = `${leadingLabel} ${trailingLabel}`;
 
   return label;
 };

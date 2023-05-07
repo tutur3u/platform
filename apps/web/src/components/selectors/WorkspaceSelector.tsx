@@ -44,10 +44,16 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
       onChange={(wsId) => {
         if (onChange) onChange();
 
-        // replace wsId in url
-        router.push(
-          router.asPath.replace(new RegExp(`/${router.query.wsId}`), `/${wsId}`)
-        );
+        // replace wsId in url if there is one
+        if (router?.query?.wsId)
+          router.push(
+            router.asPath.replace(
+              new RegExp(`/${router.query.wsId}`),
+              `/${wsId}`
+            )
+          );
+        // otherwise, redirect to /wsId
+        else router.push(`/${wsId}`);
       }}
       disabled={workspacesLoading || !hasWorkspaces}
       classNames={{

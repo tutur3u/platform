@@ -4,8 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
 import { ProductSupplier } from '../../../../types/primitives/ProductSupplier';
@@ -17,10 +16,17 @@ import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const SuppliersPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const inventoryLabel = t('sidebar-tabs:inventory');
+  const suppliersLabel = t('inventory-tabs:suppliers');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -32,9 +38,9 @@ const SuppliersPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Kho hàng', href: `/${ws.id}/inventory` },
+            { content: inventoryLabel, href: `/${ws.id}/inventory` },
             {
-              content: 'Nhà cung cấp',
+              content: suppliersLabel,
               href: `/${ws.id}/inventory/suppliers`,
             },
           ]
@@ -42,7 +48,7 @@ const SuppliersPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, inventoryLabel, suppliersLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -82,19 +88,10 @@ const SuppliersPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Nhà cung cấp – Kho hàng" />
+      <HeaderX label={`${suppliersLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
@@ -106,12 +103,12 @@ const SuppliersPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị sản phẩm"
+            label={t('inventory-suppliers-configs:show-products')}
             checked={showProducts}
             onChange={(event) => setShowProducts(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị lô hàng"
+            label={t('inventory-suppliers-configs:show-batches')}
             checked={showBatches}
             onChange={(event) => setShowBatches(event.currentTarget.checked)}
           />

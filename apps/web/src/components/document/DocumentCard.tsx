@@ -26,7 +26,7 @@ const DocumentCard = ({ wsId, document, mode }: Props) => {
       key={`doc-${id}`}
       className={`flex ${
         mode === 'list' ? 'items-center gap-4' : 'flex-col'
-      } relative flex justify-between rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80`}
+      } relative flex justify-between rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-zinc-800/80`}
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">

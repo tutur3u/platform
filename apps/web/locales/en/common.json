@@ -16,6 +16,22 @@
   "home": "Home",
   "settings": "Settings",
   "logout": "Logout",
+  "delete": "Delete",
+  "create": "Create",
   "save": "Save",
-  "saving": "Saving..."
+  "cancel": "Cancel",
+  "start": "Start",
+  "processing": "Processing",
+  "saving": "Saving...",
+  "loading": "Loading...",
+  "success": "Success",
+  "complete": "Complete",
+  "default": "Default",
+  "all": "All",
+  "general": "General",
+  "other": "Other",
+  "empty": "Empty",
+  "error": "Error",
+  "back": "Back",
+  "untitled": "Untitled"
 }

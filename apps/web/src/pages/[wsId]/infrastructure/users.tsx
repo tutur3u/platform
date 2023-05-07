@@ -7,14 +7,14 @@ import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
 import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
-import { Divider, TextInput } from '@mantine/core';
+import { Divider } from '@mantine/core';
 import PaginationSelector from '../../../components/selectors/PaginationSelector';
 import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { useLocalStorage } from '@mantine/hooks';
 import { User } from '../../../types/primitives/User';
 import useSWR from 'swr';
 import UserCard from '../../../components/cards/UserCard';
+import GeneralSearchBar from '../../../components/inputs/GeneralSearchBar';
 
 export const getServerSideProps = enforceRootWorkspace;
 
@@ -73,16 +73,7 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
       <HeaderX label={`${usersLabel} – ${infrastructureLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}

@@ -23,15 +23,13 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (error) return res.status(401).json({ error: error.message });
 
-  return res
-    .status(200)
-    .json(
-      data.map(({ id, sort_key, workspaces }) => ({
-        id,
-        sort_key,
-        ...workspaces,
-      }))
-    );
+  return res.status(200).json(
+    data.map(({ id, sort_key, workspaces }) => ({
+      id,
+      sort_key,
+      ...workspaces,
+    }))
+  );
 };
 
 const createWorkspace = async (req: NextApiRequest, res: NextApiResponse) => {

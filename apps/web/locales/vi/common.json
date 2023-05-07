@@ -16,6 +16,22 @@
   "home": "Trang chủ",
   "settings": "Cài đặt",
   "logout": "Đăng xuất",
+  "delete": "Xóa",
+  "create": "Tạo mới",
   "save": "Lưu",
-  "saving": "Đang lưu..."
+  "cancel": "Hủy bỏ",
+  "start": "Bắt đầu",
+  "processing": "Đang xử lý",
+  "saving": "Đang lưu...",
+  "loading": "Đang tải...",
+  "success": "Thành công",
+  "complete": "Hoàn tất",
+  "default": "Mặc định",
+  "all": "Tất cả",
+  "general": "Chung",
+  "other": "Khác",
+  "empty": "Trống",
+  "error": "Lỗi",
+  "back": "Quay lại",
+  "untitled": "Chưa đặt tên"
 }

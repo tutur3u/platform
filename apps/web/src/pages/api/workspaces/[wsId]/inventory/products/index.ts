@@ -64,12 +64,7 @@ const fetchProducts = async (
       )
       .eq('ws_id', wsId);
 
-    if (query) {
-      queryBuilder.textSearch(
-        'name_manufacturer_usage_description',
-        `${query}`
-      );
-    }
+    if (query) queryBuilder.ilike('name', `%${query}%`);
 
     if (warehouseIds && typeof warehouseIds === 'string') {
       queryBuilder.eq('inventory_products.warehouse_id', warehouseIds);
@@ -121,6 +116,8 @@ const fetchProducts = async (
         }
       )
       .order('created_at', { ascending: false });
+
+    if (query) queryBuilder.ilike('name', `%${query}%`);
 
     if (
       page &&

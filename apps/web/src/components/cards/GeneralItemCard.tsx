@@ -1,4 +1,5 @@
 import { Divider } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 import useSWR from 'swr';
 
@@ -45,6 +46,8 @@ const GeneralItemCard = ({
   showSecondaryLabel = false,
   showTertiaryLabel = false,
 }: Props) => {
+  const { t } = useTranslation();
+
   const { data: secondaryLabelData } = useSWR(
     showSecondaryLabel && secondaryLabelFetchPath
       ? secondaryLabelFetchPath
@@ -88,7 +91,7 @@ const GeneralItemCard = ({
           <div className="grid h-full w-full gap-2 p-2">
             {!amountData?.count && !batchData?.count && !productData?.count && (
               <div className="flex h-full items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-2 text-center font-semibold text-zinc-300">
-                Trống
+                {t('common:empty')}
               </div>
             )}
 

@@ -1,17 +1,20 @@
 import { Translate } from 'next-translate';
 import { NextRouter } from 'next/router';
 import { Mode, NavTabs, Tab } from '../types/Tab';
-import { settingsTabs } from '../constants/tabs/settings';
-import { workspaceTabs } from '../constants/tabs/workspace';
-import { workspaceUsersTabs } from '../constants/tabs/workspace-users';
-import { financeTabs } from '../constants/tabs/finance';
-import { healthcareTabs } from '../constants/tabs/healthcare';
-import { inventoryTabs } from '../constants/tabs/inventory';
-import { productDetailsTabs } from '../constants/tabs/product-details';
-import { teamTabs } from '../constants/tabs/team';
-import { wsUserDetailsTabs } from '../constants/tabs/workspace-user-details';
-import { walletDetailsTabs } from '../constants/tabs/wallet-details';
-import { infrastructureTabs } from '../constants/tabs/infrastructure';
+
+import {
+  financeTabs,
+  healthcareTabs,
+  infrastructureTabs,
+  inventoryTabs,
+  productDetailsTabs,
+  settingsTabs,
+  teamTabs,
+  walletDetailsTabs,
+  workspaceTabs,
+  workspaceUsersTabs,
+  wsUserDetailsTabs,
+} from '../constants/tabs';
 
 export const getNavTabs = (mode: Mode) => {
   switch (mode) {

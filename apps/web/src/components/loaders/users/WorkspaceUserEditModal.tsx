@@ -11,39 +11,39 @@ import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 import { Status } from '../status';
 import { WorkspaceUser } from '../../../types/primitives/WorkspaceUser';
-import { UserRole } from '../../../types/primitives/UserRole';
+import { UserGroup } from '../../../types/primitives/UserGroup';
 
 interface Props {
   wsId: string;
   user: WorkspaceUser;
-  oldRoles: UserRole[];
-  roles: UserRole[];
+  oldGroups: UserGroup[];
+  groups: UserGroup[];
 }
 
 interface Progress {
   updatedDetails: Status;
-  removeRoles: Status;
-  addRoles: Status;
+  removeGroups: Status;
+  addGroups: Status;
 }
 
-const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
+const WorkspaceUserEditModal = ({ wsId, user, oldGroups, groups }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
     updatedDetails: 'idle',
-    removeRoles: 'idle',
-    addRoles: 'idle',
+    removeGroups: 'idle',
+    addGroups: 'idle',
   });
 
   const hasError =
     progress.updatedDetails === 'error' ||
-    progress.removeRoles === 'error' ||
-    progress.addRoles === 'error';
+    progress.removeGroups === 'error' ||
+    progress.addGroups === 'error';
 
   const hasSuccess =
     progress.updatedDetails === 'success' &&
-    progress.removeRoles === 'success' &&
-    progress.addRoles === 'success';
+    progress.removeGroups === 'success' &&
+    progress.addGroups === 'success';
 
   useEffect(() => {
     if (!hasSuccess) return;
@@ -81,9 +81,9 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
     }
   };
 
-  const removeRoles = async (roles: UserRole[]) => {
-    const removePromises = roles.map((role) =>
-      fetch(`/api/workspaces/${wsId}/users/${user.id}/roles/${role.id}`, {
+  const removeGroups = async (groups: UserGroup[]) => {
+    const removePromises = groups.map((group) =>
+      fetch(`/api/workspaces/${wsId}/users/${user.id}/groups/${group.id}`, {
         method: 'DELETE',
       })
     );
@@ -91,7 +91,7 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
     const res = await Promise.all(removePromises);
 
     if (res.every((res) => res.ok)) {
-      setProgress((progress) => ({ ...progress, removeRoles: 'success' }));
+      setProgress((progress) => ({ ...progress, removeGroups: 'success' }));
       return true;
     } else {
       showNotification({
@@ -99,22 +99,22 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
         message: 'Không thể xoá các vai trò',
         color: 'red',
       });
-      setProgress((progress) => ({ ...progress, removeRoles: 'error' }));
+      setProgress((progress) => ({ ...progress, removeGroups: 'error' }));
       return false;
     }
   };
 
-  const addRoles = async (roles: UserRole[]) => {
-    const res = await fetch(`/api/workspaces/${wsId}/users/${user.id}/roles`, {
+  const addGroups = async (groups: UserGroup[]) => {
+    const res = await fetch(`/api/workspaces/${wsId}/users/${user.id}/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ roles }),
+      body: JSON.stringify({ groups }),
     });
 
     if (res) {
-      setProgress((progress) => ({ ...progress, addRoles: 'success' }));
+      setProgress((progress) => ({ ...progress, addGroups: 'success' }));
       return true;
     } else {
       showNotification({
@@ -122,17 +122,17 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
         message: 'Không thể thêm các vai trò',
         color: 'red',
       });
-      setProgress((progress) => ({ ...progress, addRoles: 'error' }));
+      setProgress((progress) => ({ ...progress, addGroups: 'error' }));
       return false;
     }
   };
 
-  const rolesToRemove = oldRoles.filter(
-    (oldRole) => !roles.find((role) => role.id === oldRole.id)
+  const groupsToRemove = oldGroups.filter(
+    (oldGroup) => !groups.find((group) => group.id === oldGroup.id)
   );
 
-  const rolesToAdd = roles.filter(
-    (role) => !oldRoles.find((oldRole) => role.id === oldRole.id)
+  const groupsToAdd = groups.filter(
+    (group) => !oldGroups.find((oldGroup) => group.id === oldGroup.id)
   );
 
   const handleEdit = async () => {
@@ -143,15 +143,15 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
 
     mutate(`/api/workspaces/${wsId}/users/${user.id}`);
 
-    setProgress((progress) => ({ ...progress, removeRoles: 'loading' }));
-    if (rolesToRemove.length) await removeRoles(rolesToRemove);
-    else setProgress((progress) => ({ ...progress, removeRoles: 'success' }));
+    setProgress((progress) => ({ ...progress, removeGroups: 'loading' }));
+    if (groupsToRemove.length) await removeGroups(groupsToRemove);
+    else setProgress((progress) => ({ ...progress, removeGroups: 'success' }));
 
-    setProgress((progress) => ({ ...progress, addRoles: 'loading' }));
-    if (rolesToAdd.length) await addRoles(rolesToAdd);
-    else setProgress((progress) => ({ ...progress, addRoles: 'success' }));
+    setProgress((progress) => ({ ...progress, addGroups: 'loading' }));
+    if (groupsToAdd.length) await addGroups(groupsToAdd);
+    else setProgress((progress) => ({ ...progress, addGroups: 'success' }));
 
-    mutate(`/api/workspaces/${wsId}/users/${user.id}/roles`);
+    mutate(`/api/workspaces/${wsId}/users/${user.id}/groups`);
   };
 
   const [started, setStarted] = useState(false);
@@ -160,9 +160,9 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
     <>
       <Timeline
         active={
-          progress.addRoles === 'success'
+          progress.addGroups === 'success'
             ? 3
-            : progress.removeRoles === 'success'
+            : progress.removeGroups === 'success'
             ? 2
             : progress.updatedDetails === 'success'
             ? 1
@@ -194,17 +194,17 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Xoá vai trò (${rolesToRemove?.length || 0})`}
+          title={`Xoá vai trò (${groupsToRemove?.length || 0})`}
         >
-          {progress.removeRoles === 'success' ? (
+          {progress.removeGroups === 'success' ? (
             <div className="text-green-300">
-              Đã xoá {rolesToRemove.length} vai trò
+              Đã xoá {groupsToRemove.length} vai trò
             </div>
-          ) : progress.removeRoles === 'error' ? (
+          ) : progress.removeGroups === 'error' ? (
             <div className="text-red-300">Không thể xoá vai trò</div>
-          ) : progress.removeRoles === 'loading' ? (
+          ) : progress.removeGroups === 'loading' ? (
             <div className="text-blue-300">
-              Đang xoá {rolesToRemove.length} vai trò
+              Đang xoá {groupsToRemove.length} vai trò
             </div>
           ) : (
             <div className="text-zinc-400/80">Đang chờ xoá vai trò</div>
@@ -213,17 +213,17 @@ const WorkspaceUserEditModal = ({ wsId, user, oldRoles, roles }: Props) => {
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm vai trò (${rolesToAdd?.length || 0})`}
+          title={`Thêm vai trò (${groupsToAdd?.length || 0})`}
         >
-          {progress.addRoles === 'success' ? (
+          {progress.addGroups === 'success' ? (
             <div className="text-green-300">
-              Đã thêm {rolesToAdd.length} vai trò
+              Đã thêm {groupsToAdd.length} vai trò
             </div>
-          ) : progress.addRoles === 'error' ? (
+          ) : progress.addGroups === 'error' ? (
             <div className="text-red-300">Không thể thêm vai trò</div>
-          ) : progress.addRoles === 'loading' ? (
+          ) : progress.addGroups === 'loading' ? (
             <div className="text-blue-300">
-              Đang thêm {rolesToAdd.length} vai trò
+              Đang thêm {groupsToAdd.length} vai trò
             </div>
           ) : (
             <div className="text-zinc-400/80">Đang chờ thêm vai trò</div>

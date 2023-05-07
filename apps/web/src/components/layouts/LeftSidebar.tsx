@@ -29,11 +29,12 @@ import CreateNewButton from './sidebar/CreateNewButton';
 import SidebarLinkList from './sidebar/SidebarLinkList';
 import SidebarTeamList from './sidebar/SidebarTeamList';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
+import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
 
-  const { sidebar, toggleSidebar } = useAppearance();
+  const { sidebar, setSidebar, toggleSidebar } = useAppearance();
   const { supabaseClient } = useSessionContext();
   const { user } = useUser();
 
@@ -74,10 +75,11 @@ function LeftSidebar({ className }: SidebarProps) {
               : 'pointer-events-none opacity-0 md:pointer-events-auto md:static md:opacity-100'
           } transition-all`}
         >
-          <div className="relative mx-4 mb-2 flex items-center justify-between pb-1">
+          <div className="relative mx-4 flex items-center justify-between pb-1">
             <Logo
               alwaysShowLabel={sidebar === 'open'}
               showLabel={sidebar !== 'closed'}
+              onClick={() => closeSidebarOnMobile({ window, setSidebar })}
             />
 
             <button
@@ -131,6 +133,9 @@ function LeftSidebar({ className }: SidebarProps) {
                               ? 'text-yellow-200 hover:text-yellow-100'
                               : 'text-zinc-300 hover:text-zinc-100'
                           } line-clamp-1 transition`}
+                          onClick={() =>
+                            closeSidebarOnMobile({ window, setSidebar })
+                          }
                         >
                           {sidebar === 'closed' ? (
                             <BuildingOffice2Icon className="w-5" />
@@ -222,6 +227,9 @@ function LeftSidebar({ className }: SidebarProps) {
                               ? 'hover:bg-yellow-300/20'
                               : 'hover:bg-purple-300/20'
                           } flex items-center gap-1 rounded-full px-4 py-0.5 font-semibold transition`}
+                          onClick={() =>
+                            closeSidebarOnMobile({ window, setSidebar })
+                          }
                         >
                           <div>{invite}</div>
                           <UserPlusIcon className="w-4" />
@@ -316,7 +324,12 @@ function LeftSidebar({ className }: SidebarProps) {
               <Divider className="my-2" variant="dashed" />
               <div className="mx-2 flex items-center justify-center gap-2">
                 {sidebar === 'open' && (
-                  <WorkspaceSelector className="w-full md:w-auto" />
+                  <WorkspaceSelector
+                    className="w-full md:w-auto"
+                    onChange={() =>
+                      closeSidebarOnMobile({ window, setSidebar })
+                    }
+                  />
                 )}
 
                 <Popover
@@ -359,7 +372,10 @@ function LeftSidebar({ className }: SidebarProps) {
                         <WorkspaceSelector
                           showLabel
                           className="mx-2 mb-2"
-                          onChange={() => setUserPopover(false)}
+                          onChange={() => {
+                            setUserPopover(false);
+                            closeSidebarOnMobile({ window, setSidebar });
+                          }}
                         />
                         <Divider variant="dashed" />
                       </>
@@ -378,6 +394,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     <SidebarButton
                       onClick={() => {
                         setUserPopover(false);
+                        closeSidebarOnMobile({ window, setSidebar });
                         handleLogout();
                       }}
                       activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}

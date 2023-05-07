@@ -15,27 +15,24 @@ export default function Logo({
   onClick,
 }: LogoProps) {
   const label = 'Tuturuuu';
-  const css = 'font-bold text-white text-4xl';
 
   return (
-    <Link
-      href="/"
-      onClick={onClick}
-      className={`flex items-center gap-2 ${css}`}
-    >
+    <Link href="/" onClick={onClick} className="flex items-center gap-2">
       {showLogo && (
-        <div className="flex-none translate-y-0.5">
+        <div className="flex-none">
           <Image
             src="/media/logos/transparent.png"
             alt="logo"
-            width={32}
-            height={32}
+            width={320}
+            height={320}
+            className="h-8 w-8"
           />
         </div>
       )}
+
       {showLabel && (
         <div
-          className={`text-2xl font-semibold text-white transition duration-200 ${
+          className={`text-xl font-semibold text-white transition duration-200 ${
             alwaysShowLabel ||
             'group-hover:static group-hover:translate-x-0 group-hover:opacity-100 md:-translate-x-2 md:opacity-0'
           }`}

@@ -5,13 +5,13 @@ import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
-import { UserRole } from '../../../types/primitives/UserRole';
+import { UserGroup } from '../../../types/primitives/UserGroup';
 import { mutate } from 'swr';
 
 interface Props {
   wsId: string;
   userId: string;
-  roles: UserRole[];
+  groups: UserGroup[];
 }
 
 interface Progress {
@@ -19,7 +19,7 @@ interface Progress {
   removeDetails: Status;
 }
 
-const WorkspaceUserDeleteModal = ({ wsId, userId, roles }: Props) => {
+const WorkspaceUserDeleteModal = ({ wsId, userId, groups }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -43,9 +43,9 @@ const WorkspaceUserDeleteModal = ({ wsId, userId, roles }: Props) => {
     });
   }, [hasSuccess, userId]);
 
-  const removeRoles = async (roles: UserRole[]) => {
-    const removePromises = roles.map((r) =>
-      fetch(`/api/workspaces/${wsId}/users/${userId}/roles/${r.id}`, {
+  const removeRoles = async (groups: UserGroup[]) => {
+    const removePromises = groups.map((r) =>
+      fetch(`/api/workspaces/${wsId}/users/${userId}/groups/${r.id}`, {
         method: 'DELETE',
       })
     );
@@ -90,9 +90,9 @@ const WorkspaceUserDeleteModal = ({ wsId, userId, roles }: Props) => {
     if (!userId) return;
 
     setProgress((progress) => ({ ...progress, removeRoles: 'loading' }));
-    if (roles.length) await removeRoles(roles);
+    if (groups.length) await removeRoles(groups);
     else setProgress((progress) => ({ ...progress, removeRoles: 'success' }));
-    mutate(`/api/workspaces/${wsId}/users/${userId}/roles`);
+    mutate(`/api/workspaces/${wsId}/users/${userId}/groups`);
 
     setProgress((progress) => ({ ...progress, removeDetails: 'loading' }));
     await removeDetails();
@@ -118,23 +118,23 @@ const WorkspaceUserDeleteModal = ({ wsId, userId, roles }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title={`Xoá vai trò (${roles?.length || 0})`}
+          title={`Xoá vai trò (${groups?.length || 0})`}
         >
           {progress.removeRoles === 'success' ? (
             <div className="text-green-300">
-              Đã xoá {roles?.length || 0} vai trò
+              Đã xoá {groups?.length || 0} vai trò
             </div>
           ) : progress.removeRoles === 'error' ? (
             <div className="text-red-300">
-              Không thể xoá {roles?.length || 0} vai trò
+              Không thể xoá {groups?.length || 0} vai trò
             </div>
           ) : progress.removeRoles === 'loading' ? (
             <div className="text-blue-300">
-              Đang xoá {roles?.length || 0} vai trò
+              Đang xoá {groups?.length || 0} vai trò
             </div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ xoá {roles?.length || 0} vai trò
+              Đang chờ xoá {groups?.length || 0} vai trò
             </div>
           )}
         </Timeline.Item>

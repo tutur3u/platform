@@ -29,8 +29,6 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
   const workspacesLabel = t('workspaces');
   const workspacesDescription = t('workspaces-description');
 
-  
-
   useEffect(() => {
     setWorkspaces(wss || []);
   }, [wss]);
@@ -75,7 +73,6 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
   }, [workspacesLabel, settings, setRootSegment]);
 
   const [isSaving, setIsSaving] = useState(false);
-
 
   const save = t('common:save');
   const saving = t('common:saving');

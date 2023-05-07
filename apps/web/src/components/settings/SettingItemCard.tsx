@@ -31,7 +31,7 @@ const SettingItemCard = ({
 
   return (
     <div
-      className={`flex flex-col rounded border border-zinc-800/80 bg-[#19191d] p-4 ${
+      className={`flex flex-col rounded border border-zinc-800/80 bg-zinc-900 p-4 ${
         disabled ? 'cursor-not-allowed opacity-50' : ''
       } ${className}`}
     >

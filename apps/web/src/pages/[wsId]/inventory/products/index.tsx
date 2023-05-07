@@ -4,8 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Divider, Switch } from '@mantine/core';
 import CategoryMultiSelector from '../../../../components/selectors/CategoryMultiSelector';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import ProductCard from '../../../../components/cards/ProductCard';
@@ -19,10 +18,17 @@ import { useSegments } from '../../../../hooks/useSegments';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import WarehouseMultiSelector from '../../../../components/selectors/WarehouseMultiSelector';
+import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const ProductsPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const inventoryLabel = t('sidebar-tabs:inventory');
+  const productsLabel = t('inventory-tabs:products');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -34,9 +40,9 @@ const ProductsPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Kho hàng', href: `/${ws.id}/inventory` },
+            { content: inventoryLabel, href: `/${ws.id}/inventory` },
             {
-              content: 'Sản phẩm',
+              content: productsLabel,
               href: `/${ws.id}/inventory/products`,
             },
           ]
@@ -44,7 +50,7 @@ const ProductsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, inventoryLabel, productsLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -101,19 +107,10 @@ const ProductsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
+      <HeaderX label={`${productsLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
@@ -132,22 +129,22 @@ const ProductsPage: PageWithLayoutProps = () => {
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số lượng"
+            label={t('inventory-products-configs:show-amount')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị nhà cung cấp"
+            label={t('inventory-products-configs:show-supplier')}
             checked={showSupplier}
             onChange={(event) => setShowSupplier(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị danh mục"
+            label={t('inventory-products-configs:show-category')}
             checked={showCategory}
             onChange={(event) => setShowCategory(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị giá tiền"
+            label={t('inventory-products-configs:show-price')}
             checked={enablePrice}
             onChange={(event) => setShowPrice(event.currentTarget.checked)}
             disabled={!enablePrice}
