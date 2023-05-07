@@ -54,7 +54,7 @@ const WorkspaceHomePage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">{homeLabel}</h1>
             <p className="text-zinc-400">
               {t('description_p1')}{' '}

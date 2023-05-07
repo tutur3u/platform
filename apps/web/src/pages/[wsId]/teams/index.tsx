@@ -90,7 +90,7 @@ const WorkspaceTeamsPage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
               {teamsLabel}{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
@@ -118,7 +118,7 @@ const WorkspaceTeamsPage = () => {
             <Link
               key={team.id}
               href={`/${wsId}/teams/${team.id}`}
-              className="group rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-[#232327]"
+              className="group rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-[#232327]"
             >
               <h1 className="font-bold">{team?.name}</h1>
 

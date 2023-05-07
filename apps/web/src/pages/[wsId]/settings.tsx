@@ -132,7 +132,7 @@ const WorkspaceSettingsPage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">{settingsLabel}</h1>
             <p className="text-zinc-400">{t('description')}</p>
           </div>
@@ -141,7 +141,7 @@ const WorkspaceSettingsPage = () => {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
           <div className="mb-1 text-2xl font-bold">{t('basic_info')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
             {t('basic_info_description')}
@@ -182,7 +182,7 @@ const WorkspaceSettingsPage = () => {
           </button>
         </div>
 
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
           <div className="mb-1 text-2xl font-bold">{t('security')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
             {t('security_description')}

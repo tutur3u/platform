@@ -3,6 +3,7 @@ import { MultiSelect } from '@mantine/core';
 import useSWR from 'swr';
 import { ProductCategory } from '../../types/primitives/ProductCategory';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   categoryIds: string[];
@@ -15,6 +16,7 @@ const CategoryMultiSelector = ({
   setCategoryIds,
   className,
 }: Props) => {
+  const { t } = useTranslation('category-multi-selector');
   const { ws } = useWorkspaces();
 
   const apiPath = `/api/workspaces/${ws?.id}/inventory/categories`;
@@ -25,14 +27,14 @@ const CategoryMultiSelector = ({
 
   const data = [
     {
-      label: 'Tất cả',
+      label: t('common:all'),
       value: '',
-      group: 'Chung',
+      group: t('common:general'),
     },
     ...(categories?.data.map((category) => ({
       label: category.name,
       value: category.id,
-      group: 'Danh mục',
+      group: t('categories'),
     })) || []),
   ];
 
@@ -59,8 +61,8 @@ const CategoryMultiSelector = ({
 
   return (
     <MultiSelect
-      label="Danh mục"
-      placeholder="Chọn danh mục"
+      label={t('category')}
+      placeholder={t('select-categories')}
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
       value={categoryIds.length > 0 ? categoryIds : ['']}

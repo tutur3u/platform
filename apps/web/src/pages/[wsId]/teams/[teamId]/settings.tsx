@@ -129,7 +129,7 @@ const TeamSettingsPage = () => {
 
       {teamId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-zinc-400">Manage the settings of your team.</p>
           </div>
@@ -138,7 +138,7 @@ const TeamSettingsPage = () => {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
           <div className="mb-1 text-2xl font-bold">Basic Information</div>
           <div className="mb-4 font-semibold text-zinc-500">
             Manage the basic information of your team.
@@ -177,7 +177,7 @@ const TeamSettingsPage = () => {
           </button>
         </div>
 
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-[#19191d] p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
           <div className="mb-1 text-2xl font-bold">Security</div>
           <div className="mb-4 font-semibold text-zinc-500">
             Manage the security of your team.

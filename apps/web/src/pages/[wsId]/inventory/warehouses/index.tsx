@@ -5,8 +5,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
 import { ProductWarehouse } from '../../../../types/primitives/ProductWarehouse';
@@ -17,10 +16,17 @@ import { useLocalStorage } from '@mantine/hooks';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WarehousesPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
+  const inventoryLabel = t('sidebar-tabs:inventory');
+  const warehousesLabel = t('inventory-tabs:warehouses');
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -32,9 +38,9 @@ const WarehousesPage: PageWithLayoutProps = () => {
               content: ws?.name || 'Tổ chức không tên',
               href: `/${ws.id}`,
             },
-            { content: 'Kho hàng', href: `/${ws.id}/inventory` },
+            { content: inventoryLabel, href: `/${ws.id}/inventory` },
             {
-              content: 'Kho chứa',
+              content: warehousesLabel,
               href: `/${ws.id}/inventory/warehouses`,
             },
           ]
@@ -42,7 +48,7 @@ const WarehousesPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, inventoryLabel, warehousesLabel, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -82,19 +88,10 @@ const WarehousesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Kho chứa – Kho hàng" />
+      <HeaderX label={`${warehousesLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
+          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
@@ -106,12 +103,12 @@ const WarehousesPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị sản phẩm"
+            label={t('inventory-warehouses-configs:show-products')}
             checked={showProducts}
             onChange={(event) => setShowProducts(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị lô hàng"
+            label={t('inventory-warehouses-configs:show-batches')}
             checked={showBatches}
             onChange={(event) => setShowBatches(event.currentTarget.checked)}
           />

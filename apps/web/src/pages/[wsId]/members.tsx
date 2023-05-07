@@ -107,7 +107,7 @@ const WorkspaceMembersPage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
               {membersLabel}{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
@@ -149,7 +149,7 @@ const WorkspaceMembersPage = () => {
           ?.map((member) => (
             <div
               key={member.id}
-              className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
+              className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4"
             >
               <p className="font-semibold lg:text-lg xl:text-xl">
                 {member.display_name}
@@ -192,7 +192,7 @@ const WorkspaceMembersPage = () => {
         {memberInvites?.map((member) => (
           <div
             key={member.id}
-            className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4"
+            className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4"
           >
             <p className="font-semibold lg:text-lg xl:text-xl">
               {member.display_name}

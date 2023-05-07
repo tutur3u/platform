@@ -92,7 +92,7 @@ const WorkspaceBoardsPage = () => {
 
       {teamId && (
         <>
-          <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <h1 className="text-2xl font-bold">
               Boards{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
@@ -122,7 +122,7 @@ const WorkspaceBoardsPage = () => {
             <Link
               href={`/projects/${teamId}/boards/${board.id}`}
               key={board.id}
-              className="relative rounded-lg border border-zinc-800/80 bg-[#19191d] p-4 transition hover:bg-zinc-800/80"
+              className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-zinc-800/80"
             >
               <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
                 {board.name || 'Untitled Document'}
