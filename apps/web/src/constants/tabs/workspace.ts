@@ -16,6 +16,10 @@ export const workspaceTabs: NavTabs = {
       href: '/[wsId]/members',
     },
     {
+      name: 'activities',
+      href: '/[wsId]/activities',
+    },
+    {
       name: 'settings',
       href: '/[wsId]/settings',
     },
