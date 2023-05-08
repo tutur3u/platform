@@ -41,7 +41,7 @@ const fetchBatches = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('inventory_batches')
@@ -50,10 +50,6 @@ const fetchBatches = async (
     )
     .eq('inventory_warehouses.ws_id', wsId)
     .order('created_at', { ascending: false });
-
-  if (query) {
-    queryBuilder.ilike('id', `%${query}%`);
-  }
 
   if (
     page &&

@@ -54,7 +54,7 @@ const fetchTransactions = async (
   }
 
   if (query) {
-    queryBuilder.ilike('name', `%${query}%`);
+    queryBuilder.ilike('description', `%${query}%`);
   }
 
   if (

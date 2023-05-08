@@ -7,6 +7,8 @@
   "created_at": "This workspace was created ",
   "security": "Security",
   "security_description": "Manage the security of your workspace.",
+  "features": "Features",
+  "features_description": "Manage the features of your workspace.",
   "delete": "Delete Workspace",
   "deleting": "Deleting Workspace"
 }

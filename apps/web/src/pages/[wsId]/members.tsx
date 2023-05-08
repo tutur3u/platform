@@ -1,7 +1,8 @@
 import {
   ArrowRightOnRectangleIcon,
+  ArrowUturnLeftIcon,
+  UserMinusIcon,
   UserPlusIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/solid';
 import { Divider, Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
@@ -166,7 +167,7 @@ const WorkspaceMembersPage = () => {
                   </Tooltip>
                 ) : (
                   <Tooltip label={t('remove_member')}>
-                    <XMarkIcon className="h-6 w-6" />
+                    <UserMinusIcon className="h-6 w-6" />
                   </Tooltip>
                 )}
               </button>
@@ -204,7 +205,7 @@ const WorkspaceMembersPage = () => {
               onClick={() => deleteMember(member, true)}
             >
               <Tooltip label={t('revoke_invitation')}>
-                <XMarkIcon className="h-6 w-6" />
+                <ArrowUturnLeftIcon className="h-6 w-6" />
               </Tooltip>
             </button>
 
