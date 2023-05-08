@@ -262,7 +262,9 @@
     "/[wsId]/finance/wallets/[walletId]/settings": [
       "sidebar-tabs",
       "wallet-details-tabs",
-      "wallets"
+      "wallets",
+      "wallet-edit-modal", 
+      "wallet-delete-modal"
     ],
 
     "/[wsId]/finance/transactions": [

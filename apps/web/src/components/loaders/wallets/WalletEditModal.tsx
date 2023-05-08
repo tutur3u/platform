@@ -8,6 +8,7 @@ import { mutate } from 'swr';
 import { Status } from '../status';
 import { Wallet } from '../../../types/primitives/Wallet';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -22,6 +23,14 @@ interface Progress {
 
 const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
   const router = useRouter();
+
+  const { t } = useTranslation('wallet-edit-modal');
+  const success = t('success');
+  const walletUpdated = t('wallet-updated');
+  const error = t('error');
+  const cannotUpdateWallet = t('cannot-update-wallet');
+  const adjustment = t('adjustment');
+  const cannotAdjustBalance = t('cannot-adjust-balance');
 
   const [progress, setProgress] = useState<Progress>({
     updateDetails: 'idle',
@@ -41,11 +50,11 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
     mutate(`/api/workspaces/${wsId}/finance/wallets/${wallet.id}`);
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật nguồn tiền',
+      title: success,
+      message: walletUpdated,
       color: 'green',
     });
-  }, [hasSuccess, wsId, wallet.id]);
+  }, [hasSuccess, wsId, wallet.id, walletUpdated, success]);
 
   const updateDetails = async () => {
     const res = await fetch(
@@ -66,8 +75,8 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật nguồn tiền',
+        title: error,
+        message: cannotUpdateWallet,
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updateDetails: 'error' }));
@@ -86,7 +95,7 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          description: 'Cân bằng số dư',
+          description: adjustment,
           amount: (wallet?.balance || 0) - oldWallet.balance,
         } as Transaction),
       }
@@ -99,8 +108,8 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cân bằng số dư',
+        title: error,
+        message: cannotAdjustBalance,
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, adjustBalance: 'error' }));
@@ -141,49 +150,49 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật thông tin cơ bản"
+          title={t('updating-basic-info')}
         >
           {progress.updateDetails === 'success' ? (
-            <div className="text-green-300">Đã cập nhật thông tin cơ bản</div>
+            <div className="text-green-300">{t('basic-info-updated')}</div>
           ) : progress.updateDetails === 'error' ? (
-            <div className="text-red-300">
-              Không thể cập nhật thông tin cơ bản
-            </div>
+            <div className="text-red-300">{t('cannot-update-basic-info')}</div>
           ) : progress.updateDetails === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật thông tin cơ bản</div>
+            <div className="text-blue-300">{t('updating-basic-info')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ cập nhật thông tin cơ bản
+              {t('waiting-for-update-basic-info')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cân bằng số dư"
+          title={adjustment}
         >
           {progress.updateDetails === 'success' ? (
-            <div className="text-green-300">Đã cân bằng số dư</div>
+            <div className="text-green-300">{t('balance-adjusted')}</div>
           ) : progress.updateDetails === 'error' ? (
-            <div className="text-red-300">Không thể cân bằng số dư</div>
+            <div className="text-red-300">{t('cannot-adjust-balance')}</div>
           ) : progress.updateDetails === 'loading' ? (
-            <div className="text-blue-300">Đang cân bằng số dư</div>
+            <div className="text-blue-300">{t('adjusting-balance')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ cân bằng số dư</div>
+            <div className="text-zinc-400/80">
+              {t('waiting-for-balance-adjusted')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.updateDetails === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('pending-completion')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -194,7 +203,7 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -203,7 +212,7 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem nguồn tiền
+            {t('wallet-details')}
           </button>
         )}
 
@@ -236,12 +245,12 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('creating')
+            : t('start')}
         </button>
       </div>
     </>
