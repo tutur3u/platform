@@ -24,19 +24,27 @@ const StatisticCard = ({
   const { t } = useTranslation();
   const loadingLabel = t('common:loading');
 
-  const generateOuterColor = () => {
+  const generateOuterColor = (enableHoverEffect: boolean) => {
     switch (color) {
       case 'green':
-        return 'border-green-300/10 bg-green-300/5 hover:bg-green-300/10';
+        return `border-green-300/10 bg-green-300/5 ${
+          enableHoverEffect ? 'hover:bg-green-300/10' : ''
+        }`;
 
       case 'red':
-        return 'border-red-300/10 bg-red-300/5 hover:bg-red-300/10';
+        return `border-red-300/10 bg-red-300/5 ${
+          enableHoverEffect ? 'hover:bg-red-300/10' : ''
+        }`;
 
       case 'blue':
-        return 'border-blue-300/10 bg-blue-300/5 hover:bg-blue-300/10';
+        return `border-blue-300/10 bg-blue-300/5 ${
+          enableHoverEffect ? 'hover:bg-blue-300/10' : ''
+        }`;
 
       default:
-        return 'border-zinc-300/10 bg-zinc-300/5 hover:bg-zinc-300/10';
+        return `border-zinc-300/10 bg-zinc-300/5 ${
+          enableHoverEffect ? 'hover:bg-zinc-300/10' : ''
+        }`;
     }
   };
 
@@ -77,9 +85,9 @@ const StatisticCard = ({
       <Link
         href={href}
         onClick={onClick}
-        className={`rounded border transition duration-300 hover:-translate-y-1 ${generateOuterColor()} ${
-          className || ''
-        }`}
+        className={`rounded border transition duration-300 ${
+          onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
+        } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
         <div
           className={`p-1 text-center text-lg font-semibold ${generateTitleColor()}`}
@@ -97,9 +105,9 @@ const StatisticCard = ({
   return (
     <button
       onClick={onClick}
-      className={`rounded border transition duration-300 hover:-translate-y-1 ${generateOuterColor()} ${
-        className || ''
-      }`}
+      className={`rounded border transition duration-300 ${
+        onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
+      } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >
       <div
         className={`p-1 text-center text-lg font-semibold ${generateTitleColor()}`}
