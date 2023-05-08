@@ -24,6 +24,7 @@ import SettingItemTab from '../../components/settings/SettingItemTab';
 import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
 import { mutate } from 'swr';
 import { useAppearance } from '../../hooks/useAppearance';
+import { DEV_MODE } from '../../constants/common';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -235,18 +236,21 @@ const SettingPage: PageWithLayoutProps = () => {
           <LanguageSelector fullWidth />
         </SettingItemTab>
 
-        <Divider className="my-2" />
-
-        <SettingItemTab
-          title={developmentLabel}
-          description={developmentDescription}
-        >
-          <Checkbox
-            label={t('hide-experimental')}
-            checked={hideExperimental}
-            onChange={toggleHideExperimental}
-          />
-        </SettingItemTab>
+        {DEV_MODE ? (
+          <>
+            <Divider className="my-2" />
+            <SettingItemTab
+              title={developmentLabel}
+              description={developmentDescription}
+            >
+              <Checkbox
+                label={t('hide-experimental')}
+                checked={hideExperimental}
+                onChange={toggleHideExperimental}
+              />
+            </SettingItemTab>
+          </>
+        ) : null}
 
         <Divider className="my-2" />
 
