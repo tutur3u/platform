@@ -263,7 +263,7 @@
       "sidebar-tabs",
       "wallet-details-tabs",
       "wallets",
-      "wallet-edit-modal", 
+      "wallet-edit-modal",
       "wallet-delete-modal"
     ],
 
@@ -272,9 +272,14 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "transactions"
     ],
-    "/[wsId]/finance/transactions/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/new": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "transactions"
+    ],
     "/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
       "finance-tabs"
@@ -285,15 +290,18 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "categories"
     ],
     "/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
-      "finance-tabs"
+      "finance-tabs",
+      "categories"
     ],
     "/[wsId]/finance/transactions/categories/[categoryId]": [
       "sidebar-tabs",
-      "finance-tabs"
+      "finance-tabs",
+      "categories"
     ],
 
     "/[wsId]/finance/invoices": [
@@ -301,10 +309,19 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "invoices"
     ],
-    "/[wsId]/finance/invoices/new": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/invoices/[invoiceId]": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/invoices/new": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "invoices"
+    ],
+    "/[wsId]/finance/invoices/[invoiceId]": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "invoices"
+    ],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
     "/[wsId]/infrastructure/users": [

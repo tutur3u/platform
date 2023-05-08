@@ -36,20 +36,27 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const transaction = t('transactions');
+  const unnamedWorkspace = t('unnamed-ws');
+  const create = t('create');
+  const adjustment = t('adjustment');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Giao dịch',
+              content: transaction,
               href: `/${ws.id}/finance/transactions`,
             },
-            { content: 'Tạo mới', href: `/${ws.id}/finance/transactions/new` },
+            { content: create, href: `/${ws.id}/finance/transactions/new` },
           ]
         : []
     );
@@ -57,7 +64,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
     mutate(`/api/workspaces/${ws?.id}/finance/wallets`);
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, transaction, unnamedWorkspace, create]);
 
   const [description, setDescription] = useState<string>('');
   const [amount, setAmount] = useState<number | ''>(Number(queryAmount) || '');
@@ -129,7 +136,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
     if (type === 'transfer' && !destinationWallet) return;
 
     openModal({
-      title: <div className="font-semibold">Tạo giao dịch mới</div>,
+      title: <div className="font-semibold">{t('create-transaction')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -174,16 +181,16 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   useEffect(() => {
     if (type === 'balance') {
       setAmount(originWallet?.balance || '');
-      setDescription('Cân bằng số dư');
+      setDescription(adjustment);
     } else {
       setDescription('');
       setDestinationWallet(null);
     }
-  }, [type, originWallet?.balance, queryAmount]);
+  }, [type, originWallet?.balance, queryAmount, adjustment]);
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${t('transactions')} - ${t('finance')}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
@@ -195,7 +202,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showCreateModal : undefined}
             >
-              Tạo mới
+              {t('create')}
             </button>
           </div>
         </div>
@@ -203,7 +210,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="mt-2" variant="dashed" />
           </div>
 
@@ -215,23 +222,23 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           >
             <div className="col-span-full flex flex-wrap gap-2">
               <Chip variant="light" value="default">
-                Mặc định
+                {t('default')}
               </Chip>
               <Chip variant="light" value="transfer">
-                Chuyển tiền
+                {t('transfer')}
               </Chip>
               <Chip variant="light" value="balance">
-                Cân bằng số dư
+                {t('adjustment')}
               </Chip>
             </div>
           </Chip.Group>
 
           <SettingItemCard
-            title="Nguồn tiền gốc"
+            title={t('origin-wallet')}
             description={
               type === 'transfer'
-                ? 'Nguồn tiền cần rút tiền.'
-                : 'Nguồn tiền thực hiện giao dịch.'
+                ? t('origin-wallet-description-transfer')
+                : t('origin-wallet-description')
             }
           >
             <div className="grid gap-2">
@@ -255,7 +262,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 <>
                   <Divider variant="dashed" />
                   <div className="text-zinc-400">
-                    Giao dịch này sẽ{' '}
+                    {t('this-transaction-will')}{' '}
                     <span className="font-semibold text-zinc-200">
                       {Intl.NumberFormat(lang, {
                         style: 'currency',
@@ -263,7 +270,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                         signDisplay: 'always',
                       }).format(amount * -1)}
                     </span>{' '}
-                    với số dư hiện tại.
+                    {t('from-current-balance')}
                   </div>
                 </>
               ) : null}
@@ -272,8 +279,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
           {type === 'transfer' ? (
             <SettingItemCard
-              title="Nguồn tiền đích"
-              description="Nguồn tiền cần nhận tiền."
+              title={t('destination-wallet')}
+              description={t('destination-wallet-description')}
             >
               <div className="grid gap-2">
                 <WalletSelector
@@ -291,7 +298,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                   <>
                     <Divider variant="dashed" />
                     <div className="text-zinc-400">
-                      Giao dịch này sẽ{' '}
+                      {t('this-transaction-will')}{' '}
                       <span className="font-semibold text-zinc-200">
                         {Intl.NumberFormat(lang, {
                           style: 'currency',
@@ -299,7 +306,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                           signDisplay: 'always',
                         }).format(amount)}
                       </span>{' '}
-                      với số dư hiện tại.
+                      {t('from-current-balance')}
                     </div>
                   </>
                 ) : null}
@@ -307,12 +314,12 @@ const NewTransactionPage: PageWithLayoutProps = () => {
             </SettingItemCard>
           ) : (
             <SettingItemCard
-              title="Nội dung"
-              description="Nội dung của giao dịch này."
+              title={t('description')}
+              description={t('description-description')}
               disabled={!originWallet}
             >
               <TextInput
-                placeholder="Nhập nội dung"
+                placeholder={t('description-placeholder')}
                 value={description}
                 onChange={(e) => setDescription(e.currentTarget.value)}
                 disabled={!originWallet}
@@ -321,8 +328,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           )}
 
           <SettingItemCard
-            title="Thời điểm giao dịch"
-            description="Thời điểm giao dịch này được thực hiện."
+            title={t('datetime')}
+            description={t('datetime-description')}
             disabled={!originWallet}
           >
             <DateTimePicker
@@ -339,13 +346,11 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title={
-              type === 'balance' ? 'Tiền trong nguồn tiền' : 'Số tiền giao dịch'
-            }
+            title={type === 'balance' ? t('balance') : t('amount')}
             description={
               type === 'balance'
-                ? 'Số tiền trong nguồn tiền sau khi giao dịch.'
-                : 'Số tiền giao dịch này được thực hiện.'
+                ? t('balance-description')
+                : t('amount-description')
             }
             disabled={!originWallet}
           >
@@ -396,7 +401,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                     <Divider variant="dashed" />
 
                     <div>
-                      Giao dịch này sẽ{' '}
+                      {t('this-transaction-will')}{' '}
                       <span className="font-semibold text-zinc-200">
                         {Intl.NumberFormat(lang, {
                           style: 'currency',
@@ -404,7 +409,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                           signDisplay: 'always',
                         }).format(amount - originWallet.balance)}
                       </span>{' '}
-                      với số dư hiện tại trong nguồn tiền.
+                      {t('from-current-balance')}
                     </div>
                   </>
                 )}
@@ -412,8 +417,8 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Danh mục giao dịch"
-            description="Loại giao dịch được thực hiện."
+            title={t('category')}
+            description={t('category-description')}
           >
             <TransactionCategorySelector
               category={
@@ -433,11 +438,11 @@ const NewTransactionPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Đơn vị tiền tệ"
-            description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
+            title={t('currency')}
+            description={t('currency-description')}
           >
             <Select
-              placeholder="Chờ chọn nguồn tiền..."
+              placeholder={t('currency-placeholder')}
               value={originWallet?.currency}
               data={[
                 {
