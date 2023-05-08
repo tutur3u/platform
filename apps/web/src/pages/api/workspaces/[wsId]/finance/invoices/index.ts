@@ -56,7 +56,7 @@ const fetchInvoices = async (
   else if (status === 'incomplete') queryBuilder.is('completed_at', null);
 
   if (query) {
-    queryBuilder.ilike('name', `%${query}%`);
+    queryBuilder.ilike('note', `%${query}%`);
   }
 
   if (

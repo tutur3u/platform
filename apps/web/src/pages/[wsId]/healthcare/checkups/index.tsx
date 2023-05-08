@@ -7,8 +7,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
 } from '../../../../components/selectors/ModeSelector';
-import { Divider, Switch, TextInput } from '@mantine/core';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import CheckupCard from '../../../../components/cards/CheckupCard';
 import { Checkup } from '../../../../types/primitives/Checkup';
@@ -44,7 +43,6 @@ const MiscExaminationPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -53,7 +51,7 @@ const MiscExaminationPage: PageWithLayoutProps = () => {
   });
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/healthcare/checkups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${ws?.id}/healthcare/checkups?page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
   const countApi = ws?.id
@@ -108,16 +106,6 @@ const MiscExaminationPage: PageWithLayoutProps = () => {
       <HeaderX label="Kiểm tra sức khoẻ – Khám bệnh" />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <TextInput
-            label="Tìm kiếm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nhập từ khoá để tìm kiếm"
-            icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
-          />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}

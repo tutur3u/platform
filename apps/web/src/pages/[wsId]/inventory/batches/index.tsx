@@ -17,7 +17,6 @@ import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
-import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
@@ -51,7 +50,6 @@ const BatchesPage: PageWithLayoutProps = () => {
     return () => setRootSegment([]);
   }, [ws, inventoryLabel, batchesLabel, setRootSegment]);
 
-  const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
   const [warehouseIds, setWarehouseIds] = useState<string[]>(['']);
 
@@ -65,7 +63,7 @@ const BatchesPage: PageWithLayoutProps = () => {
         ws?.id
       }/inventory/batches?warehouseIds=${warehouseIds.join(
         ','
-      )}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+      )}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
   const countApi = ws?.id
@@ -97,7 +95,6 @@ const BatchesPage: PageWithLayoutProps = () => {
       <HeaderX label={`${batchesLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
