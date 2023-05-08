@@ -1,6 +1,6 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -23,11 +23,13 @@ import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
 import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
 import { mutate } from 'swr';
+import { useAppearance } from '../../hooks/useAppearance';
 
 export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
+  const { hideExperimental, toggleHideExperimental } = useAppearance();
 
   const { t } = useTranslation('settings-account');
 
@@ -132,6 +134,8 @@ const SettingPage: PageWithLayoutProps = () => {
   const changeEmailDescription = t('change-email-description');
   const languageLabel = t('language');
   const languageDescription = t('language-description');
+  const developmentLabel = t('development');
+  const developmentDescription = t('development-description');
   const logoutDescription = t('logout-description');
 
   return (
@@ -229,6 +233,19 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <SettingItemTab title={languageLabel} description={languageDescription}>
           <LanguageSelector fullWidth />
+        </SettingItemTab>
+
+        <Divider className="my-2" />
+
+        <SettingItemTab
+          title={developmentLabel}
+          description={developmentDescription}
+        >
+          <Checkbox
+            label={t('hide-experimental')}
+            checked={hideExperimental}
+            onChange={toggleHideExperimental}
+          />
         </SettingItemTab>
 
         <Divider className="my-2" />

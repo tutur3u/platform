@@ -4,6 +4,8 @@ import {
   DEFAULT_APP_THEME,
   SIDEBAR_STATE_KEY,
   DEFAULT_SIDEBAR_STATE,
+  HIDE_EXPERIMENTAL_KEY,
+  DEFAULT_HIDE_EXPERIMENTAL,
 } from '../constants/prefs';
 import { useLocalStorage } from '@mantine/hooks';
 
@@ -17,6 +19,9 @@ const AppearanceContext = createContext({
   sidebar: 'open' as SidebarState,
   setSidebar: (state: SidebarState) => console.log(state),
   toggleSidebar: () => console.log('toggle'),
+
+  hideExperimental: true,
+  toggleHideExperimental: () => console.log('toggle'),
 });
 
 export const AppearanceProvider = ({
@@ -34,8 +39,15 @@ export const AppearanceProvider = ({
     defaultValue: DEFAULT_SIDEBAR_STATE,
   });
 
+  const [hideExperimental, setHideExperimental] = useLocalStorage<boolean>({
+    key: HIDE_EXPERIMENTAL_KEY,
+    defaultValue: DEFAULT_HIDE_EXPERIMENTAL,
+  });
+
   const toggleSidebar = () =>
     setSidebar((prev) => (prev === 'open' ? 'closed' : 'open'));
+
+  const toggleHideExperimental = () => setHideExperimental((prev) => !prev);
 
   const values = {
     theme,
@@ -44,6 +56,9 @@ export const AppearanceProvider = ({
     sidebar,
     setSidebar,
     toggleSidebar,
+
+    hideExperimental,
+    toggleHideExperimental,
   };
 
   return (
