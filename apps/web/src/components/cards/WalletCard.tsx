@@ -7,6 +7,7 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wallet: Wallet;
+  amount?: number;
   disableLink?: boolean;
   showBalance?: boolean;
   showAmount?: boolean;
@@ -14,6 +15,7 @@ interface Props {
 
 const WalletCard = ({
   wallet,
+  amount,
   disableLink = false,
   showBalance = false,
   showAmount = false,
@@ -23,7 +25,7 @@ const WalletCard = ({
   const { t } = useTranslation('finance-tabs');
 
   const countApi =
-    showAmount && ws?.id && wallet?.id
+    showAmount && ws?.id && wallet?.id && amount === undefined
       ? `/api/workspaces/${ws.id}/finance/wallets/${wallet.id}/transactions/count`
       : null;
 
@@ -60,7 +62,7 @@ const WalletCard = ({
 
         {showAmount && (
           <div className="m-2 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">
-            {`${count} ${t('transactions').toLowerCase()}`}
+            {`${amount ?? count} ${t('transactions').toLowerCase()}`}
           </div>
         )}
       </div>

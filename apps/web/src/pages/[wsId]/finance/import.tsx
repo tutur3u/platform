@@ -315,6 +315,11 @@ const WalletImportPage: PageWithLayoutProps = () => {
     });
   };
 
+  const getWalletTransactionsCount = (walletId?: string) =>
+    walletId
+      ? transactions?.filter((t) => t.wallet_id === walletId)?.length || 0
+      : 0;
+
   if (!ws) return null;
 
   return (
@@ -552,8 +557,10 @@ const WalletImportPage: PageWithLayoutProps = () => {
                       <WalletCard
                         key={`wallet-${idx}`}
                         wallet={w}
+                        amount={getWalletTransactionsCount(w.id)}
                         disableLink
                         showBalance
+                        showAmount
                       />
                     ))}
                 </div>
