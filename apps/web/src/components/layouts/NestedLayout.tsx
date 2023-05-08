@@ -36,7 +36,7 @@ const NestedLayout: FC<Props> = ({
   const { t } = useTranslation();
 
   const { segments } = useSegments();
-  const { sidebar } = useAppearance();
+  const { sidebar, hideExperimental } = useAppearance();
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
 
@@ -44,7 +44,7 @@ const NestedLayout: FC<Props> = ({
     arr.filter((_, index) => index === arr.findIndex((a) => a.href === _.href));
 
   const filteredTabs = deduplicate(
-    tabs.filter((tab) => DEV_MODE || !tab.disabled)
+    tabs.filter((tab) => (DEV_MODE && !hideExperimental) || !tab.disabled)
   );
 
   const disableTabs = noTabs || filteredTabs.length === 0;

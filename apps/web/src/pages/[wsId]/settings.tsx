@@ -1,4 +1,4 @@
-import { Divider, TextInput } from '@mantine/core';
+import { Button, Divider, TextInput } from '@mantine/core';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
@@ -10,6 +10,8 @@ import HeaderX from '../../components/metadata/HeaderX';
 import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspaces';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
+import FeatureToggle from '../../components/cards/FeatureToggle';
+import { DEV_MODE } from '../../constants/common';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -51,6 +53,10 @@ const WorkspaceSettingsPage = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [features, setFeatures] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   if (isLoading) return <div>{loadingLabel}</div>;
 
@@ -159,27 +165,28 @@ const WorkspaceSettingsPage = () => {
             />
           </div>
 
-          <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
+          <div className="mt-2 border-zinc-700/70 text-zinc-500">
             {t('created_at')}{' '}
             <span className="font-semibold text-zinc-300">{relativeTime}</span>.
           </div>
 
           <div className="h-full" />
 
-          <button
+          <Button
             onClick={
               isSystemWs || isSaving || name === ws?.name
                 ? undefined
                 : handleSave
             }
+            disabled={isSystemWs || isSaving || name === ws?.name}
             className={`${
               isSystemWs || isSaving || name === ws?.name
                 ? 'cursor-not-allowed opacity-50'
                 : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition lg:text-xl`}
+            } col-span-full mt-2 flex w-full items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition`}
           >
             {isSaving ? t('common:saving') : t('common:save')}
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
@@ -189,18 +196,70 @@ const WorkspaceSettingsPage = () => {
           </div>
 
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
-            <button
+            <Button
               onClick={isSystemWs ? undefined : handleDelete}
+              disabled={isSystemWs}
               className={`${
                 isSystemWs
                   ? 'cursor-not-allowed opacity-50'
                   : 'hover:border-red-300/30 hover:bg-red-300/20'
-              } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition lg:text-xl`}
+              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition`}
             >
               {isDeleting ? t('deleting') : t('delete')}
-            </button>
+            </Button>
           </div>
         </div>
+
+        {DEV_MODE && (
+          <>
+            <Divider className="col-span-full" />
+
+            <div className="col-span-full flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+              <div className="mb-1 text-2xl font-bold">{t('features')}</div>
+              <div className="mb-4 font-semibold text-zinc-500">
+                {t('features_description')}
+              </div>
+
+              <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <FeatureToggle
+                  label={t('sidebar-tabs:documents')}
+                  checked={features?.documents}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, documents: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:users')}
+                  checked={features?.users}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, users: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:healthcare')}
+                  checked={features?.healthcare}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, healthcare: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:inventory')}
+                  checked={features?.inventory}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, inventory: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:finance')}
+                  checked={features?.finance}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, finance: value }))
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

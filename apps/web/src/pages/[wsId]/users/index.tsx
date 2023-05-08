@@ -46,8 +46,11 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/users/groups/count`
     : null;
 
-  const { data: users } = useSWR<number>(usersCountApi);
-  const { data: groups } = useSWR<number>(groupsCountApi);
+  const { data: users, error: usersError } = useSWR<number>(usersCountApi);
+  const { data: groups, error: groupsError } = useSWR<number>(groupsCountApi);
+
+  const isUsersLoading = users === undefined && !usersError;
+  const isGroupsLoading = groups === undefined && !groupsError;
 
   if (!ws) return null;
 
@@ -61,6 +64,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             color="blue"
             value={users}
             href={`/${ws?.id}/users/list`}
+            loading={isUsersLoading}
           />
 
           <StatisticCard
@@ -68,6 +72,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
             color="green"
             value={groups}
             href={`/${ws?.id}/users/groups`}
+            loading={isGroupsLoading}
           />
         </div>
       </div>

@@ -12,5 +12,8 @@
   "change-email-description": "Once you have confirmed the change on both emails, your newemail address will be automatically applied.",
   "language": "Language",
   "language-description": "Change the language of the website.",
+  "development": "Development",
+  "development-description": "Customize local development settings.",
+  "hide-experimental": "Hide experimental features",
   "logout-description": "Log out of your account."
 }

@@ -27,6 +27,7 @@ interface Props {
 
 const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const { t } = useTranslation('sidebar-tabs');
+
   const user = useUser();
 
   const home = t('home');
