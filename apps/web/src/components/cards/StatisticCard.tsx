@@ -1,9 +1,11 @@
+import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 interface Props {
   title: string;
   value?: string | number;
   href?: string;
+  loading?: boolean;
   color?: 'green' | 'red' | 'blue';
 
   onClick?: () => void;
@@ -14,10 +16,14 @@ const StatisticCard = ({
   title,
   value,
   href,
+  loading,
   color,
   onClick,
   className,
 }: Props) => {
+  const { t } = useTranslation();
+  const loadingLabel = t('common:loading');
+
   const generateOuterColor = () => {
     switch (color) {
       case 'green':
@@ -83,7 +89,7 @@ const StatisticCard = ({
         <div
           className={`m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${generateInnerColor()}`}
         >
-          {value != null ? value : 'N/A'}
+          {loading ? loadingLabel : value != null ? value : 'N/A'}
         </div>
       </Link>
     );
@@ -103,7 +109,7 @@ const StatisticCard = ({
       <div
         className={`m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${generateInnerColor()}`}
       >
-        {value != null ? value : 'N/A'}
+        {loading ? loadingLabel : value != null ? value : 'N/A'}
       </div>
     </button>
   );

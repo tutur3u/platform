@@ -43,8 +43,13 @@ const InfrastructureOverviewPage: PageWithLayoutProps = () => {
 
   const workspacesCountApi = ws?.id ? `/api/workspaces/count` : null;
 
-  const { data: users } = useSWR<number>(usersCountApi);
-  const { data: workspaces } = useSWR<number>(workspacesCountApi);
+  const { data: users, error: usersError } = useSWR<number>(usersCountApi);
+
+  const { data: workspaces, error: workspacesError } =
+    useSWR<number>(workspacesCountApi);
+
+  const isUsersLoading = users === undefined && !usersError;
+  const isWorkspacesLoading = workspaces === undefined && !workspacesError;
 
   return (
     <>
@@ -53,12 +58,14 @@ const InfrastructureOverviewPage: PageWithLayoutProps = () => {
         <StatisticCard
           title={usersLabel}
           value={users}
+          loading={isUsersLoading}
           href={`/${ws?.id}/infrastructure/users`}
         />
 
         <StatisticCard
           title={workspacesLabel}
           value={workspaces}
+          loading={isWorkspacesLoading}
           href={`/${ws?.id}/infrastructure/workspaces`}
         />
       </div>

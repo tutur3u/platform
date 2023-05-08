@@ -11,6 +11,7 @@ import { enforceHasWorkspaces } from '../../utils/serverless/enforce-has-workspa
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 import FeatureToggle from '../../components/cards/FeatureToggle';
+import { DEV_MODE } from '../../constants/common';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -209,52 +210,56 @@ const WorkspaceSettingsPage = () => {
           </div>
         </div>
 
-        <Divider className="col-span-full" />
+        {DEV_MODE && (
+          <>
+            <Divider className="col-span-full" />
 
-        <div className="col-span-full flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
-          <div className="mb-1 text-2xl font-bold">{t('features')}</div>
-          <div className="mb-4 font-semibold text-zinc-500">
-            {t('features_description')}
-          </div>
+            <div className="col-span-full flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+              <div className="mb-1 text-2xl font-bold">{t('features')}</div>
+              <div className="mb-4 font-semibold text-zinc-500">
+                {t('features_description')}
+              </div>
 
-          <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <FeatureToggle
-              label={t('sidebar-tabs:documents')}
-              checked={features?.documents}
-              onCheck={(value) =>
-                setFeatures((fs) => ({ ...fs, documents: value }))
-              }
-            />
-            <FeatureToggle
-              label={t('sidebar-tabs:users')}
-              checked={features?.users}
-              onCheck={(value) =>
-                setFeatures((fs) => ({ ...fs, users: value }))
-              }
-            />
-            <FeatureToggle
-              label={t('sidebar-tabs:healthcare')}
-              checked={features?.healthcare}
-              onCheck={(value) =>
-                setFeatures((fs) => ({ ...fs, healthcare: value }))
-              }
-            />
-            <FeatureToggle
-              label={t('sidebar-tabs:inventory')}
-              checked={features?.inventory}
-              onCheck={(value) =>
-                setFeatures((fs) => ({ ...fs, inventory: value }))
-              }
-            />
-            <FeatureToggle
-              label={t('sidebar-tabs:finance')}
-              checked={features?.finance}
-              onCheck={(value) =>
-                setFeatures((fs) => ({ ...fs, finance: value }))
-              }
-            />
-          </div>
-        </div>
+              <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <FeatureToggle
+                  label={t('sidebar-tabs:documents')}
+                  checked={features?.documents}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, documents: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:users')}
+                  checked={features?.users}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, users: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:healthcare')}
+                  checked={features?.healthcare}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, healthcare: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:inventory')}
+                  checked={features?.inventory}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, inventory: value }))
+                  }
+                />
+                <FeatureToggle
+                  label={t('sidebar-tabs:finance')}
+                  checked={features?.finance}
+                  onCheck={(value) =>
+                    setFeatures((fs) => ({ ...fs, finance: value }))
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

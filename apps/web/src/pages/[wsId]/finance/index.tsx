@@ -81,13 +81,33 @@ const FinancePage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/finance/invoices/count${dateRangeQuery}`
     : null;
 
-  const { data: sum } = useSWR<number>(sumApi);
-  const { data: income } = useSWR<number>(incomeApi);
-  const { data: expense } = useSWR<number>(expenseApi);
-  const { data: walletsCount } = useSWR<number>(walletsCountApi);
-  const { data: categoriesCount } = useSWR<number>(categoriesCountApi);
-  const { data: transactionsCount } = useSWR<number>(transactionsCountApi);
-  const { data: invoicesCount } = useSWR<number>(invoicesCountApi);
+  const { data: sum, error: sumError } = useSWR<number>(sumApi);
+  const { data: income, error: incomeError } = useSWR<number>(incomeApi);
+  const { data: expense, error: expenseError } = useSWR<number>(expenseApi);
+
+  const { data: walletsCount, error: walletsError } =
+    useSWR<number>(walletsCountApi);
+
+  const { data: categoriesCount, error: categoriesError } =
+    useSWR<number>(categoriesCountApi);
+
+  const { data: transactionsCount, error: transactionsError } =
+    useSWR<number>(transactionsCountApi);
+
+  const { data: invoicesCount, error: invoicesError } =
+    useSWR<number>(invoicesCountApi);
+
+  const isSumLoading = sum === undefined && !sumError;
+  const isIncomeLoading = income === undefined && !incomeError;
+  const isExpenseLoading = expense === undefined && !expenseError;
+  const isWalletsCountLoading = walletsCount === undefined && !walletsError;
+  const isCategoriesCountLoading =
+    categoriesCount === undefined && !categoriesError;
+
+  const isTransactionsCountLoading =
+    transactionsCount === undefined && !transactionsError;
+
+  const isInvoicesCountLoading = invoicesCount === undefined && !invoicesError;
 
   const walletsLabel = t('finance-tabs:wallets');
   const transactionsLabel = t('finance-tabs:transactions');
@@ -133,6 +153,7 @@ const FinancePage: PageWithLayoutProps = () => {
               style: 'currency',
               currency: 'VND',
             }).format(sum || 0)}
+            loading={isSumLoading}
             className="md:col-span-2"
           />
 
@@ -144,6 +165,7 @@ const FinancePage: PageWithLayoutProps = () => {
               currency: 'VND',
               signDisplay: 'exceptZero',
             }).format(income || 0)}
+            loading={isIncomeLoading}
           />
 
           <StatisticCard
@@ -154,30 +176,35 @@ const FinancePage: PageWithLayoutProps = () => {
               currency: 'VND',
               signDisplay: 'exceptZero',
             }).format(expense || 0)}
+            loading={isExpenseLoading}
           />
 
           <StatisticCard
             title={walletsLabel}
             value={walletsCount}
             href={`/${ws?.id}/finance/wallets`}
+            loading={isWalletsCountLoading}
           />
 
           <StatisticCard
             title={categoriesLabel}
             value={categoriesCount}
             href={`/${ws?.id}/finance/transactions/categories`}
+            loading={isCategoriesCountLoading}
           />
 
           <StatisticCard
             title={transactionsLabel}
             value={transactionsCount}
             href={`/${ws?.id}/finance/transactions`}
+            loading={isTransactionsCountLoading}
           />
 
           <StatisticCard
             title={invoicesLabel}
             value={invoicesCount}
             href={`/${ws?.id}/finance/invoices`}
+            loading={isInvoicesCountLoading}
           />
 
           <div className="col-span-full">

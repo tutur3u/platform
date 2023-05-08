@@ -47,5 +47,5 @@ const fetchExpense = async (
   });
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json(data || 0);
 };

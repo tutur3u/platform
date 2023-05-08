@@ -64,16 +64,31 @@ const InventoryPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/inventory/suppliers/count`
     : null;
 
-  const { data: products } = useSWR<{
+  const { data: products, error: productsError } = useSWR<{
     ws: number;
     inventory: number;
   }>(productsCountApi);
 
-  const { data: categories } = useSWR<number>(categoriesCountApi);
-  const { data: batches } = useSWR<number>(batchesCountApi);
-  const { data: warehouses } = useSWR<number>(warehousesCountApi);
-  const { data: units } = useSWR<number>(unitsCountApi);
-  const { data: suppliers } = useSWR<number>(suppliersCountApi);
+  const { data: categories, error: categoriesError } =
+    useSWR<number>(categoriesCountApi);
+
+  const { data: batches, error: batchesError } =
+    useSWR<number>(batchesCountApi);
+
+  const { data: warehouses, error: warehousesError } =
+    useSWR<number>(warehousesCountApi);
+
+  const { data: units, error: unitsError } = useSWR<number>(unitsCountApi);
+
+  const { data: suppliers, error: suppliersError } =
+    useSWR<number>(suppliersCountApi);
+
+  const isProductsLoading = products === undefined && !productsError;
+  const isCategoriesLoading = categories === undefined && !categoriesError;
+  const isBatchesLoading = batches === undefined && !batchesError;
+  const isWarehousesLoading = warehouses === undefined && !warehousesError;
+  const isUnitsLoading = units === undefined && !unitsError;
+  const isSuppliersLoading = suppliers === undefined && !suppliersError;
 
   return (
     <>
@@ -110,6 +125,7 @@ const InventoryPage: PageWithLayoutProps = () => {
           color="blue"
           value={products?.ws}
           href={`/${ws?.id}/inventory/products`}
+          loading={isProductsLoading}
           className="md:col-span-2"
         />
 
@@ -117,36 +133,42 @@ const InventoryPage: PageWithLayoutProps = () => {
           title={t('inventory-overview:products-with-prices')}
           value={products?.inventory}
           href={`/${ws?.id}/inventory/products`}
+          loading={isProductsLoading}
         />
 
         <StatisticCard
           title={t('product-categories')}
           value={categories}
           href={`/${ws?.id}/inventory/categories`}
+          loading={isCategoriesLoading}
         />
 
         <StatisticCard
           title={t('batches')}
           value={batches}
           href={`/${ws?.id}/inventory/batches`}
+          loading={isBatchesLoading}
         />
 
         <StatisticCard
           title={t('warehouses')}
           value={warehouses}
           href={`/${ws?.id}/inventory/warehouses`}
+          loading={isWarehousesLoading}
         />
 
         <StatisticCard
           title={t('units')}
           value={units}
           href={`/${ws?.id}/inventory/units`}
+          loading={isUnitsLoading}
         />
 
         <StatisticCard
           title={t('suppliers')}
           value={suppliers}
           href={`/${ws?.id}/inventory/suppliers`}
+          loading={isSuppliersLoading}
         />
       </div>
     </>
