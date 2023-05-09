@@ -1,24 +1,30 @@
-const colors = require('tailwindcss/colors');
+import { blue, red } from 'tailwindcss/colors';
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: true,
-  content: [
-    // app content
-    `src/**/*.{js,ts,jsx,tsx}`,
-    // include packages if not transpiling
-    // "../../packages/**/*.{js,ts,jsx,tsx}",
-  ],
-  variants: {
-    width: ['responsive', 'hover', 'focus'],
-  },
-  theme: {
-    extend: {
-      colors: {
-        brandblue: colors.blue[500],
-        brandred: colors.red[500],
-      },
+export const darkMode = true;
+
+export const content = [
+  // app content
+  `src/**/*.{js,ts,jsx,tsx}`,
+  // include packages if not transpiling
+  // "../../packages/**/*.{js,ts,jsx,tsx}",
+];
+
+export const variants = {
+  height: ['responsive', 'hover', 'focus'],
+  width: ['responsive', 'hover', 'focus'],
+};
+
+export const theme = {
+  extend: {
+    colors: {
+      brandblue: blue[500],
+      brandred: red[500],
     },
   },
-  plugins: [require('tailwind-scrollbar'), require('tailwindcss-themer')],
 };
+
+export const plugins = [
+  require('tailwind-scrollbar'),
+  require('tailwindcss-themer'),
+];

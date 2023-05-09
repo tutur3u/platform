@@ -17,7 +17,7 @@ const WorkspaceMemberMultiSelector = ({
   className,
 }: Props) => {
   const { ws } = useWorkspaces();
-  const { t } = useTranslation('ws-members');
+  const { t } = useTranslation('ws-member-selector');
 
   const apiPath = `/api/workspaces/${ws?.id}/members`;
   const { data: users } = useSWR<User[]>(ws?.id ? apiPath : null);

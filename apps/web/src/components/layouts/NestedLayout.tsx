@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { FC, Fragment } from 'react';
+import { FC, Fragment, useEffect, useState } from 'react';
 import { useSegments } from '../../hooks/useSegments';
 import { ActionIcon } from '@mantine/core';
 import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
@@ -11,7 +11,7 @@ import { getTabs } from '../../utils/tab-helper';
 import { Mode, Tab } from '../../types/Tab';
 import { DEV_MODE } from '../../constants/common';
 import BottomNavigationBar from './BottomNavigationBar';
-import { SidebarState, useAppearance } from '../../hooks/useAppearance';
+import { useAppearance } from '../../hooks/useAppearance';
 import LeftSidebar from './LeftSidebar';
 
 interface Props {
@@ -36,7 +36,7 @@ const NestedLayout: FC<Props> = ({
   const { t } = useTranslation();
 
   const { segments } = useSegments();
-  const { sidebar, hideExperimental } = useAppearance();
+  const { hideExperimental } = useAppearance();
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
 
@@ -47,31 +47,56 @@ const NestedLayout: FC<Props> = ({
     tabs.filter((tab) => (DEV_MODE && !hideExperimental) || !tab.disabled)
   );
 
-  const disableTabs = noTabs || filteredTabs.length === 0;
+  const defaultNoTabs = noTabs || filteredTabs.length === 0;
 
-  const generateSidebarWidth = (state: SidebarState) =>
-    state === 'closed' ? 'w-0 md:w-16' : 'w-full md:w-64';
+  const [disableTabs, setDisableTabs] = useState(defaultNoTabs);
+  const [cachedDisableTabs, setCachedDisableTabs] = useState(defaultNoTabs);
 
-  const generateLeftMargin = (state: SidebarState) =>
-    state === 'closed' ? 'md:ml-16' : 'md:ml-64';
+  useEffect(() => {
+    if (defaultNoTabs) {
+      setDisableTabs(true);
+      setCachedDisableTabs(true);
+      return;
+    } else {
+      setDisableTabs(false);
+      setCachedDisableTabs(false);
+    }
+
+    const content = document.getElementById('content');
+    if (!content) return;
+
+    const handleScroll = () => {
+      const pos = content.scrollTop;
+      const disable = pos > 0;
+
+      setDisableTabs(disable);
+      setCachedDisableTabs(disable);
+    };
+
+    content.addEventListener('scroll', handleScroll);
+    return () => content.removeEventListener('scroll', handleScroll);
+  }, [defaultNoTabs]);
 
   return (
-    <div className="flex h-screen min-h-screen w-full bg-[#111113]">
-      <LeftSidebar
-        className={`transition-all duration-300 ${generateSidebarWidth(
-          sidebar
-        )}`}
-      />
+    <div className="relative flex h-screen min-h-full w-screen min-w-full">
+      <LeftSidebar />
 
-      <main
-        className={`fixed inset-0 flex h-full flex-col overflow-auto bg-[#111113] ${generateLeftMargin(
-          sidebar
-        )} transition-all duration-300`}
-      >
+      <main className={`relative flex h-full w-full flex-col bg-[#111113]`}>
         <nav
+          id="top-navigation"
           className={`${
             disableTabs ? 'h-[3.8rem]' : 'h-25'
-          } fixed z-[9999] w-full flex-none border-b border-zinc-800 bg-[#111113]/70 backdrop-blur-md`}
+          } absolute inset-x-0 top-0 z-[100] flex-none border-b border-zinc-800 bg-[#111113]/50 backdrop-blur transition-all duration-300`}
+          onMouseEnter={
+            defaultNoTabs || !disableTabs
+              ? undefined
+              : () => setDisableTabs(false)
+          }
+          onMouseLeave={
+            defaultNoTabs || !disableTabs
+              ? undefined
+              : () => setDisableTabs(cachedDisableTabs)
+          }
         >
           <div className="flex items-center gap-2 py-3">
             {onFavorite && (
@@ -119,7 +144,10 @@ const NestedLayout: FC<Props> = ({
           </div>
 
           {disableTabs || (
-            <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 transition-all duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32">
+            <div
+              id="tabs"
+              className="scrollbar-none flex gap-4 overflow-x-auto px-4 duration-300 md:mx-8 md:px-0 lg:mx-16 xl:mx-32"
+            >
               {filteredTabs.map((tab) => {
                 if (tab.disabled)
                   return (
@@ -158,9 +186,10 @@ const NestedLayout: FC<Props> = ({
         </nav>
 
         <div
-          className={`${
-            disableTabs ? 'pt-24' : 'pt-32'
-          } h-full px-4 md:px-8 lg:px-16 xl:px-32`}
+          id="content"
+          className={`h-full overflow-auto px-4 ${
+            defaultNoTabs ? 'pt-24' : 'pt-32'
+          } md:px-8 lg:px-16 xl:px-32`}
         >
           {children}
         </div>

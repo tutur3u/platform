@@ -20,7 +20,7 @@ import useTranslation from 'next-translate/useTranslation';
 export const getServerSideProps = enforceHasWorkspaces;
 
 const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
-  const { t } = useTranslation('sidebar-tabs');
+  const { t } = useTranslation('workspace-tabs');
 
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();

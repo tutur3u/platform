@@ -56,9 +56,7 @@ export default function SidebarButton({
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}
         {showLabel && (
-          <div className="line-clamp-1 inline-block text-sm font-semibold">
-            {label}
-          </div>
+          <div className="line-clamp-1 text-sm font-semibold">{label}</div>
         )}
       </div>
     </Tooltip>
