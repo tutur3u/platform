@@ -50,10 +50,17 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/healthcare/vital-groups/count`
     : null;
 
-  const { data: checkups } = useSWR<number>(checkupsCountApi);
-  const { data: diagnoses } = useSWR<number>(diagnosesCountApi);
-  const { data: vitals } = useSWR<number>(vitalsCountApi);
-  const { data: groups } = useSWR<number>(groupsCountApi);
+  const { data: checkups, error: checkupsError } =
+    useSWR<number>(checkupsCountApi);
+  const { data: diagnoses, error: diagnosesError } =
+    useSWR<number>(diagnosesCountApi);
+  const { data: vitals, error: vitalsError } = useSWR<number>(vitalsCountApi);
+  const { data: groups, error: groupsError } = useSWR<number>(groupsCountApi);
+
+  const isCheckupsLoading = checkups === undefined && !checkupsError;
+  const isDiagnosesLoading = diagnoses === undefined && !diagnosesError;
+  const isVitalsLoading = vitals === undefined && !vitalsError;
+  const isGroupsLoading = groups === undefined && !groupsError;
 
   return (
     <>
@@ -65,24 +72,28 @@ const MiscOverviewPage: PageWithLayoutProps = () => {
             color="blue"
             value={checkups}
             href={`/${ws?.id}/healthcare/checkups`}
+            loading={isCheckupsLoading}
           />
 
           <StatisticCard
             title="Chẩn đoán"
             value={diagnoses}
             href={`/${ws?.id}/healthcare/diagnoses`}
+            loading={isDiagnosesLoading}
           />
 
           <StatisticCard
             title="Chỉ số"
             value={vitals}
             href={`/${ws?.id}/healthcare/vitals`}
+            loading={isVitalsLoading}
           />
 
           <StatisticCard
             title="Nhóm chỉ số"
             value={groups}
             href={`/${ws?.id}/healthcare/vital-groups`}
+            loading={isGroupsLoading}
           />
         </div>
       </div>
