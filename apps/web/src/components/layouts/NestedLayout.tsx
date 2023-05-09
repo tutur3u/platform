@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { FC, Fragment, useEffect, useState } from 'react';
 import { useSegments } from '../../hooks/useSegments';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Button } from '@mantine/core';
 import { StarIcon as OutlinedStarIcon } from '@heroicons/react/24/outline';
-import { StarIcon } from '@heroicons/react/24/solid';
+import { ArrowUpCircleIcon, StarIcon } from '@heroicons/react/24/solid';
 import LoadingIndicator from '../common/LoadingIndicator';
 import useTranslation from 'next-translate/useTranslation';
 import { getTabs } from '../../utils/tab-helper';
@@ -52,6 +52,8 @@ const NestedLayout: FC<Props> = ({
   const [disableTabs, setDisableTabs] = useState(defaultNoTabs);
   const [cachedDisableTabs, setCachedDisableTabs] = useState(defaultNoTabs);
 
+  const [prevScrollPos, setPrevScrollPos] = useState(0);
+
   useEffect(() => {
     if (defaultNoTabs) {
       setDisableTabs(true);
@@ -67,6 +69,8 @@ const NestedLayout: FC<Props> = ({
 
     const handleScroll = () => {
       const pos = content.scrollTop;
+      setPrevScrollPos(pos);
+
       const disable = pos > 0;
 
       setDisableTabs(disable);
@@ -187,12 +191,26 @@ const NestedLayout: FC<Props> = ({
 
         <div
           id="content"
-          className={`h-full overflow-auto px-4 ${
+          className={`h-full overflow-auto scroll-smooth px-4 ${
             defaultNoTabs ? 'pt-24' : 'pt-32'
           } md:px-8 lg:px-16 xl:px-32`}
         >
           {children}
         </div>
+
+        <Button
+          className={`fixed bottom-16 right-4 z-50 rounded-full border border-blue-300/20 bg-[#2b3542] md:bottom-4 md:right-8 ${
+            prevScrollPos <= 100 ? 'hidden' : ''
+          }`}
+          size="md"
+          variant="subtle"
+          onClick={() => {
+            document?.getElementById('content')?.scrollTo(0, 0);
+          }}
+        >
+          <ArrowUpCircleIcon className="h-6 w-6" />
+        </Button>
+
         <BottomNavigationBar />
       </main>
     </div>
