@@ -1,4 +1,4 @@
-# Tuturuuu Monorepo
+# Tuturuuu Monorepo [![CI](https://github.com/tutur3u/tutur3u/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/tutur3u/tutur3u/actions/workflows/ci.yaml) [![Supabase CI](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
 
 This is Tuturuuu's centralized monorepo, powered by Turborepo.
 
@@ -63,6 +63,12 @@ To develop all apps and packages (without requiring a local setup), run the foll
 
 ```bash
 pnpm dev
+```
+
+To stop development apps and packages that are running on your local machine, run the following command:
+
+```bash
+pnpm stop
 ```
 
 #### Better Development Experience
