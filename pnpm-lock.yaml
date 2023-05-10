@@ -29,8 +29,8 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0
       '@heroicons/react':
-        specifier: ^2.0.17
-        version: 2.0.17(react@18.2.0)
+        specifier: ^2.0.18
+        version: 2.0.18(react@18.2.0)
       '@mantine/core':
         specifier: ^6.0.10
         version: 6.0.10(@emotion/react@11.11.0)(@mantine/hooks@6.0.10)(@types/react@18.2.6)(react-dom@18.2.0)(react@18.2.0)
@@ -222,8 +222,8 @@ importers:
         specifier: ^8.4.23
         version: 8.4.23
       supabase:
-        specifier: ^1.57.2
-        version: 1.57.2
+        specifier: ^1.57.3
+        version: 1.57.3
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -259,14 +259,14 @@ importers:
   packages/tailwind-config:
     devDependencies:
       tailwind-scrollbar:
-        specifier: ^3.0.0
-        version: 3.0.0(tailwindcss@3.3.2)
+        specifier: ^3.0.1
+        version: 3.0.1(tailwindcss@3.3.2)
       tailwindcss:
         specifier: ^3.3.2
         version: 3.3.2
       tailwindcss-themer:
-        specifier: ^3.0.2
-        version: 3.0.2(tailwindcss@3.3.2)
+        specifier: ^3.1.0
+        version: 3.1.0(tailwindcss@3.3.2)
 
   packages/tsconfig: {}
 
@@ -1046,8 +1046,8 @@ packages:
       tabbable: 6.1.2
     dev: false
 
-  /@heroicons/react@2.0.17(react@18.2.0):
-    resolution: {integrity: sha512-90GMZktkA53YbNzHp6asVEDevUQCMtxWH+2UK2S8OpnLEu7qckTJPhNxNQG52xIR1WFTwFqtH6bt7a60ZNcLLA==}
+  /@heroicons/react@2.0.18(react@18.2.0):
+    resolution: {integrity: sha512-7TyMjRrZZMBPa+/5Y8lN0iyvUU/01PeMGX2+RE7cQWpEUIcb4QotzUObFkJDejj/HUH4qjP/eQ0gzzKs2f+6Yw==}
     peerDependencies:
       react: '>= 16'
     dependencies:
@@ -7358,8 +7358,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.57.2:
-    resolution: {integrity: sha512-Lr9LRKRMc0lnOFvmKaccKAoKsJI5VTuq4um3Gga3VrofP+kPbGYYRO3xDV3JW42S9sSzbwcwUaxUsTzogoQxgw==}
+  /supabase@1.57.3:
+    resolution: {integrity: sha512-4XTWt6NNkXo7tQs6byKHsk83I581YPTkhcOgcirUbX4QgObkK3uMG9HvTolUECpMN2/ZrihmfHer5EgWF1uK0A==}
     hasBin: true
     requiresBuild: true
     dependencies:
@@ -7416,8 +7416,8 @@ packages:
     resolution: {integrity: sha512-qCN98uP7i9z0fIS4amQ5zbGBOq+OSigYeGvPy7NDk8Y9yncqDZ9pRPgfsc2PJIVM9RrJj7GIfuRgmjoUU9zTHQ==}
     dev: false
 
-  /tailwind-scrollbar@3.0.0(tailwindcss@3.3.2):
-    resolution: {integrity: sha512-OkVRX9Q1T769vk979UZ519jhj/j/zNBHql7zPLI+tlhX+ahksYO4ZryWD29lOETDx9Wj1sw+K1OeW7W3+ECQOA==}
+  /tailwind-scrollbar@3.0.1(tailwindcss@3.3.2):
+    resolution: {integrity: sha512-mM0ecSf/RGRGWw/qB0Zg1bWhuXIkpmleNAFgMxdb4eERgA6eQ0kVouYsF3/OvBqDSK8RJikZC/ynGPxnfXeddw==}
     engines: {node: '>=12.13.0'}
     peerDependencies:
       tailwindcss: 3.x
@@ -7425,8 +7425,8 @@ packages:
       tailwindcss: 3.3.2
     dev: true
 
-  /tailwindcss-themer@3.0.2(tailwindcss@3.3.2):
-    resolution: {integrity: sha512-jnDQh6Bwezqli0H9Bsfqoxn69rr4DArzbASXD9dRZPrgmE7U9ppswohIGLEroni5efCVPYB/yyOah3DOwm58Yw==}
+  /tailwindcss-themer@3.1.0(tailwindcss@3.3.2):
+    resolution: {integrity: sha512-IfgxpCxWm5rRK3Q7aTvVyhQ/7tyyn8EJl5tFak5tS+/n8oXT7OGfv8praYepR7+IsM92waAuBDZng1HgnstrYA==}
     peerDependencies:
       tailwindcss: ^3.1.0
     dependencies:
