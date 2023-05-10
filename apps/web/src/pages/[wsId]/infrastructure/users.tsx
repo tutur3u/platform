@@ -5,7 +5,6 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
-import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
 import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
 import { Divider } from '@mantine/core';
 import PaginationSelector from '../../../components/selectors/PaginationSelector';
@@ -15,8 +14,9 @@ import { User } from '../../../types/primitives/User';
 import useSWR from 'swr';
 import UserCard from '../../../components/cards/UserCard';
 import GeneralSearchBar from '../../../components/inputs/GeneralSearchBar';
+import { enforceRootAdmin } from '../../../utils/serverless/enforce-root-admin';
 
-export const getServerSideProps = enforceRootWorkspace;
+export const getServerSideProps = enforceRootAdmin;
 
 const InfrastructureUsersPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();

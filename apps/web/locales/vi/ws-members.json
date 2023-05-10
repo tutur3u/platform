@@ -14,5 +14,17 @@
   "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
   "error": "Lỗi",
   "revoke_error": "Đã xảy ra lỗi khi thu hồi lời mời",
-  "remove_error": "Đã xảy ra lỗi khi xóa thành viên"
+  "remove_error": "Đã xảy ra lỗi khi xóa thành viên",
+  "member-settings": "Cài đặt thành viên",
+  "role": "Vai trò",
+  "role-placeholder": "Chọn vai trò",
+  "role-title": "Vị trí",
+  "role-title-placeholder": "Thiết kế, Quản lý dự án, v.v.",
+  "delete-member-description": "Bạn có thể xóa thành viên này khỏi không gian làm việc.",
+  "member-updated": "Thành viên đã được cập nhật",
+  "has-been-updated": "đã được cập nhật",
+  "update-error": "Đã xảy ra lỗi khi cập nhật thành viên",
+  "member": "Thành viên",
+  "admin": "Quản trị viên",
+  "owner": "Chủ sở hữu"
 }

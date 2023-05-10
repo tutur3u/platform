@@ -14,5 +14,17 @@
   "has_been_removed": "has been removed from this workspace",
   "error": "Error",
   "revoke_error": "An error occurred while revoking the invitation",
-  "remove_error": "An error occurred while removing the member"
+  "remove_error": "An error occurred while removing the member",
+  "member-settings": "Member settings",
+  "role": "Role",
+  "role-placeholder": "Select a role",
+  "role-title": "Title",
+  "role-title-placeholder": "Designer, Project Manager, etc.",
+  "delete-member-description": "You can delete this member from the workspace.",
+  "member-updated": "Member updated",
+  "has-been-updated": "has been updated",
+  "update-error": "An error occurred while updating the member",
+  "member": "Member",
+  "admin": "Administrator",
+  "owner": "Owner"
 }

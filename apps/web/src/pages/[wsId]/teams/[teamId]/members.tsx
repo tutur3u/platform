@@ -66,7 +66,7 @@ const TeamMembersPage = () => {
         </>
       )}
 
-      <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mb-8 mt-4 grid gap-4 xl:grid-cols-2">
         {members
           ?.sort(
             (

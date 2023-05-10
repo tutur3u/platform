@@ -10,7 +10,9 @@ const fetchMembers = async (
 
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('created_at, users(id, handle, display_name, avatar_url)')
+    .select(
+      'role, role_title, created_at, users(id, handle, display_name, avatar_url)'
+    )
     .eq('ws_id', wsId);
 
   if (error) return res.status(500).json({ error: error.message });
@@ -18,6 +20,8 @@ const fetchMembers = async (
   return res.status(200).json(
     data.map((member) => ({
       ...member.users,
+      role: member.role,
+      role_title: member.role_title,
       created_at: member.created_at,
     }))
   );

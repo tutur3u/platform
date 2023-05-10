@@ -52,6 +52,10 @@
   "change_ethnicity_from": "Thay đổi dân tộc từ",
   "set_national_id_to": "Thiết lập CMND/CCCD thành",
   "change_national_id_from": "Thay đổi CMND/CCCD từ",
+  "set_role_to": "Thiết lập vai trò thành",
+  "change_role_from": "Thay đổi vai trò từ",
+  "set_role_title_to": "Thiết lập vị trí thành",
+  "change_role_title_from": "Thay đổi vị trí từ",
   "trailing_label_workspace_members": {
     "one": "{{count}} thành viên",
     "other": "{{count}} thành viên"

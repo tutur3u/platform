@@ -42,6 +42,7 @@
       "pagination",
       "crud-ops",
       "ws-member-selector",
+      "ws-members",
       "ws-activities"
     ],
     "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],

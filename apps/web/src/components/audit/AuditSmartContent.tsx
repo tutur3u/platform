@@ -890,29 +890,78 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (userId)
     return (
       <div className="flex flex-col rounded border border-zinc-300/10 bg-zinc-800 p-4">
-        <p className="text-zinc-400">
+        <div className="text-zinc-400">
           {user != null && (
-            <p>
-              •{' '}
-              {data.op === 'INSERT'
-                ? data.table_name === 'workspace_members'
-                  ? t('added')
-                  : t('invited')
-                : data.table_name === 'workspace_members'
-                ? t('removed')
-                : t('revoked_invite')}{' '}
-              {t('member')}{' '}
-              <span className="font-semibold text-zinc-200">
-                {user.display_name || t('no_display_name')}
-              </span>{' '}
-              (
-              <span className="font-semibold text-blue-300">
-                {user?.handle ? `@${user.handle}` : t('no_handle')}
-              </span>
-              )
-            </p>
+            <>
+              {data.op === 'INSERT' && (
+                <p>
+                  •{' '}
+                  {data.table_name === 'workspace_members'
+                    ? t('added')
+                    : t('invited')}{' '}
+                  {t('member')}{' '}
+                  <span className="font-semibold text-zinc-200">
+                    {user.display_name || t('no_display_name')}
+                  </span>{' '}
+                  (
+                  <span className="font-semibold text-blue-300">
+                    {user?.handle ? `@${user.handle}` : t('no_handle')}
+                  </span>
+                  )
+                </p>
+              )}
+
+              {data.op === 'UPDATE' && (
+                <>
+                  {data?.record?.role != data?.old_record?.role && (
+                    <p>
+                      • {t('change_role_from')}{' '}
+                      <span className="font-semibold text-zinc-200">
+                        {t('ws-members:' + data.old_record.role.toLowerCase())}
+                      </span>{' '}
+                      {t('to')}{' '}
+                      <span className="font-semibold text-zinc-200">
+                        {t('ws-members:' + data.record.role.toLowerCase())}
+                      </span>
+                    </p>
+                  )}
+
+                  {data?.record?.role_title != data?.old_record?.role_title &&
+                    data?.record?.role_title != null && (
+                      <p>
+                        • {t('change_role_title_from')}{' '}
+                        <span className="font-semibold text-zinc-200">
+                          {data.old_record.role_title}
+                        </span>{' '}
+                        {t('to')}{' '}
+                        <span className="font-semibold text-zinc-200">
+                          {data.record.role_title}
+                        </span>
+                      </p>
+                    )}
+                </>
+              )}
+
+              {data.op === 'DELETE' && (
+                <p>
+                  •{' '}
+                  {data.table_name === 'workspace_members'
+                    ? t('removed')
+                    : t('revoked_invite')}{' '}
+                  {t('member')}{' '}
+                  <span className="font-semibold text-zinc-200">
+                    {user.display_name || t('no_display_name')}
+                  </span>{' '}
+                  (
+                  <span className="font-semibold text-blue-300">
+                    {user?.handle ? `@${user.handle}` : t('no_handle')}
+                  </span>
+                  )
+                </p>
+              )}
+            </>
           )}
-        </p>
+        </div>
       </div>
     );
 
