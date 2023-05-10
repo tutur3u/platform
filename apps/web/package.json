@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 7803",
@@ -23,7 +23,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/server": "^11.11.0",
-    "@heroicons/react": "^2.0.17",
+    "@heroicons/react": "^2.0.18",
     "@mantine/core": "^6.0.10",
     "@mantine/dates": "^6.0.10",
     "@mantine/form": "^6.0.10",
@@ -90,7 +90,7 @@
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
     "tailwind-config": "workspace:*",
-    "supabase": "^1.57.2",
+    "supabase": "^1.57.3",
     "tailwindcss": "^3.3.2",
     "tsconfig": "workspace:*",
     "typescript": "^5.0.4"

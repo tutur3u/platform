@@ -52,6 +52,10 @@
   "change_ethnicity_from": "Changed ethnicity from",
   "set_national_id_to": "Set national ID to",
   "change_national_id_from": "Changed national ID from",
+  "set_role_to": "Set role to",
+  "change_role_from": "Changed role from",
+  "set_role_title_to": "Set role title to",
+  "change_role_title_from": "Changed role title from",
   "trailing_label_workspace_members": {
     "one": "{{count}} member",
     "other": "{{count}} members"

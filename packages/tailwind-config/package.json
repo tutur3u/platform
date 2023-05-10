@@ -5,7 +5,7 @@
   "main": "index.js",
   "devDependencies": {
     "tailwindcss": "^3.3.2",
-    "tailwind-scrollbar": "^3.0.0",
-    "tailwindcss-themer": "^3.0.2"
+    "tailwind-scrollbar": "^3.0.1",
+    "tailwindcss-themer": "^3.1.0"
   }
 }

@@ -18,6 +18,7 @@ import {
 import { WorkspacePreset } from '../../../types/primitives/WorkspacePreset';
 import { useUser } from '@supabase/auth-helpers-react';
 import { ROOT_WORKSPACE_ID } from '../../../constants/common';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 
 interface Props {
   wsId: string;
@@ -27,8 +28,14 @@ interface Props {
 
 const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const { t } = useTranslation('sidebar-tabs');
+  const { members } = useWorkspaces();
 
   const user = useUser();
+
+  const currentMember = members?.find((m) => m.id === user?.id);
+  const currentRole = currentMember?.role || 'MEMBER';
+
+  const adminLevel = currentRole === 'ADMIN' || currentRole === 'OWNER';
 
   const home = t('home');
   const calendar = t('calendar');
@@ -159,7 +166,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      {isRootWs && user?.email?.endsWith('@tuturuuu.com') && (
+      {isRootWs && user?.email?.endsWith('@tuturuuu.com') && adminLevel && (
         <SidebarLink
           href={`/${wsId}/infrastructure`}
           activeIcon={<WrenchScrewdriverIcon className="w-5" />}

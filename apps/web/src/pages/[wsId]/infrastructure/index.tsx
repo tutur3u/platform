@@ -5,11 +5,11 @@ import NestedLayout from '../../../components/layouts/NestedLayout';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
-import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
 import StatisticCard from '../../../components/cards/StatisticCard';
 import useSWR from 'swr';
+import { enforceRootAdmin } from '../../../utils/serverless/enforce-root-admin';
 
-export const getServerSideProps = enforceRootWorkspace;
+export const getServerSideProps = enforceRootAdmin;
 
 const InfrastructureOverviewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
