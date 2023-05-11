@@ -10,11 +10,6 @@ export const content = [
   // "../../packages/**/*.{js,ts,jsx,tsx}",
 ];
 
-export const variants = {
-  height: ['responsive', 'hover', 'focus'],
-  width: ['responsive', 'hover', 'focus'],
-};
-
 export const theme = {
   extend: {
     colors: {
