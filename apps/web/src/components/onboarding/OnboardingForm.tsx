@@ -8,6 +8,7 @@ import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
 import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
+import { mutate } from 'swr';
 
 interface Props {
   forceLoading?: boolean;
@@ -52,6 +53,8 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
+      mutate('/api/workspaces/current');
+
       const res = await fetch('/api/workspaces/current');
       const data = await res.json();
 
