@@ -87,6 +87,10 @@ const WorkspaceMemberEditForm = ({
           label: t(role.toLowerCase()),
           disabled: !checkRole(role),
         }))}
+        disabled={
+          currentRole === 'MEMBER' ||
+          availableRoles.every((role) => !checkRole(role))
+        }
         withinPortal
       />
 
@@ -130,7 +134,9 @@ const WorkspaceMemberEditForm = ({
             <Divider variant="dashed" className="my-1" />
             <div>
               <span className="text-zinc-400">
-                {t('delete-member-description')}
+                {user.role === 'OWNER' && disallowOwnerChange
+                  ? t('cannot-delete-last-owner')
+                  : t('delete-member-description')}
               </span>
             </div>
             <Button
@@ -142,6 +148,7 @@ const WorkspaceMemberEditForm = ({
                 closeAllModals();
               }}
               className="bg-red-300/10"
+              disabled={user.role === 'OWNER' && disallowOwnerChange}
             >
               {t('common:delete')}
             </Button>

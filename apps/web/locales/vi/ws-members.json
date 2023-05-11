@@ -21,6 +21,7 @@
   "role-title": "Vị trí",
   "role-title-placeholder": "Thiết kế, Quản lý dự án, v.v.",
   "delete-member-description": "Bạn có thể xóa thành viên này khỏi không gian làm việc.",
+  "cannot-delete-last-owner": "Bạn không thể xóa chủ sở hữu cuối cùng của không gian làm việc.",
   "member-updated": "Thành viên đã được cập nhật",
   "has-been-updated": "đã được cập nhật",
   "update-error": "Đã xảy ra lỗi khi cập nhật thành viên",

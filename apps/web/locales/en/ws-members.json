@@ -21,6 +21,7 @@
   "role-title": "Title",
   "role-title-placeholder": "Designer, Project Manager, etc.",
   "delete-member-description": "You can delete this member from the workspace.",
+  "cannot-delete-last-owner": "You cannot delete the last owner of the workspace.",
   "member-updated": "Member updated",
   "has-been-updated": "has been updated",
   "update-error": "An error occurred while updating the member",
