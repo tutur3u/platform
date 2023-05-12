@@ -89,11 +89,15 @@ const GeneralItemCard = ({
         <>
           <Divider className="w-full border-zinc-700" />
           <div className="grid h-full w-full gap-2 p-2">
-            {!amountData?.count && !batchData?.count && !productData?.count && (
-              <div className="flex h-full items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-2 text-center font-semibold text-zinc-300">
-                {t('common:empty')}
-              </div>
-            )}
+            {amountData?.count === undefined &&
+              !batchData?.count &&
+              !productData?.count && (
+                <div className="flex h-full items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-2 text-center font-semibold text-zinc-300">
+                  {amountFetchPath && amountData?.count === undefined
+                    ? t('common:loading')
+                    : t('common:empty')}
+                </div>
+              )}
 
             {amountData?.count != null && (
               <div className="flex h-full items-center justify-center gap-1 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">

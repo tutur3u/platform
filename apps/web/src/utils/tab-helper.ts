@@ -15,6 +15,7 @@ import {
   workspaceUsersTabs,
   wsUserDetailsTabs,
 } from '../constants/tabs';
+import { wsUserGroupDetailsTabs } from '../constants/tabs/workspace-group-details';
 
 export const getNavTabs = (mode: Mode) => {
   switch (mode) {
@@ -48,13 +49,16 @@ export const getNavTabs = (mode: Mode) => {
     case 'user_details':
       return wsUserDetailsTabs;
 
+    case 'user_group_details':
+      return wsUserGroupDetailsTabs;
+
     case 'team':
       return teamTabs;
   }
 };
 
 const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
-  const { wsId, teamId, productId, userId, walletId } = router.query;
+  const { wsId, teamId, productId, userId, groupId, walletId } = router.query;
 
   return tabs.map((tab) => {
     if (tab.href) {
@@ -64,6 +68,7 @@ const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
         .replace('[userId]', userId as string)
         .replace('[productId]', productId as string)
         .replace('[userId]', userId as string)
+        .replace('[groupId]', groupId as string)
         .replace('[walletId]', walletId as string);
 
       return {

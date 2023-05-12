@@ -3,9 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    const { wsId, groupId } = req.query;
+
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+
+    if (!groupId || typeof groupId !== 'string')
+      throw new Error('Invalid groupId');
+
     switch (req.method) {
       case 'GET':
-        return await fetchInvites(req, res);
+        return await fetchAmount(req, res, groupId);
 
       default:
         throw new Error(
@@ -24,28 +31,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchInvites = async (req: NextApiRequest, res: NextApiResponse) => {
+const fetchAmount = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  groupId: string
+) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-
-  const { data, error } = await supabase
-    .from('workspace_invites')
-    .select('created_at, workspaces(id, name)')
-    .eq('user_id', user?.id);
+  const { count, error } = await supabase
+    .from('workspace_user_groups_users')
+    .select('user_id', {
+      head: true,
+      count: 'exact',
+    })
+    .eq('group_id', groupId);
 
   if (error) return res.status(401).json({ error: error.message });
-
-  return res
-    .status(200)
-    .json(data.map((ws) => ({ ...ws.workspaces, created_at: ws.created_at })));
+  return res.status(200).json({ count });
 };

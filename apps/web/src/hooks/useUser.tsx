@@ -1,5 +1,5 @@
 import { showNotification } from '@mantine/notifications';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
   Session,
@@ -35,8 +35,6 @@ export const UserDataProvider = ({
 
   const isLoading = !user && !userError;
 
-  const [initialized, setInitialized] = useState(false);
-
   useEffect(() => {
     const syncData = async (session: Session | null) => {
       if (!session) return;
@@ -50,14 +48,14 @@ export const UserDataProvider = ({
       mutate('/api/user', null);
       mutate('/api/workspaces/current', null);
       mutate('/api/workspaces/invited', null);
+
+      await supabase.auth.signOut();
       router.push('/login');
     };
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (initialized) return;
-
       const isAuthenticated =
         event === 'SIGNED_IN' ||
         event === 'INITIAL_SESSION' ||
@@ -65,24 +63,12 @@ export const UserDataProvider = ({
 
       const isSignedOut = event === 'SIGNED_OUT';
 
-      if (isAuthenticated) {
-        setInitialized(true);
-        syncData(session);
-      } else if (isSignedOut) removeData();
+      if (isAuthenticated) syncData(session);
+      else if (isSignedOut) removeData();
     });
 
     return () => subscription?.unsubscribe();
-  }, [supabase.auth, router, initialized]);
-
-  useEffect(() => {
-    if (userError) {
-      showNotification({
-        title: 'Failed to fetch user data',
-        message: 'Please try again later',
-        color: 'red',
-      });
-    }
-  }, [userError]);
+  }, [supabase.auth, router]);
 
   const updateUser = async (data: Partial<User>) => {
     if (data?.handle?.length) {

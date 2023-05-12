@@ -10,15 +10,20 @@ import {
   IdentificationIcon,
   PhoneIcon,
   ShieldCheckIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
+import { openModal } from '@mantine/modals';
 import { DatePickerInput } from '@mantine/dates';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import moment from 'moment';
 import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
+import WorkspaceUserEditModal from '../../../../components/loaders/users/WorkspaceUserEditModal';
+import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
 import { UserGroup } from '../../../../types/primitives/UserGroup';
 import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -37,7 +42,9 @@ const genders = [
   },
 ];
 
-const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
+const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -67,8 +74,8 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               href: `/${ws.id}/users/${userId}`,
             },
             {
-              content: 'Overview',
-              href: `/${ws.id}/users/${userId}`,
+              content: 'Settings',
+              href: `/${ws.id}/users/${userId}/settings`,
             },
           ]
         : []
@@ -113,10 +120,25 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     if (userGroups) setGroups(userGroups);
   }, [userGroups]);
 
+  const allGroupsValid = () => groups.every((group) => group.id.length > 0);
+
+  const hasData = () => !!user;
+  const hasRequiredFields = () =>
+    name.length > 0 && allGroupsValid() && hasData();
+
   const getUniqueUnitIds = () => {
     const groupIds = new Set<string>();
     groups.forEach((r) => groupIds.add(r.id));
     return Array.from(groupIds);
+  };
+
+  const addEmptyGroup = () => {
+    setGroups((groups) => [
+      ...groups,
+      {
+        id: '',
+      },
+    ]);
   };
 
   const updateGroup = (index: number, group: UserGroup | null) => {
@@ -128,10 +150,149 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const removeGroup = (index: number) =>
+    setGroups((groups) => groups.filter((_, i) => i !== index));
+
+  const showEditModal = () => {
+    if (!user || !userGroups) return;
+    if (typeof userId !== 'string') return;
+    if (!ws?.id) return;
+
+    openModal({
+      title: <div className="font-semibold">Cập nhật người dùng</div>,
+      centered: true,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      withCloseButton: false,
+      children: (
+        <WorkspaceUserEditModal
+          wsId={ws.id}
+          user={{
+            id: userId,
+            name,
+            gender,
+            birthday: birthday
+              ? moment(birthday).format('YYYY-MM-DD')
+              : undefined,
+            ethnicity,
+            national_id: nationalId,
+            guardian,
+            note,
+            phone,
+            email,
+            address,
+          }}
+          oldGroups={userGroups}
+          groups={groups}
+        />
+      ),
+    });
+  };
+
+  const showDeleteModal = () => {
+    if (!user) return;
+    if (typeof userId !== 'string') return;
+    if (!ws?.id) return;
+
+    openModal({
+      title: <div className="font-semibold">Xóa người dùng</div>,
+      centered: true,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      withCloseButton: false,
+      children: (
+        <WorkspaceUserDeleteModal
+          wsId={ws.id}
+          userId={userId}
+          groups={groups}
+        />
+      ),
+    });
+  };
+
+  const reset = () => {
+    if (!user) return;
+    if (typeof userId !== 'string') return;
+    if (!ws?.id) return;
+
+    setName(user?.name || '');
+    setGender(user?.gender || '');
+    setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
+    setEthnicity(user?.ethnicity || '');
+    setNationalId(user?.national_id || '');
+    setGuardian(user?.guardian || '');
+    setNote(user?.note || '');
+    setPhone(user?.phone || '');
+    setEmail(user?.email || '');
+    setAddress(user?.address || '');
+    setGroups(userGroups || []);
+  };
+
+  const isDirty = () => {
+    if (!user) return false;
+    if (typeof userId !== 'string') return false;
+    if (!ws?.id) return false;
+
+    if (
+      user?.birthday
+        ? !moment(user.birthday).isSame(moment(birthday))
+        : !birthday
+    )
+      return true;
+
+    if (name !== user.name) return true;
+    if (gender !== user.gender) return true;
+    if (ethnicity !== user.ethnicity) return true;
+    if (nationalId !== user.national_id) return true;
+    if (guardian !== user.guardian) return true;
+    if (note !== user.note) return true;
+    if (phone !== user.phone) return true;
+    if (email !== user.email) return true;
+    if (address !== user.address) return true;
+    if (groups.length !== userGroups?.length) return true;
+    if (groups.some((group, i) => group.id !== userGroups[i].id)) return true;
+
+    return false;
+  };
+
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
+        {user && hasRequiredFields() && (
+          <div
+            className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+              isDirty() ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div>{t('common:unsaved-changes')}</div>
+
+            <div className="flex w-full items-center gap-2 md:w-fit">
+              <button
+                className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                  isDirty()
+                    ? 'hover:bg-zinc-300/10'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={reset}
+              >
+                {t('common:reset')}
+              </button>
+
+              <button
+                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
+                  isDirty()
+                    ? 'hover:bg-blue-300/20'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={showEditModal}
+              >
+                {t('common:save')}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
             <div className="col-span-full">
@@ -145,7 +306,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required
-              disabled
             />
             <Select
               label="Giới tính"
@@ -154,7 +314,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               data={genders}
               onChange={(val) => setGender(val || '')}
               required
-              disabled
             />
 
             <DatePickerInput
@@ -170,7 +329,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               classNames={{
                 input: 'bg-[#25262b]',
               }}
-              disabled
             />
 
             {ws?.preset === 'PHARMACY' && (
@@ -179,7 +337,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 placeholder='Ví dụ: "Kinh"'
                 value={ethnicity}
                 onChange={(e) => setEthnicity(e.currentTarget.value)}
-                disabled
               />
             )}
 
@@ -191,7 +348,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 onChange={(e) => setNationalId(e.currentTarget.value)}
                 className="md:col-span-2"
                 icon={<IdentificationIcon className="h-5 w-5" />}
-                disabled
               />
             )}
 
@@ -203,7 +359,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 onChange={(e) => setGuardian(e.currentTarget.value)}
                 className="md:col-span-2"
                 icon={<ShieldCheckIcon className="h-5 w-5" />}
-                disabled
               />
             )}
 
@@ -216,8 +371,19 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
-              disabled
             />
+
+            <Divider className="col-span-full my-2" />
+            <div className="col-span-full">
+              <div className="text-2xl font-semibold">Bảo mật</div>
+              <Divider className="my-2" variant="dashed" />
+            </div>
+            <div
+              onClick={showDeleteModal}
+              className="flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+            >
+              {t('common:delete')}
+            </div>
           </div>
 
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
@@ -232,7 +398,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={phone}
               onChange={(e) => setPhone(e.currentTarget.value)}
               icon={<PhoneIcon className="h-5 w-5" />}
-              disabled
             />
 
             <TextInput
@@ -241,7 +406,6 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
               icon={<EnvelopeIcon className="h-5 w-5" />}
-              disabled
             />
 
             <div className="hidden xl:col-span-2 xl:block" />
@@ -253,31 +417,38 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               onChange={(e) => setAddress(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
-              disabled
             />
 
-            {groups.length > 0 && (
-              <>
-                <Divider className="col-span-full my-2" />
-                <div className="col-span-full grid gap-2">
-                  <div className="text-2xl font-semibold">Nhóm người dùng</div>
-                  <Divider className="mb-2" variant="dashed" />
+            <Divider className="col-span-full my-2" />
 
-                  {groups.map((r, idx) => (
-                    <div key={`group-${idx}`} className="flex items-end gap-2">
-                      <UserGroupSelector
-                        group={r}
-                        setGroup={(r) => updateGroup(idx, r)}
-                        blacklist={getUniqueUnitIds()}
-                        className="w-full"
-                        hideLabel
-                        disabled
-                      />
-                    </div>
-                  ))}
+            <div className="col-span-full grid gap-2">
+              <div className="text-2xl font-semibold">Nhóm người dùng</div>
+              <Divider className="mb-2" variant="dashed" />
+
+              <button
+                className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                onClick={addEmptyGroup}
+              >
+                + Thêm nhóm
+              </button>
+
+              {groups.map((r, idx) => (
+                <div key={`group-${idx}`} className="flex items-end gap-2">
+                  <UserGroupSelector
+                    group={r}
+                    setGroup={(r) => updateGroup(idx, r)}
+                    blacklist={getUniqueUnitIds()}
+                    className="w-full"
+                  />
+                  <button
+                    className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
+                    onClick={() => removeGroup(idx)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -285,8 +456,8 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   );
 };
 
-WorkspaceUserDetailsPage.getLayout = function getLayout(page: ReactElement) {
+WorkspaceUserSettingsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="user_details">{page}</NestedLayout>;
 };
 
-export default WorkspaceUserDetailsPage;
+export default WorkspaceUserSettingsPage;

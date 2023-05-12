@@ -1,9 +1,8 @@
 import { Timeline } from '@mantine/core';
 import { useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
-import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 import { Status } from '../../status';
 import { UserGroup } from '../../../../types/primitives/UserGroup';
@@ -19,9 +18,7 @@ interface Progress {
 }
 
 const UserGroupEditModal = ({ wsId, group }: Props) => {
-  const { t } = useTranslation('ws-users-groups-details');
-
-  const router = useRouter();
+  const { t } = useTranslation('ws-user-groups-details');
 
   const [progress, setProgress] = useState<Progress>({
     updated: 'idle',
@@ -77,7 +74,7 @@ const UserGroupEditModal = ({ wsId, group }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
+          bullet={<ArrowPathIcon className="h-5 w-5" />}
           title={t('update-user-group')}
         >
           {progress.updated === 'success' ? (
@@ -116,15 +113,6 @@ const UserGroupEditModal = ({ wsId, group }: Props) => {
           </button>
         )}
 
-        {group.id && hasSuccess && (
-          <button
-            className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-            onClick={() => closeAllModals()}
-          >
-            {t('view-group')}
-          </button>
-        )}
-
         <button
           className={`rounded border px-4 py-1 font-semibold transition ${
             hasError
@@ -136,13 +124,7 @@ const UserGroupEditModal = ({ wsId, group }: Props) => {
               : 'border-blue-300/10 bg-blue-300/10 text-blue-300 hover:bg-blue-300/20'
           }`}
           onClick={() => {
-            if (hasError) {
-              closeAllModals();
-              return;
-            }
-
-            if (hasSuccess) {
-              router.push(`/${wsId}/users/groups`);
+            if (hasError || hasSuccess) {
               closeAllModals();
               return;
             }

@@ -30,7 +30,12 @@ export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
-  const { hideExperimental, toggleHideExperimental } = useAppearance();
+  const {
+    hideExperimentalOnSidebar,
+    hideExperimentalOnTopNav,
+    toggleHideExperimentalOnSidebar,
+    toggleHideExperimentalOnTopNav,
+  } = useAppearance();
 
   const { t } = useTranslation('settings-account');
 
@@ -243,11 +248,18 @@ const SettingPage: PageWithLayoutProps = () => {
               title={developmentLabel}
               description={developmentDescription}
             >
-              <Checkbox
-                label={t('hide-experimental')}
-                checked={hideExperimental}
-                onChange={toggleHideExperimental}
-              />
+              <div className="grid gap-2">
+                <Checkbox
+                  label={t('hide-experimental-on-sidebar')}
+                  checked={hideExperimentalOnSidebar}
+                  onChange={toggleHideExperimentalOnSidebar}
+                />
+                <Checkbox
+                  label={t('hide-experimental-on-top-nav')}
+                  checked={hideExperimentalOnTopNav}
+                  onChange={toggleHideExperimentalOnTopNav}
+                />
+              </div>
             </SettingItemTab>
           </>
         ) : null}

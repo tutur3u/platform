@@ -40,12 +40,13 @@ file_size_limit = "50MiB"
 [auth]
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://localhost:3000"
+site_url = "http://localhost:7803"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://localhost:3000"]
+additional_redirect_urls = ["https://localhost:7803"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 seconds (one
 # week).
-jwt_expiry = 3600
+# For local development, the value is set to 120 seconds to make it easier to test.
+jwt_expiry = 120
 # Allow/disallow new user signups to your project.
 enable_signup = true
 

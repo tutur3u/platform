@@ -12,7 +12,9 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  if (!user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
 
   const { data, error } = await supabase
     .from('workspace_members')

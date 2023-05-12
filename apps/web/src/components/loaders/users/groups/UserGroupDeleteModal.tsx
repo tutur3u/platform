@@ -1,6 +1,6 @@
 import { Timeline } from '@mantine/core';
 import { useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
@@ -17,7 +17,7 @@ interface Progress {
 }
 
 const UserGroupDeleteModal = ({ wsId, groupId }: Props) => {
-  const { t } = useTranslation('ws-users-groups-details');
+  const { t } = useTranslation('ws-user-groups-details');
 
   const router = useRouter();
 
@@ -67,7 +67,7 @@ const UserGroupDeleteModal = ({ wsId, groupId }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
+          bullet={<TrashIcon className="h-5 w-5" />}
           title={t('delete-user-group')}
         >
           {progress.removed === 'success' ? (
