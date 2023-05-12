@@ -119,11 +119,13 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
         >
           <PlusCardButton href={`/${ws.id}/users/groups/new`} />
           {groups &&
-            groups?.map((r) => (
+            groups?.map((group) => (
               <GeneralItemCard
-                key={r.id}
-                name={r.name}
-                href={`/${ws.id}/users/groups/${r.id}`}
+                key={group.id}
+                name={group.name}
+                href={`/${ws.id}/users/groups/${group.id}`}
+                amountFetchPath={`/api/workspaces/${ws.id}/users/groups/${group.id}/amount`}
+                amountTrailing={t('sidebar-tabs:users').toLowerCase()}
                 showAmount={showUsers}
               />
             ))}

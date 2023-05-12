@@ -107,7 +107,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<FingerPrintIcon className="w-5" />}
         label={attendance}
         showTooltip={!sidebarOpened}
-        disabled
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'PHARMACY') && (
