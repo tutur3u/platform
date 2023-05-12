@@ -104,9 +104,7 @@ export default function SidebarLink({
           )}
           {showLabel && !showTooltip && (
             <>
-              <div className="line-clamp-1 inline-block w-full text-sm">
-                {label}
-              </div>
+              <div className="line-clamp-1 w-full text-sm">{label}</div>
               {trailingIcon}
             </>
           )}

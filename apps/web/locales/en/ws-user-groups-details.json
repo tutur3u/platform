@@ -22,5 +22,9 @@
   "cant-delete": "Can't delete user group",
   "completion-pending": "Completion pending",
   "completion-cancelled": "Completion cancelled",
-  "completed": "Completed"
+  "completed": "Completed",
+  "reset": "Reset",
+  "unsaved-changes": "You have unsaved changes.",
+  "security": "Security",
+  "security-description": "This will affect the security of the group."
 }

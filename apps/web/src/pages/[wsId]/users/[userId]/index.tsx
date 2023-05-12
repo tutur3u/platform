@@ -10,17 +10,13 @@ import {
   IdentificationIcon,
   PhoneIcon,
   ShieldCheckIcon,
-  TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
-import { openModal } from '@mantine/modals';
 import { DatePickerInput } from '@mantine/dates';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import moment from 'moment';
 import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
-import WorkspaceUserEditModal from '../../../../components/loaders/users/WorkspaceUserEditModal';
-import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
 import { UserGroup } from '../../../../types/primitives/UserGroup';
 import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
 
@@ -117,25 +113,10 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     if (userGroups) setGroups(userGroups);
   }, [userGroups]);
 
-  const allGroupsValid = () => groups.every((group) => group.id.length > 0);
-
-  const hasData = () => !!user;
-  const hasRequiredFields = () =>
-    name.length > 0 && allGroupsValid() && hasData();
-
   const getUniqueUnitIds = () => {
     const groupIds = new Set<string>();
     groups.forEach((r) => groupIds.add(r.id));
     return Array.from(groupIds);
-  };
-
-  const addEmptyGroup = () => {
-    setGroups((groups) => [
-      ...groups,
-      {
-        id: '',
-      },
-    ]);
   };
 
   const updateGroup = (index: number, group: UserGroup | null) => {
@@ -147,95 +128,10 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
     });
   };
 
-  const removeGroup = (index: number) =>
-    setGroups((groups) => groups.filter((_, i) => i !== index));
-
-  const showEditModal = () => {
-    if (!user || !userGroups) return;
-    if (typeof userId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật người dùng</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WorkspaceUserEditModal
-          wsId={ws.id}
-          user={{
-            id: userId,
-            name,
-            gender,
-            birthday: birthday
-              ? moment(birthday).format('YYYY-MM-DD')
-              : undefined,
-            ethnicity,
-            national_id: nationalId,
-            guardian,
-            note,
-            phone,
-            email,
-            address,
-          }}
-          oldGroups={userGroups}
-          groups={groups}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!user) return;
-    if (typeof userId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa người dùng</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WorkspaceUserDeleteModal
-          wsId={ws.id}
-          userId={userId}
-          groups={groups}
-        />
-      ),
-    });
-  };
-
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                user ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={user ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
-
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              Lưu thay đổi
-            </button>
-          </div>
-        </div>
-
-        <Divider className="my-4" />
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
             <div className="col-span-full">
@@ -249,6 +145,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required
+              disabled
             />
             <Select
               label="Giới tính"
@@ -257,6 +154,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               data={genders}
               onChange={(val) => setGender(val || '')}
               required
+              disabled
             />
 
             <DatePickerInput
@@ -272,6 +170,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               classNames={{
                 input: 'bg-[#25262b]',
               }}
+              disabled
             />
 
             {ws?.preset === 'PHARMACY' && (
@@ -280,6 +179,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 placeholder='Ví dụ: "Kinh"'
                 value={ethnicity}
                 onChange={(e) => setEthnicity(e.currentTarget.value)}
+                disabled
               />
             )}
 
@@ -291,6 +191,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 onChange={(e) => setNationalId(e.currentTarget.value)}
                 className="md:col-span-2"
                 icon={<IdentificationIcon className="h-5 w-5" />}
+                disabled
               />
             )}
 
@@ -302,6 +203,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
                 onChange={(e) => setGuardian(e.currentTarget.value)}
                 className="md:col-span-2"
                 icon={<ShieldCheckIcon className="h-5 w-5" />}
+                disabled
               />
             )}
 
@@ -314,6 +216,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
+              disabled
             />
           </div>
 
@@ -329,6 +232,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={phone}
               onChange={(e) => setPhone(e.currentTarget.value)}
               icon={<PhoneIcon className="h-5 w-5" />}
+              disabled
             />
 
             <TextInput
@@ -337,6 +241,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
               icon={<EnvelopeIcon className="h-5 w-5" />}
+              disabled
             />
 
             <div className="hidden xl:col-span-2 xl:block" />
@@ -348,38 +253,31 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               onChange={(e) => setAddress(e.currentTarget.value)}
               className="md:col-span-2"
               minRows={5}
+              disabled
             />
 
-            <Divider className="col-span-full my-2" />
+            {groups.length > 0 && (
+              <>
+                <Divider className="col-span-full my-2" />
+                <div className="col-span-full grid gap-2">
+                  <div className="text-2xl font-semibold">Nhóm người dùng</div>
+                  <Divider className="mb-2" variant="dashed" />
 
-            <div className="col-span-full grid gap-2">
-              <div className="text-2xl font-semibold">Vai trò</div>
-              <Divider className="my-2" variant="dashed" />
-
-              <button
-                className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
-                onClick={addEmptyGroup}
-              >
-                + Thêm vai trò
-              </button>
-
-              {groups.map((r, idx) => (
-                <div key={`group-${idx}`} className="flex items-end gap-2">
-                  <UserGroupSelector
-                    group={r}
-                    setGroup={(r) => updateGroup(idx, r)}
-                    blacklist={getUniqueUnitIds()}
-                    className="w-full"
-                  />
-                  <button
-                    className="rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
-                    onClick={() => removeGroup(idx)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                  {groups.map((r, idx) => (
+                    <div key={`group-${idx}`} className="flex items-end gap-2">
+                      <UserGroupSelector
+                        group={r}
+                        setGroup={(r) => updateGroup(idx, r)}
+                        blacklist={getUniqueUnitIds()}
+                        className="w-full"
+                        hideLabel
+                        disabled
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>

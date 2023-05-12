@@ -119,23 +119,34 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const reset = () => {
+    if (!group) return;
+    setName(group?.name || '');
+  };
+
   return (
     <>
       <HeaderX label={`${settingsLabel} – ${group?.name || untitledLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
+        <div
+          className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+            group && name !== group.name ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div>{t('unsaved-changes')}</div>
+
+          <div className="flex w-full items-center gap-2 md:w-fit">
             <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                group ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
+              className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                group ? 'hover:bg-zinc-300/10' : 'cursor-not-allowed opacity-50'
               }`}
-              onClick={group ? showDeleteModal : undefined}
+              onClick={group ? reset : undefined}
             >
-              {t('common:delete')}
+              {t('reset')}
             </button>
 
             <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
+              className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
                 hasRequiredFields()
                   ? 'hover:bg-blue-300/20'
                   : 'cursor-not-allowed opacity-50'
@@ -147,7 +158,6 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
           </div>
         </div>
 
-        <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">{t('basic-info')}</div>
@@ -165,6 +175,12 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
               required
             />
           </SettingItemCard>
+
+          <SettingItemCard
+            title={t('security')}
+            description={t('security-description')}
+            onDelete={showDeleteModal}
+          />
         </div>
       </div>
     </>

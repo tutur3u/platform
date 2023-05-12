@@ -353,14 +353,14 @@ const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
             <Divider className="col-span-full my-2" />
 
             <div className="col-span-full grid gap-2">
-              <div className="text-2xl font-semibold">Vai trò</div>
-              <Divider className="my-2" variant="dashed" />
+              <div className="text-2xl font-semibold">Nhóm người dùng</div>
+              <Divider className="mb-2" variant="dashed" />
 
               <button
                 className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
                 onClick={addEmptyGroup}
               >
-                + Thêm vai trò
+                + Thêm nhóm
               </button>
 
               {groups.map((r, idx) => (

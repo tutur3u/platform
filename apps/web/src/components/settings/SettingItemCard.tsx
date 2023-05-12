@@ -10,6 +10,7 @@ interface Props {
   comingSoon?: boolean;
 
   onSave?: () => void;
+  onDelete?: () => void;
 
   className?: string;
   children?: React.ReactNode;
@@ -22,12 +23,14 @@ const SettingItemCard = ({
   disabled,
   comingSoon,
   onSave,
+  onDelete,
   className,
   children,
 }: Props) => {
   const { t } = useTranslation('common');
 
   const comingSoonLabel = t('coming-soon');
+  const extraAction = onSave || onDelete || comingSoon;
 
   return (
     <div
@@ -42,11 +45,11 @@ const SettingItemCard = ({
         </div>
       )}
 
-      {(onSave || comingSoon) && <div className="h-full" />}
+      {extraAction && <div className="h-full" />}
 
       {children}
 
-      {(onSave || comingSoon) && (
+      {extraAction && (
         <>
           <Divider className="my-4" />
           {comingSoon ? (
@@ -55,10 +58,18 @@ const SettingItemCard = ({
             </div>
           ) : (
             <div
-              onClick={onSave}
-              className="flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+              onClick={onSave || onDelete}
+              className={`flex cursor-pointer items-center justify-center rounded border p-2 font-semibold transition duration-300 ${
+                disabled
+                  ? 'cursor-not-allowed opacity-50'
+                  : onSave
+                  ? 'border-blue-300/20 bg-blue-300/10 text-blue-300 hover:border-blue-300/30 hover:bg-blue-300/20'
+                  : onDelete
+                  ? 'border-red-300/20 bg-red-300/10 text-red-300 hover:border-red-300/30 hover:bg-red-300/20'
+                  : ''
+              }`}
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? '...' : onSave ? t('save') : t('delete')}
             </div>
           )}
         </>
