@@ -14,6 +14,7 @@
   "language-description": "Change the language of the website.",
   "development": "Development",
   "development-description": "Customize local development settings.",
-  "hide-experimental": "Hide experimental features",
+  "hide-experimental-on-sidebar": "Hide experimental features on sidebar",
+  "hide-experimental-on-top-nav": "Hide experimental features on top navigation bar",
   "logout-description": "Log out of your account."
 }

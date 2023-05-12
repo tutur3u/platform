@@ -14,6 +14,7 @@
   "language-description": "Thay đổi ngôn ngữ của trang web.",
   "development": "Phát triển",
   "development-description": "Tùy chỉnh cài đặt phát triển cục bộ.",
-  "hide-experimental": "Ẩn tính năng thử nghiệm",
+  "hide-experimental-on-sidebar": "Ẩn tính năng thử nghiệm trên thanh bên",
+  "hide-experimental-on-top-nav": "Ẩn tính năng thử nghiệm trên thanh điều hướng trên cùng",
   "logout-description": "Đăng xuất khỏi tài khoản của bạn."
 }

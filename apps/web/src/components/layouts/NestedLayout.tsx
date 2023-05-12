@@ -36,7 +36,7 @@ const NestedLayout: FC<Props> = ({
   const { t } = useTranslation();
 
   const { segments } = useSegments();
-  const { hideExperimental } = useAppearance();
+  const { hideExperimentalOnTopNav } = useAppearance();
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
 
@@ -44,7 +44,9 @@ const NestedLayout: FC<Props> = ({
     arr.filter((_, index) => index === arr.findIndex((a) => a.href === _.href));
 
   const filteredTabs = deduplicate(
-    tabs.filter((tab) => (DEV_MODE && !hideExperimental) || !tab.disabled)
+    tabs.filter(
+      (tab) => (DEV_MODE && !hideExperimentalOnTopNav) || !tab.disabled
+    )
   );
 
   const defaultNoTabs = noTabs || filteredTabs.length === 0;
@@ -113,12 +115,12 @@ const NestedLayout: FC<Props> = ({
               </ActionIcon>
             )}
 
-            {segments && segments.length > 0 ? (
-              <div
-                id="segments"
-                className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded p-1 md:mx-8 lg:mx-16 xl:mx-32"
-              >
-                {segments
+            <div
+              id="segments"
+              className="scrollbar-none mx-4 flex gap-2 overflow-x-auto rounded p-1 md:mx-8 lg:mx-16 xl:mx-32"
+            >
+              {segments && segments.length > 0 ? (
+                segments
                   .filter((_, index) =>
                     // If disableTabs is true, then we want to show all segments
                     disableTabs
@@ -140,11 +142,13 @@ const NestedLayout: FC<Props> = ({
                         </span>
                       )}
                     </Fragment>
-                  ))}
-              </div>
-            ) : (
-              <LoadingIndicator className="h-4 w-4" />
-            )}
+                  ))
+              ) : (
+                <div className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold transition md:hover:border-zinc-300/10 md:hover:bg-zinc-300/10">
+                  <LoadingIndicator className="h-4 w-4" />
+                </div>
+              )}
+            </div>
           </div>
 
           {disableTabs || (

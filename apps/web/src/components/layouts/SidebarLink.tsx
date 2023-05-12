@@ -49,7 +49,7 @@ export default function SidebarLink({
   const router = useRouter();
   const { wsId, teamId } = router.query;
 
-  const { sidebar, setSidebar, hideExperimental } = useAppearance();
+  const { sidebar, setSidebar, hideExperimentalOnSidebar } = useAppearance();
 
   const isExpanded = sidebar === 'open';
 
@@ -63,7 +63,8 @@ export default function SidebarLink({
       : enhancedPath.startsWith(href)
     : false;
 
-  if (disabled && (!DEV_MODE || (DEV_MODE && hideExperimental))) return null;
+  if (disabled && (!DEV_MODE || (DEV_MODE && hideExperimentalOnSidebar)))
+    return null;
 
   return (
     <Link
