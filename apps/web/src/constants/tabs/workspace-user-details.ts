@@ -22,5 +22,10 @@ export const wsUserDetailsTabs: NavTabs = {
       href: '/[wsId]/users/[userId]/checkups',
       disabled: true,
     },
+    {
+      name: 'settings',
+      href: '/[wsId]/users/[userId]/settings',
+      disabled: true,
+    },
   ],
 };

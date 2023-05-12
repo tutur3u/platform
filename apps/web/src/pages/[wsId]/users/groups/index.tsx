@@ -98,7 +98,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label={t('ws-users-groups-configs:show-users')}
+            label={t('ws-user-groups-configs:show-users')}
             checked={showUsers}
             onChange={(event) => setShowUsers(event.currentTarget.checked)}
           />

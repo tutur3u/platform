@@ -17,7 +17,7 @@ interface Progress {
 }
 
 const UserGroupDeleteModal = ({ wsId, groupId }: Props) => {
-  const { t } = useTranslation('ws-users-groups-details');
+  const { t } = useTranslation('ws-user-groups-details');
 
   const router = useRouter();
 

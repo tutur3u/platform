@@ -18,7 +18,7 @@ import useTranslation from 'next-translate/useTranslation';
 export const getServerSideProps = enforceHasWorkspaces;
 
 const RoleDetailsPage: PageWithLayoutProps = () => {
-  const { t } = useTranslation('ws-users-groups-details');
+  const { t } = useTranslation('ws-user-groups-details');
 
   const usersLabel = t('sidebar-tabs:users');
   const groupsLabel = t('workspace-users-tabs:groups');
@@ -159,7 +159,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
 };
 
 RoleDetailsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
+  return <NestedLayout mode="user_group_details">{page}</NestedLayout>;
 };
 
 export default RoleDetailsPage;

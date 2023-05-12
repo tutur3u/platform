@@ -72,18 +72,19 @@
       "search",
       "view-mode",
       "pagination",
-      "ws-users-groups-configs",
+      "ws-user-groups-configs",
       "workspace-users-tabs"
     ],
     "/[wsId]/users/groups/new": [
       "sidebar-tabs",
       "workspace-users-tabs",
-      "ws-users-groups-details"
+      "ws-user-groups-details"
     ],
     "/[wsId]/users/groups/[groupId]": [
       "sidebar-tabs",
       "workspace-users-tabs",
-      "ws-users-groups-details"
+      "ws-user-groups-details",
+      "ws-user-groups-details-tabs"
     ],
 
     "/[wsId]/users/new": ["sidebar-tabs"],
