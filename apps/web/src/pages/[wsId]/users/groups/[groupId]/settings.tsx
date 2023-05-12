@@ -1,27 +1,28 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Divider, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import UserGroupEditModal from '../../../../components/loaders/users/groups/UserGroupEditModal';
-import UserGroupDeleteModal from '../../../../components/loaders/users/groups/UserGroupDeleteModal';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import SettingItemCard from '../../../../../components/settings/SettingItemCard';
+import UserGroupEditModal from '../../../../../components/loaders/users/groups/UserGroupEditModal';
+import UserGroupDeleteModal from '../../../../../components/loaders/users/groups/UserGroupDeleteModal';
 import { useRouter } from 'next/router';
-import { UserGroup } from '../../../../types/primitives/UserGroup';
+import { UserGroup } from '../../../../../types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const RoleDetailsPage: PageWithLayoutProps = () => {
-  const { t } = useTranslation('ws-users-groups-details');
+const UserGroupSettingsPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('ws-user-groups-details');
 
   const usersLabel = t('sidebar-tabs:users');
   const groupsLabel = t('workspace-users-tabs:groups');
+  const settingsLabel = t('ws-user-groups-details-tabs:settings');
   const untitledLabel = t('common:untitled');
 
   const { setRootSegment } = useSegments();
@@ -52,12 +53,24 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               content: group?.name || untitledLabel,
               href: `/${ws.id}/users/groups/${group.id}`,
             },
+            {
+              content: settingsLabel,
+              href: `/${ws.id}/users/groups/${group.id}/settings`,
+            },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, group, usersLabel, groupsLabel, untitledLabel, setRootSegment]);
+  }, [
+    ws,
+    group,
+    usersLabel,
+    groupsLabel,
+    settingsLabel,
+    untitledLabel,
+    setRootSegment,
+  ]);
 
   const [name, setName] = useState<string>('');
 
@@ -106,35 +119,49 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const reset = () => {
+    if (!group) return;
+    setName(group?.name || '');
+  };
+
   return (
     <>
-      <HeaderX label={`${groupsLabel} – ${usersLabel}`} />
+      <HeaderX label={`${settingsLabel} – ${group?.name || untitledLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                group ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={group ? showDeleteModal : undefined}
-            >
-              {t('common:delete')}
-            </button>
+        {group && hasRequiredFields() && (
+          <div
+            className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+              name !== group.name ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div>{t('common:unsaved-changes')}</div>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              {t('common:save')}
-            </button>
+            <div className="flex w-full items-center gap-2 md:w-fit">
+              <button
+                className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                  name !== group.name
+                    ? 'hover:bg-zinc-300/10'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={reset}
+              >
+                {t('common:reset')}
+              </button>
+
+              <button
+                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
+                  name !== group.name
+                    ? 'hover:bg-blue-300/20'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={showEditModal}
+              >
+                {t('common:save')}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">{t('basic-info')}</div>
@@ -152,14 +179,20 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               required
             />
           </SettingItemCard>
+
+          <SettingItemCard
+            title={t('security')}
+            description={t('security-description')}
+            onDelete={showDeleteModal}
+          />
         </div>
       </div>
     </>
   );
 };
 
-RoleDetailsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
+UserGroupSettingsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="user_group_details">{page}</NestedLayout>;
 };
 
-export default RoleDetailsPage;
+export default UserGroupSettingsPage;

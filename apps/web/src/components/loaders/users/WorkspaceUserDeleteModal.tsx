@@ -1,6 +1,6 @@
 import { Timeline } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
@@ -117,7 +117,7 @@ const WorkspaceUserDeleteModal = ({ wsId, userId, groups }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
+          bullet={<TrashIcon className="h-5 w-5" />}
           title={`Xoá vai trò (${groups?.length || 0})`}
         >
           {progress.removeRoles === 'success' ? (
@@ -140,7 +140,7 @@ const WorkspaceUserDeleteModal = ({ wsId, userId, groups }: Props) => {
         </Timeline.Item>
 
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
+          bullet={<TrashIcon className="h-5 w-5" />}
           title="Xoá người dùng"
         >
           {progress.removeDetails === 'success' ? (

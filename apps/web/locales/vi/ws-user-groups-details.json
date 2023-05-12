@@ -22,5 +22,7 @@
   "cant-delete": "Không thể xóa nhóm người dùng",
   "completion-pending": "Đang chờ hoàn thành",
   "completion-cancelled": "Đã hủy hoàn thành",
-  "completed": "Đã hoàn thành"
+  "completed": "Đã hoàn thành",
+  "security": "Bảo mật",
+  "security-description": "Điều này sẽ ảnh hưởng đến bảo mật của nhóm."
 }

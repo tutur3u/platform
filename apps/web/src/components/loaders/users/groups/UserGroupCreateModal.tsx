@@ -19,7 +19,7 @@ interface Progress {
 }
 
 const UserGroupCreateModal = ({ wsId, group }: Props) => {
-  const { t } = useTranslation('ws-users-groups-details');
+  const { t } = useTranslation('ws-user-groups-details');
 
   const router = useRouter();
 

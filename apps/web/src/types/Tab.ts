@@ -9,7 +9,8 @@ export type Mode =
   | 'infrastructure'
   | 'wallet_details'
   | 'product_details'
-  | 'user_details';
+  | 'user_details'
+  | 'user_group_details';
 
 export type Tab = {
   name: string;

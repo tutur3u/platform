@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { UserGroup } from '../../../../../../types/primitives/UserGroup';
+import { UserGroup } from '../../../../../../../types/primitives/UserGroup';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {

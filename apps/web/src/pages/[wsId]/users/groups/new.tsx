@@ -14,7 +14,7 @@ import useTranslation from 'next-translate/useTranslation';
 export const getServerSideProps = enforceHasWorkspaces;
 
 const NewRolePage: PageWithLayoutProps = () => {
-  const { t } = useTranslation('ws-users-groups-details');
+  const { t } = useTranslation('ws-user-groups-details');
 
   const usersLabel = t('sidebar-tabs:users');
   const groupsLabel = t('workspace-users-tabs:groups');

@@ -4,8 +4,10 @@ import {
   DEFAULT_APP_THEME,
   SIDEBAR_STATE_KEY,
   DEFAULT_SIDEBAR_STATE,
-  HIDE_EXPERIMENTAL_KEY,
-  DEFAULT_HIDE_EXPERIMENTAL,
+  HIDE_EXPERIMENTAL_ON_SIDEBAR_KEY,
+  DEFAULT_HIDE_EXPERIMENTAL_ON_SIDEBAR,
+  HIDE_EXPERIMENTAL_ON_TOP_NAVBAR_KEY,
+  DEFAULT_HIDE_EXPERIMENTAL_ON_TOP_NAVBAR,
 } from '../constants/prefs';
 import { useLocalStorage } from '@mantine/hooks';
 
@@ -20,8 +22,11 @@ const AppearanceContext = createContext({
   setSidebar: (state: SidebarState) => console.log(state),
   toggleSidebar: () => console.log('toggle'),
 
-  hideExperimental: true,
-  toggleHideExperimental: () => console.log('toggle'),
+  hideExperimentalOnSidebar: true,
+  toggleHideExperimentalOnSidebar: () => console.log('toggle'),
+
+  hideExperimentalOnTopNav: true,
+  toggleHideExperimentalOnTopNav: () => console.log('toggle'),
 });
 
 export const AppearanceProvider = ({
@@ -39,15 +44,26 @@ export const AppearanceProvider = ({
     defaultValue: DEFAULT_SIDEBAR_STATE,
   });
 
-  const [hideExperimental, setHideExperimental] = useLocalStorage<boolean>({
-    key: HIDE_EXPERIMENTAL_KEY,
-    defaultValue: DEFAULT_HIDE_EXPERIMENTAL,
-  });
+  const [hideExperimentalOnSidebar, setHideExperimentalOnSidebar] =
+    useLocalStorage<boolean>({
+      key: HIDE_EXPERIMENTAL_ON_SIDEBAR_KEY,
+      defaultValue: DEFAULT_HIDE_EXPERIMENTAL_ON_SIDEBAR,
+    });
+
+  const [hideExperimentalOnTopNav, setHideExperimentalOnTopNav] =
+    useLocalStorage<boolean>({
+      key: HIDE_EXPERIMENTAL_ON_TOP_NAVBAR_KEY,
+      defaultValue: DEFAULT_HIDE_EXPERIMENTAL_ON_TOP_NAVBAR,
+    });
 
   const toggleSidebar = () =>
     setSidebar((prev) => (prev === 'open' ? 'closed' : 'open'));
 
-  const toggleHideExperimental = () => setHideExperimental((prev) => !prev);
+  const toggleHideExperimentalOnSidebar = () =>
+    setHideExperimentalOnSidebar((prev) => !prev);
+
+  const toggleHideExperimentalOnTopNav = () =>
+    setHideExperimentalOnTopNav((prev) => !prev);
 
   const values = {
     theme,
@@ -57,8 +73,11 @@ export const AppearanceProvider = ({
     setSidebar,
     toggleSidebar,
 
-    hideExperimental,
-    toggleHideExperimental,
+    hideExperimentalOnSidebar,
+    toggleHideExperimentalOnSidebar,
+
+    hideExperimentalOnTopNav,
+    toggleHideExperimentalOnTopNav,
   };
 
   return (

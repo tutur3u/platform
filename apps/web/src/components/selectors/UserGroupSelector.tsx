@@ -12,6 +12,7 @@ interface Props {
   blacklist?: string[];
   className?: string;
 
+  hideLabel?: boolean;
   disabled?: boolean;
   required?: boolean;
   searchable?: boolean;
@@ -25,6 +26,7 @@ const UserGroupSelector = ({
   blacklist = [],
   className,
 
+  hideLabel = false,
   disabled = false,
   required = false,
   searchable = true,
@@ -93,7 +95,7 @@ const UserGroupSelector = ({
 
   return (
     <Select
-      label="Nhóm người dùng"
+      label={hideLabel ? undefined : 'Nhóm người dùng'}
       placeholder="Chọn nhóm người dùng"
       data={data}
       value={group?.id}

@@ -48,7 +48,8 @@ const fetchUserGroups = async (
     .from('workspace_user_groups')
     .select('id, name, created_at')
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .order('name')
+    .order('id');
 
   if (blacklist && typeof blacklist === 'string') {
     queryBuilder.not('id', 'in', `(${blacklist})`);

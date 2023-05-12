@@ -60,10 +60,10 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws?.id}/users?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id ? `/api/workspaces/${ws.id}/users/count` : null;
+  const { data } = useSWR<{ data: WorkspaceUser[]; count: number }>(apiPath);
 
-  const { data: users } = useSWR<WorkspaceUser[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  const users = data?.data;
+  const count = data?.count;
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',

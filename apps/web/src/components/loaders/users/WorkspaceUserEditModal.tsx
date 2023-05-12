@@ -1,9 +1,10 @@
 import { Timeline } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import {
-  BanknotesIcon,
+  ArrowPathIcon,
   CheckBadgeIcon,
   PlusIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
@@ -174,7 +175,7 @@ const WorkspaceUserEditModal = ({ wsId, user, oldGroups, groups }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
+          bullet={<ArrowPathIcon className="h-5 w-5" />}
           title="Cập nhật thông tin cơ bản"
         >
           {progress.updatedDetails === 'success' ? (
@@ -193,7 +194,7 @@ const WorkspaceUserEditModal = ({ wsId, user, oldGroups, groups }: Props) => {
         </Timeline.Item>
 
         <Timeline.Item
-          bullet={<BanknotesIcon className="h-5 w-5" />}
+          bullet={<TrashIcon className="h-5 w-5" />}
           title={`Xoá vai trò (${groupsToRemove?.length || 0})`}
         >
           {progress.removeGroups === 'success' ? (
@@ -212,7 +213,7 @@ const WorkspaceUserEditModal = ({ wsId, user, oldGroups, groups }: Props) => {
         </Timeline.Item>
 
         <Timeline.Item
-          bullet={<BanknotesIcon className="h-5 w-5" />}
+          bullet={<PlusIcon className="h-5 w-5" />}
           title={`Thêm vai trò (${groupsToAdd?.length || 0})`}
         >
           {progress.addGroups === 'success' ? (

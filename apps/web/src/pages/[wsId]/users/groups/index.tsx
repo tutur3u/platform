@@ -98,7 +98,7 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label={t('ws-users-groups-configs:show-users')}
+            label={t('ws-user-groups-configs:show-users')}
             checked={showUsers}
             onChange={(event) => setShowUsers(event.currentTarget.checked)}
           />
@@ -119,11 +119,13 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
         >
           <PlusCardButton href={`/${ws.id}/users/groups/new`} />
           {groups &&
-            groups?.map((r) => (
+            groups?.map((group) => (
               <GeneralItemCard
-                key={r.id}
-                name={r.name}
-                href={`/${ws.id}/users/groups/${r.id}`}
+                key={group.id}
+                name={group.name}
+                href={`/${ws.id}/users/groups/${group.id}`}
+                amountFetchPath={`/api/workspaces/${ws.id}/users/groups/${group.id}/amount`}
+                amountTrailing={t('sidebar-tabs:users').toLowerCase()}
                 showAmount={showUsers}
               />
             ))}
