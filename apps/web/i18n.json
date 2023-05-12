@@ -83,6 +83,16 @@
     "/[wsId]/users/groups/[groupId]": [
       "sidebar-tabs",
       "workspace-users-tabs",
+      "search",
+      "view-mode",
+      "pagination",
+      "ws-users-list-configs",
+      "ws-user-groups-details",
+      "ws-user-groups-details-tabs"
+    ],
+    "/[wsId]/users/groups/[groupId]/settings": [
+      "sidebar-tabs",
+      "workspace-users-tabs",
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"
     ],

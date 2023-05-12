@@ -1,27 +1,28 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Divider, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import UserGroupEditModal from '../../../../components/loaders/users/groups/UserGroupEditModal';
-import UserGroupDeleteModal from '../../../../components/loaders/users/groups/UserGroupDeleteModal';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import SettingItemCard from '../../../../../components/settings/SettingItemCard';
+import UserGroupEditModal from '../../../../../components/loaders/users/groups/UserGroupEditModal';
+import UserGroupDeleteModal from '../../../../../components/loaders/users/groups/UserGroupDeleteModal';
 import { useRouter } from 'next/router';
-import { UserGroup } from '../../../../types/primitives/UserGroup';
+import { UserGroup } from '../../../../../types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const RoleDetailsPage: PageWithLayoutProps = () => {
+const UserGroupSettingsPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('ws-user-groups-details');
 
   const usersLabel = t('sidebar-tabs:users');
   const groupsLabel = t('workspace-users-tabs:groups');
+  const settingsLabel = t('ws-user-groups-details-tabs:settings');
   const untitledLabel = t('common:untitled');
 
   const { setRootSegment } = useSegments();
@@ -52,12 +53,24 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               content: group?.name || untitledLabel,
               href: `/${ws.id}/users/groups/${group.id}`,
             },
+            {
+              content: settingsLabel,
+              href: `/${ws.id}/users/groups/${group.id}/settings`,
+            },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [ws, group, usersLabel, groupsLabel, untitledLabel, setRootSegment]);
+  }, [
+    ws,
+    group,
+    usersLabel,
+    groupsLabel,
+    settingsLabel,
+    untitledLabel,
+    setRootSegment,
+  ]);
 
   const [name, setName] = useState<string>('');
 
@@ -108,7 +121,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={`${groupsLabel} – ${usersLabel}`} />
+      <HeaderX label={`${settingsLabel} – ${group?.name || untitledLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
@@ -158,8 +171,8 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
   );
 };
 
-RoleDetailsPage.getLayout = function getLayout(page: ReactElement) {
+UserGroupSettingsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="user_group_details">{page}</NestedLayout>;
 };
 
-export default RoleDetailsPage;
+export default UserGroupSettingsPage;

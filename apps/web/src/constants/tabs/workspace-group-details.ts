@@ -10,7 +10,6 @@ export const wsUserGroupDetailsTabs: NavTabs = {
     {
       name: 'settings',
       href: '/[wsId]/users/groups/[groupId]/settings',
-      disabled: true,
     },
   ],
 };

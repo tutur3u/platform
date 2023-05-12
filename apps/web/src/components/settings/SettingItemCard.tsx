@@ -3,7 +3,7 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   title: string;
-  description: string;
+  description?: string;
   saving?: boolean;
 
   disabled?: boolean;

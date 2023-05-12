@@ -42,15 +42,24 @@ const fetchWorkspaceUsers = async (
     res,
   });
 
-  const { query, page, itemsPerPage } = req.query;
+  const { query, page, itemsPerPage, groupId } = req.query;
 
   const queryBuilder = supabase
     .from('workspace_users')
     .select(
-      'id, name, gender, birthday, ethnicity, national_id, guardian, note, phone, email, address'
+      `id, name, gender, birthday, ethnicity, national_id, guardian, note, phone, email, address${
+        groupId ? ',workspace_user_groups!inner(id)' : ''
+      }`,
+      {
+        count: 'exact',
+      }
     )
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
+
+  if (groupId) {
+    queryBuilder.eq('workspace_user_groups.id', groupId);
+  }
 
   if (query) {
     queryBuilder.ilike('name', `%${query}%`);
@@ -71,10 +80,10 @@ const fetchWorkspaceUsers = async (
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error } = await queryBuilder;
+  const { data, error, count } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({ data, count });
 };
 
 const createWorkspaceUser = async (
