@@ -116,7 +116,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
-    router.push('/login');
+    router.push('/');
   };
 
   const logOut = t('common:logout');

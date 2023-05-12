@@ -118,7 +118,9 @@ const WorkspaceMemberEditForm = ({
           await onSubmit(wsId, newUser);
           closeAllModals();
         }}
-        disabled={!role}
+        disabled={
+          !role || (role === user?.role && roleTitle === user?.role_title)
+        }
         className="bg-blue-300/10"
       >
         {user?.id ? t('common:save') : t('invite_member')}

@@ -8,7 +8,6 @@ import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
 import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
-import { mutate } from 'swr';
 
 interface Props {
   forceLoading?: boolean;
@@ -18,25 +17,42 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
   const router = useRouter();
 
   const { user, updateUser } = useUser();
+  const { workspaces, workspaceInvites } = useWorkspaces();
 
   const [displayName, setDisplayName] = useState('');
   const [handle, setUsername] = useState('');
 
-  const [profileCompleted, setProfileCompleted] = useState(false);
+  const [profileCompleted, setProfileCompleted] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !workspaces) return;
 
     const hasDisplayName = (user?.display_name || '')?.length > 0;
     const hasUsername = (user?.handle || '')?.length > 0;
 
     setProfileCompleted(hasDisplayName && hasUsername);
-    if (hasDisplayName && hasUsername) return;
+
+    const hasWorkspaces = workspaces.length > 0;
+
+    if (hasDisplayName && hasUsername && hasWorkspaces) {
+      const { nextUrl, withWorkspace } = router.query;
+
+      if (!workspaces?.[0]?.id) return;
+      const defaultUrl = `/${workspaces[0].id}`;
+
+      const url =
+        withWorkspace === 'true'
+          ? `${defaultUrl}/` + nextUrl
+          : nextUrl?.toString() || defaultUrl;
+
+      if (url) router.push(url);
+      return;
+    } else if (hasDisplayName && hasUsername) return;
 
     setDisplayName(user?.display_name || '');
     setUsername(user?.handle || '');
-  }, [user]);
+  }, [router, user, workspaces, profileCompleted]);
 
   const updateProfile = async () => {
     setSaving(true);
@@ -48,36 +64,6 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
 
     setSaving(false);
   };
-
-  const { workspaces, workspaceInvites } = useWorkspaces();
-
-  useEffect(() => {
-    const fetchWorkspaces = async () => {
-      mutate('/api/workspaces/current');
-
-      const res = await fetch('/api/workspaces/current');
-      const data = await res.json();
-
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { nextUrl, withWorkspace } = router.query;
-
-      if (data?.length > 0) {
-        const defaultUrl = `/${data?.[0]?.id}`;
-
-        const url =
-          withWorkspace === 'true'
-            ? `/${defaultUrl}/` + nextUrl
-            : nextUrl?.toString() || `/${defaultUrl}`;
-
-        if (url) router.push(url);
-      }
-    };
-
-    if (!profileCompleted) return;
-
-    fetchWorkspaces();
-  }, [router, workspaces, profileCompleted]);
 
   const { t } = useTranslation('onboarding');
 

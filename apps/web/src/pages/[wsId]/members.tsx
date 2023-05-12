@@ -62,7 +62,7 @@ const WorkspaceMembersPage = () => {
   const user = useUser();
 
   const deleteMember = async (member: User, invited: boolean) => {
-    if (!member?.id) return;
+    if (!user?.id || !member?.id) return;
 
     const response = await fetch(
       `/api/workspaces/${wsId}/members/${member.id}${
@@ -74,8 +74,13 @@ const WorkspaceMembersPage = () => {
     );
 
     if (response.ok) {
-      mutate(`/api/workspaces/${wsId}/members`);
-      mutate(`/api/workspaces/${wsId}/members/invites`);
+      if (user.id === member.id) {
+        mutate(`/api/workspaces/current`);
+      } else {
+        mutate(`/api/workspaces/${wsId}/members`);
+        mutate(`/api/workspaces/${wsId}/members/invites`);
+      }
+
       showNotification({
         title: invited ? t('invitation_revoked') : t('member_removed'),
         message: invited
