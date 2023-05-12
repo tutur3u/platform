@@ -55,7 +55,8 @@ const fetchWorkspaceUsers = async (
       }
     )
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .order('name')
+    .order('id');
 
   if (groupId) {
     queryBuilder.eq('workspace_user_groups.id', groupId);

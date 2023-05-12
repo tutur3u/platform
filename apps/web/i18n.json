@@ -99,6 +99,7 @@
 
     "/[wsId]/users/new": ["sidebar-tabs"],
     "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],
+    "/[wsId]/users/[userId]/settings": ["sidebar-tabs", "ws-user-details-tabs"],
 
     "/[wsId]/attendance": ["sidebar-tabs"],
 

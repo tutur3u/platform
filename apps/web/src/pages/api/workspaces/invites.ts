@@ -32,10 +32,11 @@ const fetchInvites = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError) return res.status(401).json({ error: userError.message });
+  if (!user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
 
   const { data, error } = await supabase
     .from('workspace_invites')

@@ -12,7 +12,8 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError) return res.status(401).json({ error: userError.message });
+  if (!user?.id || userError)
+    return res.status(401).json({ error: 'Unauthorized.' });
 
   const publicPromise = supabase
     .from('users')
@@ -48,8 +49,8 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError) return res.status(401).json({ error: userError.message });
-  if (!user?.id) return res.status(401).json({ error: 'User not found' });
+  if (!user?.id || userError)
+    return res.status(401).json({ error: 'Unauthorized.' });
 
   const { display_name, handle, birthday } = req.body;
 
