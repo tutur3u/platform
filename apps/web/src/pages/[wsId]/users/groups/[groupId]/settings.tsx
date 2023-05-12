@@ -128,35 +128,39 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label={`${settingsLabel} – ${group?.name || untitledLabel}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div
-          className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
-            group && name !== group.name ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <div>{t('unsaved-changes')}</div>
+        {group && hasRequiredFields() && (
+          <div
+            className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+              name !== group.name ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div>{t('common:unsaved-changes')}</div>
 
-          <div className="flex w-full items-center gap-2 md:w-fit">
-            <button
-              className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
-                group ? 'hover:bg-zinc-300/10' : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={group ? reset : undefined}
-            >
-              {t('reset')}
-            </button>
+            <div className="flex w-full items-center gap-2 md:w-fit">
+              <button
+                className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                  name !== group.name
+                    ? 'hover:bg-zinc-300/10'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={reset}
+              >
+                {t('common:reset')}
+              </button>
 
-            <button
-              className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              {t('common:save')}
-            </button>
+              <button
+                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
+                  name !== group.name
+                    ? 'hover:bg-blue-300/20'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={showEditModal}
+              >
+                {t('common:save')}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">

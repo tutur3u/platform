@@ -23,6 +23,7 @@ import WorkspaceUserEditModal from '../../../../components/loaders/users/Workspa
 import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
 import { UserGroup } from '../../../../types/primitives/UserGroup';
 import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -42,6 +43,8 @@ const genders = [
 ];
 
 const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation();
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -207,35 +210,89 @@ const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
     });
   };
 
+  const reset = () => {
+    if (!user) return;
+    if (typeof userId !== 'string') return;
+    if (!ws?.id) return;
+
+    setName(user?.name || '');
+    setGender(user?.gender || '');
+    setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
+    setEthnicity(user?.ethnicity || '');
+    setNationalId(user?.national_id || '');
+    setGuardian(user?.guardian || '');
+    setNote(user?.note || '');
+    setPhone(user?.phone || '');
+    setEmail(user?.email || '');
+    setAddress(user?.address || '');
+    setGroups(userGroups || []);
+  };
+
+  const isDirty = () => {
+    if (!user) return false;
+    if (typeof userId !== 'string') return false;
+    if (!ws?.id) return false;
+
+    if (
+      user?.birthday
+        ? !moment(user.birthday).isSame(moment(birthday))
+        : !birthday
+    )
+      return true;
+
+    if (name !== user.name) return true;
+    if (gender !== user.gender) return true;
+    if (ethnicity !== user.ethnicity) return true;
+    if (nationalId !== user.national_id) return true;
+    if (guardian !== user.guardian) return true;
+    if (note !== user.note) return true;
+    if (phone !== user.phone) return true;
+    if (email !== user.email) return true;
+    if (address !== user.address) return true;
+    if (groups.length !== userGroups?.length) return true;
+    if (groups.some((group, i) => group.id !== userGroups[i].id)) return true;
+
+    return false;
+  };
+
   return (
     <>
       <HeaderX label="Sản phẩm – Kho hàng" />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                user ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={user ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
+        {user && hasRequiredFields() && (
+          <div
+            className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+              isDirty() ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div>{t('common:unsaved-changes')}</div>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              Lưu thay đổi
-            </button>
+            <div className="flex w-full items-center gap-2 md:w-fit">
+              <button
+                className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                  isDirty()
+                    ? 'hover:bg-zinc-300/10'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={reset}
+              >
+                {t('common:reset')}
+              </button>
+
+              <button
+                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
+                  isDirty()
+                    ? 'hover:bg-blue-300/20'
+                    : 'pointer-events-none cursor-not-allowed opacity-50'
+                }`}
+                onClick={showEditModal}
+              >
+                {t('common:save')}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <Divider className="my-4" />
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
             <div className="col-span-full">
@@ -315,6 +372,18 @@ const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
               className="md:col-span-2"
               minRows={5}
             />
+
+            <Divider className="col-span-full my-2" />
+            <div className="col-span-full">
+              <div className="text-2xl font-semibold">Bảo mật</div>
+              <Divider className="my-2" variant="dashed" />
+            </div>
+            <div
+              onClick={showDeleteModal}
+              className="flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+            >
+              {t('common:delete')}
+            </div>
           </div>
 
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
