@@ -128,6 +128,10 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   }, [freshWsId]);
 
   useEffect(() => {
+    if (!user || wsError) setCachedWsId(null);
+  }, [user, wsError]);
+
+  useEffect(() => {
     const updateWsId = async () => {
       const res = await fetch('/api/workspaces/current');
       const data = await res.json();
@@ -135,8 +139,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       setCachedWsId(data?.current?.[0]?.id);
     };
 
-    if (!freshWsId && !cachedWsId) updateWsId();
-  }, [freshWsId, cachedWsId]);
+    if (user && !freshWsId && !cachedWsId) updateWsId();
+  }, [user, freshWsId, cachedWsId]);
 
   const { data: workspaceInvites, error: workspaceInvitesError } = useSWR<
     Workspace[]
