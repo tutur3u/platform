@@ -289,8 +289,8 @@ const NewPage: PageWithLayoutProps = () => {
             {products?.length > 0 && (
               <div className="col-span-full">
                 <NumberInput
-                  label={t('diff')}
-                  placeholder={t('diff-placeholder')}
+                  label={t('total')}
+                  placeholder={t('total-placeholder')}
                   value={price + (diff || 0)}
                   onChange={(e) => setDiff((e || 0) - price)}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}

@@ -21,12 +21,18 @@
   "note": "Note",
   "note-placeholder": "Enter note for this invoice",
   "add-note": "Add note",
-  "diff": "The amount customer needs to pay",
-  "diff-placeholder": "Enter the amount customer needs to pay",
+  "total": "The amount customer needs to pay",
+  "total-placeholder": "Enter the amount customer needs to pay",
   "reorder": "Reorder",
   "discount": "Customer will receive a discount of",
   "extra-pay": "Customer will pay an extra of",
   "for-this-invoice": "for this invoice.",
   "products": "Products",
-  "add-product": "Add product"
+  "add-product": "Add product",
+  "update-invoice": "Update invoice",
+  "delete-invoice": "Delete invoice",
+  "reopen-invoice": "Reopen invoice",
+  "close-invoice": "Close invoice",
+  "save-changes": "Save changes",
+  "examination": "Medical examination"
 }
