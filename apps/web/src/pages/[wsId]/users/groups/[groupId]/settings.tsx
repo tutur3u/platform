@@ -130,8 +130,10 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         {group && hasRequiredFields() && (
           <div
-            className={`absolute inset-x-0 bottom-0 mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded border border-zinc-300/10 bg-zinc-900 p-4 transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
-              name !== group.name ? 'opacity-100' : 'opacity-0'
+            className={`bg-bg-zinc-900/80 absolute inset-x-0 bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300/10 p-4 backdrop-blur transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+              name !== group.name
+                ? 'opacity-100'
+                : 'pointer-events-none opacity-0'
             }`}
           >
             <div>{t('common:unsaved-changes')}</div>
