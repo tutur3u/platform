@@ -7,6 +7,7 @@ import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import Providers from '../components/common/Providers';
 import Analytics from '../components/common/Analytics';
 import usePersistLocale from '../hooks/usePersistLocale';
+import { Database } from '../types/database.types';
 
 export default function Application({
   Component,
@@ -16,7 +17,9 @@ export default function Application({
   usePersistLocale();
 
   // Create a new supabase browser client on every first render.
-  const [supabaseClient] = useState(() => createBrowserSupabaseClient());
+  const [supabaseClient] = useState(() =>
+    createBrowserSupabaseClient<Database>()
+  );
 
   //* Use the layout defined at the page level, if available
   const getLayout = Component?.getLayout || ((page: ReactElement) => page);

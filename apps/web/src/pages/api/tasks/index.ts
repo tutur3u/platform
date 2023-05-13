@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Database } from '../../../types/database.types';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -28,7 +29,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default handler;
 
 const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createServerSupabaseClient<Database>({
     req,
     res,
   });
@@ -71,7 +72,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (option === 'my-tasks') {
     const { data, error } = await supabase.rpc('get_user_tasks', {
-      _board_id: boardId,
+      _board_id: boardId as string,
     });
 
     if (error) return res.status(401).json({ error: error.message });
@@ -96,7 +97,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createServerSupabaseClient<Database>({
     req,
     res,
   });

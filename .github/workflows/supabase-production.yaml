@@ -1,4 +1,4 @@
-name: Supabase CI
+name: Supabase Production Migration
 
 on:
   push:
