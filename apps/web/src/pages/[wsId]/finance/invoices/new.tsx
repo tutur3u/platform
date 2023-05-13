@@ -27,21 +27,27 @@ const NewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const unnamedWorkspace = t('unnamed-ws');
+  const invoice = t('invoices');
+  const create = t('create');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Hoá đơn',
+              content: invoice,
               href: `/${ws.id}/finance/invoices`,
             },
             {
-              content: 'Tạo mới',
+              content: create,
               href: `/${ws.id}/finance/invoices/new`,
             },
           ]
@@ -49,7 +55,7 @@ const NewPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, invoice, unnamedWorkspace, create]);
 
   const [walletId, setWalletId] = useLocalStorage<string>({
     key: 'invoice-new-wallet-id',
@@ -123,7 +129,7 @@ const NewPage: PageWithLayoutProps = () => {
   const showCreateModal = () => {
     if (!ws) return;
     openModal({
-      title: <div className="font-semibold">Tạo hoá đơn mới</div>,
+      title: <div className="font-semibold">{t('create-invoice')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -157,11 +163,11 @@ const NewPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Hoá đơn – Tài chính" />
+      <HeaderX label={`${invoice} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <Switch
-            label="Đóng đơn sau khi tạo"
+            label={t('close-order-after-create')}
             checked={closeOrderAfterCreate}
             onChange={(event) =>
               setCloseOrderAfterCreate(event.currentTarget.checked)
@@ -176,7 +182,7 @@ const NewPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showCreateModal : undefined}
             >
-              Tạo mới
+              {t('create')}
             </button>
           </div>
         </div>
@@ -185,7 +191,7 @@ const NewPage: PageWithLayoutProps = () => {
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
           <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
             <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+              <div className="text-2xl font-semibold">{t('basic-info')}</div>
               <Divider className="my-2" variant="dashed" />
             </div>
 
@@ -198,7 +204,7 @@ const NewPage: PageWithLayoutProps = () => {
 
             <DateTimePicker
               value={takenAt}
-              label="Thời điểm giao dịch"
+              label={t('time')}
               onChange={(date) => setTakenAt(date || new Date())}
               className="col-span-full"
               classNames={{
@@ -212,8 +218,8 @@ const NewPage: PageWithLayoutProps = () => {
 
             {notice != null ? (
               <Textarea
-                label="Lời dặn"
-                placeholder="Nhập lời dặn cho hoá đơn này"
+                label={t('notice')}
+                placeholder={t('notice-placeholder')}
                 value={notice}
                 onChange={(e) => setNotice(e.currentTarget.value)}
                 className="md:col-span-2"
@@ -227,14 +233,14 @@ const NewPage: PageWithLayoutProps = () => {
                 className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNotice('')}
               >
-                + Thêm lời dặn
+                + {t('add-notice')}
               </button>
             )}
 
             {note != null ? (
               <Textarea
-                label="Ghi chú"
-                placeholder="Nhập ghi chú cho hoá đơn này"
+                label={t('note')}
+                placeholder={t('note-placeholder')}
                 value={note}
                 onChange={(e) => setNote(e.currentTarget.value)}
                 className="md:col-span-2"
@@ -248,7 +254,7 @@ const NewPage: PageWithLayoutProps = () => {
                 className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNote('')}
               >
-                + Thêm ghi chú
+                + {t('add-note')}
               </button>
             )}
 
@@ -283,8 +289,8 @@ const NewPage: PageWithLayoutProps = () => {
             {products?.length > 0 && (
               <div className="col-span-full">
                 <NumberInput
-                  label="Số tiền khách cần đưa"
-                  placeholder="Nhập số tiền khách cần đưa"
+                  label={t('diff')}
+                  placeholder={t('diff-placeholder')}
                   value={price + (diff || 0)}
                   onChange={(e) => setDiff((e || 0) - price)}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
@@ -301,18 +307,18 @@ const NewPage: PageWithLayoutProps = () => {
                       className="mt-2 w-full rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition hover:bg-red-300/20 md:col-span-2"
                       onClick={() => setDiff(0)}
                     >
-                      Đặt lại
+                      {t('reorder')}
                     </button>
                     <Divider className="my-2" />
                     <div className="my-2 rounded border border-orange-300/10 bg-orange-300/10 p-2 text-center font-semibold text-orange-300">
-                      Khách hàng sẽ {diff > 0 ? 'trả thêm' : 'được giảm'}{' '}
+                      {diff > 0 ? t('extra-pay') : t('discount')}{' '}
                       <span className="text-orange-100 underline decoration-orange-100 underline-offset-4">
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND',
                         }).format(Math.abs(diff))}
                       </span>{' '}
-                      cho hoá đơn này.
+                      {t('for-this-invoice')}
                     </div>
                   </>
                 )}
@@ -323,15 +329,15 @@ const NewPage: PageWithLayoutProps = () => {
           <div className="grid h-fit gap-x-4 gap-y-2 xl:col-span-3">
             <div className="col-span-full">
               <div className="text-2xl font-semibold">
-                Sản phẩm{' '}
+                {t('products')}{' '}
                 {products?.length > 0 && (
                   <>
                     (
                     <span className="text-blue-300">
+                      x
                       {Intl.NumberFormat('vi-VN', {
                         style: 'decimal',
-                      }).format(products?.length || 0)}{' '}
-                      SP
+                      }).format(products?.length || 0)}
                     </span>{' '}
                     {amount != 0 && (
                       <>
@@ -384,7 +390,7 @@ const NewPage: PageWithLayoutProps = () => {
                 className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
                 onClick={addEmptyProduct}
               >
-                + Thêm sản phẩm
+                + {t('add-product')}
               </button>
             </div>
 

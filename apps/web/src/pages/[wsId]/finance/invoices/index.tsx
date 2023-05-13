@@ -18,6 +18,7 @@ import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -25,17 +26,22 @@ const MiscsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const unnamedWorkspace = t('unnamed-ws');
+  const invoice = t('invoices');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Hoá đơn',
+              content: invoice,
               href: `/${ws.id}/finance/invoices`,
             },
           ]
@@ -43,7 +49,7 @@ const MiscsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, invoice, unnamedWorkspace]);
 
   const [status, setStatus] = useState('');
 
@@ -115,7 +121,7 @@ const MiscsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Hoá đơn – Tài chính" />
+      <HeaderX label={`${invoice} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -135,42 +141,42 @@ const MiscsPage: PageWithLayoutProps = () => {
           <div className="col-span-2 hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số điện thoại"
+            label={t('show-phone')}
             checked={showPhone}
             onChange={(event) => setShowPhone(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị giới tính"
+            label={t('show-gender')}
             checked={showGender}
             onChange={(event) => setShowGender(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị địa chỉ"
+            label={t('show-address')}
             checked={showAddress}
             onChange={(event) => setShowAddress(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị thời gian tạo"
+            label={t('show-time')}
             checked={showTime}
             onChange={(event) => setShowTime(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị trạng thái"
+            label={t('show-status')}
             checked={showStatus}
             onChange={(event) => setShowStatus(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị số lượng sản phẩm"
+            label={t('show-amount')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị giá tiền"
+            label={t('show-price')}
             checked={showPrice}
             onChange={(event) => setShowPrice(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị người tạo"
+            label={t('show-creator')}
             checked={showCreator}
             onChange={(event) => setShowCreator(event.currentTarget.checked)}
           />
