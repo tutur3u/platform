@@ -38,7 +38,7 @@ const DetailsPage: PageWithLayoutProps = () => {
   const unnamedWorkspace = t('unnamed-ws');
   const invoices = t('invoices');
   const loading = t('common:loading');
-  const examination = t('examination');
+  const checkup = t('checkup');
 
   const apiPath =
     wsId && invoiceId
@@ -68,7 +68,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: examination, href: `/${ws.id}/finance` },
+            { content: checkup, href: `/${ws.id}/finance` },
             {
               content: invoices,
               href: `/${ws.id}/finance/invoices`,
@@ -89,7 +89,7 @@ const DetailsPage: PageWithLayoutProps = () => {
     unnamedWorkspace,
     invoices,
     loading,
-    examination,
+    checkup,
   ]);
 
   const [walletId, setWalletId] = useState<string | null>(null);
