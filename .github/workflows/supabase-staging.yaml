@@ -1,4 +1,4 @@
-name: Supabase Staging Migration
+name: Supabase CI
 
 on:
   push:
