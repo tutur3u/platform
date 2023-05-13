@@ -26,7 +26,7 @@ const MiscsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
-  const { t } = useTranslation('transactions');
+  const { t } = useTranslation('invoices');
   const finance = t('finance');
   const unnamedWorkspace = t('unnamed-ws');
   const invoice = t('invoices');
