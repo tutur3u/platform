@@ -32,7 +32,7 @@ const TopNavbar = ({
       id="top-navigation"
       className={`${
         disableTabs ? 'h-[3.8rem]' : 'h-25'
-      } fixed inset-x-0 top-0 z-[100] flex-none border-b border-zinc-800 bg-[#111113]/50 backdrop-blur transition-all duration-300`}
+      } absolute inset-x-0 top-0 z-[100] clear-both flex-none border-b border-zinc-800 bg-[#111113]/50 backdrop-blur transition-all duration-300 content-none`}
       onMouseEnter={
         defaultNoTabs || !disableTabs ? undefined : () => setDisableTabs(false)
       }
