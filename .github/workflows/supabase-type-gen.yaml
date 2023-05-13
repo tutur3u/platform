@@ -12,11 +12,12 @@ jobs:
       - uses: supabase/setup-cli@v1
 
       - name: Start Supabase local development setup
-        run: supabase start
+        run: |
+          cd apps/web
+          supabase start
 
       - name: Verify generated types are up-to-date
         run: |
-          cd apps/web
           supabase gen types typescript --local > src/types/database.types.ts
           if [ "$(git diff --ignore-space-at-eol types.ts | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build. See status below:"
