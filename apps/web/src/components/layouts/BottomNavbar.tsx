@@ -9,7 +9,7 @@ import {
   HomeIcon,
 } from '@heroicons/react/24/outline';
 
-export default function BottomNavigationBar() {
+export default function BottomNavbar() {
   const { ws } = useWorkspaces();
 
   const { setSidebar } = useAppearance();
