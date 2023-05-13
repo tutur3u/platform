@@ -11,6 +11,7 @@ import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { mutate } from 'swr';
 import { Product } from '../../../types/primitives/Product';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -25,6 +26,10 @@ interface Progress {
 
 const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
   const router = useRouter();
+
+  const { t } = useTranslation('invoice-modal');
+  const success = t('common:success');
+  const invoiceDeleted = t('invoice-deleted');
 
   const [progress, setProgress] = useState<Progress>({
     removeProducts: 'idle',
@@ -41,11 +46,11 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
     if (!hasSuccess) return;
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá hoá đơn',
+      title: success,
+      message: invoiceDeleted,
       color: 'green',
     });
-  }, [hasSuccess, invoiceId]);
+  }, [hasSuccess, invoiceId, success, invoiceDeleted]);
 
   const removeProducts = async (products: Product[]) => {
     const removePromises = products.map((p) =>
@@ -64,8 +69,8 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá các sản phẩm',
+        title: t('common:error'),
+        message: t('cannot-remove-products'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removeProducts: 'error' }));
@@ -90,8 +95,8 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá hoá đơn',
+        title: t('common:error'),
+        message: t('cannot-delete-invoice'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, remove: 'error' }));
@@ -132,53 +137,61 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title={`Xoá sản phẩm (${products?.length || 0})`}
+          title={`${t('remove')} ${t('product')} (${products?.length || 0})`}
         >
           {progress.removeProducts === 'success' ? (
             <div className="text-green-300">
-              Đã xoá {products?.length || 0} sản phẩm
+              {t('removed')} {products?.length || 0} {t('product')}
             </div>
           ) : progress.removeProducts === 'error' ? (
             <div className="text-red-300">
-              Không thể xoá {products?.length || 0} sản phẩm
+              {t('cannot-remove')} {products?.length || 0} {t('product')}
             </div>
           ) : progress.removeProducts === 'loading' ? (
             <div className="text-blue-300">
-              Đang xoá {products?.length || 0} sản phẩm
+              {t('removing')} {products?.length || 0} {t('product')}
             </div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ xoá {products?.length || 0} sản phẩm
+              {t('pending-to-remove')} {products?.length || 0} {t('product')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title="Xoá hoá đơn"
+          title={`${t('delete')} ${t('invoice')}`}
         >
           {progress.remove === 'success' ? (
-            <div className="text-green-300">Đã xoá hoá đơn</div>
+            <div className="text-green-300">
+              {t('deleted')} {t('invoice')}
+            </div>
           ) : progress.remove === 'error' ? (
-            <div className="text-red-300">Không thể xoá hoá đơn</div>
+            <div className="text-red-300">
+              {t('cannot-delete')} {t('invoice')}
+            </div>
           ) : progress.remove === 'loading' ? (
-            <div className="text-blue-300">Đang xoá hoá đơn</div>
+            <div className="text-blue-300">
+              {t('deleting')} {t('invoice')}
+            </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá hoá đơn</div>
+            <div className="text-zinc-400/80">
+              {t('pending-invoice-deleted')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.remove === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('common:pending-completion')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -189,7 +202,7 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -222,12 +235,12 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

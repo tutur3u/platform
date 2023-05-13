@@ -33,5 +33,10 @@
   "empty": "Empty",
   "error": "Error",
   "back": "Back",
-  "untitled": "Untitled"
+  "untitled": "Untitled",
+  "completed": "Completed",
+  "cancel-completed": "Cancel completed",
+  "pending-completion": "Pending completion",
+  "return": "Return",
+  "creating": "Creating"
 }

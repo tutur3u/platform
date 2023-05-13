@@ -33,5 +33,10 @@
   "empty": "Trống",
   "error": "Lỗi",
   "back": "Quay lại",
-  "untitled": "Chưa đặt tên"
+  "untitled": "Chưa đặt tên",
+  "completed": "Đã hoàn tất",
+  "cancel-completed": "Đã huỷ hoàn tất",
+  "pending-completion": "Đang chờ hoàn tất",
+  "return": "Quay lại",
+  "creating": "Đang tạo"
 }

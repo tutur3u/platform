@@ -320,7 +320,8 @@
     "/[wsId]/finance/invoices/[invoiceId]": [
       "sidebar-tabs",
       "finance-tabs",
-      "invoices"
+      "invoices",
+      "invoice-modal"
     ],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
