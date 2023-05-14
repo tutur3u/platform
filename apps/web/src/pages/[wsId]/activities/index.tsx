@@ -75,8 +75,19 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={activitiesLabel} />
+
+      {ws?.id && (
+        <>
+          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+            <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
+            <p className="text-zinc-400">{t('ws-activities:description')}</p>
+          </div>
+          <Divider className="my-4" />
+        </>
+      )}
+
       <div className="flex min-h-full w-full flex-col pb-20">
-        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
             items={itemsPerPage}
@@ -92,7 +103,7 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
           />
         </div>
 
-        <Divider className="mt-4" />
+        <Divider className="mt-4" variant="dashed" />
         <PaginationIndicator
           activePage={activePage}
           setActivePage={setPage}

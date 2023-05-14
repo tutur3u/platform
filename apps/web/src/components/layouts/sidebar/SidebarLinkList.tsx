@@ -28,13 +28,11 @@ interface Props {
 
 const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const { t } = useTranslation('sidebar-tabs');
-  const { members } = useWorkspaces();
+  const { ws } = useWorkspaces();
 
   const user = useUser();
 
-  const currentMember = members?.find((m) => m.id === user?.id);
-  const currentRole = currentMember?.role || 'MEMBER';
-
+  const currentRole = ws?.role || 'MEMBER';
   const adminLevel = currentRole === 'ADMIN' || currentRole === 'OWNER';
 
   const home = t('home');

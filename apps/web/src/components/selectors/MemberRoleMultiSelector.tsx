@@ -1,29 +1,21 @@
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { MultiSelect } from '@mantine/core';
-import useSWR from 'swr';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { User } from '../../types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  userIds: string[];
-  setUserIds: (userIds: string[]) => void;
+  roles: string[];
+  setRoles: (roles: string[]) => void;
   className?: string;
+  disabled?: boolean;
 }
 
-const WorkspaceMemberMultiSelector = ({
-  userIds,
-  setUserIds,
+const MemberRoleMultiSelector = ({
+  roles,
+  setRoles,
   className,
+  disabled,
 }: Props) => {
-  const { ws } = useWorkspaces();
-  const { t } = useTranslation('ws-member-selector');
-
-  const apiPath = `/api/workspaces/${ws?.id}/members`;
-  const { data: fetchedData } = useSWR<{ data: User[] }>(
-    ws?.id ? apiPath : null
-  );
-  const users = fetchedData?.data;
+  const { t } = useTranslation('member-roles');
 
   const data = [
     {
@@ -31,41 +23,51 @@ const WorkspaceMemberMultiSelector = ({
       value: '',
       group: t('common:general'),
     },
-    ...(users?.map((u) => ({
-      label: u?.display_name || u?.handle || u?.email || u?.id,
-      value: u.id,
-      group: t('members'),
-    })) || []),
+    {
+      label: t('owner'),
+      value: 'OWNER',
+      group: t('common:other'),
+    },
+    {
+      label: t('admin'),
+      value: 'ADMIN',
+      group: t('common:other'),
+    },
+    {
+      label: t('member'),
+      value: 'MEMBER',
+      group: t('common:other'),
+    },
   ];
 
   const handleIdsChange = (ids: string[]) => {
-    if (ids.length === 0) return setUserIds(['']);
+    if (ids.length === 0) return setRoles(['']);
 
     // Only allow either all, or multiple categories to be selected
     if (ids[0] === '') {
       if (ids.length === 1) {
         // "All" is selected, so clear all other selections
-        setUserIds(ids);
+        setRoles(ids);
         return;
       }
 
       // "All" is not selected, so remove it from the list
-      setUserIds(ids.filter((id) => id !== ''));
+      setRoles(ids.filter((id) => id !== ''));
     } else if (ids.length > 1 && ids.includes('')) {
       // Since "All" is selected, remove all other selections
-      setUserIds(['']);
+      setRoles(['']);
     } else {
-      setUserIds(ids);
+      setRoles(ids);
     }
   };
 
   return (
     <MultiSelect
-      label={t('members')}
-      placeholder={t('select_members')}
+      label={t('roles')}
+      placeholder={t('select-roles')}
       icon={<UserCircleIcon className="h-5" />}
       data={data}
-      value={userIds.length > 0 ? userIds : ['']}
+      value={roles.length > 0 ? roles : ['']}
       onChange={handleIdsChange}
       className={className}
       styles={{
@@ -86,10 +88,10 @@ const WorkspaceMemberMultiSelector = ({
           },
         },
       }}
-      disabled={!users}
+      disabled={disabled}
       searchable
     />
   );
 };
 
-export default WorkspaceMemberMultiSelector;
+export default MemberRoleMultiSelector;

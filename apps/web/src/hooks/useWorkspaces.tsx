@@ -12,7 +12,6 @@ import { useUser } from '@supabase/auth-helpers-react';
 import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { Team } from '../types/primitives/Team';
-import { User } from '../types/primitives/User';
 
 const WorkspaceContext = createContext({
   workspaces: undefined as Workspace[] | undefined,
@@ -23,12 +22,6 @@ const WorkspaceContext = createContext({
 
   workspaceInvites: undefined as Workspace[] | undefined,
   workspaceInvitesLoading: true,
-
-  members: undefined as User[] | undefined,
-  membersLoading: true,
-
-  memberInvites: undefined as User[] | undefined,
-  memberInvitesLoading: true,
 
   teams: undefined as Team[] | undefined,
   teamsLoading: true,
@@ -147,18 +140,6 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   >(user ? '/api/workspaces/invites' : null);
 
   const workspaceInvitesLoading = !workspaceInvites && !workspaceInvitesError;
-
-  const { data: members, error: membersError } = useSWR<User[]>(
-    ws?.id ? `/api/workspaces/${ws.id}/members` : null
-  );
-
-  const { data: memberInvites, error: memberInvitesError } = useSWR<User[]>(
-    ws?.id ? `/api/workspaces/${ws.id}/members/invites` : null
-  );
-
-  const memberInvitesLoading = !memberInvites && !memberInvitesError;
-
-  const membersLoading = !members && !membersError;
 
   const { data: teams, error: teamsError } = useSWR<Team[]>(
     ws?.id ? `/api/workspaces/${ws.id}/teams` : null
@@ -355,12 +336,6 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
     workspaceInvites,
     workspaceInvitesLoading,
-
-    members,
-    membersLoading,
-
-    memberInvites,
-    memberInvitesLoading,
 
     teams,
     teamsLoading,

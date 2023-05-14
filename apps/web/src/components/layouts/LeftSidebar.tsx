@@ -30,6 +30,8 @@ import SidebarLinkList from './sidebar/SidebarLinkList';
 import SidebarTeamList from './sidebar/SidebarTeamList';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
 import { closeSidebarOnMobile } from '../../utils/responsive-helper';
+import { User } from '../../types/primitives/User';
+import useSWR from 'swr';
 
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
@@ -43,7 +45,17 @@ function LeftSidebar({ className }: SidebarProps) {
     router.push('/');
   };
 
-  const { ws, workspaceInvites, members } = useWorkspaces();
+  const { ws, workspaceInvites } = useWorkspaces();
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`
+    : null;
+
+  const { data, error } = useSWR<{ data: User[]; count: number }>(apiPath);
+
+  const members = data?.data;
+  const membersCount = data?.count || 0;
+  const membersLoading = !members && !error;
 
   const [userPopover, setUserPopover] = useState(false);
 
@@ -98,8 +110,7 @@ function LeftSidebar({ className }: SidebarProps) {
                     {ws.name || 'Unnamed Workspace'}
                   </div>
                   <div className="text-xs font-semibold">
-                    {members?.length || 0}{' '}
-                    {(members?.length || 0) <= 1 ? 'member' : 'members'}
+                    {membersCount} {membersCount <= 1 ? 'member' : 'members'}
                   </div>
                 </div>
               }
@@ -146,48 +157,66 @@ function LeftSidebar({ className }: SidebarProps) {
                   <div className="flex items-center justify-between">
                     <Tooltip.Group>
                       <Avatar.Group spacing="sm" color="blue">
-                        {members &&
-                          members.slice(0, 3).map((member) => (
-                            <Tooltip
-                              key={member.id}
-                              label={
-                                <div className="font-semibold">
-                                  <div>
-                                    {member?.display_name || member?.email}
-                                  </div>
-                                  {member?.handle && (
-                                    <div
-                                      className={
-                                        isRootWs
-                                          ? 'text-yellow-200'
-                                          : 'text-blue-300'
-                                      }
-                                    >
-                                      @{member.handle}
-                                    </div>
-                                  )}
-                                </div>
-                              }
-                              color={isRootWs ? '#2d291c' : '#182a3d'}
-                            >
+                        {membersLoading
+                          ? Array.from({ length: 4 }, (_, i) => (
                               <Avatar
+                                key={i}
                                 color={isRootWs ? 'yellow' : 'blue'}
                                 radius="xl"
+                                className="animate-pulse"
                                 classNames={{
                                   root: isRootWs ? 'border-yellow-900/20' : '',
                                 }}
                               >
-                                {getInitials(
-                                  member?.display_name || member?.email
-                                )}
+                                ...
                               </Avatar>
-                            </Tooltip>
-                          ))}
-                        {(members?.length || 0) > 3 && (
+                            ))
+                          : members &&
+                            members
+                              .slice(0, membersCount > 4 ? 3 : 4)
+                              .map((member) => (
+                                <Tooltip
+                                  key={member.id}
+                                  label={
+                                    <div className="font-semibold">
+                                      <div>
+                                        {member?.display_name || member?.email}
+                                      </div>
+                                      {member?.handle && (
+                                        <div
+                                          className={
+                                            isRootWs
+                                              ? 'text-yellow-200'
+                                              : 'text-blue-300'
+                                          }
+                                        >
+                                          @{member.handle}
+                                        </div>
+                                      )}
+                                    </div>
+                                  }
+                                  color={isRootWs ? '#2d291c' : '#182a3d'}
+                                >
+                                  <Avatar
+                                    color={isRootWs ? 'yellow' : 'blue'}
+                                    radius="xl"
+                                    classNames={{
+                                      root: isRootWs
+                                        ? 'border-yellow-900/20'
+                                        : '',
+                                    }}
+                                  >
+                                    {getInitials(
+                                      member?.display_name || member?.email
+                                    )}
+                                  </Avatar>
+                                </Tooltip>
+                              ))}
+                        {membersCount > 4 && (
                           <Tooltip
                             label={
                               <div className="font-semibold">
-                                {(members?.length || 0) - 3} {moreMembers}
+                                {membersCount - 3} {moreMembers}
                               </div>
                             }
                             color={isRootWs ? '#2d291c' : '#182a3d'}
@@ -199,7 +228,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                 root: isRootWs ? 'border-yellow-900/20' : '',
                               }}
                             >
-                              +{(members?.length || 0) - 3}
+                              +{membersCount - 3}
                             </Avatar>
                           </Tooltip>
                         )}

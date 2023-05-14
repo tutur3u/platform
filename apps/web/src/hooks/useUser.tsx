@@ -2,7 +2,6 @@ import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
-  Session,
   useSupabaseClient,
   useUser as useSupabaseUser,
 } from '@supabase/auth-helpers-react';
@@ -36,21 +35,14 @@ export const UserDataProvider = ({
   const isLoading = !user && !userError;
 
   useEffect(() => {
-    const syncData = async (session: Session | null) => {
-      if (!session) return;
-
+    const syncData = async () => {
       mutate('/api/user');
-      mutate('/api/workspaces/current');
       mutate('/api/workspaces/invited');
     };
 
     const removeData = async () => {
       mutate('/api/user', null);
-      mutate('/api/workspaces/current', null);
       mutate('/api/workspaces/invited', null);
-
-      await supabase.auth.signOut();
-      router.push('/login');
     };
 
     const {
@@ -63,7 +55,7 @@ export const UserDataProvider = ({
 
       const isSignedOut = event === 'SIGNED_OUT';
 
-      if (isAuthenticated) syncData(session);
+      if (isAuthenticated && session) syncData();
       else if (isSignedOut) removeData();
     });
 
