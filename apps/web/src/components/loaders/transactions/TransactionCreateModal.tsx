@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -27,6 +28,10 @@ const TransactionCreateModal = ({
 }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('transaction-modal');
+  const success = t('common:success');
+  const transactionCreated = t('transaction-created');
+
   const [progress, setProgress] = useState<Progress>({
     created: 'idle',
   });
@@ -37,11 +42,11 @@ const TransactionCreateModal = ({
   useEffect(() => {
     if (hasSuccess)
       showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo giao dịch',
+        title: success,
+        message: transactionCreated,
         color: 'green',
       });
-  }, [hasSuccess]);
+  }, [hasSuccess, success, transactionCreated]);
 
   const createTransaction = async (transaction: Transaction) => {
     const res = await fetch(
@@ -61,8 +66,8 @@ const TransactionCreateModal = ({
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo giao dịch',
+        title: t('common:error'),
+        message: t('cannot-create-transaction'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -91,30 +96,34 @@ const TransactionCreateModal = ({
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo giao dịch"
+          title={t('create-transaction')}
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo giao dịch</div>
+            <div className="text-green-300">{t('transaction-created')}</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo giao dịch</div>
+            <div className="text-red-300">{t('cannot-create-transaction')}</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo giao dịch</div>
+            <div className="text-blue-300">{t('creating-transaction')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo giao dịch</div>
+            <div className="text-zinc-400/80">
+              {t('pending-transaction-created')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -125,7 +134,7 @@ const TransactionCreateModal = ({
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -135,7 +144,7 @@ const TransactionCreateModal = ({
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem giao dịch
+            {t('transaction-details')}
           </Link>
         )}
 
@@ -168,12 +177,12 @@ const TransactionCreateModal = ({
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

@@ -160,7 +160,7 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
             <div className="text-blue-300">{t('updating-basic-info')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              {t('pending-update-basic-info')}
+              {t('pending-basic-info-updated')}
             </div>
           )}
         </Timeline.Item>

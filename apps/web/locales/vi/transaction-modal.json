@@ -1,0 +1,21 @@
+{
+  "cancel": "Huỷ",
+  "transaction-deleted": "Đã xoá giao dịch",
+  "cannot-delete-transaction": "Không thể xoá giao dịch",
+  "delete-transaction": "Xoá giao dịch",
+  "deleting-transaction": "Đang xoá giao dịch",
+  "pending-transaction-deleted": "Đang chờ xoá giao dịch",
+  "transaction-created": "Đã tạo giao dịch",
+  "cannot-create-transaction": "Không thể tạo giao dịch",
+  "create-transaction": "Tạo giao dịch",
+  "creating-transaction": "Đang tạo giao dịch",
+  "pending-transaction-created": "Đang chờ tạo giao dịch",
+  "transaction-details": "Xem giao dịch",
+  "transaction-updated": "Đã cập nhật giao dịch",
+  "cannot-update-transaction": "Không thể cập nhật giao dịch",
+  "update-basic-info": "Cập nhật thông tin cơ bản",
+  "basic-info-updated": "Đã cập nhật thông tin cơ bản",
+  "cannot-update-basic-info": "Không thể cập nhật thông tin cơ bản",
+  "updating-basic-info": "Đang cập nhật thông tin cơ bản",
+  "pending-basic-info-updated": "Đang chờ cập nhật thông tin cơ bản"
+}

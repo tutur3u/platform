@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 import { Status } from '../status';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -21,6 +22,10 @@ interface Progress {
 const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('transaction-modal');
+  const success = t('common:success');
+  const transactionUpdated = t('transaction-updated');
+
   const [progress, setProgress] = useState<Progress>({
     updated: 'idle',
   });
@@ -34,11 +39,11 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
     mutate(`/api/workspaces/${wsId}/finance/transactions/${transaction.id}`);
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật giao dịch',
+      title: success,
+      message: transactionUpdated,
       color: 'green',
     });
-  }, [hasSuccess, wsId, transaction.id]);
+  }, [hasSuccess, wsId, transaction.id, transactionUpdated, success]);
 
   const updateDetails = async () => {
     const res = await fetch(
@@ -58,8 +63,8 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật giao dịch',
+        title: t('common:error'),
+        message: t('cannot-update-transaction'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updated: 'error' }));
@@ -87,34 +92,34 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật thông tin cơ bản"
+          title={t('update-basic-info')}
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã cập nhật thông tin cơ bản</div>
+            <div className="text-green-300">{t('basic-info-updated')}</div>
           ) : progress.updated === 'error' ? (
-            <div className="text-red-300">
-              Không thể cập nhật thông tin cơ bản
-            </div>
+            <div className="text-red-300">{t('cannot-update-basic-info')}</div>
           ) : progress.updated === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật thông tin cơ bản</div>
+            <div className="text-blue-300">{t('updating-basic-info')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ cập nhật thông tin cơ bản
+              {t('pending-basic-info-updated')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -125,7 +130,7 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -134,7 +139,7 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem giao dịch
+            {t('transaction-details')}
           </button>
         )}
 
@@ -167,12 +172,12 @@ const TransactionEditModal = ({ wsId, transaction, redirectUrl }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>
