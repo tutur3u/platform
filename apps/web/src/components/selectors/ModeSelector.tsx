@@ -7,25 +7,36 @@ export type Mode = 'list' | 'grid';
 interface Props {
   mode: Mode;
   setMode: (mode: Mode) => void;
+  showAll?: boolean;
 }
 
-const ModeSelector = ({ mode, setMode }: Props) => {
+const ModeSelector = ({ mode, setMode, showAll = false }: Props) => {
   const { t } = useTranslation('view-mode');
 
-  const data =
-    mode === 'list'
-      ? [
-          {
-            label: t('list_view'),
-            value: 'list',
-          },
-        ]
-      : [
-          {
-            label: t('grid_view'),
-            value: 'grid',
-          },
-        ];
+  const data = showAll
+    ? [
+        {
+          label: t('list_view'),
+          value: 'list',
+        },
+        {
+          label: t('grid_view'),
+          value: 'grid',
+        },
+      ]
+    : mode === 'list'
+    ? [
+        {
+          label: t('list_view'),
+          value: 'list',
+        },
+      ]
+    : [
+        {
+          label: t('grid_view'),
+          value: 'grid',
+        },
+      ];
 
   return (
     <Select

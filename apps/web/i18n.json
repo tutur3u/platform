@@ -33,7 +33,15 @@
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs", "ws-home"],
     "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
-    "/[wsId]/members": ["sidebar-tabs", "workspace-tabs", "ws-members"],
+    "/[wsId]/members": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "search",
+      "view-mode",
+      "pagination",
+      "member-roles",
+      "ws-members"
+    ],
     "/[wsId]/activities": [
       "sidebar-tabs",
       "workspace-tabs",
@@ -54,7 +62,15 @@
     "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
 
     "/[wsId]/teams/[teamId]": ["sidebar-tabs", "team-tabs"],
-    "/[wsId]/teams/[teamId]/members": ["sidebar-tabs", "team-tabs"],
+    "/[wsId]/teams/[teamId]/members": [
+      "sidebar-tabs",
+      "team-tabs",
+      "search",
+      "view-mode",
+      "pagination",
+      "member-roles",
+      "ws-members"
+    ],
     "/[wsId]/teams/[teamId]/settings": ["sidebar-tabs", "team-tabs"],
 
     "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],

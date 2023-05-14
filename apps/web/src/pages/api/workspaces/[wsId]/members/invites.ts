@@ -35,17 +35,43 @@ const fetchInvites = async (
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
-  const { data, error } = await supabase
+  const { page, itemsPerPage, roles } = req.query;
+
+  const queryBuilder = supabase
     .from('workspace_invites')
-    .select('created_at, users(id, handle, display_name, avatar_url)')
+    .select('created_at, users(id, handle, display_name, avatar_url)', {
+      count: 'exact',
+    })
     .eq('ws_id', wsId);
+
+  if (roles && typeof roles === 'string') {
+    queryBuilder.eq('role', roles);
+  }
+
+  if (
+    page &&
+    itemsPerPage &&
+    typeof page === 'string' &&
+    typeof itemsPerPage === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(itemsPerPage);
+
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { count, data, error } = await queryBuilder;
 
   if (error) return res.status(500).json({ error: error.message });
 
-  return res.status(200).json(
-    data.map((member) => ({
+  return res.status(200).json({
+    data: data.map((member) => ({
       ...member.users,
       created_at: member.created_at,
-    }))
-  );
+    })),
+    count,
+  });
 };

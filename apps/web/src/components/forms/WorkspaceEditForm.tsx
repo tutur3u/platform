@@ -41,7 +41,7 @@ const WorkspaceEditForm = ({ ws, onSubmit, onDelete }: Props) => {
           fullWidth
           variant="subtle"
           onClick={() => {
-            const newWorkspace = { id: ws?.id || uuidv4(), name };
+            const newWorkspace = { id: ws?.id || uuidv4(), name } as Workspace;
 
             onSubmit(newWorkspace);
             closeAllModals();
