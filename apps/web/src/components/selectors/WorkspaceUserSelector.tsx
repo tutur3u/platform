@@ -4,6 +4,7 @@ import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   userId: string;
@@ -32,6 +33,8 @@ const WorkspaceUserSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('ws-selector');
+
   const apiPath = `/api/workspaces/${ws?.id}/users`;
   const { data: users } = useSWR<WorkspaceUser[]>(ws?.id ? apiPath : null);
 
@@ -44,7 +47,7 @@ const WorkspaceUserSelector = ({
       ]
     : [
         {
-          label: 'Khách vãng lai',
+          label: t('passersby'),
           value: '',
         },
         ...(users?.map((user) => ({
@@ -79,8 +82,8 @@ const WorkspaceUserSelector = ({
 
       if (!id || typeof id !== 'string') {
         showNotification({
-          title: 'Lỗi',
-          message: 'Không thể tạo người dùng',
+          title: t('common:error'),
+          message: t('cannot-create-user'),
           color: 'red',
         });
         return null;
@@ -89,8 +92,8 @@ const WorkspaceUserSelector = ({
       return { ...warehouse, id };
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo người dùng',
+        title: t('common:error'),
+        message: t('cannot-create-user'),
         color: 'red',
       });
       return null;
@@ -99,8 +102,8 @@ const WorkspaceUserSelector = ({
 
   return (
     <Select
-      label="Người dùng"
-      placeholder="Chọn người dùng"
+      label={t('user')}
+      placeholder={t('user-placeholder')}
       data={data}
       value={userId}
       onChange={setUserId}
@@ -125,7 +128,7 @@ const WorkspaceUserSelector = ({
       }}
       getCreateLabel={(query) => (
         <div>
-          + Tạo <span className="font-semibold">{query}</span>
+          + {t('create')} <span className="font-semibold">{query}</span>
         </div>
       )}
       onCreate={(query) => {
@@ -148,7 +151,7 @@ const WorkspaceUserSelector = ({
           };
         });
       }}
-      nothingFound="Không tìm thấy người dùng nào"
+      nothingFound={t('nothing-found')}
       disabled={!users || disabled}
       required={required}
       searchable={searchable}

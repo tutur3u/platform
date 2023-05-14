@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   walletId?: string | null;
@@ -46,6 +47,8 @@ const WalletSelector = ({
   creatable = true,
 }: Props) => {
   const router = useRouter();
+
+  const { t } = useTranslation('wallet-selector');
 
   const {
     query: { walletId },
@@ -141,8 +144,8 @@ const WalletSelector = ({
 
       if (!id || typeof id !== 'string') {
         showNotification({
-          title: 'Lỗi',
-          message: 'Không thể tạo nguồn tiền',
+          title: t('common:error'),
+          message: t('cannot-create-wallet'),
           color: 'red',
         });
         return null;
@@ -151,8 +154,8 @@ const WalletSelector = ({
       return { ...wallet, id };
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo nguồn tiền',
+        title: t('common:error'),
+        message: t('cannot-create-wallet'),
         color: 'red',
       });
       return null;
@@ -161,8 +164,8 @@ const WalletSelector = ({
 
   return (
     <Select
-      label={hideLabel ? undefined : 'Nguồn tiền'}
-      placeholder="Chọn nguồn tiền"
+      label={hideLabel ? undefined : t('wallet')}
+      placeholder={t('wallet-placeholder')}
       data={data}
       value={wallet?.id}
       onChange={(id) => setWallet(wallets?.find((v) => v.id === id) || null)}
@@ -187,7 +190,7 @@ const WalletSelector = ({
       }}
       getCreateLabel={(query) => (
         <div>
-          + Tạo <span className="font-semibold">{query}</span>
+          + {t('create')} <span className="font-semibold">{query}</span>
         </div>
       )}
       onCreate={(query) => {
@@ -212,7 +215,7 @@ const WalletSelector = ({
           };
         });
       }}
-      nothingFound="Không tìm thấy nguồn tiền nào"
+      nothingFound={t('nothing-found')}
       disabled={!wallets || disabled}
       required={required}
       searchable={searchable}
