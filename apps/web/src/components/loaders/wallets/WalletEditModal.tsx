@@ -24,10 +24,10 @@ interface Progress {
 const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
   const router = useRouter();
 
-  const { t } = useTranslation('wallet-edit-modal');
-  const success = t('success');
+  const { t } = useTranslation('wallet-modal');
+  const success = t('common:success');
   const walletUpdated = t('wallet-updated');
-  const error = t('error');
+  const error = t('common:error');
   const cannotUpdateWallet = t('cannot-update-wallet');
   const adjustment = t('adjustment');
   const cannotAdjustBalance = t('cannot-adjust-balance');
@@ -160,7 +160,7 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
             <div className="text-blue-300">{t('updating-basic-info')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              {t('waiting-for-update-basic-info')}
+              {t('pending-update-basic-info')}
             </div>
           )}
         </Timeline.Item>
@@ -177,22 +177,24 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
             <div className="text-blue-300">{t('adjusting-balance')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              {t('waiting-for-balance-adjusted')}
+              {t('pending-balance-adjusted')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title={t('complete')}
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.updateDetails === 'success' ? (
-            <div className="text-green-300">{t('completed')}</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">{t('cancel-completed')}</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">{t('pending-completion')}</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -245,12 +247,12 @@ const WalletEditModal = ({ wsId, oldWallet, wallet }: Props) => {
           }}
         >
           {hasError
-            ? t('return')
+            ? t('common:return')
             : hasSuccess
-            ? t('complete')
+            ? t('common:complete')
             : started
-            ? t('creating')
-            : t('start')}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

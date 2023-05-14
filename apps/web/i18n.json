@@ -268,8 +268,7 @@
       "sidebar-tabs",
       "wallet-details-tabs",
       "wallets",
-      "wallet-edit-modal",
-      "wallet-delete-modal"
+      "wallet-modal"
     ],
 
     "/[wsId]/finance/transactions": [
@@ -284,12 +283,14 @@
       "sidebar-tabs",
       "finance-tabs",
       "transactions",
-      "wallet-selector"
+      "wallet-selector",
+      "category-selector"
     ],
     "/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
       "finance-tabs",
-      "wallet-selector"
+      "wallet-selector",
+      "category-selector"
     ],
 
     "/[wsId]/finance/transactions/categories": [
@@ -325,7 +326,8 @@
       "invoices",
       "invoice-modal",
       "ws-selector",
-      "wallet-selector"
+      "wallet-selector",
+      "category-selector"
     ],
     "/[wsId]/finance/invoices/[invoiceId]": [
       "sidebar-tabs",
@@ -333,7 +335,8 @@
       "invoices",
       "invoice-modal",
       "ws-selector",
-      "wallet-selector"
+      "wallet-selector",
+      "category-selector"
     ],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],

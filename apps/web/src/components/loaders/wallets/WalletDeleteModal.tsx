@@ -19,10 +19,10 @@ interface Progress {
 const WalletDeleteModal = ({ wsId, walletId }: Props) => {
   const router = useRouter();
 
-  const { t } = useTranslation('wallet-delete-modal');
-  const success = t('success');
+  const { t } = useTranslation('wallet-modal');
+  const success = t('common:success');
   const walletDeleted = t('wallet-deleted');
-  const error = t('error');
+  const error = t('common:error');
   const cannotDeleteWallet = t('cannot-delete-wallet');
 
   const [progress, setProgress] = useState<Progress>({
@@ -95,22 +95,24 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
             <div className="text-blue-300">{t('deleting-wallet')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              {t('waiting-wallet-deleted')}
+              {t('pending-wallet-deleted')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title={t('complete')}
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">{t('completed')}</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">{t('cancel-completed')}</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">{t('pending-completion')}</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -154,12 +156,12 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
           }}
         >
           {hasError
-            ? t('return')
+            ? t('common:return')
             : hasSuccess
-            ? t('complete')
+            ? t('common:complete')
             : started
-            ? t('creating')
-            : t('start')}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>
