@@ -17,7 +17,7 @@ interface Progress {
   updated: Status;
 }
 
-const TransactionEditModal = ({ wsId, category }: Props) => {
+const TransactionCategoryEditModal = ({ wsId, category }: Props) => {
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -180,4 +180,4 @@ const TransactionEditModal = ({ wsId, category }: Props) => {
   );
 };
 
-export default TransactionEditModal;
+export default TransactionCategoryEditModal;
