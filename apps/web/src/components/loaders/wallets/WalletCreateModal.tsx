@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
 import { Wallet } from '../../../types/primitives/Wallet';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -20,6 +21,10 @@ interface Progress {
 const WalletCreateModal = ({ wsId, wallet }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('wallet-modal');
+  const success = t('common:success');
+  const walletCreated = t('wallet-created');
+
   const [progress, setProgress] = useState<Progress>({
     created: 'idle',
   });
@@ -30,11 +35,11 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
   useEffect(() => {
     if (hasSuccess)
       showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo nguồn tiền',
+        title: success,
+        message: walletCreated,
         color: 'green',
       });
-  }, [hasSuccess]);
+  }, [hasSuccess, success, walletCreated]);
 
   const createWallet = async () => {
     const res = await fetch(`/api/workspaces/${wsId}/finance/wallets`, {
@@ -51,8 +56,8 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo nguồn tiền',
+        title: t('common:error'),
+        message: t('cannot-create-wallet'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -81,30 +86,34 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo nguồn tiền"
+          title={t('create-wallet')}
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo nguồn tiền</div>
+            <div className="text-green-300">{t('wallet-created')}</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo nguồn tiền</div>
+            <div className="text-red-300">{t('cannot-create-wallet')}</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo nguồn tiền</div>
+            <div className="text-blue-300">{t('creating-wallet')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo nguồn tiền</div>
+            <div className="text-zinc-400/80">
+              {t('pending-wallet-created')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -115,7 +124,7 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -125,7 +134,7 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem nguồn tiền
+            {t('wallet-details')}
           </Link>
         )}
 
@@ -158,12 +167,12 @@ const WalletCreateModal = ({ wsId, wallet }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

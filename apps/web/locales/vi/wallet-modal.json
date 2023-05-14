@@ -16,5 +16,10 @@
   "cannot-delete-wallet": "Không thể xoá nguồn tiền",
   "delete-wallet": "Xoá nguồn tiền",
   "deleting-wallet": "Đang xoá nguồn tiền",
-  "pending-wallet-deleted": "Đang chờ xoá nguồn tiền"
+  "pending-wallet-deleted": "Đang chờ xoá nguồn tiền",
+  "wallet-created": "Đã tạo nguồn tiền",
+  "cannot-create-wallet": "Không thể tạo nguồn tiền",
+  "create-wallet": "Tạo nguồn tiền",
+  "creating-wallet": "Đang tạo nguồn tiền",
+  "pending-wallet-created": "Đang chờ tạo nguồn tiền"
 }

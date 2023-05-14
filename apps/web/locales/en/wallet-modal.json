@@ -16,5 +16,10 @@
   "cannot-delete-wallet": "Cannot delete wallet",
   "delete-wallet": "Delete wallet",
   "deleting-wallet": "Deleting wallet",
-  "pending-wallet-deleted": "Pending wallet deleted"
+  "pending-wallet-deleted": "Pending wallet deleted",
+  "wallet-created": "Wallet created",
+  "cannot-create-wallet": "Cannot create wallet",
+  "create-wallet": "Create wallet",
+  "creating-wallet": "Creating wallet",
+  "pending-wallet-created": "Pending wallet created"
 }

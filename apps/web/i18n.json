@@ -249,7 +249,7 @@
       "finance-tabs",
       "wallets"
     ],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets", "wallet-modal"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs",
