@@ -42,5 +42,16 @@
   "deleted": "Deleted",
   "cannot-delete": "Cannot delete",
   "deleting": "Deleting",
-  "pending-invoice-deleted": "Pending invoice deleted"
+  "pending-invoice-deleted": "Pending invoice deleted",
+  "invoice-created": "Invoice created",
+  "cannot-create-transaction": "Cannot create transaction",
+  "cannot-create-invoice": "Cannot create invoice",
+  "cannot-create-unit-price": "Cannot create unit price",
+  "create": "Create",
+  "creating": "Creating",
+  "cannot-create": "Cannot create",
+  "created": "Created",
+  "pending-transaction-created": "Pending transaction created",
+  "pending-invoice-created": "Pending invoice created",
+  "canceled-adding-product": "Canceled adding product"
 }
