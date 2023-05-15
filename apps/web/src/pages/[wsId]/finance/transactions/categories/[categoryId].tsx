@@ -13,12 +13,19 @@ import TransactionCategoryEditModal from '../../../../../components/loaders/tran
 import { useRouter } from 'next/router';
 import { TransactionCategory } from '../../../../../types/primitives/TransactionCategory';
 import useSWR from 'swr';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('categories');
+  const finance = t('finance');
+  const categories = t('category');
+  const unnamedWorkspace = t('unnamed-ws');
+  const unnamedCategory = t('unnamed-category');
 
   const router = useRouter();
   const { wsId, categoryId } = router.query;
@@ -35,16 +42,16 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Danh mục giao dịch',
+              content: categories,
               href: `/${ws.id}/finance/transactions/categories`,
             },
             {
-              content: category?.name || 'Danh mục không tên',
+              content: category?.name || unnamedCategory,
               href: `/${ws.id}/finance/transactions/categories/${category?.id}`,
             },
           ]
@@ -52,7 +59,15 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, category, setRootSegment]);
+  }, [
+    ws,
+    category,
+    setRootSegment,
+    finance,
+    categories,
+    unnamedWorkspace,
+    unnamedCategory,
+  ]);
 
   const [name, setName] = useState<string>('');
   const [isExpense, setIsExpense] = useState<boolean | null>(null);
@@ -72,7 +87,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật danh mục giao dịch</div>,
+      title: <div className="font-semibold">{t('update-category')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -96,7 +111,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa danh mục giao dịch</div>,
+      title: <div className="font-semibold">{t('delete-category')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -109,7 +124,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${categories} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
@@ -121,7 +136,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
               }`}
               onClick={category ? showDeleteModal : undefined}
             >
-              Xoá
+              {t('delete')}
             </button>
 
             <button
@@ -132,7 +147,7 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showEditModal : undefined}
             >
-              Lưu thay đổi
+              {t('save-changes')}
             </button>
           </div>
         </div>
@@ -140,16 +155,16 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Tên danh mục giao dịch"
-            description="Tên danh mục giao dịch sẽ được hiển thị trên giao diện người dùng."
+            title={t('name')}
+            description={t('name-description')}
           >
             <TextInput
-              placeholder="Nhập tên danh mục giao dịch"
+              placeholder={category?.name || t('name-placeholder')}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               disabled={!category}
@@ -157,24 +172,24 @@ const TransactionCategoryDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Loại giao dịch"
-            description="Quyết định danh mục giao dịch này có phải là danh mục thu hay chi."
+            title={t('type')}
+            description={t('type-description')}
           >
             <Select
-              placeholder="Chọn loại giao dịch"
+              placeholder={t('type-placeholder')}
               value={isExpense ? 'expense' : 'income'}
               onChange={(e) => setIsExpense(e === 'expense')}
               data={[
-                { label: 'Chi tiêu', value: 'expense' },
-                { label: 'Thu nhập', value: 'income' },
+                { label: t('expense'), value: 'expense' },
+                { label: t('income'), value: 'income' },
               ]}
               disabled={!category}
             />
           </SettingItemCard>
 
           <SettingItemCard
-            title="Biểu tượng đại diện"
-            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên danh mục giao dịch."
+            title={t('icon')}
+            description={t('icon-description')}
             disabled
             comingSoon
           />

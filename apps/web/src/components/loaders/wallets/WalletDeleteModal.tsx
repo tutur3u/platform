@@ -5,6 +5,7 @@ import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../status';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -18,6 +19,12 @@ interface Progress {
 const WalletDeleteModal = ({ wsId, walletId }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('wallet-modal');
+  const success = t('common:success');
+  const walletDeleted = t('wallet-deleted');
+  const error = t('common:error');
+  const cannotDeleteWallet = t('cannot-delete-wallet');
+
   const [progress, setProgress] = useState<Progress>({
     removed: 'idle',
   });
@@ -29,11 +36,11 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
     if (!hasSuccess) return;
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá nguồn tiền',
+      title: success,
+      message: walletDeleted,
       color: 'green',
     });
-  }, [hasSuccess, walletId]);
+  }, [hasSuccess, walletId, success, walletDeleted]);
 
   const removeDetails = async () => {
     const res = await fetch(
@@ -49,8 +56,8 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá nguồn tiền',
+        title: error,
+        message: cannotDeleteWallet,
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removed: 'error' }));
@@ -78,30 +85,34 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Xoá nguồn tiền"
+          title={t('delete-wallet')}
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã xoá nguồn tiền</div>
+            <div className="text-green-300">{t('wallet-deleted')}</div>
           ) : progress.removed === 'error' ? (
-            <div className="text-red-300">Không thể xoá nguồn tiền</div>
+            <div className="text-red-300">{t('cannot-delete-wallet')}</div>
           ) : progress.removed === 'loading' ? (
-            <div className="text-blue-300">Đang xoá nguồn tiền</div>
+            <div className="text-blue-300">{t('deleting-wallet')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá nguồn tiền</div>
+            <div className="text-zinc-400/80">
+              {t('pending-wallet-deleted')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -112,7 +123,7 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -145,12 +156,12 @@ const WalletDeleteModal = ({ wsId, walletId }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

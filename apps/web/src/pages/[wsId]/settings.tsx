@@ -172,21 +172,19 @@ const WorkspaceSettingsPage = () => {
 
           <div className="h-full" />
 
-          <Button
-            onClick={
-              isSystemWs || isSaving || name === ws?.name
-                ? undefined
-                : handleSave
-            }
-            disabled={isSystemWs || isSaving || name === ws?.name}
-            className={`${
-              isSystemWs || isSaving || name === ws?.name
-                ? 'cursor-not-allowed opacity-50'
-                : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-            } col-span-full mt-2 flex w-full items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition`}
-          >
-            {isSaving ? t('common:saving') : t('common:save')}
-          </Button>
+          {isSystemWs || (
+            <Button
+              onClick={isSaving || name === ws?.name ? undefined : handleSave}
+              disabled={isSaving || name === ws?.name}
+              className={`${
+                isSaving || name === ws?.name
+                  ? 'cursor-not-allowed opacity-50'
+                  : 'hover:border-blue-300/30 hover:bg-blue-300/20'
+              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition`}
+            >
+              {isSaving ? t('common:saving') : t('common:save')}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">

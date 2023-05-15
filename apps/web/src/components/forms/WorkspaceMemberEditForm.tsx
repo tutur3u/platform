@@ -61,11 +61,6 @@ const WorkspaceMemberEditForm = ({
     return true;
   };
 
-  if (user?.role) {
-    console.log('Member priority:', getRolePriority(user.role));
-    console.log('Current priority:', getRolePriority(currentRole));
-  }
-
   return (
     <div className="grid gap-2">
       <div className="rounded border border-zinc-300/10 bg-zinc-800 p-4">

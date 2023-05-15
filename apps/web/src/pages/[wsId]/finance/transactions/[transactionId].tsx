@@ -30,6 +30,12 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const transactions = t('transactions');
+  const unnamedWorkspace = t('unnamed-ws');
+  const loading = t('loading');
+
   const router = useRouter();
   const { wsId, transactionId, redirectToWallets } = router.query;
 
@@ -52,16 +58,16 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
       ws && transaction
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Giao dịch',
+              content: transactions,
               href: `/${ws.id}/finance/transactions`,
             },
             {
-              content: transaction?.id || 'Đang tải...',
+              content: transaction?.id || loading,
               href: `/${ws.id}/finance/transactions/${transaction?.id}`,
             },
           ]
@@ -69,7 +75,15 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, transaction, setRootSegment]);
+  }, [
+    ws,
+    transaction,
+    setRootSegment,
+    finance,
+    transactions,
+    unnamedWorkspace,
+    loading,
+  ]);
 
   const [description, setDescription] = useState<string>('');
   const [takenAt, setTakenAt] = useState<Date>(new Date());
@@ -113,7 +127,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Cập nhật giao dịch</div>,
+      title: <div className="font-semibold">{t('update-wallet')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -147,7 +161,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
     if (!ws?.id) return;
 
     openModal({
-      title: <div className="font-semibold">Xóa giao dịch</div>,
+      title: <div className="font-semibold">{t('delete-wallet')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -170,7 +184,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${transaction} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
@@ -182,7 +196,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
               }`}
               onClick={transaction ? showDeleteModal : undefined}
             >
-              Xoá
+              {t('delete')}
             </button>
 
             <button
@@ -193,7 +207,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showEditModal : undefined}
             >
-              Lưu thay đổi
+              {t('save-changes')}
             </button>
           </div>
         </div>
@@ -201,13 +215,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Nguồn tiền"
-            description="Nguồn tiền mà giao dịch này được thực hiện."
+            title={t('wallets')}
+            description={t('wallet-description')}
           >
             <div className="flex gap-2">
               <WalletSelector
@@ -233,12 +247,12 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Nội dung"
-            description="Nội dung của giao dịch này."
+            title={t('description')}
+            description={t('description-description')}
             disabled={!wallet}
           >
             <TextInput
-              placeholder="Nhập nội dung"
+              placeholder={t('description-placeholder')}
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
               disabled={!wallet}
@@ -246,8 +260,8 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Thời điểm giao dịch"
-            description="Thời điểm giao dịch này được thực hiện."
+            title={t('datetime')}
+            description={t('datetime-description')}
             disabled={!wallet}
           >
             <DateTimePicker
@@ -261,13 +275,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Số tiền giao dịch"
-            description="Số tiền giao dịch này được thực hiện."
+            title={t('amount')}
+            description={t('amount-description')}
             disabled={!wallet}
           >
             <div className="grid gap-2">
               <NumberInput
-                placeholder="Nhập số tiền"
+                placeholder={t('amount-placeholder')}
                 value={amount}
                 onChange={(num) =>
                   category
@@ -300,8 +314,8 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Danh mục giao dịch"
-            description="Loại giao dịch được thực hiện."
+            title={t('category')}
+            description={t('category-description')}
           >
             <TransactionCategorySelector
               categoryId={transaction?.category_id}
@@ -313,11 +327,11 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           </SettingItemCard>
 
           <SettingItemCard
-            title="Đơn vị tiền tệ"
-            description="Đơn vị tiền tệ sẽ được sử dụng để hiển thị số tiền."
+            title={t('currency')}
+            description={t('currency-description')}
           >
             <Select
-              placeholder="Chờ chọn nguồn tiền..."
+              placeholder={t('currency-placeholder')}
               value={wallet?.currency}
               data={[
                 {

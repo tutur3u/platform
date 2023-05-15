@@ -19,6 +19,7 @@ import MiniPlusButton from '../../../../components/common/MiniPlusButton';
 import 'moment/locale/vi';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -26,17 +27,23 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { lang } = useTranslation();
+  const { t } = useTranslation('transactions');
+  const finance = t('finance');
+  const transaction = t('transactions');
+  const unnamedWorkspace = t('unnamed-ws');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Giao dịch',
+              content: transaction,
               href: `/${ws.id}/finance/transactions`,
             },
           ]
@@ -44,7 +51,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, transaction, unnamedWorkspace]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -108,22 +115,23 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayStr = today.toDateString();
 
-    if (dateStr === todayStr) return 'Hôm nay';
+    if (dateStr === todayStr) return t('today');
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toDateString();
 
-    if (dateStr === yesterdayStr) return 'Hôm qua';
+    if (dateStr === yesterdayStr) return t('yesterday');
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toDateString();
 
-    if (dateStr === tomorrowStr) return 'Ngày mai';
+    if (dateStr === tomorrowStr) return t('tomorrow');
 
     return (
       moment(date)
+        .locale(lang)
         // Format the date to a string
         .format('dddd, DD/MM/YYYY')
         // Capitalize the first letter of the day
@@ -133,7 +141,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${t('transactions')} - ${t('finance')}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -148,17 +156,17 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số tiền"
+            label={t('show-amount')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị thời gian"
+            label={t('show-datetime')}
             checked={showDatetime}
             onChange={(event) => setShowDatetime(event.currentTarget.checked)}
           />
           <Switch
-            label="Hiển thị nguồn tiền"
+            label={t('show-wallet')}
             checked={showWallet}
             onChange={(event) => setShowWallet(event.currentTarget.checked)}
           />
@@ -172,7 +180,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
           }`}
         >
           <h3 className="col-span-full text-lg font-semibold text-gray-300">
-            Giao dịch mới
+            {t('new-transaction')}
           </h3>
           <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
         </div>
@@ -196,7 +204,8 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
                   <div className="flex gap-2">
                     <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
-                      {data.transactions.length} giao dịch
+                      {data.transactions.length}{' '}
+                      {t('transactions').toLowerCase()}
                     </div>
                     <div
                       className={`rounded px-2 py-0.5 text-base ${

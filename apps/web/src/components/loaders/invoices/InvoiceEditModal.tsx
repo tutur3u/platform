@@ -13,6 +13,7 @@ import { Status } from '../status';
 import { Invoice } from '../../../types/primitives/Invoice';
 import { Product } from '../../../types/primitives/Product';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -39,6 +40,10 @@ const EditModal = ({
   invoice,
   products,
 }: Props) => {
+  const { t } = useTranslation('invoice-modal');
+  const success = t('success');
+  const invoiceUpdated = t('invoice-updated');
+
   const router = useRouter();
 
   const [progress, setProgress] = useState<Progress>({
@@ -70,11 +75,11 @@ const EditModal = ({
     mutate(`/api/invoices/${invoice.id}/products`);
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật hoá đơn',
+      title: success,
+      message: invoiceUpdated,
       color: 'green',
     });
-  }, [hasSuccess, wsId, invoice.id]);
+  }, [hasSuccess, wsId, invoice.id, invoiceUpdated, success]);
 
   const updateTransaction = async (transaction: Transaction) => {
     const res = await fetch(
@@ -96,8 +101,8 @@ const EditModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật giao dịch',
+        title: t('common:error'),
+        message: t('cannot-update-transaction'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updateTransaction: 'error' }));
@@ -123,8 +128,8 @@ const EditModal = ({
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật hoá đơn',
+        title: t('common:error'),
+        message: t('cannot-update-invoice'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updateDetails: 'error' }));
@@ -153,8 +158,8 @@ const EditModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể cập nhật các sản phẩm',
+        title: t('common:error'),
+        message: t('cannot-update-products'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, updateProducts: 'error' }));
@@ -179,8 +184,8 @@ const EditModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá các sản phẩm',
+        title: t('common:error'),
+        message: t('cannot-remove-products'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removeProducts: 'error' }));
@@ -205,8 +210,8 @@ const EditModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể thêm các sản phẩm',
+        title: t('common:error'),
+        message: t('cannot-add-products'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, addProducts: 'error' }));
@@ -290,106 +295,120 @@ const EditModal = ({
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật giao dịch"
+          title={`${t('update')} ${t('transaction')}`}
         >
           {progress.updateTransaction === 'success' ? (
-            <div className="text-green-300">Đã cập nhật giao dịch</div>
+            <div className="text-green-300">{t('transaction-updated')}</div>
           ) : progress.updateTransaction === 'error' ? (
-            <div className="text-red-300">Không thể cập nhật giao dịch</div>
+            <div className="text-red-300">{t('cannot-update-transaction')}</div>
           ) : progress.updateTransaction === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật giao dịch</div>
+            <div className="text-blue-300">{t('updating-transaction')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ cập nhật giao dịch</div>
+            <div className="text-zinc-400/80">
+              {t('pending-transaction-updated')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật thông tin cơ bản"
+          title={`${t('update')} ${t('basic-info')}`}
         >
           {progress.updateDetails === 'success' ? (
-            <div className="text-green-300">Đã cập nhật thông tin cơ bản</div>
+            <div className="text-green-300">{t('basic-info-updated')}</div>
           ) : progress.updateDetails === 'error' ? (
-            <div className="text-red-300">
-              Không thể cập nhật thông tin cơ bản
-            </div>
+            <div className="text-red-300">{t('cannot-update-basic-info')}</div>
           ) : progress.updateDetails === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật thông tin cơ bản</div>
+            <div className="text-blue-300">{t('updating-basic-info')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ cập nhật thông tin cơ bản
+              {t('pending-basic-info-updated')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Cập nhật sản phẩm (${productsToUpdate?.length || 0})`}
+          title={`${t('update')} ${t('product')} (${
+            productsToUpdate?.length || 0
+          })`}
         >
           {progress.updateProducts === 'success' ? (
             <div className="text-green-300">
-              Đã cập nhật {productsToUpdate.length} sản phẩm
+              {t('updated')} {productsToUpdate.length} {t('product')}
             </div>
           ) : progress.updateProducts === 'error' ? (
-            <div className="text-red-300">Không thể cập nhật sản phẩm</div>
+            <div className="text-red-300">
+              {t('cannot-update')} {t('product')}
+            </div>
           ) : progress.updateProducts === 'loading' ? (
             <div className="text-blue-300">
-              Đang cập nhật {productsToUpdate.length} sản phẩm
+              {t('updating')} {productsToUpdate.length} {t('product')}
             </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ cập nhật sản phẩm</div>
+            <div className="text-zinc-400/80">
+              {t('pending-product-updated')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Xoá sản phẩm (${productsToRemove?.length || 0})`}
+          title={`${t('remove')} ${t('product')} (${
+            productsToRemove?.length || 0
+          })`}
         >
           {progress.removeProducts === 'success' ? (
             <div className="text-green-300">
-              Đã xoá {productsToRemove.length} sản phẩm
+              {t('removed')} {productsToRemove.length} {t('product')}
             </div>
           ) : progress.removeProducts === 'error' ? (
-            <div className="text-red-300">Không thể xoá sản phẩm</div>
+            <div className="text-red-300">
+              {t('cannot-remove')} {t('product')}
+            </div>
           ) : progress.removeProducts === 'loading' ? (
             <div className="text-blue-300">
-              Đang xoá {productsToRemove.length} sản phẩm
+              {t('removing')} {productsToRemove.length} {t('product')}
             </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá sản phẩm</div>
+            <div className="text-zinc-400/80">
+              {t('pending-product-removed')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm sản phẩm (${productsToAdd?.length || 0})`}
+          title={`${t('add')} ${t('product')} (${productsToAdd?.length || 0})`}
         >
           {progress.addProducts === 'success' ? (
             <div className="text-green-300">
-              Đã thêm {productsToAdd.length} sản phẩm
+              {t('added')} {productsToAdd.length} {t('product')}
             </div>
           ) : progress.addProducts === 'error' ? (
-            <div className="text-red-300">Không thể thêm sản phẩm</div>
+            <div className="text-red-300">
+              {t('cannot-add')} {t('product')}
+            </div>
           ) : progress.addProducts === 'loading' ? (
             <div className="text-blue-300">
-              Đang thêm {productsToAdd.length} sản phẩm
+              {t('adding')} {productsToAdd.length} {t('product')}
             </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ thêm sản phẩm</div>
+            <div className="text-zinc-400/80">{t('pending-product-added')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.addProducts === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">{t('common:pending-completion')}</div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -400,7 +419,7 @@ const EditModal = ({
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -409,7 +428,7 @@ const EditModal = ({
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
-            Xem hoá đơn
+            {t('invoice-details')}
           </button>
         )}
 
@@ -442,12 +461,12 @@ const EditModal = ({
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

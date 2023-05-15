@@ -1,5 +1,6 @@
 import { Squares2X2Icon } from '@heroicons/react/24/solid';
 import { Select } from '@mantine/core';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   status: string;
@@ -8,41 +9,43 @@ interface Props {
 }
 
 const StatusSelector = ({ status, setStatus, preset }: Props) => {
+  const { t } = useTranslation('status-selector');
+
   const data =
     preset === 'status'
       ? [
           {
-            label: 'Tất cả',
+            label: t('all'),
             value: '',
           },
           {
-            label: 'Đang hoạt động',
+            label: t('active'),
             value: 'active',
           },
           {
-            label: 'Ngưng hoạt động',
+            label: t('inactive'),
             value: 'inactive',
           },
         ]
       : [
           {
-            label: 'Tất cả',
+            label: t('all'),
             value: '',
           },
           {
-            label: 'Đã hoàn thành',
+            label: t('completed'),
             value: 'completed',
           },
           {
-            label: 'Chưa hoàn thành',
+            label: t('incomplete'),
             value: 'incomplete',
           },
         ];
 
   return (
     <Select
-      label="Trạng thái"
-      placeholder="Chọn trạng thái"
+      label={t('status')}
+      placeholder={t('status-placeholder')}
       icon={<Squares2X2Icon className="h-5" />}
       data={data}
       value={status}
