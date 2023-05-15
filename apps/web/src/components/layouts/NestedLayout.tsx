@@ -81,10 +81,12 @@ const NestedLayout: FC<Props> = ({
   }, [defaultNoTabs]);
 
   return (
-    <div className="relative flex h-screen min-h-full w-screen min-w-full">
+    <div className="flex h-screen min-h-full w-screen min-w-full">
       <LeftSidebar />
 
-      <main className={`relative flex h-full w-full flex-col bg-[#111113]`}>
+      <BottomNavbar />
+
+      <div className="relative flex h-full w-full flex-col bg-[#111113]">
         <TopNavbar
           cachedDisableTabs={cachedDisableTabs}
           defaultNoTabs={defaultNoTabs}
@@ -96,18 +98,17 @@ const NestedLayout: FC<Props> = ({
           tabs={filteredTabs}
         />
 
-        <div
+        <main
           id="content"
           className={`h-full overflow-auto scroll-smooth px-4 ${
             defaultNoTabs ? 'pt-24' : 'pt-32'
           } md:px-8 lg:px-16 xl:px-32`}
         >
           {children}
-        </div>
+        </main>
 
         <ScrollTopTopButton prevScrollPos={prevScrollPos} />
-        <BottomNavbar />
-      </main>
+      </div>
     </div>
   );
 };

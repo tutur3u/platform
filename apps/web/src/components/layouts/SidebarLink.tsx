@@ -83,13 +83,13 @@ export default function SidebarLink({
         disabled={!showTooltip}
       >
         <div
-          className={`flex items-center gap-2 rounded p-2 ${
+          className={`flex items-center gap-2 rounded border p-2 ${
             disabled
-              ? 'cursor-not-allowed text-zinc-300/50'
+              ? 'cursor-not-allowed border-transparent text-zinc-300/50'
               : defaultHighlight
               ? defaultActive && isActive
-                ? 'bg-zinc-300/10 text-zinc-100'
-                : 'text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
+                ? 'border-zinc-300/10 bg-zinc-300/10 text-zinc-100'
+                : 'border-transparent text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
               : ''
           } ${left && isExpanded ? 'justify-start' : 'justify-center'} ${
             classNames?.innerRoot

@@ -42,7 +42,7 @@ const WorkspaceMembersPage = () => {
 
   const { ws } = useWorkspaces();
 
-  const [view, setView] = useState<'members' | 'invited'>('members');
+  const [view, setView] = useState<'joined' | 'invited'>('joined');
   const [activePage, setPage] = useState(1);
 
   const [roles, setRoles] = useState<string[]>([]);
@@ -62,7 +62,7 @@ const WorkspaceMembersPage = () => {
   }, [view, roles, itemsPerPage]);
 
   const apiPath = ws?.id
-    ? (view === 'members'
+    ? (view === 'joined'
         ? `/api/workspaces/${ws.id}/members`
         : `/api/workspaces/${ws.id}/members/invites`) +
       // Add query params
@@ -142,7 +142,7 @@ const WorkspaceMembersPage = () => {
   };
 
   const updateMember = async (wsId: string, member: User) => {
-    if (!member?.id) return;
+    if (!ws?.id || !user?.id || !member?.id) return;
 
     const response = await fetch(
       `/api/workspaces/${wsId}/members/${member.id}`,
@@ -159,6 +159,7 @@ const WorkspaceMembersPage = () => {
     );
 
     if (response.ok) {
+      if (user.id === member.id) mutate(`/api/workspaces/${ws.id}`);
       mutate(apiPath);
       showNotification({
         title: t('member-updated'),
@@ -230,7 +231,7 @@ const WorkspaceMembersPage = () => {
           <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
             <div>
               <h1 className="text-2xl font-bold">
-                {view === 'members' ? membersLabel : t('pending_invitations')}{' '}
+                {view === 'joined' ? membersLabel : t('pending_invitations')}{' '}
                 <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
                   {members?.length || 0}
                 </span>
@@ -248,9 +249,9 @@ const WorkspaceMembersPage = () => {
               </button>{' '}
               <SegmentedControl
                 value={view}
-                onChange={(value) => setView(value as 'members' | 'invited')}
+                onChange={(value) => setView(value as 'joined' | 'invited')}
                 data={[
-                  { label: membersLabel, value: 'members' },
+                  { label: t('joined'), value: 'joined' },
                   { label: t('invited'), value: 'invited' },
                 ]}
               />
@@ -271,7 +272,7 @@ const WorkspaceMembersPage = () => {
             }}
           />
           <MemberRoleMultiSelector
-            roles={view === 'members' ? roles : []}
+            roles={view === 'joined' ? roles : []}
             setRoles={setRoles}
             disabled={view === 'invited'}
           />
@@ -329,19 +330,19 @@ const WorkspaceMembersPage = () => {
                     <button
                       className="font-semibold text-zinc-400 transition duration-150 hover:text-zinc-200"
                       onClick={
-                        view === 'members'
+                        view === 'joined'
                           ? () => showEditModal(member)
                           : () => deleteMember(member, true)
                       }
                     >
                       <Tooltip
                         label={
-                          view === 'members'
+                          view === 'joined'
                             ? t('common:settings')
                             : t('revoke_invitation')
                         }
                       >
-                        {view === 'members' ? (
+                        {view === 'joined' ? (
                           <Cog6ToothIcon className="h-6 w-6" />
                         ) : (
                           <ArrowUturnLeftIcon className="h-6 w-6" />
@@ -353,7 +354,7 @@ const WorkspaceMembersPage = () => {
                   <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-800 pt-2">
                     {member?.created_at ? (
                       <div className="text-zinc-500">
-                        {view === 'members' ? t('member_since') : t('invited')}{' '}
+                        {view === 'joined' ? t('member_since') : t('invited')}{' '}
                         <span className="font-semibold text-zinc-400">
                           {moment(member.created_at).locale(lang).fromNow()}
                         </span>
@@ -361,7 +362,7 @@ const WorkspaceMembersPage = () => {
                       </div>
                     ) : null}
 
-                    {view === 'members' && (
+                    {view === 'joined' && (
                       <div
                         className={`rounded border px-2 py-0.5 font-semibold ${getRoleColor(
                           member?.role?.toLocaleLowerCase() || 'unknown'

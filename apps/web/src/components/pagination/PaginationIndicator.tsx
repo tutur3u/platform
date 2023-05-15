@@ -23,7 +23,7 @@ const PaginationIndicator = ({
       <div className="py-1 text-zinc-400">
         {totalItems != null ? (
           totalItems === 0 ? (
-            t('no_results')
+            t('no_results') + '.'
           ) : (
             <>
               {t('showing_from')}{' '}
@@ -38,7 +38,7 @@ const PaginationIndicator = ({
               </span>{' '}
               {t('of')}{' '}
               <span className="font-semibold text-zinc-200">{totalItems}</span>{' '}
-              {t('results')}
+              {t('results')}.
             </>
           )
         ) : (

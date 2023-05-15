@@ -42,7 +42,7 @@ const TopNavbar = ({
           : () => setDisableTabs(cachedDisableTabs)
       }
     >
-      <div className="flex items-center gap-2 py-3">
+      <div className="flex items-center gap-2 py-2">
         {onFavorite && (
           <ActionIcon color="yellow" onClick={onFavorite}>
             {isFavorite ? (

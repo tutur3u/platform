@@ -63,13 +63,13 @@ importers:
         version: 6.0.10(@mantine/core@6.0.10)(@mantine/hooks@6.0.10)(@tabler/icons-react@2.18.0)(@tiptap/extension-link@2.0.3)(@tiptap/react@2.0.3)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.6.1
-        version: 0.6.1(@supabase/supabase-js@2.21.0)
+        version: 0.6.1(@supabase/supabase-js@2.22.0)
       '@supabase/auth-helpers-react':
         specifier: ^0.3.1
-        version: 0.3.1(@supabase/supabase-js@2.21.0)
+        version: 0.3.1(@supabase/supabase-js@2.22.0)
       '@supabase/supabase-js':
-        specifier: ^2.21.0
-        version: 2.21.0
+        specifier: ^2.22.0
+        version: 2.22.0
       '@tabler/icons-react':
         specifier: ^2.18.0
         version: 2.18.0(react@18.2.0)
@@ -247,7 +247,7 @@ importers:
         version: 8.8.0(eslint@8.40.0)
       eslint-config-turbo:
         specifier: latest
-        version: 1.9.4(eslint@8.40.0)
+        version: 1.9.3(eslint@8.40.0)
       eslint-plugin-react:
         specifier: 7.32.2
         version: 7.32.2(eslint@8.40.0)
@@ -259,8 +259,8 @@ importers:
   packages/tailwind-config:
     devDependencies:
       tailwind-scrollbar:
-        specifier: ^3.0.1
-        version: 3.0.1(tailwindcss@3.3.2)
+        specifier: ^3.0.4
+        version: 3.0.4(tailwindcss@3.3.2)
       tailwindcss:
         specifier: ^3.3.2
         version: 3.3.2
@@ -1847,29 +1847,29 @@ packages:
       '@sinonjs/commons': 3.0.0
     dev: true
 
-  /@supabase/auth-helpers-nextjs@0.6.1(@supabase/supabase-js@2.21.0):
+  /@supabase/auth-helpers-nextjs@0.6.1(@supabase/supabase-js@2.22.0):
     resolution: {integrity: sha512-ffDAR4pW2Cosj/CuuGRAhzOFfHtqzdgax7zqRGGyq334gxxPplsmJFGaLPRJ3Z/4mTSIJHyFd6LYdHMN0a+5Bw==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:
-      '@supabase/auth-helpers-shared': 0.3.4(@supabase/supabase-js@2.21.0)
-      '@supabase/supabase-js': 2.21.0
+      '@supabase/auth-helpers-shared': 0.3.4(@supabase/supabase-js@2.22.0)
+      '@supabase/supabase-js': 2.22.0
     dev: false
 
-  /@supabase/auth-helpers-react@0.3.1(@supabase/supabase-js@2.21.0):
+  /@supabase/auth-helpers-react@0.3.1(@supabase/supabase-js@2.22.0):
     resolution: {integrity: sha512-g3SFv08Dz9FapNif/ZY1b7qKGlMJDyTLSayHBz3kb3FuYxg7aLWgQtydDhm5AGbc0XtvpIBuhGTIOVevwpdosA==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:
-      '@supabase/supabase-js': 2.21.0
+      '@supabase/supabase-js': 2.22.0
     dev: false
 
-  /@supabase/auth-helpers-shared@0.3.4(@supabase/supabase-js@2.21.0):
+  /@supabase/auth-helpers-shared@0.3.4(@supabase/supabase-js@2.22.0):
     resolution: {integrity: sha512-8I3D0SPHHexkFTSfPg0nZgJSVazWoB3tZDpT6IjRv6w89vDMUzO99Lit4H9anVLF4teW8c/nJJxawDNbDlgbgg==}
     peerDependencies:
       '@supabase/supabase-js': ^2.0.4
     dependencies:
-      '@supabase/supabase-js': 2.21.0
+      '@supabase/supabase-js': 2.22.0
       jose: 4.14.4
     dev: false
 
@@ -1915,8 +1915,8 @@ packages:
       - encoding
     dev: false
 
-  /@supabase/supabase-js@2.21.0:
-    resolution: {integrity: sha512-FW3ZzBoc4orSgfX0dXrmJoXAcI/hiekmqXTkN64vjtUF2Urp3UjyAf71UTtV9Jl6ejHoe3K++e0+Rg9zKUJh5w==}
+  /@supabase/supabase-js@2.22.0:
+    resolution: {integrity: sha512-omkgSWL1HwnpXZZy+yshFLx/qqxwk9kx9jbRM6IHNEylKrH/sz6JX7rGyIOmN9niDxMRjsCu1nwuBhD6IiF2xg==}
     dependencies:
       '@supabase/functions-js': 2.1.1
       '@supabase/gotrue-js': 2.26.0
@@ -3850,13 +3850,13 @@ packages:
       eslint: 8.40.0
     dev: false
 
-  /eslint-config-turbo@1.9.4(eslint@8.40.0):
-    resolution: {integrity: sha512-pB9Jg1Zn0Qo25LLxmvcMgjBmw8sEt6rwJO8oTKjO4DEQVUAMoNHcR7bdQCdIszHV3c1tYUjbJgm0L1B9qU81nw==}
+  /eslint-config-turbo@1.9.3(eslint@8.40.0):
+    resolution: {integrity: sha512-QG6jxFQkrGSpQqlFKefPdtgUfr20EbU0s4tGGIuGFOcPuJEdsY6VYZpZUxNJvmMcTGqPgMyOPjAFBKhy/DPHLA==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
       eslint: 8.40.0
-      eslint-plugin-turbo: 1.9.4(eslint@8.40.0)
+      eslint-plugin-turbo: 1.9.3(eslint@8.40.0)
     dev: false
 
   /eslint-import-resolver-node@0.3.7:
@@ -4014,8 +4014,8 @@ packages:
       string.prototype.matchall: 4.0.8
     dev: false
 
-  /eslint-plugin-turbo@1.9.4(eslint@8.40.0):
-    resolution: {integrity: sha512-ySDJl63nIWa+j9WOAnblBWKDyaCTfGCYhSNSMCe0N5Jk01YWMEowFr2bGw31Zg0dOijioYo9ewwfLLKbJYOUmQ==}
+  /eslint-plugin-turbo@1.9.3(eslint@8.40.0):
+    resolution: {integrity: sha512-ZsRtksdzk3v+z5/I/K4E50E4lfZ7oYmLX395gkrUMBz4/spJlYbr+GC8hP9oVNLj9s5Pvnm9rLv/zoj5PVYaVw==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
@@ -7349,8 +7349,8 @@ packages:
     resolution: {integrity: sha512-qCN98uP7i9z0fIS4amQ5zbGBOq+OSigYeGvPy7NDk8Y9yncqDZ9pRPgfsc2PJIVM9RrJj7GIfuRgmjoUU9zTHQ==}
     dev: false
 
-  /tailwind-scrollbar@3.0.1(tailwindcss@3.3.2):
-    resolution: {integrity: sha512-mM0ecSf/RGRGWw/qB0Zg1bWhuXIkpmleNAFgMxdb4eERgA6eQ0kVouYsF3/OvBqDSK8RJikZC/ynGPxnfXeddw==}
+  /tailwind-scrollbar@3.0.4(tailwindcss@3.3.2):
+    resolution: {integrity: sha512-X/QBsn/C5u9x6/YvTc1Zo7b09Gqs5BfDe0UK/8LDQUv8IEBKF+p2ISTRwvAr50MH0hn/wTyCEOann7uXoa1/2Q==}
     engines: {node: '>=12.13.0'}
     peerDependencies:
       tailwindcss: 3.x

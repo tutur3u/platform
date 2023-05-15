@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 7803",
@@ -36,7 +36,7 @@
     "@mantine/tiptap": "^6.0.10",
     "@supabase/auth-helpers-nextjs": "^0.6.1",
     "@supabase/auth-helpers-react": "^0.3.1",
-    "@supabase/supabase-js": "^2.21.0",
+    "@supabase/supabase-js": "^2.22.0",
     "@tabler/icons-react": "^2.18.0",
     "@tiptap/extension-highlight": "2.0.3",
     "@tiptap/extension-link": "2.0.3",
