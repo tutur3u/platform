@@ -322,7 +322,9 @@
       "view-mode",
       "pagination",
       "finance-tabs",
-      "invoices"
+      "invoices",
+      "status-selector",
+      "invoice-card"
     ],
     "/[wsId]/finance/invoices/new": [
       "sidebar-tabs",
@@ -331,7 +333,8 @@
       "invoice-modal",
       "ws-selector",
       "wallet-selector",
-      "category-selector"
+      "category-selector",
+      "invoice-product-input"
     ],
     "/[wsId]/finance/invoices/[invoiceId]": [
       "sidebar-tabs",
@@ -340,7 +343,8 @@
       "invoice-modal",
       "ws-selector",
       "wallet-selector",
-      "category-selector"
+      "category-selector",
+      "invoice-product-input"
     ],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],

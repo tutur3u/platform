@@ -6,6 +6,7 @@ import SettingItemCard from '../settings/SettingItemCard';
 import ProductSelector from '../selectors/ProductSelector';
 import UnitSelector from '../selectors/UnitSelector';
 import WarehouseSelector from '../selectors/WarehouseSelector';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -56,6 +57,8 @@ const InvoiceProductInput = ({
       });
   }, [wsId, p, hideStock, updateProduct]);
 
+  const { t } = useTranslation('invoice-product-input');
+
   return (
     <SettingItemCard
       title={
@@ -64,19 +67,19 @@ const InvoiceProductInput = ({
               style: 'currency',
               currency: 'VND',
             }).format(Number(p?.price * (p?.amount || 0)))
-          : 'Chưa có đơn giá'
+          : t('no-price')
       }
       description={
         p?.price != null && p?.price != ''
           ? p?.amount === 0
-            ? 'Chưa có số lượng'
+            ? t('missing-amount')
             : `${Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
               }).format(Number(p.price))} x ${Intl.NumberFormat('vi-VN').format(
                 Number(p?.amount || 0)
               )}`
-          : 'Chờ chọn sản phẩm và nhập số lượng'
+          : t('pending-product-selection-and-amount')
       }
     >
       <div className="flex gap-2">
@@ -141,23 +144,25 @@ const InvoiceProductInput = ({
 
           {p?.warehouse_id === undefined || p?.warehouse_id === '' ? (
             <div className="col-span-full rounded border border-orange-300/20 bg-orange-300/10 p-4 text-center font-semibold text-orange-300">
-              Chờ nhập dữ liệu.
+              {t('pending-data')}
             </div>
           ) : p?.price === '' || p?.stock === '' ? (
             <div className="col-span-full rounded border border-orange-300/20 bg-orange-300/10 p-4 text-center font-semibold text-orange-300">
-              Đang tải dữ liệu...
+              {t('loading-data')}
             </div>
           ) : p?.stock === 0 ? (
             <div className="col-span-full rounded border border-red-300/20 bg-red-300/10 p-4 text-center font-semibold text-red-300">
-              Sản phẩm đã hết hàng.
+              {t('product-out-of-stock')}
             </div>
           ) : (
             <>
               {hideStock || (
                 <NumberInput
-                  label="Tồn kho"
+                  label={t('in-stock')}
                   placeholder={
-                    p.warehouse_id ? 'Đang tải...' : 'Chờ chọn sản phẩm'
+                    p.warehouse_id
+                      ? t('common:loading')
+                      : t('pending-product-selection')
                   }
                   value={p.stock}
                   min={0}
@@ -172,9 +177,11 @@ const InvoiceProductInput = ({
               )}
 
               <NumberInput
-                label="Giá sản phẩm"
+                label={t('price')}
                 placeholder={
-                  p.warehouse_id ? 'Đang tải...' : 'Chờ chọn sản phẩm'
+                  p.warehouse_id
+                    ? t('common:loading')
+                    : t('pending-product-selection')
                 }
                 value={p.price}
                 min={0}
@@ -188,13 +195,13 @@ const InvoiceProductInput = ({
               />
 
               <NumberInput
-                label="Số lượng"
+                label={t('amount')}
                 placeholder={
                   p?.stock && p?.price
-                    ? 'Nhập số lượng'
+                    ? t('amount-placeholder')
                     : p.warehouse_id
-                    ? 'Chờ tải giá'
-                    : 'Chờ chọn sản phẩm'
+                    ? t('pending-amount-loaded')
+                    : t('pending-product-selection')
                 }
                 value={p.amount}
                 onChange={(val) =>
