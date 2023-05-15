@@ -17,6 +17,7 @@ import ModeSelector, {
 import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -24,17 +25,22 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('categories');
+  const finance = t('finance');
+  const category = t('category');
+  const unnamedWorkspace = t('unnamed-ws');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Danh mục giao dịch',
+              content: category,
               href: `/${ws.id}/finance/transactions/categories`,
             },
           ]
@@ -42,7 +48,7 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, category, unnamedWorkspace]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
@@ -77,7 +83,7 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${category} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -91,7 +97,7 @@ const FinanceCategoriesPage: PageWithLayoutProps = () => {
           />
           <Divider variant="dashed" className="col-span-full" />
           <Switch
-            label="Hiển thị số giao dịch"
+            label={t('show-amount-of-transaction')}
             checked={showAmount}
             onChange={(event) => setShowAmount(event.currentTarget.checked)}
           />

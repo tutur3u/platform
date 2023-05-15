@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   categoryId?: string | null;
@@ -51,6 +52,8 @@ const TransactionCategorySelector = ({
 
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('category-selector');
+
   const apiPath = ws?.id
     ? `/api/workspaces/${
         ws?.id
@@ -65,7 +68,7 @@ const TransactionCategorySelector = ({
     ...(showTransfer
       ? [
           {
-            label: 'Chuyển tiền',
+            label: t('transfer'),
             value: 'transfer',
             disabled: true,
           },
@@ -100,10 +103,10 @@ const TransactionCategorySelector = ({
   ]);
 
   const create = async ({
-    warehouse,
+    category,
   }: {
     wsId: string;
-    warehouse: Partial<TransactionCategory>;
+    category: Partial<TransactionCategory>;
   }): Promise<TransactionCategory | null> => {
     if (!apiPath) return null;
 
@@ -112,7 +115,7 @@ const TransactionCategorySelector = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(warehouse),
+      body: JSON.stringify(category),
     });
 
     if (res.ok) {
@@ -120,18 +123,18 @@ const TransactionCategorySelector = ({
 
       if (!id || typeof id !== 'string') {
         showNotification({
-          title: 'Lỗi',
-          message: 'Không thể tạo kho hàng',
+          title: t('common:error'),
+          message: t('cannot-create-category'),
           color: 'red',
         });
         return null;
       }
 
-      return { ...warehouse, id };
+      return { ...category, id };
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo kho hàng',
+        title: t('common:error'),
+        message: t('cannot-create-category'),
         color: 'red',
       });
       return null;
@@ -140,8 +143,8 @@ const TransactionCategorySelector = ({
 
   return (
     <Select
-      label={hideLabel ? undefined : 'Danh mục giao dịch'}
-      placeholder="Không có danh mục giao dịch"
+      label={hideLabel ? undefined : t('category')}
+      placeholder={t('category-placeholder')}
       data={data}
       value={category?.id}
       onChange={(id) =>
@@ -168,7 +171,7 @@ const TransactionCategorySelector = ({
       }}
       getCreateLabel={(query) => (
         <div>
-          + Tạo <span className="font-semibold">{query}</span>
+          + {t('create')} <span className="font-semibold">{query}</span>
         </div>
       )}
       onCreate={(query) => {
@@ -176,7 +179,7 @@ const TransactionCategorySelector = ({
 
         create({
           wsId: ws.id,
-          warehouse: {
+          category: {
             name: query,
             is_expense: true,
           },
@@ -192,7 +195,7 @@ const TransactionCategorySelector = ({
           };
         });
       }}
-      nothingFound="Không tìm thấy kho hàng nào"
+      nothingFound={t('nothing-found')}
       disabled={!categories || disabled}
       required={required}
       clearable={clearable}

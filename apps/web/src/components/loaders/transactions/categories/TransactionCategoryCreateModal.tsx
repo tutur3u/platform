@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
 import { Status } from '../../status';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -20,6 +21,10 @@ interface Progress {
 const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('category-modal');
+  const success = t('common:success');
+  const categoryCreated = t('category-created');
+
   const [progress, setProgress] = useState<Progress>({
     created: 'idle',
   });
@@ -30,11 +35,11 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
   useEffect(() => {
     if (hasSuccess)
       showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo danh mục giao dịch',
+        title: success,
+        message: categoryCreated,
         color: 'green',
       });
-  }, [hasSuccess]);
+  }, [hasSuccess, success, categoryCreated]);
 
   const createTransaction = async () => {
     const res = await fetch(
@@ -54,8 +59,8 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo danh mục giao dịch',
+        title: t('common:error'),
+        message: t('cannot-create-category'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, created: 'error' }));
@@ -84,32 +89,34 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo danh mục giao dịch"
+          title={t('create-category')}
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã tạo danh mục giao dịch</div>
+            <div className="text-green-300">{t('category-created')}</div>
           ) : progress.created === 'error' ? (
-            <div className="text-red-300">Không thể tạo danh mục giao dịch</div>
+            <div className="text-red-300">{t('cannot-create-category')}</div>
           ) : progress.created === 'loading' ? (
-            <div className="text-blue-300">Đang tạo danh mục giao dịch</div>
+            <div className="text-blue-300">{t('creating-category')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ tạo danh mục giao dịch
+              {t('pending-category-created')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.created === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -120,7 +127,7 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -130,7 +137,7 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem danh mục giao dịch
+            {t('category-details')}
           </Link>
         )}
 
@@ -163,12 +170,12 @@ const TransactionCategoryCreateModal = ({ wsId, category }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

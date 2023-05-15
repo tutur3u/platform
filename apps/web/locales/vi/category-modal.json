@@ -1,0 +1,21 @@
+{
+  "cancel": "Huỷ",
+  "category-deleted": "Đã xoá danh mục giao dịch",
+  "cannot-delete-category": "Không thể xoá danh mục giao dịch",
+  "delete-category": "Xoá danh mục giao dịch",
+  "deleting-category": "Đang xoá danh mục giao dịch",
+  "pending-category-deleted": "Đang chờ xoá danh mục giao dịch",
+  "category-created": "Đã tạo danh mục giao dịch",
+  "cannot-create-category": "Không thể tạo danh mục giao dịch",
+  "create-category": "Tạo danh mục giao dịch",
+  "creating-category": "Đang tạo danh mục giao dịch",
+  "pending-category-created": "Đang chờ tạo danh mục giao dịch",
+  "category-details": "Xem danh mục giao dịch",
+  "category-updated": "Đã cập nhật danh mục giao dịch",
+  "cannot-update-category": "Không thể cập nhật danh mục giao dịch",
+  "update-basic-info": "Cập nhật thông tin cơ bản",
+  "basic-info-updated": "Đã cập nhật thông tin cơ bản",
+  "cannot-update-basic-info": "Không thể cập nhật thông tin cơ bản",
+  "updating-basic-info": "Đang cập nhật thông tin cơ bản",
+  "pending-basic-info-updated": "Đang chờ cập nhật thông tin cơ bản"
+}

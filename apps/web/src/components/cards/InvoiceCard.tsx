@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { getGender } from '../../utils/gender-helper';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { Invoice } from '../../types/primitives/Invoice';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   invoice: Invoice;
@@ -33,6 +34,8 @@ const InvoiceCard = ({
   showCreator = false,
 }: Props) => {
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('invoice-card');
 
   const userApiPath = `/api/workspaces/${ws?.id}/users/${invoice.customer_id}`;
   const { data: user } = useSWR<WorkspaceUser>(
@@ -62,7 +65,7 @@ const InvoiceCard = ({
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
-            {invoice?.customer_id ? user?.name : 'Khách vãng lai'}{' '}
+            {invoice?.customer_id ? user?.name : t('passersby')}{' '}
             {showGender && user?.gender && (
               <span className="lowercase text-orange-300">
                 ({getGender(user.gender)})
@@ -71,7 +74,7 @@ const InvoiceCard = ({
           </div>
           {showPhone && invoice?.customer_id && (
             <div className="line-clamp-1 font-semibold text-zinc-400/70">
-              {user?.phone || 'Chưa có số điện thoại'}
+              {user?.phone || t('missing-phone')}
             </div>
           )}
         </div>
@@ -85,16 +88,17 @@ const InvoiceCard = ({
         <div className="flex w-full flex-col items-center justify-center gap-2 p-2">
           {showCreator && (
             <div className="line-clamp-2 w-full rounded border border-cyan-300/20 bg-cyan-300/10 px-4 py-0.5 font-semibold text-cyan-300">
-              Người tạo -{' '}
+              {t('creator')} -{' '}
               {invoice.creator_id
-                ? creator?.display_name || 'Không có tên'
-                : 'Không xác định'}
+                ? creator?.display_name || t('unnamed')
+                : t('unknown')}
             </div>
           )}
 
           {showTime && (
             <div className="line-clamp-2 w-full rounded border border-zinc-300/20 bg-zinc-300/10 px-4 py-0.5 font-semibold text-zinc-300">
-              Tạo lúc {moment(invoice?.created_at).format('HH:mm, DD/MM/YYYY')}
+              {t('created-at')}{' '}
+              {moment(invoice?.created_at).format('HH:mm, DD/MM/YYYY')}
             </div>
           )}
 
@@ -107,10 +111,10 @@ const InvoiceCard = ({
               }`}
             >
               {invoice?.completed_at
-                ? `Hoàn tất lúc ${moment(invoice?.completed_at).format(
+                ? `${t('completed-at')} ${moment(invoice?.completed_at).format(
                     'HH:mm, DD/MM/YYYY'
                   )}`
-                : 'Chờ đóng đơn'}
+                : t('pending-invoice-closed')}
             </div>
           )}
         </div>
@@ -127,7 +131,7 @@ const InvoiceCard = ({
               {Intl.NumberFormat('vi-VN', {
                 style: 'decimal',
               }).format(items?.count || 0)}
-              {' sản phẩm'}
+              {t('product')}
             </div>
           )}
 
@@ -148,7 +152,7 @@ const InvoiceCard = ({
           <Divider variant="dashed" className="w-full border-zinc-700" />
           <div className="m-2 h-full w-full px-2">
             <div className="flex h-full items-center justify-center rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
-              {user?.address || 'Chưa có địa chỉ'}
+              {user?.address || t('missing-address')}
             </div>
           </div>
         </>

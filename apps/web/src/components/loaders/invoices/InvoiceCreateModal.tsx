@@ -13,6 +13,7 @@ import { Status } from '../status';
 import { Invoice } from '../../../types/primitives/Invoice';
 import { Product } from '../../../types/primitives/Product';
 import { Transaction } from '../../../types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -36,6 +37,10 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
     createdProducts: 'idle',
   });
 
+  const { t } = useTranslation('invoice-modal');
+  const success = t('common:success');
+  const invoiceCreated = t('invoice-created');
+
   const hasError =
     progress.createdTransaction === 'error' ||
     progress.createdInvoice === 'error' ||
@@ -49,11 +54,11 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
   useEffect(() => {
     if (hasSuccess)
       showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo hoá đơn',
+        title: success,
+        message: invoiceCreated,
         color: 'green',
       });
-  }, [hasSuccess]);
+  }, [hasSuccess, success, invoiceCreated]);
 
   const createTransaction = async (transaction: Transaction) => {
     if (!transaction?.wallet_id) {
@@ -81,8 +86,8 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo giao dịch',
+        title: t('common:error'),
+        message: t('cannot-create-transaction'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, createdTransaction: 'error' }));
@@ -108,8 +113,8 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo hoá đơn',
+        title: t('common:error'),
+        message: t('cannot-create-invoice'),
         color: 'red',
       });
       setProgress((progress) => ({
@@ -142,8 +147,8 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo đơn giá',
+        title: t('common:error'),
+        message: t('cannot-create-unit-price'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, createdProducts: 'error' }));
@@ -193,70 +198,92 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo giao dịch"
+          title={`${t('create')} ${t('transaction')}`}
         >
           {progress.createdTransaction === 'success' ? (
-            <div className="text-green-300">Đã tạo giao dịch</div>
+            <div className="text-green-300">
+              {t('created')} {t('transaction')}
+            </div>
           ) : progress.createdTransaction === 'error' ? (
-            <div className="text-red-300">Không thể tạo giao dịch</div>
+            <div className="text-red-300">
+              {t('cannot-create')} {t('transaction')}
+            </div>
           ) : progress.createdTransaction === 'loading' ? (
-            <div className="text-blue-300">Đang tạo giao dịch</div>
+            <div className="text-blue-300">
+              {t('creating')} {t('transaction')}
+            </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo giao dịch</div>
+            <div className="text-zinc-400/80">
+              {t('pending-transaction-created')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo hoá đơn"
+          title={`${t('create')} ${t('invoice')}`}
         >
           {progress.createdInvoice === 'success' ? (
-            <div className="text-green-300">Đã tạo hoá đơn</div>
+            <div className="text-green-300">
+              {t('created')} {t('invoice')}
+            </div>
           ) : progress.createdInvoice === 'error' ? (
-            <div className="text-red-300">Không thể tạo hoá đơn</div>
+            <div className="text-red-300">
+              {t('cannot-create')} {t('invoice')}
+            </div>
           ) : progress.createdInvoice === 'loading' ? (
-            <div className="text-blue-300">Đang tạo hoá đơn</div>
+            <div className="text-blue-300">
+              {t('creating')} {t('invoice')}
+            </div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo hoá đơn</div>
+            <div className="text-zinc-400/80">
+              {t('pending-invoice-created')}
+            </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
           bullet={<BanknotesIcon className="h-5 w-5" />}
-          title={`Thêm sản phẩm (${products?.length || 0})`}
+          title={`Thêm ${t('product')} (${products?.length || 0})`}
         >
           {progress.createdInvoice === 'success' ? (
             progress.createdProducts === 'success' ? (
               <div className="text-green-300">
-                Đã thêm {products.length} sản phẩm
+                {t('added')} {products.length} {t('product')}
               </div>
             ) : progress.createdProducts === 'error' ? (
-              <div className="text-red-300">Không thể thêm sản phẩm</div>
+              <div className="text-red-300">
+                {t('cannot-add')} {t('product')}
+              </div>
             ) : progress.createdProducts === 'loading' ? (
               <div className="text-blue-300">
-                Đang thêm {products.length} sản phẩm
+                {t('adding')} {products.length} {t('product')}
               </div>
             ) : (
-              <div className="text-zinc-400/80">Đang chờ thêm sản phẩm</div>
+              <div className="text-zinc-400/80">
+                {t('pending-product-added')}
+              </div>
             )
           ) : progress.createdInvoice === 'error' ? (
-            <div className="text-red-300">Đã huỷ thêm sản phẩm</div>
+            <div className="text-red-300">{t('canceled-adding-product')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ thêm hoá đơn</div>
+            <div className="text-zinc-400/80">{t('pending-invoice-added')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.createdProducts === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -267,7 +294,7 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -277,7 +304,7 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
             onClick={() => closeAllModals()}
             className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
           >
-            Xem hoá đơn
+            {t('invoice-details')}
           </Link>
         )}
 
@@ -310,12 +337,12 @@ const CreateModal = ({ wsId, invoice, transaction, products }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

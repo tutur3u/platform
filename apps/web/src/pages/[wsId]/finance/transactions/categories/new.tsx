@@ -10,6 +10,7 @@ import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import SettingItemCard from '../../../../../components/settings/SettingItemCard';
 import TransactionCategoryCreateModal from '../../../../../components/loaders/transactions/categories/TransactionCategoryCreateModal';
 import { useLocalStorage } from '@mantine/hooks';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -17,21 +18,27 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
+  const { t } = useTranslation('categories');
+  const finance = t('finance');
+  const category = t('category');
+  const unnamedWorkspace = t('unnamed-ws');
+  const create = t('create');
+
   useEffect(() => {
     setRootSegment(
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: 'Tài chính', href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
-              content: 'Danh mục giao dịch',
+              content: category,
               href: `/${ws.id}/finance/transactions/categories`,
             },
             {
-              content: 'Tạo mới',
+              content: create,
               href: `/${ws.id}/finance/transactions/categories/new`,
             },
           ]
@@ -39,7 +46,7 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [ws, setRootSegment]);
+  }, [ws, setRootSegment, finance, category, unnamedWorkspace, create]);
 
   const [name, setName] = useState<string>('');
 
@@ -53,7 +60,7 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
   const showCreateModal = () => {
     if (!ws) return;
     openModal({
-      title: <div className="font-semibold">Tạo danh mục giao dịch mới</div>,
+      title: <div className="font-semibold">{t('create-category')}</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
@@ -72,7 +79,7 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label="Giao dịch – Tài chính" />
+      <HeaderX label={`${category} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
@@ -84,7 +91,7 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showCreateModal : undefined}
             >
-              Tạo mới
+              {t('create')}
             </button>
           </div>
         </div>
@@ -92,39 +99,39 @@ const NewTransactionCategoryPage: PageWithLayoutProps = () => {
         <Divider className="my-4" />
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <SettingItemCard
-            title="Tên danh mục giao dịch"
-            description="Tên danh mục giao dịch sẽ được hiển thị trên giao diện người dùng."
+            title={t('name')}
+            description={t('name-description')}
           >
             <TextInput
-              placeholder="Nhập tên danh mục giao dịch"
+              placeholder={t('name-placeholder')}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
             />
           </SettingItemCard>
 
           <SettingItemCard
-            title="Loại giao dịch"
-            description="Quyết định danh mục giao dịch này có phải là danh mục thu hay chi."
+            title={t('type')}
+            description={t('type-description')}
           >
             <Select
-              placeholder="Chọn loại giao dịch"
+              placeholder={t('type-placeholder')}
               value={isExpense ? 'expense' : 'income'}
               onChange={(e) => setIsExpense(e === 'expense')}
               data={[
-                { label: 'Chi tiêu', value: 'expense' },
-                { label: 'Thu nhập', value: 'income' },
+                { label: t('expense'), value: 'expense' },
+                { label: t('income'), value: 'income' },
               ]}
             />
           </SettingItemCard>
 
           <SettingItemCard
-            title="Biểu tượng đại diện"
-            description="Biểu tượng đại diện sẽ được hiển thị cùng với tên danh mục giao dịch."
+            title={t('icon')}
+            description={t('icon-description')}
             disabled
             comingSoon
           />

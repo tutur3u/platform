@@ -128,10 +128,15 @@
       "pagination",
       "healthcare-tabs"
     ],
-    "/[wsId]/healthcare/checkups/new": ["sidebar-tabs", "healthcare-tabs"],
+    "/[wsId]/healthcare/checkups/new": [
+      "sidebar-tabs",
+      "healthcare-tabs",
+      "ws-selector"
+    ],
     "/[wsId]/healthcare/checkups/[checkupId]": [
       "sidebar-tabs",
-      "healthcare-tabs"
+      "healthcare-tabs",
+      "ws-selector"
     ],
 
     "/[wsId]/healthcare/diagnoses": [
@@ -273,7 +278,7 @@
       "finance-tabs",
       "wallets"
     ],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets"],
+    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets", "wallet-modal"],
     "/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs",
@@ -291,7 +296,8 @@
     "/[wsId]/finance/wallets/[walletId]/settings": [
       "sidebar-tabs",
       "wallet-details-tabs",
-      "wallets"
+      "wallets",
+      "wallet-modal"
     ],
 
     "/[wsId]/finance/transactions": [
@@ -299,12 +305,23 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "transactions"
     ],
-    "/[wsId]/finance/transactions/new": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/transactions/new": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "transactions",
+      "wallet-selector",
+      "category-selector",
+      "transaction-modal"
+    ],
     "/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
-      "finance-tabs"
+      "finance-tabs",
+      "wallet-selector",
+      "category-selector",
+      "transaction-modal"
     ],
 
     "/[wsId]/finance/transactions/categories": [
@@ -312,15 +329,20 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "categories"
     ],
     "/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
-      "finance-tabs"
+      "finance-tabs",
+      "categories",
+      "category-modal"
     ],
     "/[wsId]/finance/transactions/categories/[categoryId]": [
       "sidebar-tabs",
-      "finance-tabs"
+      "finance-tabs",
+      "categories",
+      "category-modal"
     ],
 
     "/[wsId]/finance/invoices": [
@@ -328,10 +350,31 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs"
+      "finance-tabs",
+      "invoices",
+      "status-selector",
+      "invoice-card"
     ],
-    "/[wsId]/finance/invoices/new": ["sidebar-tabs", "finance-tabs"],
-    "/[wsId]/finance/invoices/[invoiceId]": ["sidebar-tabs", "finance-tabs"],
+    "/[wsId]/finance/invoices/new": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "invoices",
+      "invoice-modal",
+      "ws-selector",
+      "wallet-selector",
+      "category-selector",
+      "invoice-product-input"
+    ],
+    "/[wsId]/finance/invoices/[invoiceId]": [
+      "sidebar-tabs",
+      "finance-tabs",
+      "invoices",
+      "invoice-modal",
+      "ws-selector",
+      "wallet-selector",
+      "category-selector",
+      "invoice-product-input"
+    ],
 
     "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
     "/[wsId]/infrastructure/users": [
