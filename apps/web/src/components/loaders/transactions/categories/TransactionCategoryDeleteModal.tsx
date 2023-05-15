@@ -5,6 +5,7 @@ import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../../status';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -18,6 +19,10 @@ interface Progress {
 const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('category-modal');
+  const success = t('common:success');
+  const categoryDeleted = t('category-deleted');
+
   const [progress, setProgress] = useState<Progress>({
     removed: 'idle',
   });
@@ -29,11 +34,11 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
     if (!hasSuccess) return;
 
     showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá danh mục giao dịch',
+      title: success,
+      message: categoryDeleted,
       color: 'green',
     });
-  }, [hasSuccess, categoryId]);
+  }, [hasSuccess, categoryId, success, categoryDeleted]);
 
   const removeDetails = async () => {
     const res = await fetch(
@@ -49,8 +54,8 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể xoá danh mục giao dịch',
+        title: t('common:error'),
+        message: t('cannot-delete-category'),
         color: 'red',
       });
       setProgress((progress) => ({ ...progress, removed: 'error' }));
@@ -78,32 +83,34 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Xoá danh mục giao dịch"
+          title={t('delete-category')}
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã xoá danh mục giao dịch</div>
+            <div className="text-green-300">{t('category-deleted')}</div>
           ) : progress.removed === 'error' ? (
-            <div className="text-red-300">Không thể xoá danh mục giao dịch</div>
+            <div className="text-red-300">{t('cannot-delete-category')}</div>
           ) : progress.removed === 'loading' ? (
-            <div className="text-blue-300">Đang xoá danh mục giao dịch</div>
+            <div className="text-blue-300">{t('deleting-category')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ xoá danh mục giao dịch
+              {t('pending-category-deleted')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -114,7 +121,7 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -135,7 +142,7 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
             }
 
             if (hasSuccess) {
-              router.push(`/${wsId}/finance/transactions/categories`);
+              router.push(`/${wsId}/finance/categories/categories`);
               closeAllModals();
               return;
             }
@@ -147,12 +154,12 @@ const TransactionCategoryDeleteModal = ({ wsId, categoryId }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

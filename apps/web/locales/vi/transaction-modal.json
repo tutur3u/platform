@@ -17,5 +17,14 @@
   "basic-info-updated": "Đã cập nhật thông tin cơ bản",
   "cannot-update-basic-info": "Không thể cập nhật thông tin cơ bản",
   "updating-basic-info": "Đang cập nhật thông tin cơ bản",
-  "pending-basic-info-updated": "Đang chờ cập nhật thông tin cơ bản"
+  "pending-basic-info-updated": "Đang chờ cập nhật thông tin cơ bản",
+  "link-transactions": "Liên kết giao dịch",
+  "cannot-link-transactions": "Không thể liên kết giao dịch",
+  "withdraw-from-wallet": "Rút tiền từ nguồn tiền",
+  "receive-from-wallet": "Nhận tiền từ nguồn tiền",
+  "create-withdraw-transaction": "Tạo giao dịch rút tiền",
+  "create-deposit-transaction": "Tạo giao dịch nhận tiền",
+  "transactions-linked": "Đã liên kết giao dịch",
+  "linking-transactions": "Đang liên kết giao dịch",
+  "pending-transactions-linked": "Đang chờ liên kết giao dịch"
 }

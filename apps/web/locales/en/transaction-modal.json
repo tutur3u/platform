@@ -17,5 +17,14 @@
   "basic-info-updated": "Basic information updated",
   "cannot-update-basic-info": "Cannot update basic information",
   "updating-basic-info": "Updating basic information",
-  "pending-basic-info-updated": "Pending basic information updated"
+  "pending-basic-info-updated": "Pending basic information updated",
+  "link-transactions": "Link transactions",
+  "cannot-link-transactions": "Cannot link transactions",
+  "withdraw-from-wallet": "Withdraw from wallet",
+  "receive-from-wallet": "Receive from wallet",
+  "create-withdraw-transaction": "Create withdraw transaction",
+  "create-deposit-transaction": "Create deposit transaction",
+  "transactions-linked": "Transactions linked",
+  "linking-transactions": "Linking transactions",
+  "pending-transactions-linked": "Pending transactions linked"
 }

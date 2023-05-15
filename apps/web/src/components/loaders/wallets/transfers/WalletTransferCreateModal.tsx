@@ -8,6 +8,7 @@ import { Status } from '../../status';
 import { Transaction } from '../../../../types/primitives/Transaction';
 import { WalletTransfer } from '../../../../types/primitives/WalletTransfer';
 import { Wallet } from '../../../../types/primitives/Wallet';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -32,6 +33,10 @@ const WalletTransferCreateModal = ({
 }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('transaction-modal');
+  const success = t('common:success');
+  const transactionCreated = t('transaction-created');
+
   const [progress, setProgress] = useState<Progress>({
     createdWithdrawTransaction: 'idle',
     createdDepositTransaction: 'idle',
@@ -51,11 +56,11 @@ const WalletTransferCreateModal = ({
   useEffect(() => {
     if (hasSuccess)
       showNotification({
-        title: 'Thành công',
-        message: 'Đã tạo giao dịch',
+        title: success,
+        message: transactionCreated,
         color: 'green',
       });
-  }, [hasSuccess]);
+  }, [hasSuccess, success, transactionCreated]);
 
   const createTransaction = async (
     walletId: string,
@@ -77,8 +82,8 @@ const WalletTransferCreateModal = ({
       return id;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo giao dịch',
+        title: t('common:error'),
+        message: t('cannot-create-transaction'),
         color: 'red',
       });
       return false;
@@ -101,8 +106,8 @@ const WalletTransferCreateModal = ({
       return true;
     } else {
       showNotification({
-        title: 'Lỗi',
-        message: 'Không thể tạo liên kết giao dịch',
+        title: t('common:error'),
+        message: t('cannot-link-transaction'),
         color: 'red',
       });
       return false;
@@ -121,13 +126,13 @@ const WalletTransferCreateModal = ({
     const withdrawPromise = createTransaction(originWallet.id, {
       ...transaction,
       amount: -(transaction?.amount || 0),
-      description: `Rút tiền từ nguồn tiền ${originWallet.name}`,
+      description: `${t('withdraw-from-wallet')} ${originWallet.name}`,
     });
 
     const depositPromise = createTransaction(destinationWallet.id, {
       ...transaction,
       amount: transaction?.amount || 0,
-      description: `Nhận tiền từ nguồn tiền ${originWallet.name}`,
+      description: `${t('receive-from-wallet')} ${originWallet.name}`,
     });
 
     const [withdrawId, depositId] = await Promise.all([
@@ -191,62 +196,68 @@ const WalletTransferCreateModal = ({
       >
         <Timeline.Item
           bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo giao dịch rút tiền"
+          title={t('create-withdraw-transaction')}
         >
           {progress.createdWithdrawTransaction === 'success' ? (
-            <div className="text-green-300">Đã tạo giao dịch</div>
+            <div className="text-green-300">{t('transaction-created')}</div>
           ) : progress.createdWithdrawTransaction === 'error' ? (
-            <div className="text-red-300">Không thể tạo giao dịch</div>
+            <div className="text-red-300">{t('cannot-create-transaction')}</div>
           ) : progress.createdWithdrawTransaction === 'loading' ? (
-            <div className="text-blue-300">Đang tạo giao dịch</div>
-          ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo giao dịch</div>
-          )}
-        </Timeline.Item>
-
-        <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
-          title="Tạo giao dịch nhận tiền"
-        >
-          {progress.createdDepositTransaction === 'success' ? (
-            <div className="text-green-300">Đã tạo giao dịch</div>
-          ) : progress.createdDepositTransaction === 'error' ? (
-            <div className="text-red-300">Không thể tạo giao dịch</div>
-          ) : progress.createdDepositTransaction === 'loading' ? (
-            <div className="text-blue-300">Đang tạo giao dịch</div>
-          ) : (
-            <div className="text-zinc-400/80">Đang chờ tạo giao dịch</div>
-          )}
-        </Timeline.Item>
-
-        <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
-          title="Liên kết giao dịch"
-        >
-          {progress.createdWalletTransfer === 'success' ? (
-            <div className="text-green-300">Đã tạo liên kết giao dịch</div>
-          ) : progress.createdWalletTransfer === 'error' ? (
-            <div className="text-red-300">Không thể tạo liên kết giao dịch</div>
-          ) : progress.createdWalletTransfer === 'loading' ? (
-            <div className="text-blue-300">Đang tạo liên kết giao dịch</div>
+            <div className="text-blue-300">{t('creating-transaction')}</div>
           ) : (
             <div className="text-zinc-400/80">
-              Đang chờ tạo liên kết giao dịch
+              {t('pending-transaction-created')}
             </div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          bullet={<PlusIcon className="h-5 w-5" />}
+          title={t('create-deposit-transaction')}
+        >
+          {progress.createdDepositTransaction === 'success' ? (
+            <div className="text-green-300">{t('transaction-created')}</div>
+          ) : progress.createdDepositTransaction === 'error' ? (
+            <div className="text-red-300">{t('cannot-create-transaction')}</div>
+          ) : progress.createdDepositTransaction === 'loading' ? (
+            <div className="text-blue-300">{t('creating-transaction')}</div>
+          ) : (
+            <div className="text-zinc-400/80">
+              {t('pending-transaction-created')}
+            </div>
+          )}
+        </Timeline.Item>
+
+        <Timeline.Item
+          bullet={<PlusIcon className="h-5 w-5" />}
+          title={t('link-transactions')}
+        >
+          {progress.createdWalletTransfer === 'success' ? (
+            <div className="text-green-300">{t('transactions-linked')}</div>
+          ) : progress.createdWalletTransfer === 'error' ? (
+            <div className="text-red-300">{t('cannot-link-transactions')}</div>
+          ) : progress.createdWalletTransfer === 'loading' ? (
+            <div className="text-blue-300">{t('cannot-link-transactions')}</div>
+          ) : (
+            <div className="text-zinc-400/80">
+              {t('pending-transactions-linked')}
+            </div>
+          )}
+        </Timeline.Item>
+
+        <Timeline.Item
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.createdWalletTransfer === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -257,7 +268,7 @@ const WalletTransferCreateModal = ({
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
+            {t('cancel')}
           </button>
         )}
 
@@ -290,12 +301,12 @@ const WalletTransferCreateModal = ({
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

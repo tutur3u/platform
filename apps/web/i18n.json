@@ -306,12 +306,14 @@
     "/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
       "finance-tabs",
-      "categories"
+      "categories",
+      "category-modal"
     ],
     "/[wsId]/finance/transactions/categories/[categoryId]": [
       "sidebar-tabs",
       "finance-tabs",
-      "categories"
+      "categories",
+      "category-modal"
     ],
 
     "/[wsId]/finance/invoices": [
