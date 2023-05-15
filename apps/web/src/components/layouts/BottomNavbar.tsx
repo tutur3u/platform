@@ -21,7 +21,7 @@ export default function BottomNavbar() {
       : `/onboarding?nextUrl=${url}&withWorkspace=true`;
 
   return (
-    <div className="fixed bottom-0 z-[100] flex w-full items-center justify-between gap-2 border-t border-zinc-800 bg-zinc-900 p-2 md:hidden">
+    <div className="fixed bottom-0 z-[100] flex w-full items-center justify-between gap-2 border-t border-zinc-800 bg-[#111113]/50 p-2 backdrop-blur md:hidden">
       <SidebarLink
         href={getWorkspaceHome('')}
         activeIcon={<HomeIcon className="w-5" />}

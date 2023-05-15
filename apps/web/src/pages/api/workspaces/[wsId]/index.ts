@@ -2,23 +2,34 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Workspace } from '../../../../types/primitives/Workspace';
 
-const fetchWorkspaces = async (
+const fetchWorkspace = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+
   const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name, preset, created_at')
-    .eq('id', wsId)
+    .from('workspace_members')
+    .select('id:ws_id, role, workspaces(name, preset, created_at)')
+    .eq('user_id', user.id)
+    .eq('ws_id', wsId)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data);
+  return res.status(200).json({
+    id: data.id,
+    role: data.role,
+    ...data.workspaces,
+  });
 };
 
 const updateWorkspace = async (
@@ -69,7 +80,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     switch (req.method) {
       case 'GET':
-        return await fetchWorkspaces(req, res, wsId);
+        return await fetchWorkspace(req, res, wsId);
 
       case 'PUT':
         return await updateWorkspace(req, res, wsId);
