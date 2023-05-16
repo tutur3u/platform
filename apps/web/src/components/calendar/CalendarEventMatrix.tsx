@@ -10,13 +10,15 @@ const CalendarEventMatrix = () => {
 
   return (
     <div
-      className={`pointer-events-none absolute inset-0 grid grid-cols-${columns} ${
-        dates.length === 1 && 'max-w-lg'
+      className={`pointer-events-none absolute inset-0 grid ${
+        columns === 1 && 'max-w-lg'
       }`}
     >
-      {events.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      <div id="calendar-event-matrix" className="relative">
+        {events.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
     </div>
   );
 };

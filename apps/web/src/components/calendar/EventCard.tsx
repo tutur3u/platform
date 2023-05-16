@@ -103,13 +103,20 @@ export default function EventCard({ event }: EventCardProps) {
 
     // Update event position
     cardEl.style.top = `${startHours * 80}px`;
-    const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
-    cardEl.style.left = `${left}px`;
+
+    const observer = new ResizeObserver(() => {
+      const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
+      cardEl.style.left = `${left}px`;
+    });
+
+    observer.observe(cellEl);
 
     // Update event time visibility
     const timeEl = cardEl.querySelector('#time');
     if (duration <= 0.5) timeEl?.classList.add('hidden');
     else timeEl?.classList.remove('hidden');
+
+    return () => observer.disconnect();
   }, [id, start_at, end_at, level, getDatesInView]);
 
   const isPast = () => {
@@ -140,15 +147,22 @@ export default function EventCard({ event }: EventCardProps) {
     ) as HTMLDivElement | null;
     if (!cellEl) return;
 
-    const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
-    const normalWidth = cellEl.offsetWidth - level * 12 - 4;
+    const observer = new ResizeObserver(() => {
+      const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
+      const normalWidth = cellEl.offsetWidth - level * 12 - 4;
 
-    const isEditing = isDragging || isResizing;
-    const padding = isEditing ? paddedWidth : normalWidth;
+      const isEditing = isDragging || isResizing;
+      const padding = isEditing ? paddedWidth : normalWidth;
 
-    cardEl.style.width = `${padding}px`;
+      cardEl.style.width = `${padding}px`;
+      if (isEditing) hideModal();
+    });
 
-    if (isEditing) hideModal();
+    observer.observe(cellEl);
+
+    return () => {
+      observer.disconnect();
+    };
   }, [id, level, isDragging, isResizing, getDatesInView, hideModal]);
 
   const activeEvent = getActiveEvent();
@@ -367,35 +381,55 @@ export default function EventCard({ event }: EventCardProps) {
     const colors: {
       [key: string]: string;
     } = {
-      red: `border-red-300/80 text-red-200 ${
-        isNotFocused ? 'bg-[#241f22]' : 'bg-[#302729]'
+      red: `border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200 ${
+        isNotFocused
+          ? 'bg-[#fdecec] dark:bg-[#241f22]'
+          : 'bg-[#fcdada] dark:bg-[#302729]'
       }`,
-      blue: `border-blue-300/80 text-blue-200 ${
-        isNotFocused ? 'bg-[#1e2127]' : 'bg-[#252a32]'
+      blue: `border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200 ${
+        isNotFocused
+          ? 'bg-[#ebf2fe] dark:bg-[#1e2127]'
+          : 'bg-[#d8e6fd] dark:bg-[#252a32]'
       }`,
-      green: `border-green-300/80 text-green-200 ${
-        isNotFocused ? 'bg-[#1e2323]' : 'bg-[#242e2a]'
+      green: `border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200 ${
+        isNotFocused
+          ? 'bg-[#e8f9ef] dark:bg-[#1e2323]'
+          : 'bg-[#d3f3df] dark:bg-[#242e2a]'
       }`,
-      yellow: `border-yellow-300/80 text-yellow-200 ${
-        isNotFocused ? 'bg-[#24221e]' : 'bg-[#302d1f]'
+      yellow: `border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200 ${
+        isNotFocused
+          ? 'bg-[#fdf7e6] dark:bg-[#24221e]'
+          : 'bg-[#fbf0ce] dark:bg-[#302d1f]'
       }`,
-      orange: `border-orange-300/80 text-orange-200 ${
-        isNotFocused ? 'bg-[#242020]' : 'bg-[#302924]'
+      orange: `border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200 ${
+        isNotFocused
+          ? 'bg-[#fef1e7] dark:bg-[#242020]'
+          : 'bg-[#fee3d0] dark:bg-[#302924]'
       }`,
-      purple: `border-purple-300/80 text-purple-200 ${
-        isNotFocused ? 'bg-[#222027]' : 'bg-[#2c2832]'
+      purple: `border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200 ${
+        isNotFocused
+          ? 'bg-[#f6eefe] dark:bg-[#222027]'
+          : 'bg-[#eeddfd] dark:bg-[#2c2832]'
       }`,
-      pink: `border-pink-300/80 text-pink-200 ${
-        isNotFocused ? 'bg-[#242025]' : 'bg-[#2f272e]'
+      pink: `border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200 ${
+        isNotFocused
+          ? 'bg-[#fdecf5] dark:bg-[#242025]'
+          : 'bg-[#fbdaeb] dark:bg-[#2f272e]'
       }`,
-      indigo: `border-indigo-300/80 text-indigo-200 ${
-        isNotFocused ? 'bg-[#1f2027]' : 'bg-[#272832]'
+      indigo: `border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200 ${
+        isNotFocused
+          ? 'bg-[#efeffe] dark:bg-[#1f2027]'
+          : 'bg-[#e0e0fc] dark:bg-[#272832]'
       }`,
-      cyan: `border-cyan-300/80 text-cyan-200 ${
-        isNotFocused ? 'bg-[#1c2327]' : 'bg-[#212e31]'
+      cyan: `border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200 ${
+        isNotFocused
+          ? 'bg-[#e6f8fb] dark:bg-[#1c2327]'
+          : 'bg-[#cdf0f6] dark:bg-[#212e31]'
       }`,
-      gray: `border-gray-300/80 text-gray-200 ${
-        isNotFocused ? 'bg-[#222225]' : 'bg-[#2b2c2e]'
+      gray: `border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200 ${
+        isNotFocused
+          ? 'bg-[#f0f1f2] dark:bg-[#222225]'
+          : 'bg-[#e1e3e6] dark:bg-[#2b2c2e]'
       }`,
     };
 
@@ -419,7 +453,7 @@ export default function EventCard({ event }: EventCardProps) {
         id={`event-${id}`}
         className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${
           isPast() && !isOpened
-            ? 'border-zinc-500 border-opacity-30 bg-[#1c1c1e] text-zinc-400'
+            ? 'border-zinc-400 border-opacity-30 bg-[#e3e3e4] text-zinc-400 dark:border-zinc-600 dark:bg-[#1c1c1e]'
             : generateColor()
         } ${isNotFocused && 'border-transparent text-opacity-10'} ${
           level && 'border'
@@ -454,7 +488,11 @@ export default function EventCard({ event }: EventCardProps) {
             {duration > 0.5 && (
               <div
                 id="time"
-                className={isPast() ? 'text-zinc-400/50' : 'text-zinc-200/50'}
+                className={
+                  isPast()
+                    ? 'text-zinc-400/50'
+                    : 'text-zinc-700/50 dark:text-zinc-200/50'
+                }
               >
                 {startTime} - {endTime}
               </div>

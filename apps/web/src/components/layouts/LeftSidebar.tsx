@@ -1,5 +1,5 @@
 import {
-  HomeIcon,
+  ArrowPathIcon,
   Cog6ToothIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
@@ -67,7 +67,8 @@ function LeftSidebar({ className }: SidebarProps) {
   const invite = t('invite');
   const moreMembers = t('more-members');
 
-  const home = t('home');
+  const refresh = t('refresh');
+
   const notifications = t('notifications');
 
   const collapseSidebar = t('collapse-sidebar');
@@ -282,7 +283,7 @@ function LeftSidebar({ className }: SidebarProps) {
       )}
 
       <div className="scrollbar-none h-full overflow-y-auto">
-        {ws?.id && (
+        {ws?.id ? (
           <>
             <CreateNewButton />
             <Divider className="mt-2" />
@@ -302,10 +303,22 @@ function LeftSidebar({ className }: SidebarProps) {
               />
             </div>
           </>
+        ) : (
+          <div className="mx-2 h-full">
+            <SidebarLink
+              onClick={() => {
+                router.reload();
+                setUserPopover(false);
+              }}
+              activeIcon={<ArrowPathIcon className="w-5" />}
+              label={refresh}
+              showTooltip={sidebar === 'closed'}
+            />
+          </div>
         )}
       </div>
 
-      {ws?.id ? (
+      {ws?.id && (
         <div className="mx-2">
           <SidebarLink
             href={`/${ws.id}/notifications`}
@@ -327,16 +340,6 @@ function LeftSidebar({ className }: SidebarProps) {
             classNames={{
               root: 'hidden md:block',
             }}
-          />
-        </div>
-      ) : (
-        <div className={`mx-2 h-full`}>
-          <SidebarLink
-            href={`/onboarding?nextUrl=&withWorkspace=true`}
-            onClick={() => setUserPopover(false)}
-            activeIcon={<HomeIcon className="w-5" />}
-            label={home}
-            showTooltip={sidebar === 'closed'}
           />
         </div>
       )}

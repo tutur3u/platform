@@ -18,7 +18,7 @@ const UserCard = ({ user }: Props) => {
           <div className="line-clamp-1 font-semibold tracking-wide">
             {user.display_name}
           </div>
-          <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
+          <div className="line-clamp-1 font-semibold text-blue-600 dark:text-blue-300">
             @{user?.handle || 'Chưa có handle'}
           </div>
         </div>
@@ -30,7 +30,7 @@ const UserCard = ({ user }: Props) => {
       />
 
       <div className="m-2 h-full w-full px-2">
-        <div className="flex h-full items-center justify-center rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+        <div className="flex h-full items-center justify-center rounded border border-green-500/20 bg-green-500/10 p-2 font-semibold text-green-600 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">
           Created at {moment(user?.created_at).format('HH:mm, DD/MM/YYYY')}
         </div>
       </div>
