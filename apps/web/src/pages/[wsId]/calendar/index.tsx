@@ -5,7 +5,6 @@ import HeaderX from '../../../components/metadata/HeaderX';
 import { DEV_MODE } from '../../../constants/common';
 import Calendar from '../../../components/calendar/Calendar';
 import NestedLayout from '../../../components/layouts/NestedLayout';
-import UnderConstructionTag from '../../../components/common/UnderConstructionTag';
 
 const CalendarPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
@@ -16,14 +15,6 @@ const CalendarPage: PageWithLayoutProps = () => {
       href: '/calendar',
     });
   }, [setRootSegment]);
-
-  if (!DEV_MODE)
-    return (
-      <>
-        <HeaderX label="Calendar" />
-        <UnderConstructionTag />
-      </>
-    );
 
   return (
     <>
