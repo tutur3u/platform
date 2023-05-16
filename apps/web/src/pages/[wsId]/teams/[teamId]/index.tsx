@@ -50,11 +50,11 @@ const TeamOverviewPage = () => {
 
       {teamId && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">Overview</h1>
-            <p className="text-zinc-400">
+            <p className="text-zinc-700 dark:text-zinc-400">
               A quick summary of the{' '}
-              <span className="font-semibold text-zinc-200">
+              <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {team?.name || 'Untitled Team'}
               </span>{' '}
               team and its progress.

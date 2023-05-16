@@ -150,7 +150,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
   };
 
   return (
-    <div className="rounded border border-zinc-300/10 bg-zinc-900 p-4">
+    <div className="rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
       <div className="text-2xl font-semibold">{warehouse.name}</div>
       <Divider className="my-2" variant="dashed" />
 
@@ -181,7 +181,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
       <div className="flex flex-col justify-between gap-2 md:flex-row">
         <button
-          className="mt-4 rounded border border-purple-300/10 bg-purple-300/10 px-4 py-2 font-semibold text-purple-300 transition hover:bg-purple-300/20"
+          className="mt-4 rounded border border-purple-500/10 bg-purple-500/10 px-4 py-2 font-semibold text-purple-500 transition hover:bg-purple-500/20 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300 dark:hover:bg-purple-300/20"
           onClick={addEmptyPrice}
         >
           + Thêm đơn giá
@@ -190,15 +190,15 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
         {productId && pricesChanged && (
           <div className="mt-4 flex flex-col gap-2 md:flex-row">
             <button
-              className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-2 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
+              className="rounded border border-zinc-500/10 bg-zinc-500/10 px-4 py-2 font-semibold text-zinc-500 transition hover:bg-zinc-500/20 dark:border-zinc-300/10 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20"
               onClick={resetPrices}
             >
               Hủy
             </button>
             <button
-              className={`rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
+              className={`rounded border border-green-500/10 bg-green-500/10 px-4 py-2 font-semibold text-green-500 transition dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300 ${
                 hasRequiredFields()
-                  ? 'hover:bg-green-300/20'
+                  ? 'hover:bg-green-500/20 dark:hover:bg-green-300/20'
                   : 'cursor-not-allowed opacity-50'
               }`}
               onClick={hasRequiredFields() ? showEditModal : undefined}

@@ -27,22 +27,22 @@ const StatisticCard = ({
   const generateOuterColor = (enableHoverEffect: boolean) => {
     switch (color) {
       case 'green':
-        return `border-green-300/10 bg-green-300/5 ${
+        return `border-green-500/10 bg-green-500/10 dark:border-green-300/10 dark:bg-green-300/5 ${
           enableHoverEffect ? 'hover:bg-green-300/10' : ''
         }`;
 
       case 'red':
-        return `border-red-300/10 bg-red-300/5 ${
+        return `border-red-500/10 bg-red-500/10 dark:border-red-300/10 dark:bg-red-300/5 ${
           enableHoverEffect ? 'hover:bg-red-300/10' : ''
         }`;
 
       case 'blue':
-        return `border-blue-300/10 bg-blue-300/5 ${
+        return `border-blue-500/10 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/5 ${
           enableHoverEffect ? 'hover:bg-blue-300/10' : ''
         }`;
 
       default:
-        return `border-zinc-300/10 bg-zinc-300/5 ${
+        return `border-zinc-500/10 bg-zinc-500/10 dark:border-zinc-300/10 dark:bg-zinc-300/5 ${
           enableHoverEffect ? 'hover:bg-zinc-300/10' : ''
         }`;
     }
@@ -51,32 +51,32 @@ const StatisticCard = ({
   const generateInnerColor = () => {
     switch (color) {
       case 'green':
-        return 'border-green-300/20 bg-green-300/10 text-green-300';
+        return 'border-green-500/20 bg-green-500/10 text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300';
 
       case 'red':
-        return 'border-red-300/20 bg-red-300/10 text-red-300';
+        return 'border-red-500/20 bg-red-500/10 text-red-500 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300';
 
       case 'blue':
-        return 'border-blue-300/20 bg-blue-300/10 text-blue-300';
+        return 'border-blue-500/20 bg-blue-500/10 text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300';
 
       default:
-        return 'border-zinc-300/20 bg-zinc-300/10 text-zinc-300';
+        return 'border-zinc-500/20 bg-zinc-500/10 text-zinc-500 dark:border-zinc-300/20 dark:bg-zinc-300/10 dark:text-zinc-300';
     }
   };
 
   const generateTitleColor = () => {
     switch (color) {
       case 'green':
-        return 'text-green-300';
+        return 'text-green-700 dark:text-green-300';
 
       case 'red':
-        return 'text-red-300';
+        return 'text-red-700 dark:text-red-300';
 
       case 'blue':
-        return 'text-blue-300';
+        return 'text-blue-700 dark:text-blue-300';
 
       default:
-        return 'text-zinc-300';
+        return 'text-zinc-700 dark:text-zinc-300';
     }
   };
 

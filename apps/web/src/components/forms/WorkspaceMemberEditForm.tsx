@@ -63,9 +63,11 @@ const WorkspaceMemberEditForm = ({
 
   return (
     <div className="grid gap-2">
-      <div className="rounded border border-zinc-300/10 bg-zinc-800 p-4">
+      <div className="rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-xl font-semibold">{user?.display_name}</div>
-        {user?.handle && <div className="text-blue-300">@{user.handle}</div>}
+        {user?.handle && (
+          <div className="text-blue-600 dark:text-blue-300">@{user.handle}</div>
+        )}
       </div>
 
       <Divider className="my-1" />
@@ -116,7 +118,7 @@ const WorkspaceMemberEditForm = ({
         disabled={
           !role || (role === user?.role && roleTitle === user?.role_title)
         }
-        className="bg-blue-300/10"
+        className="bg-blue-500/10 dark:bg-blue-300/10"
       >
         {user?.id ? t('common:save') : t('invite_member')}
       </Button>
@@ -130,7 +132,7 @@ const WorkspaceMemberEditForm = ({
           <>
             <Divider variant="dashed" className="my-1" />
             <div>
-              <span className="text-zinc-400">
+              <span className="text-zinc-700 dark:text-zinc-400">
                 {user.role === 'OWNER' && disallowOwnerChange
                   ? t('cannot-delete-last-owner')
                   : t('delete-member-description')}
@@ -144,7 +146,7 @@ const WorkspaceMemberEditForm = ({
                 await onDelete?.();
                 closeAllModals();
               }}
-              className="bg-red-300/10"
+              className="bg-red-500/10 dark:bg-red-300/10"
               disabled={user.role === 'OWNER' && disallowOwnerChange}
             >
               {t('common:delete')}

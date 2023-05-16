@@ -33,7 +33,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
           )
         ) : null}
 
-        <span className="text-zinc-400">
+        <span className="text-zinc-700 dark:text-zinc-400">
           {' '}
           {hasActor
             ? fullLabel

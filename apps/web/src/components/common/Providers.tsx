@@ -38,8 +38,8 @@ const Providers = ({
       >
         <CalendarProvider>
           <UserDataProvider>
-            <MantineProvider>
-              <AppearanceProvider>
+            <AppearanceProvider>
+              <MantineProvider>
                 <SegmentProvider>
                   <WorkspaceProvider>
                     <WalletProvider>
@@ -47,8 +47,8 @@ const Providers = ({
                     </WalletProvider>
                   </WorkspaceProvider>
                 </SegmentProvider>
-              </AppearanceProvider>
-            </MantineProvider>
+              </MantineProvider>
+            </AppearanceProvider>
           </UserDataProvider>
         </CalendarProvider>
       </SWRConfig>

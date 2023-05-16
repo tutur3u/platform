@@ -32,7 +32,7 @@ const TopNavbar = ({
       id="top-navigation"
       className={`${
         disableTabs ? 'h-[3.8rem]' : 'h-25'
-      } absolute inset-x-0 top-0 z-[100] clear-both flex-none border-b border-zinc-800 bg-[#111113]/50 backdrop-blur transition-all duration-300 content-none`}
+      } absolute inset-x-0 top-0 z-[100] clear-both w-full flex-none border-b border-zinc-300 bg-white/50 backdrop-blur transition-all duration-300 content-none dark:border-zinc-800 dark:bg-[#111113]/50`}
       onMouseEnter={
         defaultNoTabs || !disableTabs ? undefined : () => setDisableTabs(false)
       }
@@ -70,7 +70,7 @@ const TopNavbar = ({
                 <Fragment key={`segment-${s.content}-${s.href}`}>
                   <Link
                     href={s.href}
-                    className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold transition md:hover:border-zinc-300/10 md:hover:bg-zinc-300/10"
+                    className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold text-zinc-700 transition dark:text-zinc-300 md:hover:border-zinc-500/20 md:hover:bg-zinc-500/10 md:dark:hover:border-zinc-300/10 md:dark:hover:bg-zinc-300/10"
                   >
                     {s?.content || ''}
                   </Link>
@@ -82,7 +82,7 @@ const TopNavbar = ({
                 </Fragment>
               ))
           ) : (
-            <div className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold transition md:hover:border-zinc-300/10 md:hover:bg-zinc-300/10">
+            <div className="min-w-max rounded border border-transparent px-2 py-0.5 font-semibold transition md:hover:border-zinc-500/20 md:hover:bg-zinc-500/10 md:dark:hover:border-zinc-300/10 md:dark:hover:bg-zinc-300/10">
               <LoadingIndicator className="h-4 w-4" />
             </div>
           )}
@@ -99,7 +99,7 @@ const TopNavbar = ({
               return (
                 <div
                   key={`tab-${tab.href}`}
-                  className="group flex-none cursor-not-allowed rounded-t-lg border-b-2 border-transparent pb-2 text-zinc-500/80 opacity-50"
+                  className="group flex-none cursor-not-allowed rounded-t-lg border-b-2 border-transparent pb-2 opacity-50 dark:text-zinc-500/80"
                 >
                   <div
                     className={`select-none rounded px-4 py-1 text-center font-semibold`}
@@ -117,11 +117,11 @@ const TopNavbar = ({
                   segments &&
                   segments.length > 0 &&
                   segments.slice(-1)[0].href === tab.href
-                    ? 'border-zinc-300 text-zinc-300'
-                    : 'border-transparent text-zinc-500 md:hover:text-zinc-300'
+                    ? 'border-zinc-500 text-zinc-700 dark:border-zinc-300 dark:text-zinc-300'
+                    : 'border-transparent text-zinc-400 dark:text-zinc-500 md:hover:text-zinc-700 md:dark:hover:text-zinc-300'
                 }`}
               >
-                <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-800">
+                <div className="rounded px-4 py-1 text-center font-semibold md:group-hover:bg-zinc-500/10 md:dark:group-hover:bg-zinc-800">
                   {tab.name}
                 </div>
               </Link>

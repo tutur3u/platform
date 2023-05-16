@@ -24,18 +24,20 @@ const ProductCard = ({
   return (
     <Link
       href={`/${ws.id}/inventory/products/${product.id}`}
-      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
+      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
             {product.name}{' '}
             {product.unit && (
-              <span className="lowercase text-blue-300">({product.unit})</span>
+              <span className="lowercase text-blue-600 dark:text-blue-300">
+                ({product.unit})
+              </span>
             )}
           </div>
           {showSupplier && (
-            <div className="line-clamp-1 font-semibold text-zinc-400/70">
+            <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
               {product.manufacturer}
             </div>
           )}
@@ -43,10 +45,10 @@ const ProductCard = ({
 
         {(showAmount || showCategory) && (
           <>
-            <Divider className="w-full border-zinc-700" />
+            <Divider className="w-full border-zinc-300 dark:border-zinc-700" />
             <div className="flex flex-col items-center justify-center gap-2 p-2">
               {showAmount && (
-                <div className="line-clamp-1 w-full rounded border border-blue-300/20 bg-blue-300/10 px-4 py-0.5 font-semibold text-blue-300">
+                <div className="line-clamp-1 w-full rounded border border-blue-500/20 bg-blue-500/10 px-4 py-0.5 font-semibold text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
                   {Intl.NumberFormat('vi-VN', {
                     style: 'decimal',
                   }).format(product?.amount || 0)}{' '}
@@ -54,7 +56,7 @@ const ProductCard = ({
                 </div>
               )}
               {showCategory && (
-                <div className="line-clamp-1 w-full rounded border border-orange-300/20 bg-orange-300/10 px-4 py-0.5 font-semibold text-orange-300">
+                <div className="line-clamp-1 w-full rounded border border-orange-500/20 bg-orange-500/10 px-4 py-0.5 font-semibold text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
                   {product?.category}
                 </div>
               )}
@@ -65,13 +67,16 @@ const ProductCard = ({
 
       {showPrice && (
         <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
+          <Divider
+            variant="dashed"
+            className="w-full border-zinc-300 dark:border-zinc-700"
+          />
           <div className="w-full">
             <div
               className={`m-2 rounded border p-2 font-semibold ${
                 product?.unit
-                  ? 'border-purple-300/20 bg-purple-300/10 text-purple-300'
-                  : 'border-red-300/20 bg-red-300/10 text-red-300'
+                  ? 'border-purple-500/20 bg-purple-500/10 text-purple-500 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300'
+                  : 'border-red-500/20 bg-red-500/10 text-red-500 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300'
               }`}
             >
               {product?.unit ? (

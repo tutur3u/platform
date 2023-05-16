@@ -23,7 +23,7 @@
   "add-note": "Add note",
   "total": "The amount customer needs to pay",
   "total-placeholder": "Enter the amount customer needs to pay",
-  "reorder": "Reorder",
+  "reset": "Reset",
   "discount": "Customer will receive a discount of",
   "extra-pay": "Customer will pay an extra of",
   "for-this-invoice": "for this invoice.",

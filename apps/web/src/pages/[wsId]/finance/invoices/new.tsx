@@ -208,7 +208,7 @@ const NewPage: PageWithLayoutProps = () => {
               onChange={(date) => setTakenAt(date || new Date())}
               className="col-span-full"
               classNames={{
-                input: 'bg-[#25262b]',
+                input: 'dark:bg-[#25262b]',
               }}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
@@ -230,7 +230,7 @@ const NewPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNotice('')}
               >
                 + {t('add-notice')}
@@ -251,7 +251,7 @@ const NewPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNote('')}
               >
                 + {t('add-note')}
@@ -304,15 +304,15 @@ const NewPage: PageWithLayoutProps = () => {
                 {diff != 0 && (
                   <>
                     <button
-                      className="mt-2 w-full rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition hover:bg-red-300/20 md:col-span-2"
+                      className="mt-2 w-full rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-500/20 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20 md:col-span-2"
                       onClick={() => setDiff(0)}
                     >
-                      {t('reorder')}
+                      {t('reset')}
                     </button>
                     <Divider className="my-2" />
-                    <div className="my-2 rounded border border-orange-300/10 bg-orange-300/10 p-2 text-center font-semibold text-orange-300">
+                    <div className="my-2 rounded border border-orange-500/10 bg-orange-500/10 p-2 text-center font-semibold text-orange-400 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300">
                       {diff > 0 ? t('extra-pay') : t('discount')}{' '}
-                      <span className="text-orange-100 underline decoration-orange-100 underline-offset-4">
+                      <span className="text-orange-600 underline decoration-orange-600 underline-offset-4 dark:text-orange-100 dark:decoration-orange-100">
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND',
@@ -333,7 +333,7 @@ const NewPage: PageWithLayoutProps = () => {
                 {products?.length > 0 && (
                   <>
                     (
-                    <span className="text-blue-300">
+                    <span className="text-blue-600 dark:text-blue-300">
                       x
                       {Intl.NumberFormat('vi-VN', {
                         style: 'decimal',
@@ -342,7 +342,7 @@ const NewPage: PageWithLayoutProps = () => {
                     {amount != 0 && (
                       <>
                         |{' '}
-                        <span className="text-purple-300">
+                        <span className="text-purple-600 dark:text-purple-300">
                           x
                           {Intl.NumberFormat('vi-VN', {
                             style: 'decimal',
@@ -351,7 +351,7 @@ const NewPage: PageWithLayoutProps = () => {
                       </>
                     )}
                     |{' '}
-                    <span className="text-green-300">
+                    <span className="text-green-600 dark:text-green-300">
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND',
@@ -360,14 +360,14 @@ const NewPage: PageWithLayoutProps = () => {
                     {diff != null && diff != 0 && (
                       <>
                         {diff > 0 ? ' + ' : ' - '}{' '}
-                        <span className="text-red-300">
+                        <span className="text-red-600 dark:text-red-300">
                           {Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND',
                           }).format(Math.abs(diff))}
                         </span>
                         {' = '}
-                        <span className="text-yellow-300">
+                        <span className="text-yellow-600 dark:text-yellow-300">
                           {Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND',
@@ -387,7 +387,7 @@ const NewPage: PageWithLayoutProps = () => {
               <Divider className="mb-4 mt-2" variant="dashed" />
 
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
                 onClick={addEmptyProduct}
               >
                 + {t('add-product')}

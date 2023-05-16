@@ -22,36 +22,46 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
   return (
     <div className="w-full text-center">
-      <Divider className="mb-16 border-zinc-500/10" />
+      <Divider className="mb-16 border-zinc-500/30 dark:border-zinc-500/10" />
 
       {hideSlogan || (
         <>
           <div className="flex flex-col items-center p-8">
             <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
-              <span className="text-green-300">{maximize}</span>{' '}
-              <span className="text-blue-300">{productivity}</span>,{' '}
-              <span className="text-orange-300">{minimize}</span>{' '}
-              <span className="text-red-300">{stress}</span>.
+              <span className="text-green-500 dark:text-green-300">
+                {maximize}
+              </span>{' '}
+              <span className="text-blue-500 dark:text-blue-300">
+                {productivity}
+              </span>
+              ,{' '}
+              <span className="text-orange-500 dark:text-orange-300">
+                {minimize}
+              </span>{' '}
+              <span className="text-red-500 dark:text-red-300">{stress}</span>.
             </div>
 
-            <div className="mt-2 text-zinc-300 md:text-xl">
+            <div className="mt-2 text-zinc-700 dark:text-zinc-300 md:text-xl">
               {getStartedDesc}
             </div>
 
             <Link
               href="/signup"
-              className="mt-4 block w-full max-w-xs rounded border border-blue-300/20 bg-blue-300/10 px-8 py-2 font-semibold text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
+              className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
             >
               {getStarted}
             </Link>
           </div>
 
-          <Divider className="my-16 w-full border-zinc-300/10" />
+          <Divider className="my-16 w-full border-zinc-500/20 dark:border-zinc-300/10" />
         </>
       )}
 
-      <div className="flex flex-col items-center justify-center gap-4 px-4 pb-8 md:px-32 lg:px-64">
-        <Link href="/" className="flex gap-2 transition hover:text-blue-200">
+      <div className="flex flex-col items-center justify-center gap-4 px-4 md:px-32 lg:px-64">
+        <Link
+          href="/"
+          className="flex gap-2 transition dark:hover:text-blue-200"
+        >
           <Image
             src="/media/logos/transparent.png"
             width={320}
@@ -65,7 +75,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
         <div className="flex gap-8">
           <Link
             href="https://www.facebook.com/Tuturuuu"
-            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
+            className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -78,7 +88,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
           <Link
             href="https://twitter.com/tutur3u"
-            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
+            className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +101,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
           <Link
             href="https://github.com/Tutur3u"
-            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
+            className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +114,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
           <Link
             href="https://www.linkedin.com/company/Tuturuuu/"
-            className="fill-zinc-200/40 transition duration-300 hover:fill-zinc-200"
+            className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -117,9 +127,9 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
         </div>
       </div>
 
-      <Divider className="my-8 border-zinc-500/10" />
+      <Divider className="my-8 border-zinc-500/30 dark:border-zinc-500/10" />
 
-      <div className="px-4 pb-8 text-center text-zinc-400 md:px-32 lg:px-64">
+      <div className="px-4 pb-8 text-center text-zinc-700 dark:text-zinc-400 md:px-32 lg:px-64">
         <div>{copyright}</div>
       </div>
     </div>

@@ -36,7 +36,13 @@ const WorkspaceUserSelector = ({
   const { t } = useTranslation('ws-selector');
 
   const apiPath = `/api/workspaces/${ws?.id}/users`;
-  const { data: users } = useSWR<WorkspaceUser[]>(ws?.id ? apiPath : null);
+
+  const { data: fetchedData } = useSWR<{
+    data: WorkspaceUser[];
+    count: number;
+  }>(ws?.id ? apiPath : null);
+
+  const users = fetchedData?.data;
 
   const data = notEmpty
     ? [
@@ -49,10 +55,12 @@ const WorkspaceUserSelector = ({
         {
           label: t('passersby'),
           value: '',
+          group: t('common:general'),
         },
         ...(users?.map((user) => ({
           label: user.name,
           value: user.id,
+          group: t('common:other'),
         })) || []),
       ];
 

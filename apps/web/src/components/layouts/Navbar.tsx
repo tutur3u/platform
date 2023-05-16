@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { useUser } from '@supabase/auth-helpers-react';
 import UserProfilePopover from './UserProfilePopover';
 import useTranslation from 'next-translate/useTranslation';
-import { Bars3Icon } from '@heroicons/react/24/solid';
-import { Popover } from '@mantine/core';
+import { Bars3Icon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import { ActionIcon, Popover } from '@mantine/core';
 import { useState } from 'react';
 import LanguageSelector from '../selectors/LanguageSelector';
+import { useAppearance } from '../../hooks/useAppearance';
 
 interface NavbarProps {
   hideNavLinks?: boolean;
@@ -14,6 +15,8 @@ interface NavbarProps {
 
 const Navbar = ({ hideNavLinks }: NavbarProps) => {
   const { t } = useTranslation();
+  const { theme, changeTheme } = useAppearance();
+
   const user = useUser();
 
   const login = t('common:login');
@@ -25,30 +28,47 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
   const close = () => setOpened(false);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 p-4 font-semibold text-white backdrop-blur-lg md:px-32 lg:px-64">
-      <Link href="/" className="flex gap-2 transition hover:text-blue-200">
-        <Image
-          src="/media/logos/transparent.png"
-          width={320}
-          height={320}
-          alt="logo"
-          className="h-8 w-8"
-        />
-        <div className="mr-4 text-2xl">Tuturuuu</div>
+    <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-white md:px-32 lg:px-64">
+      <div className="flex items-center gap-2">
+        <Link href="/" className="flex gap-2">
+          <Image
+            src="/media/logos/transparent.png"
+            width={320}
+            height={320}
+            alt="logo"
+            className="h-8 w-8"
+          />
+          <div className="mr-4 text-2xl dark:hover:text-blue-200">Tuturuuu</div>
+        </Link>
+
         <LanguageSelector hideOnMobile />
-      </Link>
+        <ActionIcon
+          onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="border border-zinc-300 dark:border-zinc-300/10"
+          size="lg"
+        >
+          {theme === 'dark' ? (
+            <SunIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
+          ) : (
+            <MoonIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
+          )}
+        </ActionIcon>
+      </div>
 
       {hideNavLinks ? null : user ? (
         <UserProfilePopover />
       ) : (
         <>
           <div className="hidden items-center gap-4 md:flex">
-            <Link href="/login" className="hover:text-blue-200">
+            <Link
+              href="/login"
+              className="hover:text-blue-600 dark:hover:text-blue-200"
+            >
               {login}
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-blue-300/20 px-4 py-1 text-blue-300 transition duration-300 hover:bg-blue-300/30 hover:text-blue-200"
+              className="rounded-full border border-blue-500/10 bg-blue-500/10 px-4 py-1 text-blue-500 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/30"
             >
               {getStarted}
             </Link>

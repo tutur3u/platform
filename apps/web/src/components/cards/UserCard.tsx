@@ -12,19 +12,22 @@ const UserCard = ({ user }: Props) => {
   if (!ws) return null;
 
   return (
-    <div className="group flex cursor-pointer flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800">
+    <div className="group flex cursor-pointer flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800">
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
             {user.display_name}
           </div>
-          <div className="line-clamp-1 font-semibold text-zinc-400/70">
+          <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
             @{user?.handle || 'Chưa có handle'}
           </div>
         </div>
       </div>
 
-      <Divider variant="dashed" className="w-full border-zinc-700" />
+      <Divider
+        variant="dashed"
+        className="w-full border-zinc-300 dark:border-zinc-700"
+      />
 
       <div className="m-2 h-full w-full px-2">
         <div className="flex h-full items-center justify-center rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">

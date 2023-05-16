@@ -78,9 +78,11 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
 
       {ws?.id && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
-            <p className="text-zinc-400">{t('ws-activities:description')}</p>
+            <p className="text-zinc-700 dark:text-zinc-400">
+              {t('ws-activities:description')}
+            </p>
           </div>
           <Divider className="my-4" />
         </>
@@ -119,8 +121,10 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
           }`}
           variant="contained"
           classNames={{
-            content: 'border-t border-zinc-300/10 bg-zinc-900 pt-4 rounded-b',
-            control: 'rounded bg-zinc-800/70 transition hover:bg-zinc-800/70',
+            content:
+              'border-t dark:border-zinc-300/10 border-zinc-500/10 dark:bg-zinc-900 dark:bg-zinc-500/5 pt-4 rounded-b',
+            control:
+              'rounded dark:bg-zinc-800/70 transition dark:hover:bg-zinc-800/70 hover:bg-zinc-100',
             item: 'rounded',
           }}
         >

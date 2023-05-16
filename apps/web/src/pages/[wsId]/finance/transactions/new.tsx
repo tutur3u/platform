@@ -261,7 +261,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               {type === 'transfer' && originWallet && amount ? (
                 <>
                   <Divider variant="dashed" />
-                  <div className="text-zinc-400">
+                  <div className="text-zinc-700 dark:text-zinc-400">
                     {t('this-transaction-will')}{' '}
                     <span className="font-semibold text-zinc-200">
                       {Intl.NumberFormat(lang, {
@@ -297,7 +297,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                 {destinationWallet && amount ? (
                   <>
                     <Divider variant="dashed" />
-                    <div className="text-zinc-400">
+                    <div className="text-zinc-700 dark:text-zinc-400">
                       {t('this-transaction-will')}{' '}
                       <span className="font-semibold text-zinc-200">
                         {Intl.NumberFormat(lang, {
@@ -340,7 +340,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
               classNames={{
-                root: 'bg-[#25262b]',
+                root: 'dark:bg-[#25262b]',
               }}
             />
           </SettingItemCard>

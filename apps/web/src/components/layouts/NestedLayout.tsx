@@ -81,12 +81,11 @@ const NestedLayout: FC<Props> = ({
   }, [defaultNoTabs]);
 
   return (
-    <div className="flex h-screen min-h-full w-screen min-w-full">
+    <div className="flex h-screen max-h-full min-h-full w-screen min-w-full max-w-full overscroll-none">
       <LeftSidebar />
-
       <BottomNavbar />
 
-      <div className="relative flex h-full w-full flex-col bg-[#111113]">
+      <div className="relative flex h-full w-full flex-col bg-white dark:bg-[#111113]">
         <TopNavbar
           cachedDisableTabs={cachedDisableTabs}
           defaultNoTabs={defaultNoTabs}

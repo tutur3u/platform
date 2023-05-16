@@ -120,9 +120,9 @@ const NewProductPage: PageWithLayoutProps = () => {
 
             <div className="flex gap-2">
               <button
-                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition ${
+                className={`w-full rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 ${
                   hasRequiredFields()
-                    ? 'hover:bg-blue-300/20'
+                    ? 'hover:bg-blue-500/20 dark:hover:bg-blue-300/20'
                     : 'cursor-not-allowed opacity-50'
                 }`}
                 onClick={hasRequiredFields() ? showCreateModal : undefined}
@@ -138,7 +138,7 @@ const NewProductPage: PageWithLayoutProps = () => {
               <Divider className="mb-4 mt-2" variant="dashed" />
             </div>
 
-            <div className="flex min-h-full items-center justify-center rounded border border-zinc-300/10 bg-zinc-900 p-4 text-center text-2xl font-semibold text-zinc-500">
+            <div className="bg-zinc-zinc-500/5 flex min-h-full items-center justify-center rounded border border-zinc-300 p-4 text-center text-2xl font-semibold text-zinc-500 dark:border-zinc-300/10 dark:bg-zinc-900 dark:text-zinc-500">
               Chỉ có thể tạo đơn giá sau khi tạo sản phẩm
             </div>
           </div>
