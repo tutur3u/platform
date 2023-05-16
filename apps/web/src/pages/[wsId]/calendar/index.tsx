@@ -2,7 +2,6 @@ import { ReactElement, useEffect } from 'react';
 import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import HeaderX from '../../../components/metadata/HeaderX';
-import { DEV_MODE } from '../../../constants/common';
 import Calendar from '../../../components/calendar/Calendar';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 
