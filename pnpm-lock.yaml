@@ -225,8 +225,8 @@ importers:
         specifier: ^8.4.23
         version: 8.4.23
       supabase:
-        specifier: ^1.60.1
-        version: 1.60.1
+        specifier: ^1.60.2
+        version: 1.60.2
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -2697,12 +2697,6 @@ packages:
       '@typescript-eslint/types': 5.59.6
       eslint-visitor-keys: 3.4.1
     dev: true
-
-  /@upstash/qstash@0.3.6:
-    resolution: {integrity: sha512-NKN4jbPhB5lfHoSIaU7AuQ3F+yGS20e/FBRiUuPetcKoi354wHhKj9AJFfkFT5SSeLq0XEsXRNynm8gqCS4HjQ==}
-    dependencies:
-      '@deno/shim-crypto': 0.3.1
-    dev: false
 
   /@upstash/qstash@0.3.6:
     resolution: {integrity: sha512-NKN4jbPhB5lfHoSIaU7AuQ3F+yGS20e/FBRiUuPetcKoi354wHhKj9AJFfkFT5SSeLq0XEsXRNynm8gqCS4HjQ==}
@@ -7380,8 +7374,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.60.1:
-    resolution: {integrity: sha512-d0zIWRo7T0qA5PQ5n4t3VORGTqBWRyHKMJFXCix/x0v9Q2DBtwSYV/flgmAt27QpUA+OjznvPpL+nvBzxt+6yg==}
+  /supabase@1.60.2:
+    resolution: {integrity: sha512-kMXQO/26X1A1LBKt84GChLEdrowE3LMgfKnSedmWD+U0DIuo9HTmXP2CIePErjovTu5ZBXj4GcbYQ41lE8YlJg==}
     hasBin: true
     requiresBuild: true
     dependencies:

@@ -90,7 +90,7 @@
     "lint-staged": "^13.2.2",
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
-    "supabase": "^1.60.1",
+    "supabase": "^1.60.2",
     "tailwind-config": "workspace:*",
     "tailwindcss": "^3.3.2",
     "tsconfig": "workspace:*",
