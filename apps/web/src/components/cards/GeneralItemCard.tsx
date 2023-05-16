@@ -109,7 +109,7 @@ const GeneralItemCard = ({
             )}
 
             {batchData?.count != null && (
-              <div className="flex h-full items-center justify-center gap-1 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+              <div className="flex h-full items-center justify-center gap-1 rounded border border-green-500/20 bg-green-500/10 p-2 font-semibold text-green-600 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">
                 {Intl.NumberFormat('vi-VN', {
                   style: 'decimal',
                 }).format(batchData?.count || 0)}{' '}
@@ -136,7 +136,7 @@ const GeneralItemCard = ({
             className="w-full border-zinc-300 dark:border-zinc-700"
           />
           <div className="h-full w-full p-2">
-            <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-orange-300/20 bg-orange-300/10 p-2 font-semibold text-orange-300">
+            <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-orange-500/20 bg-orange-500/10 p-2 font-semibold text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
               {secondLabel}
             </div>
           </div>
@@ -150,7 +150,7 @@ const GeneralItemCard = ({
             className="w-full border-zinc-300 dark:border-zinc-700"
           />
           <div className="h-full w-full p-2">
-            <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+            <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-green-500/20 bg-green-500/10 p-2 font-semibold text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">
               {thirdLabel}
             </div>
           </div>
