@@ -44,7 +44,7 @@ export default function SidebarButton({
     >
       <div
         onClick={disabled ? undefined : onClick}
-        className={`flex items-center gap-2 rounded p-2 ${
+        className={`flex select-none items-center gap-2 rounded p-2 ${
           left || isExpanded ? 'justify-start' : 'justify-center'
         } ${
           disabled

@@ -64,15 +64,12 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         }}
       />
 
-      {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
-        <SidebarLink
-          href={`/${wsId}/calendar`}
-          activeIcon={<CalendarDaysIcon className="w-5" />}
-          label={calendar}
-          showTooltip={!sidebarOpened}
-          disabled
-        />
-      )}
+      <SidebarLink
+        href={`/${wsId}/calendar`}
+        activeIcon={<CalendarDaysIcon className="w-5" />}
+        label={calendar}
+        showTooltip={!sidebarOpened}
+      />
 
       {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
         <SidebarLink

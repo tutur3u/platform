@@ -13,7 +13,6 @@ const CalendarContext = createContext({
   getDate: () => new Date(),
   getDatesInView: () => [new Date()] as Date[],
   getTitle: () => 'Title' as string,
-  getView: () => 'day' as 'day' | '4-day' | 'week',
 
   isToday: () => true as boolean,
   selectToday: () => console.log('selectToday'),
@@ -22,6 +21,8 @@ const CalendarContext = createContext({
   handleNext: () => console.log('handleNext'),
   handlePrev: () => console.log('handlePrev'),
 
+  view: 'day' as 'day' | '4-day' | 'week',
+  availableViews: [] as { label: string; value: string; disabled?: boolean }[],
   enableDayView: () => console.log('enableDayView'),
   enable4DayView: () => console.log('enable4DayView'),
   enableWeekView: () => console.log('enableWeekView'),
@@ -227,12 +228,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       year: 'numeric',
     });
 
-  const getView = () => {
-    if (datesInView.length === 1) return 'day';
-    else if (datesInView.length === 4) return '4-day';
-    return 'week';
-  };
-
   // Update the date's hour and minute, every minute
   useEffect(() => {
     // calculate seconds to next minute
@@ -282,15 +277,26 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const [datesInView, setDatesInView] = useState<Date[]>([]);
 
+  const [view, setView] = useState<'day' | 'week' | '4-day'>('week');
+
   const getDatesInView = useCallback(() => datesInView, [datesInView]);
 
+  const [availableViews, setAvailableViews] = useState<
+    { value: string; label: string; disabled?: boolean }[]
+  >([]);
+
   const enableDayView = useCallback(() => {
+    if (availableViews.find((v) => v.value === 'day')?.disabled) return;
+
     const newDate = new Date(date);
     newDate.setHours(0, 0, 0, 0);
     setDatesInView([newDate]);
-  }, [date]);
+    setView('day');
+  }, [date, availableViews]);
 
   const enable4DayView = useCallback(() => {
+    if (availableViews.find((v) => v.value === '4-day')?.disabled) return;
+
     const dates = [];
 
     for (let i = 0; i < 4; i++) {
@@ -301,9 +307,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setDatesInView(dates);
-  }, [date]);
+    setView('4-day');
+  }, [date, availableViews]);
 
   const enableWeekView = useCallback(() => {
+    if (availableViews.find((v) => v.value === 'week')?.disabled) return;
+
     const getMonday = () => {
       const day = date.getDay() || 7;
       const newDate = new Date(date);
@@ -325,17 +334,54 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     };
 
     setDatesInView(getWeekdays());
-  }, [date]);
+    setView('week');
+  }, [date, availableViews]);
+
+  useEffect(() => {
+    setAvailableViews([
+      {
+        value: 'day',
+        label: 'Day',
+        disabled: false,
+      },
+      {
+        value: '4-day',
+        label: '4 Days',
+        disabled: window.innerWidth <= 768,
+      },
+      {
+        value: 'week',
+        label: 'Week',
+        disabled: window.innerWidth <= 768,
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     const updateDatesInView = () => {
-      if (datesInView.length === 1) enableDayView();
-      else if (datesInView.length === 4) enable4DayView();
-      else if (datesInView.length === 7) enableWeekView();
+      if (
+        datesInView.length === 7 &&
+        availableViews.find((v) => v.value === 'week')?.disabled === false
+      )
+        enableWeekView();
+      else if (
+        datesInView.length === 4 &&
+        availableViews.find((v) => v.value === '4-day')?.disabled === false
+      )
+        enable4DayView();
+      else enableDayView();
     };
 
     updateDatesInView();
-  }, [date, datesInView.length, enableDayView, enable4DayView, enableWeekView]);
+  }, [
+    view,
+    date,
+    datesInView.length,
+    availableViews,
+    enableDayView,
+    enable4DayView,
+    enableWeekView,
+  ]);
 
   const handleNext = () =>
     setDate((date) => {
@@ -395,7 +441,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     getDate,
     getDatesInView,
     getTitle,
-    getView,
 
     isToday,
     selectToday,
@@ -404,6 +449,8 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     handleNext,
     handlePrev,
 
+    view,
+    availableViews,
     enableDayView,
     enable4DayView,
     enableWeekView,

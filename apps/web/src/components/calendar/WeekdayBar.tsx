@@ -23,7 +23,7 @@ const WeekdayBar = () => {
 
   return (
     <div className="flex">
-      <div className="flex w-16 items-center justify-center border-b border-zinc-800 font-semibold">
+      <div className="flex w-16 items-center justify-center border-b border-zinc-300 font-semibold dark:border-zinc-800">
         ICT
       </div>
       <div className={`grid flex-1 ${getGridCols()}`}>
