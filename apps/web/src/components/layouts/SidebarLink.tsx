@@ -89,7 +89,7 @@ export default function SidebarLink({
             disableBorder ? (isExpanded ? 'p-1' : '') : 'p-2'
           } ${
             disabled
-              ? 'cursor-not-allowed text-zinc-300/50'
+              ? 'cursor-not-allowed border-transparent text-zinc-300/50'
               : defaultHighlight
               ? defaultActive && isActive
                 ? `bg-zinc-500/10 text-zinc-900 dark:bg-zinc-500/10 dark:text-zinc-100 ${
