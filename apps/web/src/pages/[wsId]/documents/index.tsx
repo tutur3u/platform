@@ -112,10 +112,10 @@ const DocumentsPage: PageWithLayoutProps = () => {
     <div className="pb-20">
       <HeaderX label="Documents" />
 
-      <div className="flex flex-col items-center gap-4 pb-8 md:flex-row">
-        <h1 className="w-full flex-grow rounded-lg bg-zinc-900 p-4 text-2xl font-bold md:w-auto">
+      <div className="flex flex-col items-center gap-4 md:flex-row">
+        <h1 className="w-full flex-grow rounded-lg bg-zinc-500/5 p-4 text-2xl font-bold dark:bg-zinc-900 md:w-auto">
           {documentsLabel}{' '}
-          <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+          <span className="rounded-lg bg-purple-500/10 px-2 text-lg text-purple-600 dark:bg-purple-300/20 dark:text-purple-300">
             {documents?.length || 0}
           </span>
         </h1>
@@ -123,7 +123,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
         <div className="flex gap-4">
           <button
             onClick={showDocumentEditForm}
-            className="flex flex-none items-center gap-1 rounded bg-blue-300/20 p-4 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+            className="flex flex-none items-center gap-1 rounded bg-blue-500/10 p-4 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/10"
           >
             {creating ? creatingLabel : newDocumentLabel}{' '}
             {creating ? (
@@ -132,10 +132,12 @@ const DocumentsPage: PageWithLayoutProps = () => {
               <DocumentPlusIcon className="h-4 w-4" />
             )}
           </button>
-          <div className="flex gap-2 rounded-lg border border-zinc-800 p-2">
+          <div className="flex gap-2 rounded-lg border border-zinc-300 p-2 dark:border-zinc-800">
             <button
               className={`${
-                mode === 'list' ? 'bg-zinc-800' : 'text-zinc-700'
+                mode === 'list'
+                  ? 'bg-zinc-500/20 dark:bg-zinc-800'
+                  : 'text-zinc-700'
               } h-fit rounded-lg p-2 transition`}
               onClick={() => setMode('list')}
             >
@@ -143,7 +145,9 @@ const DocumentsPage: PageWithLayoutProps = () => {
             </button>
             <button
               className={`${
-                mode === 'grid' ? 'bg-zinc-800' : 'text-zinc-700'
+                mode === 'grid'
+                  ? 'bg-zinc-500/20 dark:bg-zinc-800'
+                  : 'text-zinc-700'
               } h-fit rounded-lg p-2 transition`}
               onClick={() => setMode('grid')}
             >

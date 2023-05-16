@@ -75,7 +75,9 @@ const WorkspaceAIPlaygroundPage = () => {
     <div className="flex flex-col gap-4 pb-20">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex h-full flex-col gap-2">
-          <h2 className="text-2xl font-semibold text-blue-300">Prompt</h2>
+          <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
+            Prompt
+          </h2>
 
           <Textarea
             value={prompt}
@@ -85,10 +87,10 @@ const WorkspaceAIPlaygroundPage = () => {
           />
 
           <button
-            className={`mt-1 rounded border border-blue-300/20 bg-blue-300/10 px-4 py-3 font-semibold text-blue-300 transition ${
+            className={`mt-1 rounded border border-blue-500/20 bg-blue-500/10 px-4 py-3 font-semibold text-blue-600 transition dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 ${
               !prompt || loading
                 ? 'cursor-not-allowed opacity-50'
-                : 'hover:bg-blue-300/20'
+                : 'hover:bg-blue-500/20 dark:hover:bg-blue-300/20'
             }`}
             onClick={
               prompt && !loading
@@ -104,9 +106,11 @@ const WorkspaceAIPlaygroundPage = () => {
         </div>
 
         <div className="flex h-full flex-col gap-2">
-          <h2 className="text-2xl font-semibold text-blue-300">Response</h2>
+          <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
+            Response
+          </h2>
 
-          <div className="h-full rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+          <div className="h-full rounded-lg border border-zinc-300 bg-zinc-500/10 p-4 dark:border-zinc-700 dark:bg-zinc-800">
             {response ? (
               <>
                 <div>
@@ -114,7 +118,7 @@ const WorkspaceAIPlaygroundPage = () => {
                 </div>
               </>
             ) : (
-              <div className="flex h-full items-center justify-center text-2xl font-semibold text-zinc-500">
+              <div className="tẽt-zinc-700 flex h-full items-center justify-center text-2xl font-semibold dark:text-zinc-500">
                 {loading ? 'Generating...' : 'No response yet.'}
               </div>
             )}

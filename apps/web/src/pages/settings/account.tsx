@@ -188,7 +188,7 @@ const SettingPage: PageWithLayoutProps = () => {
             value={birthday}
             onChange={setBirthday}
             classNames={{
-              input: 'bg-[#25262b]',
+              input: 'dark:bg-[#25262b]',
             }}
           />
         </SettingItemTab>
@@ -222,7 +222,9 @@ const SettingPage: PageWithLayoutProps = () => {
 
                 <Divider variant="dashed" className="mt-1" />
 
-                <div className="text-zinc-400">{changeEmailDescription}</div>
+                <div className="text-zinc-700 dark:text-zinc-400">
+                  {changeEmailDescription}
+                </div>
               </>
             )}
           </div>
@@ -230,7 +232,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <div
           onClick={handleSave}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition duration-300 hover:border-blue-300/30 hover:bg-blue-300/20"
+          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
         >
           {isSaving ? saving : save}
         </div>
@@ -269,7 +271,7 @@ const SettingPage: PageWithLayoutProps = () => {
         <SettingItemTab title={logOut} description={logoutDescription}>
           <div
             onClick={handleLogout}
-            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {logOut}
           </div>

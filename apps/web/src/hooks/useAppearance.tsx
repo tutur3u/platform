@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import {
   APP_THEME_KEY,
   DEFAULT_APP_THEME,
@@ -16,7 +16,7 @@ export type SidebarState = 'open' | 'closed';
 
 const AppearanceContext = createContext({
   theme: 'dark' as Theme,
-  setTheme: (theme: Theme) => console.log(theme),
+  changeTheme: (theme: Theme) => console.log(theme),
 
   sidebar: 'open' as SidebarState,
   setSidebar: (state: SidebarState) => console.log(state),
@@ -38,6 +38,25 @@ export const AppearanceProvider = ({
     key: APP_THEME_KEY,
     defaultValue: DEFAULT_APP_THEME,
   });
+
+  useEffect(() => {
+    if (
+      theme === 'dark' ||
+      (!(APP_THEME_KEY in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    )
+      document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [theme]);
+
+  const changeTheme = (theme: Theme | null) => {
+    if (!theme) {
+      localStorage.removeItem(APP_THEME_KEY);
+      return;
+    } else {
+      setTheme(theme);
+    }
+  };
 
   const [sidebar, setSidebar] = useLocalStorage<SidebarState>({
     key: SIDEBAR_STATE_KEY,
@@ -67,7 +86,7 @@ export const AppearanceProvider = ({
 
   const values = {
     theme,
-    setTheme,
+    changeTheme,
 
     sidebar,
     setSidebar,

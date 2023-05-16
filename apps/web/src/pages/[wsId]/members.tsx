@@ -189,16 +189,16 @@ const WorkspaceMembersPage = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'member':
-        return 'border-blue-300/10 bg-blue-300/10 text-blue-300';
+        return 'border-blue-500/20 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/10 text-blue-600 dark:text-blue-300';
 
       case 'admin':
-        return 'border-orange-300/10 bg-orange-300/10 text-orange-300';
+        return 'border-orange-500/20 bg-orange-500/10 dark:border-orange-300/10 dark:bg-orange-300/10 text-orange-600 dark:text-orange-300';
 
       case 'owner':
-        return 'border-purple-300/10 bg-purple-300/10 text-purple-300';
+        return 'border-purple-500/20 bg-purple-500/10 dark:border-purple-300/10 dark:bg-purple-300/10 text-purple-600 dark:text-purple-300';
 
       default:
-        return 'border-zinc-800/80 bg-zinc-900 text-zinc-400';
+        return 'border-zinc-500/80 bg-zinc-500/10 text dark:border-zinc-800/80 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400';
     }
   };
 
@@ -228,21 +228,20 @@ const WorkspaceMembersPage = () => {
 
       {wsId && (
         <>
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <div>
               <h1 className="text-2xl font-bold">
-                {view === 'joined' ? membersLabel : t('pending_invitations')}{' '}
-                <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
-                  {members?.length || 0}
-                </span>
+                {view === 'joined' ? membersLabel : t('pending_invitations')}
               </h1>
-              <p className="text-zinc-400">{t('description')}</p>
+              <p className="text-zinc-700 dark:text-zinc-400">
+                {t('description')}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={showSelectUserForm}
-                className="flex h-fit items-center justify-center gap-1 rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                className="flex h-fit items-center justify-center gap-1 rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               >
                 {t('invite_member')}
                 <UserPlusIcon className="h-4 w-4" />
@@ -314,7 +313,7 @@ const WorkspaceMembersPage = () => {
               ?.map((member) => (
                 <div
                   key={member.id}
-                  className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4"
+                  className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
                 >
                   <p className="font-semibold lg:text-lg xl:text-xl">
                     {member.display_name}{' '}
@@ -324,11 +323,13 @@ const WorkspaceMembersPage = () => {
                       </span>
                     ) : null}
                   </p>
-                  <p className="text-blue-300">@{member.handle}</p>
+                  <p className="text-blue-600 dark:text-blue-300">
+                    @{member.handle}
+                  </p>
 
                   <div className="absolute right-4 top-4 flex gap-2">
                     <button
-                      className="font-semibold text-zinc-400 transition duration-150 hover:text-zinc-200"
+                      className="font-semibold text-zinc-400 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200"
                       onClick={
                         view === 'joined'
                           ? () => showEditModal(member)
@@ -351,11 +352,11 @@ const WorkspaceMembersPage = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-800 pt-2">
+                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-300 pt-2 dark:border-zinc-800">
                     {member?.created_at ? (
                       <div className="text-zinc-500">
                         {view === 'joined' ? t('member_since') : t('invited')}{' '}
-                        <span className="font-semibold text-zinc-400">
+                        <span className="font-semibold text-zinc-600 dark:text-zinc-400">
                           {moment(member.created_at).locale(lang).fromNow()}
                         </span>
                         .

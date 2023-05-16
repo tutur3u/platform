@@ -50,8 +50,8 @@ export default function SidebarButton({
           disabled
             ? 'cursor-not-allowed text-zinc-600'
             : isActive
-            ? 'cursor-pointer bg-zinc-300/10 text-zinc-100'
-            : 'cursor-pointer text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
+            ? 'cursor-pointer border-zinc-300 bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
+            : 'cursor-pointer border-transparent text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100'
         } ${classNames?.root}`}
       >
         {showIcon && <div className="flex-none">{activeIcon}</div>}

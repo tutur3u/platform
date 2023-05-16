@@ -17,7 +17,7 @@ const SidebarTeamList = ({ wsId, sidebarOpened }: Props) => {
     <div className="m-2">
       {teamsLoading || (
         <div className={`flex flex-col ${sidebarOpened ? 'gap-1' : 'gap-2'}`}>
-          {(teams?.length || 0) > 0 && <Divider />}
+          {(teams?.length || 0) > 0 && <Divider className="pb-1" />}
           {teams &&
             teams.map((team) => (
               <SidebarLink
@@ -54,6 +54,7 @@ const SidebarTeamList = ({ wsId, sidebarOpened }: Props) => {
                 }
                 label={team?.name || 'Untitled Team'}
                 showTooltip={!sidebarOpened}
+                disableBorder
               />
             ))}
         </div>

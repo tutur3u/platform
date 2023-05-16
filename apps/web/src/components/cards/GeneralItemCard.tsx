@@ -76,7 +76,7 @@ const GeneralItemCard = ({
   return (
     <Link
       href={href || '#'}
-      className="group flex flex-col items-center justify-start rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
+      className="group flex flex-col items-center justify-start rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full items-center justify-center p-2 text-center">
         <div className="line-clamp-1 font-semibold tracking-wide">
@@ -87,7 +87,7 @@ const GeneralItemCard = ({
 
       {showAmount && (
         <>
-          <Divider className="w-full border-zinc-700" />
+          <Divider className="w-full border-zinc-300 dark:border-zinc-700" />
           <div className="grid h-full w-full gap-2 p-2">
             {amountData?.count === undefined &&
               !batchData?.count &&
@@ -100,7 +100,7 @@ const GeneralItemCard = ({
               )}
 
             {amountData?.count != null && (
-              <div className="flex h-full items-center justify-center gap-1 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">
+              <div className="flex h-full items-center justify-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
                 {Intl.NumberFormat('vi-VN', amountOptions).format(
                   amountData?.count || 0
                 )}{' '}
@@ -118,7 +118,7 @@ const GeneralItemCard = ({
             )}
 
             {productData?.count != null && (
-              <div className="flex h-full items-center justify-center gap-1 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
+              <div className="flex h-full items-center justify-center gap-1 rounded border border-purple-500/20 bg-purple-500/10 p-2 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
                 {Intl.NumberFormat('vi-VN', {
                   style: 'decimal',
                 }).format(productData?.count || 0)}{' '}
@@ -131,7 +131,10 @@ const GeneralItemCard = ({
 
       {showSecondaryLabel && secondLabel && (
         <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
+          <Divider
+            variant="dashed"
+            className="w-full border-zinc-300 dark:border-zinc-700"
+          />
           <div className="h-full w-full p-2">
             <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-orange-300/20 bg-orange-300/10 p-2 font-semibold text-orange-300">
               {secondLabel}
@@ -142,7 +145,10 @@ const GeneralItemCard = ({
 
       {showTertiaryLabel && thirdLabel && (
         <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
+          <Divider
+            variant="dashed"
+            className="w-full border-zinc-300 dark:border-zinc-700"
+          />
           <div className="h-full w-full p-2">
             <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
               {thirdLabel}

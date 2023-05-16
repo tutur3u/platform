@@ -87,16 +87,16 @@ const TeamMembersPage = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'member':
-        return 'border-blue-300/10 bg-blue-300/10 text-blue-300';
+        return 'border-blue-500/20 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/10 text-blue-600 dark:text-blue-300';
 
       case 'admin':
-        return 'border-orange-300/10 bg-orange-300/10 text-orange-300';
+        return 'border-orange-500/20 bg-orange-500/10 dark:border-orange-300/10 dark:bg-orange-300/10 text-orange-600 dark:text-orange-300';
 
       case 'owner':
-        return 'border-purple-300/10 bg-purple-300/10 text-purple-300';
+        return 'border-purple-500/20 bg-purple-500/10 dark:border-purple-300/10 dark:bg-purple-300/10 text-purple-600 dark:text-purple-300';
 
       default:
-        return 'border-zinc-800/80 bg-zinc-900 text-zinc-400';
+        return 'border-zinc-500/80 bg-zinc-500/10 text dark:border-zinc-800/80 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400';
     }
   };
 
@@ -106,7 +106,7 @@ const TeamMembersPage = () => {
 
       {teamId && (
         <>
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <div>
               <h1 className="text-2xl font-bold">
                 {t('team-tabs:members')}{' '}
@@ -114,7 +114,9 @@ const TeamMembersPage = () => {
                   {members?.length || 0}
                 </span>
               </h1>
-              <p className="text-zinc-400">{t('description')}</p>
+              <p className="text-zinc-700 dark:text-zinc-400">
+                {t('description')}
+              </p>
             </div>
           </div>
           <Divider className="my-4" />
@@ -170,7 +172,7 @@ const TeamMembersPage = () => {
               ?.map((member) => (
                 <div
                   key={member.id}
-                  className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4"
+                  className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
                 >
                   <p className="font-semibold lg:text-lg xl:text-xl">
                     {member.display_name}{' '}
@@ -180,13 +182,15 @@ const TeamMembersPage = () => {
                       </span>
                     ) : null}
                   </p>
-                  <p className="text-blue-300">@{member.handle}</p>
+                  <p className="text-blue-600 dark:text-blue-300">
+                    @{member.handle}
+                  </p>
 
-                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-800 pt-2">
+                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-300 pt-2 dark:border-zinc-800">
                     {member?.created_at ? (
                       <div className="text-zinc-500">
                         {t('member_since')}{' '}
-                        <span className="font-semibold text-zinc-400">
+                        <span className="font-semibold text-zinc-600 dark:text-zinc-400">
                           {moment(member.created_at).locale(lang).fromNow()}
                         </span>
                         .

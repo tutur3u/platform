@@ -146,7 +146,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
       <div className="mt-2 flex min-h-full w-full flex-col pb-20">
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div
-            className={`rounded border border-orange-300/10 bg-orange-300/10 p-4 text-orange-300 ${
+            className={`rounded border border-orange-500/10 bg-orange-500/10 p-4 text-orange-600 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300 ${
               wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
             }`}
           >
@@ -154,29 +154,29 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
               {t('wallet-name')}
             </div>
 
-            <div className="line-clamp-1 text-orange-300/70">
+            <div className="line-clamp-1 text-orange-600/70 dark:text-orange-300/70">
               {wallet?.name}
             </div>
           </div>
 
           {wallet?.type === 'CREDIT' && (
             <>
-              <div className="rounded border border-purple-300/10 bg-purple-300/10 p-4 text-purple-300">
+              <div className="rounded border border-purple-500/10 bg-purple-500/10 p-4 text-purple-600 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300">
                 <div className="line-clamp-1 text-2xl font-semibold">
                   {t('credit-limit')}
                 </div>
-                <div className="line-clamp-2 text-purple-300/70">
+                <div className="line-clamp-2 text-purple-600/70 dark:text-purple-300/70">
                   {Intl.NumberFormat('vi-VN', {
                     style: 'currency',
                     currency: wallet?.currency || 'VND',
                   }).format(wallet?.limit || 0)}
                 </div>
               </div>
-              <div className="rounded border border-red-300/10 bg-red-300/10 p-4 text-red-300">
+              <div className="rounded border border-red-500/10 bg-red-500/10 p-4 text-red-600 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300">
                 <div className="line-clamp-1 text-2xl font-semibold">
                   {t('outstanding-balance')}
                 </div>
-                <div className="line-clamp-2 text-red-300/70">
+                <div className="line-clamp-2 text-red-600/70 dark:text-red-300/70">
                   {Intl.NumberFormat('vi-VN', {
                     style: 'currency',
                     currency: wallet?.currency || 'VND',
@@ -189,7 +189,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           )}
 
           <div
-            className={`rounded border border-green-300/10 bg-green-300/10 p-4 text-green-300 ${
+            className={`rounded border border-green-500/10 bg-green-500/10 p-4 text-green-600 dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300 ${
               wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
             }`}
           >
@@ -198,7 +198,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
                 ? t('balance')
                 : t('available-credit')}
             </div>
-            <div className="line-clamp-2 text-green-300/70">
+            <div className="line-clamp-2 text-green-600/70 dark:text-green-300/70">
               {Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: wallet?.currency || 'VND',
@@ -207,16 +207,16 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
           </div>
 
           {wallet?.statement_date && wallet?.payment_date ? (
-            <div className="col-span-full text-zinc-400">
+            <div className="col-span-full text-zinc-500 dark:text-zinc-400">
               {t('statement-date-message')}{' '}
-              <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
+              <span className="font-semibold text-blue-500 underline decoration-blue-500 underline-offset-2 dark:text-blue-200 dark:decoration-blue-300">
                 {wallet?.statement_date}
               </span>{' '}
               {t('payment-due-date-message')}{' '}
-              <span className="font-semibold text-blue-200 underline decoration-blue-300 underline-offset-2">
+              <span className="font-semibold text-blue-500 underline decoration-blue-500 underline-offset-2 dark:text-blue-200 dark:decoration-blue-300">
                 {wallet?.payment_date}
               </span>{' '}
-              {t('next-month')}
+              {t('next-month')}.
             </div>
           ) : null}
         </div>
@@ -228,12 +228,10 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <h3 className="col-span-full text-lg font-semibold text-gray-300">
+          <h3 className="col-span-full text-lg font-semibold text-zinc-700 dark:text-zinc-300">
             {t('new-transaction')}
           </h3>
-          <PlusCardButton
-            href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
-          />
+          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
         </div>
 
         <div className="mt-8 grid gap-8">
@@ -242,9 +240,9 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
             Object.entries(transactionsByDate).map(([date, data]) => (
               <div
                 key={date}
-                className="group rounded-lg border border-zinc-300/10 bg-zinc-900 p-4"
+                className="group rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
               >
-                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-gray-300 md:flex-row">
+                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 dark:text-zinc-300 md:flex-row">
                   <div className="flex gap-2">
                     <div>{getRelativeDate(date)}</div>
                     <MiniPlusButton
@@ -254,15 +252,15 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
+                    <div className="rounded bg-purple-500/10 px-2 py-0.5 text-base text-purple-600 dark:bg-purple-300/10 dark:text-purple-300">
                       {data.transactions.length}{' '}
-                      {t('transaction').toLowerCase()}
+                      {t('transactions').toLowerCase()}
                     </div>
                     <div
                       className={`rounded px-2 py-0.5 text-base ${
                         data.total < 0
-                          ? 'bg-red-300/10 text-red-300'
-                          : 'bg-green-300/10 text-green-300'
+                          ? 'bg-red-500/10 text-red-600 dark:bg-red-300/10 dark:text-red-300'
+                          : 'bg-green-500/10 text-green-600 dark:bg-green-300/10 dark:text-green-300'
                       }`}
                     >
                       {Intl.NumberFormat('vi-VN', {
@@ -278,7 +276,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
                 <div
                   className={`grid gap-4 ${
-                    mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+                    mode === 'grid' && 'lg:grid-cols-2 xl:grid-cols-3'
                   }`}
                 >
                   {data.transactions.map((c) => (
@@ -286,8 +284,7 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
                       key={c.id}
                       wsId={ws.id}
                       transaction={c}
-                      showAmount={true}
-                      showDatetime={false}
+                      showAmount
                     />
                   ))}
                 </div>

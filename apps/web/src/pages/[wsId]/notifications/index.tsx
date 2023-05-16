@@ -50,10 +50,10 @@ const NotificationsPage = () => {
       ) : (
         <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
           <CheckBadgeIcon className="h-32 w-32 text-green-500" />
-          <h3 className="text-2xl font-semibold text-zinc-300">
+          <h3 className="text-2xl font-semibold text-zinc-700 dark:text-zinc-300">
             {noNotifications}
           </h3>
-          <p className="text-zinc-400">{desc}</p>
+          <p className="text-zinc-700 dark:text-zinc-400">{desc}</p>
         </div>
       )}
     </div>

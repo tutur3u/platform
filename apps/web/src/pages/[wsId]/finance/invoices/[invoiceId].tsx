@@ -334,7 +334,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               onChange={(date) => setTakenAt(date || new Date())}
               className="col-span-full"
               classNames={{
-                input: 'bg-[#25262b]',
+                input: 'dark:bg-[#25262b]',
               }}
               valueFormat="HH:mm - dddd, DD/MM/YYYY"
               locale={lang}
@@ -357,7 +357,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNotice('')}
               >
                 + {t('add-notice')}
@@ -378,7 +378,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNote('')}
               >
                 + {t('add-note')}
@@ -519,7 +519,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               <Divider className="mb-4 mt-2" variant="dashed" />
 
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
                 onClick={addEmptyProduct}
               >
                 + {t('add-product')}

@@ -50,7 +50,7 @@ const TransactionCard = ({
               redirectToWallets ? '?redirectToWallets=true' : ''
             }`
       }
-      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
+      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -62,15 +62,18 @@ const TransactionCard = ({
 
       {showExtra && (
         <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
+          <Divider
+            variant="dashed"
+            className="w-full border-zinc-300 dark:border-zinc-700"
+          />
 
           <div className="w-full">
             {showAmount && (
               <div
                 className={`m-2 rounded border p-2 font-semibold ${
                   (transaction?.amount || 0) < 0
-                    ? 'border-red-300/20 bg-red-300/10 text-red-300'
-                    : 'border-green-300/20 bg-green-300/10 text-green-300'
+                    ? 'border-red-500/20 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300'
+                    : 'border-green-500/20 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300'
                 }`}
               >
                 {transaction?.amount === 0
@@ -84,13 +87,13 @@ const TransactionCard = ({
             )}
 
             {showWallet && (
-              <div className="m-2 rounded border border-green-300/20 bg-green-300/10 p-2 font-semibold text-green-300">
+              <div className="m-2 rounded border border-purple-500/20 bg-purple-500/10 p-2 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
                 {wallet?.name || t('unnamed-wallet')}
               </div>
             )}
 
             {showDatetime && (
-              <div className="m-2 rounded border border-orange-300/20 bg-orange-300/10 p-2 font-semibold text-orange-300">
+              <div className="m-2 rounded border border-orange-500/20 bg-orange-500/10 p-2 font-semibold text-orange-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
                 {moment(transaction?.taken_at).format('HH:mm | DD/MM/YYYY')}
               </div>
             )}

@@ -11,18 +11,18 @@ const PlusCardButton = ({ href, onClick }: Props) => {
     return (
       <Link
         href={href}
-        className="group flex items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 p-4 transition hover:bg-zinc-800"
+        className="group flex items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/10 p-4 transition hover:bg-zinc-500/20 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
       >
-        <PlusIcon className="h-6 w-6 text-zinc-400 transition group-hover:text-zinc-300" />
+        <PlusIcon className="h-6 w-6 text-zinc-700 transition group-hover:text-zinc-900 dark:text-zinc-400 dark:group-hover:text-zinc-300" />
       </Link>
     );
 
   return (
     <button
       onClick={onClick}
-      className="group flex items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 p-4 transition hover:bg-zinc-800"
+      className="group flex items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/10 p-4 transition hover:bg-zinc-500/20 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
-      <PlusIcon className="h-6 w-6 text-zinc-400 transition group-hover:text-zinc-300" />
+      <PlusIcon className="h-6 w-6 text-zinc-700 transition group-hover:text-zinc-900 dark:text-zinc-400 dark:group-hover:text-zinc-300" />
     </button>
   );
 };

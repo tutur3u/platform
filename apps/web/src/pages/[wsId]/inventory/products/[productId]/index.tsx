@@ -184,9 +184,9 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
 
             <div className="flex gap-2">
               <button
-                className={`w-fit rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition ${
+                className={`w-fit rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-500 transition dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 ${
                   product
-                    ? 'hover:bg-red-300/20'
+                    ? 'hover:bg-red-500/20 dark:hover:bg-red-300/20'
                     : 'cursor-not-allowed opacity-50'
                 }`}
                 onClick={product ? showDeleteModal : undefined}
@@ -195,9 +195,9 @@ const ProductDetailsPage: PageWithLayoutProps = () => {
               </button>
 
               <button
-                className={`w-full rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
+                className={`w-full rounded border border-green-500/10 bg-green-500/10 px-4 py-2 font-semibold text-green-500 transition dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300 ${
                   hasRequiredFields()
-                    ? 'hover:bg-green-300/20'
+                    ? 'hover:bg-green-500/20 dark:hover:bg-green-300/20'
                     : 'cursor-not-allowed opacity-50'
                 }`}
                 onClick={hasRequiredFields() ? showEditModal : undefined}

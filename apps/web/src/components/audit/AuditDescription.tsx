@@ -23,7 +23,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
       value={activeTab}
       onTabChange={setActiveTab}
       variant="pills"
-      color="gray"
+      color="blue"
     >
       <Tabs.List>
         <Tabs.Tab value="default">{t('common:default')}</Tabs.Tab>

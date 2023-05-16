@@ -17,7 +17,11 @@ export default function Logo({
   const label = 'Tuturuuu';
 
   return (
-    <Link href="/" onClick={onClick} className="flex items-center gap-2">
+    <Link
+      href="/onboarding?nextUrl=/&withWorkspace=true"
+      onClick={onClick}
+      className="flex items-center gap-2"
+    >
       {showLogo && (
         <div className="flex-none">
           <Image
@@ -32,7 +36,7 @@ export default function Logo({
 
       {showLabel && (
         <div
-          className={`text-xl font-semibold text-white transition duration-200 ${
+          className={`text-xl font-semibold text-black transition duration-200 dark:text-white ${
             alwaysShowLabel ||
             'group-hover:static group-hover:translate-x-0 group-hover:opacity-100 md:-translate-x-2 md:opacity-0'
           }`}

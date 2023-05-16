@@ -26,7 +26,7 @@ const DocumentCard = ({ wsId, document, mode }: Props) => {
       key={`doc-${id}`}
       className={`flex ${
         mode === 'list' ? 'items-center gap-4' : 'flex-col'
-      } relative flex justify-between rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-zinc-800/80`}
+      } relative flex justify-between rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80`}
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
@@ -37,7 +37,7 @@ const DocumentCard = ({ wsId, document, mode }: Props) => {
           <>
             <Divider className="my-2" />
 
-            <p className="text-zinc-400">
+            <p className="text-zinc-700 dark:text-zinc-400">
               <div
                 className="prose line-clamp-3"
                 dangerouslySetInnerHTML={{
@@ -54,7 +54,7 @@ const DocumentCard = ({ wsId, document, mode }: Props) => {
           mode === 'grid' && 'mt-8'
         } flex flex-wrap items-center gap-2 justify-self-end text-sm font-semibold`}
       >
-        <div className="flex max-w-full items-center gap-1 rounded-lg bg-blue-300/10 px-2 py-1.5 text-blue-300">
+        <div className="flex max-w-full items-center gap-1 rounded-lg bg-blue-500/10 px-2 py-1.5 text-blue-600 dark:bg-blue-300/10 dark:text-blue-300">
           <DocumentPlusIcon className="w-5 flex-none" />
           <div className="line-clamp-1">{creationDate}</div>
         </div>

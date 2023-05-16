@@ -48,10 +48,14 @@ const LanguageSelector = ({
         hideOnMobile ? 'hidden md:block' : ''
       }`}
       classNames={{
-        input: transparent ? 'bg-zinc-300/10 border-zinc-300/10' : undefined,
-        dropdown: transparent ? 'bg-[#5f4c3e] border-zinc-300/10' : undefined,
+        input: transparent
+          ? 'text-zinc-300 bg-zinc-300/10 border-zinc-300/10'
+          : undefined,
+        dropdown: transparent
+          ? 'bg-[#5f4c3e] border-zinc-300/10 dark:bg-[#5f4c3e] dark:border-zinc-300/10'
+          : undefined,
         item: transparent
-          ? 'hover:bg-zinc-300/20 hover:text-zinc-200'
+          ? 'text-zinc-300 hover:bg-zinc-300/20 hover:text-zinc-200'
           : undefined,
         itemsWrapper: 'gap-1',
       }}
