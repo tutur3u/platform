@@ -5,9 +5,17 @@ interface ColorOptionProps {
   color: SupportedColor;
   selectedColor: SupportedColor;
   onSelect: (color: SupportedColor) => void;
+  variant?: 'default' | 'card';
+  disabled?: boolean;
 }
 
-const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
+const ColorOption = ({
+  color,
+  selectedColor,
+  onSelect,
+  variant = 'default',
+  disabled = false,
+}: ColorOptionProps) => {
   const isSelected = color === selectedColor;
 
   const getBorderColor = () => {
@@ -123,14 +131,23 @@ const ColorOption = ({ color, selectedColor, onSelect }: ColorOptionProps) => {
       classNames={{
         tooltip: `font-semibold border-2 py-0.5 px-2 capitalize ${getLabelColor()}`,
       }}
+      disabled={disabled}
     >
       <button
-        className={`h-fit w-fit justify-self-center rounded-full border-2 ${getBorderColor()} p-0.5 ${
-          isSelected || 'border-opacity-30'
+        className={`h-fit justify-self-center border-2 ${
+          variant === 'default'
+            ? 'w-fit rounded-full p-0.5'
+            : 'w-full rounded-lg p-1'
+        } ${getBorderColor()} ${isSelected || 'border-opacity-30'} ${
+          disabled && 'cursor-not-allowed opacity-30'
         } transition`}
-        onClick={() => onSelect(color)}
+        onClick={disabled ? undefined : () => onSelect(color)}
       >
-        <div className={`h-4 w-4 rounded-full ${getBackgroundColor()}`} />
+        <div
+          className={`${
+            variant === 'default' ? 'h-4 w-4 rounded-full' : 'h-8 rounded'
+          } ${getBackgroundColor()}`}
+        />
       </button>
     </Tooltip>
   );

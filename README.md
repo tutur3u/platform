@@ -101,7 +101,6 @@ There are 5 seed accounts that are already set up on running the local developme
 4. user3@tuturuuu.com:password123
 5. user4@tuturuuu.com:password123
 
-
 ### Test
 
 To run all tests, run the following command:

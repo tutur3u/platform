@@ -12,6 +12,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       case 'GET':
         return await fetchEvents(req, res, wsId);
 
+      case 'POST':
+        return await createEvent(req, res, wsId);
+
       default:
         throw new Error(
           `The HTTP ${req.method} method is not supported at this route.`
@@ -75,4 +78,34 @@ const fetchEvents = async (
     data: CalendarEvent[];
     count: number;
   });
+};
+
+const createEvent = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  wsId: string
+) => {
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
+
+  const { title, description, start_at, end_at, color } =
+    req.body as CalendarEvent;
+
+  const { data, error } = await supabase
+    .from('workspace_calendar_events')
+    .insert({
+      title,
+      description,
+      start_at,
+      end_at,
+      color: color?.toUpperCase(),
+      ws_id: wsId,
+    } as CalendarEvent)
+    .select('id')
+    .single();
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json({ id: data.id });
 };

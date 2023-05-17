@@ -63,6 +63,8 @@
       "view-mode",
       "pagination"
     ],
+    "/[wsId]/calendar/events/new": ["sidebar-tabs", "calendar-tabs"],
+    "/[wsId]/calendar/events/[eventId]": ["sidebar-tabs", "calendar-tabs"],
 
     "/[wsId]/tasks": ["sidebar-tabs"],
 

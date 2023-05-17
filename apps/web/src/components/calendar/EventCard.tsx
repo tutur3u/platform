@@ -419,7 +419,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Popover
       opened={isOpened}
-      position="right"
+      position={window.innerWidth < 768 ? 'bottom' : 'right'}
       onClose={closeModal}
       classNames={{
         arrow: `${generateColor()} border-2`,
@@ -429,6 +429,7 @@ export default function EventCard({ event }: EventCardProps) {
       <Popover.Dropdown className={`${generateColor()} border-2`}>
         <CalendarEventEditForm id={event.id} />
       </Popover.Dropdown>
+
       <div
         id={`event-${id}`}
         className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${

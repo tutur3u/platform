@@ -90,9 +90,6 @@ const PromotionsPage: PageWithLayoutProps = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Nhập từ khoá để tìm kiếm"
             icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
           <StatusSelector

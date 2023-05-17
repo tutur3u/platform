@@ -1,19 +1,21 @@
 import { ReactElement, useEffect, useState } from 'react';
-import { useSegments } from '../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import HeaderX from '../../../components/metadata/HeaderX';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useSegments } from '../../../../hooks/useSegments';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import HeaderX from '../../../../components/metadata/HeaderX';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import { Divider } from '@mantine/core';
-import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
-import PlusCardButton from '../../../components/common/PlusCardButton';
-import GeneralSearchBar from '../../../components/inputs/GeneralSearchBar';
-import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
-import PaginationSelector from '../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
+import PlusCardButton from '../../../../components/common/PlusCardButton';
+import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
+import ModeSelector, {
+  Mode,
+} from '../../../../components/selectors/ModeSelector';
+import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import { useLocalStorage } from '@mantine/hooks';
-import GeneralItemCard from '../../../components/cards/GeneralItemCard';
-import { CalendarEvent } from '../../../types/primitives/CalendarEvent';
+import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
+import { CalendarEvent } from '../../../../types/primitives/CalendarEvent';
 import useSWR from 'swr';
 
 const CalendarEventsPage: PageWithLayoutProps = () => {
