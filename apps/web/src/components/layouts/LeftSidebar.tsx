@@ -31,7 +31,7 @@ import SidebarTeamList from './sidebar/SidebarTeamList';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
 import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 import { User } from '../../types/primitives/User';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 
 function LeftSidebar({ className }: SidebarProps) {
@@ -306,9 +306,11 @@ function LeftSidebar({ className }: SidebarProps) {
         ) : (
           <div className="mx-2 h-full">
             <SidebarLink
+              href={`/onboarding?nextUrl=${router.asPath}&fastRefresh=true`}
               onClick={() => {
-                router.reload();
-                setUserPopover(false);
+                mutate('/api/user');
+                mutate('/api/workspaces/current');
+                mutate('/api/workspaces/invites');
               }}
               activeIcon={<ArrowPathIcon className="w-5" />}
               label={refresh}

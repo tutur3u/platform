@@ -46,10 +46,11 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const OnboardingPage = () => {
   const {
-    query: { nextUrl, withWorkspace },
+    query: { nextUrl, withWorkspace, fastRefresh },
   } = useRouter();
 
-  const forceHideBackground = nextUrl != null && withWorkspace === 'true';
+  const forceHideBackground =
+    fastRefresh === 'true' || (nextUrl != null && withWorkspace === 'true');
 
   return (
     <>

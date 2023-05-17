@@ -17,7 +17,7 @@ export default function CalendarHeader() {
   } = useCalendar();
 
   return (
-    <div className="mb-8 flex flex-col justify-between gap-2 md:flex-row">
+    <div className="mb-2 flex flex-col justify-between gap-2 md:flex-row">
       <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{getTitle()}</span>
       </div>

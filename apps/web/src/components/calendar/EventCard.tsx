@@ -381,56 +381,36 @@ export default function EventCard({ event }: EventCardProps) {
     const colors: {
       [key: string]: string;
     } = {
-      red: `border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200 ${
-        isNotFocused
-          ? 'bg-[#fdecec] dark:bg-[#241f22]'
-          : 'bg-[#fcdada] dark:bg-[#302729]'
-      }`,
-      blue: `border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200 ${
-        isNotFocused
-          ? 'bg-[#ebf2fe] dark:bg-[#1e2127]'
-          : 'bg-[#d8e6fd] dark:bg-[#252a32]'
-      }`,
-      green: `border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200 ${
-        isNotFocused
-          ? 'bg-[#e8f9ef] dark:bg-[#1e2323]'
-          : 'bg-[#d3f3df] dark:bg-[#242e2a]'
-      }`,
-      yellow: `border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200 ${
-        isNotFocused
-          ? 'bg-[#fdf7e6] dark:bg-[#24221e]'
-          : 'bg-[#fbf0ce] dark:bg-[#302d1f]'
-      }`,
-      orange: `border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200 ${
-        isNotFocused
-          ? 'bg-[#fef1e7] dark:bg-[#242020]'
-          : 'bg-[#fee3d0] dark:bg-[#302924]'
-      }`,
-      purple: `border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200 ${
-        isNotFocused
-          ? 'bg-[#f6eefe] dark:bg-[#222027]'
-          : 'bg-[#eeddfd] dark:bg-[#2c2832]'
-      }`,
-      pink: `border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200 ${
-        isNotFocused
-          ? 'bg-[#fdecf5] dark:bg-[#242025]'
-          : 'bg-[#fbdaeb] dark:bg-[#2f272e]'
-      }`,
-      indigo: `border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200 ${
-        isNotFocused
-          ? 'bg-[#efeffe] dark:bg-[#1f2027]'
-          : 'bg-[#e0e0fc] dark:bg-[#272832]'
-      }`,
-      cyan: `border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200 ${
-        isNotFocused
-          ? 'bg-[#e6f8fb] dark:bg-[#1c2327]'
-          : 'bg-[#cdf0f6] dark:bg-[#212e31]'
-      }`,
-      gray: `border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200 ${
-        isNotFocused
-          ? 'bg-[#f0f1f2] dark:bg-[#222225]'
-          : 'bg-[#e1e3e6] dark:bg-[#2b2c2e]'
-      }`,
+      red: isNotFocused
+        ? 'bg-[#fdecec] dark:bg-[#241f22] border-red-500/40 text-red-600/50 dark:border-red-300/30 dark:text-red-200/50'
+        : 'bg-[#fcdada] dark:bg-[#302729] border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200',
+      blue: isNotFocused
+        ? 'bg-[#ebf2fe] dark:bg-[#1e2127] border-blue-500/40 text-blue-600/50 dark:border-blue-300/30 dark:text-blue-200/50'
+        : 'bg-[#d8e6fd] dark:bg-[#252a32] border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200',
+      green: isNotFocused
+        ? 'bg-[#e8f9ef] dark:bg-[#1e2323] border-green-500/40 text-green-600/50 dark:border-green-300/30 dark:text-green-200/50'
+        : 'bg-[#d3f3df] dark:bg-[#242e2a] border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200',
+      yellow: isNotFocused
+        ? 'bg-[#fdf7e6] dark:bg-[#24221e] border-yellow-500/40 text-yellow-600/50 dark:border-yellow-300/30 dark:text-yellow-200/50'
+        : 'bg-[#fbf0ce] dark:bg-[#302d1f] border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200',
+      orange: isNotFocused
+        ? 'bg-[#fef1e7] dark:bg-[#242020] border-orange-500/40 text-orange-600/50 dark:border-orange-300/30 dark:text-orange-200/50'
+        : 'bg-[#fee3d0] dark:bg-[#302924] border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200',
+      purple: isNotFocused
+        ? 'bg-[#f6eefe] dark:bg-[#222027] border-purple-500/40 text-purple-600/50 dark:border-purple-300/30 dark:text-purple-200/50'
+        : 'bg-[#eeddfd] dark:bg-[#2c2832] border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200',
+      pink: isNotFocused
+        ? 'bg-[#fdecf5] dark:bg-[#242025] border-pink-500/40 text-pink-600/50 dark:border-pink-300/30 dark:text-pink-200/50'
+        : 'bg-[#fbdaeb] dark:bg-[#2f272e] border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200',
+      indigo: isNotFocused
+        ? 'bg-[#efeffe] dark:bg-[#1f2027] border-indigo-500/40 text-indigo-600/50 dark:border-indigo-300/30 dark:text-indigo-200/50'
+        : 'bg-[#e0e0fc] dark:bg-[#272832] border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200',
+      cyan: isNotFocused
+        ? 'bg-[#e6f8fb] dark:bg-[#1c2327] border-cyan-500/40 text-cyan-600/50 dark:border-cyan-300/30 dark:text-cyan-200/50'
+        : 'bg-[#cdf0f6] dark:bg-[#212e31] border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200',
+      gray: isNotFocused
+        ? 'bg-[#f0f1f2] dark:bg-[#222225] border-gray-500/40 text-gray-600/50 dark:border-gray-300/30 dark:text-gray-200/50'
+        : 'bg-[#e1e3e6] dark:bg-[#2b2c2e] border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200',
     };
 
     return colors[eventColor];
