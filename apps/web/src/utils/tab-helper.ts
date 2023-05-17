@@ -16,6 +16,7 @@ import {
   wsUserDetailsTabs,
 } from '../constants/tabs';
 import { wsUserGroupDetailsTabs } from '../constants/tabs/workspace-group-details';
+import { calendarTabs } from '../constants/tabs/calendar';
 
 export const getNavTabs = (mode: Mode) => {
   switch (mode) {
@@ -36,6 +37,9 @@ export const getNavTabs = (mode: Mode) => {
 
     case 'finance':
       return financeTabs;
+
+    case 'calendar':
+      return calendarTabs;
 
     case 'infrastructure':
       return infrastructureTabs;

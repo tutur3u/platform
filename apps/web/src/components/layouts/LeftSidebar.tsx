@@ -305,9 +305,11 @@ function LeftSidebar({ className }: SidebarProps) {
           </>
         ) : (
           <div className="mx-2 h-full">
-            <SidebarLink
-              href={`/onboarding?nextUrl=${router.asPath}&fastRefresh=true`}
+            <SidebarButton
+              // href={`/onboarding?nextUrl=${router.asPath}&fastRefresh=true`}
               onClick={() => {
+                router.reload();
+
                 mutate('/api/user');
                 mutate('/api/workspaces/current');
                 mutate('/api/workspaces/invites');
