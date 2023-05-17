@@ -1,6 +1,11 @@
+import { SupportedColor } from './SupportedColors';
+
 export interface CalendarEvent {
   id: string;
   title: string;
-  start_at: Date;
-  duration: number;
+  description: string;
+  start_at: string;
+  end_at: string;
+  color: SupportedColor;
+  ws_id: string;
 }

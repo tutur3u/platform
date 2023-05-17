@@ -108,7 +108,9 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [cachedWsId, setCachedWsId] = useState<string | null>(null);
 
   const { wsId: freshWsId } = router.query;
-  const wsId = freshWsId ?? cachedWsId;
+
+  const wsId =
+    freshWsId?.toString() ?? cachedWsId ?? workspaces?.[0]?.id ?? null;
 
   useEffect(() => {
     if (cachedWsId) return;

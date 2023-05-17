@@ -100,7 +100,7 @@ const NestedLayout: FC<Props> = ({
         <main
           id="content"
           className={`h-full overflow-auto scroll-smooth px-4 ${
-            defaultNoTabs ? 'pt-24' : 'pt-32'
+            defaultNoTabs ? 'pt-24' : 'pt-[6.75rem]'
           } md:px-8 lg:px-16 xl:px-32`}
         >
           {children}

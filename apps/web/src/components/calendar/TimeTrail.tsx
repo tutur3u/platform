@@ -2,11 +2,11 @@ const TimeTrail = () => {
   const hours = Array.from(Array(24).keys());
 
   return (
-    <div className="grid h-fit w-20 grid-rows-[24] border-r border-zinc-300 dark:border-zinc-800">
+    <div className="grid h-fit w-14 grid-rows-[24] border-r border-zinc-300 dark:border-zinc-800 md:w-20">
       {hours.map((hour, index) => (
         <div
           key={`trail-hour-${index}`}
-          className={`relative flex h-20 w-full min-w-fit items-center justify-end text-xl font-semibold ${
+          className={`relative flex h-20 w-full min-w-fit items-center justify-end text-sm font-semibold md:text-xl ${
             hour !== 23 && 'translate-y-3'
           }`}
         >

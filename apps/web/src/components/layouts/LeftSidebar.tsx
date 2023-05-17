@@ -68,6 +68,7 @@ function LeftSidebar({ className }: SidebarProps) {
   const moreMembers = t('more-members');
 
   const refresh = t('refresh');
+  const loading = t('common:loading');
 
   const notifications = t('notifications');
 
@@ -78,6 +79,8 @@ function LeftSidebar({ className }: SidebarProps) {
   const logout = t('common:logout');
 
   const isRootWs = ws?.id === ROOT_WORKSPACE_ID;
+
+  const [refreshing, setRefreshing] = useState(false);
 
   return (
     <div
@@ -305,15 +308,36 @@ function LeftSidebar({ className }: SidebarProps) {
           </>
         ) : (
           <div className="mx-2 h-full">
-            <SidebarLink
-              href={`/onboarding?nextUrl=${router.asPath}&fastRefresh=true`}
-              onClick={() => {
-                mutate('/api/user');
-                mutate('/api/workspaces/current');
-                mutate('/api/workspaces/invites');
+            <SidebarButton
+              onClick={async () => {
+                setRefreshing(true);
+
+                const userPromise = mutate('/api/user', null, true);
+
+                const currentWsPromise = mutate(
+                  '/api/workspaces/current',
+                  null,
+                  true
+                );
+
+                const wsInvitesPromise = mutate(
+                  '/api/workspaces/invites',
+                  null,
+                  true
+                );
+
+                await Promise.all([
+                  userPromise,
+                  currentWsPromise,
+                  wsInvitesPromise,
+                ]);
+
+                router.push(
+                  `/onboarding?nextUrl=${router.asPath}&fastRefresh=true`
+                );
               }}
               activeIcon={<ArrowPathIcon className="w-5" />}
-              label={refresh}
+              label={refreshing ? loading : refresh}
               showTooltip={sidebar === 'closed'}
             />
           </div>

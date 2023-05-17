@@ -23,7 +23,7 @@ const WeekdayBar = () => {
 
   return (
     <div className="flex">
-      <div className="flex w-20 items-center justify-center rounded-tl-lg border border-r-0 border-zinc-300 font-semibold dark:border-zinc-800">
+      <div className="flex w-14 items-center justify-center rounded-tl-lg border border-r-0 border-zinc-300 font-semibold dark:border-zinc-800 md:w-20">
         ICT
       </div>
       <div

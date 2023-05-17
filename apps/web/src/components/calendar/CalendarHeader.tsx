@@ -16,9 +16,11 @@ export default function CalendarHeader() {
     enableWeekView,
   } = useCalendar();
 
+  const views = availableViews.filter((view) => view?.disabled !== true);
+
   return (
-    <div className="mb-2 flex flex-col justify-between gap-2 md:flex-row">
-      <div className="flex items-center gap-4 text-3xl font-semibold">
+    <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-4 text-2xl font-semibold lg:text-3xl">
         <span>{getTitle()}</span>
       </div>
 
@@ -54,16 +56,18 @@ export default function CalendarHeader() {
           </button>
         </div>
 
-        <SegmentedControl
-          radius="md"
-          value={view}
-          data={availableViews.filter((view) => view?.disabled !== true)}
-          onChange={(value) => {
-            if (value === 'day') enableDayView();
-            if (value === '4-day') enable4DayView();
-            if (value === 'week') enableWeekView();
-          }}
-        />
+        {views.length > 1 && (
+          <SegmentedControl
+            radius="md"
+            value={view}
+            data={views}
+            onChange={(value) => {
+              if (value === 'day') enableDayView();
+              if (value === '4-day') enable4DayView();
+              if (value === 'week') enableWeekView();
+            }}
+          />
+        )}
       </div>
     </div>
   );
