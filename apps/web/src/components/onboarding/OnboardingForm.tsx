@@ -58,7 +58,7 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
       const url =
         withWorkspace !== 'true' && nextUrl
           ? nextUrl.toString() || '/'
-          : `/${workspaces[0].id}/` + nextUrl;
+          : `/${workspaces[0].id}/` + (nextUrl || '');
 
       if (url) router.push(url);
       return;
