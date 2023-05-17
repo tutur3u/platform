@@ -13,13 +13,29 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   const { getEvent, updateEvent, deleteEvent } = useCalendar();
   const event = getEvent(id);
 
-  const [startDate, setStartDate] = useState<Date | null | undefined>(
-    event?.start_at || undefined
+  const [startDate, setStartDate] = useState<Date | null>(
+    event?.start_at ?? null
   );
 
-  const [endDate, setEndDate] = useState<Date | null | undefined>(
-    event?.end_at || undefined
-  );
+  const [endDate, setEndDate] = useState<Date | null>(event?.end_at ?? null);
+
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+
+    // Make sure end date is always after start date
+    if (startDate > endDate) {
+      // Make sure it's 1 hour after start date and before 23:59
+      const newEndDate = new Date(startDate);
+      newEndDate.setMinutes(newEndDate.getMinutes() + 60);
+
+      if (newEndDate.getHours() >= 23) {
+        newEndDate.setHours(23);
+        newEndDate.setMinutes(59);
+      }
+
+      setEndDate(newEndDate);
+    }
+  }, [startDate, endDate]);
 
   useEffect(() => {
     updateEvent(id, {
@@ -122,13 +138,15 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           label="Start at"
           value={startDate}
           onChange={(date) => {
-            setStartDate((prev) => {
-              if (!date) return null;
-              if (!prev) return date;
-              return new Date(
-                prev.setHours(date.getHours(), date.getMinutes())
-              );
-            });
+            // Make sure start date and end date are on the same day
+            // If not, set end date's date to start date's date (keep time)
+            if (date && endDate && date?.getDate() !== endDate?.getDate()) {
+              const newEndDate = new Date(endDate);
+              newEndDate.setDate(date.getDate());
+              setEndDate(newEndDate);
+            }
+
+            setStartDate(date);
           }}
           clearable={false}
           variant="filled"
@@ -136,20 +154,21 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
-          popoverProps={{ withinPortal: true }}
         />
 
         <DateTimePicker
           label="End at"
           value={endDate}
           onChange={(date) => {
-            setEndDate((prev) => {
-              if (!date) return null;
-              if (!prev) return date;
-              return new Date(
-                prev.setHours(date.getHours(), date.getMinutes())
-              );
-            });
+            // Make sure start date and end date are on the same day
+            // If not, set end date's date to start date's date (keep time)
+            if (date && startDate && date?.getDate() !== startDate?.getDate()) {
+              const newStartDate = new Date(startDate);
+              newStartDate.setDate(date.getDate());
+              setStartDate(newStartDate);
+            }
+
+            setEndDate(date);
           }}
           clearable={false}
           variant="filled"
@@ -157,7 +176,6 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
           }}
-          popoverProps={{ withinPortal: true }}
         />
       </div>
 

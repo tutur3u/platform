@@ -23,10 +23,12 @@ const WeekdayBar = () => {
 
   return (
     <div className="flex">
-      <div className="flex w-16 items-center justify-center border-b border-zinc-300 font-semibold dark:border-zinc-800">
+      <div className="flex w-20 items-center justify-center rounded-tl-lg border border-r-0 border-zinc-300 font-semibold dark:border-zinc-800">
         ICT
       </div>
-      <div className={`grid flex-1 ${getGridCols()}`}>
+      <div
+        className={`grid flex-1 rounded-tr-lg border-r border-t border-zinc-300 dark:border-zinc-800 ${getGridCols()}`}
+      >
         {days.map((weekday, index) => (
           <div
             key={`date-${weekday.toLocaleString('en-us', {

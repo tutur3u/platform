@@ -8,6 +8,7 @@ import WorkspaceInviteSnippet from '../notifications/WorkspaceInviteSnippet';
 import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
+import { mutate } from 'swr';
 
 interface Props {
   forceLoading?: boolean;
@@ -26,7 +27,23 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user || !workspaces) return;
+    const { nextUrl, withWorkspace } = router.query;
+
+    if (user && workspaces && nextUrl && !withWorkspace) {
+      router.push(nextUrl.toString());
+      return;
+    }
+
+    if (!user) {
+      mutate('/api/user');
+      return;
+    }
+
+    if (!workspaces) {
+      mutate('/api/workspaces/current');
+      mutate('/api/workspaces/invites');
+      return;
+    }
 
     const hasDisplayName = (user?.display_name || '')?.length > 0;
     const hasUsername = (user?.handle || '')?.length > 0;
@@ -36,15 +53,12 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
     const hasWorkspaces = workspaces.length > 0;
 
     if (hasDisplayName && hasUsername && hasWorkspaces) {
-      const { nextUrl, withWorkspace } = router.query;
-
       if (!workspaces?.[0]?.id) return;
-      const defaultUrl = `/${workspaces[0].id}`;
 
       const url =
-        withWorkspace === 'true'
-          ? `${defaultUrl}/` + nextUrl
-          : nextUrl?.toString() || defaultUrl;
+        withWorkspace !== 'true' && nextUrl
+          ? nextUrl.toString() || '/'
+          : `/${workspaces[0].id}/` + nextUrl;
 
       if (url) router.push(url);
       return;

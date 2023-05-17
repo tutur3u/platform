@@ -17,15 +17,15 @@ export default function CalendarHeader() {
   } = useCalendar();
 
   return (
-    <div className="mb-8 flex flex-col justify-between gap-2 md:flex-row">
+    <div className="mb-2 flex flex-col justify-between gap-2 md:flex-row">
       <div className="flex items-center gap-4 text-3xl font-semibold">
         <span>{getTitle()}</span>
       </div>
 
-      <div className="flex items-center justify-center gap-4 text-blue-600 dark:text-blue-300">
-        <div className="flex gap-1">
+      <div className="flex items-center justify-center gap-4 text-zinc-600 dark:text-zinc-300">
+        <div className="flex h-full gap-0.5">
           <button
-            className="h-full rounded-l-lg bg-blue-500/10 p-2 text-3xl transition hover:bg-blue-500/20 dark:bg-blue-300/10 dark:hover:bg-blue-300/20"
+            className="h-full rounded-l-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
             onClick={handlePrev}
           >
             <ChevronLeftIcon className="w-4" />
@@ -33,10 +33,10 @@ export default function CalendarHeader() {
 
           <button
             onClick={isToday() ? undefined : selectToday}
-            className={`rounded p-1 font-semibold transition ${
+            className={`px-4 py-1 font-semibold transition ${
               isToday()
                 ? 'cursor-not-allowed bg-zinc-500/20 text-zinc-500 opacity-50 dark:bg-zinc-300/10 dark:text-zinc-300'
-                : 'cursor-pointer bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-300/10 dark:hover:bg-blue-300/20'
+                : 'cursor-pointer bg-zinc-500/10 text-zinc-600 hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20'
             }`}
           >
             {view === 'day'
@@ -47,7 +47,7 @@ export default function CalendarHeader() {
           </button>
 
           <button
-            className="h-full rounded-r-lg bg-blue-500/10 p-2 text-3xl transition hover:bg-blue-500/20 dark:bg-blue-300/10 dark:hover:bg-blue-300/20"
+            className="h-full rounded-r-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
             onClick={handleNext}
           >
             <ChevronRightIcon className="w-4" />

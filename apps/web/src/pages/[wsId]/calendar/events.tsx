@@ -2,19 +2,18 @@ import { ReactElement, useEffect } from 'react';
 import { useSegments } from '../../../hooks/useSegments';
 import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
 import HeaderX from '../../../components/metadata/HeaderX';
-import Calendar from '../../../components/calendar/Calendar';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
-const CalendarPage: PageWithLayoutProps = () => {
+const CalendarEventsPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
   const { setRootSegment } = useSegments();
 
   const { t } = useTranslation('calendar-tabs');
 
   const calendarLabel = t('calendar');
-  const overviewLabel = t('overview');
+  const eventsLabel = t('events');
 
   useEffect(() => {
     setRootSegment(
@@ -25,24 +24,23 @@ const CalendarPage: PageWithLayoutProps = () => {
               href: `/${ws.id}`,
             },
             { content: calendarLabel, href: `/${ws.id}/calendar` },
-            { content: overviewLabel, href: `/${ws.id}/calendar` },
+            { content: eventsLabel, href: `/${ws.id}/calendar/events` },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [calendarLabel, overviewLabel, ws, setRootSegment]);
+  }, [calendarLabel, eventsLabel, ws, setRootSegment]);
 
   return (
     <>
-      <HeaderX label={`${overviewLabel} – ${calendarLabel}`} />
-      <Calendar />
+      <HeaderX label={`${eventsLabel} – ${calendarLabel}`} />
     </>
   );
 };
 
-CalendarPage.getLayout = function getLayout(page: ReactElement) {
+CalendarEventsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout mode="calendar">{page}</NestedLayout>;
 };
 
-export default CalendarPage;
+export default CalendarEventsPage;

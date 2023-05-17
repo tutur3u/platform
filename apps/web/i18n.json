@@ -55,7 +55,9 @@
     ],
     "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
 
-    "/[wsId]/calendar": ["sidebar-tabs"],
+    "/[wsId]/calendar": ["sidebar-tabs", "calendar-tabs"],
+    "/[wsId]/calendar/events": ["sidebar-tabs", "calendar-tabs"],
+
     "/[wsId]/tasks": ["sidebar-tabs"],
 
     "/[wsId]/documents": ["sidebar-tabs", "documents"],
