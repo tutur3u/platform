@@ -11,7 +11,7 @@ interface Props {
 const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   const router = useRouter();
 
-  const { ws, workspaces, workspacesLoading, setCachedWsId } = useWorkspaces();
+  const { ws, workspaces, workspacesLoading, setWsId } = useWorkspaces();
 
   const hasWorkspaces = workspaces && workspaces.length > 0;
 
@@ -54,7 +54,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
             )
           );
         // otherwise, redirect to /wsId
-        else setCachedWsId(wsId);
+        else setWsId(wsId);
       }}
       disabled={workspacesLoading || !hasWorkspaces}
       classNames={{
