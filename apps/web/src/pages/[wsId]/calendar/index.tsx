@@ -13,6 +13,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 
   const { t } = useTranslation('calendar-tabs');
 
+  const untitledLabel = t('common:untitled');
   const calendarLabel = t('calendar');
   const overviewLabel = t('overview');
 
@@ -21,7 +22,7 @@ const CalendarPage: PageWithLayoutProps = () => {
       ws
         ? [
             {
-              content: ws?.name || 'Tổ chức không tên',
+              content: ws?.name || untitledLabel,
               href: `/${ws.id}`,
             },
             { content: calendarLabel, href: `/${ws.id}/calendar` },
@@ -31,7 +32,7 @@ const CalendarPage: PageWithLayoutProps = () => {
     );
 
     return () => setRootSegment([]);
-  }, [calendarLabel, overviewLabel, ws, setRootSegment]);
+  }, [untitledLabel, calendarLabel, overviewLabel, ws, setRootSegment]);
 
   return (
     <>

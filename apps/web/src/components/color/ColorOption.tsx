@@ -1,5 +1,6 @@
 import { Tooltip } from '@mantine/core';
 import { SupportedColor } from '../../types/primitives/SupportedColors';
+import useTranslation from 'next-translate/useTranslation';
 
 interface ColorOptionProps {
   color: SupportedColor;
@@ -125,9 +126,11 @@ const ColorOption = ({
     return colors[color];
   };
 
+  const { t } = useTranslation('calendar-event-configs');
+
   return (
     <Tooltip
-      label={color}
+      label={t(color.toLowerCase())}
       classNames={{
         tooltip: `font-semibold border-2 py-0.5 px-2 capitalize ${getLabelColor()}`,
       }}

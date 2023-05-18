@@ -1,10 +1,12 @@
-import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { Button, Timeline } from '@mantine/core';
+import { useState } from 'react';
+import { CheckBadgeIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Status } from '../../status';
+import { useCalendar } from '../../../../hooks/useCalendar';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -18,22 +20,15 @@ interface Progress {
 const CalendarEventDeleteModal = ({ wsId, eventId }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('calendar-event-delete-form');
+  const { refresh } = useCalendar();
+
   const [progress, setProgress] = useState<Progress>({
     removed: 'idle',
   });
 
   const hasError = progress.removed === 'error';
   const hasSuccess = progress.removed === 'success';
-
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã xoá sự kiện',
-      color: 'green',
-    });
-  }, [hasSuccess, eventId]);
 
   const removeDetails = async () => {
     const res = await fetch(
@@ -44,6 +39,8 @@ const CalendarEventDeleteModal = ({ wsId, eventId }: Props) => {
     );
 
     if (res.ok) {
+      await refresh();
+
       setProgress((progress) => ({ ...progress, removed: 'success' }));
       const { id } = await res.json();
       return id;
@@ -77,46 +74,48 @@ const CalendarEventDeleteModal = ({ wsId, eventId }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
-          title="Xoá sự kiện"
+          bullet={<TrashIcon className="h-5 w-5" />}
+          title={t('delete-event')}
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã xoá sự kiện</div>
+            <div className="text-green-300">{t('delete-event')}</div>
           ) : progress.removed === 'error' ? (
-            <div className="text-red-300">Không thể xoá sự kiện</div>
+            <div className="text-red-300">{t('cant-delete-event')}</div>
           ) : progress.removed === 'loading' ? (
-            <div className="text-blue-300">Đang xoá sự kiện</div>
+            <div className="text-blue-300">{t('deleting-event')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ xoá sự kiện</div>
+            <div className="text-zinc-400/80">{t('pending-event-delete')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.removed === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
 
       <div className="mt-4 flex justify-end gap-2">
         {started || (
-          <button
+          <Button
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
-          </button>
+            {t('common:cancel')}
+          </Button>
         )}
 
-        <button
+        <Button
           className={`rounded border px-4 py-1 font-semibold transition ${
             hasError
               ? 'border-red-300/10 bg-red-300/10 text-red-300 hover:bg-red-300/20'
@@ -145,13 +144,13 @@ const CalendarEventDeleteModal = ({ wsId, eventId }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
-        </button>
+            ? t('common:creating')
+            : t('common:start')}
+        </Button>
       </div>
     </>
   );

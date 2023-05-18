@@ -37,6 +37,8 @@ import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 function LeftSidebar({ className }: SidebarProps) {
   const router = useRouter();
 
+  const { wsId } = router.query;
+
   const { sidebar, theme, setSidebar, toggleSidebar, changeTheme } =
     useAppearance();
 
@@ -314,7 +316,11 @@ function LeftSidebar({ className }: SidebarProps) {
 
                 const userPromise = mutate('/api/user', null, true);
 
-                const currentWsPromise = mutate(
+                const currentWsPromise = wsId
+                  ? mutate(`/api/workspaces/${wsId}`, null, true)
+                  : Promise.resolve();
+
+                const workspacesPromise = mutate(
                   '/api/workspaces/current',
                   null,
                   true
@@ -329,6 +335,7 @@ function LeftSidebar({ className }: SidebarProps) {
                 await Promise.all([
                   userPromise,
                   currentWsPromise,
+                  workspacesPromise,
                   wsInvitesPromise,
                 ]);
 

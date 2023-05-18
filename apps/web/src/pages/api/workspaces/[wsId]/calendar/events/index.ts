@@ -49,7 +49,6 @@ const fetchEvents = async (
     .select('id, title, description, start_at, end_at, color, ws_id', {
       count: 'exact',
     })
-    .order('start_at', { ascending: false })
     .eq('ws_id', wsId);
 
   if (query) {
@@ -74,7 +73,18 @@ const fetchEvents = async (
   const { count, data, error } = await queryBuilder;
   if (error) return res.status(401).json({ error: error.message });
 
-  return res.status(200).json({ data, count } as {
+  const sortedEvents = data.sort((a, b) => {
+    if (a.start_at < b.start_at) return -1;
+    if (a.start_at > b.start_at) return 1;
+    if (a.end_at < b.end_at) return 1;
+    if (a.end_at > b.end_at) return -1;
+    return 0;
+  });
+
+  return res.status(200).json({
+    data: sortedEvents,
+    count,
+  } as {
     data: CalendarEvent[];
     count: number;
   });

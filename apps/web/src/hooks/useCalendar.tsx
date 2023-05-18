@@ -4,14 +4,20 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
-import { CalendarEventBase } from '../types/primitives/CalendarEventBase';
-import mockEvents from '../data/events';
+import { useWorkspaces } from './useWorkspaces';
+import useSWR, { mutate as swrMutate } from 'swr';
+import { CalendarEvent } from '../types/primitives/CalendarEvent';
+import moment from 'moment';
+import useTranslation from 'next-translate/useTranslation';
+import 'moment/locale/vi';
+import { useRouter } from 'next/router';
 
 const CalendarContext = createContext({
+  refresh: async () => console.log('refresh'),
   getDate: () => new Date(),
-  getDatesInView: () => [new Date()] as Date[],
   getTitle: () => 'Title' as string,
 
   isToday: () => true as boolean,
@@ -21,7 +27,8 @@ const CalendarContext = createContext({
   handleNext: () => console.log('handleNext'),
   handlePrev: () => console.log('handlePrev'),
 
-  view: 'day' as 'day' | '4-day' | 'week',
+  view: 'day' as 'day' | '4-days' | 'week',
+  datesInView: [] as Date[],
   availableViews: [] as { label: string; value: string; disabled?: boolean }[],
   enableDayView: () => console.log('enableDayView'),
   enable4DayView: () => console.log('enable4DayView'),
@@ -29,25 +36,25 @@ const CalendarContext = createContext({
 
   getEvent: (eventId: string) => {
     console.log('getEvent', eventId);
-    return undefined as CalendarEventBase | undefined;
+    return undefined as CalendarEvent | undefined;
   },
 
-  getCurrentEvents: () => [] as CalendarEventBase[],
-  getUpcomingEvent: () => undefined as CalendarEventBase | undefined,
+  getCurrentEvents: () => [] as CalendarEvent[],
+  getUpcomingEvent: () => undefined as CalendarEvent | undefined,
 
-  getEvents: () => [] as CalendarEventBase[],
+  getEvents: () => [] as CalendarEvent[],
 
   getEventLevel: (eventId: string) => {
     console.log('getEventLevel', eventId);
     return 0 as number;
   },
 
-  addEvent: (event: CalendarEventBase) => console.log('addEvent', event),
+  addEvent: (event: CalendarEvent) => console.log('addEvent', event),
   addEmptyEvent: (date: Date) => {
     console.log('addEmptyEvent', date);
-    return {} as CalendarEventBase | undefined;
+    return {} as CalendarEvent | undefined;
   },
-  updateEvent: (eventId: string, data: Partial<CalendarEventBase>) =>
+  updateEvent: (eventId: string, data: Partial<CalendarEvent>) =>
     console.log('updateEvent', eventId, data),
   deleteEvent: (eventId: string) => console.log('deleteEvent', eventId),
 
@@ -57,7 +64,7 @@ const CalendarContext = createContext({
   },
   getActiveEvent: () => {
     console.log('getActiveEvent');
-    return undefined as CalendarEventBase | undefined;
+    return undefined as CalendarEvent | undefined;
   },
   isModalActive: () => false as boolean,
   isEditing: () => false as boolean,
@@ -70,16 +77,44 @@ const CalendarContext = createContext({
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [date, setDate] = useState(new Date());
-  const [events, setEvents] = useState<CalendarEventBase[]>([]);
+
+  const { ws } = useWorkspaces();
+
+  const [datesInView, setDatesInView] = useState<Date[]>([]);
+  const [view, setView] = useState<'day' | 'week' | '4-days'>('week');
+
+  const getDateRangeQuery = () => {
+    if (!datesInView.length) return '';
+
+    const startAt = datesInView[0];
+    const endAt = datesInView[datesInView.length - 1];
+
+    return `?start_at=${startAt.toISOString()}&end_at=${endAt.toISOString()}`;
+  };
+
+  const apiPath = ws?.id
+    ? `/api/workspaces/${ws?.id}/calendar/events${getDateRangeQuery()}`
+    : null;
+
+  const { data, mutate } = useSWR<{
+    data: CalendarEvent[];
+    count: number;
+  }>(apiPath);
+
+  const router = useRouter();
+
+  const refresh = useCallback(async () => await swrMutate(apiPath), [apiPath]);
+
+  useEffect(() => {
+    if (router.pathname === '/[wsId]/calendar') refresh();
+  }, [router.pathname, refresh]);
+
+  const events = useMemo(() => data?.data ?? [], [data]);
 
   const [openedModalId, setOpenedModalId] = useState<string | null>(null);
   const [lastCreatedEventId, setLastCreatedEventId] = useState<string | null>(
     null
   );
-
-  useEffect(() => {
-    setEvents(mockEvents);
-  }, []);
 
   const getEvent = useCallback(
     (eventId: string) => events.find((e) => e.id === eventId),
@@ -94,12 +129,15 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       const start = e.start_at;
       const end = e.end_at;
 
-      const isSameDay =
-        start.getDate() === now.getDate() &&
-        start.getMonth() === now.getMonth() &&
-        start.getFullYear() === now.getFullYear();
+      const startDate = moment(start).toDate();
+      const endDate = moment(end).toDate();
 
-      return isSameDay && start <= now && end >= now;
+      const isSameDay =
+        startDate.getDate() === now.getDate() &&
+        startDate.getMonth() === now.getMonth() &&
+        startDate.getFullYear() === now.getFullYear();
+
+      return isSameDay && startDate <= now && endDate >= now;
     });
   }, [events]);
 
@@ -111,19 +149,22 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       const start = e.start_at;
       const end = e.end_at;
 
-      const isSameDay =
-        start.getDate() === now.getDate() &&
-        start.getMonth() === now.getMonth() &&
-        start.getFullYear() === now.getFullYear();
+      const startDate = moment(start).toDate();
+      const endDate = moment(end).toDate();
 
-      return isSameDay && start > now && end > now;
+      const isSameDay =
+        startDate.getDate() === now.getDate() &&
+        startDate.getMonth() === now.getMonth() &&
+        startDate.getFullYear() === now.getFullYear();
+
+      return isSameDay && startDate > now && endDate > now;
     });
   }, [events]);
 
   const getEvents = useCallback(() => events, [events]);
 
   const getLevel = useCallback(
-    (events: CalendarEventBase[], eventId: string): number => {
+    (events: CalendarEvent[], eventId: string): number => {
       const event = events.find((e) => e.id === eventId);
       if (!event) return 0;
 
@@ -134,7 +175,11 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         if (e.id === eventId) return false;
 
         // If the event is not on the same day
-        if (e.start_at.getDate() !== event.start_at.getDate()) return false;
+        if (
+          moment(e.start_at).toDate().getDate() !==
+          moment(event.start_at).toDate().getDate()
+        )
+          return false;
 
         // If the event ends before the current event starts,
         // or if the event starts after the current event ends
@@ -157,76 +202,138 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     [events, getLevel]
   );
 
-  const addEvent = useCallback(
-    (event: CalendarEventBase) => {
-      setEvents((prev) => [...prev, event]);
-    },
-    [setEvents]
-  );
+  const addEvent = async (event: CalendarEvent) => {
+    if (!apiPath) return;
 
-  const addEmptyEvent = useCallback(
-    (date: Date) => {
-      if (lastCreatedEventId) {
-        setLastCreatedEventId(null);
-        setOpenedModalId(null);
-        return;
+    try {
+      const res = await fetch(apiPath, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to add event');
       }
 
-      // The event will be 1 hour long
-      const start_at = new Date(date);
-      const end_at = new Date(date);
-      end_at.setHours(end_at.getHours() + 1);
+      const { id: eventId } = await res.json();
+      await refresh();
 
-      const event: CalendarEventBase = {
-        id: crypto.randomUUID(),
-        title: '',
-        start_at,
-        end_at,
-      };
+      setOpenedModalId(eventId);
+      setLastCreatedEventId(eventId);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-      addEvent(event);
-      setOpenedModalId(event.id);
-      setLastCreatedEventId(event.id);
-      return event;
-    },
-    [addEvent, lastCreatedEventId]
-  );
-
-  const updateEvent = useCallback(
-    (eventId: string, data: Partial<CalendarEventBase>) =>
-      setEvents((prev) =>
-        prev
-          .map((e) => {
-            if (e.id !== eventId) return e;
-            return { ...e, ...data };
-          })
-          .sort((a, b) => {
-            if (a.start_at < b.start_at) return -1;
-            if (a.start_at > b.start_at) return 1;
-            if (a.end_at < b.end_at) return 1;
-            if (a.end_at > b.end_at) return -1;
-            return 0;
-          })
-      ),
-    [setEvents]
-  );
-
-  const deleteEvent = useCallback(
-    (eventId: string) => {
-      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  const addEmptyEvent = (date: Date) => {
+    if (lastCreatedEventId) {
       setLastCreatedEventId(null);
       setOpenedModalId(null);
+      return;
+    }
+
+    const start_at = new Date(date);
+    const end_at = new Date(date);
+    end_at.setHours(end_at.getHours() + 1);
+
+    const event: CalendarEvent = {
+      id: crypto.randomUUID(),
+      start_at: start_at.toISOString(),
+      end_at: end_at.toISOString(),
+      local: true,
+    };
+
+    addEvent(event);
+
+    return event;
+  };
+
+  const updateEvent = useCallback(
+    async (eventId: string, data: Partial<CalendarEvent>) => {
+      if (!ws) return;
+
+      mutate((prev) => {
+        const newEvents =
+          prev?.data
+            .map((e) => {
+              if (e.id !== eventId) return e;
+
+              if (
+                (data.title !== undefined && data.title !== e.title) ||
+                (data.description !== undefined &&
+                  data.description !== e.description) ||
+                (data.start_at !== undefined &&
+                  !moment(data.start_at).isSame(e.start_at)) ||
+                (data.end_at !== undefined &&
+                  !moment(data.end_at).isSame(e.end_at)) ||
+                (data.color !== undefined && data.color !== e.color)
+              ) {
+                return { ...e, ...data, local: true };
+              }
+
+              return { ...e, ...data };
+            })
+            .sort((a, b) => {
+              if (a.start_at === b.end_at || a.end_at === b.start_at) return 0;
+              if (a.start_at < b.start_at) return -1;
+              if (a.start_at > b.start_at) return 1;
+              if (a.end_at < b.end_at) return 1;
+              if (a.end_at > b.end_at) return -1;
+              return 0;
+            }) ?? [];
+
+        return { data: newEvents, count: newEvents?.length ?? 0 };
+      }, false);
     },
-    [setEvents]
+    [ws, mutate]
   );
+
+  const deleteEvent = async (eventId: string) => {
+    if (!ws) return;
+
+    mutate((prev) => {
+      const newEvents = prev?.data.filter((e) => e.id !== eventId) ?? [];
+      return { data: newEvents, count: newEvents?.length ?? 0 };
+    }, false);
+
+    try {
+      const res = await fetch(
+        `/api/workspaces/${ws.id}/calendar/events/${eventId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!res.ok) {
+        mutate((prev) => {
+          const newEvents = prev?.data.filter((e) => e.id !== eventId) ?? [];
+          return { data: newEvents, count: newEvents?.length ?? 0 };
+        }, false);
+
+        throw new Error('Failed to delete event');
+      }
+
+      await refresh();
+    } catch (err) {
+      console.error(err);
+    }
+
+    setLastCreatedEventId(null);
+    setOpenedModalId(null);
+  };
 
   const getDate = () => date;
 
+  const { t, lang } = useTranslation('calendar');
+
   const getTitle = () =>
-    date.toLocaleString('en-US', {
-      month: 'long',
-      year: 'numeric',
-    });
+    moment(date)
+      .locale(lang)
+      .format(lang === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
+      .replace(/^\w/, (c) => c.toUpperCase());
 
   // Update the date's hour and minute, every minute
   useEffect(() => {
@@ -275,12 +382,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     setDate(new Date());
   };
 
-  const [datesInView, setDatesInView] = useState<Date[]>([]);
-
-  const [view, setView] = useState<'day' | 'week' | '4-day'>('week');
-
-  const getDatesInView = useCallback(() => datesInView, [datesInView]);
-
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >([]);
@@ -295,7 +396,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   }, [date, availableViews]);
 
   const enable4DayView = useCallback(() => {
-    if (availableViews.find((v) => v.value === '4-day')?.disabled) return;
+    if (availableViews.find((v) => v.value === '4-days')?.disabled) return;
 
     const dates = [];
 
@@ -307,7 +408,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setDatesInView(dates);
-    setView('4-day');
+    setView('4-days');
   }, [date, availableViews]);
 
   const enableWeekView = useCallback(() => {
@@ -341,21 +442,21 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     setAvailableViews([
       {
         value: 'day',
-        label: 'Day',
+        label: t('day'),
         disabled: false,
       },
       {
-        value: '4-day',
-        label: '4 Days',
+        value: '4-days',
+        label: t('4-days'),
         disabled: window.innerWidth <= 768,
       },
       {
         value: 'week',
-        label: 'Week',
+        label: t('week'),
         disabled: window.innerWidth <= 768,
       },
     ]);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const updateDatesInView = () => {
@@ -366,7 +467,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         enableWeekView();
       else if (
         datesInView.length === 4 &&
-        availableViews.find((v) => v.value === '4-day')?.disabled === false
+        availableViews.find((v) => v.value === '4-days')?.disabled === false
       )
         enable4DayView();
       else enableDayView();
@@ -438,8 +539,8 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const showModal = useCallback(() => setModalHidden(false), []);
 
   const values = {
+    refresh,
     getDate,
-    getDatesInView,
     getTitle,
 
     isToday,
@@ -450,6 +551,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     handlePrev,
 
     view,
+    datesInView,
     availableViews,
     enableDayView,
     enable4DayView,

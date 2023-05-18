@@ -1,0 +1,19 @@
+{
+  "new-event": "Sự kiện mới",
+  "event-name": "Tên sự kiện",
+  "event-description": "Mô tả sự kiện",
+  "start-at": "Bắt đầu lúc",
+  "end-at": "Kết thúc lúc",
+  "delete-event": "Xóa sự kiện",
+  "view-event": "Xem sự kiện",
+  "yellow": "Vàng",
+  "orange": "Cam",
+  "red": "Đỏ",
+  "pink": "Hồng",
+  "purple": "Tím",
+  "indigo": "Chàm",
+  "blue": "Xanh dương",
+  "cyan": "Xanh lục",
+  "green": "Xanh lá cây",
+  "gray": "Xám"
+}

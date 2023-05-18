@@ -55,7 +55,12 @@
     ],
     "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
 
-    "/[wsId]/calendar": ["sidebar-tabs", "calendar-tabs"],
+    "/[wsId]/calendar": [
+      "sidebar-tabs",
+      "calendar-tabs",
+      "calendar",
+      "calendar-event-configs"
+    ],
     "/[wsId]/calendar/events": [
       "sidebar-tabs",
       "calendar-tabs",
@@ -63,8 +68,19 @@
       "view-mode",
       "pagination"
     ],
-    "/[wsId]/calendar/events/new": ["sidebar-tabs", "calendar-tabs"],
-    "/[wsId]/calendar/events/[eventId]": ["sidebar-tabs", "calendar-tabs"],
+    "/[wsId]/calendar/events/new": [
+      "sidebar-tabs",
+      "calendar-tabs",
+      "calendar-event-configs",
+      "calendar-event-create-form"
+    ],
+    "/[wsId]/calendar/events/[eventId]": [
+      "sidebar-tabs",
+      "calendar-tabs",
+      "calendar-event-configs",
+      "calendar-event-edit-form",
+      "calendar-event-delete-form"
+    ],
 
     "/[wsId]/tasks": ["sidebar-tabs"],
 

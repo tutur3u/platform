@@ -14,9 +14,9 @@ import ModeSelector, {
 } from '../../../../components/selectors/ModeSelector';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import { useLocalStorage } from '@mantine/hooks';
-import GeneralItemCard from '../../../../components/cards/GeneralItemCard';
 import { CalendarEvent } from '../../../../types/primitives/CalendarEvent';
 import useSWR from 'swr';
+import CalendarEventCard from '../../../../components/cards/CalendarEventCard';
 
 const CalendarEventsPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
@@ -63,7 +63,7 @@ const CalendarEventsPage: PageWithLayoutProps = () => {
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'calendar-events-mode',
-    defaultValue: 'grid',
+    defaultValue: 'list',
   });
 
   if (!ws) return null;
@@ -74,7 +74,7 @@ const CalendarEventsPage: PageWithLayoutProps = () => {
       <div className="flex min-h-full w-full flex-col pb-20">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} />
+          <ModeSelector mode={mode} setMode={setMode} showAll />
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {
@@ -94,17 +94,18 @@ const CalendarEventsPage: PageWithLayoutProps = () => {
         />
 
         <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+          className={`grid ${
+            mode === 'grid' ? 'gap-4 md:grid-cols-2 xl:grid-cols-3' : 'gap-2'
           }`}
         >
           <PlusCardButton href={`/${ws.id}/calendar/events/new`} />
+
           {events &&
-            events?.data.map((e: CalendarEvent) => (
-              <GeneralItemCard
+            events?.data.map((e) => (
+              <CalendarEventCard
                 key={e.id}
-                href={`/${ws.id}/calendar/events/${e.id}`}
-                name={e.title}
+                event={e}
+                orientation={mode === 'grid' ? 'vertical' : 'horizontal'}
               />
             ))}
         </div>

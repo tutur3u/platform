@@ -1,12 +1,13 @@
-import { Timeline } from '@mantine/core';
-import { useEffect, useState } from 'react';
-import { CheckBadgeIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { Button, Timeline } from '@mantine/core';
+import { useState } from 'react';
+import { ArrowPathIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { showNotification } from '@mantine/notifications';
 import { closeAllModals } from '@mantine/modals';
 import { useRouter } from 'next/router';
-import { mutate } from 'swr';
 import { Status } from '../../status';
 import { CalendarEvent } from '../../../../types/primitives/CalendarEvent';
+import { useCalendar } from '../../../../hooks/useCalendar';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wsId: string;
@@ -21,24 +22,15 @@ interface Progress {
 const CalendarEventEditModal = ({ wsId, event }: Props) => {
   const router = useRouter();
 
+  const { t } = useTranslation('calendar-event-edit-form');
+  const { refresh } = useCalendar();
+
   const [progress, setProgress] = useState<Progress>({
     updated: 'idle',
   });
 
   const hasError = progress.updated === 'error';
   const hasSuccess = progress.updated === 'success';
-
-  useEffect(() => {
-    if (!hasSuccess) return;
-
-    mutate(`/api/workspaces/${wsId}/calendar/events/${event.id}`);
-
-    showNotification({
-      title: 'Thành công',
-      message: 'Đã cập nhật sự kiện',
-      color: 'green',
-    });
-  }, [hasSuccess, wsId, event.id]);
 
   const updateDetails = async () => {
     const res = await fetch(
@@ -53,6 +45,8 @@ const CalendarEventEditModal = ({ wsId, event }: Props) => {
     );
 
     if (res.ok) {
+      await refresh();
+
       setProgress((progress) => ({ ...progress, updated: 'success' }));
       const { id } = await res.json();
       return id;
@@ -86,56 +80,54 @@ const CalendarEventEditModal = ({ wsId, event }: Props) => {
         className="mt-2"
       >
         <Timeline.Item
-          bullet={<PlusIcon className="h-5 w-5" />}
-          title="Cập nhật thông tin cơ bản"
+          bullet={<ArrowPathIcon className="h-5 w-5" />}
+          title={t('update-event')}
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã cập nhật thông tin cơ bản</div>
+            <div className="text-green-300">{t('update-event')}</div>
           ) : progress.updated === 'error' ? (
-            <div className="text-red-300">
-              Không thể cập nhật thông tin cơ bản
-            </div>
+            <div className="text-red-300">{t('cant-update-event')}</div>
           ) : progress.updated === 'loading' ? (
-            <div className="text-blue-300">Đang cập nhật thông tin cơ bản</div>
+            <div className="text-blue-300">{t('updating-event')}</div>
           ) : (
-            <div className="text-zinc-400/80">
-              Đang chờ cập nhật thông tin cơ bản
-            </div>
+            <div className="text-zinc-400/80">{t('pending-event-update')}</div>
           )}
         </Timeline.Item>
 
         <Timeline.Item
-          title="Hoàn tất"
+          title={t('common:complete')}
           bullet={<CheckBadgeIcon className="h-5 w-5" />}
           lineVariant="dashed"
         >
           {progress.updated === 'success' ? (
-            <div className="text-green-300">Đã hoàn tất</div>
+            <div className="text-green-300">{t('common:completed')}</div>
           ) : hasError ? (
-            <div className="text-red-300">Đã huỷ hoàn tất</div>
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">Đang chờ hoàn tất</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
 
       <div className="mt-4 flex justify-end gap-2">
         {started || (
-          <button
+          <Button
             className="rounded border border-zinc-300/10 bg-zinc-300/10 px-4 py-1 font-semibold text-zinc-300 transition hover:bg-zinc-300/20"
             onClick={() => closeAllModals()}
           >
-            Huỷ
-          </button>
+            {t('common:cancel')}
+          </Button>
         )}
 
         {event.id && hasSuccess && (
-          <button
-            className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
+          <Button
             onClick={() => closeAllModals()}
+            className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
           >
-            Xem sự kiện
-          </button>
+            {t('event-details')}
+          </Button>
         )}
 
         <button
@@ -167,12 +159,12 @@ const CalendarEventEditModal = ({ wsId, event }: Props) => {
           }}
         >
           {hasError
-            ? 'Quay lại'
+            ? t('common:return')
             : hasSuccess
-            ? 'Hoàn tất'
+            ? t('common:complete')
             : started
-            ? 'Đang tạo'
-            : 'Bắt đầu'}
+            ? t('common:creating')
+            : t('common:start')}
         </button>
       </div>
     </>

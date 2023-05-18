@@ -1,6 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
 import { useCalendar } from '../../hooks/useCalendar';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function CalendarHeader() {
   const {
@@ -15,6 +16,8 @@ export default function CalendarHeader() {
     enable4DayView,
     enableWeekView,
   } = useCalendar();
+
+  const { t } = useTranslation('calendar');
 
   const views = availableViews.filter((view) => view?.disabled !== true);
 
@@ -42,10 +45,10 @@ export default function CalendarHeader() {
             }`}
           >
             {view === 'day'
-              ? 'Today'
+              ? t('today')
               : view === 'week'
-              ? 'This week'
-              : 'Current'}
+              ? t('this-week')
+              : t('current')}
           </button>
 
           <button
@@ -63,7 +66,7 @@ export default function CalendarHeader() {
             data={views}
             onChange={(value) => {
               if (value === 'day') enableDayView();
-              if (value === '4-day') enable4DayView();
+              if (value === '4-days') enable4DayView();
               if (value === 'week') enableWeekView();
             }}
           />

@@ -2,26 +2,60 @@ import { Popover } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
-import { CalendarEventBase } from '../../types/primitives/CalendarEventBase';
 import CalendarEventEditForm from '../forms/CalendarEventEditForm';
+import { CalendarEvent } from '../../types/primitives/CalendarEvent';
+import moment from 'moment';
 
 interface EventCardProps {
-  event: CalendarEventBase;
+  wsId: string;
+  event: CalendarEvent;
 }
 
-export default function EventCard({ event }: EventCardProps) {
-  const { id, title, start_at, end_at } = event;
+export default function EventCard({ wsId, event }: EventCardProps) {
+  const { id, title, start_at, end_at, color } = event;
 
   const {
+    refresh,
     getEventLevel: getLevel,
     updateEvent,
-    getDatesInView,
+    datesInView: dates,
     getActiveEvent,
     openModal,
     closeModal,
     hideModal,
     showModal,
   } = useCalendar();
+
+  useEffect(() => {
+    const syncEvent = async () => {
+      try {
+        const res = await fetch(
+          `/api/workspaces/${wsId}/calendar/events/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(event),
+          }
+        );
+
+        if (!res.ok) throw new Error('Failed to sync event');
+        await refresh();
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (event.local) {
+      // Wait 500ms before syncing the event
+      const timeout = setTimeout(() => {
+        syncEvent();
+      }, 500);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [event, wsId, id, refresh]);
 
   const convertTime = (time: number) => {
     // 9.5 => 9:30
@@ -33,8 +67,11 @@ export default function EventCard({ event }: EventCardProps) {
     return `${pad(hours)}:${pad(minutes)}`;
   };
 
-  const startHours = start_at.getHours() + start_at.getMinutes() / 60;
-  const endHours = end_at.getHours() + end_at.getMinutes() / 60;
+  const startDate = moment(start_at).toDate();
+  const endDate = moment(end_at).toDate();
+
+  const startHours = startDate.getHours() + startDate.getMinutes() / 60;
+  const endHours = endDate.getHours() + endDate.getMinutes() / 60;
 
   const startTime = convertTime(startHours);
   const endTime = convertTime(endHours);
@@ -66,8 +103,8 @@ export default function EventCard({ event }: EventCardProps) {
 
     if (!cardEl || !cellEl) return;
 
-    const startHours = start_at.getHours() + start_at.getMinutes() / 60;
-    const endHours = end_at.getHours() + end_at.getMinutes() / 60;
+    const startHours = startDate.getHours() + startDate.getMinutes() / 60;
+    const endHours = endDate.getHours() + endDate.getMinutes() / 60;
 
     const duration =
       startHours > endHours ? 24 - startHours : endHours - startHours;
@@ -75,15 +112,12 @@ export default function EventCard({ event }: EventCardProps) {
     // Calculate event height
     const height = Math.max(20 - 4, duration * 80 - 4);
 
-    // Get dates
-    const dates = getDatesInView();
-
     // Calculate the index of the day the event is in
     const dateIdx = dates.findIndex((date) => {
       return (
-        date.getFullYear() === start_at.getFullYear() &&
-        date.getMonth() === start_at.getMonth() &&
-        date.getDate() === start_at.getDate()
+        date.getFullYear() === startDate.getFullYear() &&
+        date.getMonth() === startDate.getMonth() &&
+        date.getDate() === startDate.getDate()
       );
     });
 
@@ -117,10 +151,10 @@ export default function EventCard({ event }: EventCardProps) {
     else timeEl?.classList.remove('hidden');
 
     return () => observer.disconnect();
-  }, [id, start_at, end_at, level, getDatesInView]);
+  }, [id, startDate, endDate, level, dates]);
 
   const isPast = () => {
-    const endAt = new Date(start_at);
+    const endAt = new Date(startDate);
 
     const extraHours = Math.floor(duration);
     const extraMinutes = Math.round((duration - extraHours) * 60);
@@ -163,7 +197,7 @@ export default function EventCard({ event }: EventCardProps) {
     return () => {
       observer.disconnect();
     };
-  }, [id, level, isDragging, isResizing, getDatesInView, hideModal]);
+  }, [id, level, isDragging, isResizing, hideModal]);
 
   const activeEvent = getActiveEvent();
   const isOpened = activeEvent?.id === id;
@@ -200,7 +234,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         // calculate new end time
         const newDuration = Math.round(cardEl.offsetHeight / 20) / 4;
-        const newEndAt = new Date(start_at);
+        const newEndAt = new Date(startDate);
 
         const extraHours = Math.floor(newDuration);
         const extraMinutes = Math.round((newDuration - extraHours) * 60);
@@ -209,7 +243,7 @@ export default function EventCard({ event }: EventCardProps) {
         newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
 
         // update event
-        updateEvent(id, { end_at: newEndAt });
+        updateEvent(id, { end_at: newEndAt.toISOString() });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -238,7 +272,15 @@ export default function EventCard({ event }: EventCardProps) {
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, updateEvent, isResizing, start_at, isDragging, hideModal, showModal]);
+  }, [
+    id,
+    updateEvent,
+    isResizing,
+    startDate,
+    isDragging,
+    hideModal,
+    showModal,
+  ]);
 
   // Event dragging
   useEffect(() => {
@@ -282,13 +324,11 @@ export default function EventCard({ event }: EventCardProps) {
         // If the top or left doesn't change, don't update
         if (top === cardEl.offsetTop && left === cardEl.offsetLeft) return;
 
-        const dates = getDatesInView();
-
         const dateIdx = dates.findIndex((date) => {
           return (
-            date.getFullYear() === start_at.getFullYear() &&
-            date.getMonth() === start_at.getMonth() &&
-            date.getDate() === start_at.getDate()
+            date.getFullYear() === startDate.getFullYear() &&
+            date.getMonth() === startDate.getMonth() &&
+            date.getDate() === startDate.getDate()
           );
         });
 
@@ -296,7 +336,7 @@ export default function EventCard({ event }: EventCardProps) {
         const newDateIdx = Math.round(left / halfCellWidth / 2);
 
         // calculate new start time
-        const newStartAt = new Date(start_at);
+        const newStartAt = new Date(startDate);
 
         const newStartHour = Math.round(top / 20) / 4;
         const leftoverHour = newStartHour - Math.floor(newStartHour);
@@ -307,7 +347,7 @@ export default function EventCard({ event }: EventCardProps) {
         newStartAt.setMinutes(newStartMinute);
 
         // calculate new end time (duration)
-        const newEndAt = new Date(end_at);
+        const newEndAt = new Date(endDate);
 
         const extraHours = Math.floor(duration);
         const extraMinutes = Math.round((duration - extraHours) * 60);
@@ -315,7 +355,7 @@ export default function EventCard({ event }: EventCardProps) {
         newEndAt.setHours(newStartAt.getHours() + extraHours);
         newEndAt.setMinutes(newStartAt.getMinutes() + extraMinutes);
 
-        // Update start_at and end_at if the date changes
+        // Update startDate and endDate if the date changes
         if (dateIdx !== newDateIdx) {
           const newDate = dates[newDateIdx];
           if (!newDate) return;
@@ -330,7 +370,10 @@ export default function EventCard({ event }: EventCardProps) {
         }
 
         // update event
-        updateEvent(id, { start_at: newStartAt, end_at: newEndAt });
+        updateEvent(id, {
+          start_at: newStartAt.toISOString(),
+          end_at: newEndAt.toISOString(),
+        });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -361,14 +404,14 @@ export default function EventCard({ event }: EventCardProps) {
     };
   }, [
     id,
-    start_at,
-    end_at,
+    startDate,
+    endDate,
     duration,
     level,
+    dates,
     startHours,
     isResizing,
     updateEvent,
-    getDatesInView,
     showModal,
     setIsDragging,
   ]);
@@ -376,7 +419,7 @@ export default function EventCard({ event }: EventCardProps) {
   const isNotFocused = activeEvent != null && !isOpened;
 
   const generateColor = () => {
-    const eventColor = event?.color || 'blue';
+    const eventColor = color?.toLowerCase() || 'blue';
 
     const colors: {
       [key: string]: string;
@@ -427,7 +470,7 @@ export default function EventCard({ event }: EventCardProps) {
       trapFocus
     >
       <Popover.Dropdown className={`${generateColor()} border-2`}>
-        <CalendarEventEditForm id={event.id} />
+        <CalendarEventEditForm id={id} />
       </Popover.Dropdown>
 
       <div
@@ -464,7 +507,7 @@ export default function EventCard({ event }: EventCardProps) {
                 duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
               }`}
             >
-              {isPast() ? '✅'.concat(title) : title}
+              {isPast() ? '✅'.concat(title || '') : title}
             </div>
             {duration > 0.5 && (
               <div
@@ -472,7 +515,7 @@ export default function EventCard({ event }: EventCardProps) {
                 className={
                   isPast()
                     ? 'text-zinc-400/50'
-                    : 'text-zinc-700/50 dark:text-zinc-200/50'
+                    : `${generateColor()} opacity-80`
                 }
               >
                 {startTime} - {endTime}
