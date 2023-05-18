@@ -54,14 +54,17 @@ const DynamicIsland = () => {
     return `${hoursString}${minutesString}${secondsString}`.trimEnd();
   };
 
-  const timeLeft = events.length > 0 ? getTimeLeft(events[0].end_at) : 0;
+  const firstEventEnd = events?.[0]?.end_at
+    ? moment(events[0].end_at).toDate()
+    : null;
+  const timeLeft = firstEventEnd ? getTimeLeft(firstEventEnd) : 0;
 
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [endAt, setEndAt] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (events?.[0]?.end_at) setEndAt(events[0].end_at);
-  }, [events]);
+    if (events?.[0]?.end_at) setEndAt(firstEventEnd);
+  }, [events, firstEventEnd]);
 
   const focusMinutes = 25;
   const breakMinutes = 5;
@@ -78,13 +81,13 @@ const DynamicIsland = () => {
   const [time, setTime] = useState(0);
 
   useEffect(() => {
-    if (endAt && events?.[0]?.end_at !== endAt) {
-      setEndAt(events?.[0]?.end_at);
+    if (endAt && firstEventEnd !== endAt) {
+      setEndAt(firstEventEnd);
       setCurrentCycle(1);
       setStartAt(null);
       setTime(0);
     }
-  }, [endAt, events]);
+  }, [endAt, events, firstEventEnd]);
 
   const startTimer = () => {
     if (startAt) {
@@ -96,7 +99,7 @@ const DynamicIsland = () => {
     }
 
     const cycle = timeLeft > totalMinutes * 60 ? totalMinutes * 60 : timeLeft;
-    setEndAt(events?.[0].end_at);
+    setEndAt(firstEventEnd);
     setStartAt(new Date());
     setCurrentCycle(1);
     setTime(cycle);

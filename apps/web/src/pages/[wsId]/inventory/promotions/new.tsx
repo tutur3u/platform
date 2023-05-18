@@ -86,9 +86,6 @@ const NewPromotionPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Khai trương", "Có sổ hộ nghèo"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
           />
         </div>

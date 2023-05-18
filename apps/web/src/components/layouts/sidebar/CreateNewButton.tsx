@@ -62,6 +62,7 @@ const CreateNewButton = () => {
   const newTask = t('new-task');
   const newNote = t('new-note');
   const newTransaction = t('new-transaction');
+  const newInvoice = t('new-invoice');
   const invitePeople = t('invite-people');
 
   return (
@@ -142,7 +143,7 @@ const CreateNewButton = () => {
           href={`/${ws?.id}/finance/invoices/new`}
           onClick={() => setPopover(false)}
           activeIcon={<ReceiptPercentIcon className="w-5" />}
-          label="New Invoice"
+          label={newInvoice}
           left
         />
 

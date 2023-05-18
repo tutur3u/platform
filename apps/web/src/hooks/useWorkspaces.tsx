@@ -26,7 +26,7 @@ const WorkspaceContext = createContext({
   teams: undefined as Team[] | undefined,
   teamsLoading: true,
 
-  setCachedWsId: (wsId: string) => console.log('setCachedWsId', wsId),
+  setWsId: (wsId: string) => console.log('setWsId', wsId),
 
   createWorkspace: async (
     ws: Workspace,
@@ -105,21 +105,20 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const workspacesLoading = !workspaces && !workspacesError;
 
-  const [cachedWsId, setCachedWsId] = useState<string | null>(null);
+  const [wsId, setWsId] = useState<string | null>(null);
 
   const { wsId: freshWsId } = router.query;
-  const wsId = freshWsId ?? cachedWsId;
 
   useEffect(() => {
-    if (cachedWsId) return;
+    if (wsId) return;
 
     if (!workspaces || workspacesError || workspaces.length === 0) {
-      setCachedWsId(null);
+      setWsId(null);
       return;
     }
 
-    setCachedWsId(workspaces?.[0]?.id ?? null);
-  }, [workspaces, workspacesError, cachedWsId]);
+    setWsId(freshWsId?.toString() ?? workspaces?.[0]?.id ?? null);
+  }, [freshWsId, workspaces, workspacesError, wsId]);
 
   useEffect(() => {
     if (user && !wsId) mutate('/api/workspaces/current');
@@ -338,7 +337,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     teams,
     teamsLoading,
 
-    setCachedWsId,
+    setWsId,
 
     createWorkspace,
     updateWorkspace,

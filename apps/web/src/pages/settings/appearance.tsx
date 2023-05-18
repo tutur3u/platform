@@ -43,7 +43,7 @@ const SettingPage: PageWithLayoutProps = () => {
       <HeaderX label={settings} />
 
       <SettingItemCard title={appearance} description={appearanceDescription}>
-        <div className="grid gap-4 text-center xl:grid-cols-2">
+        <div className="grid gap-4 text-center md:grid-cols-2">
           <div
             onClick={() => changeTheme('dark')}
             className={`flex w-full cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/30 dark:bg-blue-300/20 dark:text-blue-300 ${

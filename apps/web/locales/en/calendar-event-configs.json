@@ -1,0 +1,19 @@
+{
+  "new-event": "New event",
+  "event-name": "Event name",
+  "event-description": "Event description",
+  "start-at": "Start at",
+  "end-at": "End at",
+  "delete-event": "Delete event",
+  "view-event": "View event",
+  "yellow": "Yellow",
+  "orange": "Orange",
+  "red": "Red",
+  "pink": "Pink",
+  "purple": "Purple",
+  "indigo": "Indigo",
+  "blue": "Blue",
+  "cyan": "Cyan",
+  "green": "Green",
+  "gray": "Gray"
+}

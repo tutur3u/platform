@@ -1,6 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
 import { useCalendar } from '../../hooks/useCalendar';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function CalendarHeader() {
   const {
@@ -16,9 +17,13 @@ export default function CalendarHeader() {
     enableWeekView,
   } = useCalendar();
 
+  const { t } = useTranslation('calendar');
+
+  const views = availableViews.filter((view) => view?.disabled !== true);
+
   return (
-    <div className="mb-2 flex flex-col justify-between gap-2 md:flex-row">
-      <div className="flex items-center gap-4 text-3xl font-semibold">
+    <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-4 text-2xl font-semibold lg:text-3xl">
         <span>{getTitle()}</span>
       </div>
 
@@ -40,10 +45,10 @@ export default function CalendarHeader() {
             }`}
           >
             {view === 'day'
-              ? 'Today'
+              ? t('today')
               : view === 'week'
-              ? 'This week'
-              : 'Current'}
+              ? t('this-week')
+              : t('current')}
           </button>
 
           <button
@@ -54,16 +59,18 @@ export default function CalendarHeader() {
           </button>
         </div>
 
-        <SegmentedControl
-          radius="md"
-          value={view}
-          data={availableViews.filter((view) => view?.disabled !== true)}
-          onChange={(value) => {
-            if (value === 'day') enableDayView();
-            if (value === '4-day') enable4DayView();
-            if (value === 'week') enableWeekView();
-          }}
-        />
+        {views.length > 1 && (
+          <SegmentedControl
+            radius="md"
+            value={view}
+            data={views}
+            onChange={(value) => {
+              if (value === 'day') enableDayView();
+              if (value === '4-days') enable4DayView();
+              if (value === 'week') enableWeekView();
+            }}
+          />
+        )}
       </div>
     </div>
   );

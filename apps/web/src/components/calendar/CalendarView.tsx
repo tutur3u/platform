@@ -3,9 +3,7 @@ import CalendarMatrix from './CalendarMatrix';
 import TimeIndicator from './TimeIndicator';
 
 const CalendarView = () => {
-  const { getDatesInView } = useCalendar();
-
-  const dates = getDatesInView();
+  const { datesInView: dates } = useCalendar();
   const columns = dates.length;
 
   return (

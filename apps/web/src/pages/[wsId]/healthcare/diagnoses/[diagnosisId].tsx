@@ -146,9 +146,6 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Nhiệt độ", "Huyết áp", "Huyết đường", "Cholesterol", "Triglyceride", "Creatinine"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
             disabled={!diagnosis}
           />
@@ -161,9 +158,6 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
             minRows={5}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
           />
 
           <Textarea
@@ -172,9 +166,6 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
             value={note}
             onChange={(e) => setNote(e.currentTarget.value)}
             minRows={5}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
           />
         </div>
       </div>

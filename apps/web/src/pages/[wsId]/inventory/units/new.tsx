@@ -83,9 +83,6 @@ const NewUnitPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Thuốc", "Thực phẩm"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
           />
         </div>

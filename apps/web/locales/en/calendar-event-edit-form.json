@@ -1,0 +1,8 @@
+{
+  "update-event": "Update event",
+  "event-details": "Event details",
+  "updated-event": "Updated event",
+  "cant-update-event": "Can't update event",
+  "updating-event": "Updating event",
+  "pending-event-update": "Pending event update"
+}

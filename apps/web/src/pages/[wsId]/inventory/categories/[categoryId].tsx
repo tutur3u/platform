@@ -22,12 +22,12 @@ const CategoryDetailsPage: PageWithLayoutProps = () => {
   const router = useRouter();
   const { wsId, categoryId } = router.query;
 
-  const pathPath =
+  const apiPath =
     wsId && categoryId
       ? `/api/workspaces/${wsId}/inventory/categories/${categoryId}`
       : null;
 
-  const { data: category } = useSWR<ProductCategory>(pathPath);
+  const { data: category } = useSWR<ProductCategory>(apiPath);
 
   useEffect(() => {
     setRootSegment(
@@ -142,9 +142,6 @@ const CategoryDetailsPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Paracetamol 500mg"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
             disabled={!category}
           />

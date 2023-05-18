@@ -83,9 +83,6 @@ const NewSupplierPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Nhà thuốc Long Châu", "Công ty TNHH ABC", "Chợ thuốc"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
           />
         </div>

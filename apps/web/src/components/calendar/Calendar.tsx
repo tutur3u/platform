@@ -4,7 +4,7 @@ import WeekdayBar from './WeekdayBar';
 
 const Calendar = () => {
   return (
-    <div className="flex h-full w-full flex-col pb-4">
+    <div className="flex h-full w-full flex-col pb-16 md:pb-4">
       <CalendarHeader />
       <WeekdayBar />
       <CalendarViewWithTrail />
