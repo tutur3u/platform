@@ -6,6 +6,7 @@ import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 interface AuthFormProps {
   title: string;
@@ -74,6 +75,20 @@ const AuthForm = ({
     if (onSubmit) await onSubmit({ email, password });
     setSubmitting(false);
   };
+
+  const { supabaseClient } = useSessionContext();
+
+  async function handleSignInWithGoogle() {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+    });
+  }
+
+  async function handleSignInWithGithub() {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: 'github',
+    });
+  }
 
   const ctaText = submitting ? submittingLabel : submitLabel;
 
@@ -179,6 +194,26 @@ const AuthForm = ({
             disabled={isFormInvalid || disabled}
           >
             {ctaText}
+          </Button>
+
+          <Button
+            className="bg-blue-300/10"
+            variant="light"
+            onClick={() => {
+              handleSignInWithGoogle();
+            }}
+          >
+            Log in with Google
+          </Button>
+
+          <Button
+            className="bg-blue-300/10"
+            variant="light"
+            onClick={() => {
+              handleSignInWithGithub();
+            }}
+          >
+            Log in with Github
           </Button>
 
           {secondaryAction && (
