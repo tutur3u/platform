@@ -197,34 +197,36 @@ const AuthForm = ({
             {ctaText}
           </Button>
 
-          <div className="my-1 flex items-center justify-center gap-3">
-            <div
-              className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
-              onClick={() => {
-                handleSignInWithGoogle();
-              }}
-            >
-              <Image
-                width={30}
-                height={30}
-                src="/media/google-logo.png"
-                alt="Google logo"
-              />
+          {!recoveryMode && !resetPasswordMode && (
+            <div className="my-1 flex items-center justify-center gap-3">
+              <div
+                className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
+                onClick={() => {
+                  handleSignInWithGoogle();
+                }}
+              >
+                <Image
+                  width={30}
+                  height={30}
+                  src="/media/google-logo.png"
+                  alt="Google logo"
+                />
+              </div>
+              <div
+                className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
+                onClick={() => {
+                  handleSignInWithGithub();
+                }}
+              >
+                <Image
+                  width={30}
+                  height={30}
+                  src="/media/github-mark.png"
+                  alt="Github logo"
+                />
+              </div>
             </div>
-            <div
-              className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
-              onClick={() => {
-                handleSignInWithGithub();
-              }}
-            >
-              <Image
-                width={30}
-                height={30}
-                src="/media/github-mark.png"
-                alt="Github logo"
-              />
-            </div>
-          </div>
+          )}
 
           {secondaryAction && (
             <div>
