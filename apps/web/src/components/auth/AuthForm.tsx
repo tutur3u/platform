@@ -7,6 +7,7 @@ import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 import { useSessionContext } from '@supabase/auth-helpers-react';
+import Image from 'next/image';
 
 interface AuthFormProps {
   title: string;
@@ -196,25 +197,34 @@ const AuthForm = ({
             {ctaText}
           </Button>
 
-          <Button
-            className="bg-blue-300/10"
-            variant="light"
-            onClick={() => {
-              handleSignInWithGoogle();
-            }}
-          >
-            Log in with Google
-          </Button>
-
-          <Button
-            className="bg-blue-300/10"
-            variant="light"
-            onClick={() => {
-              handleSignInWithGithub();
-            }}
-          >
-            Log in with Github
-          </Button>
+          <div className="my-1 flex items-center justify-center gap-3">
+            <div
+              className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
+              onClick={() => {
+                handleSignInWithGoogle();
+              }}
+            >
+              <Image
+                width={30}
+                height={30}
+                src="/media/google-logo.png"
+                alt="Google logo"
+              />
+            </div>
+            <div
+              className="rounded-full bg-slate-50/70 p-2 hover:cursor-pointer"
+              onClick={() => {
+                handleSignInWithGithub();
+              }}
+            >
+              <Image
+                width={30}
+                height={30}
+                src="/media/github-mark.png"
+                alt="Github logo"
+              />
+            </div>
+          </div>
 
           {secondaryAction && (
             <div>
