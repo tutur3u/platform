@@ -44,7 +44,7 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
         <LanguageSelector hideOnMobile />
         <ActionIcon
           onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="border border-zinc-300 dark:border-zinc-300/10"
+          className="border border-zinc-300 bg-transparent hover:bg-zinc-200 dark:border-zinc-300/10 dark:bg-[#25262b] dark:hover:bg-[#454751]/40"
           size="lg"
         >
           {theme === 'dark' ? (
