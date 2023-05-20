@@ -9,8 +9,8 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   categoryId?: string | null;
-  category: TransactionCategory | null;
-  setCategory: (category: TransactionCategory | null) => void;
+  category?: TransactionCategory | null;
+  setCategory?: (category: TransactionCategory | null) => void;
 
   blacklist?: string[];
   className?: string;
@@ -148,7 +148,9 @@ const TransactionCategorySelector = ({
       data={data}
       value={category?.id}
       onChange={(id) =>
-        setCategory(categories?.find((v) => v.id === id) || null)
+        setCategory
+          ? setCategory(categories?.find((v) => v.id === id) || null)
+          : null
       }
       className={className}
       styles={{
@@ -187,7 +189,7 @@ const TransactionCategorySelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(categories || []), item]);
-          setCategory(item);
+          if (setCategory) setCategory(item);
 
           return {
             label: item.name,

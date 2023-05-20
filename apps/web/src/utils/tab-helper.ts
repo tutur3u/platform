@@ -17,6 +17,7 @@ import {
 } from '../constants/tabs';
 import { wsUserGroupDetailsTabs } from '../constants/tabs/workspace-group-details';
 import { calendarTabs } from '../constants/tabs/calendar';
+import { transactionDetailsTabs } from '../constants/tabs/transaction-details';
 
 export const getNavTabs = (mode: Mode) => {
   switch (mode) {
@@ -47,6 +48,9 @@ export const getNavTabs = (mode: Mode) => {
     case 'wallet_details':
       return walletDetailsTabs;
 
+    case 'transaction_details':
+      return transactionDetailsTabs;
+
     case 'product_details':
       return productDetailsTabs;
 
@@ -62,7 +66,8 @@ export const getNavTabs = (mode: Mode) => {
 };
 
 const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
-  const { wsId, teamId, productId, userId, groupId, walletId } = router.query;
+  const { wsId, teamId, productId, userId, groupId, walletId, transactionId } =
+    router.query;
 
   return tabs.map((tab) => {
     if (tab.href) {
@@ -73,7 +78,8 @@ const enhanceHref = ({ router, tabs }: { router: NextRouter; tabs: Tab[] }) => {
         .replace('[productId]', productId as string)
         .replace('[userId]', userId as string)
         .replace('[groupId]', groupId as string)
-        .replace('[walletId]', walletId as string);
+        .replace('[walletId]', walletId as string)
+        .replace('[transactionId]', transactionId as string);
 
       return {
         ...tab,

@@ -19,7 +19,7 @@ const SidebarTeamList = ({ wsId, sidebarOpened }: Props) => {
         <div className={`flex flex-col ${sidebarOpened ? 'gap-1' : 'gap-2'}`}>
           {(teams?.length || 0) > 0 && <Divider className="pb-1" />}
           {teams &&
-            teams.map((team) => (
+            teams?.map((team) => (
               <SidebarLink
                 key={team.id}
                 href={`/${wsId}/teams/${team.id}`}

@@ -1,40 +1,43 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Button, Divider, NumberInput, Select, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import WalletSelector from '../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../types/primitives/Wallet';
-import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
-import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import WalletSelector from '../../../../../components/selectors/WalletSelector';
+import { Wallet } from '../../../../../types/primitives/Wallet';
+import SettingItemCard from '../../../../../components/settings/SettingItemCard';
+import TransactionCategorySelector from '../../../../../components/selectors/TransactionCategorySelector';
+import { TransactionCategory } from '../../../../../types/primitives/TransactionCategory';
 import { useRouter } from 'next/router';
-import { Transaction } from '../../../../types/primitives/Transaction';
+import { Transaction } from '../../../../../types/primitives/Transaction';
 import useSWR from 'swr';
-import TransactionDeleteModal from '../../../../components/loaders/transactions/TransactionDeleteModal';
-import TransactionEditModal from '../../../../components/loaders/transactions/TransactionEditModal';
+import TransactionDeleteModal from '../../../../../components/loaders/transactions/TransactionDeleteModal';
+import TransactionEditModal from '../../../../../components/loaders/transactions/TransactionEditModal';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { EyeIcon } from '@heroicons/react/24/outline';
-import ThousandMultiplierChips from '../../../../components/chips/ThousandMultiplierChips';
+import ThousandMultiplierChips from '../../../../../components/chips/ThousandMultiplierChips';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const TransactionDetailsPage: PageWithLayoutProps = () => {
+const TransactionSettingsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
   const { t } = useTranslation('transactions');
+
   const finance = t('finance');
   const transactions = t('transactions');
   const unnamedWorkspace = t('unnamed-ws');
-  const loading = t('loading');
+  const loading = t('common:loading');
+
+  const settingsLabel = t('transaction-details-tabs:settings');
 
   const router = useRouter();
   const { wsId, transactionId, redirectToWallets } = router.query;
@@ -70,6 +73,10 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
               content: transaction?.id || loading,
               href: `/${ws.id}/finance/transactions/${transaction?.id}`,
             },
+            {
+              content: settingsLabel,
+              href: `/${ws.id}/finance/transactions/${transaction?.id}/settings`,
+            },
           ]
         : []
     );
@@ -81,6 +88,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
     setRootSegment,
     finance,
     transactions,
+    settingsLabel,
     unnamedWorkspace,
     loading,
   ]);
@@ -185,7 +193,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={`${transaction} - ${finance}`} />
-      <div className="mt-2 flex min-h-full w-full flex-col ">
+      <div className="flex min-h-full w-full flex-col ">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
             <button
@@ -316,6 +324,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           <SettingItemCard
             title={t('category')}
             description={t('category-description')}
+            disabled={!wallet}
           >
             <TransactionCategorySelector
               categoryId={transaction?.category_id}
@@ -329,6 +338,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
           <SettingItemCard
             title={t('currency')}
             description={t('currency-description')}
+            disabled={!wallet}
           >
             <Select
               placeholder={t('currency-placeholder')}
@@ -349,8 +359,8 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
   );
 };
 
-TransactionDetailsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
+TransactionSettingsPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="transaction_details">{page}</NestedLayout>;
 };
 
-export default TransactionDetailsPage;
+export default TransactionSettingsPage;
