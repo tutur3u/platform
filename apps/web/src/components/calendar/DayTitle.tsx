@@ -1,25 +1,42 @@
+import { useCalendar } from '../../hooks/useCalendar';
+
 interface DayTitleProps {
   date: Date;
   weekday: string;
 }
 
 export default function DayTitle({ date, weekday }: DayTitleProps) {
+  const { view } = useCalendar();
+
   const today = new Date();
   const isToday = date.toDateString() === today.toDateString();
+
   return (
     <div
-      className={`flex h-20 flex-col items-center justify-center border-b border-l border-zinc-800 pb-2 text-xl font-semibold ${
-        isToday ? 'text-blue-300' : ''
+      className={`border-b border-l border-zinc-300 text-center font-semibold dark:border-zinc-800 ${
+        view !== 'day' ? 'p-1' : 'md:p-1'
       }`}
     >
-      {weekday}
-      <span
-        className={`${
-          isToday ? 'bg-blue-300/30 text-blue-300' : 'text-white'
-        } mt-1 flex aspect-square items-center justify-center rounded-full p-1 text-xl`}
+      <div
+        className={`flex items-center justify-center gap-1 rounded p-1 ${
+          isToday
+            ? `text-purple-500 dark:text-purple-300 ${
+                view !== 'day' && 'bg-purple-500/20 dark:bg-purple-300/10'
+              }`
+            : 'text-zinc-700 dark:text-zinc-300'
+        }`}
       >
-        {date.getDate()}
-      </span>
+        <span className="text-lg">{weekday}</span>
+        <span
+          className={`${
+            isToday
+              ? 'bg-purple-500/20 dark:bg-purple-300/20'
+              : 'bg-zinc-500/20 dark:bg-zinc-300/10 dark:text-white'
+          } flex aspect-square items-center justify-center rounded px-1`}
+        >
+          {date.getDate()}
+        </span>
+      </div>
     </div>
   );
 }

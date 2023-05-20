@@ -258,7 +258,7 @@ const NewCheckupPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNextCheckupAt(checkupAt || new Date())}
               >
                 + Thêm lịch tái khám
@@ -327,7 +327,7 @@ const NewCheckupPage: PageWithLayoutProps = () => {
               />
             ) : (
               <button
-                className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/20 md:col-span-2"
+                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
                 onClick={() => setNote('')}
               >
                 + Thêm ghi chú
@@ -344,13 +344,13 @@ const NewCheckupPage: PageWithLayoutProps = () => {
 
               <div className="flex gap-2">
                 <button
-                  className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                  className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
                   onClick={addEmptyGroup}
                 >
                   + Thêm nhóm chỉ số
                 </button>
                 <button
-                  className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                  className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
                   onClick={addEmptyVital}
                 >
                   + Thêm chỉ số

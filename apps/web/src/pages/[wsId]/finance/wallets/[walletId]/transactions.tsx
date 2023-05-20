@@ -164,7 +164,7 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label={`${transaction} - ${wallets}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
-        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
@@ -194,12 +194,10 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <h3 className="col-span-full text-lg font-semibold text-gray-300">
+          <h3 className="col-span-full text-lg font-semibold text-zinc-700 dark:text-zinc-300">
             {t('new-transaction')}
           </h3>
-          <PlusCardButton
-            href={`/${ws.id}/finance/transactions/new?walletId=${walletId}`}
-          />
+          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
         </div>
 
         <div className="mt-8 grid gap-8">
@@ -208,9 +206,9 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
             Object.entries(transactionsByDate).map(([date, data]) => (
               <div
                 key={date}
-                className="group rounded-lg border border-zinc-300/10 bg-zinc-900 p-4"
+                className="group rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
               >
-                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-gray-300 md:flex-row">
+                <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 dark:text-zinc-300 md:flex-row">
                   <div className="flex gap-2">
                     <div>{getRelativeDate(date)}</div>
                     <MiniPlusButton
@@ -220,15 +218,15 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <div className="rounded bg-purple-300/10 px-2 py-0.5 text-base text-purple-300">
+                    <div className="rounded bg-purple-500/10 px-2 py-0.5 text-base text-purple-600 dark:bg-purple-300/10 dark:text-purple-300">
                       {data.transactions.length}{' '}
-                      {t('transaction').toLowerCase()}
+                      {t('transactions').toLowerCase()}
                     </div>
                     <div
                       className={`rounded px-2 py-0.5 text-base ${
                         data.total < 0
-                          ? 'bg-red-300/10 text-red-300'
-                          : 'bg-green-300/10 text-green-300'
+                          ? 'bg-red-500/10 text-red-600 dark:bg-red-300/10 dark:text-red-300'
+                          : 'bg-green-500/10 text-green-600 dark:bg-green-300/10 dark:text-green-300'
                       }`}
                     >
                       {Intl.NumberFormat('vi-VN', {

@@ -83,16 +83,13 @@ const PromotionsPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label="Mã giảm giá – Kho hàng" />
       <div className="flex min-h-full w-full flex-col pb-20">
-        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <TextInput
             label="Tìm kiếm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Nhập từ khoá để tìm kiếm"
             icon={<MagnifyingGlassIcon className="h-5" />}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
           />
           <ModeSelector mode={mode} setMode={setMode} />
           <StatusSelector

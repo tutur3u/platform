@@ -26,6 +26,8 @@ const WorkspaceContext = createContext({
   teams: undefined as Team[] | undefined,
   teamsLoading: true,
 
+  setWsId: (wsId: string) => console.log('setWsId', wsId),
+
   createWorkspace: async (
     ws: Workspace,
     options?: {
@@ -103,10 +105,24 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const workspacesLoading = !workspaces && !workspacesError;
 
-  const [cachedWsId, setCachedWsId] = useState<string | null>(null);
+  const [wsId, setWsId] = useState<string | null>(null);
+
   const { wsId: freshWsId } = router.query;
 
-  const wsId = freshWsId ?? cachedWsId;
+  useEffect(() => {
+    if (wsId) return;
+
+    if (!workspaces || workspacesError || workspaces.length === 0) {
+      setWsId(null);
+      return;
+    }
+
+    setWsId(freshWsId?.toString() ?? workspaces?.[0]?.id ?? null);
+  }, [freshWsId, workspaces, workspacesError, wsId]);
+
+  useEffect(() => {
+    if (user && !wsId) mutate('/api/workspaces/current');
+  }, [user, wsId]);
 
   const validWsId = typeof wsId === 'string' && wsId.length > 0;
 
@@ -115,25 +131,6 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const wsLoading = !ws && !wsError;
-
-  useEffect(() => {
-    if (typeof freshWsId === 'string') setCachedWsId(freshWsId);
-  }, [freshWsId]);
-
-  useEffect(() => {
-    if (!user || wsError) setCachedWsId(null);
-  }, [user, wsError]);
-
-  useEffect(() => {
-    const updateWsId = async () => {
-      const res = await fetch('/api/workspaces/current');
-      const data = await res.json();
-
-      setCachedWsId(data?.current?.[0]?.id);
-    };
-
-    if (user && !freshWsId && !cachedWsId) updateWsId();
-  }, [user, freshWsId, cachedWsId]);
 
   const { data: workspaceInvites, error: workspaceInvitesError } = useSWR<
     Workspace[]
@@ -339,6 +336,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
     teams,
     teamsLoading,
+
+    setWsId,
 
     createWorkspace,
     updateWorkspace,

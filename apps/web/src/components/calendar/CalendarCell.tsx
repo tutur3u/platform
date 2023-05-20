@@ -6,9 +6,9 @@ interface CalendarCellProps {
 }
 
 const CalendarCell = ({ date, hour }: CalendarCellProps) => {
-  const id = `cell-${date}-${hour}`;
-
   const { addEmptyEvent } = useCalendar();
+
+  const id = `cell-${date}-${hour}`;
 
   const handleCreateEvent = (midHour?: boolean) => {
     const newDate = new Date(date);
@@ -22,7 +22,9 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   return (
     <div
       id={id}
-      className="calendar-cell grid h-20 border-b border-l border-zinc-800"
+      className={`calendar-cell grid h-20 border-r border-zinc-300 dark:border-zinc-800 ${
+        hour !== 0 && 'border-t'
+      }`}
       onContextMenu={(e) => {
         e.preventDefault();
       }}

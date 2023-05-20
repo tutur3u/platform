@@ -2,26 +2,60 @@ import { Popover } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
-import { CalendarEventBase } from '../../types/primitives/CalendarEventBase';
 import CalendarEventEditForm from '../forms/CalendarEventEditForm';
+import { CalendarEvent } from '../../types/primitives/CalendarEvent';
+import moment from 'moment';
 
 interface EventCardProps {
-  event: CalendarEventBase;
+  wsId: string;
+  event: CalendarEvent;
 }
 
-export default function EventCard({ event }: EventCardProps) {
-  const { id, title, start_at, end_at } = event;
+export default function EventCard({ wsId, event }: EventCardProps) {
+  const { id, title, start_at, end_at, color } = event;
 
   const {
+    refresh,
     getEventLevel: getLevel,
     updateEvent,
-    getDatesInView,
+    datesInView: dates,
     getActiveEvent,
     openModal,
     closeModal,
     hideModal,
     showModal,
   } = useCalendar();
+
+  useEffect(() => {
+    const syncEvent = async () => {
+      try {
+        const res = await fetch(
+          `/api/workspaces/${wsId}/calendar/events/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(event),
+          }
+        );
+
+        if (!res.ok) throw new Error('Failed to sync event');
+        await refresh();
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (event.local) {
+      // Wait 500ms before syncing the event
+      const timeout = setTimeout(() => {
+        syncEvent();
+      }, 500);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [event, wsId, id, refresh]);
 
   const convertTime = (time: number) => {
     // 9.5 => 9:30
@@ -33,8 +67,11 @@ export default function EventCard({ event }: EventCardProps) {
     return `${pad(hours)}:${pad(minutes)}`;
   };
 
-  const startHours = start_at.getHours() + start_at.getMinutes() / 60;
-  const endHours = end_at.getHours() + end_at.getMinutes() / 60;
+  const startDate = moment(start_at).toDate();
+  const endDate = moment(end_at).toDate();
+
+  const startHours = startDate.getHours() + startDate.getMinutes() / 60;
+  const endHours = endDate.getHours() + endDate.getMinutes() / 60;
 
   const startTime = convertTime(startHours);
   const endTime = convertTime(endHours);
@@ -66,8 +103,8 @@ export default function EventCard({ event }: EventCardProps) {
 
     if (!cardEl || !cellEl) return;
 
-    const startHours = start_at.getHours() + start_at.getMinutes() / 60;
-    const endHours = end_at.getHours() + end_at.getMinutes() / 60;
+    const startHours = startDate.getHours() + startDate.getMinutes() / 60;
+    const endHours = endDate.getHours() + endDate.getMinutes() / 60;
 
     const duration =
       startHours > endHours ? 24 - startHours : endHours - startHours;
@@ -75,15 +112,12 @@ export default function EventCard({ event }: EventCardProps) {
     // Calculate event height
     const height = Math.max(20 - 4, duration * 80 - 4);
 
-    // Get dates
-    const dates = getDatesInView();
-
     // Calculate the index of the day the event is in
     const dateIdx = dates.findIndex((date) => {
       return (
-        date.getFullYear() === start_at.getFullYear() &&
-        date.getMonth() === start_at.getMonth() &&
-        date.getDate() === start_at.getDate()
+        date.getFullYear() === startDate.getFullYear() &&
+        date.getMonth() === startDate.getMonth() &&
+        date.getDate() === startDate.getDate()
       );
     });
 
@@ -103,17 +137,24 @@ export default function EventCard({ event }: EventCardProps) {
 
     // Update event position
     cardEl.style.top = `${startHours * 80}px`;
-    const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
-    cardEl.style.left = `${left}px`;
+
+    const observer = new ResizeObserver(() => {
+      const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
+      cardEl.style.left = `${left}px`;
+    });
+
+    observer.observe(cellEl);
 
     // Update event time visibility
     const timeEl = cardEl.querySelector('#time');
     if (duration <= 0.5) timeEl?.classList.add('hidden');
     else timeEl?.classList.remove('hidden');
-  }, [id, start_at, end_at, level, getDatesInView]);
+
+    return () => observer.disconnect();
+  }, [id, startDate, endDate, level, dates]);
 
   const isPast = () => {
-    const endAt = new Date(start_at);
+    const endAt = new Date(startDate);
 
     const extraHours = Math.floor(duration);
     const extraMinutes = Math.round((duration - extraHours) * 60);
@@ -140,16 +181,23 @@ export default function EventCard({ event }: EventCardProps) {
     ) as HTMLDivElement | null;
     if (!cellEl) return;
 
-    const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
-    const normalWidth = cellEl.offsetWidth - level * 12 - 4;
+    const observer = new ResizeObserver(() => {
+      const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
+      const normalWidth = cellEl.offsetWidth - level * 12 - 4;
 
-    const isEditing = isDragging || isResizing;
-    const padding = isEditing ? paddedWidth : normalWidth;
+      const isEditing = isDragging || isResizing;
+      const padding = isEditing ? paddedWidth : normalWidth;
 
-    cardEl.style.width = `${padding}px`;
+      cardEl.style.width = `${padding}px`;
+      if (isEditing) hideModal();
+    });
 
-    if (isEditing) hideModal();
-  }, [id, level, isDragging, isResizing, getDatesInView, hideModal]);
+    observer.observe(cellEl);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [id, level, isDragging, isResizing, hideModal]);
 
   const activeEvent = getActiveEvent();
   const isOpened = activeEvent?.id === id;
@@ -186,7 +234,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         // calculate new end time
         const newDuration = Math.round(cardEl.offsetHeight / 20) / 4;
-        const newEndAt = new Date(start_at);
+        const newEndAt = new Date(startDate);
 
         const extraHours = Math.floor(newDuration);
         const extraMinutes = Math.round((newDuration - extraHours) * 60);
@@ -195,7 +243,7 @@ export default function EventCard({ event }: EventCardProps) {
         newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
 
         // update event
-        updateEvent(id, { end_at: newEndAt });
+        updateEvent(id, { end_at: newEndAt.toISOString() });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -224,7 +272,15 @@ export default function EventCard({ event }: EventCardProps) {
     return () => {
       rootEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, updateEvent, isResizing, start_at, isDragging, hideModal, showModal]);
+  }, [
+    id,
+    updateEvent,
+    isResizing,
+    startDate,
+    isDragging,
+    hideModal,
+    showModal,
+  ]);
 
   // Event dragging
   useEffect(() => {
@@ -268,13 +324,11 @@ export default function EventCard({ event }: EventCardProps) {
         // If the top or left doesn't change, don't update
         if (top === cardEl.offsetTop && left === cardEl.offsetLeft) return;
 
-        const dates = getDatesInView();
-
         const dateIdx = dates.findIndex((date) => {
           return (
-            date.getFullYear() === start_at.getFullYear() &&
-            date.getMonth() === start_at.getMonth() &&
-            date.getDate() === start_at.getDate()
+            date.getFullYear() === startDate.getFullYear() &&
+            date.getMonth() === startDate.getMonth() &&
+            date.getDate() === startDate.getDate()
           );
         });
 
@@ -282,7 +336,7 @@ export default function EventCard({ event }: EventCardProps) {
         const newDateIdx = Math.round(left / halfCellWidth / 2);
 
         // calculate new start time
-        const newStartAt = new Date(start_at);
+        const newStartAt = new Date(startDate);
 
         const newStartHour = Math.round(top / 20) / 4;
         const leftoverHour = newStartHour - Math.floor(newStartHour);
@@ -293,7 +347,7 @@ export default function EventCard({ event }: EventCardProps) {
         newStartAt.setMinutes(newStartMinute);
 
         // calculate new end time (duration)
-        const newEndAt = new Date(end_at);
+        const newEndAt = new Date(endDate);
 
         const extraHours = Math.floor(duration);
         const extraMinutes = Math.round((duration - extraHours) * 60);
@@ -301,7 +355,7 @@ export default function EventCard({ event }: EventCardProps) {
         newEndAt.setHours(newStartAt.getHours() + extraHours);
         newEndAt.setMinutes(newStartAt.getMinutes() + extraMinutes);
 
-        // Update start_at and end_at if the date changes
+        // Update startDate and endDate if the date changes
         if (dateIdx !== newDateIdx) {
           const newDate = dates[newDateIdx];
           if (!newDate) return;
@@ -316,7 +370,10 @@ export default function EventCard({ event }: EventCardProps) {
         }
 
         // update event
-        updateEvent(id, { start_at: newStartAt, end_at: newEndAt });
+        updateEvent(id, {
+          start_at: newStartAt.toISOString(),
+          end_at: newEndAt.toISOString(),
+        });
       };
 
       const handleMouseUp = (e: MouseEvent) => {
@@ -347,14 +404,14 @@ export default function EventCard({ event }: EventCardProps) {
     };
   }, [
     id,
-    start_at,
-    end_at,
+    startDate,
+    endDate,
     duration,
     level,
+    dates,
     startHours,
     isResizing,
     updateEvent,
-    getDatesInView,
     showModal,
     setIsDragging,
   ]);
@@ -362,41 +419,41 @@ export default function EventCard({ event }: EventCardProps) {
   const isNotFocused = activeEvent != null && !isOpened;
 
   const generateColor = () => {
-    const eventColor = event?.color || 'blue';
+    const eventColor = color?.toLowerCase() || 'blue';
 
     const colors: {
       [key: string]: string;
     } = {
-      red: `border-red-300/80 text-red-200 ${
-        isNotFocused ? 'bg-[#241f22]' : 'bg-[#302729]'
-      }`,
-      blue: `border-blue-300/80 text-blue-200 ${
-        isNotFocused ? 'bg-[#1e2127]' : 'bg-[#252a32]'
-      }`,
-      green: `border-green-300/80 text-green-200 ${
-        isNotFocused ? 'bg-[#1e2323]' : 'bg-[#242e2a]'
-      }`,
-      yellow: `border-yellow-300/80 text-yellow-200 ${
-        isNotFocused ? 'bg-[#24221e]' : 'bg-[#302d1f]'
-      }`,
-      orange: `border-orange-300/80 text-orange-200 ${
-        isNotFocused ? 'bg-[#242020]' : 'bg-[#302924]'
-      }`,
-      purple: `border-purple-300/80 text-purple-200 ${
-        isNotFocused ? 'bg-[#222027]' : 'bg-[#2c2832]'
-      }`,
-      pink: `border-pink-300/80 text-pink-200 ${
-        isNotFocused ? 'bg-[#242025]' : 'bg-[#2f272e]'
-      }`,
-      indigo: `border-indigo-300/80 text-indigo-200 ${
-        isNotFocused ? 'bg-[#1f2027]' : 'bg-[#272832]'
-      }`,
-      cyan: `border-cyan-300/80 text-cyan-200 ${
-        isNotFocused ? 'bg-[#1c2327]' : 'bg-[#212e31]'
-      }`,
-      gray: `border-gray-300/80 text-gray-200 ${
-        isNotFocused ? 'bg-[#222225]' : 'bg-[#2b2c2e]'
-      }`,
+      red: isNotFocused
+        ? 'bg-[#fdecec] dark:bg-[#241f22] border-red-500/40 text-red-600/50 dark:border-red-300/30 dark:text-red-200/50'
+        : 'bg-[#fcdada] dark:bg-[#302729] border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200',
+      blue: isNotFocused
+        ? 'bg-[#ebf2fe] dark:bg-[#1e2127] border-blue-500/40 text-blue-600/50 dark:border-blue-300/30 dark:text-blue-200/50'
+        : 'bg-[#d8e6fd] dark:bg-[#252a32] border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200',
+      green: isNotFocused
+        ? 'bg-[#e8f9ef] dark:bg-[#1e2323] border-green-500/40 text-green-600/50 dark:border-green-300/30 dark:text-green-200/50'
+        : 'bg-[#d3f3df] dark:bg-[#242e2a] border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200',
+      yellow: isNotFocused
+        ? 'bg-[#fdf7e6] dark:bg-[#24221e] border-yellow-500/40 text-yellow-600/50 dark:border-yellow-300/30 dark:text-yellow-200/50'
+        : 'bg-[#fbf0ce] dark:bg-[#302d1f] border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200',
+      orange: isNotFocused
+        ? 'bg-[#fef1e7] dark:bg-[#242020] border-orange-500/40 text-orange-600/50 dark:border-orange-300/30 dark:text-orange-200/50'
+        : 'bg-[#fee3d0] dark:bg-[#302924] border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200',
+      purple: isNotFocused
+        ? 'bg-[#f6eefe] dark:bg-[#222027] border-purple-500/40 text-purple-600/50 dark:border-purple-300/30 dark:text-purple-200/50'
+        : 'bg-[#eeddfd] dark:bg-[#2c2832] border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200',
+      pink: isNotFocused
+        ? 'bg-[#fdecf5] dark:bg-[#242025] border-pink-500/40 text-pink-600/50 dark:border-pink-300/30 dark:text-pink-200/50'
+        : 'bg-[#fbdaeb] dark:bg-[#2f272e] border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200',
+      indigo: isNotFocused
+        ? 'bg-[#efeffe] dark:bg-[#1f2027] border-indigo-500/40 text-indigo-600/50 dark:border-indigo-300/30 dark:text-indigo-200/50'
+        : 'bg-[#e0e0fc] dark:bg-[#272832] border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200',
+      cyan: isNotFocused
+        ? 'bg-[#e6f8fb] dark:bg-[#1c2327] border-cyan-500/40 text-cyan-600/50 dark:border-cyan-300/30 dark:text-cyan-200/50'
+        : 'bg-[#cdf0f6] dark:bg-[#212e31] border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200',
+      gray: isNotFocused
+        ? 'bg-[#f0f1f2] dark:bg-[#222225] border-gray-500/40 text-gray-600/50 dark:border-gray-300/30 dark:text-gray-200/50'
+        : 'bg-[#e1e3e6] dark:bg-[#2b2c2e] border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200',
     };
 
     return colors[eventColor];
@@ -405,7 +462,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Popover
       opened={isOpened}
-      position="right"
+      position={window.innerWidth < 768 ? 'bottom' : 'right'}
       onClose={closeModal}
       classNames={{
         arrow: `${generateColor()} border-2`,
@@ -413,13 +470,14 @@ export default function EventCard({ event }: EventCardProps) {
       trapFocus
     >
       <Popover.Dropdown className={`${generateColor()} border-2`}>
-        <CalendarEventEditForm id={event.id} />
+        <CalendarEventEditForm id={id} />
       </Popover.Dropdown>
+
       <div
         id={`event-${id}`}
         className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${
           isPast() && !isOpened
-            ? 'border-zinc-500 border-opacity-30 bg-[#1c1c1e] text-zinc-400'
+            ? 'border-zinc-400 border-opacity-30 bg-[#e3e3e4] text-zinc-400 dark:border-zinc-600 dark:bg-[#1c1c1e]'
             : generateColor()
         } ${isNotFocused && 'border-transparent text-opacity-10'} ${
           level && 'border'
@@ -449,12 +507,16 @@ export default function EventCard({ event }: EventCardProps) {
                 duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
               }`}
             >
-              {isPast() ? '✅'.concat(title) : title}
+              {isPast() ? '✅'.concat(title || '') : title}
             </div>
             {duration > 0.5 && (
               <div
                 id="time"
-                className={isPast() ? 'text-zinc-400/50' : 'text-zinc-200/50'}
+                className={
+                  isPast()
+                    ? 'text-zinc-400/50'
+                    : `${generateColor()} opacity-80`
+                }
               >
                 {startTime} - {endTime}
               </div>

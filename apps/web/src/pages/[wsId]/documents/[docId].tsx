@@ -163,7 +163,9 @@ const ProjectDocumentEditor = () => {
       title: <div className="font-semibold">{t('delete-document')}</div>,
       children: t('delete-document-confirmation'),
       labels: {
-        confirm: t('delete'),
+        confirm: (
+          <div className="text-blue-200 dark:text-blue-300">{t('delete')}</div>
+        ),
         cancel: t('cancel'),
       },
       centered: true,
@@ -215,7 +217,7 @@ const ProjectDocumentEditor = () => {
 
             <button
               onClick={deleteDocument}
-              className="h-fit rounded-lg bg-zinc-300/10 p-2 text-zinc-300 hover:bg-zinc-300/20 hover:text-zinc-100"
+              className="h-fit rounded-lg bg-zinc-500/5 p-2 text-zinc-600 hover:bg-zinc-500/10 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20 dark:hover:text-zinc-100"
             >
               <TrashIcon className="h-5 w-5" />
             </button>

@@ -178,7 +178,7 @@ const NewPage: PageWithLayoutProps = () => {
               valueFormat="DD/MM/YYYY"
               className={ws?.preset !== 'PHARMACY' ? 'md:col-span-2' : ''}
               classNames={{
-                input: 'bg-[#25262b]',
+                input: 'dark:bg-[#25262b]',
               }}
             />
 
@@ -261,14 +261,14 @@ const NewPage: PageWithLayoutProps = () => {
             <Divider className="col-span-full my-2" />
 
             <div className="col-span-full grid gap-2">
-              <div className="text-2xl font-semibold">Vai trò</div>
-              <Divider className="my-2" variant="dashed" />
+              <div className="text-2xl font-semibold">Nhóm người dùng</div>
+              <Divider className="mb-2" variant="dashed" />
 
               <button
-                className="w-fit rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+                className="w-fit rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
                 onClick={addEmptyGroup}
               >
-                + Thêm vai trò
+                + Thêm nhóm
               </button>
 
               {groups.map((r, idx) => (

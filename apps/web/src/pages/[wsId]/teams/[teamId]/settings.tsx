@@ -129,16 +129,18 @@ const TeamSettingsPage = () => {
 
       {teamId && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="text-zinc-400">Manage the settings of your team.</p>
+            <p className="text-zinc-700 dark:text-zinc-400">
+              Manage the settings of your team.
+            </p>
           </div>
           <Divider className="my-4" />
         </>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
           <div className="mb-1 text-2xl font-bold">Basic Information</div>
           <div className="mb-4 font-semibold text-zinc-500">
             Manage the basic information of your team.
@@ -154,9 +156,9 @@ const TeamSettingsPage = () => {
           </div>
 
           {team?.created_at && (
-            <div className="mt-8 border-t border-zinc-700/70 pt-4 text-zinc-500">
+            <div className="mt-2 text-zinc-500">
               This team was created{' '}
-              <span className="font-semibold text-zinc-300">
+              <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                 {moment(team.created_at).fromNow()}
               </span>
               .
@@ -170,14 +172,14 @@ const TeamSettingsPage = () => {
             className={`${
               isSaving || name === team?.name
                 ? 'cursor-not-allowed opacity-50'
-                : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-            } col-span-full mt-8 flex w-full items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-2 text-xl font-semibold text-blue-300 transition`}
+                : 'hover:border-blue-500/30 hover:bg-blue-500/20 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20'
+            } col-span-full mt-8 flex w-full items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300`}
           >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
 
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
           <div className="mb-1 text-2xl font-bold">Security</div>
           <div className="mb-4 font-semibold text-zinc-500">
             Manage the security of your team.
@@ -185,7 +187,7 @@ const TeamSettingsPage = () => {
 
           <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
             <div
-              className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-2 text-xl font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
+              className="col-span-full flex h-fit w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
               onClick={() => showDeleteTeamModal(team)}
             >
               {isDeleting ? 'Deleting...' : 'Delete Team'}

@@ -71,7 +71,7 @@ const DateRangePicker = ({
           value={value}
           onChange={onChange}
           classNames={{
-            input: 'bg-[#25262b]',
+            input: 'dark:bg-[#25262b]',
           }}
           locale={lang}
           valueFormat="DD MMMM, YYYY"

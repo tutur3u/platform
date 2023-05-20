@@ -115,12 +115,12 @@ const TransactionCategoryEditModal = ({ wsId, category }: Props) => {
         >
           {progress.updated === 'success' ? (
             <div className="text-green-300">{t('common:completed')}</div>
-            ) : hasError ? (
-              <div className="text-red-300">{t('common:cancel-completed')}</div>
-            ) : (
-              <div className="text-zinc-400/80">
-                {t('common:pending-completion')}
-              </div>
+          ) : hasError ? (
+            <div className="text-red-300">{t('common:cancel-completed')}</div>
+          ) : (
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>
@@ -137,7 +137,7 @@ const TransactionCategoryEditModal = ({ wsId, category }: Props) => {
 
         {category.id && hasSuccess && (
           <button
-            className="rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition hover:bg-blue-300/20"
+            className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
             onClick={() => closeAllModals()}
           >
             {t('category-details')}

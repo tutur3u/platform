@@ -2,8 +2,7 @@ import { useCalendar } from '../../hooks/useCalendar';
 import CalendarColumn from './CalendarColumn';
 
 const CalendarBaseMatrix = () => {
-  const { getDatesInView } = useCalendar();
-  const dates = getDatesInView();
+  const { datesInView: dates } = useCalendar();
 
   return (
     <>

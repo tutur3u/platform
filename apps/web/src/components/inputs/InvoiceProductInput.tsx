@@ -143,15 +143,15 @@ const InvoiceProductInput = ({
           />
 
           {p?.warehouse_id === undefined || p?.warehouse_id === '' ? (
-            <div className="col-span-full rounded border border-orange-300/20 bg-orange-300/10 p-4 text-center font-semibold text-orange-300">
+            <div className="col-span-full rounded border border-orange-500/20 bg-orange-500/10 p-4 text-center font-semibold text-orange-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
               {t('pending-data')}
             </div>
           ) : p?.price === '' || p?.stock === '' ? (
-            <div className="col-span-full rounded border border-orange-300/20 bg-orange-300/10 p-4 text-center font-semibold text-orange-300">
+            <div className="col-span-full rounded border border-orange-500/20 bg-orange-500/10 p-4 text-center font-semibold text-orange-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
               {t('loading-data')}
             </div>
           ) : p?.stock === 0 ? (
-            <div className="col-span-full rounded border border-red-300/20 bg-red-300/10 p-4 text-center font-semibold text-red-300">
+            <div className="col-span-full rounded border border-red-500/20 bg-red-500/10 p-4 text-center font-semibold text-red-600 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300">
               {t('product-out-of-stock')}
             </div>
           ) : (
@@ -227,7 +227,7 @@ const InvoiceProductInput = ({
         </div>
 
         <button
-          className="mt-[1.6125rem] h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
+          className="mt-[1.6125rem] h-fit rounded border border-red-500/10 bg-red-500/10 px-1 py-1.5 font-semibold text-red-600 transition hover:bg-red-500/20 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20 md:px-4"
           onClick={removePrice}
         >
           <TrashIcon className="h-5 w-5" />

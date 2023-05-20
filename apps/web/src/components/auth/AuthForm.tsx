@@ -191,7 +191,7 @@ const AuthForm = ({
 
         <div className="grid w-full gap-2 text-center">
           <Button
-            className="bg-blue-300/10"
+            className="bg-blue-300/10 text-blue-300 transition hover:bg-blue-300/20"
             variant="light"
             loading={submitting}
             onClick={(e) => {
@@ -257,7 +257,7 @@ const AuthForm = ({
         </div>
 
         <div className="grid gap-2">
-          <div className="text-center text-sm font-semibold text-zinc-300/70">
+          <div className="text-center text-sm font-semibold text-zinc-300/60">
             {noticeP1}{' '}
             <Link
               href="/terms"

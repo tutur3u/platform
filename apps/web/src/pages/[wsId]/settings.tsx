@@ -138,16 +138,18 @@ const WorkspaceSettingsPage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">{settingsLabel}</h1>
-            <p className="text-zinc-400">{t('description')}</p>
+            <p className="text-zinc-700 dark:text-zinc-400">
+              {t('description')}
+            </p>
           </div>
           <Divider className="my-4" />
         </>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
           <div className="mb-1 text-2xl font-bold">{t('basic_info')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
             {t('basic_info_description')}
@@ -165,9 +167,12 @@ const WorkspaceSettingsPage = () => {
             />
           </div>
 
-          <div className="mt-2 border-zinc-700/70 text-zinc-500">
+          <div className="mt-2 text-zinc-500">
             {t('created_at')}{' '}
-            <span className="font-semibold text-zinc-300">{relativeTime}</span>.
+            <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+              {relativeTime}
+            </span>
+            .
           </div>
 
           <div className="h-full" />
@@ -179,15 +184,15 @@ const WorkspaceSettingsPage = () => {
               className={`${
                 isSaving || name === ws?.name
                   ? 'cursor-not-allowed opacity-50'
-                  : 'hover:border-blue-300/30 hover:bg-blue-300/20'
-              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300 transition`}
+                  : 'hover:border-blue-500/30 hover:bg-blue-500/20 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20'
+              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-600 transition dark:text-blue-300`}
             >
               {isSaving ? t('common:saving') : t('common:save')}
             </Button>
           )}
         </div>
 
-        <div className="flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+        <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
           <div className="mb-1 text-2xl font-bold">{t('security')}</div>
           <div className="mb-4 font-semibold text-zinc-500">
             {t('security_description')}
@@ -200,8 +205,8 @@ const WorkspaceSettingsPage = () => {
               className={`${
                 isSystemWs
                   ? 'cursor-not-allowed opacity-50'
-                  : 'hover:border-red-300/30 hover:bg-red-300/20'
-              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition`}
+                  : 'hover:border-red-500/30 hover:bg-red-500/20 dark:hover:border-red-300/30 dark:hover:bg-red-300/20'
+              } col-span-full mt-2 flex w-full items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-600 transition dark:text-red-300`}
             >
               {isDeleting ? t('deleting') : t('delete')}
             </Button>
@@ -212,7 +217,7 @@ const WorkspaceSettingsPage = () => {
           <>
             <Divider className="col-span-full" />
 
-            <div className="col-span-full flex flex-col rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+            <div className="col-span-full flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
               <div className="mb-1 text-2xl font-bold">{t('features')}</div>
               <div className="mb-4 font-semibold text-zinc-500">
                 {t('features_description')}

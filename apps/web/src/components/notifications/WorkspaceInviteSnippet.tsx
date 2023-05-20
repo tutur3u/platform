@@ -78,7 +78,7 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
 
   return (
     <div
-      className={`rounded-lg border p-8 ${
+      className={`rounded-lg border p-4 md:p-8 ${
         gray
           ? 'border-zinc-300/10 bg-zinc-900'
           : 'border-blue-300/20 bg-blue-300/10'
@@ -98,7 +98,7 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
         <span className="text-zinc-200">{ws?.name || `Unnamed Workspace`}</span>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid gap-2 md:grid-cols-2">
         <div
           className="flex cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300 transition duration-300 hover:border-red-300/10 hover:bg-red-300/10 hover:text-red-300"
           onClick={() => declineInvite(ws)}

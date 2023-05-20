@@ -168,7 +168,7 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
               valueFormat="DD/MM/YYYY"
               className={ws?.preset !== 'PHARMACY' ? 'md:col-span-2' : ''}
               classNames={{
-                input: 'bg-[#25262b]',
+                input: 'dark:bg-[#25262b]',
               }}
               disabled
             />

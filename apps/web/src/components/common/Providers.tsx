@@ -36,21 +36,21 @@ const Providers = ({
             fetch(resource, init).then((res) => res.json()),
         }}
       >
-        <CalendarProvider>
-          <UserDataProvider>
+        <UserDataProvider>
+          <AppearanceProvider>
             <MantineProvider>
-              <AppearanceProvider>
-                <SegmentProvider>
-                  <WorkspaceProvider>
+              <SegmentProvider>
+                <WorkspaceProvider>
+                  <CalendarProvider>
                     <WalletProvider>
                       <TransactionProvider>{children}</TransactionProvider>
                     </WalletProvider>
-                  </WorkspaceProvider>
-                </SegmentProvider>
-              </AppearanceProvider>
+                  </CalendarProvider>
+                </WorkspaceProvider>
+              </SegmentProvider>
             </MantineProvider>
-          </UserDataProvider>
-        </CalendarProvider>
+          </AppearanceProvider>
+        </UserDataProvider>
       </SWRConfig>
     </SessionContextProvider>
   );

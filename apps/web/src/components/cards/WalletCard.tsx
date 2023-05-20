@@ -36,7 +36,7 @@ const WalletCard = ({
   return (
     <Link
       href={disableLink ? '#' : `/${ws.id}/finance/wallets/${wallet.id}`}
-      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
+      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -47,12 +47,15 @@ const WalletCard = ({
       </div>
 
       {(showBalance || showAmount) && (
-        <Divider variant="dashed" className="w-full border-zinc-700" />
+        <Divider
+          variant="dashed"
+          className="w-full border-zinc-300 dark:border-zinc-700"
+        />
       )}
 
       <div className="w-full">
         {showBalance && (
-          <div className="m-2 rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
+          <div className="m-2 rounded border border-purple-500/20 bg-purple-500/10 p-2 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
             {Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
@@ -61,7 +64,7 @@ const WalletCard = ({
         )}
 
         {showAmount && (
-          <div className="m-2 rounded border border-blue-300/20 bg-blue-300/10 p-2 font-semibold text-blue-300">
+          <div className="m-2 rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
             {`${amount ?? count} ${t('transactions').toLowerCase()}`}
           </div>
         )}

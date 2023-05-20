@@ -26,6 +26,7 @@ interface SidebarLinkProps {
   exactMatch?: boolean;
   disableAutoClose?: boolean;
   disabled?: boolean;
+  disableBorder?: boolean;
 }
 
 export default function SidebarLink({
@@ -45,6 +46,7 @@ export default function SidebarLink({
   exactMatch = false,
   disableAutoClose = false,
   disabled = false,
+  disableBorder = false,
 }: SidebarLinkProps) {
   const router = useRouter();
   const { wsId, teamId } = router.query;
@@ -83,13 +85,21 @@ export default function SidebarLink({
         disabled={!showTooltip}
       >
         <div
-          className={`flex items-center gap-2 rounded border p-2 ${
+          className={`flex items-center gap-2 rounded ${
+            disableBorder ? (isExpanded ? 'p-1' : '') : 'p-2'
+          } ${
             disabled
               ? 'cursor-not-allowed border-transparent text-zinc-300/50'
               : defaultHighlight
               ? defaultActive && isActive
-                ? 'border-zinc-300/10 bg-zinc-300/10 text-zinc-100'
-                : 'border-transparent text-zinc-300 md:hover:bg-zinc-300/5 md:hover:text-zinc-100'
+                ? `bg-zinc-500/10 text-zinc-900 dark:bg-zinc-500/10 dark:text-zinc-100 ${
+                    disableBorder
+                      ? ''
+                      : 'border border-zinc-300 dark:border-zinc-300/10'
+                  }`
+                : `text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
+                    disableBorder ? '' : 'border border-transparent'
+                  }`
               : ''
           } ${left && isExpanded ? 'justify-start' : 'justify-center'} ${
             classNames?.innerRoot

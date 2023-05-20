@@ -11,7 +11,7 @@ interface Props {
 const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
   const router = useRouter();
 
-  const { ws, workspaces, workspacesLoading } = useWorkspaces();
+  const { ws, workspaces, workspacesLoading, setWsId } = useWorkspaces();
 
   const hasWorkspaces = workspaces && workspaces.length > 0;
 
@@ -29,7 +29,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
 
   if (!hasWorkspaces)
     return (
-      <div className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded border border-zinc-800 bg-zinc-800/80 p-2 text-sm text-zinc-500 transition">
+      <div className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded border border-zinc-300 bg-zinc-500/5 p-2 text-sm text-zinc-500 transition dark:border-zinc-800 dark:bg-zinc-800/80">
         <div className="line-clamp-1 font-bold">
           {workspacesLoading ? 'Đang tải...' : 'Chưa là thành viên'}
         </div>
@@ -43,6 +43,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
       value={ws?.id || ''}
       onChange={(wsId) => {
         if (onChange) onChange();
+        if (!wsId) return;
 
         // replace wsId in url if there is one
         if (router?.query?.wsId)
@@ -53,7 +54,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
             )
           );
         // otherwise, redirect to /wsId
-        else router.push(`/${wsId}`);
+        else setWsId(wsId);
       }}
       disabled={workspacesLoading || !hasWorkspaces}
       classNames={{

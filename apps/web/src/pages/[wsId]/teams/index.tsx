@@ -90,14 +90,16 @@ const WorkspaceTeamsPage = () => {
 
       {wsId && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">
               {teamsLabel}{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
                 {teams?.length || 0}
               </span>
             </h1>
-            <p className="text-zinc-400">{t('description')}</p>
+            <p className="text-zinc-700 dark:text-zinc-400">
+              {t('description')}
+            </p>
           </div>
           <Divider className="my-4" />
         </>
@@ -106,7 +108,7 @@ const WorkspaceTeamsPage = () => {
       {wsId && (
         <button
           onClick={showTeamEditForm}
-          className="flex items-center gap-1 rounded bg-blue-300/20 px-4 py-2 font-semibold text-blue-300 transition hover:bg-blue-300/10"
+          className="flex items-center gap-1 rounded bg-blue-500/10 px-4 py-2 font-semibold text-blue-500 transition hover:bg-blue-500/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/10"
         >
           {t('new_team')} <SquaresPlusIcon className="h-4 w-4" />
         </button>
@@ -118,16 +120,16 @@ const WorkspaceTeamsPage = () => {
             <Link
               key={team.id}
               href={`/${wsId}/teams/${team.id}`}
-              className="group rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-[#232327]"
+              className="group rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-[#232327]"
             >
               <h1 className="font-bold">{team?.name}</h1>
 
               {team?.created_at ? (
                 <>
                   <Divider className="mb-2 mt-8" variant="dashed" />
-                  <div className="w-fit rounded-lg border border-blue-300/20 bg-blue-300/10 px-4 py-2 text-blue-300/50 transition group-hover:border-transparent">
+                  <div className="w-fit rounded-lg border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-blue-600/80 transition group-hover:border-transparent dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300/50">
                     {t('created')}{' '}
-                    <span className="font-semibold text-blue-300">
+                    <span className="font-semibold text-blue-600 dark:text-blue-300">
                       {moment(team.created_at).locale(lang).fromNow()}
                     </span>
                   </div>

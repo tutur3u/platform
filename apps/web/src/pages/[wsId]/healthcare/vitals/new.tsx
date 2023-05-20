@@ -87,9 +87,6 @@ const NewVitalPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "Nhiệt độ", "Huyết áp", "Huyết đường", "Cholesterol", "Triglyceride", "Creatinine"'
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
             required
           />
 
@@ -100,9 +97,6 @@ const NewVitalPage: PageWithLayoutProps = () => {
             placeholder='Ví dụ: "°C", "mmHg", "mg/dl", "mg", "ml", "mg/kg"'
             value={unit}
             onChange={(e) => setUnit(e.currentTarget.value)}
-            classNames={{
-              input: 'bg-white/5 border-zinc-300/20 font-semibold',
-            }}
           />
         </div>
       </div>

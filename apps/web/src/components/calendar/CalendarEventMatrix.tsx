@@ -1,22 +1,27 @@
+import { useRouter } from 'next/router';
 import { useCalendar } from '../../hooks/useCalendar';
 import EventCard from './EventCard';
 
 const CalendarEventMatrix = () => {
-  const { getEvents, getDatesInView } = useCalendar();
+  const router = useRouter();
 
-  const dates = getDatesInView();
+  const { wsId } = router.query;
+  const { getEvents, datesInView: dates } = useCalendar();
+
   const events = getEvents();
   const columns = dates.length;
 
   return (
     <div
-      className={`pointer-events-none absolute inset-0 grid grid-cols-${columns} ${
-        dates.length === 1 && 'max-w-lg'
+      className={`pointer-events-none absolute inset-0 grid ${
+        columns === 1 && 'max-w-lg'
       }`}
     >
-      {events.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      <div id="calendar-event-matrix" className="relative">
+        {events.map((event) => (
+          <EventCard wsId={wsId as string} key={event.id} event={event} />
+        ))}
+      </div>
     </div>
   );
 };

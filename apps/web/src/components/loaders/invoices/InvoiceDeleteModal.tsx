@@ -191,7 +191,9 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
           ) : hasError ? (
             <div className="text-red-300">{t('common:cancel-completed')}</div>
           ) : (
-            <div className="text-zinc-400/80">{t('common:pending-completion')}</div>
+            <div className="text-zinc-400/80">
+              {t('common:pending-completion')}
+            </div>
           )}
         </Timeline.Item>
       </Timeline>

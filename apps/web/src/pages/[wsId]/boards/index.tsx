@@ -92,14 +92,14 @@ const WorkspaceBoardsPage = () => {
 
       {teamId && (
         <>
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">
               Boards{' '}
               <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
                 {boards?.length || 0}
               </span>
             </h1>
-            <p className="text-zinc-400">
+            <p className="text-zinc-700 dark:text-zinc-400">
               A great way to organize your tasks into different categories and
               easily track their progress.
             </p>

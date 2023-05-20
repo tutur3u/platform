@@ -3,6 +3,7 @@
   "more-members": "người khác",
   "new": "Tạo mới",
   "home": "Trang chủ",
+  "refresh": "Làm mới",
   "calendar": "Lịch",
   "tasks": "Công việc",
   "documents": "Tài liệu",
@@ -21,6 +22,7 @@
   "new-task": "Tạo công việc mới",
   "new-note": "Tạo ghi chú mới",
   "new-transaction": "Tạo giao dịch mới",
+  "new-invoice": "Tạo hóa đơn mới",
   "invite-people": "Mời người dùng",
   "collapse-sidebar": "Đóng thanh bên",
   "expand-sidebar": "Mở thanh bên"

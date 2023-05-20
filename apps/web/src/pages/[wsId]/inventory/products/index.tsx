@@ -109,7 +109,7 @@ const ProductsPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label={`${productsLabel} – ${inventoryLabel}`} />
       <div className="flex min-h-full w-full flex-col pb-20">
-        <div className="mt-2 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector

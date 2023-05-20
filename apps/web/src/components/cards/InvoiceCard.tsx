@@ -60,20 +60,20 @@ const InvoiceCard = ({
   return (
     <Link
       href={`/${ws.id}/finance/invoices/${invoice.id}`}
-      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-800/70 text-center transition hover:bg-zinc-800"
+      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
             {invoice?.customer_id ? user?.name : t('passersby')}{' '}
             {showGender && user?.gender && (
-              <span className="lowercase text-orange-300">
+              <span className="lowercase text-orange-600 dark:text-orange-300">
                 ({getGender(user.gender)})
               </span>
             )}
           </div>
           {showPhone && invoice?.customer_id && (
-            <div className="line-clamp-1 font-semibold text-zinc-400/70">
+            <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
               {user?.phone || t('missing-phone')}
             </div>
           )}
@@ -81,7 +81,7 @@ const InvoiceCard = ({
       </div>
 
       {(showStatusInfo || showExtraInfo) && (
-        <Divider className="w-full border-zinc-700" />
+        <Divider className="w-full border-zinc-300 dark:border-zinc-700" />
       )}
 
       {showStatusInfo && (
@@ -121,7 +121,7 @@ const InvoiceCard = ({
       )}
 
       {showStatusInfo && showExtraInfo && (
-        <Divider className="w-full border-zinc-700" />
+        <Divider className="w-full border-zinc-300 dark:border-zinc-700" />
       )}
 
       {showExtraInfo && (
@@ -149,9 +149,12 @@ const InvoiceCard = ({
 
       {showAddress && invoice?.customer_id && (
         <>
-          <Divider variant="dashed" className="w-full border-zinc-700" />
+          <Divider
+            variant="dashed"
+            className="w-full border-zinc-300 dark:border-zinc-700"
+          />
           <div className="m-2 h-full w-full px-2">
-            <div className="flex h-full items-center justify-center rounded border border-purple-300/20 bg-purple-300/10 p-2 font-semibold text-purple-300">
+            <div className="flex h-full items-center justify-center rounded border border-purple-500/20 bg-purple-500/10 p-2 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
               {user?.address || t('missing-address')}
             </div>
           </div>
