@@ -6,6 +6,8 @@ import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
+import { useSessionContext } from '@supabase/auth-helpers-react';
+import Image from 'next/image';
 
 interface AuthFormProps {
   title: string;
@@ -74,6 +76,26 @@ const AuthForm = ({
     if (onSubmit) await onSubmit({ email, password });
     setSubmitting(false);
   };
+
+  const { supabaseClient } = useSessionContext();
+
+  const SupabaseAuthOptions = {
+    redirectTo: 'https://tuturuuu.com/onboarding',
+  };
+
+  async function handleSignInWithGoogle() {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: SupabaseAuthOptions,
+    });
+  }
+
+  async function handleSignInWithGithub() {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: 'github',
+      options: SupabaseAuthOptions,
+    });
+  }
 
   const ctaText = submitting ? submittingLabel : submitLabel;
 
@@ -198,27 +220,62 @@ const AuthForm = ({
               </Link>
             </div>
           )}
+
+          {!recoveryMode && !resetPasswordMode && (
+            <>
+              <Divider className="w-full border-zinc-300/10" variant="dashed" />
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  className="w-full rounded border border-zinc-300/10 bg-zinc-300/10 p-1 transition hover:bg-zinc-300/20"
+                  onClick={handleSignInWithGoogle}
+                  size="lg"
+                >
+                  <Image
+                    width={30}
+                    height={30}
+                    src="/media/google-logo.png"
+                    alt="Google logo"
+                  />
+                </Button>
+                <Button
+                  className="w-full rounded border border-zinc-300/10 bg-zinc-300/10 p-1 transition hover:bg-zinc-300/20"
+                  onClick={handleSignInWithGithub}
+                  size="lg"
+                >
+                  <Image
+                    width={30}
+                    height={30}
+                    src="/media/github-mark.png"
+                    alt="Github logo"
+                  />
+                </Button>
+              </div>
+            </>
+          )}
+
+          <Divider className="w-full border-zinc-300/10" />
         </div>
 
-        <Divider className="w-full border-zinc-300/10" variant="dashed" />
-        <div className="text-center text-sm font-semibold text-zinc-300/60">
-          {noticeP1}{' '}
-          <Link
-            href="/terms"
-            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
-          >
-            {tos}
-          </Link>{' '}
-          {and}{' '}
-          <Link
-            href="/privacy"
-            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
-          >
-            {privacy}
-          </Link>{' '}
-          {noticeP2}
+        <div className="grid gap-2">
+          <div className="text-center text-sm font-semibold text-zinc-300/60">
+            {noticeP1}{' '}
+            <Link
+              href="/terms"
+              className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+            >
+              {tos}
+            </Link>{' '}
+            {and}{' '}
+            <Link
+              href="/privacy"
+              className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+            >
+              {privacy}
+            </Link>{' '}
+            {noticeP2}
+          </div>
+          <LanguageSelector fullWidth transparent />
         </div>
-        <LanguageSelector fullWidth transparent />
       </div>
     </div>
   );
