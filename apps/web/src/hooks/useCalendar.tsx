@@ -30,6 +30,13 @@ const CalendarContext = createContext({
   view: 'day' as 'day' | '4-days' | 'week',
   datesInView: [] as Date[],
   availableViews: [] as { label: string; value: string; disabled?: boolean }[],
+  setAvailableViews: (
+    views: {
+      label: string;
+      value: string;
+      disabled?: boolean;
+    }[]
+  ) => console.log('setAvailableViews', views),
   enableDayView: () => console.log('enableDayView'),
   enable4DayView: () => console.log('enable4DayView'),
   enableWeekView: () => console.log('enableWeekView'),
@@ -327,7 +334,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const getDate = () => date;
 
-  const { t, lang } = useTranslation('calendar');
+  const { lang } = useTranslation('calendar');
 
   const getTitle = () =>
     moment(date)
@@ -439,26 +446,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   }, [date, availableViews]);
 
   useEffect(() => {
-    setAvailableViews([
-      {
-        value: 'day',
-        label: t('day'),
-        disabled: false,
-      },
-      {
-        value: '4-days',
-        label: t('4-days'),
-        disabled: window.innerWidth <= 768,
-      },
-      {
-        value: 'week',
-        label: t('week'),
-        disabled: window.innerWidth <= 768,
-      },
-    ]);
-  }, [t]);
-
-  useEffect(() => {
     const updateDatesInView = () => {
       if (
         datesInView.length === 7 &&
@@ -553,6 +540,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     view,
     datesInView,
     availableViews,
+    setAvailableViews,
     enableDayView,
     enable4DayView,
     enableWeekView,

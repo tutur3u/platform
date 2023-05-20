@@ -9,6 +9,7 @@ export type Mode =
   | 'calendar'
   | 'infrastructure'
   | 'wallet_details'
+  | 'transaction_details'
   | 'product_details'
   | 'user_details'
   | 'user_group_details';

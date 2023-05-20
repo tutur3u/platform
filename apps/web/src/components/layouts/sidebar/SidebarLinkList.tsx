@@ -69,6 +69,9 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<CalendarDaysIcon className="w-5" />}
         label={calendar}
         showTooltip={!sidebarOpened}
+        classNames={{
+          root: 'hidden md:block',
+        }}
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
@@ -118,9 +121,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         activeIcon={<ArchiveBoxIcon className="w-5" />}
         label={inventory}
         showTooltip={!sidebarOpened}
-        classNames={{
-          root: 'hidden md:block',
-        }}
       />
 
       {(wsPreset === 'ALL' || wsPreset === 'EDUCATION') && (

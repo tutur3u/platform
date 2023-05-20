@@ -54,12 +54,12 @@ const CalendarEventCard = ({
   return (
     <Link
       href={`/${ws.id}/calendar/events/${event.id}`}
-      className={`group flex h-full w-full items-center justify-center rounded-lg border text-center transition ${generateColor()} ${
+      className={`group flex w-full items-center justify-center rounded-lg border text-center transition ${generateColor()} ${
         orientation === 'horizontal' ? 'flex-row' : 'flex-col'
       }`}
     >
       <div
-        className={`flex h-full w-full flex-col justify-center ${
+        className={`flex w-full flex-col justify-center ${
           orientation === 'horizontal'
             ? 'p-4 text-start'
             : 'items-center p-2 text-center'

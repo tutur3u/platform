@@ -2,12 +2,14 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
 import { useCalendar } from '../../hooks/useCalendar';
 import useTranslation from 'next-translate/useTranslation';
+import { useEffect } from 'react';
 
 export default function CalendarHeader() {
   const {
     isToday,
     getTitle,
     availableViews,
+    setAvailableViews,
     view,
     handlePrev,
     handleNext,
@@ -20,6 +22,26 @@ export default function CalendarHeader() {
   const { t } = useTranslation('calendar');
 
   const views = availableViews.filter((view) => view?.disabled !== true);
+
+  useEffect(() => {
+    setAvailableViews([
+      {
+        value: 'day',
+        label: t('day'),
+        disabled: false,
+      },
+      {
+        value: '4-days',
+        label: t('4-days'),
+        disabled: window.innerWidth <= 768,
+      },
+      {
+        value: 'week',
+        label: t('week'),
+        disabled: window.innerWidth <= 768,
+      },
+    ]);
+  }, [t, setAvailableViews]);
 
   return (
     <div className="mb-2 flex items-center justify-between gap-2">

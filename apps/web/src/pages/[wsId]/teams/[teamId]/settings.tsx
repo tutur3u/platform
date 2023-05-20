@@ -124,7 +124,7 @@ const TeamSettingsPage = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`Settings – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (

@@ -223,12 +223,12 @@ const WorkspaceMembersPage = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`${membersLabel} – ${ws?.name}`} />
 
       {wsId && (
         <>
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+          <div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900 md:flex-row md:items-start">
             <div>
               <h1 className="text-2xl font-bold">
                 {view === 'joined' ? membersLabel : t('pending_invitations')}
@@ -238,7 +238,7 @@ const WorkspaceMembersPage = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
               <button
                 onClick={showSelectUserForm}
                 className="flex h-fit items-center justify-center gap-1 rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
@@ -260,7 +260,7 @@ const WorkspaceMembersPage = () => {
         </>
       )}
 
-      <div className="flex min-h-full w-full flex-col pb-20">
+      <div className="flex min-h-full w-full flex-col ">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ModeSelector mode={mode} setMode={setMode} showAll />
           <PaginationSelector

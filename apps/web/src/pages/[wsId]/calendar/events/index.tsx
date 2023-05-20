@@ -71,10 +71,14 @@ const CalendarEventsPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={`${eventsLabel} – ${calendarLabel}`} />
-      <div className="flex min-h-full w-full flex-col pb-20">
+      <div className="flex min-h-full w-full flex-col ">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} showAll />
+          <ModeSelector
+            setMode={setMode}
+            showAll={window.innerWidth > 768}
+            mode={window.innerWidth <= 768 ? 'grid' : mode}
+          />
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {
@@ -105,7 +109,13 @@ const CalendarEventsPage: PageWithLayoutProps = () => {
               <CalendarEventCard
                 key={e.id}
                 event={e}
-                orientation={mode === 'grid' ? 'vertical' : 'horizontal'}
+                orientation={
+                  window.innerWidth <= 768
+                    ? 'vertical'
+                    : mode === 'grid'
+                    ? 'vertical'
+                    : 'horizontal'
+                }
               />
             ))}
         </div>

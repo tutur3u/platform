@@ -33,7 +33,7 @@ const NestedLayout: FC<Props> = ({
   const { t } = useTranslation();
 
   const { segments } = useSegments();
-  const { hideExperimentalOnTopNav } = useAppearance();
+  const { sidebar, hideExperimentalOnTopNav } = useAppearance();
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
 
@@ -74,6 +74,8 @@ const NestedLayout: FC<Props> = ({
 
       setDisableTabs(disable);
       setCachedDisableTabs(disable);
+
+      console.log('pos', pos);
     };
 
     content.addEventListener('scroll', handleScroll);
@@ -81,33 +83,33 @@ const NestedLayout: FC<Props> = ({
   }, [defaultNoTabs]);
 
   return (
-    <div className="flex h-screen max-h-full min-h-full w-screen min-w-full max-w-full overscroll-none">
+    <div className="flex">
+      <ScrollTopTopButton prevScrollPos={prevScrollPos} />
       <LeftSidebar />
+      <TopNavbar
+        cachedDisableTabs={cachedDisableTabs}
+        defaultNoTabs={defaultNoTabs}
+        disableTabs={disableTabs}
+        isFavorite={isFavorite}
+        onFavorite={onFavorite}
+        setDisableTabs={setDisableTabs}
+        segments={segments}
+        tabs={filteredTabs}
+      />
       <BottomNavbar />
 
-      <div className="relative flex h-full w-full flex-col bg-white dark:bg-[#111113]">
-        <TopNavbar
-          cachedDisableTabs={cachedDisableTabs}
-          defaultNoTabs={defaultNoTabs}
-          disableTabs={disableTabs}
-          isFavorite={isFavorite}
-          onFavorite={onFavorite}
-          setDisableTabs={setDisableTabs}
-          segments={segments}
-          tabs={filteredTabs}
-        />
-
-        <main
-          id="content"
-          className={`h-full overflow-auto scroll-smooth px-4 ${
-            defaultNoTabs ? 'pt-24' : 'pt-[6.75rem] md:pt-32'
-          } md:px-8 lg:px-16 xl:px-32`}
-        >
-          {children}
-        </main>
-
-        <ScrollTopTopButton prevScrollPos={prevScrollPos} />
-      </div>
+      <main
+        id="content"
+        className={`h-full w-full overflow-x-hidden scroll-smooth transition-all duration-500 md:h-screen ${
+          sidebar === 'open'
+            ? 'fixed overflow-y-hidden md:static md:overflow-y-auto'
+            : 'overflow-y-auto'
+        } ${defaultNoTabs ? 'pt-24' : 'md:pt-30 pt-28'} ${
+          sidebar === 'open' ? 'md:ml-64' : 'md:ml-16'
+        } px-4 pb-16 md:px-8 md:pb-8 lg:px-16 xl:px-32`}
+      >
+        {children}
+      </main>
     </div>
   );
 };

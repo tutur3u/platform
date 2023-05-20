@@ -141,5 +141,9 @@
   "trailing_label_healthcare_checkups": {
     "one": "{{count}} đơn khám sức khỏe",
     "other": "{{count}} đơn khám sức khỏe"
+  },
+  "trailing_label_workspace_calendar_events": {
+    "one": "{{count}} sự kiện lịch",
+    "other": "{{count}} sự kiện lịch"
   }
 }

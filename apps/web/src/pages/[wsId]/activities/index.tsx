@@ -88,7 +88,7 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
         </>
       )}
 
-      <div className="flex min-h-full w-full flex-col pb-20">
+      <div className="flex min-h-full w-full flex-col ">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector

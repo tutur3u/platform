@@ -101,12 +101,12 @@ const TeamMembersPage = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`Members – ${team?.name || 'Untitled Team'}`} />
 
       {teamId && (
         <>
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+          <div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900 md:flex-row md:items-start">
             <div>
               <h1 className="text-2xl font-bold">
                 {t('team-tabs:members')}{' '}
@@ -123,7 +123,7 @@ const TeamMembersPage = () => {
         </>
       )}
 
-      <div className="flex min-h-full w-full flex-col pb-20">
+      <div className="flex min-h-full w-full flex-col ">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ModeSelector mode={mode} setMode={setMode} showAll />
           <PaginationSelector

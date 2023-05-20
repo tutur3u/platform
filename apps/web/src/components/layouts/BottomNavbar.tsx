@@ -2,7 +2,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import SidebarLink from './SidebarLink';
 import {
-  ArchiveBoxIcon,
+  CalendarDaysIcon,
   BanknotesIcon,
   BellIcon,
   EllipsisHorizontalCircleIcon,
@@ -32,8 +32,8 @@ export default function BottomNavbar() {
         exactMatch
       />
       <SidebarLink
-        href={getWorkspaceHome('inventory')}
-        activeIcon={<ArchiveBoxIcon className="w-5" />}
+        href={getWorkspaceHome('calendar')}
+        activeIcon={<CalendarDaysIcon className="w-5" />}
         showLabel={false}
         classNames={{
           root: 'w-full',

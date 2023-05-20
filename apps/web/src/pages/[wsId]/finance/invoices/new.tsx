@@ -164,7 +164,7 @@ const NewPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={`${invoice} - ${finance}`} />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
+      <div className="mt-2 flex min-h-full w-full flex-col ">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <Switch
             label={t('close-order-after-create')}

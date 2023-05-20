@@ -9,8 +9,8 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   walletId?: string | null;
-  wallet: Wallet | null;
-  setWallet: (wallet: Wallet | null) => void;
+  wallet?: Wallet | null;
+  setWallet?: (wallet: Wallet | null) => void;
 
   blacklist?: string[];
   className?: string;
@@ -94,7 +94,7 @@ const WalletSelector = ({
         currentWallet.name !== wallet?.name ||
         currentWallet.balance !== wallet?.balance)
     ) {
-      setWallet(currentWallet);
+      if (setWallet) setWallet(currentWallet);
 
       router.replace(
         {
@@ -110,7 +110,7 @@ const WalletSelector = ({
       return;
     }
 
-    if (preventPreselected || wallet?.id) return;
+    if (preventPreselected || wallet?.id || !setWallet) return;
     setWallet(wallets?.[0]);
   }, [
     router,
@@ -168,7 +168,9 @@ const WalletSelector = ({
       placeholder={t('wallet-placeholder')}
       data={data}
       value={wallet?.id}
-      onChange={(id) => setWallet(wallets?.find((v) => v.id === id) || null)}
+      onChange={(id) =>
+        setWallet ? setWallet(wallets?.find((v) => v.id === id) || null) : null
+      }
       className={className}
       styles={{
         item: {
@@ -207,7 +209,7 @@ const WalletSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(wallets || []), item]);
-          setWallet(item);
+          if (setWallet) setWallet(item);
 
           return {
             label: item.name,

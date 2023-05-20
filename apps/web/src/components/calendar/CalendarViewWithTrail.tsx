@@ -21,7 +21,7 @@ const CalendarViewWithTrail = () => {
   return (
     <div
       id="calendar-view"
-      className="scrollbar-none flex overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l border-zinc-300 text-center dark:border-zinc-800"
+      className="scrollbar-none flex h-full overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l border-zinc-300 text-center dark:border-zinc-800"
     >
       <TimeTrail />
       <CalendarView />
