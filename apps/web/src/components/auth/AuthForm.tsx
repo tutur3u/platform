@@ -90,13 +90,6 @@ const AuthForm = ({
     });
   }
 
-  async function handleSignInWithGithub() {
-    await supabaseClient.auth.signInWithOAuth({
-      provider: 'github',
-      options: SupabaseAuthOptions,
-    });
-  }
-
   const ctaText = submitting ? submittingLabel : submitLabel;
 
   const noticeP1 = t('notice-p1');
@@ -235,18 +228,6 @@ const AuthForm = ({
                     height={30}
                     src="/media/google-logo.png"
                     alt="Google logo"
-                  />
-                </Button>
-                <Button
-                  className="w-full rounded border border-zinc-300/10 bg-zinc-300/10 p-1 transition hover:bg-zinc-300/20"
-                  onClick={handleSignInWithGithub}
-                  size="lg"
-                >
-                  <Image
-                    width={30}
-                    height={30}
-                    src="/media/github-mark.png"
-                    alt="Github logo"
                   />
                 </Button>
               </div>
