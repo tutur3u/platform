@@ -1,13 +1,15 @@
 import { TextInput, Button, PasswordInput, Divider } from '@mantine/core';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { AuthFormFields } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
-import { useSessionContext } from '@supabase/auth-helpers-react';
+import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
+import { DEV_MODE } from '../../constants/common';
 
 interface AuthFormProps {
   title: string;
@@ -46,9 +48,15 @@ const AuthForm = ({
 
   onSubmit,
 }: AuthFormProps) => {
-  const { t } = useTranslation('auth');
+  const router = useRouter();
+  const user = useUser();
 
-  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    if (user) router.push('/onboarding');
+  }, [router, user]);
+
+  const { t } = useTranslation('auth');
+  const [submitting, setSubmitting] = useState(!!user);
 
   const form = useForm({
     initialValues: {
@@ -80,7 +88,9 @@ const AuthForm = ({
   const { supabaseClient } = useSessionContext();
 
   const SupabaseAuthOptions = {
-    redirectTo: 'https://tuturuuu.com/onboarding',
+    redirectTo: DEV_MODE
+      ? 'http://localhost:7803/onboarding'
+      : 'https://tuturuuu.com/onboarding',
   };
 
   async function handleSignInWithGoogle() {
