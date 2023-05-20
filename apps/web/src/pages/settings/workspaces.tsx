@@ -110,7 +110,7 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="pb-20 md:max-w-lg">
+    <div className="md:max-w-lg">
       <HeaderX label="Settings" />
 
       <div className="grid">

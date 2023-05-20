@@ -103,7 +103,7 @@ const NewVitalGroupPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label="Nhóm chỉ số – Khám bệnh" />
-      <div className="mt-2 flex min-h-full w-full flex-col pb-20">
+      <div className="mt-2 flex min-h-full w-full flex-col ">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end">
             <button

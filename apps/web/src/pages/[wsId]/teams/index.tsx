@@ -85,7 +85,7 @@ const WorkspaceTeamsPage = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`${teamsLabel} – ${ws?.name}`} />
 
       {wsId && (

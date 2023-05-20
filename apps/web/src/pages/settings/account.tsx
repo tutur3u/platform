@@ -145,7 +145,7 @@ const SettingPage: PageWithLayoutProps = () => {
   const logoutDescription = t('logout-description');
 
   return (
-    <div className="pb-20 md:max-w-lg">
+    <div className="md:max-w-lg">
       <HeaderX label={settings} />
 
       <div className="grid gap-2">

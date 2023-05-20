@@ -86,9 +86,10 @@ function LeftSidebar({ className }: SidebarProps) {
 
   return (
     <div
-      className={`group fixed z-[1000] flex h-screen flex-col border-r border-zinc-300 bg-white pb-2 pt-4 dark:border-zinc-800/80 dark:bg-zinc-900 md:static ${
+      onClick={(e) => e.stopPropagation()}
+      className={`group fixed z-[1000] flex h-screen flex-col border-r border-zinc-300 bg-white pb-2 pt-4 dark:border-zinc-800/80 dark:bg-zinc-900 ${
         sidebar === 'open'
-          ? 'w-full opacity-100 md:w-72'
+          ? 'w-full opacity-100 md:w-64'
           : 'pointer-events-none w-0 opacity-0 md:pointer-events-auto md:w-16 md:opacity-100'
       } ${className} transition-all duration-300`}
     >
@@ -103,6 +104,7 @@ function LeftSidebar({ className }: SidebarProps) {
           <div className="flex gap-2">
             <ActionIcon
               onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="border border-zinc-500/10 bg-zinc-500/10 dark:border-zinc-300/10 dark:bg-zinc-800/50"
               size="lg"
             >
               {theme === 'dark' ? (
@@ -113,7 +115,7 @@ function LeftSidebar({ className }: SidebarProps) {
             </ActionIcon>
 
             <button
-              className="rounded-lg bg-zinc-500/10 p-1.5 transition hover:bg-zinc-500/20 dark:bg-zinc-800 dark:hover:bg-zinc-700 md:hidden"
+              className="rounded border border-zinc-500/10 bg-zinc-500/10 p-1.5 transition dark:border-zinc-300/10 dark:bg-zinc-800/50 md:hidden"
               onClick={toggleSidebar}
             >
               <XMarkIcon className="h-5 w-5" />
@@ -399,7 +401,7 @@ function LeftSidebar({ className }: SidebarProps) {
       </div>
 
       {ws?.id && (
-        <>
+        <div className="fixed inset-x-0 bottom-2 md:static">
           <Divider className="my-2" variant="dashed" />
           <div className="mx-2 flex items-center justify-center gap-2">
             {sidebar === 'open' && (
@@ -481,7 +483,7 @@ function LeftSidebar({ className }: SidebarProps) {
               </Popover.Dropdown>
             </Popover>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

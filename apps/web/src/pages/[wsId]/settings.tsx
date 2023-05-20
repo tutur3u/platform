@@ -133,7 +133,7 @@ const WorkspaceSettingsPage = () => {
   const relativeTime = localizedMoment?.fromNow() || t('common:loading');
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`${settingsLabel} – ${ws?.name}`} />
 
       {wsId && (

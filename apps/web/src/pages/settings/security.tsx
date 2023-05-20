@@ -50,7 +50,7 @@ const SettingPage: PageWithLayoutProps = () => {
   const logOut = t('common:logout');
 
   return (
-    <div className="grid gap-4 pb-20 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <HeaderX label={settings} />
 
       <SettingItemCard title={security} description={securityDescription}>

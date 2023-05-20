@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import LoadingIndicator from '../common/LoadingIndicator';
 import { Tab } from '../../types/Tab';
+import { useAppearance } from '../../hooks/useAppearance';
 
 interface Props {
   cachedDisableTabs?: boolean;
@@ -27,12 +28,17 @@ const TopNavbar = ({
   segments,
   tabs,
 }: Props) => {
+  const { sidebar } = useAppearance();
+  const isExpanded = sidebar === 'open';
+
   return (
     <nav
       id="top-navigation"
       className={`${
-        disableTabs ? 'h-[3.8rem]' : 'h-25'
-      } absolute inset-x-0 top-0 z-[100] clear-both w-full flex-none border-b border-zinc-300 bg-white/50 backdrop-blur transition-all duration-300 content-none dark:border-zinc-800 dark:bg-[#111113]/50`}
+        disableTabs ? 'h-[3.95rem]' : 'h-25'
+      } fixed left-0 right-0 top-0 ${
+        isExpanded ? 'md:left-64' : 'md:left-16'
+      } z-[100] clear-both w-full flex-none border-b border-zinc-300 bg-white/50 backdrop-blur content-none dark:border-zinc-800 dark:bg-[#111113]/50`}
       onMouseEnter={
         defaultNoTabs || !disableTabs ? undefined : () => setDisableTabs(false)
       }

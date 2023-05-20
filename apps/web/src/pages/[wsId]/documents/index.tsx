@@ -109,7 +109,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label="Documents" />
 
       <div className="flex flex-col items-center gap-4 md:flex-row">

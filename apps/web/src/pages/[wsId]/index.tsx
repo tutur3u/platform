@@ -49,7 +49,7 @@ const WorkspaceHomePage = () => {
   if (isLoading) return <div>{loadingLabel}</div>;
 
   return (
-    <div className="pb-20">
+    <div className="">
       <HeaderX label={`${homeLabel} – ${data?.name}`} />
 
       {wsId && (
