@@ -141,5 +141,9 @@
   "trailing_label_healthcare_checkups": {
     "one": "{{count}} checkup",
     "other": "{{count}} checkups"
+  },
+  "trailing_label_workspace_calendar_events": {
+    "one": "{{count}} calendar event",
+    "other": "{{count}} calendar events"
   }
 }
