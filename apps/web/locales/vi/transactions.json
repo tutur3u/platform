@@ -46,5 +46,6 @@
   "delete-transaction": "Xóa giao dịch",
   "delete": "Xóa",
   "save-changes": "Lưu thay đổi",
-  "wallet-description": "Nguồn tiền mà giao dịch này được thực hiện."
+  "wallet-description": "Nguồn tiền mà giao dịch này được thực hiện.",
+  "report-opt-in": "Hiển thị trong báo cáo"
 }

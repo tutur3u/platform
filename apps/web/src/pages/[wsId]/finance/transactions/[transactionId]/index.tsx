@@ -3,7 +3,14 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Button, Divider, NumberInput, Select, TextInput } from '@mantine/core';
+import {
+  Button,
+  Checkbox,
+  Divider,
+  NumberInput,
+  Select,
+  TextInput,
+} from '@mantine/core';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import WalletSelector from '../../../../../components/selectors/WalletSelector';
@@ -93,7 +100,7 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={`${transaction} - ${finance}`} />
+      <HeaderX label={`${transactions} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col ">
         <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="col-span-full">
@@ -181,6 +188,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
                     ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                     : ''
                 }
+                disabled
+              />
+
+              <Divider className="my-1" variant="dashed" />
+              <Checkbox
+                label={t('report-opt-in')}
+                checked={transaction?.report_opt_in}
                 disabled
               />
             </div>

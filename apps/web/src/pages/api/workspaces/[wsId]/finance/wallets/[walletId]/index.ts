@@ -45,7 +45,7 @@ const fetchWallet = async (
   const { data, error } = await supabase
     .from('workspace_wallets')
     .select(
-      'name, description, currency, balance, type, credit_wallets(statement_date, payment_date, limit)'
+      'name, description, currency, balance, type, report_opt_in, credit_wallets(statement_date, payment_date, limit)'
     )
     .eq('id', walletId)
     .single();
@@ -59,6 +59,7 @@ const fetchWallet = async (
     currency: data.currency,
     balance: data.balance,
     type: data.type,
+    report_opt_in: data.report_opt_in,
 
     statement_date: Array.isArray(data.credit_wallets)
       ? null
@@ -92,6 +93,7 @@ const updateWallet = async (
     statement_date,
     payment_date,
     limit,
+    report_opt_in,
   } = req.body as Wallet;
 
   const standardPromise = supabase
@@ -101,6 +103,7 @@ const updateWallet = async (
       description,
       currency,
       type,
+      report_opt_in,
     })
     .eq('id', walletId);
 
@@ -113,7 +116,7 @@ const updateWallet = async (
             statement_date,
             payment_date,
             limit,
-          })
+          } as Wallet)
           .eq('wallet_id', walletId)
       : Promise.resolve({ error: null });
 

@@ -3,7 +3,14 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Button, Divider, NumberInput, Select, TextInput } from '@mantine/core';
+import {
+  Button,
+  Checkbox,
+  Divider,
+  NumberInput,
+  Select,
+  TextInput,
+} from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
@@ -27,6 +34,8 @@ import ThousandMultiplierChips from '../../../../../components/chips/ThousandMul
 export const getServerSideProps = enforceHasWorkspaces;
 
 const TransactionSettingsPage: PageWithLayoutProps = () => {
+  const router = useRouter();
+
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -39,7 +48,6 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
 
   const settingsLabel = t('transaction-details-tabs:settings');
 
-  const router = useRouter();
   const { wsId, transactionId, redirectToWallets } = router.query;
 
   const apiPath =
@@ -70,12 +78,12 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
               href: `/${ws.id}/finance/transactions`,
             },
             {
-              content: transaction?.id || loading,
-              href: `/${ws.id}/finance/transactions/${transaction?.id}`,
+              content: (transactionId as string) ?? loading,
+              href: `/${ws.id}/finance/transactions/${transactionId}`,
             },
             {
               content: settingsLabel,
-              href: `/${ws.id}/finance/transactions/${transaction?.id}/settings`,
+              href: `/${ws.id}/finance/transactions/${transactionId}/settings`,
             },
           ]
         : []
@@ -85,6 +93,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
   }, [
     ws,
     transaction,
+    transactionId,
     setRootSegment,
     finance,
     transactions,
@@ -96,6 +105,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
   const [description, setDescription] = useState<string>('');
   const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
+  const [reportOptIn, setReportOptIn] = useState<boolean>(true);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [category, setCategory] = useState<TransactionCategory | null>(null);
@@ -113,6 +123,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
           : new Date()
       );
       setAmount(transaction?.amount || 0);
+      setReportOptIn(transaction?.report_opt_in ?? true);
     }
   }, [transaction]);
 
@@ -150,6 +161,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
             taken_at: takenAt.toISOString(),
             category_id: category?.id,
             wallet_id: wallet?.id,
+            report_opt_in: reportOptIn,
           }}
           redirectUrl={
             redirectToWallets === 'true'
@@ -192,7 +204,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={`${transaction} - ${finance}`} />
+      <HeaderX label={`${transactions} - ${finance}`} />
       <div className="flex min-h-full w-full flex-col ">
         <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
           <div className="flex items-end justify-end gap-2">
@@ -318,6 +330,13 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
                   hidden={!transaction?.amount || amount === transaction.amount}
                 />
               )}
+
+              <Divider className="my-1" variant="dashed" />
+              <Checkbox
+                label={t('report-opt-in')}
+                checked={reportOptIn}
+                onChange={(e) => setReportOptIn(e.currentTarget.checked)}
+              />
             </div>
           </SettingItemCard>
 

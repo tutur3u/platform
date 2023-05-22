@@ -4,6 +4,7 @@ import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import {
+  Checkbox,
   Divider,
   NumberInput,
   Select,
@@ -88,6 +89,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
   const [balance, setBalance] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('VND');
   const [type, setType] = useState<string>('STANDARD');
+  const [reportOptIn, setReportOptIn] = useState<boolean>(true);
 
   const [statementDate, setStatementDate] = useState<number>(0);
   const [paymentDate, setPaymentDate] = useState<number>(0);
@@ -103,6 +105,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
     setStatementDate(wallet?.statement_date || 0);
     setPaymentDate(wallet?.payment_date || 0);
     setLimit(wallet?.limit || '');
+    setReportOptIn(wallet?.report_opt_in ?? true);
   }, [wallet]);
 
   const hasRequiredFields = () => name.length > 0;
@@ -132,6 +135,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
             limit: limit === '' ? undefined : limit,
             statement_date: statementDate,
             payment_date: paymentDate,
+            report_opt_in: reportOptIn,
           }}
         />
       ),
@@ -391,6 +395,13 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                   </div>
                 </>
               )}
+
+              <Divider className="my-1" variant="dashed" />
+              <Checkbox
+                label={t('report-opt-in')}
+                checked={reportOptIn}
+                onChange={(e) => setReportOptIn(e.currentTarget.checked)}
+              />
             </div>
           </SettingItemCard>
 

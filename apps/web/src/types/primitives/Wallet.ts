@@ -6,6 +6,7 @@ export interface Wallet {
   description?: string;
   statement_date?: number | null;
   payment_date?: number | null;
+  report_opt_in?: boolean;
   limit?: number | null;
   type?: string;
   created_at?: Date;

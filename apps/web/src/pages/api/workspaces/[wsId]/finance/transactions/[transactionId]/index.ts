@@ -48,7 +48,7 @@ const getTransaction = async (
   const { data, error } = await supabase
     .from('wallet_transactions')
     .select(
-      'id, description, amount, taken_at, created_at, wallet_id, category_id, transaction_categories(name)'
+      'id, description, amount, taken_at, created_at, wallet_id, category_id, report_opt_in, transaction_categories(name)'
     )
     .eq('id', transactionId)
     .single();
@@ -68,6 +68,7 @@ const getTransaction = async (
         : ''),
     wallet_id: data.wallet_id,
     category_id: data.category_id,
+    report_opt_in: data.report_opt_in,
   } as Transaction);
 };
 
@@ -81,8 +82,14 @@ const updateTransaction = async (
     res,
   });
 
-  const { description, amount, taken_at, category_id, wallet_id } =
-    req.body as Transaction;
+  const {
+    description,
+    amount,
+    taken_at,
+    category_id,
+    wallet_id,
+    report_opt_in,
+  } = req.body as Transaction;
 
   const { error } = await supabase
     .from('wallet_transactions')
@@ -92,6 +99,7 @@ const updateTransaction = async (
       taken_at,
       category_id,
       wallet_id,
+      report_opt_in,
     })
     .eq('id', transactionId);
 
