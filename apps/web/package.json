@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 7803",
@@ -92,7 +92,7 @@
     "lint-staged": "^13.2.2",
     "next-translate-plugin": "^2.0.5",
     "postcss": "^8.4.23",
-    "supabase": "^1.62.3",
+    "supabase": "^1.62.4",
     "tailwind-config": "workspace:*",
     "tailwindcss": "^3.3.2",
     "tsconfig": "workspace:*",

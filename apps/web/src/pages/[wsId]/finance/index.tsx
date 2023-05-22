@@ -55,8 +55,6 @@ const FinancePage: PageWithLayoutProps = () => {
 
   const dateRangeQuery = `?startDate=${startDate}&endDate=${endDate}`;
 
-  const sumApi = ws?.id ? `/api/workspaces/${ws.id}/finance/wallets/sum` : null;
-
   const incomeApi = ws?.id
     ? `/api/workspaces/${ws.id}/finance/wallets/income${dateRangeQuery}`
     : null;
@@ -81,7 +79,6 @@ const FinancePage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws.id}/finance/invoices/count${dateRangeQuery}`
     : null;
 
-  const { data: sum, error: sumError } = useSWR<number>(sumApi);
   const { data: income, error: incomeError } = useSWR<number>(incomeApi);
   const { data: expense, error: expenseError } = useSWR<number>(expenseApi);
 
@@ -97,7 +94,6 @@ const FinancePage: PageWithLayoutProps = () => {
   const { data: invoicesCount, error: invoicesError } =
     useSWR<number>(invoicesCountApi);
 
-  const isSumLoading = sum === undefined && !sumError;
   const isIncomeLoading = income === undefined && !incomeError;
   const isExpenseLoading = expense === undefined && !expenseError;
   const isWalletsCountLoading = walletsCount === undefined && !walletsError;
@@ -130,6 +126,7 @@ const FinancePage: PageWithLayoutProps = () => {
   const { data: transactions } = useSWR<Transaction[]>(apiPath);
 
   if (!ws) return null;
+  const sum = (income || 0) - (expense || 0);
 
   return (
     <>
@@ -153,7 +150,7 @@ const FinancePage: PageWithLayoutProps = () => {
               style: 'currency',
               currency: 'VND',
             }).format(sum || 0)}
-            loading={isSumLoading}
+            loading={isIncomeLoading || isExpenseLoading}
             className="md:col-span-2"
           />
 

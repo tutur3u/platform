@@ -48,5 +48,6 @@
   "save-changes": "Save changes",
   "cancel-payment": "Cancel payment",
   "pay-now": "Pay now",
-  "pay-by-another-wallet": "Pay by another wallet"
+  "pay-by-another-wallet": "Pay by another wallet",
+  "report-opt-in": "Show in report"
 }

@@ -5,5 +5,6 @@ export interface Transaction {
   category_id?: string;
   wallet_id?: string;
   taken_at?: string | null;
+  report_opt_in?: boolean;
   created_at?: string;
 }

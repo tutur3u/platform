@@ -46,5 +46,6 @@
   "delete-transaction": "Delete transaction",
   "delete": "Delete",
   "save-changes": "Save changes",
-  "wallet-description": "Wallet from which this transaction was made."
+  "wallet-description": "Wallet from which this transaction was made.",
+  "report-opt-in": "Show in report"
 }
