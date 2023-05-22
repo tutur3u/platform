@@ -29,6 +29,16 @@
       "settings-tabs",
       "settings-workspaces"
     ],
+    "/settings/activities": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "search",
+      "view-mode",
+      "pagination",
+      "crud-ops",
+      "ws-activities",
+      "ws-multi-selector"
+    ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/[wsId]": ["sidebar-tabs", "workspace-tabs", "ws-home"],

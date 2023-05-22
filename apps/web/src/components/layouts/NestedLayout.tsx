@@ -74,8 +74,6 @@ const NestedLayout: FC<Props> = ({
 
       setDisableTabs(disable);
       setCachedDisableTabs(disable);
-
-      console.log('pos', pos);
     };
 
     content.addEventListener('scroll', handleScroll);

@@ -1,60 +1,58 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../utils/serverless/enforce-has-workspaces';
-import { useSegments } from '../../../hooks/useSegments';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
+import HeaderX from '../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
+import { useSegments } from '../../hooks/useSegments';
+import NestedLayout from '../../components/layouts/NestedLayout';
+import PaginationIndicator from '../../components/pagination/PaginationIndicator';
 import { Accordion, Divider } from '@mantine/core';
-import PaginationSelector from '../../../components/selectors/PaginationSelector';
-import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
+import PaginationSelector from '../../components/selectors/PaginationSelector';
+import ModeSelector, { Mode } from '../../components/selectors/ModeSelector';
 import { useLocalStorage } from '@mantine/hooks';
-import AuditLogCard from '../../../components/cards/AuditLogCard';
+import AuditLogCard from '../../components/cards/AuditLogCard';
 import useSWR from 'swr';
-import OperationMultiSelector from '../../../components/selectors/OperationMultiSelector';
-import WorkspaceMemberMultiSelector from '../../../components/selectors/WorkspaceMemberMultiSelector';
-import { AuditLog } from '../../../types/primitives/AuditLog';
+import OperationMultiSelector from '../../components/selectors/OperationMultiSelector';
+import { AuditLog } from '../../types/primitives/AuditLog';
 import useTranslation from 'next-translate/useTranslation';
+import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+import { useUser } from '../../hooks/useUser';
+import WorkspaceMultiSelector from '../../components/selectors/WorkspaceMultiSelector';
 
-export const getServerSideProps = enforceHasWorkspaces;
+export const getServerSideProps = enforceAuthenticated;
 
-const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
-  const { t } = useTranslation('workspace-tabs');
+const UserActivitiesPage: PageWithLayoutProps = () => {
+  const { t } = useTranslation('settings-tabs');
+  const { user } = useUser();
 
   const { setRootSegment } = useSegments();
-  const { ws, wsId } = useWorkspaces();
 
+  const settingsLabel = t('common:settings');
   const activitiesLabel = t('activities');
-  const loadingLabel = t('common:loading');
 
   useEffect(() => {
     setRootSegment([
       {
-        content: ws?.name ?? loadingLabel,
-        href: `/${wsId}`,
+        content: settingsLabel,
+        href: '/settings',
       },
-      { content: activitiesLabel, href: `/${wsId}/activities` },
+      { content: activitiesLabel, href: `/settings/activities` },
     ]);
 
     return () => setRootSegment([]);
-  }, [ws, wsId, loadingLabel, activitiesLabel, setRootSegment]);
+  }, [user, settingsLabel, activitiesLabel, setRootSegment]);
 
   const [activePage, setPage] = useState(1);
 
   const [ops, setOps] = useState<string[]>([]);
-  const [userIds, setUserIds] = useState<string[]>([]);
+  const [wsIds, setWsIds] = useState<string[]>([]);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'activities-items-per-page',
     defaultValue: 15,
   });
 
-  const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/activities?ops=${
-        ops.length > 0 ? ops.join(',') : ''
-      }&userIds=${
-        userIds.length > 0 ? userIds.join(',') : ''
+  const apiPath = user?.id
+    ? `/api/user/activities?ops=${ops.length > 0 ? ops.join(',') : ''}&wsIds=${
+        wsIds.length > 0 ? wsIds.join(',') : ''
       }&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
@@ -73,7 +71,7 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
     <>
       <HeaderX label={activitiesLabel} />
 
-      {ws?.id && (
+      {user?.id && (
         <>
           <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
             <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
@@ -95,10 +93,19 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
               setItemsPerPage(size);
             }}
           />
-          <OperationMultiSelector ops={ops} setOps={setOps} />
-          <WorkspaceMemberMultiSelector
-            userIds={userIds}
-            setUserIds={setUserIds}
+          <OperationMultiSelector
+            ops={ops}
+            setOps={(newOps) => {
+              setPage(1);
+              setOps(newOps);
+            }}
+          />
+          <WorkspaceMultiSelector
+            wsIds={wsIds}
+            setWsIds={(newWsIds) => {
+              setPage(1);
+              setWsIds(newWsIds);
+            }}
           />
         </div>
 
@@ -139,8 +146,8 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
   );
 };
 
-WorkspaceActivitiesPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="workspace">{page}</NestedLayout>;
+UserActivitiesPage.getLayout = function getLayout(page: ReactElement) {
+  return <NestedLayout mode="settings">{page}</NestedLayout>;
 };
 
-export default WorkspaceActivitiesPage;
+export default UserActivitiesPage;

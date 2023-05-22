@@ -11,13 +11,14 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session)
+  if (!session) {
     return {
       redirect: {
         destination: '/login',
         permanent: false,
       },
     };
+  }
 
   const { error } = await supabase
     .from('users')

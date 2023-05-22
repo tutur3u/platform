@@ -28,8 +28,15 @@ export const UserDataProvider = ({
 
   const apiPath = supabaseUser ? '/api/user' : null;
 
-  const { data: user, error: userError } = useSWR<User>(apiPath, {
-    onError: () => router.push('/login'),
+  const {
+    data: user,
+    error: userError,
+    mutate: userMutate,
+  } = useSWR<User>(apiPath, {
+    onError: () => {
+      userMutate(undefined);
+      router.push('/login');
+    },
   });
 
   const isLoading = !user && !userError;

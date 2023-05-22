@@ -145,5 +145,9 @@
   "trailing_label_workspace_calendar_events": {
     "one": "{{count}} calendar event",
     "other": "{{count}} calendar events"
+  },
+  "trailing_label_wallet_transactions": {
+    "one": "{{count}} transaction",
+    "other": "{{count}} transactions"
   }
 }

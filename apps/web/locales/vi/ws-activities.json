@@ -145,5 +145,9 @@
   "trailing_label_workspace_calendar_events": {
     "one": "{{count}} sự kiện lịch",
     "other": "{{count}} sự kiện lịch"
+  },
+  "trailing_label_wallet_transactions": {
+    "one": "{{count}} giao dịch ví",
+    "other": "{{count}} giao dịch ví"
   }
 }

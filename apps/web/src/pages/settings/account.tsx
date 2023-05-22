@@ -40,7 +40,6 @@ const SettingPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('settings-account');
 
   const settings = t('common:settings');
-
   const account = t('account');
 
   useEffect(() => {
