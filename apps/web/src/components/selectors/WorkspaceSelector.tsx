@@ -44,6 +44,7 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
       onChange={(wsId) => {
         if (onChange) onChange();
         if (!wsId) return;
+        setWsId(wsId);
 
         // replace wsId in url if there is one
         if (router?.query?.wsId)
@@ -53,8 +54,6 @@ const WorkspaceSelector = ({ showLabel, onChange, className }: Props) => {
               `/${wsId}`
             )
           );
-        // otherwise, redirect to /wsId
-        else setWsId(wsId);
       }}
       disabled={workspacesLoading || !hasWorkspaces}
       classNames={{

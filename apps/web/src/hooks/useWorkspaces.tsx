@@ -18,6 +18,7 @@ const WorkspaceContext = createContext({
   workspacesLoading: true,
 
   ws: undefined as Workspace | undefined,
+  wsId: null as string | null,
   wsLoading: true,
 
   workspaceInvites: undefined as Workspace[] | undefined,
@@ -329,6 +330,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     workspacesLoading,
 
     ws,
+    wsId,
     wsLoading,
 
     workspaceInvites,

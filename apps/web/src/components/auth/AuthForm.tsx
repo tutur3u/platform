@@ -6,10 +6,11 @@ import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
-import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { DEV_MODE } from '../../constants/common';
+import { mutate } from 'swr';
 
 interface AuthFormProps {
   title: string;
@@ -49,14 +50,34 @@ const AuthForm = ({
   onSubmit,
 }: AuthFormProps) => {
   const router = useRouter();
-  const user = useUser();
+  const { supabaseClient } = useSessionContext();
+
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) router.push('/onboarding');
-  }, [router, user]);
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+
+      if (session) {
+        setSubmitting(true);
+
+        const userPromise = mutate('/api/user');
+        const workspacesPromise = mutate('/api/workspaces/current');
+        const invitesPromise = mutate('/api/workspaces/invites');
+
+        await Promise.all([userPromise, workspacesPromise, invitesPromise]);
+        router.push('/onboarding');
+      } else {
+        setSubmitting(false);
+      }
+    };
+
+    checkSession();
+  }, [supabaseClient.auth, router]);
 
   const { t } = useTranslation('auth');
-  const [submitting, setSubmitting] = useState(!!user);
 
   const form = useForm({
     initialValues: {
@@ -84,8 +105,6 @@ const AuthForm = ({
     if (onSubmit) await onSubmit({ email, password });
     setSubmitting(false);
   };
-
-  const { supabaseClient } = useSessionContext();
 
   const SupabaseAuthOptions = {
     redirectTo: DEV_MODE

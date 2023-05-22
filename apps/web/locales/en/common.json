@@ -40,5 +40,6 @@
   "cancel-completed": "Cancel completed",
   "pending-completion": "Pending completion",
   "return": "Return",
-  "creating": "Creating"
+  "creating": "Creating",
+  "unnamed-workspace": "Unnamed Workspace"
 }

@@ -3,13 +3,20 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId } = req.query;
+    const supabase = createServerSupabaseClient({
+      req,
+      res,
+    });
 
-    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.id) throw new Error('Unauthorized');
 
     switch (req.method) {
       case 'GET':
-        return await fetchActivities(req, res, wsId);
+        return await fetchActivities(req, res);
 
       default:
         throw new Error(
@@ -28,35 +35,30 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default handler;
 
-const fetchActivities = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  wsId: string
-) => {
+const fetchActivities = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { ops, userIds, page, itemsPerPage } = req.query;
+  const { ops, wsIds, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
     .from('audit_logs')
     .select(
-      'id, record_id, old_record_id, op, table_name, record, old_record, ts, auth_uid',
+      'id, record_id, old_record_id, op, table_name, record, old_record, ts, auth_uid, ws_id',
       {
         count: 'exact',
       }
     )
-    .order('ts', { ascending: false })
-    .eq('ws_id', wsId);
+    .order('ts', { ascending: false });
 
   if (ops && typeof ops === 'string') {
     queryBuilder.in('op', ops.split(','));
   }
 
-  if (userIds && typeof userIds === 'string') {
-    queryBuilder.in('auth_uid', userIds.split(','));
+  if (wsIds && typeof wsIds === 'string') {
+    queryBuilder.in('ws_id', wsIds.split(','));
   }
 
   if (

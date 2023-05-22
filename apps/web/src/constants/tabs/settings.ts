@@ -20,6 +20,10 @@ export const settingsTabs: NavTabs = {
       href: '/settings/workspaces',
     },
     {
+      name: 'activities',
+      href: '/settings/activities',
+    },
+    {
       name: 'notifications',
       href: '/settings/notifications',
       disabled: true,

@@ -11,6 +11,7 @@ export interface AuditLog {
   ts?: string;
   auth_uid?: string;
   auth_role?: string;
+  ws_id?: string;
 }
 
 export type Operation = 'INSERT' | 'UPDATE' | 'DELETE';
