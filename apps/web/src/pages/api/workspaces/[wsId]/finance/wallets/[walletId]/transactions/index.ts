@@ -81,7 +81,7 @@ const createTransaction = async (
     res,
   });
 
-  const { description, amount, taken_at, category_id } =
+  const { description, amount, taken_at, category_id, report_opt_in } =
     req.body as Transaction;
 
   const { data, error } = await supabase
@@ -90,9 +90,10 @@ const createTransaction = async (
       description,
       amount,
       category_id,
+      report_opt_in,
       taken_at,
       wallet_id: walletId,
-    })
+    } as Transaction)
     .select('id')
     .single();
 

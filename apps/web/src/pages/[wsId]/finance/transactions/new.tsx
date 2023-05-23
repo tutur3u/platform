@@ -3,7 +3,14 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Chip, Divider, NumberInput, Select, TextInput } from '@mantine/core';
+import {
+  Checkbox,
+  Chip,
+  Divider,
+  NumberInput,
+  Select,
+  TextInput,
+} from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -68,6 +75,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
 
   const [description, setDescription] = useState<string>('');
   const [amount, setAmount] = useState<number | ''>(Number(queryAmount) || '');
+  const [reportOptOut, setReportOptOut] = useState<boolean>(false);
 
   const [takenAt, setTakenAt] = useState<Date>(
     dateQuery ? new Date(dateQuery as string) : new Date()
@@ -152,6 +160,7 @@ const NewTransactionPage: PageWithLayoutProps = () => {
               amount: amount || 0,
               taken_at: takenAt.toISOString(),
               category_id: category?.id,
+              report_opt_in: !reportOptOut,
             }}
             redirectUrl={`/${ws.id}/finance/wallets`}
           />
@@ -179,6 +188,9 @@ const NewTransactionPage: PageWithLayoutProps = () => {
   const { lang } = useTranslation();
 
   useEffect(() => {
+    if (type === 'default') setReportOptOut(false);
+    else setReportOptOut(true);
+
     if (type === 'balance') {
       setAmount(originWallet?.balance || '');
       setDescription(adjustment);
@@ -413,6 +425,13 @@ const NewTransactionPage: PageWithLayoutProps = () => {
                     </div>
                   </>
                 )}
+
+              <Divider className="my-1" variant="dashed" />
+              <Checkbox
+                label={t('report-opt-out')}
+                checked={reportOptOut}
+                onChange={(e) => setReportOptOut(e.currentTarget.checked)}
+              />
             </div>
           </SettingItemCard>
 

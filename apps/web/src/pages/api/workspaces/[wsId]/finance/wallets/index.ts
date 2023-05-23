@@ -99,6 +99,7 @@ const createWallet = async (
     statement_date,
     payment_date,
     limit,
+    report_opt_in,
   } = req.body as Wallet;
 
   const { data: wallet, error: walletError } = await supabase
@@ -109,6 +110,7 @@ const createWallet = async (
       currency,
       type,
       ws_id: wsId,
+      report_opt_in,
     })
     .select('id')
     .single();
@@ -137,6 +139,7 @@ const createWallet = async (
         description: 'Initial deposit',
         amount: balance,
         wallet_id: wallet.id,
+        report_opt_in: false,
       } as Transaction);
 
     if (transactionError)

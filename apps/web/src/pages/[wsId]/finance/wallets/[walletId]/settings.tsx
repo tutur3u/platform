@@ -89,7 +89,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
   const [balance, setBalance] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('VND');
   const [type, setType] = useState<string>('STANDARD');
-  const [reportOptIn, setReportOptIn] = useState<boolean>(true);
+  const [reportOptOut, setReportOptOut] = useState<boolean>(false);
 
   const [statementDate, setStatementDate] = useState<number>(0);
   const [paymentDate, setPaymentDate] = useState<number>(0);
@@ -105,7 +105,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
     setStatementDate(wallet?.statement_date || 0);
     setPaymentDate(wallet?.payment_date || 0);
     setLimit(wallet?.limit || '');
-    setReportOptIn(wallet?.report_opt_in ?? true);
+    setReportOptOut(!(wallet?.report_opt_in ?? true));
   }, [wallet]);
 
   const hasRequiredFields = () => name.length > 0;
@@ -135,7 +135,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
             limit: limit === '' ? undefined : limit,
             statement_date: statementDate,
             payment_date: paymentDate,
-            report_opt_in: reportOptIn,
+            report_opt_in: !reportOptOut,
           }}
         />
       ),
@@ -398,9 +398,9 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
 
               <Divider className="my-1" variant="dashed" />
               <Checkbox
-                label={t('report-opt-in')}
-                checked={reportOptIn}
-                onChange={(e) => setReportOptIn(e.currentTarget.checked)}
+                label={t('report-opt-out')}
+                checked={reportOptOut}
+                onChange={(e) => setReportOptOut(e.currentTarget.checked)}
               />
             </div>
           </SettingItemCard>

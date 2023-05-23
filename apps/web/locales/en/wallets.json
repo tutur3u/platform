@@ -49,5 +49,5 @@
   "cancel-payment": "Cancel payment",
   "pay-now": "Pay now",
   "pay-by-another-wallet": "Pay by another wallet",
-  "report-opt-in": "Show in report"
+  "report-opt-out": "Hide from reports"
 }
