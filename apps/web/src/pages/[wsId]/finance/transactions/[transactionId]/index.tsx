@@ -193,8 +193,8 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
 
               <Divider className="my-1" variant="dashed" />
               <Checkbox
-                label={t('report-opt-in')}
-                checked={transaction?.report_opt_in}
+                label={t('report-opt-out')}
+                checked={!transaction?.report_opt_in}
                 disabled
               />
             </div>

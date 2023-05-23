@@ -126,7 +126,7 @@ const FinancePage: PageWithLayoutProps = () => {
   const { data: transactions } = useSWR<Transaction[]>(apiPath);
 
   if (!ws) return null;
-  const sum = (income || 0) - (expense || 0);
+  const sum = (income || 0) + (expense || 0);
 
   return (
     <>

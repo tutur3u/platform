@@ -105,7 +105,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
   const [description, setDescription] = useState<string>('');
   const [takenAt, setTakenAt] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(0);
-  const [reportOptIn, setReportOptIn] = useState<boolean>(true);
+  const [reportOptOut, setReportOptOut] = useState<boolean>(false);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [category, setCategory] = useState<TransactionCategory | null>(null);
@@ -123,7 +123,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
           : new Date()
       );
       setAmount(transaction?.amount || 0);
-      setReportOptIn(transaction?.report_opt_in ?? true);
+      setReportOptOut(!(transaction?.report_opt_in ?? true));
     }
   }, [transaction]);
 
@@ -161,7 +161,7 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
             taken_at: takenAt.toISOString(),
             category_id: category?.id,
             wallet_id: wallet?.id,
-            report_opt_in: reportOptIn,
+            report_opt_in: !reportOptOut,
           }}
           redirectUrl={
             redirectToWallets === 'true'
@@ -333,9 +333,9 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
 
               <Divider className="my-1" variant="dashed" />
               <Checkbox
-                label={t('report-opt-in')}
-                checked={reportOptIn}
-                onChange={(e) => setReportOptIn(e.currentTarget.checked)}
+                label={t('report-opt-out')}
+                checked={reportOptOut}
+                onChange={(e) => setReportOptOut(e.currentTarget.checked)}
               />
             </div>
           </SettingItemCard>
