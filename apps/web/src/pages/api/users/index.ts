@@ -35,7 +35,7 @@ const fetchUsers = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const queryBuilder = supabase
     .from('users')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (query) {
@@ -57,8 +57,8 @@ const fetchUsers = async (req: NextApiRequest, res: NextApiResponse) => {
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error } = await queryBuilder;
+  const { data, count, error } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({ data, count });
 };

@@ -17,8 +17,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(prettier@2.8.8)
       turbo:
-        specifier: ^1.9.8
-        version: 1.9.8
+        specifier: ^1.9.9
+        version: 1.9.9
 
   apps/web:
     dependencies:
@@ -62,8 +62,8 @@ importers:
         specifier: ^6.0.11
         version: 6.0.11(@mantine/core@6.0.11)(@mantine/hooks@6.0.11)(@tabler/icons-react@2.20.0)(@tiptap/extension-link@2.0.3)(@tiptap/react@2.0.3)(react@18.2.0)
       '@sentry/nextjs':
-        specifier: ^7.52.1
-        version: 7.52.1(next@13.4.3)(react@18.2.0)
+        specifier: ^7.53.0
+        version: 7.53.0(next@13.4.3)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.6.1
         version: 0.6.1(@supabase/supabase-js@2.22.0)
@@ -195,8 +195,8 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4
       '@types/testing-library__jest-dom':
-        specifier: ^5.14.5
-        version: 5.14.5
+        specifier: ^5.14.6
+        version: 5.14.6
       '@types/uuid':
         specifier: ^9.0.1
         version: 9.0.1
@@ -234,8 +234,8 @@ importers:
         specifier: ^8.4.23
         version: 8.4.23
       supabase:
-        specifier: ^1.62.4
-        version: 1.62.4
+        specifier: ^1.63.0
+        version: 1.63.0
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -1880,25 +1880,25 @@ packages:
     resolution: {integrity: sha512-sXo/qW2/pAcmT43VoRKOJbDOfV3cYpq3szSVfIThQXNt+E4DfKj361vaAt3c88U5tPUxzEswam7GW48PJqtKAg==}
     dev: false
 
-  /@sentry-internal/tracing@7.52.1:
-    resolution: {integrity: sha512-6N99rE+Ek0LgbqSzI/XpsKSLUyJjQ9nychViy+MP60p1x+hllukfTsDbNtUNrPlW0Bx+vqUrWKkAqmTFad94TQ==}
+  /@sentry-internal/tracing@7.53.0:
+    resolution: {integrity: sha512-0UrXhZ9wJo3bkzwVq/DkJVnTFmPI+71fjTS0AdyVzP2WYX+qF5NfmsndjWHK0m/g/ZWnfqEqXHmKa6Vt/PyoEQ==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/core': 7.52.1
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/core': 7.53.0
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       tslib: 1.14.1
     dev: false
 
-  /@sentry/browser@7.52.1:
-    resolution: {integrity: sha512-HrCOfieX68t+Wj42VIkraLYwx8kN5311SdBkHccevWs2Y2dZU7R9iLbI87+nb5kpOPQ7jVWW7d6QI/yZmliYgQ==}
+  /@sentry/browser@7.53.0:
+    resolution: {integrity: sha512-P+vn+RdDZQ9ODjYmr9j1vo+YlbTXEnNKlXL+ECoD4yoSNizN21Q1BBoiLSn1kipcdfbgUix+eEFNdhbpNxPQwA==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry-internal/tracing': 7.52.1
-      '@sentry/core': 7.52.1
-      '@sentry/replay': 7.52.1
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry-internal/tracing': 7.53.0
+      '@sentry/core': 7.53.0
+      '@sentry/replay': 7.53.0
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       tslib: 1.14.1
     dev: false
 
@@ -1919,27 +1919,27 @@ packages:
       - supports-color
     dev: false
 
-  /@sentry/core@7.52.1:
-    resolution: {integrity: sha512-36clugQu5z/9jrit1gzI7KfKbAUimjRab39JeR0mJ6pMuKLTTK7PhbpUAD4AQBs9qVeXN2c7h9SVZiSA0UDvkg==}
+  /@sentry/core@7.53.0:
+    resolution: {integrity: sha512-TKMWWEvwT8tSqyIWuCexUk+fIoMA8ZAzGJdOfPW9XRL38RrXA9O+7V5xxK98X/bPHQ6UQF/QceookGOqqpmQyQ==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       tslib: 1.14.1
     dev: false
 
-  /@sentry/integrations@7.52.1:
-    resolution: {integrity: sha512-4uejF01723wzEHjcP5AcNcV+Z/6U27b1LyaDu0jY3XDry98MMjhS/ASzecLpaEFxi3dh/jMTUrNp1u7WMj59Lg==}
+  /@sentry/integrations@7.53.0:
+    resolution: {integrity: sha512-6GC5ULGnSHjPlOFdK3E1tW/4FitaX+Wm0daBdYl5EYUz9haWWdlKXfi0ELzW+SWDJVE1o86zEyZ4saCUhwz52g==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       localforage: 1.10.0
       tslib: 1.14.1
     dev: false
 
-  /@sentry/nextjs@7.52.1(next@13.4.3)(react@18.2.0):
-    resolution: {integrity: sha512-zd1StGdAn0vSS21l4gVyzCtfnEbJ+e5ZIgLZiaLUOSvKdMAtIlhXTotpn7CILIx+PzjOwiRFWp1XtSoU4FZyZg==}
+  /@sentry/nextjs@7.53.0(next@13.4.3)(react@18.2.0):
+    resolution: {integrity: sha512-XCQxl456gMjqCfnilASvOPUUktDK0NZ8hJPG1yNMeCHpzRgwdfxC3o+vMJzpVgFUBxwlZwsa08vj7+YZ1bMPMQ==}
     engines: {node: '>=8'}
     peerDependencies:
       next: ^10.0.8 || ^11.0 || ^12.0 || ^13.0
@@ -1950,12 +1950,12 @@ packages:
         optional: true
     dependencies:
       '@rollup/plugin-commonjs': 24.0.0(rollup@2.78.0)
-      '@sentry/core': 7.52.1
-      '@sentry/integrations': 7.52.1
-      '@sentry/node': 7.52.1
-      '@sentry/react': 7.52.1(react@18.2.0)
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/core': 7.53.0
+      '@sentry/integrations': 7.53.0
+      '@sentry/node': 7.53.0
+      '@sentry/react': 7.53.0(react@18.2.0)
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       '@sentry/webpack-plugin': 1.20.0
       chalk: 3.0.0
       next: 13.4.3(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
@@ -1968,14 +1968,14 @@ packages:
       - supports-color
     dev: false
 
-  /@sentry/node@7.52.1:
-    resolution: {integrity: sha512-n3frjYbkY/+eZ5RTQMaipv6Hh9w3ia40GDeRK6KJQit7OLKLmXisD+FsdYzm8Jc784csSvb6HGGVgqLpO1p9Og==}
+  /@sentry/node@7.53.0:
+    resolution: {integrity: sha512-iuavyakRJ0ci6+fCwmDRlDRn7IddOOM41iTTUl+K3AiFNdyIeK0Ix8tEOmIrSWA2pbanTFVicWfR3MuiAvsKGw==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry-internal/tracing': 7.52.1
-      '@sentry/core': 7.52.1
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry-internal/tracing': 7.53.0
+      '@sentry/core': 7.53.0
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       cookie: 0.4.2
       https-proxy-agent: 5.0.1
       lru_map: 0.3.3
@@ -1984,39 +1984,39 @@ packages:
       - supports-color
     dev: false
 
-  /@sentry/react@7.52.1(react@18.2.0):
-    resolution: {integrity: sha512-RRH+GJE5TNg5QS86bSjSZuR2snpBTOO5/SU9t4BOqZMknzhMVTClGMm84hffJa9pMPMJPQ2fWQAbhrlD8RcF6w==}
+  /@sentry/react@7.53.0(react@18.2.0):
+    resolution: {integrity: sha512-CSafT8yTtvI0j73ppDRvhL/pIl+jaQVFAHmGJXEVfVxTw/2VK1R+8yEhP83x4mRlM34sFZYWQe86OUc8BXaRgw==}
     engines: {node: '>=8'}
     peerDependencies:
       react: 15.x || 16.x || 17.x || 18.x
     dependencies:
-      '@sentry/browser': 7.52.1
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/browser': 7.53.0
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
       hoist-non-react-statics: 3.3.2
       react: 18.2.0
       tslib: 1.14.1
     dev: false
 
-  /@sentry/replay@7.52.1:
-    resolution: {integrity: sha512-A+RaUmpU9/yBHnU3ATemc6wAvobGno0yf5R6fZYkAFoo2FCR2YG6AXxkTazymIf8v2DnLGaSDORYDPdhQClU9A==}
+  /@sentry/replay@7.53.0:
+    resolution: {integrity: sha512-RHQJoevR0aPg0gpqtyKvz1z4zP/bQgNgPQCtW1QqH2rMwlUq09u1J63hufUkOFspGo/TqoBgGq0GxG2M2D0QHw==}
     engines: {node: '>=12'}
     dependencies:
-      '@sentry/core': 7.52.1
-      '@sentry/types': 7.52.1
-      '@sentry/utils': 7.52.1
+      '@sentry/core': 7.53.0
+      '@sentry/types': 7.53.0
+      '@sentry/utils': 7.53.0
     dev: false
 
-  /@sentry/types@7.52.1:
-    resolution: {integrity: sha512-OMbGBPrJsw0iEXwZ2bJUYxewI1IEAU2e1aQGc0O6QW5+6hhCh+8HO8Xl4EymqwejjztuwStkl6G1qhK+Q0/Row==}
+  /@sentry/types@7.53.0:
+    resolution: {integrity: sha512-hqlbrCL8nfDfjlF6wh4NHNW9plhWJ1m2BSqRyspcxOC44e293BPfwjUzr0aQapJK/aRkHROnfAtzsEu2awNPzg==}
     engines: {node: '>=8'}
     dev: false
 
-  /@sentry/utils@7.52.1:
-    resolution: {integrity: sha512-MPt1Xu/jluulknW8CmZ2naJ53jEdtdwCBSo6fXJvOTI0SDqwIPbXDVrsnqLAhVJuIN7xbkj96nuY/VBR6S5sWg==}
+  /@sentry/utils@7.53.0:
+    resolution: {integrity: sha512-T3F2DkXB9fDjUIAcrOMrGCnquyTQxTyTb5Mh+NbFBevQn32fHehQ62VraLhe20HTVy8YBFkXisvLu6HeOZ5Mog==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.52.1
+      '@sentry/types': 7.53.0
       tslib: 1.14.1
     dev: false
 
@@ -2168,7 +2168,7 @@ packages:
     dependencies:
       '@adobe/css-tools': 4.2.0
       '@babel/runtime': 7.21.5
-      '@types/testing-library__jest-dom': 5.14.5
+      '@types/testing-library__jest-dom': 5.14.6
       aria-query: 5.1.3
       chalk: 3.0.0
       css.escape: 1.5.1
@@ -2673,8 +2673,8 @@ packages:
     resolution: {integrity: sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==}
     dev: true
 
-  /@types/testing-library__jest-dom@5.14.5:
-    resolution: {integrity: sha512-SBwbxYoyPIvxHbeHxTZX2Pe/74F/tX2/D3mMvzabdeJ25bBojfW0TyB8BHrbq/9zaaKICJZjLP+8r6AeZMFCuQ==}
+  /@types/testing-library__jest-dom@5.14.6:
+    resolution: {integrity: sha512-FkHXCb+ikSoUP4Y4rOslzTdX5sqYwMxfefKh1GmZ8ce1GOkEHntSp6b5cGadmNfp5e4BMEWOMx+WSKd5/MqlDA==}
     dependencies:
       '@types/jest': 29.5.1
     dev: true
@@ -7605,8 +7605,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.62.4:
-    resolution: {integrity: sha512-Be7nIOQoFiI0qYjYhKS+9/UUA4QKq7kdqmv4KBvOJ5mgOuohE3EuOHJxlDSklhtqInFkKdQUuj/wsmA9xBWg8w==}
+  /supabase@1.63.0:
+    resolution: {integrity: sha512-WXD3Q2isQGeqt/Z7vXIOxA+MABS0z3xw9ywm6L0CYDqvKvQswiJ71+9SZVRLlXkhrM6YhECd8OzY+tYCUAB02Q==}
     hasBin: true
     requiresBuild: true
     dependencies:
@@ -7899,65 +7899,65 @@ packages:
       tslib: 1.14.1
       typescript: 5.0.4
 
-  /turbo-darwin-64@1.9.8:
-    resolution: {integrity: sha512-PkTdBjPfgpj/Dob/6SjkzP0BBP80/KmFjLEocXVEECCLJE6tHKbWLRdvc79B0N6SufdYdZ1uvvoU3KPtBokSPw==}
+  /turbo-darwin-64@1.9.9:
+    resolution: {integrity: sha512-UDGM9E21eCDzF5t1F4rzrjwWutcup33e7ZjNJcW/mJDPorazZzqXGKEPIy9kXwKhamUUXfC7668r6ZuA1WXF2Q==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-darwin-arm64@1.9.8:
-    resolution: {integrity: sha512-sLwqOx3XV57QCEoJM9GnDDnnqidG8wf29ytxssBaWHBdeJTjupyrmzTUrX+tyKo3Q+CjWvbPLyqVqxT4g5NuXQ==}
+  /turbo-darwin-arm64@1.9.9:
+    resolution: {integrity: sha512-VyfkXzTJpYLTAQ9krq2myyEq7RPObilpS04lgJ4OO1piq76RNmSpX9F/t9JCaY9Pj/4TL7i0d8PM7NGhwEA5Ag==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-64@1.9.8:
-    resolution: {integrity: sha512-AMg6VT6sW7aOD1uOs5suxglXfTYz9T0uVyKGKokDweGOYTWmuTMGU5afUT1tYRUwQ+kVPJI+83Atl5Ob0oBsgw==}
+  /turbo-linux-64@1.9.9:
+    resolution: {integrity: sha512-Fu1MY29Odg8dHOqXcpIIGC3T63XLOGgnGfbobXMKdrC7JQDvtJv8TUCYciRsyknZYjyyKK1z6zKuYIiDjf3KeQ==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-arm64@1.9.8:
-    resolution: {integrity: sha512-tLnxFv+OIklwTjiOZ8XMeEeRDAf150Ry4BCivNwgTVFAqQGEqkFP6KGBy56hb5RRF1frPQpoPGipJNVm7c8m1w==}
+  /turbo-linux-arm64@1.9.9:
+    resolution: {integrity: sha512-50LI8NafPuJxdnMCBeDdzgyt1cgjQG7FwkyY336v4e95WJPUVjrHdrKH6jYXhOUyrv9+jCJxwX1Yrg02t5yJ1g==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-64@1.9.8:
-    resolution: {integrity: sha512-r3pCjvXTMR7kq2E3iqwFlN1R7pFO/TOsuUjMhOSPP7HwuuUIinAckU4I9foM3q7ZCQd1XXScBUt3niDyHijAqQ==}
+  /turbo-windows-64@1.9.9:
+    resolution: {integrity: sha512-9IsTReoLmQl1IRsy3WExe2j2RKWXQyXujfJ4fXF+jp08KxjVF4/tYP2CIRJx/A7UP/7keBta27bZqzAjsmbSTA==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-arm64@1.9.8:
-    resolution: {integrity: sha512-CWzRbX2TM5IfHBC6uWM659qUOEDC4h0nn16ocG8yIq1IF3uZMzKRBHgGOT5m1BHom+R08V0NcjTmPRoqpiI0dg==}
+  /turbo-windows-arm64@1.9.9:
+    resolution: {integrity: sha512-CUu4hpeQo68JjDr0V0ygTQRLbS+/sNfdqEVV+Xz9136vpKn2WMQLAuUBVZV0Sp0S/7i+zGnplskT0fED+W46wQ==}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo@1.9.8:
-    resolution: {integrity: sha512-dTouGZBm4a2fE0OPafcTQERCp4i3ZOow0Pr0JlOyxKmzJy0JRwXypH013kbZoK6k1ET5tS/g9rwUXIM/AmWXXQ==}
+  /turbo@1.9.9:
+    resolution: {integrity: sha512-+ZS66LOT7ahKHxh6XrIdcmf2Yk9mNpAbPEj4iF2cs0cAeaDU3xLVPZFF0HbSho89Uxwhx7b5HBgPbdcjQTwQkg==}
     hasBin: true
     requiresBuild: true
     optionalDependencies:
-      turbo-darwin-64: 1.9.8
-      turbo-darwin-arm64: 1.9.8
-      turbo-linux-64: 1.9.8
-      turbo-linux-arm64: 1.9.8
-      turbo-windows-64: 1.9.8
-      turbo-windows-arm64: 1.9.8
+      turbo-darwin-64: 1.9.9
+      turbo-darwin-arm64: 1.9.9
+      turbo-linux-64: 1.9.9
+      turbo-linux-arm64: 1.9.9
+      turbo-windows-64: 1.9.9
+      turbo-windows-arm64: 1.9.9
     dev: true
 
   /type-check@0.3.2:

@@ -149,5 +149,13 @@
   "trailing_label_wallet_transactions": {
     "one": "{{count}} giao dịch ví",
     "other": "{{count}} giao dịch ví"
+  },
+  "trailing_label_calendar_event_platform_participants": {
+    "one": "{{count}} người tham gia (người dùng nền tảng)",
+    "other": "{{count}} người tham gia (người dùng nền tảng)"
+  },
+  "trailing_label_calendar_event_virtual_participants": {
+    "one": "{{count}} người tham gia (người dùng ảo)",
+    "other": "{{count}} người tham gia (người dùng ảo)"
   }
 }

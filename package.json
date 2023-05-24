@@ -1,6 +1,6 @@
 {
   "name": "tutur3u",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -24,7 +24,7 @@
     "eslint-config-custom": "workspace:*",
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.3.0",
-    "turbo": "^1.9.8"
+    "turbo": "^1.9.9"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -14,6 +14,7 @@ import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 import { useRouter } from 'next/router';
+import { useLocalStorage } from '@mantine/hooks';
 
 const CalendarContext = createContext({
   refresh: async () => console.log('refresh'),
@@ -88,7 +89,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const { ws } = useWorkspaces();
 
   const [datesInView, setDatesInView] = useState<Date[]>([]);
-  const [view, setView] = useState<'day' | 'week' | '4-days'>('week');
+  const [view, setView] = useLocalStorage({
+    key: 'calendar-view',
+    defaultValue: 'week' as 'day' | '4-days' | 'week',
+  });
 
   const getDateRangeQuery = () => {
     if (!datesInView.length) return '';
@@ -400,7 +404,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     newDate.setHours(0, 0, 0, 0);
     setDatesInView([newDate]);
     setView('day');
-  }, [date, availableViews]);
+  }, [date, setView, availableViews]);
 
   const enable4DayView = useCallback(() => {
     if (availableViews.find((v) => v.value === '4-days')?.disabled) return;
@@ -416,7 +420,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
     setDatesInView(dates);
     setView('4-days');
-  }, [date, availableViews]);
+  }, [date, setView, availableViews]);
 
   const enableWeekView = useCallback(() => {
     if (availableViews.find((v) => v.value === 'week')?.disabled) return;
@@ -443,7 +447,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
     setDatesInView(getWeekdays());
     setView('week');
-  }, [date, availableViews]);
+  }, [date, setView, availableViews]);
 
   useEffect(() => {
     const updateDatesInView = () => {

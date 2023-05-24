@@ -10,44 +10,60 @@ interface Props {
   userId: string;
   setUserId: (userId: string) => void;
 
+  label?: string;
+  placeholder?: string;
+
   className?: string;
 
+  mode?: 'platform' | 'workspace';
   notEmpty?: boolean;
   disabled?: boolean;
   required?: boolean;
   searchable?: boolean;
   creatable?: boolean;
+  clearable?: boolean;
+  preventPreselect?: boolean;
 }
 
 const WorkspaceUserSelector = ({
   userId,
   setUserId,
 
+  label,
+  placeholder,
+
   className,
 
+  mode = 'workspace',
   notEmpty = false,
   disabled = false,
   required = false,
   searchable = true,
   creatable = true,
+  clearable = false,
+  preventPreselect = false,
 }: Props) => {
   const { ws } = useWorkspaces();
 
   const { t } = useTranslation('ws-selector');
 
-  const apiPath = `/api/workspaces/${ws?.id}/users`;
+  const apiPath = ws?.id
+    ? mode === 'workspace'
+      ? `/api/workspaces/${ws.id}/users`
+      : `/api/users`
+    : null;
 
   const { data: fetchedData } = useSWR<{
     data: WorkspaceUser[];
     count: number;
-  }>(ws?.id ? apiPath : null);
+  }>(apiPath);
 
   const users = fetchedData?.data;
 
   const data = notEmpty
     ? [
         ...(users?.map((user) => ({
-          label: user.name,
+          label: user?.name ?? user?.display_name,
           value: user.id,
         })) || []),
       ]
@@ -65,11 +81,11 @@ const WorkspaceUserSelector = ({
       ];
 
   useEffect(() => {
-    if (!users) return;
+    if (!users || preventPreselect) return;
 
     if (users.length === 1) setUserId(users[0].id);
     else if (userId && !users?.find((p) => p.id === userId)) setUserId('');
-  }, [userId, users, setUserId]);
+  }, [preventPreselect, userId, users, setUserId]);
 
   const create = async ({
     warehouse,
@@ -77,6 +93,8 @@ const WorkspaceUserSelector = ({
     wsId: string;
     warehouse: Partial<WorkspaceUser>;
   }): Promise<WorkspaceUser | null> => {
+    if (!apiPath) return null;
+
     const res = await fetch(apiPath, {
       method: 'POST',
       headers: {
@@ -110,8 +128,8 @@ const WorkspaceUserSelector = ({
 
   return (
     <Select
-      label={t('user')}
-      placeholder={t('user-placeholder')}
+      label={label ?? t('user')}
+      placeholder={placeholder ?? t('user-placeholder')}
       data={data}
       value={userId}
       onChange={setUserId}
@@ -164,6 +182,7 @@ const WorkspaceUserSelector = ({
       required={required}
       searchable={searchable}
       creatable={!!ws?.id && creatable}
+      clearable={clearable}
     />
   );
 };

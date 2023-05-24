@@ -81,12 +81,16 @@
     "/[wsId]/calendar/events/new": [
       "sidebar-tabs",
       "calendar-tabs",
+      "ws-selector",
+      "user-type-selector",
       "calendar-event-configs",
       "calendar-event-create-form"
     ],
     "/[wsId]/calendar/events/[eventId]": [
       "sidebar-tabs",
       "calendar-tabs",
+      "ws-selector",
+      "user-type-selector",
       "calendar-event-configs",
       "calendar-event-edit-form",
       "calendar-event-delete-form"

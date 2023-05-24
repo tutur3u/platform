@@ -15,5 +15,10 @@
   "blue": "Xanh dương",
   "cyan": "Xanh lục",
   "green": "Xanh lá cây",
-  "gray": "Xám"
+  "gray": "Xám",
+  "basic-info": "Thông tin cơ bản",
+  "participants": "Người tham gia",
+  "virtual-users": "Người dùng ảo",
+  "platform-users": "Người dùng nền tảng",
+  "could-not-invite": "Không thể mời người dùng"
 }
