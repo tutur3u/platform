@@ -149,5 +149,13 @@
   "trailing_label_wallet_transactions": {
     "one": "{{count}} transaction",
     "other": "{{count}} transactions"
+  },
+  "trailing_label_calendar_event_platform_participants": {
+    "one": "{{count}} participant (platform user)",
+    "other": "{{count}} participants (platform users)"
+  },
+  "trailing_label_calendar_event_virtual_participants": {
+    "one": "{{count}} participant (virtual user)",
+    "other": "{{count}} participants (virtual users)"
   }
 }

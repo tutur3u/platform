@@ -55,7 +55,9 @@ const NewEventPage: PageWithLayoutProps = () => {
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(
+    new Date(new Date().getTime() + 3600000)
+  );
   const [color, setColor] = useState<SupportedColor>('blue');
 
   const hasRequiredFields = () => startDate && endDate;
@@ -174,20 +176,20 @@ const NewEventPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={`${eventsLabel} – ${calendarLabel}`} />
-      <div className="mt-2 flex min-h-full w-full flex-col ">
+      <div className="relative grid min-h-full w-full gap-4 pb-32 xl:grid-cols-2">
         {hasRequiredFields() && (
           <div
-            className={`fixed inset-x-0 bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300/10 bg-zinc-900/80 p-4 backdrop-blur transition duration-300 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+            className={`absolute inset-x-0 bottom-0 z-[100] mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition duration-300 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mb-4 md:flex-row ${
               isDirty() ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
             <div>{t('common:unsaved-changes')}</div>
 
-            <div className="flex w-full items-center gap-2 md:w-fit">
+            <div className="flex w-full items-center gap-4 md:w-fit">
               <button
-                className={`w-full rounded border border-zinc-300/10 bg-zinc-300/5 px-4 py-1 font-semibold text-zinc-300 transition md:w-fit ${
+                className={`w-full font-semibold text-zinc-700 transition dark:text-zinc-300 md:w-fit ${
                   isDirty()
-                    ? 'hover:bg-zinc-300/10'
+                    ? ''
                     : 'pointer-events-none cursor-not-allowed opacity-50'
                 }`}
                 onClick={reset}
@@ -196,7 +198,7 @@ const NewEventPage: PageWithLayoutProps = () => {
               </button>
 
               <button
-                className={`w-full rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition md:w-fit ${
+                className={`w-full rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 md:w-fit ${
                   isDirty()
                     ? 'hover:bg-blue-300/20'
                     : 'pointer-events-none cursor-not-allowed opacity-50'
@@ -209,7 +211,11 @@ const NewEventPage: PageWithLayoutProps = () => {
           </div>
         )}
 
-        <div className="grid h-fit max-w-lg gap-2">
+        <div className="grid h-fit gap-2 xl:max-w-lg">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
+          </div>
+
           <TextInput
             label={t('event-name')}
             placeholder={t('event-name')}
@@ -253,8 +259,8 @@ const NewEventPage: PageWithLayoutProps = () => {
                 input: `font-semibold ${getInputColor()}`,
                 label: getLabelColor(),
               }}
-              valueFormat="DD/MM/YYYY, HH:mm"
               clearable={false}
+              valueFormat="DD/MM/YYYY, HH:mm"
               locale={lang}
               required
             />
@@ -282,8 +288,8 @@ const NewEventPage: PageWithLayoutProps = () => {
                 input: `font-semibold ${getInputColor()}`,
                 label: getLabelColor(),
               }}
-              valueFormat="DD/MM/YYYY, HH:mm"
               clearable={false}
+              valueFormat="DD/MM/YYYY, HH:mm"
               locale={lang}
               required
             />
@@ -293,6 +299,7 @@ const NewEventPage: PageWithLayoutProps = () => {
             value={color}
             onChange={(color) => setColor(color)}
             variant="card"
+            disabled={!ws || !event}
           />
         </div>
       </div>

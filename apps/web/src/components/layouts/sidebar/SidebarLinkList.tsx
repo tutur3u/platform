@@ -84,14 +84,12 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
-        <SidebarLink
-          href={`/${wsId}/documents`}
-          activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-          label={documents}
-          showTooltip={!sidebarOpened}
-        />
-      )}
+      <SidebarLink
+        href={`/${wsId}/documents`}
+        activeIcon={<ClipboardDocumentListIcon className="w-5" />}
+        label={documents}
+        showTooltip={!sidebarOpened}
+      />
 
       <SidebarLink
         href={`/${wsId}/users`}
@@ -116,12 +114,14 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      <SidebarLink
-        href={`/${wsId}/inventory`}
-        activeIcon={<ArchiveBoxIcon className="w-5" />}
-        label={inventory}
-        showTooltip={!sidebarOpened}
-      />
+      {adminLevel && (
+        <SidebarLink
+          href={`/${wsId}/inventory`}
+          activeIcon={<ArchiveBoxIcon className="w-5" />}
+          label={inventory}
+          showTooltip={!sidebarOpened}
+        />
+      )}
 
       {(wsPreset === 'ALL' || wsPreset === 'EDUCATION') && (
         <SidebarLink
@@ -133,15 +133,17 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      <SidebarLink
-        href={`/${wsId}/finance`}
-        activeIcon={<BanknotesIcon className="w-5" />}
-        label={finance}
-        showTooltip={!sidebarOpened}
-        classNames={{
-          root: 'hidden md:block',
-        }}
-      />
+      {adminLevel && (
+        <SidebarLink
+          href={`/${wsId}/finance`}
+          activeIcon={<BanknotesIcon className="w-5" />}
+          label={finance}
+          showTooltip={!sidebarOpened}
+          classNames={{
+            root: 'hidden md:block',
+          }}
+        />
+      )}
 
       <SidebarLink
         href={`/${wsId}/databases`}

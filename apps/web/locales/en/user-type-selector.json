@@ -1,0 +1,7 @@
+{
+  "type": "User type",
+  "type-placeholder": "Select a user type",
+  "platform": "Platform",
+  "virtual": "Virtual",
+  "group": "Group"
+}

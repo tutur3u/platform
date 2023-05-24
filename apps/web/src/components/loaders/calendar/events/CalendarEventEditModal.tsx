@@ -8,6 +8,7 @@ import { Status } from '../../status';
 import { CalendarEvent } from '../../../../types/primitives/CalendarEvent';
 import { useCalendar } from '../../../../hooks/useCalendar';
 import useTranslation from 'next-translate/useTranslation';
+import { mutate } from 'swr';
 
 interface Props {
   wsId: string;
@@ -45,6 +46,7 @@ const CalendarEventEditModal = ({ wsId, event }: Props) => {
     );
 
     if (res.ok) {
+      mutate(`/api/workspaces/${wsId}/calendar/events/${event.id}`, event);
       await refresh();
 
       setProgress((progress) => ({ ...progress, updated: 'success' }));

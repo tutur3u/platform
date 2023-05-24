@@ -3,7 +3,7 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Divider, TextInput, Textarea } from '@mantine/core';
+import { Button, Chip, Divider, TextInput, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
@@ -13,11 +13,17 @@ import ColorPallete from '../../../../../components/color/ColorPallete';
 import { SupportedColor } from '../../../../../types/primitives/SupportedColors';
 import { useRouter } from 'next/router';
 import { CalendarEvent } from '../../../../../types/primitives/CalendarEvent';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import CalendarEventEditModal from '../../../../../components/loaders/calendar/events/CalendarEventEditModal';
 import CalendarEventDeleteModal from '../../../../../components/loaders/calendar/events/CalendarEventDeleteModal';
 import moment from 'moment';
 import 'dayjs/locale/vi';
+import EventParticipantCard from '../../../../../components/cards/EventParticipantCard';
+import { EventParticipant } from '../../../../../types/primitives/EventParticipant';
+import WorkspaceUserSelector from '../../../../../components/selectors/WorkspaceUserSelector';
+import { UserPlusIcon } from '@heroicons/react/24/solid';
+import UserTypeSelector from '../../../../../components/selectors/UserTypeSelector';
+import { showNotification } from '@mantine/notifications';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -73,17 +79,42 @@ const EventDetailsPage: PageWithLayoutProps = () => {
 
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [color, setColor] = useState<SupportedColor>('blue');
+
+  const [userType, setUserType] = useState<'platform' | 'virtual'>('platform');
+  const [newParticipantId, setNewParticipantId] = useState('');
+  const [participantsView, setParticipantsView] = useState<
+    'all' | 'platform' | 'virtual'
+  >('all');
+
+  useEffect(() => {
+    setNewParticipantId('');
+  }, [userType, participantsView]);
+
+  const participantApiPath = apiPath
+    ? `${apiPath}/participants${
+        participantsView ? `?type=${participantsView}` : null
+      }`
+    : null;
+
+  const { data } = useSWR<{
+    platform: number;
+    virtual: number;
+    count: number;
+    data: EventParticipant[];
+  }>(participantApiPath);
+
+  const participants = data?.data || [];
 
   useEffect(() => {
     if (!event) return;
 
     setTitle(event?.title || '');
     setDescription(event?.description || '');
-    setStartDate(new Date(event?.start_at));
-    setEndDate(new Date(event?.end_at));
+    setStartDate(event?.start_at ? moment(event?.start_at).toDate() : null);
+    setEndDate(event?.end_at ? moment(event?.end_at).toDate() : null);
     setColor((event?.color?.toLowerCase() || 'blue') as SupportedColor);
   }, [event]);
 
@@ -113,8 +144,8 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             id: eventId,
             title,
             description,
-            start_at: startDate?.toISOString(),
-            end_at: endDate?.toISOString(),
+            start_at: startDate.toISOString(),
+            end_at: endDate.toISOString(),
             ws_id: ws.id,
             color,
           }}
@@ -156,13 +187,15 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     if (color !== event?.color?.toLowerCase()) return true;
 
     if (
-      startDate?.toISOString() !==
-      (event?.start_at ? moment(event?.start_at).toISOString() : null)
+      startDate &&
+      startDate.toISOString() !==
+        (event?.start_at ? moment(event?.start_at).toISOString() : null)
     )
       return true;
     if (
-      endDate?.toISOString() !==
-      (event?.end_at ? moment(event?.end_at).toISOString() : null)
+      endDate &&
+      endDate.toISOString() !==
+        (event?.end_at ? moment(event?.end_at).toISOString() : null)
     )
       return true;
 
@@ -237,13 +270,39 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     }
   };
 
+  const inviteParticipant = async () => {
+    if (!newParticipantId || !apiPath) return;
+
+    const res = await fetch(`${apiPath}/participants?type=${userType}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: newParticipantId,
+      }),
+    });
+
+    if (res.ok) {
+      mutate(apiPath);
+      mutate(participantApiPath);
+      setNewParticipantId('');
+    } else {
+      showNotification({
+        color: 'red',
+        title: t('common:error'),
+        message: t('could-not-invite'),
+      });
+    }
+  };
+
   return (
     <>
       <HeaderX label={`${eventsLabel} – ${calendarLabel}`} />
-      <div className="flex min-h-full w-full flex-col">
+      <div className="relative grid min-h-full w-full gap-4 pb-32 xl:grid-cols-2">
         {event && hasRequiredFields() && (
           <div
-            className={`fixed inset-x-0 bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition duration-300 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+            className={`absolute inset-x-0 bottom-0 z-[100] mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition duration-300 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mb-4 md:flex-row ${
               isDirty() ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
@@ -275,7 +334,11 @@ const EventDetailsPage: PageWithLayoutProps = () => {
           </div>
         )}
 
-        <div className="grid h-fit max-w-lg gap-2 pb-32">
+        <div className="grid h-fit gap-2 xl:max-w-lg">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">{t('basic-info')}</div>
+          </div>
+
           <TextInput
             label={t('event-name')}
             placeholder={t('event-name')}
@@ -367,6 +430,82 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             className="flex cursor-pointer items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-300 transition duration-300 hover:border-red-300/30 hover:bg-red-300/20"
           >
             {t('common:delete')}
+          </div>
+        </div>
+
+        <div className="grid h-fit gap-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">{t('participants')}</div>
+          </div>
+
+          <Chip.Group
+            multiple={false}
+            value={participantsView}
+            onChange={(view) => {
+              setParticipantsView(view as 'all' | 'platform' | 'virtual');
+              if (view !== 'all') setUserType(view as 'platform' | 'virtual');
+            }}
+          >
+            <div className="mb-2 flex flex-wrap justify-start gap-2">
+              <Chip color="cyan" variant="light" value="all">
+                {t('common:all')} (
+                {(data?.platform || 0) + (data?.virtual || 0)})
+              </Chip>
+              <Chip color="teal" variant="light" value="platform">
+                {t('platform-users')} ({data?.platform || 0})
+              </Chip>
+              <Chip color="grape" variant="light" value="virtual">
+                {t('virtual-users')} ({data?.virtual || 0})
+              </Chip>
+            </div>
+          </Chip.Group>
+
+          <div className="flex flex-col items-center gap-2 rounded border border-zinc-300/5 p-2 dark:bg-zinc-900 md:flex-row">
+            <UserTypeSelector
+              type={userType}
+              setType={setUserType}
+              label=""
+              className="w-full md:max-w-[12rem]"
+              disabled={participantsView !== 'all'}
+            />
+            <WorkspaceUserSelector
+              userId={newParticipantId}
+              setUserId={setNewParticipantId}
+              label=""
+              mode={userType === 'virtual' ? 'workspace' : 'platform'}
+              className="w-full"
+              preventPreselect
+              clearable
+              notEmpty
+            />
+            <Button
+              variant="subtle"
+              className={`w-full border md:w-fit ${
+                newParticipantId &&
+                'border-blue-500/10 bg-blue-500/10 hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:hover:bg-blue-300/20'
+              }`}
+              disabled={!newParticipantId}
+              onClick={inviteParticipant}
+            >
+              <UserPlusIcon className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {participants.length > 0 && (
+            <Divider className="my-1" variant="dashed" />
+          )}
+
+          <div className="grid gap-2 md:grid-cols-2">
+            {wsId &&
+              participants.map((p) => (
+                <EventParticipantCard
+                  key={`${p.event_id}-${p.user_id}-${p.type}`}
+                  wsId={wsId as string}
+                  participant={p}
+                  className={getInputColor()}
+                  mutatePath={participantApiPath}
+                />
+              ))}
           </div>
         </div>
       </div>

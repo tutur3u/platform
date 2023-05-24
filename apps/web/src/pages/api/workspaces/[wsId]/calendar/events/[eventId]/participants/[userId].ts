@@ -1,24 +1,29 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CalendarEvent } from '../../../../../../types/primitives/CalendarEvent';
+import { EventParticipant } from '../../../../../../../../types/primitives/EventParticipant';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { eventId } = req.query;
+    const { eventId, userId, type } = req.query;
 
     if (!eventId || typeof eventId !== 'string')
       throw new Error('Invalid eventId');
 
+    if (!userId || typeof userId !== 'string')
+      throw new Error('Invalid userId');
+
+    if (type && typeof type !== 'string') throw new Error('Invalid type');
+
     switch (req.method) {
       case 'GET':
-        return await fetchCategory(req, res, eventId);
+        return await fetchParticipant(req, res, eventId, userId);
 
       case 'PUT': {
-        return await updateCategory(req, res, eventId);
+        return await updateParticipant(req, res, eventId, userId, type);
       }
 
       case 'DELETE': {
-        return await deleteCategory(req, res, eventId);
+        return await deleteParticipant(req, res, eventId, userId, type);
       }
 
       default:
@@ -36,57 +41,64 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const fetchCategory = async (
+const fetchParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  eventId: string
+  eventId: string,
+  userId: string
 ) => {
   const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_calendar_events')
-    .select('id, title, description, start_at, end_at, color, ws_id')
-    .eq('id', eventId)
+    .select('event_id, user_id, going, type, display_name, handle')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
 
-  return res.status(200).json(data as CalendarEvent);
+  return res.status(200).json(data as EventParticipant);
 };
 
-const updateCategory = async (
+const updateParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  eventId: string
+  eventId: string,
+  userId: string,
+  type?: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
     res,
   });
 
-  const { title, description, start_at, end_at, color } =
-    req.body as CalendarEvent;
+  const { role, going } = req.body as EventParticipant;
 
   const { error } = await supabase
-    .from('workspace_calendar_events')
+    .from(
+      type === 'virtual'
+        ? 'calendar_event_virtual_participants'
+        : 'calendar_event_platform_participants'
+    )
     .update({
-      title,
-      description,
-      start_at,
-      end_at,
-      color: color?.toUpperCase(),
-    } as CalendarEvent)
-    .eq('id', eventId);
+      role,
+      going,
+    } as EventParticipant)
+    .eq('event_id', eventId)
+    .eq('user_id', userId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
 };
 
-const deleteCategory = async (
+const deleteParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  eventId: string
+  eventId: string,
+  userId: string,
+  type?: string
 ) => {
   const supabase = createServerSupabaseClient({
     req,
@@ -94,9 +106,14 @@ const deleteCategory = async (
   });
 
   const { error } = await supabase
-    .from('workspace_calendar_events')
+    .from(
+      type === 'virtual'
+        ? 'calendar_event_virtual_participants'
+        : 'calendar_event_platform_participants'
+    )
     .delete()
-    .eq('id', eventId);
+    .eq('event_id', eventId)
+    .eq('user_id', userId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});

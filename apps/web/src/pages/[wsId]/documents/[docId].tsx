@@ -100,10 +100,10 @@ const ProjectDocumentEditor = () => {
 
   useEffect(() => {
     if (!editor) return;
-    const editable = mode === 'edit';
+    const editable = mode === 'edit' && doc?.id !== null;
     editor.setEditable(editable);
     setSaving(false);
-  }, [mode, editor]);
+  }, [mode, editor, doc?.id]);
 
   useEffect(() => {
     if (!doc) return;
@@ -244,6 +244,7 @@ const ProjectDocumentEditor = () => {
                   </div>
                 ),
                 value: 'edit',
+                disabled: !doc?.id,
               },
             ]}
             className="mb-2"
@@ -251,7 +252,7 @@ const ProjectDocumentEditor = () => {
         </>
       )}
 
-      {doc && editor ? (
+      {doc?.id && editor ? (
         <DocumentEditor editor={editor} />
       ) : (
         <div className="flex items-center justify-center">
