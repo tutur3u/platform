@@ -15,7 +15,7 @@ interface Props {
 
   className?: string;
 
-  mode: 'platform' | 'workspace';
+  mode?: 'platform' | 'workspace';
   notEmpty?: boolean;
   disabled?: boolean;
   required?: boolean;
