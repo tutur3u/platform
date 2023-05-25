@@ -16,7 +16,7 @@ const LandingPage = () => {
             <h1 className="mb-5 text-2xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-3xl">
               {t('our-logo')}
             </h1>
-            <div className="grid grid-cols-2 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:gap-8 xl:grid-cols-4">
+            <div className="grid gap-4 xl:grid-cols-2">
               <LogoTab
                 logoImage="/media/official-logos/dark-logo.svg"
                 alt="Dark logo"
@@ -29,20 +29,6 @@ const LandingPage = () => {
                 alt="Light logo"
                 pngLink="/media/official-logos/light-logo.png"
                 svgLink="/media/official-logos/light-logo.svg"
-                light={true}
-              />
-              <LogoTab
-                logoImage="/media/official-logos/dark-logo-mono.svg"
-                alt="Dark logo mono"
-                pngLink="/media/official-logos/dark-logo-mono.png"
-                svgLink="/media/official-logos/dark-logo-mono.svg"
-                light={false}
-              />
-              <LogoTab
-                logoImage="/media/official-logos/light-logo-mono.svg"
-                alt="Light logo mono"
-                pngLink="/media/official-logos/light-logo-mono.png"
-                svgLink="/media/official-logos/light-logo-mono.svg"
                 light={true}
               />
             </div>
