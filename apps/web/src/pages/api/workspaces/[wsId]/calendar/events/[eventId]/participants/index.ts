@@ -50,11 +50,13 @@ const fetchParticipants = async (
 
   const platformParticipants = supabase
     .from('calendar_event_platform_participants')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', eventId);
 
   const virtualParticipants = supabase
     .from('calendar_event_virtual_participants')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', eventId);
 
   const queryBuilder = supabase
     .from('calendar_event_participants')

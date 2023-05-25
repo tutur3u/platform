@@ -473,6 +473,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
               setUserId={setNewParticipantId}
               label=""
               mode={userType === 'virtual' ? 'workspace' : 'platform'}
+              creatable={userType === 'virtual'}
               className="w-full"
               preventPreselect
               clearable
