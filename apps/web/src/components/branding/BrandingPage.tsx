@@ -1,18 +1,20 @@
-import DefaultHead from '../headers/DefaultHead';
+import useTranslation from 'next-translate/useTranslation';
+import HeaderX from '../metadata/HeaderX';
 import LogoTab from './LogoTab';
 
 const LandingPage = () => {
+  const { t } = useTranslation('branding');
   return (
     <>
-      <DefaultHead />
+      <HeaderX label={t('branding')} />
       <div className="mx-4 mb-8 mt-24 flex flex-col gap-9 md:mx-32 lg:mx-64">
         <h1 className="text-4xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-5xl">
-          Branding
+          {t('branding')}
         </h1>
         <section>
           <div>
             <h1 className="mb-5 text-2xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-3xl">
-              Our logo
+              {t('our-logo')}
             </h1>
             <div className="grid grid-cols-2 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:gap-8 xl:grid-cols-4">
               <LogoTab
@@ -50,7 +52,7 @@ const LandingPage = () => {
         <section>
           <div className="">
             <h1 className="mb-5 text-2xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-3xl">
-              Colors
+              {t('colors')}
             </h1>
             <div className="grid grid-cols-2 gap-6 xl:grid-cols-3">
               <div className="h-44 rounded-xl bg-[#4180E9] p-3 text-xl font-bold">
