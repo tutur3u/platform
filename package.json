@@ -7,6 +7,7 @@
     "buildx": "pnpm i && turbo run build",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
+    "devrs": "cd apps/web && pnpm devrs",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
