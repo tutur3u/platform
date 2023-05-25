@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { CalendarEvent } from '../../../../../../../types/primitives/CalendarEvent';
 
@@ -41,7 +41,7 @@ const fetchCategory = async (
   res: NextApiResponse,
   eventId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_calendar_events')
@@ -60,7 +60,7 @@ const updateCategory = async (
   res: NextApiResponse,
   eventId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -88,7 +88,7 @@ const deleteCategory = async (
   res: NextApiResponse,
   eventId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

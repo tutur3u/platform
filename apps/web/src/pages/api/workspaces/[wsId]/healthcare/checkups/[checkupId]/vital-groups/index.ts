@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { VitalGroup } from '../../../../../../../../types/primitives/VitalGroup';
 
@@ -41,7 +41,7 @@ const fetchVitalGroups = async (
   res: NextApiResponse,
   checkupId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('healthcare_checkup_vital_groups')
@@ -59,7 +59,7 @@ const addVitalGroups = async (
   res: NextApiResponse,
   checkupId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -84,7 +84,7 @@ const deleteVitalGroups = async (
   res: NextApiResponse,
   checkupId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/auth-helpers-react';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { AuthRequest, AuthResponse } from '../../../types/AuthData';
 
@@ -46,7 +46,7 @@ const handler = async (
         },
       });
 
-    const supabase = createServerSupabaseClient({
+    const supabase = createPagesServerClient({
       req,
       res,
     });

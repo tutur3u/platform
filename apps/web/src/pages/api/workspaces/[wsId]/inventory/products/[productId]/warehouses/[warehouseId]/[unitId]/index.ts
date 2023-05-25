@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ProductPrice } from '../../../../../../../../../../types/primitives/ProductPrice';
 
@@ -49,7 +49,7 @@ const fetchPrice = async (
   unitId: string,
   warehouseId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('inventory_products')
@@ -72,7 +72,7 @@ const updatePrice = async (
   unitId: string,
   warehouseId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -101,7 +101,7 @@ const deletePrice = async (
   unitId: string,
   warehouseId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

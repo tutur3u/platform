@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ProductUnit } from '../../../../../../../../types/primitives/ProductUnit';
 
@@ -35,7 +35,7 @@ const fetchUnits = async (
   res: NextApiResponse,
   productId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('inventory_units')

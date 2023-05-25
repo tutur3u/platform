@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { UserGroup } from '../../../../../../../types/primitives/UserGroup';
 
@@ -41,7 +41,7 @@ const fetchRoles = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_user_groups_users')
@@ -67,7 +67,7 @@ const addRoles = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -90,7 +90,7 @@ const deleteRoles = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

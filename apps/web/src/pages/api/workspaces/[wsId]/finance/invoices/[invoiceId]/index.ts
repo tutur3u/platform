@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Invoice } from '../../../../../../../types/primitives/Invoice';
 
@@ -41,7 +41,7 @@ const fetchInvoice = async (
   res: NextApiResponse,
   invoiceId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('finance_invoices')
@@ -62,7 +62,7 @@ const updateInvoice = async (
   res: NextApiResponse,
   invoiceId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -91,7 +91,7 @@ const deleteInvoice = async (
   res: NextApiResponse,
   invoiceId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
