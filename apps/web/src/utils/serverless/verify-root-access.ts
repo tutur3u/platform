@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
 
@@ -6,7 +6,7 @@ export const verifyRootAccess = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

@@ -2,11 +2,11 @@ import { PageWithLayoutProps } from '../types/PageWithLayoutProps';
 import { ReactElement } from 'react';
 import Page from '../components/home/LandingPage';
 import DefaultLayout from '../components/layouts/DefaultLayout';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createServerSupabaseClient(ctx);
+  const supabase = createPagesServerClient(ctx);
 
   const {
     data: { session },

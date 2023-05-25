@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -32,7 +32,7 @@ const fetchCount = async (
   res: NextApiResponse,
   groupId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('vital_group_vitals')

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -36,7 +36,7 @@ const fetchBatches = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -73,7 +73,7 @@ const fetchBatches = async (
 };
 
 const createBatch = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

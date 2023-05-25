@@ -1,5 +1,5 @@
 import { Product } from './../../../../../../../../types/primitives/Product';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -40,7 +40,7 @@ const fetchProducts = async (
   res: NextApiResponse,
   batchId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('inventory_batch_products')
@@ -58,7 +58,7 @@ const addProducts = async (
   res: NextApiResponse,
   batchId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -84,7 +84,7 @@ const deleteProducts = async (
   res: NextApiResponse,
   batchId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

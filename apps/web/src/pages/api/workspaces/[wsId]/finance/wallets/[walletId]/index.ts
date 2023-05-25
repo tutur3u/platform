@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Wallet } from '../../../../../../../types/primitives/Wallet';
 
@@ -40,7 +40,7 @@ const fetchWallet = async (
   res: NextApiResponse,
   walletId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_wallets')
@@ -80,7 +80,7 @@ const updateWallet = async (
   res: NextApiResponse,
   walletId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -137,7 +137,7 @@ const deleteWallet = async (
   res: NextApiResponse,
   walletId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

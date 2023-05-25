@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Product } from '../../../../../../../types/primitives/Product';
 
@@ -41,7 +41,7 @@ const fetchProduct = async (
   res: NextApiResponse,
   productId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_products')
@@ -60,7 +60,7 @@ const updateProduct = async (
   res: NextApiResponse,
   productId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -88,7 +88,7 @@ const deleteProduct = async (
   res: NextApiResponse,
   productId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

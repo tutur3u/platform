@@ -84,9 +84,16 @@ pnpm devx
 
 Running `devx` will:
 
+1. Stop the currently running supabase instance and save current data as backup (if there is any)
+2. Install all dependencies
+3. Start a new supabase instance (using backed up data)
+4. Start all Next.js apps in development mode
+
+If you want to have the same procedure without the backup, you can run `pnpm devrs` instead. This will:
+
 1. Stop the currently running supabase instance (if there is any)
 2. Install all dependencies
-3. Start a new supabase instance
+3. Start a new supabase instance (with clean data from seed.sql)
 4. Start all Next.js apps in development mode
 
 > In case you don't want to run a local supabase instance, you can run `pnpm run dev` instead.
@@ -95,11 +102,11 @@ Running `devx` will:
 
 There are 5 seed accounts that are already set up on running the local development stack (formatted as email:password):
 
-1. local@tuturuuu.com:password123
-2. user1@tuturuuu.com:password123
-3. user2@tuturuuu.com:password123
-4. user3@tuturuuu.com:password123
-5. user4@tuturuuu.com:password123
+1. <local@tuturuuu.com>:password123
+2. <user1@tuturuuu.com>:password123
+3. <user2@tuturuuu.com>:password123
+4. <user3@tuturuuu.com>:password123
+5. <user4@tuturuuu.com>:password123
 
 ### Test
 

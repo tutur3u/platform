@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
@@ -12,7 +12,7 @@ import { mutate } from 'swr';
 import AuthEmailSent from '../components/auth/AuthEmailSent';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createServerSupabaseClient(ctx);
+  const supabase = createPagesServerClient(ctx);
 
   const {
     data: { session },

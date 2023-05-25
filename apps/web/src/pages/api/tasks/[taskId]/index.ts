@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Database } from '../../../../types/database.types';
 
@@ -36,7 +36,7 @@ const updateTask = async (
   res: NextApiResponse,
   taskId: string
 ) => {
-  const supabase = createServerSupabaseClient<Database>({
+  const supabase = createPagesServerClient<Database>({
     req,
     res,
   });
@@ -66,7 +66,7 @@ const deleteTask = async (
   res: NextApiResponse,
   taskId: string
 ) => {
-  const supabase = createServerSupabaseClient<Database>({
+  const supabase = createPagesServerClient<Database>({
     req,
     res,
   });

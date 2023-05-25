@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { WorkspaceUser } from '../../../../../../types/primitives/WorkspaceUser';
 
@@ -41,7 +41,7 @@ const fetchWorkspaceUser = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_users')
@@ -62,7 +62,7 @@ const updateWorkspaceUser = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -105,7 +105,7 @@ const deleteWorkspaceUser = async (
   res: NextApiResponse,
   userId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

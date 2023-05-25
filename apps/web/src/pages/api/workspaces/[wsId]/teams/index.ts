@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const fetchProjects = async (
@@ -6,7 +6,7 @@ const fetchProjects = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
     .from('workspace_teams')
@@ -24,7 +24,7 @@ const createProject = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { name } = req.body;
 

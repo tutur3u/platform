@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Database } from '../../../types/database.types';
 
@@ -29,7 +29,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default handler;
 
 const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createServerSupabaseClient<Database>({
+  const supabase = createPagesServerClient<Database>({
     req,
     res,
   });
@@ -97,7 +97,7 @@ const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createServerSupabaseClient<Database>({
+  const supabase = createPagesServerClient<Database>({
     req,
     res,
   });

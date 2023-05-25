@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { GetServerSidePropsContext } from 'next';
 import useTranslation from 'next-translate/useTranslation';
@@ -9,7 +9,7 @@ import LanguageSelector from '../components/selectors/LanguageSelector';
 import { Button, Divider } from '@mantine/core';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createServerSupabaseClient(ctx);
+  const supabase = createPagesServerClient(ctx);
 
   const {
     data: { session },

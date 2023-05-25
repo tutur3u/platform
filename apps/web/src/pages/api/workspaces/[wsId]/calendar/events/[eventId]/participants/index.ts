@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { EventParticipant } from '../../../../../../../../types/primitives/EventParticipant';
 
@@ -41,7 +41,7 @@ const fetchParticipants = async (
   eventId: string,
   type?: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -50,11 +50,13 @@ const fetchParticipants = async (
 
   const platformParticipants = supabase
     .from('calendar_event_platform_participants')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', eventId);
 
   const virtualParticipants = supabase
     .from('calendar_event_virtual_participants')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', eventId);
 
   const queryBuilder = supabase
     .from('calendar_event_participants')
@@ -121,7 +123,7 @@ const createParticipant = async (
   eventId: string,
   type?: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const deleteMember = async (
@@ -8,7 +8,7 @@ const deleteMember = async (
   userId: string,
   invited = false
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { error } = await supabase
     .from(invited ? 'workspace_invites' : 'workspace_members')
@@ -27,7 +27,7 @@ const updateMember = async (
   userId: string,
   invited = false
 ) => {
-  const supabase = createServerSupabaseClient({ req, res });
+  const supabase = createPagesServerClient({ req, res });
 
   const { role, role_title } = req.body;
 

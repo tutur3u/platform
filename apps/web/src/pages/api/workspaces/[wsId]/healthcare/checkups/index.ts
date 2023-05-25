@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Checkup } from '../../../../../../types/primitives/Checkup';
 
@@ -37,7 +37,7 @@ const fetchCheckups = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
@@ -82,7 +82,7 @@ const createCheckup = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient({
+  const supabase = createPagesServerClient({
     req,
     res,
   });

@@ -5,7 +5,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { Avatar, Textarea } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import Image from 'next/image';
 import {
@@ -26,7 +26,7 @@ import NestedLayout from '../../components/layouts/NestedLayout';
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // Create authenticated Supabase Client
-  const supabase = createServerSupabaseClient(ctx);
+  const supabase = createPagesServerClient(ctx);
 
   // Check if we have a session
   const {
