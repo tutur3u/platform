@@ -40,26 +40,26 @@ const LandingPage = () => {
             <h1 className="mb-5 text-2xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-3xl">
               {t('colors')}
             </h1>
-            <div className="grid grid-cols-2 gap-6 xl:grid-cols-3">
-              <div className="h-44 rounded-xl bg-[#4180E9] p-3 text-xl font-bold">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="h-32 rounded-lg bg-[#4180E9] p-3 text-xl font-bold">
                 #4180E9
               </div>
-              <div className="h-44 rounded-xl bg-[#4ACA3F] p-3 text-xl font-bold text-[#26292F]">
+              <div className="h-32 rounded-lg bg-[#4ACA3F] p-3 text-xl font-bold text-[#26292F]">
                 #4ACA3F
               </div>
-              <div className="h-44 rounded-xl bg-[#FB7B05] p-3 text-xl font-bold text-[#26292F]">
+              <div className="h-32 rounded-lg bg-[#FB7B05] p-3 text-xl font-bold text-[#26292F]">
                 #FB7B05
               </div>
-              <div className="h-44 rounded-xl bg-[#E94646] p-3 text-xl font-bold">
+              <div className="h-32 rounded-lg bg-[#E94646] p-3 text-xl font-bold">
                 #E94646
               </div>
-              <div className="h-44 rounded-xl bg-[#26292F] p-3 text-xl font-bold">
+              <div className="h-32 rounded-lg bg-[#26292F] p-3 text-xl font-bold">
                 #26292F
               </div>
-              <div className="h-44 rounded-xl bg-[#FFFFFF] p-3 text-xl font-bold text-[#363636]">
+              <div className="h-32 rounded-lg bg-[#FFFFFF] p-3 text-xl font-bold text-[#363636]">
                 #FFFFFF
               </div>
-              <div className="h-44 rounded-xl bg-[#363636] p-3 text-xl font-bold">
+              <div className="col-span-full h-32 rounded-lg bg-[#363636] p-3 text-xl font-bold xl:col-span-2">
                 #363636
               </div>
             </div>
