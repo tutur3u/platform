@@ -62,9 +62,7 @@ const getTransaction = async (
     description:
       data?.description ||
       (data?.transaction_categories
-        ? Array.isArray(data?.transaction_categories)
-          ? data?.transaction_categories?.[0]?.name
-          : data?.transaction_categories?.name
+        ? data?.transaction_categories?.[0]?.name
         : ''),
     wallet_id: data.wallet_id,
     category_id: data.category_id,

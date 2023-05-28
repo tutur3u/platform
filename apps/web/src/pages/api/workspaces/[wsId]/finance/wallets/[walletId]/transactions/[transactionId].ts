@@ -53,7 +53,7 @@ const updateTransaction = async (
       taken_at,
       category_id,
       wallet_id,
-    })
+    } as Transaction)
     .eq('id', transactionId);
 
   if (error) return res.status(401).json({ error: error.message });
