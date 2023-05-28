@@ -57,7 +57,7 @@ const fetchVitals = async (
       return {
         id,
         value,
-        unit: Array.isArray(healthcare_vitals) ? null : healthcare_vitals?.unit,
+        unit: healthcare_vitals[0]?.unit,
       };
     })
   );

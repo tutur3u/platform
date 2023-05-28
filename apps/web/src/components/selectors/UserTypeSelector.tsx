@@ -5,7 +5,7 @@ import useTranslation from 'next-translate/useTranslation';
 interface Props {
   label?: string;
   placeholder?: string;
-  type: 'platform' | 'virtual';
+  type: 'platform' | 'virtual' | 'groups';
   setType: (type: 'platform' | 'virtual') => void;
   className?: string;
   disabled?: boolean;
@@ -31,9 +31,8 @@ const UserTypeSelector = ({
       value: 'virtual',
     },
     {
-      label: t('group'),
-      value: 'group',
-      disabled: true,
+      label: t('groups'),
+      value: 'groups',
     },
   ];
 

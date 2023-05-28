@@ -83,10 +83,12 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [color, setColor] = useState<SupportedColor>('blue');
 
-  const [userType, setUserType] = useState<'platform' | 'virtual'>('platform');
+  const [userType, setUserType] = useState<'platform' | 'virtual' | 'groups'>(
+    'platform'
+  );
   const [newParticipantId, setNewParticipantId] = useState('');
   const [participantsView, setParticipantsView] = useState<
-    'all' | 'platform' | 'virtual'
+    'all' | 'platform' | 'virtual' | 'groups'
   >('all');
 
   useEffect(() => {
@@ -102,6 +104,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   const { data } = useSWR<{
     platform: number;
     virtual: number;
+    groups: number;
     count: number;
     data: EventParticipant[];
   }>(participantApiPath);
@@ -442,20 +445,31 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             multiple={false}
             value={participantsView}
             onChange={(view) => {
-              setParticipantsView(view as 'all' | 'platform' | 'virtual');
-              if (view !== 'all') setUserType(view as 'platform' | 'virtual');
+              setParticipantsView(
+                view as 'all' | 'platform' | 'virtual' | 'groups'
+              );
+              if (view !== 'all')
+                setUserType(view as 'platform' | 'virtual' | 'groups');
             }}
           >
             <div className="mb-2 flex flex-wrap justify-start gap-2">
               <Chip color="cyan" variant="light" value="all">
-                {t('common:all')} (
-                {(data?.platform || 0) + (data?.virtual || 0)})
+                {t('common:all')}{' '}
+                {data?.platform !== null && data?.virtual !== null
+                  ? `(${(data?.platform || 0) + (data?.virtual || 0)})`
+                  : ''}
               </Chip>
               <Chip color="teal" variant="light" value="platform">
-                {t('platform-users')} ({data?.platform || 0})
+                {t('platform-users')}{' '}
+                {data?.platform !== null ? `(${data?.platform || 0})` : ''}
               </Chip>
               <Chip color="grape" variant="light" value="virtual">
-                {t('virtual-users')} ({data?.virtual || 0})
+                {t('virtual-users')}{' '}
+                {data?.virtual !== null ? `(${data?.virtual || 0})` : ''}
+              </Chip>
+              <Chip color="orange" variant="light" value="groups">
+                {t('user-groups')}{' '}
+                {data?.groups !== null ? `(${data?.groups || 0})` : ''}
               </Chip>
             </div>
           </Chip.Group>
@@ -468,17 +482,21 @@ const EventDetailsPage: PageWithLayoutProps = () => {
               className="w-full md:max-w-[12rem]"
               disabled={participantsView !== 'all'}
             />
-            <WorkspaceUserSelector
-              userId={newParticipantId}
-              setUserId={setNewParticipantId}
-              label=""
-              mode={userType === 'virtual' ? 'workspace' : 'platform'}
-              creatable={userType === 'virtual'}
-              className="w-full"
-              preventPreselect
-              clearable
-              notEmpty
-            />
+            {userType !== 'groups' ? (
+              <WorkspaceUserSelector
+                userId={newParticipantId}
+                setUserId={setNewParticipantId}
+                label=""
+                mode={userType === 'virtual' ? 'workspace' : 'platform'}
+                creatable={userType === 'virtual'}
+                className="w-full"
+                preventPreselect
+                clearable
+                notEmpty
+              />
+            ) : (
+              <div></div>
+            )}
             <Button
               variant="subtle"
               className={`w-full border md:w-fit ${

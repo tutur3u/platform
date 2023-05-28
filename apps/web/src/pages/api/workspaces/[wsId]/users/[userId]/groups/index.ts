@@ -54,9 +54,7 @@ const fetchRoles = async (
   return res.status(200).json(
     data.map((p) => ({
       id: p.id,
-      name: Array.isArray(p.workspace_user_groups)
-        ? p?.workspace_user_groups?.[0]?.name
-        : p?.workspace_user_groups?.name,
+      name: p?.workspace_user_groups?.[0]?.name,
       created_at: p.created_at,
     }))
   );
