@@ -5,14 +5,14 @@ import setLanguage from 'next-translate/setLanguage';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  fullWidth?: boolean;
+  fullWidthOnMobile?: boolean;
   transparent?: boolean;
   hideOnMobile?: boolean;
   onChange?: () => void;
 }
 
 const LanguageSelector = ({
-  fullWidth = false,
+  fullWidthOnMobile = false,
   transparent = false,
   hideOnMobile = false,
   onChange,
@@ -44,9 +44,9 @@ const LanguageSelector = ({
         if (onChange) onChange();
       }}
       data={data}
-      className={`font-semibold ${fullWidth ? 'w-full' : 'w-40'} ${
-        hideOnMobile ? 'hidden md:block' : ''
-      }`}
+      className={`font-semibold ${
+        fullWidthOnMobile ? 'w-full md:w-40' : 'w-40'
+      } ${hideOnMobile ? 'hidden md:block' : ''}`}
       classNames={{
         input: transparent
           ? 'text-zinc-300 bg-zinc-300/10 border-zinc-300/10'

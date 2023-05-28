@@ -3,11 +3,9 @@ import Link from 'next/link';
 import { useUser } from '@supabase/auth-helpers-react';
 import UserProfilePopover from './UserProfilePopover';
 import useTranslation from 'next-translate/useTranslation';
-import { Bars3Icon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
-import { ActionIcon, Popover } from '@mantine/core';
+import { Bars3Icon } from '@heroicons/react/24/solid';
+import { Popover } from '@mantine/core';
 import { useState } from 'react';
-import LanguageSelector from '../selectors/LanguageSelector';
-import { useAppearance } from '../../hooks/useAppearance';
 
 interface NavbarProps {
   hideNavLinks?: boolean;
@@ -15,7 +13,6 @@ interface NavbarProps {
 
 const Navbar = ({ hideNavLinks }: NavbarProps) => {
   const { t } = useTranslation();
-  const { theme, changeTheme } = useAppearance();
 
   const user = useUser();
 
@@ -28,31 +25,20 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
   const close = () => setOpened(false);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-white md:px-32 lg:px-64">
-      <div className="flex items-center gap-2">
-        <Link href="/" className="flex gap-2">
+    <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg dark:border-zinc-800 dark:bg-[#111113]/80 dark:text-white md:px-32 lg:px-64">
+      <div className="flex items-center gap-8">
+        <Link href="/" className="flex items-center gap-2">
           <Image
             src="/media/logos/transparent.png"
             width={320}
             height={320}
             alt="logo"
-            className="h-8 w-8"
+            className="h-7 w-7"
           />
-          <div className="mr-4 text-2xl dark:hover:text-blue-200">Tuturuuu</div>
+          <div className="text-2xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
+            Tuturuuu
+          </div>
         </Link>
-
-        <LanguageSelector hideOnMobile />
-        <ActionIcon
-          onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="border border-zinc-300 bg-transparent hover:bg-zinc-200 dark:border-zinc-300/10 dark:bg-[#25262b] dark:hover:bg-[#454751]/40"
-          size="lg"
-        >
-          {theme === 'dark' ? (
-            <SunIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
-          ) : (
-            <MoonIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
-          )}
-        </ActionIcon>
       </div>
 
       {hideNavLinks ? null : user ? (
@@ -105,7 +91,6 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
               >
                 {getStarted}
               </Link>
-              <LanguageSelector fullWidth onChange={close} />
             </Popover.Dropdown>
           </Popover>
         </>

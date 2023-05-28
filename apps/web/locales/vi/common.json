@@ -41,5 +41,10 @@
   "pending-completion": "Đang chờ hoàn tất",
   "return": "Quay lại",
   "creating": "Đang tạo",
-  "unnamed-workspace": "Không có tên"
+  "unnamed-workspace": "Không có tên",
+  "resources": "Tài nguyên",
+  "branding": "Thương hiệu",
+  "developers": "Nhà phát triển",
+  "open-source": "Mã nguồn mở",
+  "copied": "Đã sao chép"
 }
