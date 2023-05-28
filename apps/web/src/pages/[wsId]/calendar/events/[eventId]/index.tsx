@@ -482,17 +482,21 @@ const EventDetailsPage: PageWithLayoutProps = () => {
               className="w-full md:max-w-[12rem]"
               disabled={participantsView !== 'all'}
             />
-            <WorkspaceUserSelector
-              userId={newParticipantId}
-              setUserId={setNewParticipantId}
-              label=""
-              mode={userType === 'virtual' ? 'workspace' : 'platform'}
-              creatable={userType === 'virtual'}
-              className="w-full"
-              preventPreselect
-              clearable
-              notEmpty
-            />
+            {userType !== 'groups' ? (
+              <WorkspaceUserSelector
+                userId={newParticipantId}
+                setUserId={setNewParticipantId}
+                label=""
+                mode={userType === 'virtual' ? 'workspace' : 'platform'}
+                creatable={userType === 'virtual'}
+                className="w-full"
+                preventPreselect
+                clearable
+                notEmpty
+              />
+            ) : (
+              <div></div>
+            )}
             <Button
               variant="subtle"
               className={`w-full border md:w-fit ${

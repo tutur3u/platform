@@ -67,11 +67,7 @@ const getTransfer = async (
   return res.status(200).json({
     from_transaction_id: toData?.from_transaction_id,
     to_transaction_id: fromData?.to_transaction_id,
-    origin_wallet_id: Array.isArray(toData?.origin_wallet)
-      ? toData?.origin_wallet[0]?.wallet_id
-      : toData?.origin_wallet?.wallet_id,
-    destination_wallet_id: Array.isArray(fromData?.destination_wallet)
-      ? fromData?.destination_wallet[0]?.wallet_id
-      : fromData?.destination_wallet?.wallet_id,
+    origin_wallet_id: toData?.origin_wallet[0]?.wallet_id,
+    destination_wallet_id: fromData?.destination_wallet[0]?.wallet_id,
   });
 };

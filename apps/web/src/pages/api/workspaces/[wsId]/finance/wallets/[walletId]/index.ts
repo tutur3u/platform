@@ -61,15 +61,9 @@ const fetchWallet = async (
     type: data.type,
     report_opt_in: data.report_opt_in,
 
-    statement_date: Array.isArray(data.credit_wallets)
-      ? null
-      : data.credit_wallets?.statement_date,
-    payment_date: Array.isArray(data.credit_wallets)
-      ? null
-      : data.credit_wallets?.payment_date,
-    limit: Array.isArray(data.credit_wallets)
-      ? null
-      : data.credit_wallets?.limit,
+    statement_date: data.credit_wallets[0]?.statement_date,
+    payment_date: data.credit_wallets[0]?.payment_date,
+    limit: data.credit_wallets[0]?.limit,
   } as Wallet;
 
   return res.status(200).json(newData);

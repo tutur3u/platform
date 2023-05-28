@@ -54,12 +54,8 @@ const fetchVitals = async (
   return res.status(200).json(
     data.map((v) => ({
       id: v.id,
-      name: Array.isArray(v.healthcare_vitals)
-        ? v?.healthcare_vitals?.[0]?.name
-        : v?.healthcare_vitals?.name,
-      unit: Array.isArray(v.healthcare_vitals)
-        ? v?.healthcare_vitals?.[0]?.unit
-        : v?.healthcare_vitals?.unit,
+      name: v?.healthcare_vitals?.[0]?.name,
+      unit: v?.healthcare_vitals?.[0]?.unit,
     }))
   );
 };
