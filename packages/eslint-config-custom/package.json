@@ -10,7 +10,7 @@
     "eslint-config-turbo": "latest"
   },
   "devDependencies": {
-    "next": "^13.4.3"
+    "next": "^13.4.4"
   },
   "publishConfig": {
     "access": "public"
