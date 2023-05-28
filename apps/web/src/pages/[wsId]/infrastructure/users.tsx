@@ -56,10 +56,10 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
     ? `/api/users?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id ? `/api/users/count` : null;
+  const { data } = useSWR<{ data: User[]; count: number }>(apiPath);
 
-  const { data: users } = useSWR<User[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  const users = data?.data;
+  const count = data?.count;
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',
@@ -98,7 +98,9 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          {users && users?.map((u) => <UserCard key={u.id} user={u} />)}
+          {users?.map((u) => (
+            <UserCard key={u.id} user={u} />
+          ))}
         </div>
       </div>
     </>
