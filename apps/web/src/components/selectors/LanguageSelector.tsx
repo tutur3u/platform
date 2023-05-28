@@ -5,6 +5,7 @@ import setLanguage from 'next-translate/setLanguage';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
+  fullWidth?: boolean;
   fullWidthOnMobile?: boolean;
   transparent?: boolean;
   hideOnMobile?: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const LanguageSelector = ({
+  fullWidth = false,
   fullWidthOnMobile = false,
   transparent = false,
   hideOnMobile = false,
@@ -45,7 +47,7 @@ const LanguageSelector = ({
       }}
       data={data}
       className={`font-semibold ${
-        fullWidthOnMobile ? 'w-full md:w-40' : 'w-40'
+        fullWidthOnMobile ? 'w-full md:w-40' : fullWidth ? 'w-full' : 'w-40'
       } ${hideOnMobile ? 'hidden md:block' : ''}`}
       classNames={{
         input: transparent
