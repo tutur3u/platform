@@ -41,5 +41,10 @@
   "pending-completion": "Pending completion",
   "return": "Return",
   "creating": "Creating",
-  "unnamed-workspace": "Unnamed Workspace"
+  "unnamed-workspace": "Unnamed Workspace",
+  "resources": "Resources",
+  "branding": "Branding",
+  "developers": "Developers",
+  "open-source": "Open Source",
+  "copied": "Copied"
 }
