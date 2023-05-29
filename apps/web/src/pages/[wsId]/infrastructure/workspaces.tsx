@@ -52,7 +52,7 @@ const InfrastructureWorkspacesPage: PageWithLayoutProps = () => {
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'infrastructure-workspaces-per-page',
-    defaultValue: 15,
+    defaultValue: 16,
   });
 
   const apiPath = ws?.id
@@ -77,6 +77,7 @@ const InfrastructureWorkspacesPage: PageWithLayoutProps = () => {
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
+            options={[1, 4, 8, 12, 16, 36, 56, 76, 96]}
             items={itemsPerPage}
             setItems={(size) => {
               setPage(1);
