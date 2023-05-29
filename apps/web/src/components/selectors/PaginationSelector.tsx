@@ -7,42 +7,15 @@ export type Mode = 'list' | 'grid';
 interface Props {
   items: number;
   setItems: (items: number) => void;
+  options?: number[];
 }
 
-const PaginationSelector = ({ items, setItems }: Props) => {
+const PaginationSelector = ({ items, setItems, options }: Props) => {
   const { t } = useTranslation('pagination');
 
-  const data = [
-    {
-      value: '1',
-    },
-    {
-      value: '3',
-    },
-    {
-      value: '7',
-    },
-    {
-      value: '11',
-    },
-    {
-      value: '15',
-    },
-    {
-      value: '35',
-    },
-    {
-      value: '55',
-    },
-    {
-      value: '75',
-    },
-    {
-      value: '95',
-    },
-  ].map((item) => ({
-    ...item,
-    label: `${item.value} ${t('items')}`,
+  const data = (options ?? [1, 3, 7, 11, 15, 35, 55, 75, 95]).map((val) => ({
+    value: val.toString(),
+    label: `${val} ${t('items')}`,
   }));
 
   return (
