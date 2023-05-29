@@ -68,7 +68,7 @@ Then, follow these steps:
 
 5. Start the Next.js dev server: `pnpm dev`
 
-6. Your Web Application will be running on http://localhost:7803 and the dashboard on http://localhost:8003
+6. Your Web Application will be running on <http://localhost:7803> and the dashboard on <http://localhost:8003>
 
 There are 5 seed accounts that are already set up on running the local development stack (formatted as email:password):
 

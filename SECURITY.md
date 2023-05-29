@@ -27,4 +27,4 @@ Security is a top priority at Tuturuuu. While we invest heavily in proactively p
 
 ## Summary
 
-In summary, we appreciate any responsible assistance in improving the security of our systems and services. Working together, we can build a more robust and trusted experience for all Tuturuuu users. Please email security@tuturuuu.com to report any discovered vulnerabilities or with any questions.
+In summary, we appreciate any responsible assistance in improving the security of our systems and services. Working together, we can build a more robust and trusted experience for all Tuturuuu users. Please email <security@tuturuuu.com> to report any discovered vulnerabilities or with any questions.
