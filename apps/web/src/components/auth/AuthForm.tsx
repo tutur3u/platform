@@ -7,9 +7,7 @@ import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 import { useSessionContext } from '@supabase/auth-helpers-react';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { DEV_MODE } from '../../constants/common';
 import { mutate } from 'swr';
 
 interface AuthFormProps {
@@ -106,18 +104,18 @@ const AuthForm = ({
     setSubmitting(false);
   };
 
-  const SupabaseAuthOptions = {
-    redirectTo: DEV_MODE
-      ? 'http://localhost:7803/onboarding'
-      : 'https://tuturuuu.com/onboarding',
-  };
+  // const SupabaseAuthOptions = {
+  //   redirectTo: DEV_MODE
+  //     ? 'http://localhost:7803/onboarding'
+  //     : 'https://tuturuuu.com/onboarding',
+  // };
 
-  async function handleSignInWithGoogle() {
-    await supabaseClient.auth.signInWithOAuth({
-      provider: 'google',
-      options: SupabaseAuthOptions,
-    });
-  }
+  // async function handleSignInWithGoogle() {
+  //   await supabaseClient.auth.signInWithOAuth({
+  //     provider: 'google',
+  //     options: SupabaseAuthOptions,
+  //   });
+  // }
 
   const ctaText = submitting ? submittingLabel : submitLabel;
 
@@ -243,7 +241,7 @@ const AuthForm = ({
             </div>
           )}
 
-          {!recoveryMode && !resetPasswordMode && (
+          {/* {!recoveryMode && !resetPasswordMode && (
             <>
               <Divider className="w-full border-zinc-300/10" variant="dashed" />
               <div className="flex items-center justify-center gap-2">
@@ -261,7 +259,7 @@ const AuthForm = ({
                 </Button>
               </div>
             </>
-          )}
+          )} */}
 
           <Divider className="w-full border-zinc-300/10" />
         </div>

@@ -41,11 +41,11 @@ const LandingPage = () => {
             {t('colors')}
           </h1>
 
-          <div className="grid grid-cols-2 gap-4 text-xl font-bold lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 font-bold md:text-lg lg:grid-cols-3 xl:grid-cols-4 xl:text-xl">
             <CopyButton value="#4180E9">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#4180E9] p-16"
+                  className="h-32 rounded-lg bg-[#4180E9] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -56,7 +56,7 @@ const LandingPage = () => {
             <CopyButton value="#4ACA3F">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#4ACA3F] p-16"
+                  className="h-32 rounded-lg bg-[#4ACA3F] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -67,7 +67,7 @@ const LandingPage = () => {
             <CopyButton value="#FB7B05">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#FB7B05] p-16"
+                  className="h-32 rounded-lg bg-[#FB7B05] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -78,7 +78,7 @@ const LandingPage = () => {
             <CopyButton value="#E94646">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#E94646] p-16"
+                  className="h-32 rounded-lg bg-[#E94646] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -89,7 +89,7 @@ const LandingPage = () => {
             <CopyButton value="#26292F">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#26292F] p-16"
+                  className="h-32 rounded-lg bg-[#26292F] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -100,7 +100,7 @@ const LandingPage = () => {
             <CopyButton value="#FFFFFF">
               {({ copied, copy }) => (
                 <Button
-                  className="rounded-lg bg-[#FFFFFF] p-16 text-[#363636]"
+                  className="h-32 rounded-lg bg-[#FFFFFF] text-[#363636] md:h-48"
                   onClick={copy}
                   unstyled
                 >
@@ -111,7 +111,7 @@ const LandingPage = () => {
             <CopyButton value="#363636">
               {({ copied, copy }) => (
                 <Button
-                  className="col-span-full rounded-lg bg-[#363636] p-16 xl:col-span-2"
+                  className="col-span-full h-32 rounded-lg bg-[#363636] md:h-48 xl:col-span-2"
                   onClick={copy}
                   unstyled
                 >
