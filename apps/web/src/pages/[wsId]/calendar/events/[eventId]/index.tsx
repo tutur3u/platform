@@ -24,6 +24,7 @@ import WorkspaceUserSelector from '../../../../../components/selectors/Workspace
 import { UserPlusIcon } from '@heroicons/react/24/solid';
 import UserTypeSelector from '../../../../../components/selectors/UserTypeSelector';
 import { showNotification } from '@mantine/notifications';
+import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -83,12 +84,15 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [color, setColor] = useState<SupportedColor>('blue');
 
-  const [userType, setUserType] = useState<'platform' | 'virtual' | 'groups'>(
+  const [userType, setUserType] = useState<'platform' | 'virtual' | 'group'>(
     'platform'
   );
+
   const [newParticipantId, setNewParticipantId] = useState('');
+  const [newGroupId, setNewGroupId] = useState('');
+
   const [participantsView, setParticipantsView] = useState<
-    'all' | 'platform' | 'virtual' | 'groups'
+    'all' | 'platform' | 'virtual' | 'group'
   >('all');
 
   useEffect(() => {
@@ -274,16 +278,22 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   };
 
   const inviteParticipant = async () => {
-    if (!newParticipantId || !apiPath) return;
+    if ((!newParticipantId && !newGroupId) || !apiPath) return;
 
     const res = await fetch(`${apiPath}/participants?type=${userType}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        user_id: newParticipantId,
-      }),
+      body: JSON.stringify(
+        newParticipantId
+          ? {
+              user_id: newParticipantId,
+            }
+          : {
+              group_id: newGroupId,
+            }
+      ),
     });
 
     if (res.ok) {
@@ -446,10 +456,10 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             value={participantsView}
             onChange={(view) => {
               setParticipantsView(
-                view as 'all' | 'platform' | 'virtual' | 'groups'
+                view as 'all' | 'platform' | 'virtual' | 'group'
               );
               if (view !== 'all')
-                setUserType(view as 'platform' | 'virtual' | 'groups');
+                setUserType(view as 'platform' | 'virtual' | 'group');
             }}
           >
             <div className="mb-2 flex flex-wrap justify-start gap-2">
@@ -479,10 +489,10 @@ const EventDetailsPage: PageWithLayoutProps = () => {
               type={userType}
               setType={setUserType}
               label=""
-              className="w-full md:max-w-[12rem]"
+              className="w-full md:max-w-[14rem]"
               disabled={participantsView !== 'all'}
             />
-            {userType !== 'groups' ? (
+            {userType !== 'group' ? (
               <WorkspaceUserSelector
                 userId={newParticipantId}
                 setUserId={setNewParticipantId}
@@ -495,15 +505,23 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                 notEmpty
               />
             ) : (
-              <div></div>
+              <UserGroupSelector
+                group={{ id: newGroupId }}
+                setGroup={(group) => setNewGroupId(group?.id || '')}
+                className="w-full"
+                creatable={false}
+                preventPreselect
+                clearable
+                hideLabel
+              />
             )}
             <Button
               variant="subtle"
               className={`w-full border md:w-fit ${
-                newParticipantId &&
+                (newParticipantId || newGroupId) &&
                 'border-blue-500/10 bg-blue-500/10 hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:hover:bg-blue-300/20'
               }`}
-              disabled={!newParticipantId}
+              disabled={!newParticipantId && !newGroupId}
               onClick={inviteParticipant}
             >
               <UserPlusIcon className="h-5 w-5" />

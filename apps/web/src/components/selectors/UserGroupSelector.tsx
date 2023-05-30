@@ -17,6 +17,8 @@ interface Props {
   required?: boolean;
   searchable?: boolean;
   creatable?: boolean;
+  clearable?: boolean;
+  preventPreselect?: boolean;
 }
 
 const UserGroupSelector = ({
@@ -31,6 +33,8 @@ const UserGroupSelector = ({
   required = false,
   searchable = true,
   creatable = true,
+  clearable = true,
+  preventPreselect = false,
 }: Props) => {
   const { ws } = useWorkspaces();
 
@@ -49,12 +53,12 @@ const UserGroupSelector = ({
   ];
 
   useEffect(() => {
-    if (!groups || !setGroup) return;
+    if (!groups || !setGroup || preventPreselect) return;
 
     if (groups.length === 1 && !group?.id) setGroup(groups[0]);
     else if (group?.id && !groups?.find((p) => p.id === group.id))
       setGroup(null);
-  }, [group, groups, setGroup]);
+  }, [preventPreselect, group, groups, setGroup]);
 
   const create = async ({
     group,
@@ -149,6 +153,7 @@ const UserGroupSelector = ({
       required={required}
       searchable={searchable}
       creatable={!!ws?.id && creatable}
+      clearable={clearable}
     />
   );
 };

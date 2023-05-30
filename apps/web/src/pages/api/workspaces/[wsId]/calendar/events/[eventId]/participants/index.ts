@@ -132,7 +132,9 @@ const createParticipant = async (
 
   const { data, error } = await supabase
     .from(
-      type === 'virtual'
+      type === 'group'
+        ? 'calendar_event_participant_groups'
+        : type === 'virtual'
         ? 'calendar_event_virtual_participants'
         : 'calendar_event_platform_participants'
     )
