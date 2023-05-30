@@ -61,7 +61,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
         </>
       )}
 
-      <div className="flex flex-col items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 lg:px-64">
+      <div className="flex flex-col items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
           <Link
             href="/"
@@ -132,7 +132,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
           </div>
         </div>
 
-        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:gap-16">
+        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:gap-32 lg:gap-32">
           <div className="flex flex-col md:items-start">
             <div className="text-xl font-semibold">{t('common:resources')}</div>
             <div>
@@ -163,7 +163,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
       <Divider className="mt-8 border-zinc-500/30 dark:border-zinc-500/10" />
 
-      <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center text-zinc-700 dark:text-zinc-400 md:flex-row md:px-32 lg:px-64">
+      <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center text-zinc-700 dark:text-zinc-400 md:flex-row md:px-32 xl:px-64">
         <div>{copyright}</div>
 
         <div className="flex items-center gap-2">
