@@ -1,29 +1,44 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { EventParticipant } from '../../../../../../../../types/primitives/EventParticipant';
+import {
+  EventParticipant,
+  EventParticipantType,
+} from '../../../../../../../../types/primitives/EventParticipant';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { eventId, userId, type } = req.query;
+    const { eventId, participantId, type } = req.query;
 
     if (!eventId || typeof eventId !== 'string')
       throw new Error('Invalid eventId');
 
-    if (!userId || typeof userId !== 'string')
-      throw new Error('Invalid userId');
+    if (!participantId || typeof participantId !== 'string')
+      throw new Error('Invalid participantId');
 
     if (type && typeof type !== 'string') throw new Error('Invalid type');
 
     switch (req.method) {
       case 'GET':
-        return await fetchParticipant(req, res, eventId, userId);
+        return await fetchParticipant(req, res, eventId, participantId);
 
       case 'PUT': {
-        return await updateParticipant(req, res, eventId, userId, type);
+        return await updateParticipant(
+          req,
+          res,
+          eventId,
+          participantId,
+          type as EventParticipantType
+        );
       }
 
       case 'DELETE': {
-        return await deleteParticipant(req, res, eventId, userId, type);
+        return await deleteParticipant(
+          req,
+          res,
+          eventId,
+          participantId,
+          type as EventParticipantType
+        );
       }
 
       default:
@@ -45,15 +60,15 @@ const fetchParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
   eventId: string,
-  userId: string
+  participantId: string
 ) => {
   const supabase = createPagesServerClient({ req, res });
 
   const { data, error } = await supabase
-    .from('workspace_calendar_events')
-    .select('event_id, user_id, going, type, display_name, handle')
+    .from('calendar_event_participants')
+    .select('going')
     .eq('event_id', eventId)
-    .eq('user_id', userId)
+    .eq('participant_id', participantId)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -66,8 +81,8 @@ const updateParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
   eventId: string,
-  userId: string,
-  type?: string
+  participantId: string,
+  type?: EventParticipantType
 ) => {
   const supabase = createPagesServerClient({
     req,
@@ -78,7 +93,9 @@ const updateParticipant = async (
 
   const { error } = await supabase
     .from(
-      type === 'virtual'
+      type === 'user_group'
+        ? 'calendar_event_participant_groups'
+        : type === 'virtual_user'
         ? 'calendar_event_virtual_participants'
         : 'calendar_event_platform_participants'
     )
@@ -87,7 +104,7 @@ const updateParticipant = async (
       going,
     } as EventParticipant)
     .eq('event_id', eventId)
-    .eq('user_id', userId);
+    .eq(type === 'user_group' ? 'group_id' : 'user_id', participantId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
@@ -97,8 +114,8 @@ const deleteParticipant = async (
   req: NextApiRequest,
   res: NextApiResponse,
   eventId: string,
-  userId: string,
-  type?: string
+  participantId: string,
+  type?: EventParticipantType
 ) => {
   const supabase = createPagesServerClient({
     req,
@@ -107,13 +124,15 @@ const deleteParticipant = async (
 
   const { error } = await supabase
     .from(
-      type === 'virtual'
+      type === 'user_group'
+        ? 'calendar_event_participant_groups'
+        : type === 'virtual_user'
         ? 'calendar_event_virtual_participants'
         : 'calendar_event_platform_participants'
     )
     .delete()
     .eq('event_id', eventId)
-    .eq('user_id', userId);
+    .eq(type === 'user_group' ? 'group_id' : 'user_id', participantId);
 
   if (error) return res.status(401).json({ error: error.message });
   return res.status(200).json({});
