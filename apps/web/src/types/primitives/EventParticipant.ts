@@ -1,7 +1,14 @@
+export type EventParticipantType =
+  | 'platform_user'
+  | 'virtual_user'
+  | 'user_group';
+
 export interface EventParticipant {
   event_id: string;
-  user_id: string;
-  type: 'virtual' | 'platform';
+  participant_id: string;
+  group_id?: string;
+  user_id?: string;
+  type: EventParticipantType;
   display_name?: string;
   handle?: string;
   role?: string;

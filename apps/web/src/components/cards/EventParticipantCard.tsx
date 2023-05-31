@@ -1,8 +1,8 @@
 import { CheckIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
 import { EventParticipant } from '../../types/primitives/EventParticipant';
-import { mutate } from 'swr';
-import { Loader } from '@mantine/core';
+import { Button, Loader } from '@mantine/core';
+import useSWR, { mutate } from 'swr';
 
 interface Props {
   wsId: string;
@@ -17,23 +17,33 @@ const EventParticipantCard = ({
   className,
   mutatePath,
 }: Props) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [going, setGoing] = useState<boolean | null>(
-    participant?.going ?? null
-  );
-
-  const [prevGoing, setPrevGoing] = useState<boolean | null>(
-    participant?.going ?? null
-  );
+  const [going, setGoing] = useState<boolean | null>(null);
+  const [prevGoing, setPrevGoing] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (going !== null) setPrevGoing(going);
   }, [going]);
 
-  const apiPath = `/api/workspaces/${wsId}/calendar/events/${participant.event_id}/participants/${participant.user_id}?type=${participant.type}`;
+  const apiPath =
+    wsId && participant
+      ? `/api/workspaces/${wsId}/calendar/events/${participant.event_id}/participants/${participant.participant_id}?type=${participant.type}`
+      : null;
+
+  const { data: event } = useSWR<EventParticipant>(apiPath);
+
+  useEffect(() => {
+    if (event) {
+      setGoing(event?.going ?? null);
+      setPrevGoing(event?.going ?? null);
+      setLoading(false);
+    }
+  }, [event]);
 
   const deleteParticipant = async () => {
+    if (!apiPath || !mutatePath) return;
+
     setLoading(true);
 
     const res = await fetch(apiPath, {
@@ -42,14 +52,14 @@ const EventParticipantCard = ({
 
     // wait for 200ms to prevent flickering
     await new Promise((resolve) => setTimeout(resolve, 200));
-
-    if (res.ok) {
-      mutate(mutatePath);
-    } else setLoading(false);
+    if (res.ok) mutate(mutatePath);
+    else setLoading(false);
   };
 
   useEffect(() => {
     const updateParticipant = async (going: boolean | null) => {
+      if (!apiPath || !mutatePath) return;
+
       setLoading(true);
 
       const res = await fetch(apiPath, {
@@ -64,10 +74,7 @@ const EventParticipantCard = ({
 
       // wait for 200ms to prevent flickering
       await new Promise((resolve) => setTimeout(resolve, 200));
-
-      if (res.ok) {
-        mutate(mutatePath);
-      }
+      if (res.ok) mutate(mutatePath);
 
       setLoading(false);
     };
@@ -82,7 +89,7 @@ const EventParticipantCard = ({
     mutatePath,
     participant.event_id,
     participant.type,
-    participant.user_id,
+    participant.participant_id,
     wsId,
   ]);
 
@@ -102,23 +109,24 @@ const EventParticipantCard = ({
           <>
             {going === null && (
               <>
-                <button
+                <Button
                   className="rounded border border-zinc-300/5 bg-zinc-300/5 p-1 text-zinc-300 transition hover:text-zinc-300/50"
                   onClick={deleteParticipant}
+                  unstyled
                 >
                   <TrashIcon className="h-5 w-5" />
-                </button>
+                </Button>
 
-                {/* <button
+                {/* <Button
                   onClick={() => setGoing(prevGoing)}
                   className="rounded border border-zinc-300/5 bg-zinc-300/5 p-1 text-zinc-300 transition hover:text-zinc-300/50"
                 >
                   <Bars3BottomLeftIcon className="h-5 w-5" />
-                </button> */}
+                </Button> */}
               </>
             )}
-            {going !== true && (
-              <button
+            {participant?.type !== 'user_group' && going !== true && (
+              <Button
                 onClick={() =>
                   setGoing((prev) => (prev === null ? false : null))
                 }
@@ -127,12 +135,13 @@ const EventParticipantCard = ({
                     ? 'border-red-300/10 bg-red-300/10 text-red-300'
                     : 'border-zinc-300/5 bg-zinc-300/5 text-zinc-300 hover:text-zinc-300/50'
                 }`}
+                unstyled
               >
                 <XMarkIcon className="h-5 w-5" />
-              </button>
+              </Button>
             )}
-            {going !== false && (
-              <button
+            {participant?.type !== 'user_group' && going !== false && (
+              <Button
                 onClick={() =>
                   setGoing((prev) => (prev === null ? true : null))
                 }
@@ -141,9 +150,10 @@ const EventParticipantCard = ({
                     ? 'border-green-300/10 bg-green-300/10 text-green-300'
                     : 'border-zinc-300/5 bg-zinc-300/5 text-zinc-300 hover:text-zinc-300/50'
                 }`}
+                unstyled
               >
                 <CheckIcon className="h-5 w-5" />
-              </button>
+              </Button>
             )}
           </>
         )}

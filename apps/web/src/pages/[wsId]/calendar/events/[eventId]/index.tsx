@@ -84,15 +84,15 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [color, setColor] = useState<SupportedColor>('blue');
 
-  const [userType, setUserType] = useState<'platform' | 'virtual' | 'group'>(
-    'platform'
-  );
+  const [userType, setUserType] = useState<
+    'platform_user' | 'virtual_user' | 'user_group'
+  >('platform_user');
 
   const [newParticipantId, setNewParticipantId] = useState('');
   const [newGroupId, setNewGroupId] = useState('');
 
   const [participantsView, setParticipantsView] = useState<
-    'all' | 'platform' | 'virtual' | 'group'
+    'all' | 'platform_user' | 'virtual_user' | 'user_group'
   >('all');
 
   useEffect(() => {
@@ -191,7 +191,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
   const isDirty = () => {
     if (title !== event?.title) return true;
     if (description !== event?.description) return true;
-    if (color !== event?.color?.toLowerCase()) return true;
+    if (color !== (event?.color?.toLowerCase() || 'blue')) return true;
 
     if (
       startDate &&
@@ -285,21 +285,17 @@ const EventDetailsPage: PageWithLayoutProps = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(
-        newParticipantId
-          ? {
-              user_id: newParticipantId,
-            }
-          : {
-              group_id: newGroupId,
-            }
-      ),
+      body: JSON.stringify({
+        participant_id: newParticipantId || newGroupId,
+      }),
     });
 
     if (res.ok) {
-      mutate(apiPath);
       mutate(participantApiPath);
+      mutate(apiPath);
+
       setNewParticipantId('');
+      setNewGroupId('');
     } else {
       showNotification({
         color: 'red',
@@ -456,28 +452,34 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             value={participantsView}
             onChange={(view) => {
               setParticipantsView(
-                view as 'all' | 'platform' | 'virtual' | 'group'
+                view as 'all' | 'platform_user' | 'virtual_user' | 'user_group'
               );
               if (view !== 'all')
-                setUserType(view as 'platform' | 'virtual' | 'group');
+                setUserType(
+                  view as 'platform_user' | 'virtual_user' | 'user_group'
+                );
             }}
           >
             <div className="mb-2 flex flex-wrap justify-start gap-2">
               <Chip color="cyan" variant="light" value="all">
                 {t('common:all')}{' '}
                 {data?.platform !== null && data?.virtual !== null
-                  ? `(${(data?.platform || 0) + (data?.virtual || 0)})`
+                  ? `(${
+                      (data?.platform || 0) +
+                      (data?.virtual || 0) +
+                      (data?.groups || 0)
+                    })`
                   : ''}
               </Chip>
-              <Chip color="teal" variant="light" value="platform">
+              <Chip color="teal" variant="light" value="platform_user">
                 {t('platform-users')}{' '}
                 {data?.platform !== null ? `(${data?.platform || 0})` : ''}
               </Chip>
-              <Chip color="grape" variant="light" value="virtual">
+              <Chip color="grape" variant="light" value="virtual_user">
                 {t('virtual-users')}{' '}
                 {data?.virtual !== null ? `(${data?.virtual || 0})` : ''}
               </Chip>
-              <Chip color="orange" variant="light" value="groups">
+              <Chip color="orange" variant="light" value="user_group">
                 {t('user-groups')}{' '}
                 {data?.groups !== null ? `(${data?.groups || 0})` : ''}
               </Chip>
@@ -492,13 +494,13 @@ const EventDetailsPage: PageWithLayoutProps = () => {
               className="w-full md:max-w-[14rem]"
               disabled={participantsView !== 'all'}
             />
-            {userType !== 'group' ? (
+            {userType !== 'user_group' ? (
               <WorkspaceUserSelector
                 userId={newParticipantId}
                 setUserId={setNewParticipantId}
                 label=""
-                mode={userType === 'virtual' ? 'workspace' : 'platform'}
-                creatable={userType === 'virtual'}
+                mode={userType === 'virtual_user' ? 'workspace' : 'platform'}
+                creatable={userType === 'virtual_user'}
                 className="w-full"
                 preventPreselect
                 clearable
@@ -536,7 +538,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             {wsId &&
               participants.map((p) => (
                 <EventParticipantCard
-                  key={`${p.event_id}-${p.user_id}-${p.type}`}
+                  key={`${p.event_id}-${p.participant_id}-${p.type}`}
                   wsId={wsId as string}
                   participant={p}
                   className={getInputColor()}

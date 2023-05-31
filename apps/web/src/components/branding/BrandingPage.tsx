@@ -10,12 +10,14 @@ const LandingPage = () => {
   return (
     <>
       <HeaderX label={t('branding')} />
-      <div className="mx-4 flex flex-col gap-4 pb-8 pt-24 md:mx-32 lg:mx-64">
-        <h1 className="text-4xl font-semibold text-zinc-700 dark:text-zinc-200">
-          {t('branding')}
-        </h1>
+      <div className="mx-4 flex flex-col gap-8 pt-24 md:mx-32 lg:mx-64">
+        <div>
+          <h1 className="text-4xl font-semibold text-zinc-700 dark:text-zinc-200">
+            {t('branding')}
+          </h1>
 
-        <Divider variant="dashed" />
+          <Divider variant="dashed" className="mt-4" />
+        </div>
 
         <section>
           <h1 className="mb-2 text-2xl font-semibold text-zinc-700 dark:text-zinc-200">
