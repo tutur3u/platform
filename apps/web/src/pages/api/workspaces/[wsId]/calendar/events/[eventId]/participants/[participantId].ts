@@ -99,10 +99,20 @@ const updateParticipant = async (
         ? 'calendar_event_virtual_participants'
         : 'calendar_event_platform_participants'
     )
-    .update({
-      role,
-      going,
-    } as EventParticipant)
+    .upsert(
+      {
+        event_id: eventId,
+        user_id: type !== 'user_group' ? participantId : undefined,
+        group_id: type === 'user_group' ? participantId : undefined,
+        role,
+        going,
+      },
+      {
+        onConflict: `event_id, ${
+          type === 'user_group' ? 'group_id' : 'user_id'
+        }`,
+      }
+    )
     .eq('event_id', eventId)
     .eq(type === 'user_group' ? 'group_id' : 'user_id', participantId);
 

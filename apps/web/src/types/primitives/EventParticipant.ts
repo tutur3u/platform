@@ -6,8 +6,6 @@ export type EventParticipantType =
 export interface EventParticipant {
   event_id: string;
   participant_id: string;
-  group_id?: string;
-  user_id?: string;
   type: EventParticipantType;
   display_name?: string;
   handle?: string;

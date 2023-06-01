@@ -8,14 +8,16 @@ interface Props {
   wsId: string;
   participant: EventParticipant;
   className?: string;
-  mutatePath?: string | null;
+  mutatePaths?: string[] | null;
+  disableDelete?: boolean;
 }
 
 const EventParticipantCard = ({
   wsId,
   participant,
   className,
-  mutatePath,
+  mutatePaths,
+  disableDelete = false,
 }: Props) => {
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ const EventParticipantCard = ({
   }, [event]);
 
   const deleteParticipant = async () => {
-    if (!apiPath || !mutatePath) return;
+    if (!apiPath) return;
 
     setLoading(true);
 
@@ -52,13 +54,15 @@ const EventParticipantCard = ({
 
     // wait for 200ms to prevent flickering
     await new Promise((resolve) => setTimeout(resolve, 200));
-    if (res.ok) mutate(mutatePath);
+
+    if (res.ok && !(await res.json())?.error)
+      mutatePaths?.forEach((path) => mutate(path));
     else setLoading(false);
   };
 
   useEffect(() => {
     const updateParticipant = async (going: boolean | null) => {
-      if (!apiPath || !mutatePath) return;
+      if (!apiPath) return;
 
       setLoading(true);
 
@@ -74,19 +78,19 @@ const EventParticipantCard = ({
 
       // wait for 200ms to prevent flickering
       await new Promise((resolve) => setTimeout(resolve, 200));
-      if (res.ok) mutate(mutatePath);
 
-      setLoading(false);
+      if (res.ok && !(await res.json())?.error) {
+        mutatePaths?.forEach((path) => mutate(path));
+        setLoading(false);
+      }
     };
 
-    if (going !== prevGoing && going !== null) {
-      updateParticipant(going);
-    }
+    if (going !== prevGoing && going !== null) updateParticipant(going);
   }, [
     going,
     prevGoing,
     apiPath,
-    mutatePath,
+    mutatePaths,
     participant.event_id,
     participant.type,
     participant.participant_id,
@@ -109,13 +113,15 @@ const EventParticipantCard = ({
           <>
             {going === null && (
               <>
-                <Button
-                  className="rounded border border-zinc-300/5 bg-zinc-300/5 p-1 text-zinc-300 transition hover:text-zinc-300/50"
-                  onClick={deleteParticipant}
-                  unstyled
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </Button>
+                {disableDelete || (
+                  <Button
+                    className="rounded border border-zinc-300/5 bg-zinc-300/5 p-1 text-zinc-300 transition hover:text-zinc-300/50"
+                    onClick={deleteParticipant}
+                    unstyled
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </Button>
+                )}
 
                 {/* <Button
                   onClick={() => setGoing(prevGoing)}

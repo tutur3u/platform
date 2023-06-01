@@ -3,7 +3,14 @@ import HeaderX from '../../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { Button, Chip, Divider, TextInput, Textarea } from '@mantine/core';
+import {
+  Accordion,
+  Button,
+  Chip,
+  Divider,
+  TextInput,
+  Textarea,
+} from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
@@ -25,6 +32,7 @@ import { UserPlusIcon } from '@heroicons/react/24/solid';
 import UserTypeSelector from '../../../../../components/selectors/UserTypeSelector';
 import { showNotification } from '@mantine/notifications';
 import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
+import EventParticipantGroupCard from '../../../../../components/cards/EventParticipantGroupCard';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -95,8 +103,12 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     'all' | 'platform_user' | 'virtual_user' | 'user_group'
   >('all');
 
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
   useEffect(() => {
+    setSelectedGroupId(null);
     setNewParticipantId('');
+    setNewGroupId('');
   }, [userType, participantsView]);
 
   const participantApiPath = apiPath
@@ -105,13 +117,20 @@ const EventDetailsPage: PageWithLayoutProps = () => {
       }`
     : null;
 
+  const participantCountApiPath = apiPath
+    ? `${apiPath}/participants/count`
+    : null;
+
   const { data } = useSWR<{
-    platform: number;
-    virtual: number;
-    groups: number;
     count: number;
     data: EventParticipant[];
   }>(participantApiPath);
+
+  const { data: count } = useSWR<{
+    platform: number;
+    virtual: number;
+    groups: number;
+  }>(participantCountApiPath);
 
   const participants = data?.data || [];
 
@@ -294,6 +313,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
       mutate(participantApiPath);
       mutate(apiPath);
 
+      setSelectedGroupId(null);
       setNewParticipantId('');
       setNewGroupId('');
     } else {
@@ -463,25 +483,20 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             <div className="mb-2 flex flex-wrap justify-start gap-2">
               <Chip color="cyan" variant="light" value="all">
                 {t('common:all')}{' '}
-                {data?.platform !== null && data?.virtual !== null
-                  ? `(${
-                      (data?.platform || 0) +
-                      (data?.virtual || 0) +
-                      (data?.groups || 0)
-                    })`
+                {count?.platform !== null && count?.virtual !== null
+                  ? `(${(count?.platform || 0) + (count?.virtual || 0)})`
                   : ''}
               </Chip>
               <Chip color="teal" variant="light" value="platform_user">
                 {t('platform-users')}{' '}
-                {data?.platform !== null ? `(${data?.platform || 0})` : ''}
+                {count?.platform !== null ? `(${count?.platform || 0})` : ''}
               </Chip>
               <Chip color="grape" variant="light" value="virtual_user">
                 {t('virtual-users')}{' '}
-                {data?.virtual !== null ? `(${data?.virtual || 0})` : ''}
+                {count?.virtual !== null ? `(${count?.virtual || 0})` : ''}
               </Chip>
               <Chip color="orange" variant="light" value="user_group">
-                {t('user-groups')}{' '}
-                {data?.groups !== null ? `(${data?.groups || 0})` : ''}
+                {t('user-groups')}
               </Chip>
             </div>
           </Chip.Group>
@@ -534,18 +549,50 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             <Divider className="my-1" variant="dashed" />
           )}
 
-          <div className="grid gap-2 md:grid-cols-2">
-            {wsId &&
-              participants.map((p) => (
-                <EventParticipantCard
-                  key={`${p.event_id}-${p.participant_id}-${p.type}`}
-                  wsId={wsId as string}
-                  participant={p}
-                  className={getInputColor()}
-                  mutatePath={participantApiPath}
-                />
-              ))}
-          </div>
+          {participantsView === 'user_group' ? (
+            <Accordion
+              className={`grid gap-2 rounded`}
+              classNames={{
+                control: `px-2 md:px-4 ${getInputColor()}`,
+                item: `rounded border ${getInputColor()}`,
+              }}
+              value={selectedGroupId}
+              onChange={setSelectedGroupId}
+            >
+              {wsId &&
+                participants.map((p) => (
+                  <EventParticipantGroupCard
+                    key={`${p.event_id}-${p.participant_id}-${p.type}`}
+                    selected={selectedGroupId === p.participant_id}
+                    wsId={wsId as string}
+                    participant={p}
+                    className={getInputColor()}
+                    mutatePaths={
+                      participantApiPath && participantCountApiPath
+                        ? [participantApiPath, participantCountApiPath]
+                        : null
+                    }
+                  />
+                ))}
+            </Accordion>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2">
+              {wsId &&
+                participants.map((p) => (
+                  <EventParticipantCard
+                    key={`${p.event_id}-${p.participant_id}-${p.type}`}
+                    wsId={wsId as string}
+                    participant={p}
+                    className={getInputColor()}
+                    mutatePaths={
+                      participantApiPath && participantCountApiPath
+                        ? [participantApiPath, participantCountApiPath]
+                        : null
+                    }
+                  />
+                ))}
+            </div>
+          )}
         </div>
       </div>
     </>
