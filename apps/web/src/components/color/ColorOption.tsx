@@ -137,19 +137,19 @@ const ColorOption = ({
       disabled={disabled}
     >
       <button
-        className={`h-fit justify-self-center border-2 ${
-          variant === 'default'
-            ? 'w-fit rounded-full p-0.5'
-            : 'w-full rounded-lg p-1'
+        className={`flex border-2 p-0.5 ${
+          variant === 'default' ? 'h-4 w-4 rounded-full' : 'h-16 rounded'
         } ${getBorderColor()} ${isSelected || 'border-opacity-30'} ${
           disabled && 'cursor-not-allowed opacity-30'
         } transition`}
         onClick={disabled ? undefined : () => onSelect(color)}
       >
         <div
-          className={`${
-            variant === 'default' ? 'h-4 w-4 rounded-full' : 'h-8 rounded'
-          } ${getBackgroundColor()}`}
+          className={`h-full w-full ${
+            isSelected || 'opacity-50 hover:opacity-80'
+          } ${
+            variant === 'default' ? 'rounded-full' : ' rounded-sm'
+          } ${getBackgroundColor()} transition`}
         />
       </button>
     </Tooltip>

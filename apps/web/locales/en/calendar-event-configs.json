@@ -21,5 +21,7 @@
   "virtual-users": "Virtual users",
   "platform-users": "Platform users",
   "user-groups": "User groups",
-  "could-not-invite": "Could not invite user"
+  "could-not-invite": "Could not invite user",
+  "remove-group-from-event": "Remove group from event",
+  "no-users-in-current-group": "No users in current group."
 }

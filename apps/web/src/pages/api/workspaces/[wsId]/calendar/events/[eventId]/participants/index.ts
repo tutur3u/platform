@@ -61,21 +61,6 @@ const fetchParticipants = async (
 
   const { query, page, itemsPerPage } = req.query;
 
-  const platformParticipants = supabase
-    .from('calendar_event_platform_participants')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
-
-  const virtualParticipants = supabase
-    .from('calendar_event_virtual_participants')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
-
-  const participantGroups = supabase
-    .from('calendar_event_participant_groups')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
-
   const queryBuilder = supabase
     .from('calendar_event_participants')
     .select('event_id, participant_id, type, display_name, handle', {
@@ -90,6 +75,7 @@ const fetchParticipants = async (
     type === 'user_group'
   )
     queryBuilder.eq('type', type);
+  else queryBuilder.neq('type', 'user_group');
 
   if (query) {
     queryBuilder.ilike('description', `%${query}%`);
@@ -110,36 +96,14 @@ const fetchParticipants = async (
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const [
-    platformParticipantsResponse,
-    virtualParticipantsResponse,
-    participantGroupsResponse,
-    participantsResponse,
-  ] = await Promise.all([
-    platformParticipants,
-    virtualParticipants,
-    participantGroups,
-    queryBuilder,
-  ]);
-
-  const { count, data, error } = participantsResponse;
-  const { count: platform } = platformParticipantsResponse;
-  const { count: virtual } = virtualParticipantsResponse;
-  const { count: groups } = participantGroupsResponse;
-
+  const { count, data, error } = await queryBuilder;
   if (error) return res.status(401).json({ error: error.message });
 
   return res.status(200).json({
     data,
-    platform,
-    virtual,
-    groups,
     count,
   } as {
     data: EventParticipant[];
-    platform: number;
-    virtual: number;
-    groups: number;
     count: number;
   });
 };
@@ -171,8 +135,12 @@ const createParticipant = async (
       group_id: type === 'user_group' ? participant_id : undefined,
       role,
       going,
-    } as EventParticipant)
-    .select(type === 'user_group' ? 'group_id' : 'user_id')
+    })
+    .select(
+      type === 'user_group'
+        ? 'participant_id:group_id'
+        : 'participant_id:user_id'
+    )
     .single();
 
   if (error) return res.status(401).json({ error: error.message });
