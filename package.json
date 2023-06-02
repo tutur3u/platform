@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "buildx": "pnpm i && turbo run build",
+    "update:all": "pnpm -r update",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
     "devrs": "cd apps/web && pnpm devrs",
@@ -30,5 +31,5 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@8.5.1"
+  "packageManager": "pnpm@8.6.0"
 }

@@ -172,7 +172,7 @@ const WorkspaceUserSettingsPage: PageWithLayoutProps = () => {
             name,
             gender,
             birthday: birthday
-              ? moment(birthday).format('YYYY-MM-DD')
+              ? moment(birthday).format('YYYY/MM/DD') + 'T00:00:00'
               : undefined,
             ethnicity,
             national_id: nationalId,
