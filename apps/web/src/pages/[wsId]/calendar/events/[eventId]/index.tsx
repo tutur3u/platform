@@ -130,6 +130,9 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     platform: number;
     virtual: number;
     groups: number;
+    pending: number;
+    going: number;
+    not_going: number;
   }>(participantCountApiPath);
 
   const participants = data?.data || [];
@@ -228,8 +231,8 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     return false;
   };
 
-  const getInputColor = () => {
-    switch (color) {
+  const getInputColor = (forceDefault?: boolean) => {
+    switch (forceDefault ? 'gray' : color) {
       case 'red':
         return 'focus:border-red-500/10 border-red-500/10 bg-red-500/10 text-red-600 placeholder-red-600/50 dark:focus:border-red-300/10 dark:border-red-300/10 dark:bg-red-300/5 dark:text-red-200 dark:placeholder-red-200/30';
 
@@ -310,6 +313,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
     });
 
     if (res.ok) {
+      mutate(participantCountApiPath);
       mutate(participantApiPath);
       mutate(apiPath);
 
@@ -374,7 +378,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             value={title}
             onChange={(e) => setTitle(e.currentTarget.value)}
             classNames={{
-              input: `font-semibold ${getInputColor()}`,
+              input: `font-semibold ${getInputColor(true)}`,
               label: getLabelColor(),
             }}
           />
@@ -385,7 +389,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
             classNames={{
-              input: `font-semibold ${getInputColor()}`,
+              input: `font-semibold ${getInputColor(true)}`,
               label: getLabelColor(),
             }}
           />
@@ -408,7 +412,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                 setStartDate(date);
               }}
               classNames={{
-                input: `font-semibold ${getInputColor()}`,
+                input: `font-semibold ${getInputColor(true)}`,
                 label: getLabelColor(),
               }}
               clearable={false}
@@ -437,7 +441,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                 setEndDate(date);
               }}
               classNames={{
-                input: `font-semibold ${getInputColor()}`,
+                input: `font-semibold ${getInputColor(true)}`,
                 label: getLabelColor(),
               }}
               clearable={false}
@@ -501,7 +505,32 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             </div>
           </Chip.Group>
 
-          <div className="flex flex-col items-center gap-2 rounded border border-zinc-300/5 p-2 dark:bg-zinc-900 md:flex-row">
+          <div className="grid gap-2 text-center md:grid-cols-3">
+            <div className="rounded border p-4 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300">
+              <div className="font-semibold">Chưa quyết định</div>
+              <Divider className="my-1 dark:border-purple-300/10" />
+              <div className="text-4xl font-bold">
+                {count?.pending !== null ? count?.pending : '-'}
+              </div>
+            </div>
+            <div className="rounded border p-4 dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300">
+              <div className="font-semibold">Sẽ tham gia</div>
+              <Divider className="my-1 dark:border-green-300/10" />
+              <div className="text-4xl font-bold">
+                {count?.going !== null ? count?.going : '-'}
+              </div>
+            </div>
+            <div className="rounded border p-4 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300">
+              <div className="font-semibold">Không tham gia</div>
+              <Divider className="my-1 dark:border-red-300/10" />
+              <div className="text-4xl font-bold">
+                {count?.not_going !== null ? count?.not_going : '-'}
+              </div>
+            </div>
+          </div>
+          <Divider className="my-1" />
+
+          <div className="mb-1 flex flex-col items-center gap-2 rounded border p-2 dark:border-gray-300/10 dark:bg-gray-300/5 md:flex-row">
             <UserTypeSelector
               type={userType}
               setType={setUserType}
@@ -545,16 +574,12 @@ const EventDetailsPage: PageWithLayoutProps = () => {
             </Button>
           </div>
 
-          {participants.length > 0 && (
-            <Divider className="my-1" variant="dashed" />
-          )}
-
           {participantsView === 'user_group' ? (
             <Accordion
               className={`grid gap-2 rounded`}
               classNames={{
-                control: `px-2 md:px-4 ${getInputColor()}`,
-                item: `rounded border ${getInputColor()}`,
+                control: `px-2 md:px-4 ${getInputColor(true)}`,
+                item: `rounded border ${getInputColor(true)}`,
               }}
               value={selectedGroupId}
               onChange={setSelectedGroupId}
@@ -566,7 +591,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                     selected={selectedGroupId === p.participant_id}
                     wsId={wsId as string}
                     participant={p}
-                    className={getInputColor()}
+                    className={getInputColor(true)}
                     mutatePaths={
                       participantApiPath && participantCountApiPath
                         ? [participantApiPath, participantCountApiPath]
@@ -583,7 +608,7 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                     key={`${p.event_id}-${p.participant_id}-${p.type}`}
                     wsId={wsId as string}
                     participant={p}
-                    className={getInputColor()}
+                    className={getInputColor(true)}
                     mutatePaths={
                       participantApiPath && participantCountApiPath
                         ? [participantApiPath, participantCountApiPath]

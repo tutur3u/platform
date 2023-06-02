@@ -7,8 +7,9 @@ import ColorPallete from '../../../../web/src/components/color/ColorPallete';
 import moment from 'moment';
 import { SupportedColor } from '../../types/primitives/SupportedColors';
 import useTranslation from 'next-translate/useTranslation';
-import 'dayjs/locale/vi';
 import { useRouter } from 'next/router';
+import useSWR from 'swr';
+import 'dayjs/locale/vi';
 
 interface CalendarEventEditFormProps {
   id: string;
@@ -151,6 +152,20 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
 
   const { t, lang } = useTranslation('calendar-event-configs');
 
+  const countApiPath =
+    wsId && event
+      ? `/api/workspaces/${wsId}/calendar/events/${event.id}/participants/count`
+      : null;
+
+  const { data: count } = useSWR<{
+    platform: number;
+    virtual: number;
+    groups: number;
+    pending: number;
+    going: number;
+    not_going: number;
+  }>(countApiPath);
+
   if (!event) return null;
 
   return (
@@ -258,6 +273,31 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
         value={eventColor as SupportedColor}
         onChange={(color) => updateEvent(id, { color })}
       />
+
+      <Divider mt="sm" mb="xs" className={getInputColor()} />
+      <div className="grid gap-2 text-center md:grid-cols-3">
+        <div className="rounded border p-2 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300">
+          <div className="font-semibold">Chưa quyết định</div>
+          <Divider className="my-1 dark:border-purple-300/10" />
+          <div className="text-3xl font-bold">
+            {count?.pending !== null ? count?.pending : '-'}
+          </div>
+        </div>
+        <div className="rounded border p-2 dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300">
+          <div className="font-semibold">Sẽ tham gia</div>
+          <Divider className="my-1 dark:border-green-300/10" />
+          <div className="text-3xl font-bold">
+            {count?.going !== null ? count?.going : '-'}
+          </div>
+        </div>
+        <div className="rounded border p-2 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300">
+          <div className="font-semibold">Không tham gia</div>
+          <Divider className="my-1 dark:border-red-300/10" />
+          <div className="text-3xl font-bold">
+            {count?.not_going !== null ? count?.not_going : '-'}
+          </div>
+        </div>
+      </div>
       <Divider mt="sm" mb="xs" className={getInputColor()} />
 
       <div className="flex gap-2">

@@ -137,8 +137,8 @@ const ColorOption = ({
       disabled={disabled}
     >
       <button
-        className={`flex border-2 p-0.5 ${
-          variant === 'default' ? 'h-4 w-4 rounded-full' : 'h-16 rounded'
+        className={`flex w-full border-2 p-0.5 ${
+          variant === 'default' ? 'h-8 rounded-full' : 'h-16 rounded'
         } ${getBorderColor()} ${isSelected || 'border-opacity-30'} ${
           disabled && 'cursor-not-allowed opacity-30'
         } transition`}
