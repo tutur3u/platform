@@ -157,5 +157,9 @@
   "trailing_label_calendar_event_virtual_participants": {
     "one": "{{count}} người tham gia (người dùng ảo)",
     "other": "{{count}} người tham gia (người dùng ảo)"
+  },
+  "trailing_label_calendar_event_participant_groups": {
+    "one": "{{count}} nhóm người tham gia",
+    "other": "{{count}} nhóm người tham gia"
   }
 }

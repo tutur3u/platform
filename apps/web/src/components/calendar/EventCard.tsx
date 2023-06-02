@@ -462,8 +462,9 @@ export default function EventCard({ wsId, event }: EventCardProps) {
   return (
     <Popover
       opened={isOpened}
-      position={window.innerWidth < 768 ? 'bottom' : 'right'}
+      position="right"
       onClose={closeModal}
+      disabled={window.innerWidth < 768}
       classNames={{
         arrow: `${generateColor()} border-2`,
       }}

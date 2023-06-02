@@ -157,5 +157,9 @@
   "trailing_label_calendar_event_virtual_participants": {
     "one": "{{count}} participant (virtual user)",
     "other": "{{count}} participants (virtual users)"
+  },
+  "trailing_label_calendar_event_participant_groups": {
+    "one": "{{count}} participant group",
+    "other": "{{count}} participant groups"
   }
 }

@@ -32,6 +32,11 @@ const EventParticipantGroupCard = ({
       ? `/api/workspaces/${wsId}/calendar/events/${participant.event_id}/participants/${participant.participant_id}?type=${participant.type}`
       : null;
 
+  const countApiPath =
+    wsId && participant
+      ? `/api/workspaces/${wsId}/users/groups/${participant.participant_id}/amount`
+      : null;
+
   const deleteParticipant = async () => {
     if (!apiPath || !mutatePaths) return;
 
@@ -58,6 +63,8 @@ const EventParticipantGroupCard = ({
     usersApiPath
   );
 
+  const { data: countData } = useSWR<{ count: number }>(countApiPath);
+
   const isLoading = !data && !error;
 
   const users = data?.data;
@@ -67,7 +74,8 @@ const EventParticipantGroupCard = ({
       <Accordion.Control>
         <div className="flex items-center justify-between gap-2">
           <div className="line-clamp-1 font-semibold">
-            {participant.display_name || participant.handle}
+            {participant.display_name || participant.handle} (
+            {countData?.count ?? 0})
           </div>
         </div>
       </Accordion.Control>
@@ -91,8 +99,9 @@ const EventParticipantGroupCard = ({
                     type: 'virtual_user',
                   }}
                   className={className}
-                  mutatePaths={mutatePaths}
-                  disableDelete
+                  mutatePaths={
+                    usersApiPath ? [...(mutatePaths || []), usersApiPath] : null
+                  }
                 />
               ))
             ) : (
