@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { EventParticipant } from '../../types/primitives/EventParticipant';
 import { Button, Loader } from '@mantine/core';
 import useSWR, { mutate } from 'swr';
+import Link from 'next/link';
 
 interface Props {
   wsId: string;
@@ -101,9 +102,18 @@ const EventParticipantCard = ({
     <div
       className={`flex items-center justify-between gap-2 rounded border p-2 md:p-4 ${className}`}
     >
-      <div className="line-clamp-1 font-semibold">
-        {participant.display_name || participant.handle}
-      </div>
+      {participant.type === 'virtual_user' ? (
+        <Link
+          href={`/${wsId}/users/${participant.participant_id}`}
+          className="line-clamp-1 font-semibold underline-offset-1 hover:underline"
+        >
+          {participant.display_name || participant.handle}
+        </Link>
+      ) : (
+        <div className="line-clamp-1 font-semibold">
+          {participant.display_name || participant.handle}
+        </div>
+      )}
       <div className="flex items-center justify-center gap-1">
         {loading ? (
           <div className="rounded border border-zinc-300/5 bg-zinc-300/5 p-1 text-zinc-300">
