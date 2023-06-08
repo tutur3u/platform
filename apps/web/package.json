@@ -22,7 +22,7 @@
     "sb:status": "pnpm supabase status"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.0",
+    "@emotion/react": "^11.11.1",
     "@emotion/server": "^11.11.0",
     "@heroicons/react": "^2.0.18",
     "@mantine/core": "^6.0.13",
@@ -77,7 +77,7 @@
     "@types/js-cookie": "^3.0.3",
     "@types/lodash": "^4.14.195",
     "@types/node": "^20.2.5",
-    "@types/react": "^18.2.8",
+    "@types/react": "^18.2.9",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.2.4",
     "@types/react-resizable": "^3.0.4",
