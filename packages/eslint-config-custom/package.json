@@ -6,11 +6,11 @@
   "dependencies": {
     "eslint-config-next": "13.4.4",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-react": "7.32.2",
-    "eslint-config-turbo": "latest"
+    "eslint-config-turbo": "latest",
+    "eslint-plugin-react": "7.32.2"
   },
   "devDependencies": {
-    "next": "^13.4.4"
+    "next": "^13.4.5"
   },
   "publishConfig": {
     "access": "public"
