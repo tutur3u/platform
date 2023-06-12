@@ -442,6 +442,7 @@
     ],
 
     "/[wsId]/ai": ["sidebar-tabs"],
+    "/[wsId]/migrations": ["sidebar-tabs"],
     "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
   }
 }

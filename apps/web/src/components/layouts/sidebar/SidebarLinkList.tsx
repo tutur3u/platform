@@ -8,6 +8,7 @@ import {
   CheckCircleIcon,
   CircleStackIcon,
   ClipboardDocumentListIcon,
+  CodeBracketSquareIcon,
   FingerPrintIcon,
   HomeIcon,
   RectangleStackIcon,
@@ -17,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { WorkspacePreset } from '../../../types/primitives/WorkspacePreset';
 import { useUser } from '@supabase/auth-helpers-react';
-import { ROOT_WORKSPACE_ID } from '../../../constants/common';
+import { DEV_MODE, ROOT_WORKSPACE_ID } from '../../../constants/common';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 
 interface Props {
@@ -48,6 +49,7 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const databases = t('databases');
   const ai = t('ai');
   const infrastructure = t('infrastructure');
+  const migrations = t('migrations');
 
   const isRootWs = wsId === ROOT_WORKSPACE_ID;
 
@@ -163,12 +165,23 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
       )}
 
       {isRootWs && user?.email?.endsWith('@tuturuuu.com') && adminLevel && (
-        <SidebarLink
-          href={`/${wsId}/infrastructure`}
-          activeIcon={<WrenchScrewdriverIcon className="w-5" />}
-          label={infrastructure}
-          showTooltip={!sidebarOpened}
-        />
+        <>
+          <SidebarLink
+            href={`/${wsId}/infrastructure`}
+            activeIcon={<WrenchScrewdriverIcon className="w-5" />}
+            label={infrastructure}
+            showTooltip={!sidebarOpened}
+          />
+
+          {DEV_MODE && (
+            <SidebarLink
+              href={`/${wsId}/migrations`}
+              activeIcon={<CodeBracketSquareIcon className="w-5" />}
+              label={migrations}
+              showTooltip={!sidebarOpened}
+            />
+          )}
+        </>
       )}
     </div>
   );
