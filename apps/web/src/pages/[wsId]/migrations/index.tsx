@@ -54,7 +54,8 @@ const WorkspaceAIPlaygroundPage = () => {
 
   type MigrationModule =
     | 'users'
-    | 'user-linked-packages'
+    | 'user-linked-coupons'
+    | 'roles'
     | 'classes'
     | 'class-members'
     | 'class-score-names'
@@ -67,7 +68,9 @@ const WorkspaceAIPlaygroundPage = () => {
     | 'package-categories'
     | 'payment-methods'
     | 'coupons'
-    | 'bills';
+    | 'bills'
+    | 'bill-packages'
+    | 'bill-coupons';
 
   const [migrationData, setMigrationData] = useState<{
     [key in MigrationModule]?: {
@@ -95,7 +98,6 @@ const WorkspaceAIPlaygroundPage = () => {
     }
   ) => {
     const res = await fetch(url, {
-      // may have CORS issue
       headers: {
         'Content-Type': 'application/json',
         'TTR-API-KEY': apiKey,
@@ -134,13 +136,13 @@ const WorkspaceAIPlaygroundPage = () => {
     return migrationData?.[module]?.data ?? null;
   };
 
-  const setData = (module: MigrationModule, data: any, alias?: string) => {
+  const setData = (module: MigrationModule, data: any[], count: number) => {
     setMigrationData((prev) => ({
       ...prev,
       [module]: {
         ...prev?.[module],
-        data: data?.[alias || 'data'],
-        count: data?.count,
+        data,
+        count,
       },
     }));
   };
@@ -163,11 +165,33 @@ const WorkspaceAIPlaygroundPage = () => {
     setLoading(module, true);
 
     const url = `${apiEndpoint}${path}`;
-    await fetchData(url, {
-      onSuccess: (data) => setData(module, data, alias),
-      onError: (error) => setError(module, error),
-    });
+    const limit = 1000;
 
+    let count = -1;
+    let data: any[] = [];
+
+    // Reset module data
+    setData(module, [], 0);
+
+    while (data.length < count || count === -1) {
+      await fetchData(`${url}?from=${data.length}&limit=${limit}`, {
+        onSuccess: (newData) => {
+          if (count === -1) count = newData.count;
+          data = [...data, ...newData?.[alias ?? 'data']];
+          setData(module, data, newData.count);
+        },
+        onError: (error) => {
+          setLoading(module, false);
+          setError(module, error);
+          return;
+        },
+      });
+
+      // wait 200ms
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    if (count !== -1) await new Promise((resolve) => setTimeout(resolve, 200));
     setLoading(module, false);
   };
 
@@ -176,7 +200,7 @@ const WorkspaceAIPlaygroundPage = () => {
     alias?: string;
     module: MigrationModule;
     path: string;
-    functional?: boolean;
+    disabled?: boolean;
   }
 
   const generateModule = ({
@@ -184,7 +208,7 @@ const WorkspaceAIPlaygroundPage = () => {
     module,
     path,
     alias,
-    functional,
+    disabled,
   }: ModulePackage) => {
     return (
       <div className="rounded border p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
@@ -197,17 +221,18 @@ const WorkspaceAIPlaygroundPage = () => {
                 {getCount(module)}
               </div>
             ) : null}
+
             <ActionIcon
               variant="subtle"
               color="green"
               className={
-                functional
-                  ? 'border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20'
-                  : ''
+                disabled
+                  ? ''
+                  : 'border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20'
               }
               onClick={() => handleMigrate(module, path, alias)}
               loading={getLoading(module)}
-              disabled={!functional}
+              disabled={disabled}
             >
               {getData(module) ? (
                 <ArrowPathIcon className="h-4 w-4" />
@@ -218,7 +243,7 @@ const WorkspaceAIPlaygroundPage = () => {
           </div>
         </div>
 
-        {functional && (
+        {disabled || (
           <>
             <Divider className="my-2" />
 
@@ -226,13 +251,15 @@ const WorkspaceAIPlaygroundPage = () => {
               <div className="grid gap-1">
                 External Data
                 <Progress
-                  color="cyan"
                   sections={[
                     {
                       value: getData(module)
                         ? (getData(module).length / getCount(module)) * 100
                         : 0,
-                      color: 'cyan',
+                      color:
+                        getData(module)?.length === getCount(module)
+                          ? 'teal'
+                          : 'blue',
                       tooltip: getData(module)
                         ? `${getData(module).length} / ${getCount(module)}`
                         : '0 / 0',
@@ -269,35 +296,41 @@ const WorkspaceAIPlaygroundPage = () => {
       module: 'users',
       alias: 'users',
       path: '/dashboard/data/users',
-      functional: true,
     },
     {
-      name: 'Virtual Users Linked Products',
-      module: 'user-linked-packages',
-      path: '/dashboard/data/users/packages',
+      name: 'Virtual Users Linked Promotions',
+      module: 'user-linked-coupons',
+      alias: 'coupons',
+      path: '/dashboard/data/users/coupons',
     },
     {
-      name: 'User Groups',
+      name: 'User Groups (Roles)',
+      module: 'roles',
+      alias: 'roles',
+      path: '/dashboard/data/users/roles',
+    },
+    {
+      name: 'User Groups (Classes)',
       module: 'classes',
       alias: 'classes',
       path: '/dashboard/data/classes',
-      functional: true,
     },
     {
       name: 'User Group Members',
       module: 'class-members',
       alias: 'members',
       path: '/dashboard/data/classes/members',
-      functional: true,
     },
     {
       name: 'User Group Vital Categories',
       module: 'class-score-names',
+      alias: 'names',
       path: '/dashboard/data/classes/score-names',
     },
     {
       name: 'User Group Vitals',
       module: 'class-user-scores',
+      alias: 'scores',
       path: '/dashboard/data/classes/scores',
     },
     {
@@ -305,16 +338,17 @@ const WorkspaceAIPlaygroundPage = () => {
       module: 'class-user-feedbacks',
       alias: 'feedbacks',
       path: '/dashboard/data/classes/feedbacks',
-      functional: true,
     },
     {
       name: 'User Group Attendances',
       module: 'class-user-attendances',
-      path: '/dashboard/data/classes/attendances',
+      alias: 'attendance',
+      path: '/dashboard/data/classes/attendance',
     },
     {
       name: 'User Group Content',
       module: 'class-lessons',
+      alias: 'lessons',
       path: '/dashboard/data/classes/lessons',
     },
     {
@@ -322,58 +356,62 @@ const WorkspaceAIPlaygroundPage = () => {
       module: 'class-linked-packages',
       alias: 'packages',
       path: '/dashboard/data/classes/packages',
-      functional: true,
     },
     {
       name: 'Products',
       module: 'packages',
       alias: 'packages',
       path: '/dashboard/data/packages',
-      functional: true,
     },
     {
       name: 'Product categories',
       module: 'package-categories',
       alias: 'categories',
       path: '/dashboard/data/packages/categories',
-      functional: true,
     },
     {
       name: 'Wallets',
       module: 'payment-methods',
       alias: 'methods',
       path: '/dashboard/data/payment-methods',
-      functional: true,
     },
     {
       name: 'Promotions',
       module: 'coupons',
       alias: 'coupons',
       path: '/dashboard/data/coupons',
-      functional: true,
     },
     {
       name: 'Invoices',
       module: 'bills',
       alias: 'bills',
       path: '/dashboard/data/bills',
-      functional: true,
+    },
+    {
+      name: 'Invoice Products',
+      module: 'bill-packages',
+      alias: 'packages',
+      path: '/dashboard/data/bills/packages',
+    },
+    {
+      name: 'Invoice Promotions',
+      module: 'bill-coupons',
+      alias: 'coupons',
+      path: '/dashboard/data/bills/coupons',
     },
   ];
 
   const generateModules = () => {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {modules
-          .sort((a, b) => (a.functional ? -1 : 1) - (b.functional ? -1 : 1))
-          .map((m) => generateModule(m))}
+        {modules.map((m) => generateModule(m))}
       </div>
     );
   };
 
   const handleMigrateAll = async () => {
     for (const m of modules)
-      if (m.functional) await handleMigrate(m.module, m.path, m.alias);
+      if (!m?.disabled) await handleMigrate(m.module, m.path, m.alias);
   };
 
   return (
