@@ -55,7 +55,7 @@
     "eventsource-parser": "^1.0.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
-    "next": "^13.4.4",
+    "next": "^13.4.5",
     "next-translate": "^2.0.6",
     "nextjs-google-analytics": "^2.3.3",
     "openai": "^3.2.1",
