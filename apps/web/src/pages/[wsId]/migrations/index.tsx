@@ -1,7 +1,14 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../hooks/useSegments';
-import { ActionIcon, Divider, PasswordInput, Progress } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Divider,
+  PasswordInput,
+  Progress,
+  Tooltip,
+} from '@mantine/core';
 import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
@@ -9,6 +16,7 @@ import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
 import { DEV_MODE } from '../../../constants/common';
 import { Segment } from '../../../types/primitives/Segment';
 import { useLocalStorage } from '@mantine/hooks';
+import { IconGitMerge } from '@tabler/icons-react';
 
 export const getServerSideProps = enforceRootWorkspace;
 
@@ -74,8 +82,10 @@ const WorkspaceAIPlaygroundPage = () => {
 
   const [migrationData, setMigrationData] = useState<{
     [key in MigrationModule]?: {
-      data?: any | null;
-      count?: number | null;
+      externalData?: any[] | null;
+      internalData?: any[] | null;
+      externalTotal?: number | null;
+      internalTotal?: number | null;
       loading?: boolean | null;
       error?: any | null;
     } | null;
@@ -128,21 +138,31 @@ const WorkspaceAIPlaygroundPage = () => {
     return migrationData?.[module]?.loading ?? false;
   };
 
-  const getCount = (module: MigrationModule) => {
-    return migrationData?.[module]?.count ?? 0;
+  type DataSource = 'external' | 'internal';
+
+  const getCount = (source: DataSource, module: MigrationModule) => {
+    return migrationData?.[module]?.[`${source}Total`] ?? 0;
   };
 
-  const getData = (module: MigrationModule) => {
-    return migrationData?.[module]?.data ?? null;
+  const getData = (
+    source: DataSource,
+    module: MigrationModule
+  ): any[] | null => {
+    return migrationData?.[module]?.[`${source}Data`] ?? null;
   };
 
-  const setData = (module: MigrationModule, data: any[], count: number) => {
+  const setData = (
+    source: DataSource,
+    module: MigrationModule,
+    data: any[] | null,
+    count: number
+  ) => {
     setMigrationData((prev) => ({
       ...prev,
       [module]: {
         ...prev?.[module],
-        data,
-        count,
+        [`${source}Data`]: data,
+        [`${source}Total`]: count,
       },
     }));
   };
@@ -157,41 +177,83 @@ const WorkspaceAIPlaygroundPage = () => {
     }));
   };
 
-  const handleMigrate = async (
-    module: MigrationModule,
-    path: string,
-    alias?: string
-  ) => {
+  const handleMigrate = async ({
+    module,
+    externalPath,
+    internalPath,
+    alias,
+  }: ModulePackage) => {
     setLoading(module, true);
 
-    const url = `${apiEndpoint}${path}`;
+    const externalUrl = `${apiEndpoint}${externalPath}`;
     const limit = 1000;
 
-    let count = -1;
-    let data: any[] = [];
-
     // Reset module data
-    setData(module, [], 0);
+    setData('external', module, null, 0);
+    setData('internal', module, null, 0);
 
-    while (data.length < count || count === -1) {
-      await fetchData(`${url}?from=${data.length}&limit=${limit}`, {
-        onSuccess: (newData) => {
-          if (count === -1) count = newData.count;
-          data = [...data, ...newData?.[alias ?? 'data']];
-          setData(module, data, newData.count);
-        },
-        onError: (error) => {
-          setLoading(module, false);
-          setError(module, error);
-          return;
-        },
-      });
+    // Initialize external variables
+    let externalCount = -1;
+    let externalData: any[] = [];
+
+    // Fetch external data
+    while (externalData.length < externalCount || externalCount === -1) {
+      await fetchData(
+        `${externalUrl}?from=${externalData.length}&limit=${limit}`,
+        {
+          onSuccess: (newData) => {
+            if (externalCount === -1) externalCount = newData.count;
+            externalData = [...externalData, ...newData?.[alias ?? 'data']];
+            setData('external', module, externalData, newData.count);
+
+            // If count does not match, stop fetching
+            if (externalData.length !== externalCount) return;
+          },
+          onError: (error) => {
+            setLoading(module, false);
+            setError(module, error);
+            return;
+          },
+        }
+      );
 
       // wait 200ms
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    if (count !== -1) await new Promise((resolve) => setTimeout(resolve, 200));
+    // Initialize internal variables
+    let internalCount = -1;
+    let internalData: any[] = [];
+
+    // Fetch internal data
+    if (internalPath && workspaceId) {
+      while (internalData.length < internalCount || internalCount === -1) {
+        await fetchData(
+          `${internalPath.replace('[wsId]', workspaceId)}?from=${
+            internalData.length
+          }&limit=${limit}`,
+          {
+            onSuccess: (newData) => {
+              if (internalCount === -1) internalCount = newData.count;
+              internalData = [...internalData, ...newData?.data];
+              setData('internal', module, internalData, newData.count);
+
+              // If count does not match, stop fetching
+              if (internalData.length !== internalCount) return;
+            },
+            onError: (error) => {
+              setLoading(module, false);
+              setError(module, error);
+              return;
+            },
+          }
+        );
+      }
+    }
+
+    if (externalCount !== -1 || internalCount !== -1)
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
     setLoading(module, false);
   };
 
@@ -199,47 +261,93 @@ const WorkspaceAIPlaygroundPage = () => {
     name: string;
     alias?: string;
     module: MigrationModule;
-    path: string;
+    externalPath: string;
+    internalPath?: string;
     disabled?: boolean;
   }
 
   const generateModule = ({
     name,
     module,
-    path,
+    externalPath,
+    internalPath,
     alias,
     disabled,
   }: ModulePackage) => {
     return (
-      <div className="rounded border p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
+      <div
+        key={name}
+        className="rounded border p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="font-semibold">{name}</div>
 
           <div className="flex gap-1">
-            {getData(module) ? (
-              <div className="flex items-center justify-center rounded border border-purple-500/10 bg-purple-500/10 px-2 text-center text-sm font-semibold text-purple-600 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300">
-                {getCount(module)}
-              </div>
+            {getData('external', module) ? (
+              <Tooltip label="Total external items">
+                <div className="flex items-center justify-center rounded border border-blue-500/10 bg-blue-500/10 px-2 text-center text-sm font-semibold text-blue-600 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300">
+                  {getCount('external', module)}
+                </div>
+              </Tooltip>
             ) : null}
 
-            <ActionIcon
-              variant="subtle"
-              color="green"
-              className={
-                disabled
-                  ? ''
-                  : 'border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20'
+            <Tooltip label="Migrate data">
+              <ActionIcon
+                variant="subtle"
+                color="grape"
+                className={
+                  disabled
+                    ? ''
+                    : 'border border-purple-600/10 bg-purple-600/10 hover:bg-purple-600/20 dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20'
+                }
+                onClick={() =>
+                  handleMigrate({
+                    name,
+                    module,
+                    externalPath,
+                    internalPath,
+                    alias,
+                  })
+                }
+                loading={getLoading(module)}
+                disabled={disabled}
+              >
+                <IconGitMerge className="h-4 w-4" />
+              </ActionIcon>
+            </Tooltip>
+
+            <Tooltip
+              label={
+                getData('external', module) ? 'Refresh data' : 'Fetch data'
               }
-              onClick={() => handleMigrate(module, path, alias)}
-              loading={getLoading(module)}
-              disabled={disabled}
             >
-              {getData(module) ? (
-                <ArrowPathIcon className="h-4 w-4" />
-              ) : (
-                <PlayIcon className="h-4 w-4" />
-              )}
-            </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="green"
+                className={
+                  disabled
+                    ? ''
+                    : 'border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20'
+                }
+                onClick={() =>
+                  handleMigrate({
+                    name,
+                    module,
+                    externalPath,
+                    internalPath,
+                    alias,
+                  })
+                }
+                loading={getLoading(module)}
+                disabled={disabled}
+              >
+                {getData('external', module) ? (
+                  <ArrowPathIcon className="h-4 w-4" />
+                ) : (
+                  <PlayIcon className="h-4 w-4" />
+                )}
+              </ActionIcon>
+            </Tooltip>
           </div>
         </div>
 
@@ -253,16 +361,21 @@ const WorkspaceAIPlaygroundPage = () => {
                 <Progress
                   sections={[
                     {
-                      value: getData(module)
-                        ? (getData(module).length / getCount(module)) * 100
+                      value: getData('external', module)
+                        ? ((getData('external', module)?.length ?? 0) /
+                            getCount('external', module)) *
+                          100
                         : 0,
                       color:
-                        getData(module)?.length === getCount(module)
+                        getData('external', module)?.length ===
+                        getCount('external', module)
                           ? 'teal'
                           : 'blue',
-                      tooltip: getData(module)
-                        ? `${getData(module).length} / ${getCount(module)}`
-                        : '0 / 0',
+                      tooltip: getData('external', module)
+                        ? `Fetched (${
+                            getData('external', module)?.length ?? 0
+                          }/${getCount('external', module)})`
+                        : 'Loading',
                     },
                   ]}
                   size="lg"
@@ -272,17 +385,40 @@ const WorkspaceAIPlaygroundPage = () => {
               <div className="grid gap-1">
                 Synchronized
                 <Progress
-                  color="green"
                   sections={[
                     {
-                      value: 0,
-                      color: 'pink',
-                      tooltip: 'Synchronized',
+                      value:
+                        (((getData('external', module) ?? []).length -
+                          (getData('external', module) ?? []).filter((v) =>
+                            (getData('internal', module) ?? []).find(
+                              (iv) => iv.id === v.id
+                            )
+                          ).length) /
+                          (getData('external', module)?.length ?? 0)) *
+                        100,
+                      color: 'red',
+                      tooltip: `Out of sync (${
+                        (getData('external', module) ?? []).length -
+                        (getData('external', module) ?? []).filter((v) =>
+                          (getData('internal', module) ?? []).find(
+                            (iv) => iv.id === v.id
+                          )
+                        ).length
+                      }/${getData('external', module)?.length ?? 0})`,
                     },
                   ]}
                   size="lg"
                 />
               </div>
+
+              <Divider className="mt-2" />
+
+              <Button
+                variant="light"
+                className="bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-300/10 dark:hover:bg-blue-300/20"
+              >
+                View data
+              </Button>
             </div>
           </>
         )}
@@ -295,109 +431,110 @@ const WorkspaceAIPlaygroundPage = () => {
       name: 'Virtual Users',
       module: 'users',
       alias: 'users',
-      path: '/dashboard/data/users',
+      externalPath: '/dashboard/data/users',
+      internalPath: '/api/workspaces/[wsId]/users',
     },
     {
       name: 'Virtual Users Linked Promotions',
       module: 'user-linked-coupons',
       alias: 'coupons',
-      path: '/dashboard/data/users/coupons',
+      externalPath: '/dashboard/data/users/coupons',
     },
     {
       name: 'User Groups (Roles)',
       module: 'roles',
       alias: 'roles',
-      path: '/dashboard/data/users/roles',
+      externalPath: '/dashboard/data/users/roles',
     },
     {
       name: 'User Groups (Classes)',
       module: 'classes',
       alias: 'classes',
-      path: '/dashboard/data/classes',
+      externalPath: '/dashboard/data/classes',
     },
     {
       name: 'User Group Members',
       module: 'class-members',
       alias: 'members',
-      path: '/dashboard/data/classes/members',
+      externalPath: '/dashboard/data/classes/members',
     },
     {
       name: 'User Group Vital Categories',
       module: 'class-score-names',
       alias: 'names',
-      path: '/dashboard/data/classes/score-names',
+      externalPath: '/dashboard/data/classes/score-names',
     },
     {
       name: 'User Group Vitals',
       module: 'class-user-scores',
       alias: 'scores',
-      path: '/dashboard/data/classes/scores',
+      externalPath: '/dashboard/data/classes/scores',
     },
     {
       name: 'User Group Feedbacks',
       module: 'class-user-feedbacks',
       alias: 'feedbacks',
-      path: '/dashboard/data/classes/feedbacks',
+      externalPath: '/dashboard/data/classes/feedbacks',
     },
     {
       name: 'User Group Attendances',
       module: 'class-user-attendances',
       alias: 'attendance',
-      path: '/dashboard/data/classes/attendance',
+      externalPath: '/dashboard/data/classes/attendance',
     },
     {
       name: 'User Group Content',
       module: 'class-lessons',
       alias: 'lessons',
-      path: '/dashboard/data/classes/lessons',
+      externalPath: '/dashboard/data/classes/lessons',
     },
     {
       name: 'User Group Linked Products',
       module: 'class-linked-packages',
       alias: 'packages',
-      path: '/dashboard/data/classes/packages',
+      externalPath: '/dashboard/data/classes/packages',
     },
     {
       name: 'Products',
       module: 'packages',
       alias: 'packages',
-      path: '/dashboard/data/packages',
+      externalPath: '/dashboard/data/packages',
     },
     {
       name: 'Product categories',
       module: 'package-categories',
       alias: 'categories',
-      path: '/dashboard/data/packages/categories',
+      externalPath: '/dashboard/data/packages/categories',
     },
     {
       name: 'Wallets',
       module: 'payment-methods',
       alias: 'methods',
-      path: '/dashboard/data/payment-methods',
+      externalPath: '/dashboard/data/payment-methods',
     },
     {
       name: 'Promotions',
       module: 'coupons',
       alias: 'coupons',
-      path: '/dashboard/data/coupons',
+      externalPath: '/dashboard/data/coupons',
     },
     {
       name: 'Invoices',
       module: 'bills',
       alias: 'bills',
-      path: '/dashboard/data/bills',
+      externalPath: '/dashboard/data/bills',
     },
     {
       name: 'Invoice Products',
       module: 'bill-packages',
       alias: 'packages',
-      path: '/dashboard/data/bills/packages',
+      externalPath: '/dashboard/data/bills/packages',
     },
     {
       name: 'Invoice Promotions',
       module: 'bill-coupons',
       alias: 'coupons',
-      path: '/dashboard/data/bills/coupons',
+      externalPath: '/dashboard/data/bills/coupons',
     },
   ];
 
@@ -410,8 +547,7 @@ const WorkspaceAIPlaygroundPage = () => {
   };
 
   const handleMigrateAll = async () => {
-    for (const m of modules)
-      if (!m?.disabled) await handleMigrate(m.module, m.path, m.alias);
+    for (const m of modules) if (!m?.disabled) await handleMigrate(m);
   };
 
   return (
@@ -439,24 +575,35 @@ const WorkspaceAIPlaygroundPage = () => {
           />
         </div>
 
-        <h2 className="mt-4 flex items-center gap-2 text-2xl font-semibold text-blue-500 dark:text-blue-300">
-          <div>Migrate data</div>
+        <h2 className="mt-4 flex items-center gap-1 text-2xl font-semibold text-blue-500 dark:text-blue-300">
+          <div className="mr-1">Migrate data</div>
           {Object.values(migrationData ?? {}).reduce(
-            (acc, v) => acc + (v?.count ?? 0),
+            (acc, v) => acc + (v?.externalTotal ?? 0),
             0
           ) !== 0 && (
             <div className="rounded border border-blue-500/10 bg-blue-500/10 px-1 py-0.5 text-sm text-blue-600 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300">
               {Object.values(migrationData ?? {}).reduce(
-                (acc, v) => acc + (v?.data?.length ?? 0),
+                (acc, v) => acc + (v?.externalData?.length ?? 0),
                 0
               )}
               {' / '}
               {Object.values(migrationData ?? {}).reduce(
-                (acc, v) => acc + (v?.count ?? 0),
+                (acc, v) => acc + (v?.externalTotal ?? 0),
                 0
               )}
             </div>
           )}
+
+          <ActionIcon
+            variant="subtle"
+            color="grape"
+            className="border border-purple-600/10 bg-purple-600/10 hover:bg-purple-600/20 dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20"
+            onClick={handleMigrateAll}
+            loading={loading}
+          >
+            <IconGitMerge className="h-4 w-4" />
+          </ActionIcon>
+
           <ActionIcon
             variant="subtle"
             color="green"
@@ -464,7 +611,7 @@ const WorkspaceAIPlaygroundPage = () => {
             onClick={handleMigrateAll}
             loading={loading}
           >
-            {Object.values(migrationData ?? {}).filter((v) => v?.data)
+            {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
               .length ? (
               <ArrowPathIcon className="h-4 w-4" />
             ) : (
