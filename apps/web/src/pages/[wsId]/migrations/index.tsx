@@ -20,7 +20,7 @@ import { IconGitMerge } from '@tabler/icons-react';
 
 export const getServerSideProps = enforceRootWorkspace;
 
-const WorkspaceAIPlaygroundPage = () => {
+const PlatformMigrationsPage = () => {
   const { t } = useTranslation('sidebar-tabs');
   const { ws } = useWorkspaces();
   const { setRootSegment } = useSegments();
@@ -627,8 +627,8 @@ const WorkspaceAIPlaygroundPage = () => {
   );
 };
 
-WorkspaceAIPlaygroundPage.getLayout = function getLayout(page: ReactElement) {
+PlatformMigrationsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default WorkspaceAIPlaygroundPage;
+export default PlatformMigrationsPage;
