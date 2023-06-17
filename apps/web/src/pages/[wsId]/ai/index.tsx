@@ -110,7 +110,7 @@ const WorkspaceAIPlaygroundPage = () => {
             Response
           </h2>
 
-          <div className="h-full rounded-lg border border-zinc-300 bg-zinc-500/10 p-4 dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="h-full rounded border border-zinc-300 bg-zinc-500/10 p-4 dark:border-zinc-700 dark:bg-zinc-800">
             {response ? (
               <>
                 <div>
@@ -118,7 +118,7 @@ const WorkspaceAIPlaygroundPage = () => {
                 </div>
               </>
             ) : (
-              <div className="tẽt-zinc-700 flex h-full items-center justify-center text-2xl font-semibold dark:text-zinc-500">
+              <div className="flex h-full items-center justify-center text-2xl font-semibold text-zinc-700 dark:text-zinc-500">
                 {loading ? 'Generating...' : 'No response yet.'}
               </div>
             )}
