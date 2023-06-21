@@ -116,7 +116,7 @@ const PlatformMigrationsPage = () => {
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok || data?.error) {
       onError?.(data);
       return;
     }
@@ -182,6 +182,7 @@ const PlatformMigrationsPage = () => {
     externalPath,
     internalPath,
     alias,
+    mapping,
   }: ModulePackage) => {
     setLoading(module, true);
 
@@ -195,9 +196,13 @@ const PlatformMigrationsPage = () => {
     // Initialize external variables
     let externalCount = -1;
     let externalData: any[] = [];
+    let externalError: any = null;
 
     // Fetch external data
-    while (externalData.length < externalCount || externalCount === -1) {
+    while (
+      externalError === null &&
+      (externalData.length < externalCount || externalCount === -1)
+    ) {
       await fetchData(
         `${externalUrl}?from=${externalData.length}&limit=${limit}`,
         {
@@ -209,9 +214,10 @@ const PlatformMigrationsPage = () => {
             // If count does not match, stop fetching
             if (externalData.length !== externalCount) return;
           },
-          onError: (error) => {
+          onError: async (error) => {
             setLoading(module, false);
             setError(module, error);
+            externalError = error;
             return;
           },
         }
@@ -222,37 +228,87 @@ const PlatformMigrationsPage = () => {
     }
 
     // Initialize internal variables
-    let internalCount = -1;
     let internalData: any[] = [];
+    let internalError: any = null;
 
     // Fetch internal data
     if (internalPath && workspaceId) {
-      while (internalData.length < internalCount || internalCount === -1) {
-        await fetchData(
-          `${internalPath.replace('[wsId]', workspaceId)}?from=${
-            internalData.length
-          }&limit=${limit}`,
-          {
-            onSuccess: (newData) => {
-              if (internalCount === -1) internalCount = newData.count;
-              internalData = [...internalData, ...newData?.data];
-              setData('internal', module, internalData, newData.count);
+      while (
+        internalError === null &&
+        internalData.length < externalData.length
+      ) {
+        const newInternalData = mapping
+          ? mapping(externalData[internalData.length])
+          : externalData[internalData.length];
 
-              // If count does not match, stop fetching
-              if (internalData.length !== internalCount) return;
+        await fetchData(
+          internalPath
+            .replace('[wsId]', workspaceId)
+            .replace('[id]', newInternalData.id),
+          {
+            onSuccess: async (_) => {
+              const res = await fetch(
+                internalPath
+                  .replace('[wsId]', workspaceId)
+                  .replace('[id]', newInternalData.id),
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(newInternalData),
+                }
+              );
+
+              const data = await res.json();
+
+              if (!res.ok) {
+                setLoading(module, false);
+                setError(module, data);
+                internalError = data?.error;
+                return;
+              }
+
+              internalData = [...internalData, newInternalData];
+              setData('internal', module, internalData, internalData.length);
+
+              return;
             },
-            onError: (error) => {
-              setLoading(module, false);
-              setError(module, error);
+            onError: async (error) => {
+              const res = await fetch(
+                internalPath
+                  .replace('[wsId]', workspaceId)
+                  .replace('[id]', newInternalData.id),
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(newInternalData),
+                }
+              );
+
+              const data = await res.json();
+
+              if (!res.ok || data?.error) {
+                setLoading(module, false);
+                setError(module, data);
+                internalError = error;
+                return;
+              }
+
+              internalData = [...internalData, data];
+              setData('internal', module, internalData, internalData.length);
+
               return;
             },
           }
         );
+
+        // wait 200ms
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
-
-    if (externalCount !== -1 || internalCount !== -1)
-      await new Promise((resolve) => setTimeout(resolve, 200));
 
     setLoading(module, false);
   };
@@ -263,6 +319,7 @@ const PlatformMigrationsPage = () => {
     module: MigrationModule;
     externalPath: string;
     internalPath?: string;
+    mapping?: (data: any) => any;
     disabled?: boolean;
   }
 
@@ -272,6 +329,7 @@ const PlatformMigrationsPage = () => {
     externalPath,
     internalPath,
     alias,
+    mapping,
     disabled,
   }: ModulePackage) => {
     return (
@@ -307,6 +365,7 @@ const PlatformMigrationsPage = () => {
                     externalPath,
                     internalPath,
                     alias,
+                    mapping,
                   })
                 }
                 loading={getLoading(module)}
@@ -336,6 +395,7 @@ const PlatformMigrationsPage = () => {
                     externalPath,
                     internalPath,
                     alias,
+                    mapping,
                   })
                 }
                 loading={getLoading(module)}
@@ -388,17 +448,15 @@ const PlatformMigrationsPage = () => {
                   sections={[
                     {
                       value:
-                        (((getData('external', module) ?? []).length -
-                          (getData('external', module) ?? []).filter((v) =>
-                            (getData('internal', module) ?? []).find(
-                              (iv) => iv.id === v.id
-                            )
-                          ).length) /
+                        ((getData('external', module) ?? []).filter((v) =>
+                          (getData('internal', module) ?? []).find(
+                            (iv) => iv.id === v.id
+                          )
+                        ).length /
                           (getData('external', module)?.length ?? 0)) *
                         100,
-                      color: 'red',
-                      tooltip: `Out of sync (${
-                        (getData('external', module) ?? []).length -
+                      color: 'teal',
+                      tooltip: `Synchronized (${
                         (getData('external', module) ?? []).filter((v) =>
                           (getData('internal', module) ?? []).find(
                             (iv) => iv.id === v.id
@@ -432,13 +490,17 @@ const PlatformMigrationsPage = () => {
       module: 'users',
       alias: 'users',
       externalPath: '/dashboard/data/users',
-      internalPath: '/api/workspaces/[wsId]/users',
-    },
-    {
-      name: 'Virtual Users Linked Promotions',
-      module: 'user-linked-coupons',
-      alias: 'coupons',
-      externalPath: '/dashboard/data/users/coupons',
+      internalPath: '/api/workspaces/[wsId]/users/[id]',
+      mapping: (data) => ({
+        id: data?.id,
+        email: data?.email,
+        name: data?.display_name,
+        phone: data?.phone_number,
+        gender: data?.gender,
+        birthday: data?.birthday,
+        created_at: data?.created_at,
+        note: `${data?.notes}\nNickname: ${data.nickname}\nRelationship: ${data.relationship}`,
+      }),
     },
     {
       name: 'User Groups (Roles)',
@@ -513,12 +575,6 @@ const PlatformMigrationsPage = () => {
       externalPath: '/dashboard/data/payment-methods',
     },
     {
-      name: 'Promotions',
-      module: 'coupons',
-      alias: 'coupons',
-      externalPath: '/dashboard/data/coupons',
-    },
-    {
       name: 'Invoices',
       module: 'bills',
       alias: 'bills',
@@ -529,6 +585,18 @@ const PlatformMigrationsPage = () => {
       module: 'bill-packages',
       alias: 'packages',
       externalPath: '/dashboard/data/bills/packages',
+    },
+    {
+      name: 'Promotions',
+      module: 'coupons',
+      alias: 'coupons',
+      externalPath: '/dashboard/data/coupons',
+    },
+    {
+      name: 'Virtual Users Linked Promotions',
+      module: 'user-linked-coupons',
+      alias: 'coupons',
+      externalPath: '/dashboard/data/users/coupons',
     },
     {
       name: 'Invoice Promotions',
