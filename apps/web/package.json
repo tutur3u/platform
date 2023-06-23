@@ -55,7 +55,7 @@
     "eventsource-parser": "^1.0.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
-    "next": "^13.4.6",
+    "next": "^13.4.7",
     "next-translate": "^2.3.1",
     "nextjs-google-analytics": "^2.3.3",
     "openai": "^3.3.0",
@@ -64,7 +64,7 @@
     "react-csv-reader": "^4.0.0",
     "react-dom": "18.2.0",
     "react-resizable": "^3.0.5",
-    "swr": "^2.1.5",
+    "swr": "^2.2.0",
     "ui": "workspace:*",
     "uuid": "^9.0.0",
     "xlsx": "^0.18.5"
