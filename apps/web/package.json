@@ -56,7 +56,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "next": "^13.4.6",
-    "next-translate": "^2.0.6",
+    "next-translate": "^2.4.0",
     "nextjs-google-analytics": "^2.3.3",
     "openai": "^3.3.0",
     "react": "18.2.0",
