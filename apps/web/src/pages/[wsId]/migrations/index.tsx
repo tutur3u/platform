@@ -490,7 +490,7 @@ const PlatformMigrationsPage = () => {
       module: 'users',
       alias: 'users',
       externalPath: '/dashboard/data/users',
-      internalPath: '/api/workspaces/[wsId]/users/[id]',
+      internalPath: '/api/[wsId]/migrate/users',
       mapping: (data) => ({
         id: data?.id,
         email: data?.email,
