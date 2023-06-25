@@ -181,7 +181,8 @@ const PlatformMigrationsPage = () => {
     module,
     externalPath,
     internalPath,
-    alias,
+    externalAlias,
+    internalAlias,
     mapping,
   }: ModulePackage) => {
     setLoading(module, true);
@@ -208,7 +209,10 @@ const PlatformMigrationsPage = () => {
         {
           onSuccess: (newData) => {
             if (externalCount === -1) externalCount = newData.count;
-            externalData = [...externalData, ...newData?.[alias ?? 'data']];
+            externalData = [
+              ...externalData,
+              ...newData?.[externalAlias ?? internalAlias ?? 'data'],
+            ];
             setData('external', module, externalData, newData.count);
 
             // If count does not match, stop fetching
@@ -237,73 +241,30 @@ const PlatformMigrationsPage = () => {
         internalError === null &&
         internalData.length < externalData.length
       ) {
-        const newInternalData = mapping
-          ? mapping(externalData[internalData.length])
-          : externalData[internalData.length];
+        const newInternalData = mapping ? mapping(externalData) : externalData;
+        console.log(newInternalData);
 
-        await fetchData(
-          internalPath
-            .replace('[wsId]', workspaceId)
-            .replace('[id]', newInternalData.id),
-          {
-            onSuccess: async (_) => {
-              const res = await fetch(
-                internalPath
-                  .replace('[wsId]', workspaceId)
-                  .replace('[id]', newInternalData.id),
-                {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(newInternalData),
-                }
-              );
+        const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            [internalAlias ?? externalAlias ?? 'data']: newInternalData,
+          }),
+        });
 
-              const data = await res.json();
+        const data = await res.json();
 
-              if (!res.ok) {
-                setLoading(module, false);
-                setError(module, data);
-                internalError = data?.error;
-                return;
-              }
+        if (!res.ok) {
+          setLoading(module, false);
+          setError(module, data);
+          internalError = data?.error;
+          return;
+        }
 
-              internalData = [...internalData, newInternalData];
-              setData('internal', module, internalData, internalData.length);
-
-              return;
-            },
-            onError: async (error) => {
-              const res = await fetch(
-                internalPath
-                  .replace('[wsId]', workspaceId)
-                  .replace('[id]', newInternalData.id),
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(newInternalData),
-                }
-              );
-
-              const data = await res.json();
-
-              if (!res.ok || data?.error) {
-                setLoading(module, false);
-                setError(module, data);
-                internalError = error;
-                return;
-              }
-
-              internalData = [...internalData, data];
-              setData('internal', module, internalData, internalData.length);
-
-              return;
-            },
-          }
-        );
+        internalData = [...internalData, ...newInternalData];
+        setData('internal', module, internalData, internalData.length);
 
         // wait 200ms
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -315,20 +276,22 @@ const PlatformMigrationsPage = () => {
 
   interface ModulePackage {
     name: string;
-    alias?: string;
     module: MigrationModule;
+    externalAlias?: string;
+    internalAlias?: string;
     externalPath: string;
     internalPath?: string;
-    mapping?: (data: any) => any;
+    mapping?: (data: any[]) => any[];
     disabled?: boolean;
   }
 
   const generateModule = ({
     name,
     module,
+    externalAlias,
+    internalAlias,
     externalPath,
     internalPath,
-    alias,
     mapping,
     disabled,
   }: ModulePackage) => {
@@ -362,9 +325,10 @@ const PlatformMigrationsPage = () => {
                   handleMigrate({
                     name,
                     module,
+                    externalAlias,
+                    internalAlias,
                     externalPath,
                     internalPath,
-                    alias,
                     mapping,
                   })
                 }
@@ -392,9 +356,10 @@ const PlatformMigrationsPage = () => {
                   handleMigrate({
                     name,
                     module,
+                    externalAlias,
+                    internalAlias,
                     externalPath,
                     internalPath,
-                    alias,
                     mapping,
                   })
                 }
@@ -488,120 +453,125 @@ const PlatformMigrationsPage = () => {
     {
       name: 'Virtual Users',
       module: 'users',
-      alias: 'users',
+      externalAlias: 'users',
       externalPath: '/dashboard/data/users',
-      internalPath: '/api/[wsId]/migrate/users',
-      mapping: (data) => ({
-        id: data?.id,
-        email: data?.email,
-        name: data?.display_name,
-        phone: data?.phone_number,
-        gender: data?.gender,
-        birthday: data?.birthday,
-        created_at: data?.created_at,
-        note: `${data?.notes}\nNickname: ${data.nickname}\nRelationship: ${data.relationship}`,
-      }),
+      internalPath: '/api/workspaces/[wsId]/migrate/users',
+      mapping: (items) =>
+        items.map((i) => ({
+          id: i?.id,
+          email: i?.email,
+          name: i?.display_name,
+          phone: i?.phone_number,
+          gender: i?.gender,
+          birthday: i?.birthday,
+          created_at: i?.created_at,
+          note: `${i?.nickname ? `Nickname: ${i.nickname}\n` : ''}${
+            i?.relationship ? `Relationship: ${i.relationship}\n` : ''
+          }${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
+        })),
     },
     {
-      name: 'User Groups (Roles)',
+      name: 'User Groups (Roles + Classes)',
       module: 'roles',
-      alias: 'roles',
+      externalAlias: 'roles',
+      internalAlias: 'groups',
       externalPath: '/dashboard/data/users/roles',
-    },
-    {
-      name: 'User Groups (Classes)',
-      module: 'classes',
-      alias: 'classes',
-      externalPath: '/dashboard/data/classes',
+      internalPath: '/api/workspaces/[wsId]/migrate/users/groups',
+      mapping: (items) =>
+        items.map((i) => ({
+          id: i?.id,
+          name: i?.name,
+          created_at: i?.created_at,
+        })),
     },
     {
       name: 'User Group Members',
       module: 'class-members',
-      alias: 'members',
+      externalAlias: 'members',
       externalPath: '/dashboard/data/classes/members',
     },
     {
-      name: 'User Group Vital Categories',
+      name: 'User Group Indicator Groups',
       module: 'class-score-names',
-      alias: 'names',
+      externalAlias: 'names',
       externalPath: '/dashboard/data/classes/score-names',
     },
     {
-      name: 'User Group Vitals',
+      name: 'User Group Indicators',
       module: 'class-user-scores',
-      alias: 'scores',
+      externalAlias: 'scores',
       externalPath: '/dashboard/data/classes/scores',
     },
     {
       name: 'User Group Feedbacks',
       module: 'class-user-feedbacks',
-      alias: 'feedbacks',
+      externalAlias: 'feedbacks',
       externalPath: '/dashboard/data/classes/feedbacks',
     },
     {
       name: 'User Group Attendances',
       module: 'class-user-attendances',
-      alias: 'attendance',
+      externalAlias: 'attendance',
       externalPath: '/dashboard/data/classes/attendance',
     },
     {
       name: 'User Group Content',
       module: 'class-lessons',
-      alias: 'lessons',
+      externalAlias: 'lessons',
       externalPath: '/dashboard/data/classes/lessons',
     },
     {
       name: 'User Group Linked Products',
       module: 'class-linked-packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/classes/packages',
     },
     {
       name: 'Products',
       module: 'packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/packages',
     },
     {
-      name: 'Product categories',
+      name: 'Product Categories',
       module: 'package-categories',
-      alias: 'categories',
+      externalAlias: 'categories',
       externalPath: '/dashboard/data/packages/categories',
     },
     {
       name: 'Wallets',
       module: 'payment-methods',
-      alias: 'methods',
+      externalAlias: 'methods',
       externalPath: '/dashboard/data/payment-methods',
     },
     {
       name: 'Invoices',
       module: 'bills',
-      alias: 'bills',
+      externalAlias: 'bills',
       externalPath: '/dashboard/data/bills',
     },
     {
       name: 'Invoice Products',
       module: 'bill-packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/bills/packages',
     },
     {
       name: 'Promotions',
       module: 'coupons',
-      alias: 'coupons',
+      externalAlias: 'coupons',
       externalPath: '/dashboard/data/coupons',
     },
     {
       name: 'Virtual Users Linked Promotions',
       module: 'user-linked-coupons',
-      alias: 'coupons',
+      externalAlias: 'coupons',
       externalPath: '/dashboard/data/users/coupons',
     },
     {
       name: 'Invoice Promotions',
       module: 'bill-coupons',
-      alias: 'coupons',
+      externalAlias: 'coupons',
       externalPath: '/dashboard/data/bills/coupons',
     },
   ];

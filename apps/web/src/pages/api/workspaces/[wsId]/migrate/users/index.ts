@@ -11,7 +11,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     switch (req.method) {
       case 'POST':
         if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
-        return await createWorkspaceUser(req, res, wsId);
+        return await migrateWorkspaceUsers(req, res, wsId);
 
       default:
         throw new Error(
@@ -28,7 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const createWorkspaceUser = async (
+const migrateWorkspaceUsers = async (
   req: NextApiRequest,
   res: NextApiResponse,
   wsId: string
@@ -40,6 +40,12 @@ const createWorkspaceUser = async (
 
   const { users } = req.body as { users: WorkspaceUser[] };
 
+  // Delete existing users
+  const { error: deleteError } = await supabase
+    .from('workspace_users')
+    .delete()
+    .eq('ws_id', wsId);
+
   // Upsert users
   const { error: upsertError } = await supabase.from('workspace_users').upsert(
     users.map((user) => ({
@@ -47,12 +53,6 @@ const createWorkspaceUser = async (
       ws_id: wsId,
     }))
   );
-
-  // Delete users that are not in the list
-  const { error: deleteError } = await supabase
-    .from('workspace_users')
-    .delete()
-    .match({ ws_id: wsId, id: { notIn: users.map((user) => user.id) } });
 
   if (upsertError || deleteError) {
     console.error(upsertError, deleteError);
