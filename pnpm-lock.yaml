@@ -129,8 +129,8 @@ importers:
         specifier: ^13.4.6
         version: 13.4.6(@babel/core@7.22.5)(react-dom@18.2.0)(react@18.2.0)
       next-translate:
-        specifier: ^2.0.6
-        version: 2.0.6(next@13.4.6)(react@18.2.0)
+        specifier: ^2.4.2
+        version: 2.4.2(next@13.4.6)(react@18.2.0)
       nextjs-google-analytics:
         specifier: ^2.3.3
         version: 2.3.3(next@13.4.6)(react@18.2.0)
@@ -233,7 +233,7 @@ importers:
         version: 13.2.2
       next-translate-plugin:
         specifier: ^2.0.5
-        version: 2.0.5(next-translate@2.0.6)
+        version: 2.0.5(next-translate@2.4.2)
       postcss:
         specifier: ^8.4.24
         version: 8.4.24
@@ -263,7 +263,7 @@ importers:
         version: 8.8.0(eslint@8.43.0)
       eslint-config-turbo:
         specifier: latest
-        version: 1.10.3(eslint@8.43.0)
+        version: 1.10.6(eslint@8.43.0)
       eslint-plugin-react:
         specifier: 7.32.2
         version: 7.32.2(eslint@8.43.0)
@@ -3845,6 +3845,11 @@ packages:
       domhandler: 4.3.1
     dev: false
 
+  /dotenv@16.0.3:
+    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
+    engines: {node: '>=12'}
+    dev: false
+
   /duplexer2@0.1.4:
     resolution: {integrity: sha512-asLFVfWWtJ90ZyOUHMqk7/S2w2guQKxUI2itj3d92ADHhxUSbCMGi1f1cBcJ7xM1To+pE/Khbwo1yuNbMEPKeA==}
     dependencies:
@@ -4094,13 +4099,13 @@ packages:
       eslint: 8.43.0
     dev: false
 
-  /eslint-config-turbo@1.10.3(eslint@8.43.0):
-    resolution: {integrity: sha512-ggzPfTJfMsMS383oZ4zfTP1zQvyMyiigOQJRUnLt1nqII6SKkTzdKZdwmXRDHU24KFwUfEFtT6c8vnm2VhL0uQ==}
+  /eslint-config-turbo@1.10.6(eslint@8.43.0):
+    resolution: {integrity: sha512-iZ63etePRUdEIDY5MxdUhU2ekV9TDbVdHg0BK00QqVFgQTXUYuJ7rsQj/wUKTsw3jwhbLfaY6H5sknAgYyWZ2g==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
       eslint: 8.43.0
-      eslint-plugin-turbo: 1.10.3(eslint@8.43.0)
+      eslint-plugin-turbo: 1.10.6(eslint@8.43.0)
     dev: false
 
   /eslint-import-resolver-node@0.3.7:
@@ -4258,11 +4263,12 @@ packages:
       string.prototype.matchall: 4.0.8
     dev: false
 
-  /eslint-plugin-turbo@1.10.3(eslint@8.43.0):
-    resolution: {integrity: sha512-g3Mnnk7el1FqxHfqbE/MayLvCsYjA/vKmAnUj66kV4AlM7p/EZqdt42NMcMSKtDVEm0w+utQkkzWG2Xsa0Pd/g==}
+  /eslint-plugin-turbo@1.10.6(eslint@8.43.0):
+    resolution: {integrity: sha512-jlzfxYaK8hcz1DTk8Glxxi1r0kgdy85191a4CbFOTiiBulmKHMLJgzhsyE9Ong796MA62n91KFpc20BiKjlHwg==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
+      dotenv: 16.0.3
       eslint: 8.43.0
     dev: false
 
@@ -6125,23 +6131,23 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: false
 
-  /next-translate-plugin@2.0.5(next-translate@2.0.6):
+  /next-translate-plugin@2.0.5(next-translate@2.4.2):
     resolution: {integrity: sha512-H5Wecew+EQvrcCfnUiWwev8jS8ICH2Mw1SwWY8v8gXQfCpZ/ubpx+dinMhNZt+1BzqtEke53GHWov6gMvDB8tw==}
     engines: {node: '>=14.15.0'}
     requiresBuild: true
     peerDependencies:
       next-translate: '>= 2.0.0-canary.1'
     dependencies:
-      next-translate: 2.0.6(next@13.4.6)(react@18.2.0)
+      next-translate: 2.4.2(next@13.4.6)(react@18.2.0)
       typescript: 4.5.2
     dev: true
 
-  /next-translate@2.0.6(next@13.4.6)(react@18.2.0):
-    resolution: {integrity: sha512-sfyV4q+oNFnc9IWB/QmJpU9Du3gOj9C5/6zOmOVGbzOQTseafxGNXwkqwhdRooyKiBDrSXU6tlDbUw7wQDbkNg==}
-    engines: {node: '>=14.15.0'}
+  /next-translate@2.4.2(next@13.4.6)(react@18.2.0):
+    resolution: {integrity: sha512-n4yddJo5C4Wowp8S/Q2ua9ewZtOAfwfaTmeHfVlDwS64/e/XuHcT3S+1u2k9I4bXlO2/zbCTwX+ww3Lq8byoLg==}
+    engines: {node: '>=16.10.0'}
     peerDependencies:
-      next: '>= 10.0.0'
-      react: '>= 16.8.0'
+      next: '>= 13.2.5'
+      react: '>= 18.0.0'
     dependencies:
       next: 13.4.6(@babel/core@7.22.5)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
