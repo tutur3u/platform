@@ -242,8 +242,6 @@ const PlatformMigrationsPage = () => {
         internalData.length < externalData.length
       ) {
         const newInternalData = mapping ? mapping(externalData) : externalData;
-        console.log(newInternalData);
-
         const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
           method: 'POST',
           headers: {
