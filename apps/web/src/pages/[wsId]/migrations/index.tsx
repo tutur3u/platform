@@ -486,7 +486,14 @@ const PlatformMigrationsPage = () => {
       name: 'User Group Members',
       module: 'class-members',
       externalAlias: 'members',
-      externalPath: '/dashboard/data/classes/members',
+      externalPath: '/migrate/members',
+      internalPath: '/api/workspaces/[wsId]/migrate/users/groups/members',
+      mapping: (items) =>
+        items.map((i) => ({
+          user_id: i?.user_id,
+          group_id: i?.class_id,
+          created_at: i?.created_at,
+        })),
     },
     {
       name: 'User Group Indicator Groups',
