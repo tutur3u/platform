@@ -9,7 +9,7 @@ import BottomNavbar from './BottomNavbar';
 import { useAppearance } from '../../hooks/useAppearance';
 import LeftSidebar from './LeftSidebar';
 import TopNavbar from './TopNavbar';
-import ScrollTopTopButton from './ScrollTopTopButton';
+import ScrollToTopButton from './ScrollToTopButton';
 
 interface Props {
   children: React.ReactNode;
@@ -51,23 +51,23 @@ const NestedLayout: FC<Props> = ({
   const [disableTabs, setDisableTabs] = useState(defaultNoTabs);
   const [cachedDisableTabs, setCachedDisableTabs] = useState(defaultNoTabs);
 
+  const elementId = 'content';
   const [prevScrollPos, setPrevScrollPos] = useState(0);
 
   useEffect(() => {
     if (defaultNoTabs) {
       setDisableTabs(true);
       setCachedDisableTabs(true);
-      return;
     } else {
       setDisableTabs(false);
       setCachedDisableTabs(false);
     }
 
-    const content = document.getElementById('content');
-    if (!content) return;
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
     const handleScroll = () => {
-      const pos = content.scrollTop;
+      const pos = el.scrollTop;
       setPrevScrollPos(pos);
 
       const disable = pos > 0;
@@ -76,14 +76,15 @@ const NestedLayout: FC<Props> = ({
       setCachedDisableTabs(disable);
     };
 
-    content.addEventListener('scroll', handleScroll);
-    return () => content.removeEventListener('scroll', handleScroll);
-  }, [defaultNoTabs]);
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [defaultNoTabs, elementId]);
 
   return (
-    <div className="flex">
-      <ScrollTopTopButton prevScrollPos={prevScrollPos} />
+    <div className="flex max-h-screen min-h-full">
+      <ScrollToTopButton elementId={elementId} prevScrollPos={prevScrollPos} />
       <LeftSidebar />
+      <BottomNavbar />
       <TopNavbar
         cachedDisableTabs={cachedDisableTabs}
         defaultNoTabs={defaultNoTabs}
@@ -94,11 +95,10 @@ const NestedLayout: FC<Props> = ({
         segments={segments}
         tabs={filteredTabs}
       />
-      <BottomNavbar />
 
       <main
         id="content"
-        className={`h-full w-full overflow-x-hidden scroll-smooth transition-all duration-500 md:h-screen ${
+        className={`h-full w-full overflow-x-hidden scroll-smooth transition-all duration-500 ${
           sidebar === 'open'
             ? 'fixed overflow-y-hidden md:static md:overflow-y-auto'
             : 'overflow-y-auto'

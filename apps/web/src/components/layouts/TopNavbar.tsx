@@ -36,9 +36,9 @@ const TopNavbar = ({
       id="top-navigation"
       className={`${
         disableTabs ? 'h-[3.95rem]' : 'h-25'
-      } fixed left-0 right-0 top-0 ${
+      } fixed left-0 right-0 top-0 w-full ${
         isExpanded ? 'md:left-64' : 'md:left-[3.8rem]'
-      } z-[100] clear-both w-full flex-none border-b border-zinc-300 bg-white/50 backdrop-blur transition-all duration-500 content-none dark:border-zinc-800 dark:bg-[#111113]/50`}
+      } z-[100] clear-both flex-none border-b border-zinc-300 bg-white/50 backdrop-blur transition-all duration-500 content-none dark:border-zinc-800 dark:bg-[#111113]/50`}
       onMouseEnter={
         defaultNoTabs || !disableTabs ? undefined : () => setDisableTabs(false)
       }

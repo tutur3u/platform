@@ -20,7 +20,7 @@ import { IconGitMerge } from '@tabler/icons-react';
 
 export const getServerSideProps = enforceRootWorkspace;
 
-const WorkspaceAIPlaygroundPage = () => {
+const PlatformMigrationsPage = () => {
   const { t } = useTranslation('sidebar-tabs');
   const { ws } = useWorkspaces();
   const { setRootSegment } = useSegments();
@@ -116,7 +116,7 @@ const WorkspaceAIPlaygroundPage = () => {
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok || data?.error) {
       onError?.(data);
       return;
     }
@@ -181,7 +181,9 @@ const WorkspaceAIPlaygroundPage = () => {
     module,
     externalPath,
     internalPath,
-    alias,
+    externalAlias,
+    internalAlias,
+    mapping,
   }: ModulePackage) => {
     setLoading(module, true);
 
@@ -195,23 +197,31 @@ const WorkspaceAIPlaygroundPage = () => {
     // Initialize external variables
     let externalCount = -1;
     let externalData: any[] = [];
+    let externalError: any = null;
 
     // Fetch external data
-    while (externalData.length < externalCount || externalCount === -1) {
+    while (
+      externalError === null &&
+      (externalData.length < externalCount || externalCount === -1)
+    ) {
       await fetchData(
         `${externalUrl}?from=${externalData.length}&limit=${limit}`,
         {
           onSuccess: (newData) => {
             if (externalCount === -1) externalCount = newData.count;
-            externalData = [...externalData, ...newData?.[alias ?? 'data']];
+            externalData = [
+              ...externalData,
+              ...newData?.[externalAlias ?? internalAlias ?? 'data'],
+            ];
             setData('external', module, externalData, newData.count);
 
             // If count does not match, stop fetching
             if (externalData.length !== externalCount) return;
           },
-          onError: (error) => {
+          onError: async (error) => {
             setLoading(module, false);
             setError(module, error);
+            externalError = error;
             return;
           },
         }
@@ -222,56 +232,65 @@ const WorkspaceAIPlaygroundPage = () => {
     }
 
     // Initialize internal variables
-    let internalCount = -1;
     let internalData: any[] = [];
+    let internalError: any = null;
 
     // Fetch internal data
     if (internalPath && workspaceId) {
-      while (internalData.length < internalCount || internalCount === -1) {
-        await fetchData(
-          `${internalPath.replace('[wsId]', workspaceId)}?from=${
-            internalData.length
-          }&limit=${limit}`,
-          {
-            onSuccess: (newData) => {
-              if (internalCount === -1) internalCount = newData.count;
-              internalData = [...internalData, ...newData?.data];
-              setData('internal', module, internalData, newData.count);
+      while (
+        internalError === null &&
+        internalData.length < externalData.length
+      ) {
+        const newInternalData = mapping ? mapping(externalData) : externalData;
+        const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            [internalAlias ?? externalAlias ?? 'data']: newInternalData,
+          }),
+        });
 
-              // If count does not match, stop fetching
-              if (internalData.length !== internalCount) return;
-            },
-            onError: (error) => {
-              setLoading(module, false);
-              setError(module, error);
-              return;
-            },
-          }
-        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          setLoading(module, false);
+          setError(module, data);
+          internalError = data?.error;
+          return;
+        }
+
+        internalData = [...internalData, ...newInternalData];
+        setData('internal', module, internalData, internalData.length);
+
+        // wait 200ms
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
-
-    if (externalCount !== -1 || internalCount !== -1)
-      await new Promise((resolve) => setTimeout(resolve, 200));
 
     setLoading(module, false);
   };
 
   interface ModulePackage {
     name: string;
-    alias?: string;
     module: MigrationModule;
+    externalAlias?: string;
+    internalAlias?: string;
     externalPath: string;
     internalPath?: string;
+    mapping?: (data: any[]) => any[];
     disabled?: boolean;
   }
 
   const generateModule = ({
     name,
     module,
+    externalAlias,
+    internalAlias,
     externalPath,
     internalPath,
-    alias,
+    mapping,
     disabled,
   }: ModulePackage) => {
     return (
@@ -304,9 +323,11 @@ const WorkspaceAIPlaygroundPage = () => {
                   handleMigrate({
                     name,
                     module,
+                    externalAlias,
+                    internalAlias,
                     externalPath,
                     internalPath,
-                    alias,
+                    mapping,
                   })
                 }
                 loading={getLoading(module)}
@@ -333,9 +354,11 @@ const WorkspaceAIPlaygroundPage = () => {
                   handleMigrate({
                     name,
                     module,
+                    externalAlias,
+                    internalAlias,
                     externalPath,
                     internalPath,
-                    alias,
+                    mapping,
                   })
                 }
                 loading={getLoading(module)}
@@ -388,17 +411,15 @@ const WorkspaceAIPlaygroundPage = () => {
                   sections={[
                     {
                       value:
-                        (((getData('external', module) ?? []).length -
-                          (getData('external', module) ?? []).filter((v) =>
-                            (getData('internal', module) ?? []).find(
-                              (iv) => iv.id === v.id
-                            )
-                          ).length) /
+                        ((getData('external', module) ?? []).filter((v) =>
+                          (getData('internal', module) ?? []).find(
+                            (iv) => iv.id === v.id
+                          )
+                        ).length /
                           (getData('external', module)?.length ?? 0)) *
                         100,
-                      color: 'red',
-                      tooltip: `Out of sync (${
-                        (getData('external', module) ?? []).length -
+                      color: 'teal',
+                      tooltip: `Synchronized (${
                         (getData('external', module) ?? []).filter((v) =>
                           (getData('internal', module) ?? []).find(
                             (iv) => iv.id === v.id
@@ -430,110 +451,132 @@ const WorkspaceAIPlaygroundPage = () => {
     {
       name: 'Virtual Users',
       module: 'users',
-      alias: 'users',
+      externalAlias: 'users',
       externalPath: '/dashboard/data/users',
-      internalPath: '/api/workspaces/[wsId]/users',
+      internalPath: '/api/workspaces/[wsId]/migrate/users',
+      mapping: (items) =>
+        items.map((i) => ({
+          id: i?.id,
+          email: i?.email,
+          name: i?.display_name,
+          phone: i?.phone_number,
+          gender: i?.gender,
+          birthday: i?.birthday,
+          created_at: i?.created_at,
+          note: `${i?.nickname ? `Nickname: ${i.nickname}\n` : ''}${
+            i?.relationship ? `Relationship: ${i.relationship}\n` : ''
+          }${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
+        })),
     },
     {
-      name: 'Virtual Users Linked Promotions',
-      module: 'user-linked-coupons',
-      alias: 'coupons',
-      externalPath: '/dashboard/data/users/coupons',
-    },
-    {
-      name: 'User Groups (Roles)',
+      name: 'User Groups (Roles + Classes)',
       module: 'roles',
-      alias: 'roles',
+      externalAlias: 'roles',
+      internalAlias: 'groups',
       externalPath: '/dashboard/data/users/roles',
-    },
-    {
-      name: 'User Groups (Classes)',
-      module: 'classes',
-      alias: 'classes',
-      externalPath: '/dashboard/data/classes',
+      internalPath: '/api/workspaces/[wsId]/migrate/users/groups',
+      mapping: (items) =>
+        items.map((i) => ({
+          id: i?.id,
+          name: i?.name,
+          created_at: i?.created_at,
+        })),
     },
     {
       name: 'User Group Members',
       module: 'class-members',
-      alias: 'members',
-      externalPath: '/dashboard/data/classes/members',
+      externalAlias: 'members',
+      externalPath: '/migrate/members',
+      internalPath: '/api/workspaces/[wsId]/migrate/users/groups/members',
+      mapping: (items) =>
+        items.map((i) => ({
+          user_id: i?.user_id,
+          group_id: i?.class_id,
+          created_at: i?.created_at,
+        })),
     },
     {
-      name: 'User Group Vital Categories',
+      name: 'User Group Indicator Groups',
       module: 'class-score-names',
-      alias: 'names',
+      externalAlias: 'names',
       externalPath: '/dashboard/data/classes/score-names',
     },
     {
-      name: 'User Group Vitals',
+      name: 'User Group Indicators',
       module: 'class-user-scores',
-      alias: 'scores',
+      externalAlias: 'scores',
       externalPath: '/dashboard/data/classes/scores',
     },
     {
       name: 'User Group Feedbacks',
       module: 'class-user-feedbacks',
-      alias: 'feedbacks',
+      externalAlias: 'feedbacks',
       externalPath: '/dashboard/data/classes/feedbacks',
     },
     {
       name: 'User Group Attendances',
       module: 'class-user-attendances',
-      alias: 'attendance',
+      externalAlias: 'attendance',
       externalPath: '/dashboard/data/classes/attendance',
     },
     {
       name: 'User Group Content',
       module: 'class-lessons',
-      alias: 'lessons',
+      externalAlias: 'lessons',
       externalPath: '/dashboard/data/classes/lessons',
     },
     {
       name: 'User Group Linked Products',
       module: 'class-linked-packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/classes/packages',
     },
     {
       name: 'Products',
       module: 'packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/packages',
     },
     {
-      name: 'Product categories',
+      name: 'Product Categories',
       module: 'package-categories',
-      alias: 'categories',
+      externalAlias: 'categories',
       externalPath: '/dashboard/data/packages/categories',
     },
     {
       name: 'Wallets',
       module: 'payment-methods',
-      alias: 'methods',
+      externalAlias: 'methods',
       externalPath: '/dashboard/data/payment-methods',
-    },
-    {
-      name: 'Promotions',
-      module: 'coupons',
-      alias: 'coupons',
-      externalPath: '/dashboard/data/coupons',
     },
     {
       name: 'Invoices',
       module: 'bills',
-      alias: 'bills',
+      externalAlias: 'bills',
       externalPath: '/dashboard/data/bills',
     },
     {
       name: 'Invoice Products',
       module: 'bill-packages',
-      alias: 'packages',
+      externalAlias: 'packages',
       externalPath: '/dashboard/data/bills/packages',
+    },
+    {
+      name: 'Promotions',
+      module: 'coupons',
+      externalAlias: 'coupons',
+      externalPath: '/dashboard/data/coupons',
+    },
+    {
+      name: 'Virtual Users Linked Promotions',
+      module: 'user-linked-coupons',
+      externalAlias: 'coupons',
+      externalPath: '/dashboard/data/users/coupons',
     },
     {
       name: 'Invoice Promotions',
       module: 'bill-coupons',
-      alias: 'coupons',
+      externalAlias: 'coupons',
       externalPath: '/dashboard/data/bills/coupons',
     },
   ];
@@ -627,8 +670,8 @@ const WorkspaceAIPlaygroundPage = () => {
   );
 };
 
-WorkspaceAIPlaygroundPage.getLayout = function getLayout(page: ReactElement) {
+PlatformMigrationsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default WorkspaceAIPlaygroundPage;
+export default PlatformMigrationsPage;
