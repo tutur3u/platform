@@ -76,12 +76,12 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
           <PaginationSelector
-            options={[1, 4, 8, 12, 16, 36, 56, 76, 96]}
             items={itemsPerPage}
             setItems={(size) => {
               setPage(1);
               setItemsPerPage(size);
             }}
+            evenNumbers
           />
           <div className="hidden xl:block" />
         </div>

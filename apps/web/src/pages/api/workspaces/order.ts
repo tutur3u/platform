@@ -15,15 +15,6 @@ const updateWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   const { workspaces } = req.body as { workspaces: Workspace[] };
-
-  console.log(
-    workspaces.map(({ id }, idx) => ({
-      ws_id: id,
-      sort_key: idx,
-      user_id: user.id,
-    }))
-  );
-
   const { error } = await supabase
     .from('workspace_members')
     .upsert(

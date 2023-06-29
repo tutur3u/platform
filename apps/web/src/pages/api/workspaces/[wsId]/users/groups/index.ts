@@ -46,7 +46,7 @@ const fetchUserGroups = async (
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
-    .select('id, name, created_at')
+    .select('id, name, created_at', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('name')
     .order('id');
@@ -74,10 +74,10 @@ const fetchUserGroups = async (
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error } = await queryBuilder;
+  const { data, count, error } = await queryBuilder;
 
   if (error) return res.status(401).json({ error: error.message });
-  return res.status(200).json(data);
+  return res.status(200).json({ data, count });
 };
 
 const createUserGroup = async (

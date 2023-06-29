@@ -51,6 +51,10 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
 
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
+
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'users-items-per-page',
     defaultValue: 15,

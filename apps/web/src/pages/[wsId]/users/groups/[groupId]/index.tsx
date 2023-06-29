@@ -83,7 +83,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'workspace-user-groups-items-per-page',
-    defaultValue: 15,
+    defaultValue: 16,
   });
 
   const usersApiPath = ws?.id
@@ -136,6 +136,7 @@ const RoleDetailsPage: PageWithLayoutProps = () => {
               setPage(1);
               setItemsPerPage(size);
             }}
+            evenNumbers
           />
           <div className="hidden xl:block" />
           <Divider variant="dashed" className="col-span-full" />

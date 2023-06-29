@@ -124,7 +124,7 @@ function LeftSidebar({ className }: SidebarProps) {
         )}
       </div>
 
-      <Divider className="my-2" />
+      <Divider className={`my-2 ${sidebar === 'closed' && 'mt-[0.6rem]'}`} />
 
       {ws?.id && (
         <div className="mx-2">

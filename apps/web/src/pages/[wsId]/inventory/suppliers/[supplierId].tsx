@@ -22,10 +22,12 @@ const SupplierDetailsPage: PageWithLayoutProps = () => {
   const router = useRouter();
   const { supplierId } = router.query;
 
-  const supplierApiPath = `/api/suppliers/${supplierId}`;
-  const { data: supplier } = useSWR<ProductSupplier>(
-    supplierId ? supplierApiPath : null
-  );
+  const supplierApiPath =
+    ws && supplierId
+      ? `/api/workspaces/${ws.id}/inventory/suppliers/${supplierId}`
+      : null;
+
+  const { data: supplier } = useSWR<ProductSupplier>(supplierApiPath);
 
   useEffect(() => {
     setRootSegment(

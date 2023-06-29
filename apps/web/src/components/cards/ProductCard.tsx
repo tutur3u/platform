@@ -55,9 +55,9 @@ const ProductCard = ({
                   <span className="opacity-75">sản phẩm</span>
                 </div>
               )}
-              {showCategory && (
+              {showCategory && product?.category && (
                 <div className="line-clamp-1 w-full rounded border border-orange-500/20 bg-orange-500/10 px-4 py-0.5 font-semibold text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
-                  {product?.category}
+                  {product.category}
                 </div>
               )}
             </div>

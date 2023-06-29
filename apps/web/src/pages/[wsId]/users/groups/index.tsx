@@ -53,6 +53,10 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
 
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
+
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
     key: 'users-groups-items-per-page',
     defaultValue: 15,
@@ -62,12 +66,10 @@ const WorkspaceUsersPage: PageWithLayoutProps = () => {
     ? `/api/workspaces/${ws?.id}/users/groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/users/groups/count`
-    : null;
+  const { data } = useSWR<{ data: UserGroup[]; count: number }>(apiPath);
 
-  const { data: groups } = useSWR<UserGroup[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  const groups = data?.data;
+  const count = data?.count;
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',
