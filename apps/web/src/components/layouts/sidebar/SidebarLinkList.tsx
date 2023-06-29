@@ -86,12 +86,14 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      <SidebarLink
-        href={`/${wsId}/documents`}
-        activeIcon={<ClipboardDocumentListIcon className="w-5" />}
-        label={documents}
-        showTooltip={!sidebarOpened}
-      />
+      {(wsPreset === 'ALL' || wsPreset !== 'PHARMACY') && (
+        <SidebarLink
+          href={`/${wsId}/documents`}
+          activeIcon={<ClipboardDocumentListIcon className="w-5" />}
+          label={documents}
+          showTooltip={!sidebarOpened}
+        />
+      )}
 
       <SidebarLink
         href={`/${wsId}/users`}
@@ -116,14 +118,12 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      {adminLevel && (
-        <SidebarLink
-          href={`/${wsId}/inventory`}
-          activeIcon={<ArchiveBoxIcon className="w-5" />}
-          label={inventory}
-          showTooltip={!sidebarOpened}
-        />
-      )}
+      <SidebarLink
+        href={`/${wsId}/inventory`}
+        activeIcon={<ArchiveBoxIcon className="w-5" />}
+        label={inventory}
+        showTooltip={!sidebarOpened}
+      />
 
       {(wsPreset === 'ALL' || wsPreset === 'EDUCATION') && (
         <SidebarLink

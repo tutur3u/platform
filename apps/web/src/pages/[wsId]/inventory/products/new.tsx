@@ -65,6 +65,8 @@ const NewProductPage: PageWithLayoutProps = () => {
             name,
             manufacturer,
             category_id: categoryId,
+            description,
+            usage,
           }}
         />
       ),
