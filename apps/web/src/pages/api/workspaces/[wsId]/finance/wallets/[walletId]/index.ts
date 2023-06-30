@@ -54,16 +54,16 @@ const fetchWallet = async (
   if (!data) return res.status(404).json({ error: 'Not found' });
 
   const newData = {
-    name: data.name,
-    description: data.description,
-    currency: data.currency,
-    balance: data.balance,
-    type: data.type,
-    report_opt_in: data.report_opt_in,
+    name: data?.name,
+    description: data?.description ?? '',
+    currency: data?.currency,
+    balance: data?.balance,
+    type: data?.type,
+    report_opt_in: data?.report_opt_in,
 
-    statement_date: data.credit_wallets[0]?.statement_date,
-    payment_date: data.credit_wallets[0]?.payment_date,
-    limit: data.credit_wallets[0]?.limit,
+    statement_date: data?.credit_wallets?.[0]?.statement_date,
+    payment_date: data?.credit_wallets?.[0]?.payment_date,
+    limit: data?.credit_wallets?.[0]?.limit,
   } as Wallet;
 
   return res.status(200).json(newData);

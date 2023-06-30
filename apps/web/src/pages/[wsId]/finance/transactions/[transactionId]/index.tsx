@@ -206,6 +206,13 @@ const TransactionDetailsPage: PageWithLayoutProps = () => {
             disabled={!transactionWallet}
           >
             <TransactionCategorySelector
+              category={
+                transaction?.category_id
+                  ? {
+                      id: transaction?.category_id,
+                    }
+                  : null
+              }
               categoryId={transaction?.category_id}
               preventPreselected
               hideLabel
