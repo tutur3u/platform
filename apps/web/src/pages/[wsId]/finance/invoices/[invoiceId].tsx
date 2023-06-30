@@ -536,6 +536,7 @@ const InvoiceDetailsPage: PageWithLayoutProps = () => {
                   getUniqueWarehouseIds={getUniqueWarehouseIds}
                   removePrice={() => removePrice(idx)}
                   updateProduct={(product) => updateProduct(idx, product)}
+                  hideStock
                 />
               ))}
             </div>
