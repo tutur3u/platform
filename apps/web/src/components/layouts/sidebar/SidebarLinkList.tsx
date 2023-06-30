@@ -9,7 +9,6 @@ import {
   CircleStackIcon,
   ClipboardDocumentListIcon,
   CodeBracketSquareIcon,
-  FingerPrintIcon,
   HomeIcon,
   RectangleStackIcon,
   SparklesIcon,
@@ -41,7 +40,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const tasks = t('tasks');
   const documents = t('documents');
   const users = t('users');
-  const attendance = t('attendance');
   const healthcare = t('healthcare');
   const inventory = t('inventory');
   const classes = t('classes');
@@ -102,13 +100,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         showTooltip={!sidebarOpened}
       />
 
-      <SidebarLink
-        href={`/${wsId}/attendance`}
-        activeIcon={<FingerPrintIcon className="w-5" />}
-        label={attendance}
-        showTooltip={!sidebarOpened}
-      />
-
       {(wsPreset === 'ALL' || wsPreset === 'PHARMACY') && (
         <SidebarLink
           href={`/${wsId}/healthcare`}
@@ -135,17 +126,15 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         />
       )}
 
-      {adminLevel && (
-        <SidebarLink
-          href={`/${wsId}/finance`}
-          activeIcon={<BanknotesIcon className="w-5" />}
-          label={finance}
-          showTooltip={!sidebarOpened}
-          classNames={{
-            root: 'hidden md:block',
-          }}
-        />
-      )}
+      <SidebarLink
+        href={`/${wsId}/finance`}
+        activeIcon={<BanknotesIcon className="w-5" />}
+        label={finance}
+        showTooltip={!sidebarOpened}
+        classNames={{
+          root: 'hidden md:block',
+        }}
+      />
 
       <SidebarLink
         href={`/${wsId}/databases`}

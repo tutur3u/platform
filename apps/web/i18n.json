@@ -42,7 +42,16 @@
     ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
-    "/[wsId]": ["sidebar-tabs", "workspace-tabs", "ws-home"],
+    "/[wsId]": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-home",
+      "finance-tabs",
+      "finance-overview",
+      "inventory-tabs",
+      "inventory-overview",
+      "workspace-users-tabs"
+    ],
     "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
     "/[wsId]/members": [
       "sidebar-tabs",

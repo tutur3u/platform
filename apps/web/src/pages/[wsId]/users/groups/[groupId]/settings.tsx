@@ -14,6 +14,7 @@ import { useRouter } from 'next/router';
 import { UserGroup } from '../../../../../types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
+import { useAppearance } from '../../../../../hooks/useAppearance';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -26,6 +27,7 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
   const untitledLabel = t('common:untitled');
 
   const { setRootSegment } = useSegments();
+  const { sidebar } = useAppearance();
   const { ws } = useWorkspaces();
 
   const router = useRouter();
@@ -135,7 +137,11 @@ const UserGroupSettingsPage: PageWithLayoutProps = () => {
       <div className="flex min-h-full w-full flex-col ">
         {group && hasRequiredFields() && (
           <div
-            className={`fixed inset-x-0 bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition duration-300 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+            className={`fixed inset-x-0 ${
+              sidebar === 'open'
+                ? 'mx-4 md:ml-72 md:mr-8 lg:ml-80 lg:mr-16 xl:ml-96 xl:mr-32'
+                : 'mx-4 md:ml-24 md:mr-8 lg:ml-32 lg:mr-16 xl:mx-48'
+            } bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition-all duration-500 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
               isDirty() ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
