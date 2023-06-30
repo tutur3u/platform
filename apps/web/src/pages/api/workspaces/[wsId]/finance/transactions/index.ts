@@ -84,7 +84,9 @@ const fetchTransactions = async (
       description:
         transaction?.description ||
         (transaction?.transaction_categories
-          ? transaction?.transaction_categories?.[0]?.name
+          ? // @ts-ignore
+            transaction?.transaction_categories?.name ??
+            transaction?.transaction_categories?.[0]?.name
           : ''),
       wallet_id: transaction.wallet_id,
       category_id: transaction.category_id,
