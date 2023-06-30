@@ -24,7 +24,7 @@ interface Progress {
   remove: Status;
 }
 
-const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
+const InvoiceDeleteModal = ({ wsId, invoiceId, products }: Props) => {
   const router = useRouter();
 
   const { t } = useTranslation('invoice-modal');
@@ -249,4 +249,4 @@ const DeleteModal = ({ wsId, invoiceId, products }: Props) => {
   );
 };
 
-export default DeleteModal;
+export default InvoiceDeleteModal;
