@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/auth-helpers-react';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { AuthRequest, AuthResponse } from '../../../types/AuthData';
+import { DEV_MODE } from '../../../constants/common';
+import { supabaseAdmin } from '../../../utils/supabase/client';
 
 const handler = async (
   req: NextApiRequest,
@@ -72,6 +74,18 @@ const signup = async (
 
   // Check if the session is valid
   if (!session) throw 'Something went wrong';
+
+  if (DEV_MODE) {
+    const sbAdmin = supabaseAdmin();
+    if (!sbAdmin) throw 'Missing admin credentials';
+
+    const { error: userError } = await sbAdmin
+      .from('users')
+      .update({ email_confirmed_at: new Date() })
+      .eq('id', session.user?.id);
+
+    if (userError) throw userError;
+  }
 
   return session;
 };
