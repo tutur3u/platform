@@ -72,7 +72,6 @@ const signup = async (
 
   // Check if the session is valid
   if (!session) throw 'Something went wrong';
-
   return session;
 };
 

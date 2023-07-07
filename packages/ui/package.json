@@ -20,14 +20,14 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.14",
-    "eslint": "^8.43.0",
+    "eslint": "^8.44.0",
     "eslint-config-custom": "workspace:*",
-    "postcss": "^8.4.24",
+    "postcss": "^8.4.25",
     "react": "^18.2.0",
     "tailwind-config": "workspace:*",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
     "typescript": "^5.1.6"
   },
-  "packageManager": "pnpm@8.6.5"
+  "packageManager": "pnpm@8.6.6"
 }
