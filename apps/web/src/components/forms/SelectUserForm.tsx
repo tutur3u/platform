@@ -10,6 +10,7 @@ import {
   isIncompleteEmail,
   suggestEmails,
 } from '../../utils/email-helper';
+import useTranslation from 'next-translate/useTranslation';
 
 interface SelectUserFormProps {
   wsId: string;
@@ -18,6 +19,8 @@ interface SelectUserFormProps {
 type UserWithValue = User & { value: string };
 
 const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
+  const { t } = useTranslation('ws-members');
+
   const [value, setValue] = useState('');
   const [debounced] = useDebouncedValue(value, 300);
 
@@ -111,19 +114,18 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
       closeAllModals();
 
       showNotification({
-        title: 'Invitation sent',
-        message: `Invitation to ${
+        title: t('invitation_sent'),
+        message: `${t('invitation_to')} ${
           (selectedUser?.handle && `@${selectedUser?.handle}`) ||
           selectedUser?.display_name ||
           value
-        } has been sent`,
+        } ${t('has_been_sent')}`,
         color: 'teal',
       });
     } else {
-      const res = await response.json();
       showNotification({
-        title: 'Could not invite user',
-        message: res?.error?.message || 'Something went wrong',
+        title: t('invitation_error'),
+        message: t('invitation_error_already_exist'),
         color: 'red',
       });
     }
@@ -137,7 +139,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         <Autocomplete
           value={value}
           onChange={setValue}
-          placeholder="Enter an handle or email"
+          placeholder={t('enter_email_or_username')}
           itemComponent={AutoCompleteItem}
           data={suggestions}
           onItemSubmit={(item) => {
@@ -149,7 +151,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
           withinPortal
         />
       ) : (
-        <Group className="rounded-lg border border-zinc-800/80 bg-blue-300/10 p-4">
+        <Group className="rounded border border-zinc-800/80 bg-blue-300/10 px-4 py-2 text-blue-300 dark:border-blue-300/10">
           {selectedUser?.id === value ? (
             <Text>{value}</Text>
           ) : (
@@ -172,32 +174,17 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         </Group>
       )}
 
-      <div>
-        {isEmail(value) ? (
-          <Button
-            fullWidth
-            variant="subtle"
-            color="teal"
-            onClick={handleInvite}
-            loading={inviting}
-            mt="md"
-          >
-            {inviting ? 'Inviting...' : 'Invite'}
-          </Button>
-        ) : (
-          <Button
-            fullWidth
-            variant="subtle"
-            color="teal"
-            onClick={handleInvite}
-            loading={inviting}
-            mt="md"
-            disabled={!selectedUser}
-          >
-            {inviting ? 'Inviting...' : 'Invite'}
-          </Button>
-        )}
-      </div>
+      <Button
+        fullWidth
+        variant="light"
+        className="bg-blue-300/10 hover:bg-blue-300/20"
+        onClick={handleInvite}
+        loading={inviting}
+        disabled={!selectedUser && !isEmail(value)}
+        mt="xs"
+      >
+        {t('invite_member')}
+      </Button>
     </>
   );
 };
