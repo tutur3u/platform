@@ -18,11 +18,11 @@ interface Props {
 
 const ProductPriceInput = ({
   price,
-  minAmount,
+  // minAmount,
   isLast,
 
   updatePrice,
-  updateMinAmount,
+  // updateMinAmount,
   updateUnitId,
   removePrice,
   getUniqueUnitIds,
@@ -54,7 +54,7 @@ const ProductPriceInput = ({
           }
           disabled={!price.unit_id}
         />
-        <NumberInput
+        {/* <NumberInput
           label="Tồn kho tối thiểu"
           placeholder="0"
           value={minAmount || ''}
@@ -70,7 +70,7 @@ const ProductPriceInput = ({
               : ''
           }
           disabled={!price.unit_id}
-        />
+        /> */}
 
         <NumberInput
           label="Tồn kho"
@@ -79,7 +79,7 @@ const ProductPriceInput = ({
           onChange={(num) =>
             price.unit_id ? updatePrice(price.unit_id, num) : null
           }
-          className="w-full"
+          className="col-span-2 w-full"
           min={0}
           parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
           formatter={(value) =>
