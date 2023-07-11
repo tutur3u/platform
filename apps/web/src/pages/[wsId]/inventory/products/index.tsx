@@ -172,7 +172,10 @@ const ProductsPage: PageWithLayoutProps = () => {
                 product={p}
                 showSupplier={showSupplier}
                 showCategory={showCategory}
-                showAmount={showAmount}
+                showAmount={
+                  warehouseIds.filter((id) => id !== '' && id !== 'all')
+                    .length > 0 && showAmount
+                }
                 showPrice={enablePrice}
               />
             ))}

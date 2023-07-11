@@ -42,7 +42,21 @@ const NewBatchPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [price, setPrice] = useState<number | ''>();
+  const [price, setPrice] = useState<number | ''>('');
+
+  useEffect(() => {
+    if (products.length === 0) {
+      setPrice('');
+      return;
+    }
+
+    const total = products.reduce(
+      (acc, product) => acc + Number(product?.price ?? 0),
+      0
+    );
+
+    setPrice(total);
+  }, [products]);
 
   const [warehouseId, setWarehouseId] = useLocalStorage({
     key: 'warehouse-id',
