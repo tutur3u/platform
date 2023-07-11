@@ -238,8 +238,8 @@ importers:
         specifier: ^8.4.25
         version: 8.4.25
       supabase:
-        specifier: ^1.75.3
-        version: 1.75.3
+        specifier: ^1.77.5
+        version: 1.77.5
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -3135,7 +3135,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.21.9
-      caniuse-lite: 1.0.30001514
+      caniuse-lite: 1.0.30001515
       fraction.js: 4.2.0
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -3310,7 +3310,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001514
+      caniuse-lite: 1.0.30001515
       electron-to-chromium: 1.4.455
       node-releases: 2.0.13
       update-browserslist-db: 1.0.11(browserslist@4.21.9)
@@ -3390,8 +3390,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite@1.0.30001514:
-    resolution: {integrity: sha512-ENcIpYBmwAAOm/V2cXgM7rZUrKKaqisZl4ZAI520FIkqGXUxJjmaIssbRW5HVVR5tyV6ygTLIm15aU8LUmQSaQ==}
+  /caniuse-lite@1.0.30001515:
+    resolution: {integrity: sha512-eEFDwUOZbE24sb+Ecsx3+OvNETqjWIdabMy52oOkIgcUtAsQifjUG9q4U9dgTHJM2mfk4uEPxc0+xuFdJ629QA==}
 
   /case-anything@2.1.13:
     resolution: {integrity: sha512-zlOQ80VrQ2Ue+ymH5OuM/DlDq64mEm+B9UTdHULv5osUMD6HalNTblf2b1u/m6QecjsnOkBpqVZ+XPwIVsy7Ng==}
@@ -6244,7 +6244,7 @@ packages:
       '@next/env': 13.4.9
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001514
+      caniuse-lite: 1.0.30001515
       postcss: 8.4.14
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -7684,8 +7684,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.75.3:
-    resolution: {integrity: sha512-o6rd6v09QstJACYbcNPHaPPnCSi6CO5o2g4ZiZ45V+RYBQasPk8UCOqzJEzi/Ahizq3rb1bJBdwYdEpDmlepPg==}
+  /supabase@1.77.5:
+    resolution: {integrity: sha512-dqafC/LzrdGBsW1Rl6228C+rk6ZJJVI06G0U+og6hI8kgwwPBCExQ5YHUmMbrrsqayIyNQgBRukREchDSC10BA==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
