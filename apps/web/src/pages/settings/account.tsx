@@ -164,11 +164,11 @@ const SettingPage: PageWithLayoutProps = () => {
         <SettingItemTab title="Handle" description={handleDescription}>
           <TextInput
             placeholder="tuturuuu"
-            // replace all characters that are not a-z, 0-9, or _
-            value={handle.replace(/[^a-z0-9_]/gi, '').toLowerCase()}
+            // replace all characters that are not a-z, 0-9, underscore(_), or dash(-) with empty string
+            value={handle.replace(/[^a-z0-9_-]/gi, '').toLowerCase()}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
               const handle = event.currentTarget.value.replace(
-                /[^a-z0-9_]/gi,
+                /[^a-z0-9_-]/gi,
                 ''
               );
 
