@@ -297,40 +297,44 @@ const WorkspaceHomePage = () => {
             />
           </div>
 
-          <Divider className="mb-8 mt-4" variant="dashed" />
-          <div className="mb-2 text-2xl font-semibold">
-            {t('sidebar-tabs:healthcare')}
-          </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatisticCard
-              title="Kiểm tra sức khoẻ"
-              color="blue"
-              value={checkups}
-              href={`/${ws?.id}/healthcare/checkups`}
-              loading={isCheckupsLoading}
-            />
+          {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
+            <>
+              <Divider className="mb-8 mt-4" variant="dashed" />
+              <div className="mb-2 text-2xl font-semibold">
+                {t('sidebar-tabs:healthcare')}
+              </div>
+              <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <StatisticCard
+                  title="Kiểm tra sức khoẻ"
+                  color="blue"
+                  value={checkups}
+                  href={`/${ws?.id}/healthcare/checkups`}
+                  loading={isCheckupsLoading}
+                />
 
-            <StatisticCard
-              title="Chẩn đoán"
-              value={diagnoses}
-              href={`/${ws?.id}/healthcare/diagnoses`}
-              loading={isDiagnosesLoading}
-            />
+                <StatisticCard
+                  title="Chẩn đoán"
+                  value={diagnoses}
+                  href={`/${ws?.id}/healthcare/diagnoses`}
+                  loading={isDiagnosesLoading}
+                />
 
-            <StatisticCard
-              title="Chỉ số"
-              value={vitals}
-              href={`/${ws?.id}/healthcare/vitals`}
-              loading={isVitalsLoading}
-            />
+                <StatisticCard
+                  title="Chỉ số"
+                  value={vitals}
+                  href={`/${ws?.id}/healthcare/vitals`}
+                  loading={isVitalsLoading}
+                />
 
-            <StatisticCard
-              title="Nhóm chỉ số"
-              value={groups}
-              href={`/${ws?.id}/healthcare/vital-groups`}
-              loading={isGroupsLoading}
-            />
-          </div>
+                <StatisticCard
+                  title="Nhóm chỉ số"
+                  value={groups}
+                  href={`/${ws?.id}/healthcare/vital-groups`}
+                  loading={isGroupsLoading}
+                />
+              </div>
+            </>
+          )}
 
           <Divider className="mb-8 mt-4" variant="dashed" />
           <div className="mb-2 text-2xl font-semibold">

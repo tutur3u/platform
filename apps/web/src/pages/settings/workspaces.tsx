@@ -19,7 +19,7 @@ export const getServerSideProps = enforceAuthenticated;
 
 const WorkspacesSettingPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
-  const { workspaces: wss } = useWorkspaces();
+  const { workspaces: wss, setWsId } = useWorkspaces();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(wss || []);
 
@@ -144,6 +144,7 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
 
                           <Link
                             href={`/${ws.id}`}
+                            onClick={() => setWsId(ws.id)}
                             className="hover:purple-500/30 rounded border border-purple-500/20 bg-purple-500/10 p-2 transition dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20"
                           >
                             <EyeIcon className="h-5 w-5 text-purple-500 dark:text-purple-300" />

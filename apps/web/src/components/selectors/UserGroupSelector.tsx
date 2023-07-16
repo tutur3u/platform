@@ -42,7 +42,11 @@ const UserGroupSelector = ({
     .filter((id) => id !== group?.id && id !== '')
     .join(',')}`;
 
-  const { data: groups } = useSWR<UserGroup[]>(ws?.id ? apiPath : null);
+  const { data: fetchedData } = useSWR<{ data: UserGroup[]; count: number }>(
+    ws?.id ? apiPath : null
+  );
+
+  const groups = fetchedData?.data;
 
   const data = [
     ...(groups?.map((group) => ({

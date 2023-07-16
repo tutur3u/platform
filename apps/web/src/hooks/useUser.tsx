@@ -80,7 +80,7 @@ export const UserDataProvider = ({
         return;
       }
 
-      if (!/^[a-zA-Z0-9_]+$/.test(data.handle)) {
+      if (!/^[a-z0-9_-]+$/.test(data.handle)) {
         showNotification({
           title: 'Invalid handle',
           message: 'Username can only contain letters, numbers and underscores',
