@@ -561,7 +561,6 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                 group={{ id: newGroupId }}
                 setGroup={(group) => setNewGroupId(group?.id || '')}
                 className="w-full"
-                creatable={false}
                 preventPreselect
                 clearable
                 hideLabel
