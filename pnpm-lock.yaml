@@ -15,11 +15,11 @@ importers:
         specifier: workspace:*
         version: link:packages/eslint-config-custom
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       prettier-plugin-tailwindcss:
         specifier: ^0.4.1
-        version: 0.4.1(prettier@2.8.8)
+        version: 0.4.1(prettier@3.0.0)
       turbo:
         specifier: ^1.10.7
         version: 1.10.7
@@ -69,11 +69,11 @@ importers:
         specifier: ^7.58.1
         version: 7.58.1(next@13.4.9)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
-        specifier: ^0.7.2
-        version: 0.7.2(@supabase/supabase-js@2.26.0)
+        specifier: ^0.7.3
+        version: 0.7.3(@supabase/supabase-js@2.26.0)
       '@supabase/auth-helpers-react':
-        specifier: ^0.4.0
-        version: 0.4.0(@supabase/supabase-js@2.26.0)
+        specifier: ^0.4.1
+        version: 0.4.1(@supabase/supabase-js@2.26.0)
       '@supabase/supabase-js':
         specifier: ^2.26.0
         version: 2.26.0
@@ -2052,8 +2052,8 @@ packages:
       '@sinonjs/commons': 3.0.0
     dev: true
 
-  /@supabase/auth-helpers-nextjs@0.7.2(@supabase/supabase-js@2.26.0):
-    resolution: {integrity: sha512-n5IyGBYJV/WiR5Rgw4CUaiJYiOv9yW2of4ZP4EyzKt2O6/6rztt7PcGE4AoK2vERw+fb5F2QtJBdt6J5eOYCCw==}
+  /@supabase/auth-helpers-nextjs@0.7.3(@supabase/supabase-js@2.26.0):
+    resolution: {integrity: sha512-ikuBGHFnvyfneToj0Y2EfiqUnEr1bdqR6JZiFydPnzACQ2Q7TkcOhkoUSc9/sMEeG7EKX5PhH8riAz42oPdKRg==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
@@ -2062,8 +2062,8 @@ packages:
       set-cookie-parser: 2.6.0
     dev: false
 
-  /@supabase/auth-helpers-react@0.4.0(@supabase/supabase-js@2.26.0):
-    resolution: {integrity: sha512-EPsLi6r2NSZ4pyK9PTjImx9FFM+2rJoNN/I0kF3rqj2HGcFstopu9ZELKQ5Lc1humlCG4pxIdHn3564gJqIqlQ==}
+  /@supabase/auth-helpers-react@0.4.1(@supabase/supabase-js@2.26.0):
+    resolution: {integrity: sha512-Y9ZWzhpsOX93rokmywDdclzTDPbHjybU7o4/FmXlAqta75msFxHV9WVTR6//SZf2Bca2Cf65Oa/j+fYtMWraDQ==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
@@ -6683,7 +6683,7 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  /prettier-plugin-tailwindcss@0.4.1(prettier@2.8.8):
+  /prettier-plugin-tailwindcss@0.4.1(prettier@3.0.0):
     resolution: {integrity: sha512-hwn2EiJmv8M+AW4YDkbjJ6HlZCTzLyz1QlySn9sMuKV/Px0fjwldlB7tol8GzdgqtkdPtzT3iJ4UzdnYXP25Ag==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
@@ -6735,12 +6735,12 @@ packages:
       prettier-plugin-twig-melody:
         optional: true
     dependencies:
-      prettier: 2.8.8
+      prettier: 3.0.0
     dev: true
 
-  /prettier@2.8.8:
-    resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
-    engines: {node: '>=10.13.0'}
+  /prettier@3.0.0:
+    resolution: {integrity: sha512-zBf5eHpwHOGPC47h0zrPyNn+eAEIdEzfywMoYn2XPi0P44Zp0tSq64rq0xAREh4auw2cJZHo9QUob+NqCQky4g==}
+    engines: {node: '>=14'}
     hasBin: true
     dev: true
 
