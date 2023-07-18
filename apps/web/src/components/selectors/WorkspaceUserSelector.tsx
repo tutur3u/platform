@@ -63,7 +63,7 @@ const WorkspaceUserSelector = ({
   const data = notEmpty
     ? [
         ...(users?.map((user) => ({
-          label: user?.name ?? user?.display_name,
+          label: user?.name ?? user?.display_name ?? '',
           value: user.id,
         })) || []),
       ]
@@ -74,7 +74,7 @@ const WorkspaceUserSelector = ({
           group: t('common:general'),
         },
         ...(users?.map((user) => ({
-          label: user.name,
+          label: user?.name ?? user?.display_name ?? '',
           value: user.id,
           group: t('common:other'),
         })) || []),
