@@ -39,7 +39,8 @@ const fetchTransactions = async (
     res,
   });
 
-  const { walletIds, query, page, itemsPerPage } = req.query;
+  const { walletIds, query, page, itemsPerPage, startDate, endDate } =
+    req.query;
 
   const queryBuilder = supabase
     .from('wallet_transactions')
@@ -55,6 +56,14 @@ const fetchTransactions = async (
 
   if (query) {
     queryBuilder.ilike('description', `%${query}%`);
+  }
+
+  if (startDate && typeof startDate === 'string') {
+    queryBuilder.gte('taken_at', startDate);
+  }
+
+  if (endDate && typeof endDate === 'string') {
+    queryBuilder.lte('taken_at', endDate);
   }
 
   if (

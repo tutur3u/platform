@@ -33,9 +33,7 @@ const VitalSelector = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const apiPath = `/api/workspaces/${
-    ws?.id
-  }/healthcare/vitals?blacklist=${blacklist
+  const apiPath = `/api/workspaces/${ws?.id}/healthcare/vitals?blacklist=${blacklist
     .filter((id) => id !== vital?.id && id !== '')
     .join(',')}`;
 
