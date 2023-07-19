@@ -101,9 +101,9 @@ export default function SidebarLink({
                     disableBorder ? '' : 'border border-transparent'
                   }`
               : ''
-          } ${left && isExpanded ? 'justify-start' : 'justify-center'} ${
-            classNames?.innerRoot
-          }`}
+          } ${
+            left && isExpanded ? 'justify-start' : 'justify-center'
+          } ${classNames?.innerRoot}`}
         >
           {showIcon && (
             <div className="flex-none">

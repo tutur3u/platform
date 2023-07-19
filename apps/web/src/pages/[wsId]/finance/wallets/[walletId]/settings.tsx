@@ -273,9 +273,7 @@ const WalletSettingsPage: PageWithLayoutProps = () => {
                         <button
                           onClick={() =>
                             router.push(
-                              `/${
-                                ws?.id
-                              }/finance/transactions/new?targetWalletId=${walletId}&type=transfer&amount=${
+                              `/${ws?.id}/finance/transactions/new?targetWalletId=${walletId}&type=transfer&amount=${
                                 (limit || 0) - balance
                               }`
                             )

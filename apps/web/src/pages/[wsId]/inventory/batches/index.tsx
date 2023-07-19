@@ -59,9 +59,7 @@ const BatchesPage: PageWithLayoutProps = () => {
   });
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${
-        ws?.id
-      }/inventory/batches?warehouseIds=${warehouseIds.join(
+    ? `/api/workspaces/${ws?.id}/inventory/batches?warehouseIds=${warehouseIds.join(
         ','
       )}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
