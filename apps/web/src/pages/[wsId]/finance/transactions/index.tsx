@@ -20,6 +20,7 @@ import 'moment/locale/vi';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
+import FilterDateSelector from '../../../../components/selectors/FilterDateSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -146,6 +147,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
+          <FilterDateSelector/>
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {
