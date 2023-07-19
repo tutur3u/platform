@@ -3,11 +3,18 @@ import { DatePickerInput } from '@mantine/dates';
 import { useEffect, useState } from 'react';
 
 interface DateFilterProps {
+  label?: string;
+  placeholder?: string;
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
 }
 
-const DateRangeInput = ({ setStartDate, setEndDate }: DateFilterProps) => {
+const DateRangeInput = ({
+  label,
+  placeholder,
+  setStartDate,
+  setEndDate,
+}: DateFilterProps) => {
   const [value, setValue] = useState<[Date | null, Date | null]>([null, null]);
 
   const startDate = value[0];
@@ -28,8 +35,8 @@ const DateRangeInput = ({ setStartDate, setEndDate }: DateFilterProps) => {
       clearable
       value={value}
       onChange={setValue}
-      label="Date Range"
-      placeholder="Pick date"
+      label={label}
+      placeholder={placeholder}
       icon={<CalendarDaysIcon className="h-5" />}
       classNames={{
         input: 'bg-[#25262b]',

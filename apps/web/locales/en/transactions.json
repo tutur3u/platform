@@ -47,5 +47,6 @@
   "delete": "Delete",
   "save-changes": "Save changes",
   "wallet-description": "Wallet from which this transaction was made.",
-  "report-opt-out": "Hide from reports"
+  "report-opt-out": "Hide from reports",
+  "date-range": "Date range"
 }

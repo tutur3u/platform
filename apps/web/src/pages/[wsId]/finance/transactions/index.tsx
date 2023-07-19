@@ -30,6 +30,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
   const { lang } = useTranslation();
   const { t } = useTranslation('transactions');
+
   const finance = t('finance');
   const transaction = t('transactions');
   const unnamedWorkspace = t('unnamed-ws');
@@ -160,7 +161,12 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
-          <DateRangeInput setStartDate={setStartDate} setEndDate={setEndDate} />
+          <DateRangeInput
+            label={t('date-range')}
+            placeholder={t('common:all')}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {
