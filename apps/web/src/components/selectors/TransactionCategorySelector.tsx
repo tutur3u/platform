@@ -55,9 +55,7 @@ const TransactionCategorySelector = ({
   const { t } = useTranslation('category-selector');
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${
-        ws?.id
-      }/finance/transactions/categories?blacklist=${blacklist
+    ? `/api/workspaces/${ws?.id}/finance/transactions/categories?blacklist=${blacklist
         .filter((id) => id !== category?.id && id !== '')
         .join(',')}${isExpense !== undefined ? `&isExpense=${isExpense}` : ''}`
     : null;

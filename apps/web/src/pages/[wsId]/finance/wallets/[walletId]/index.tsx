@@ -102,18 +102,21 @@ const WalletDetailsPage: PageWithLayoutProps = () => {
 
   if (!ws) return null;
 
-  const transactionsByDate = transactions?.reduce((acc, cur) => {
-    const date = moment(cur.taken_at).toDate();
-    const localeDate = date.toLocaleDateString();
+  const transactionsByDate = transactions?.reduce(
+    (acc, cur) => {
+      const date = moment(cur.taken_at).toDate();
+      const localeDate = date.toLocaleDateString();
 
-    if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
+      if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
 
-    acc[localeDate].transactions.push(cur);
+      acc[localeDate].transactions.push(cur);
 
-    acc[localeDate].total += cur?.amount || 0;
+      acc[localeDate].total += cur?.amount || 0;
 
-    return acc;
-  }, {} as Record<string, { transactions: Transaction[]; total: number }>);
+      return acc;
+    },
+    {} as Record<string, { transactions: Transaction[]; total: number }>
+  );
 
   const getRelativeDate = (date: string) => {
     const now = new Date();
