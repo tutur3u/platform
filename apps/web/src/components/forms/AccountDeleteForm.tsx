@@ -1,5 +1,4 @@
-import { Button, Divider, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
+import { Button, TextInput } from '@mantine/core';
 import { User } from '../../types/primitives/User';
 import { useEffect, useState } from 'react';
 

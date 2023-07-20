@@ -27,7 +27,7 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
 import { closeAllModals, openModal } from '@mantine/modals';
 import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
-import { supabaseAdmin } from '../../utils/supabase/client';
+import Link from 'next/link';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -239,6 +239,8 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
+        <Divider variant="dashed" className="my-2" />
+
         <SettingItemTab title="Email" description={emailDescription}>
           <div className="grid gap-2">
             <TextInput
@@ -282,6 +284,21 @@ const SettingPage: PageWithLayoutProps = () => {
         >
           {isSaving ? saving : save}
         </div>
+
+        <SettingItemTab
+          title="Change password"
+          description="Change your password."
+        >
+          <div
+            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
+          >
+            <Link
+              href="/reset-password"
+            >
+              Change password
+            </Link>
+          </div>
+        </SettingItemTab>
 
         <Divider variant="dashed" className="my-2" />
 
