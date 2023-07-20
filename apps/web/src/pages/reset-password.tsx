@@ -35,7 +35,6 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const ResetPasswordPage = () => {
   const supabaseClient = useSupabaseClient();
-
   const router = useRouter();
 
   const handleResetPassword = async ({ password }: AuthFormFields) => {
