@@ -58,7 +58,7 @@ const AuthForm = ({
         data: { session },
       } = await supabaseClient.auth.getSession();
 
-      if (session) {
+      if (session && !resetPasswordMode) {
         setSubmitting(true);
 
         const userPromise = mutate('/api/user');
@@ -73,7 +73,7 @@ const AuthForm = ({
     };
 
     checkSession();
-  }, [supabaseClient.auth, router]);
+  }, [supabaseClient.auth, router, resetPasswordMode]);
 
   const { t } = useTranslation('auth');
 
