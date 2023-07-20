@@ -1,6 +1,15 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { Checkbox, Divider, TextInput } from '@mantine/core';
+import {
+  Card,
+  Checkbox,
+  Divider,
+  FileInput,
+  Group,
+  Image,
+  TextInput,
+  Text,
+} from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -56,20 +65,25 @@ const SettingPage: PageWithLayoutProps = () => {
   }, [settings, account, setRootSegment]);
 
   const { user, updateUser } = useUser();
-
   const [isSaving, setIsSaving] = useState(false);
-
   const [displayName, setDisplayName] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
+  const [valueFile, setValueFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user) {
+      // log the context of UserDataContext 
+      
+      console.log(user);
+
       setDisplayName(user?.display_name || '');
       setUsername(user?.handle || '');
       setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
       setEmail(user?.email || '');
+      setAvatar(user?.avatar_url || '');
     }
   }, [user]);
 
@@ -144,10 +158,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const logoutDescription = t('logout-description');
 
   return (
-    <div className="md:max-w-lg">
+    <div className="grid grid-cols-3 gap-x-5">
       <HeaderX label={settings} />
 
-      <div className="grid gap-2">
+      <div className="col-span-3 grid gap-1  md:max-w-lg lg:col-span-2 xl:col-span-1">
         <SettingItemTab
           title={displayNameLabel}
           description={displayNameDescription}
@@ -158,6 +172,22 @@ const SettingPage: PageWithLayoutProps = () => {
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setDisplayName(event.currentTarget.value)
             }
+          />
+        </SettingItemTab>
+
+        <SettingItemTab
+          title="Profile Picture"
+          description="Upload a profile picture for your account."
+        >
+          <FileInput
+            label="Upload files"
+            placeholder="Upload files"
+            accept="image/png,image/jpeg"
+            value={valueFile}
+            classNames={{
+              input: 'bg-[#25262b]',
+            }}
+            onChange={setValueFile}
           />
         </SettingItemTab>
 
@@ -275,6 +305,33 @@ const SettingPage: PageWithLayoutProps = () => {
             {logOut}
           </div>
         </SettingItemTab>
+      </div>
+
+      <div className="col-span-1   md:max-w-lg ">
+        <Card
+          shadow="sm"
+          padding="lg"
+          radius="md"
+          className="h-[20rem]"
+          withBorder
+        >
+          <Card.Section withBorder inheritPadding py="xs">
+            <Group position="apart">
+              <Text weight={500}>Review pictures</Text>
+            </Group>
+          </Card.Section>
+
+          <Card.Section
+            className="h-full"
+          >
+            <Image
+              src={valueFile ? URL.createObjectURL(valueFile) : avatar}
+              alt="With default placeholder"
+              withPlaceholder
+              height={278.67}
+            />
+          </Card.Section>
+        </Card>
       </div>
     </div>
   );

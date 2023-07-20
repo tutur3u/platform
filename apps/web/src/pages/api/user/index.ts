@@ -17,7 +17,7 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const publicPromise = supabase
     .from('users')
-    .select('id, display_name, handle, created_at')
+    .select('id, display_name, handle, created_at, avatar_url')
     .eq('id', user?.id)
     .single();
 
