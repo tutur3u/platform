@@ -25,6 +25,9 @@ import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticat
 import { mutate } from 'swr';
 import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
+import { closeAllModals, openModal } from '@mantine/modals';
+import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
+import { supabaseAdmin } from '../../utils/supabase/client';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -121,6 +124,50 @@ const SettingPage: PageWithLayoutProps = () => {
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
     router.push('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete account');
+
+      showNotification({
+        title: 'Account deleted',
+        message: 'Your account has been deleted.',
+        color: 'green',
+      });
+
+      closeAllModals();
+      handleLogout();
+    } catch (e) {
+      if (e instanceof Error)
+        showNotification({
+          title: 'Failed to delete account',
+          message: e.message || e.toString(),
+          color: 'red',
+        });
+    }
+  };
+
+  const showDeleteModal = () => {
+    if (!user) {
+      showNotification({
+        title: 'Error',
+        message: 'No user',
+        color: 'red',
+      });
+      return;
+    }
+    openModal({
+      title: <div className="font-semibold">Confirm account deletion</div>,
+      centered: true,
+      children: (
+        <AccountDeleteForm user={user} onDelete={handleDeleteAccount} />
+      ),
+    });
   };
 
   const logOut = t('common:logout');
@@ -273,6 +320,20 @@ const SettingPage: PageWithLayoutProps = () => {
             className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {logOut}
+          </div>
+        </SettingItemTab>
+
+        <Divider className="my-2" />
+
+        <SettingItemTab
+          title="Delete account"
+          description="Delete your account."
+        >
+          <div
+            onClick={showDeleteModal}
+            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
+          >
+            Delete account
           </div>
         </SettingItemTab>
       </div>
