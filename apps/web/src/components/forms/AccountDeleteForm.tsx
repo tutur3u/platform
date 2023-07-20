@@ -1,4 +1,4 @@
-import { Button, TextInput } from '@mantine/core';
+import { Button, Divider, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import { User } from '../../types/primitives/User';
 import { useEffect, useState } from 'react';
@@ -13,41 +13,37 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
   const [isDisabled, setIsDisabled] = useState(true);
 
   useEffect(() => {
-    if (value === user.handle) {
+    if (value === user.email) {
       setIsDisabled(false);
     } else {
       setIsDisabled(true);
     }
-  }, [value, user.handle]);
+  }, [value, user.email]);
 
   return (
     <div className="flex flex-col gap-2">
       <div>
-        This action cannot be undone. This will permanently delete user{' '}
-        <span className="font-bold">{user.handle}</span> and all associated
-      </div>
-      <div>
-        Type <span className="font-bold">{user.handle}</span> to confirm your
-        account deletion
+        This will permanently delete your account and cannot be undone. Type
+        your email address to confirm deletion.
       </div>
       <TextInput
         value={value}
+        placeholder={user.email}
         onChange={(event) => setValue(event.currentTarget.value)}
       />
-      <div className="flex gap-2">
-        <Button
-          fullWidth
-          variant="subtle"
-          color="red"
-          onClick={() => {
-            onDelete();
-          }}
-          mt="md"
-          disabled={isDisabled}
-        >
-          Delete
-        </Button>
-      </div>
+
+      <Button
+        fullWidth
+        variant="light"
+        className="border border-red-300/10 bg-red-300/10 transition hover:bg-red-300/20"
+        color="red"
+        onClick={() => {
+          onDelete();
+        }}
+        disabled={isDisabled}
+      >
+        Delete
+      </Button>
     </div>
   );
 }
