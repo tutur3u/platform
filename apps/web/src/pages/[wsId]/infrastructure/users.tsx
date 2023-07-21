@@ -99,9 +99,7 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          {users?.map((u) => (
-            <UserCard key={u.id} user={u} />
-          ))}
+          {users?.map((u) => <UserCard key={u.id} user={u} />)}
         </div>
       </div>
     </>
