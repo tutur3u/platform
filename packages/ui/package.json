@@ -19,15 +19,15 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.14",
-    "eslint": "^8.44.0",
+    "@types/react": "^18.2.15",
+    "eslint": "^8.45.0",
     "eslint-config-custom": "workspace:*",
-    "postcss": "^8.4.25",
+    "postcss": "^8.4.26",
     "react": "^18.2.0",
     "tailwind-config": "workspace:*",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
     "typescript": "^5.1.6"
   },
-  "packageManager": "pnpm@8.6.7"
+  "packageManager": "pnpm@8.6.9"
 }

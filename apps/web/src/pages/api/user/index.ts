@@ -54,10 +54,11 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized.' });
 
   const { display_name, handle, birthday } = req.body;
+  const sanitizedHandle = handle?.replace(/[^a-z0-9_-]/gi, '')?.toLowerCase();
 
   const { error } = await supabase
     .from('users')
-    .update({ display_name, handle })
+    .update({ display_name, handle: sanitizedHandle })
     .eq('id', user.id);
 
   if (error) return res.status(401).json({ error: error.message });
