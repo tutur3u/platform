@@ -280,21 +280,21 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           <div className="font-semibold">Chưa quyết định</div>
           <Divider className="my-1 dark:border-purple-300/10" />
           <div className="text-3xl font-bold">
-            {count?.pending !== null ? count?.pending : '-'}
+            {count?.pending != null ? count?.pending : '-'}
           </div>
         </div>
         <div className="rounded border p-2 dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300">
           <div className="font-semibold">Sẽ tham gia</div>
           <Divider className="my-1 dark:border-green-300/10" />
           <div className="text-3xl font-bold">
-            {count?.going !== null ? count?.going : '-'}
+            {count?.going != null ? count?.going : '-'}
           </div>
         </div>
         <div className="rounded border p-2 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300">
           <div className="font-semibold">Không tham gia</div>
           <Divider className="my-1 dark:border-red-300/10" />
           <div className="text-3xl font-bold">
-            {count?.not_going !== null ? count?.not_going : '-'}
+            {count?.not_going != null ? count?.not_going : '-'}
           </div>
         </div>
       </div>
