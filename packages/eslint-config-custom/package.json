@@ -4,13 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "eslint-config-next": "^13.4.10",
+    "eslint-config-next": "^13.4.11",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-turbo": "latest",
     "eslint-plugin-react": "^7.33.0"
   },
   "devDependencies": {
-    "next": "^13.4.10"
+    "next": "^13.4.11"
   },
   "publishConfig": {
     "access": "public"
