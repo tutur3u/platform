@@ -16,5 +16,11 @@
   "development-description": "Customize local development settings.",
   "hide-experimental-on-sidebar": "Hide experimental features on sidebar",
   "hide-experimental-on-top-nav": "Hide experimental features on top navigation bar",
-  "logout-description": "Log out of your account."
+  "logout-description": "Log out of your account.",
+  "confirm-account-deletion": "Confirm account deletion",
+  "change-password": "Change password",
+  "change-password-description": "Change your pasword",
+  "delete-account": "Delete account",
+  "delete-account-description": "Delete your account",
+  "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion."
 }
