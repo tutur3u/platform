@@ -1,6 +1,7 @@
 import { Button, TextInput } from '@mantine/core';
 import { User } from '../../types/primitives/User';
 import { useEffect, useState } from 'react';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   user: User;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function AccountDeleteForm({ user, onDelete }: Props) {
+  const { t } = useTranslation('settings-account');
   const [value, setValue] = useState('');
   const [isDisabled, setIsDisabled] = useState(true);
 
@@ -22,8 +24,7 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div>
-        This will permanently delete your account and cannot be undone. Type
-        your email address to confirm deletion.
+        {t('delete-account-message')}
       </div>
       <TextInput
         value={value}
@@ -41,7 +42,7 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
         }}
         disabled={isDisabled}
       >
-        Delete
+        {t('common:delete')}
       </Button>
     </div>
   );

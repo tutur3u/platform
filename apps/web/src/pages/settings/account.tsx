@@ -162,7 +162,9 @@ const SettingPage: PageWithLayoutProps = () => {
       return;
     }
     openModal({
-      title: <div className="font-semibold">Confirm account deletion</div>,
+      title: (
+        <div className="font-semibold">{t('confirm-account-deletion')}</div>
+      ),
       centered: true,
       children: (
         <AccountDeleteForm user={user} onDelete={handleDeleteAccount} />
@@ -189,6 +191,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const developmentLabel = t('development');
   const developmentDescription = t('development-description');
   const logoutDescription = t('logout-description');
+  const chanegPasswordLabel = t('change-password');
+  const chanegPasswordDescription = t('change-password-description');
+  const deleteAccountLabel = t('delete-account');
+  const deleteAccountDescription = t('delete-account-description');
 
   return (
     <div className="md:max-w-lg">
@@ -286,17 +292,11 @@ const SettingPage: PageWithLayoutProps = () => {
         </div>
 
         <SettingItemTab
-          title="Change password"
-          description="Change your password."
+          title={chanegPasswordLabel}
+          description={chanegPasswordDescription}
         >
-          <div
-            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
-          >
-            <Link
-              href="/reset-password"
-            >
-              Change password
-            </Link>
+          <div className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20">
+            <Link href="/reset-password">{chanegPasswordLabel}</Link>
           </div>
         </SettingItemTab>
 
@@ -343,14 +343,14 @@ const SettingPage: PageWithLayoutProps = () => {
         <Divider className="my-2" />
 
         <SettingItemTab
-          title="Delete account"
-          description="Delete your account."
+          title={deleteAccountLabel}
+          description={deleteAccountDescription}
         >
           <div
             onClick={showDeleteModal}
             className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
-            Delete account
+            {deleteAccountLabel}
           </div>
         </SettingItemTab>
       </div>
