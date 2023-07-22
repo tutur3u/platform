@@ -9,4 +9,11 @@ module.exports = {
     height: ['responsive', 'hover', 'focus'],
     width: ['responsive', 'hover', 'focus'],
   },
+  theme: {
+    extend: {
+      screens: {
+        's1131': '1131px',
+      }
+    }
+  }
 };

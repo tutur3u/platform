@@ -1,14 +1,12 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
 import {
-  Card,
   Checkbox,
   Divider,
   FileInput,
-  Group,
-  Image,
   TextInput,
-  Text,
+  Avatar,
+  ActionIcon,
 } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
@@ -34,10 +32,13 @@ import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticat
 import { mutate } from 'swr';
 import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { IconSettings } from '@tabler/icons-react';
 
 export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
+  const supabase = useSupabaseClient();
   const { setRootSegment } = useSegments();
   const {
     hideExperimentalOnSidebar,
@@ -45,9 +46,7 @@ const SettingPage: PageWithLayoutProps = () => {
     toggleHideExperimentalOnSidebar,
     toggleHideExperimentalOnTopNav,
   } = useAppearance();
-
   const { t } = useTranslation('settings-account');
-
   const settings = t('common:settings');
   const account = t('account');
 
@@ -64,44 +63,51 @@ const SettingPage: PageWithLayoutProps = () => {
     ]);
   }, [settings, account, setRootSegment]);
 
-  const { user, updateUser } = useUser();
+  const { user, updateUser, uploadImageUserBucket } = useUser();
+  const { ws } = useWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [avatar, setAvatar] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
-  const [valueFile, setValueFile] = useState<File | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user) {
-      // log the context of UserDataContext 
-      
-      console.log(user);
-
       setDisplayName(user?.display_name || '');
       setUsername(user?.handle || '');
       setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
       setEmail(user?.email || '');
-      setAvatar(user?.avatar_url || '');
+      setAvatarUrl(user?.avatar_url || '');
     }
   }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
+    let newAvatarUrl = avatarUrl;
+    const hasNewAvatar = avatarFile !== null;
 
+    if (hasNewAvatar) {
+      newAvatarUrl = (await uploadImageUserBucket?.(avatarFile)) ?? null;
+    }
     await updateUser?.({
       display_name: displayName,
       handle,
+      avatar_url: newAvatarUrl,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
-    if (user?.email !== email) await handleChangeEmail();
+    if (user?.email !== email) {
+      await handleChangeEmail();
+    }
+
+    if (hasNewAvatar && ws?.id) {
+      await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
+    }
 
     setIsSaving(false);
   };
-
-  const supabase = useSupabaseClient();
 
   const handleChangeEmail = async () => {
     try {
@@ -158,10 +164,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const logoutDescription = t('logout-description');
 
   return (
-    <div className="grid grid-cols-3 gap-x-5">
+    <div className="flex flex-col gap-8 md:flex-row">
       <HeaderX label={settings} />
 
-      <div className="col-span-3 grid gap-1  md:max-w-lg lg:col-span-2 xl:col-span-1">
+      <div className="grid gap-1 md:min-w-max md:max-w-lg">
         <SettingItemTab
           title={displayNameLabel}
           description={displayNameDescription}
@@ -175,20 +181,36 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
-        <SettingItemTab
-          title="Profile Picture"
-          description="Upload a profile picture for your account."
-        >
-          <FileInput
-            label="Upload files"
-            placeholder="Upload files"
-            accept="image/png,image/jpeg"
-            value={valueFile}
-            classNames={{
-              input: 'bg-[#25262b]',
-            }}
-            onChange={setValueFile}
-          />
+        <SettingItemTab>
+          <div className=" relative block h-fit w-[16rem] s1131:hidden">
+            <FileInput
+              accept="image/png,image/jpeg"
+              value={null}
+              className="absolute right-2 top-8 z-10 flex h-[2rem] w-[2rem] items-center justify-center rounded-md
+            hover:bg-blue-500/10"
+              onChange={setAvatarFile}
+              variant="unstyled"
+              icon={
+                <ActionIcon variant="subtle" color="blue" className="">
+                  <IconSettings size="1.5rem" />
+                </ActionIcon>
+              }
+            />
+
+            <Avatar
+              alt="Avatar"
+              src={avatarFile ? URL.createObjectURL(avatarFile) : avatarUrl}
+              size="2xl"
+              className="h-[16rem] w-[16rem] max-w-sm rounded-full "
+            />
+            {avatarFile && (
+              <div className="absolute bottom-[-0.5rem] left-0 right-0 mx-auto flex  w-[6rem] transform items-center justify-center rounded-full bg-clip-text backdrop-blur">
+                <div className="w-full rounded-full border  border-blue-300/10  bg-blue-300/10 bg-clip-padding  py-2 text-center font-semibold text-blue-300">
+                  Preview
+                </div>
+              </div>
+            )}
+          </div>
         </SettingItemTab>
 
         <SettingItemTab title="Handle" description={handleDescription}>
@@ -307,31 +329,34 @@ const SettingPage: PageWithLayoutProps = () => {
         </SettingItemTab>
       </div>
 
-      <div className="col-span-1   md:max-w-lg ">
-        <Card
-          shadow="sm"
-          padding="lg"
-          radius="md"
-          className="h-[20rem]"
-          withBorder
-        >
-          <Card.Section withBorder inheritPadding py="xs">
-            <Group position="apart">
-              <Text weight={500}>Review pictures</Text>
-            </Group>
-          </Card.Section>
+      <div className=" relative hidden h-fit w-[16rem] s1131:block">
+        <FileInput
+          accept="image/png,image/jpeg"
+          value={null}
+          className="absolute right-2 top-8 z-10 flex h-[2rem] w-[2rem] items-center justify-center rounded-md
+            hover:bg-blue-500/10"
+          onChange={setAvatarFile}
+          variant="unstyled"
+          icon={
+            <ActionIcon variant="subtle" color="blue" className="">
+              <IconSettings size="1.5rem" />
+            </ActionIcon>
+          }
+        />
 
-          <Card.Section
-            className="h-full"
-          >
-            <Image
-              src={valueFile ? URL.createObjectURL(valueFile) : avatar}
-              alt="With default placeholder"
-              withPlaceholder
-              height={278.67}
-            />
-          </Card.Section>
-        </Card>
+        <Avatar
+          alt="Avatar"
+          src={avatarFile ? URL.createObjectURL(avatarFile) : avatarUrl}
+          size="2xl"
+          className="h-[16rem] w-[16rem] max-w-sm rounded-full "
+        />
+        {avatarFile && (
+          <div className="absolute bottom-[-0.5rem] left-0 right-0 mx-auto flex  w-[6rem] transform items-center justify-center rounded-full bg-clip-text backdrop-blur">
+            <div className="w-full rounded-full border  border-blue-300/10  bg-blue-300/10 bg-clip-padding  py-2 text-center font-semibold text-blue-300">
+              Preview
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

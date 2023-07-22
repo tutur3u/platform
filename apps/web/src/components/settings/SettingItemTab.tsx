@@ -1,5 +1,5 @@
 interface SettingItemTabProps {
-  title: string;
+  title?: string;
   description?: string;
   children: React.ReactNode;
 }
@@ -18,7 +18,7 @@ export default function SettingItemTab({
             {description}
           </div>
         )}
-        
+
         <div className="my-2">{children}</div>
       </div>
     </>
