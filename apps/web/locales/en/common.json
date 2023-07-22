@@ -36,6 +36,7 @@
   "error": "Error",
   "back": "Back",
   "untitled": "Untitled",
+  "unknown": "Unknown",
   "completed": "Completed",
   "cancel-completed": "Cancel completed",
   "pending-completion": "Pending completion",
