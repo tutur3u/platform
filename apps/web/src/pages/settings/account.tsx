@@ -34,6 +34,9 @@ import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { IconSettings } from '@tabler/icons-react';
+import { closeAllModals, openModal } from '@mantine/modals';
+import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
+import Link from 'next/link';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -143,6 +146,52 @@ const SettingPage: PageWithLayoutProps = () => {
     router.push('/');
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete account');
+
+      showNotification({
+        title: 'Account deleted',
+        message: 'Your account has been deleted.',
+        color: 'green',
+      });
+
+      closeAllModals();
+      handleLogout();
+    } catch (e) {
+      if (e instanceof Error)
+        showNotification({
+          title: 'Failed to delete account',
+          message: e.message || e.toString(),
+          color: 'red',
+        });
+    }
+  };
+
+  const showDeleteModal = () => {
+    if (!user) {
+      showNotification({
+        title: 'Error',
+        message: 'No user',
+        color: 'red',
+      });
+      return;
+    }
+    openModal({
+      title: (
+        <div className="font-semibold">{t('confirm-account-deletion')}</div>
+      ),
+      centered: true,
+      children: (
+        <AccountDeleteForm user={user} onDelete={handleDeleteAccount} />
+      ),
+    });
+  };
+
   const logOut = t('common:logout');
   const save = t('common:save');
   const saving = t('common:saving');
@@ -162,6 +211,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const developmentLabel = t('development');
   const developmentDescription = t('development-description');
   const logoutDescription = t('logout-description');
+  const chanegPasswordLabel = t('change-password');
+  const chanegPasswordDescription = t('change-password-description');
+  const deleteAccountLabel = t('delete-account');
+  const deleteAccountDescription = t('delete-account-description');
 
   return (
     <div className="flex flex-col gap-8 md:flex-row">
@@ -244,6 +297,8 @@ const SettingPage: PageWithLayoutProps = () => {
           />
         </SettingItemTab>
 
+        <Divider variant="dashed" className="my-2" />
+
         <SettingItemTab title="Email" description={emailDescription}>
           <div className="grid gap-2">
             <TextInput
@@ -288,6 +343,15 @@ const SettingPage: PageWithLayoutProps = () => {
           {isSaving ? saving : save}
         </div>
 
+        <SettingItemTab
+          title={chanegPasswordLabel}
+          description={chanegPasswordDescription}
+        >
+          <div className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20">
+            <Link href="/reset-password">{chanegPasswordLabel}</Link>
+          </div>
+        </SettingItemTab>
+
         <Divider variant="dashed" className="my-2" />
 
         <SettingItemTab title={languageLabel} description={languageDescription}>
@@ -325,6 +389,20 @@ const SettingPage: PageWithLayoutProps = () => {
             className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {logOut}
+          </div>
+        </SettingItemTab>
+
+        <Divider className="my-2" />
+
+        <SettingItemTab
+          title={deleteAccountLabel}
+          description={deleteAccountDescription}
+        >
+          <div
+            onClick={showDeleteModal}
+            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
+          >
+            {deleteAccountLabel}
           </div>
         </SettingItemTab>
       </div>

@@ -2,6 +2,7 @@ export interface WorkspaceUser {
   id: string;
   name?: string;
   display_name?: string;
+  handle?: string;
   email?: string;
   phone?: string;
   birthday?: string;
