@@ -64,7 +64,7 @@ const WorkspaceMemberEditForm = ({
 
   return (
     <div className="grid gap-2">
-      <div className="flex gap-2 rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-300/5">
+      <div className="flex gap-2 rounded border border-zinc-300 bg-zinc-500/5 p-2 dark:border-zinc-300/10 dark:bg-zinc-300/5">
         <Avatar
           alt="Avatar"
           src={user?.avatar_url}
