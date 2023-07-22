@@ -1,5 +1,5 @@
 interface SettingItemTabProps {
-  title?: string;
+  title: string;
   description?: string;
   children: React.ReactNode;
 }
