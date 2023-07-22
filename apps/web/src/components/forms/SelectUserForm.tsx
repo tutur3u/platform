@@ -14,15 +14,16 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface SelectUserFormProps {
   wsId: string;
+  onComplete?: () => void;
 }
 
 type UserWithValue = User & { value: string };
 
-const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
+const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
   const { t } = useTranslation('ws-members');
 
-  const [value, setValue] = useState('');
-  const [debounced] = useDebouncedValue(value, 300);
+  const [query, setQuery] = useState('');
+  const [debounced] = useDebouncedValue(query, 300);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [suggestions, setSuggestions] = useState<UserWithValue[]>([]);
@@ -30,11 +31,11 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
   useEffect(() => {
     const fetchUsers = async (value: string) => {
       if (!value) return [];
-      const response = await fetch(`/api/users/search?query=${value}`);
+      const response = await fetch(`/api/users/search?query=${value.trim()}`);
 
       if (response.ok) {
         const data = await response.json();
-        return data;
+        return (data || []) as User[];
       }
 
       return [];
@@ -53,18 +54,19 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
       }
 
       const users = await fetchUsers(input);
-      const suggestedUsers = users.map((user: User) => ({
+
+      const suggestedUsers = (users?.map((user: User) => ({
         ...user,
-        value: user?.handle || user?.email,
-      }));
+        value:
+          `${user?.display_name} ${user?.handle}`.trim() || t('common:unknown'),
+      })) || []) as UserWithValue[];
 
       setSuggestions(suggestedUsers);
     };
 
-    if (debounced) fetchData(debounced);
-  }, [debounced]);
+    fetchData(debounced);
+  }, [t, debounced]);
 
-  // eslint-disable-next-line react/display-name
   const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
     (
       { id, value, handle, avatar_url, display_name, ...others }: UserWithValue,
@@ -90,6 +92,8 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
       )
   );
 
+  AutoCompleteItem.displayName = 'AutoCompleteItem';
+
   const [inviting, setInviting] = useState(false);
 
   const handleInvite = async () => {
@@ -101,15 +105,18 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        id: selectedUser?.id === value ? undefined : selectedUser?.id,
-        email: value,
+        id: selectedUser?.id === query ? undefined : selectedUser?.id,
+        email: query,
       }),
     });
 
     if (response.ok) {
+      onComplete?.();
+
       mutate(`/api/workspaces/${wsId}/members`);
       mutate(`/api/workspaces/${wsId}/members/invites`);
-      setValue('');
+
+      setQuery('');
       setSelectedUser(null);
       closeAllModals();
 
@@ -118,16 +125,26 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         message: `${t('invitation_to')} ${
           (selectedUser?.handle && `@${selectedUser?.handle}`) ||
           selectedUser?.display_name ||
-          value
+          query
         } ${t('has_been_sent')}`,
         color: 'teal',
       });
     } else {
-      showNotification({
-        title: t('invitation_error'),
-        message: t('invitation_error_already_exist'),
-        color: 'red',
-      });
+      const res = await response.json();
+      const error = res?.error?.message || res?.error || res?.message;
+
+      if (error == 'Could not find user') {
+        showNotification({
+          title: t('invitation_error'),
+          message: t('invitation_error_user_not_found'),
+          color: 'red',
+        });
+      } else
+        showNotification({
+          title: t('invitation_error'),
+          message: t('invitation_error_already_exist'),
+          color: 'red',
+        });
     }
 
     setInviting(false);
@@ -135,25 +152,10 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
 
   return (
     <>
-      {!selectedUser ? (
-        <Autocomplete
-          value={value}
-          onChange={setValue}
-          placeholder={t('enter_email_or_username')}
-          itemComponent={AutoCompleteItem}
-          data={suggestions}
-          onItemSubmit={(item) => {
-            const { value, ...user } = item as UserWithValue;
-            setValue(value);
-            setSelectedUser(user);
-          }}
-          data-autofocus
-          withinPortal
-        />
-      ) : (
+      {selectedUser ? (
         <Group className="rounded border border-zinc-800/80 bg-blue-300/10 px-4 py-2 text-blue-300 dark:border-blue-300/10">
-          {selectedUser?.id === value ? (
-            <Text>{value}</Text>
+          {selectedUser?.id === query ? (
+            <Text>{query}</Text>
           ) : (
             <>
               <Avatar
@@ -172,6 +174,20 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
             </>
           )}
         </Group>
+      ) : (
+        <Autocomplete
+          value={query}
+          onChange={setQuery}
+          placeholder={t('enter_email_or_username')}
+          itemComponent={AutoCompleteItem}
+          data={suggestions}
+          onItemSubmit={(item) => {
+            const { value, ...user } = item as UserWithValue;
+            setSelectedUser(user);
+          }}
+          data-autofocus
+          withinPortal
+        />
       )}
 
       <Button
@@ -180,7 +196,7 @@ const SelectUserForm = ({ wsId }: SelectUserFormProps) => {
         className="bg-blue-300/10 hover:bg-blue-300/20"
         onClick={handleInvite}
         loading={inviting}
-        disabled={!selectedUser && !isEmail(value)}
+        disabled={!selectedUser && !isEmail(query)}
         mt="xs"
       >
         {t('invite_member')}
