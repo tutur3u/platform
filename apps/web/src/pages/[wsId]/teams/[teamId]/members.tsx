@@ -6,7 +6,7 @@ import useSWR from 'swr';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { useSegments } from '../../../../hooks/useSegments';
 import HeaderX from '../../../../components/metadata/HeaderX';
-import { Divider } from '@mantine/core';
+import { Avatar, Divider } from '@mantine/core';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { User } from '../../../../types/primitives/User';
 import { useLocalStorage } from '@mantine/hooks';
@@ -18,6 +18,7 @@ import MemberRoleMultiSelector from '../../../../components/selectors/MemberRole
 import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import LoadingIndicator from '../../../../components/common/LoadingIndicator';
 import useTranslation from 'next-translate/useTranslation';
+import { getInitials } from '../../../../utils/name-helper';
 
 const TeamMembersPage = () => {
   const { t, lang } = useTranslation('ws-members');
@@ -174,21 +175,35 @@ const TeamMembersPage = () => {
                   key={member.id}
                   className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
                 >
-                  <p className="font-semibold lg:text-lg xl:text-xl">
-                    {member.display_name}{' '}
-                    {member?.role_title ? (
-                      <span className="text-orange-300">
-                        ({member.role_title})
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-blue-600 dark:text-blue-300">
-                    @{member.handle}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      alt="Avatar"
+                      src={member?.avatar_url}
+                      size="2xl"
+                      color="blue"
+                      className="aspect-square w-full max-w-[3.5rem] rounded-full text-xl"
+                    >
+                      {getInitials(member?.display_name || '?')}
+                    </Avatar>
 
-                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-300 pt-2 dark:border-zinc-800">
+                    <div>
+                      <p className="font-semibold lg:text-lg xl:text-xl">
+                        {member.display_name}{' '}
+                        {member?.role_title ? (
+                          <span className="text-orange-300">
+                            ({member.role_title})
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="font-semibold text-blue-600 dark:text-blue-300">
+                        @{member.handle}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex flex-col items-center justify-between gap-2 border-t border-zinc-300 pt-2 dark:border-zinc-800 lg:flex-row lg:gap-4">
                     {member?.created_at ? (
-                      <div className="text-zinc-500">
+                      <div className="line-clamp-1 text-zinc-500">
                         {t('member_since')}{' '}
                         <span className="font-semibold text-zinc-600 dark:text-zinc-400">
                           {moment(member.created_at).locale(lang).fromNow()}
@@ -198,7 +213,7 @@ const TeamMembersPage = () => {
                     ) : null}
 
                     <div
-                      className={`rounded border px-2 py-0.5 font-semibold ${getRoleColor(
+                      className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
                         member?.role?.toLocaleLowerCase() || 'unknown'
                       )}`}
                     >

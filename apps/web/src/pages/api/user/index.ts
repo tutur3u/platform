@@ -89,11 +89,9 @@ const deleteUser = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized.' });
 
   const adminClient = supabaseAdmin();
-
   if (!adminClient) return res.status(401).json({ error: 'Unauthorized.' });
 
   const { error } = await adminClient.auth.admin.deleteUser(user.id);
-
   if (error) return res.status(401).json({ error: error.message });
 
   return res.status(200).json({});
