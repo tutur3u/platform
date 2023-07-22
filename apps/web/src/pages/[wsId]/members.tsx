@@ -62,21 +62,43 @@ const WorkspaceMembersPage = () => {
     setPage(1);
   }, [view, roles, itemsPerPage]);
 
-  const apiPath = ws?.id
-    ? (view === 'joined'
-        ? `/api/workspaces/${ws.id}/members`
-        : `/api/workspaces/${ws.id}/members/invites`) +
+  const membersApiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/members` +
       // Add query params
       `?roles=${
         roles.length > 0 ? roles.join(',') : ''
       }&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const { data, error } = useSWR<{ data: User[]; count: number }>(apiPath);
+  const invitesApiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/members/invites` +
+      // Add query params
+      `?roles=${
+        roles.length > 0 ? roles.join(',') : ''
+      }&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
 
-  const isMembersLoading = !data && !error;
+  const apiPath = view === 'joined' ? membersApiPath : invitesApiPath;
 
-  const members = data?.data || [];
+  const { data: membersData, error: membersError } = useSWR<{
+    data: User[];
+    count: number;
+  }>(membersApiPath);
+
+  const { data: invitesData, error: invitesError } = useSWR<{
+    data: User[];
+    count: number;
+  }>(invitesApiPath);
+
+  const isMembersLoading = !membersData && !membersError;
+  const isInvitesLoading = !invitesData && !invitesError;
+
+  const data = view === 'joined' ? membersData : invitesData;
+  const isLoading = view === 'joined' ? isMembersLoading : isInvitesLoading;
+
+  const members = membersData?.data || [];
+  const invites = invitesData?.data || [];
+
   const owners = members?.filter((member) => member?.role === 'OWNER') || [];
   const ownersCount = owners?.length || 0;
 
@@ -183,7 +205,12 @@ const WorkspaceMembersPage = () => {
     openModal({
       title: <div className="font-semibold">{t('invite_member')}</div>,
       centered: true,
-      children: <SelectUserForm wsId={wsId as string} />,
+      children: (
+        <SelectUserForm
+          wsId={wsId as string}
+          onComplete={() => mutate(invitesApiPath)}
+        />
+      ),
     });
   };
 
@@ -251,8 +278,14 @@ const WorkspaceMembersPage = () => {
                 value={view}
                 onChange={(value) => setView(value as 'joined' | 'invited')}
                 data={[
-                  { label: t('joined'), value: 'joined' },
-                  { label: t('invited'), value: 'invited' },
+                  {
+                    label: `${t('joined')} (${membersData?.count ?? '-'})`,
+                    value: 'joined',
+                  },
+                  {
+                    label: `${t('invited')} (${invitesData?.count ?? '-'})`,
+                    value: 'invited',
+                  },
                 ]}
               />
             </div>
@@ -291,12 +324,12 @@ const WorkspaceMembersPage = () => {
             mode === 'grid' ? 'md:grid-cols-2' : ''
           }`}
         >
-          {isMembersLoading ? (
+          {isLoading ? (
             <div className="col-span-full flex items-center justify-center">
               <LoadingIndicator className="h-8" />
             </div>
           ) : (
-            members
+            (view === 'joined' ? members : invites)
               ?.sort(
                 (
                   a: {
