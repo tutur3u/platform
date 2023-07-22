@@ -46,5 +46,7 @@
   "branding": "Branding",
   "developers": "Developers",
   "open-source": "Open Source",
-  "copied": "Copied"
+  "copied": "Copied",
+  "edit": "Edit",
+  "remove": "Remove"
 }

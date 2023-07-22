@@ -8,5 +8,5 @@ module.exports = {
   variants: {
     height: ['responsive', 'hover', 'focus'],
     width: ['responsive', 'hover', 'focus'],
-  },
+  }
 };

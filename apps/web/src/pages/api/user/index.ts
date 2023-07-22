@@ -18,7 +18,7 @@ const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const publicPromise = supabase
     .from('users')
-    .select('id, display_name, handle, created_at')
+    .select('id, display_name, handle, created_at, avatar_url')
     .eq('id', user?.id)
     .single();
 
@@ -53,12 +53,12 @@ const updateUser = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!user?.id || userError)
     return res.status(401).json({ error: 'Unauthorized.' });
 
-  const { display_name, handle, birthday } = req.body;
+  const { display_name, handle, birthday, avatar_url } = req.body;
   const sanitizedHandle = handle?.replace(/[^a-z0-9_-]/gi, '')?.toLowerCase();
 
   const { error } = await supabase
     .from('users')
-    .update({ display_name, handle: sanitizedHandle })
+    .update({ display_name, avatar_url, handle: sanitizedHandle })
     .eq('id', user.id);
 
   if (error) return res.status(401).json({ error: error.message });
@@ -89,11 +89,9 @@ const deleteUser = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized.' });
 
   const adminClient = supabaseAdmin();
-
   if (!adminClient) return res.status(401).json({ error: 'Unauthorized.' });
 
   const { error } = await adminClient.auth.admin.deleteUser(user.id);
-
   if (error) return res.status(401).json({ error: error.message });
 
   return res.status(200).json({});
