@@ -11,6 +11,7 @@ import {
   suggestEmails,
 } from '../../utils/email-helper';
 import useTranslation from 'next-translate/useTranslation';
+import { getInitials } from '../../utils/name-helper';
 
 interface SelectUserFormProps {
   wsId: string;
@@ -78,8 +79,16 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
         </div>
       ) : (
         <div ref={ref} {...others}>
-          <Group noWrap>
-            <Avatar src={avatar_url} />
+          <div className="flex items-center gap-2">
+            <Avatar
+              alt="Avatar"
+              src={avatar_url}
+              size="lg"
+              color="blue"
+              className="aspect-square rounded-full text-xl"
+            >
+              {getInitials(display_name || '?')}
+            </Avatar>
 
             <div>
               <Text>{display_name}</Text>
@@ -87,7 +96,7 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
                 {handle ? `@${handle}` : 'No handle'}
               </Text>
             </div>
-          </Group>
+          </div>
         </div>
       )
   );
@@ -153,25 +162,35 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
   return (
     <>
       {selectedUser ? (
-        <Group className="rounded border border-zinc-800/80 bg-blue-300/10 px-4 py-2 text-blue-300 dark:border-blue-300/10">
+        <Group className="rounded border border-zinc-800/30 bg-zinc-300/5 px-4 py-2 text-zinc-300 dark:border-zinc-300/10">
           {selectedUser?.id === query ? (
             <Text>{query}</Text>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Avatar
-                src={selectedUser.avatar_url}
-                radius="md"
-                className="bg-blue-300/20"
-              />
+                alt="Avatar"
+                src={selectedUser?.avatar_url}
+                size="lg"
+                color="blue"
+                className="aspect-square rounded-full text-xl"
+              >
+                {getInitials(selectedUser?.display_name || '?')}
+              </Avatar>
               <div>
-                <Text weight="bold" className="text-blue-200">
+                <Text
+                  weight="bold"
+                  className="font-semibold text-zinc-900 dark:text-zinc-200 lg:text-lg xl:text-xl"
+                >
                   {selectedUser.display_name}
                 </Text>
-                <Text weight="light" className="text-blue-100">
+                <Text
+                  weight="light"
+                  className="font-semibold text-zinc-700 dark:text-zinc-100"
+                >
                   @{selectedUser.handle}
                 </Text>
               </div>
-            </>
+            </div>
           )}
         </Group>
       ) : (
@@ -193,7 +212,7 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
       <Button
         fullWidth
         variant="light"
-        className="bg-blue-300/10 hover:bg-blue-300/20"
+        className="border border-blue-800/30 bg-blue-300/10 hover:bg-blue-300/20 dark:border-blue-300/10"
         onClick={handleInvite}
         loading={inviting}
         disabled={!selectedUser && !isEmail(query)}
