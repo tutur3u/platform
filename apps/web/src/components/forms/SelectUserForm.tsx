@@ -91,8 +91,14 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
             </Avatar>
 
             <div>
-              <Text>{display_name}</Text>
-              <Text size="xs" color="dimmed">
+              <Text className="font-semibold text-zinc-900 dark:text-zinc-200 lg:text-lg">
+                {display_name}
+              </Text>
+              <Text
+                size="xs"
+                color="dimmed"
+                className="font-semibold text-blue-600 dark:text-blue-300"
+              >
                 {handle ? `@${handle}` : 'No handle'}
               </Text>
             </div>
@@ -164,7 +170,9 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
       {selectedUser ? (
         <Group className="rounded border border-zinc-800/30 bg-zinc-300/5 px-4 py-2 text-zinc-300 dark:border-zinc-300/10">
           {selectedUser?.id === query ? (
-            <Text>{query}</Text>
+            <Text className="font-semibold text-blue-600 dark:text-blue-300">
+              {query}
+            </Text>
           ) : (
             <div className="flex items-center gap-2">
               <Avatar
@@ -185,7 +193,7 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
                 </Text>
                 <Text
                   weight="light"
-                  className="font-semibold text-zinc-700 dark:text-zinc-100"
+                  className="font-semibold text-blue-600 dark:text-blue-300"
                 >
                   @{selectedUser.handle}
                 </Text>
