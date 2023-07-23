@@ -30,6 +30,7 @@ import { closeAllModals, openModal } from '@mantine/modals';
 import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
 import AvatarCard from '../../components/settings/AvatarCard';
+import { getInitials } from '../../utils/name-helper';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -71,10 +72,6 @@ const SettingPage: PageWithLayoutProps = () => {
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
-  useEffect(() => {
-    console.log(avatarFile);
-  }, [avatarFile]);
 
   useEffect(() => {
     if (user) {
@@ -255,15 +252,13 @@ const SettingPage: PageWithLayoutProps = () => {
       <div className="grid gap-1 md:min-w-max md:max-w-lg">
         <SettingItemTab title={avatarLabel} description={avatarDescription}>
           <AvatarCard
-            user={user}
-            setAvatarFile={setAvatarFile}
-            removeAvatar={removeAvatar}
-            avatarFile={avatarFile}
-            avatarUrl={avatarUrl}
+            src={avatarUrl}
+            file={avatarFile}
+            setFile={setAvatarFile}
+            onRemove={removeAvatar}
+            label={getInitials(user?.display_name || user?.email)}
           />
         </SettingItemTab>
-
-        <Divider variant="dashed" className="my-2" />
 
         <SettingItemTab
           title={displayNameLabel}
