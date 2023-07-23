@@ -1,13 +1,6 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import {
-  Checkbox,
-  Divider,
-  TextInput,
-  Avatar,
-  FileButton,
-  Button,
-} from '@mantine/core';
+import { Checkbox, Divider, TextInput, Button } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -15,8 +8,6 @@ import {
   AtSymbolIcon,
   CakeIcon,
   EnvelopeIcon,
-  PencilIcon,
-  TrashIcon,
 } from '@heroicons/react/24/solid';
 import HeaderX from '../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
@@ -38,7 +29,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { closeAllModals, openModal } from '@mantine/modals';
 import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
-import { getInitials } from '../../utils/name-helper';
+import AvatarCard from '../../components/settings/AvatarCard';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -80,6 +71,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    console.log(avatarFile);
+  }, [avatarFile]);
 
   useEffect(() => {
     if (user) {
@@ -207,10 +202,6 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const avatarLabel = t('avatar');
   const avatarDescription = t('avatar-description');
-  const defaultAvatar = t('default-avatar');
-  const currentAvatar = t('current-avatar');
-  const newAvatar = t('new-avatar');
-
   const displayNameLabel = t('display-name');
   const displayNameDescription = t('display-name-description');
   const handleDescription = t('handle-description');
@@ -263,62 +254,13 @@ const SettingPage: PageWithLayoutProps = () => {
 
       <div className="grid gap-1 md:min-w-max md:max-w-lg">
         <SettingItemTab title={avatarLabel} description={avatarDescription}>
-          <div className="relative flex flex-col items-center justify-center gap-4 rounded-md border border-zinc-300/10 bg-zinc-300/5 p-4 pb-14 md:flex-row">
-            <Avatar
-              alt={avatarLabel}
-              src={avatarFile ? URL.createObjectURL(avatarFile) : avatarUrl}
-              size="2xl"
-              color="blue"
-              className="aspect-square w-full max-w-[10rem] rounded-full text-4xl md:max-w-[12rem]"
-            >
-              {getInitials(user?.display_name || user?.email)}
-            </Avatar>
-
-            <div className="right-2 top-2 grid w-full gap-1 md:absolute md:w-fit">
-              <FileButton
-                accept="image/png,image/jpeg"
-                onChange={setAvatarFile}
-              >
-                {(props) => (
-                  <Button
-                    {...props}
-                    variant="light"
-                    className="w-full border border-zinc-300/5 bg-zinc-300/5 text-zinc-300 hover:bg-zinc-300/10"
-                    leftIcon={<PencilIcon className="h-4 w-4 text-zinc-300" />}
-                  >
-                    {t('common:edit')}
-                  </Button>
-                )}
-              </FileButton>
-
-              {(!!avatarFile || !!user?.avatar_url) && (
-                <Button
-                  variant="light"
-                  className="w-full border border-zinc-300/5 bg-zinc-300/5 text-zinc-300 hover:bg-zinc-300/10"
-                  leftIcon={<TrashIcon className="h-4 w-4 text-zinc-300" />}
-                  onClick={removeAvatar}
-                >
-                  {t('common:remove')}
-                </Button>
-              )}
-            </div>
-
-            <div className="absolute inset-x-0 bottom-0 flex transform items-center justify-center rounded-b border-t border-zinc-300/10 bg-clip-text backdrop-blur">
-              <div
-                className={`w-full rounded-b border bg-clip-padding py-2 text-center font-semibold ${
-                  avatarFile
-                    ? 'border-blue-300/10 bg-blue-300/10 text-blue-300'
-                    : 'border-zinc-300/10 bg-zinc-300/10 text-zinc-300'
-                }`}
-              >
-                {!user?.avatar_url && !avatarFile
-                  ? defaultAvatar
-                  : avatarFile
-                  ? newAvatar
-                  : currentAvatar}
-              </div>
-            </div>
-          </div>
+          <AvatarCard
+            user={user}
+            setAvatarFile={setAvatarFile}
+            removeAvatar={removeAvatar}
+            avatarFile={avatarFile}
+            avatarUrl={avatarUrl}
+          />
         </SettingItemTab>
 
         <Divider variant="dashed" className="my-2" />
