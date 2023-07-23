@@ -76,8 +76,7 @@ const AvatarCard = ({
       />
       {avatarFile && (
         <div className="absolute bottom-[-1rem] left-0 right-0 mx-auto flex  w-[6rem] transform items-center justify-center rounded-full bg-clip-text backdrop-blur-lg">
-          <div className="w-full rounded-full bg-zinc-300/5 text-zinc-300 border-2 border-zinc-100/20
- bg-clip-padding  py-2 text-center font-semibold ">
+          <div className="w-full rounded-full border-2 border-zinc-100/20 bg-zinc-300/5 bg-clip-padding py-2  text-center font-semibold text-zinc-300 ">
             Preview
           </div>
         </div>
