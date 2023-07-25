@@ -3,17 +3,31 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import UnitCreateModal from '../../../../components/loaders/units/UnitCreateModal';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
+import UnitItemTab from '../../../../components/inventory/UnitItemTab';
+import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
+
+type UnitType = {
+  type: 'quantity' | 'non-quantity' | 'unChecked';
+};
 
 const NewUnitPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+  const { t } = useTranslation('inventory-units-configs');
+
+  const unitSettingText = t('unit-setting');
+  const unitNameText = t('unit-name');
+  const unitTypeSettingText = t('unit-type-setting');
+  const quantityUnitText = t('quantity-unit');
+  const nonQuantityUnitText = t('non-quantity-unit');
+  const unitNamePLaceholderText = t('unit-name-placeholder');
 
   useEffect(() => {
     setRootSegment(
@@ -37,6 +51,70 @@ const NewUnitPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [name, setName] = useState<string>('');
+  const [unitType, setUnitType] = useState<UnitType>({
+    type: 'unChecked',
+  });
+
+  const QuantityUnitState = ({ type }: UnitType) => {
+    if (type === 'quantity') {
+      return (
+        <>
+          <Checkbox
+            label={quantityUnitText}
+            color="grape"
+            defaultChecked
+            onChange={() =>
+              setUnitType({
+                type: 'unChecked',
+              })
+            }
+          />
+          <Checkbox label={nonQuantityUnitText} color="grape" disabled indeterminate />
+        </>
+      );
+    }
+    if (type === 'non-quantity') {
+      return (
+        <>
+          <Checkbox label={quantityUnitText} color="grape" disabled indeterminate />
+          <Checkbox
+            label={nonQuantityUnitText}
+            color="grape"
+            defaultChecked
+            onChange={() =>
+              setUnitType({
+                type: 'unChecked',
+              })
+            }
+          />
+        </>
+      );
+    }
+    if (type === 'unChecked') {
+      return (
+        <>
+          <Checkbox
+            label={quantityUnitText}
+            color="grape"
+            onChange={() => {
+              setUnitType({
+                type: 'quantity',
+              });
+            }}
+          />
+          <Checkbox
+            label={nonQuantityUnitText}
+            color="grape"
+            onChange={() => {
+              setUnitType({
+                type: 'non-quantity',
+              });
+            }}
+          />
+        </>
+      );
+    }
+  };
 
   const hasRequiredFields = () => name.length > 0;
 
@@ -72,19 +150,21 @@ const NewUnitPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
+        <div className="grid h-fit gap-x-4 gap-y-2 md:w-1/2">
+          <UnitItemTab title={unitSettingText} description={unitNameText}>
+            <TextInput
+              placeholder={unitNamePLaceholderText}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              required
+            />
+          </UnitItemTab>
 
-          <TextInput
-            label="Tên đơn vị tính"
-            placeholder='Ví dụ: "Thuốc", "Thực phẩm"'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-          />
+          <UnitItemTab description={unitTypeSettingText}>
+            <div className="flex flex-col gap-3">
+              <QuantityUnitState type={unitType.type} />
+            </div>
+          </UnitItemTab>
         </div>
       </div>
     </>

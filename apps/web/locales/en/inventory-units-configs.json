@@ -1,3 +1,9 @@
 {
-  "show-products": "Show Products"
+  "show-products": "Show Products",
+  "unit-setting": "Basic Information",
+  "unit-name": "Unit Name",
+  "unit-type-setting": "Unit Type",
+  "quantity-unit": "Quantity Managed Unit",
+  "non-quantity-unit": "Non-Quantity Managed Unit",
+  "unit-name-placeholder": "Example: \"Medicine\", \"Food\""
 }

@@ -289,7 +289,7 @@
       "inventory-units-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/units/new": ["sidebar-tabs"],
+    "/[wsId]/inventory/units/new": ["sidebar-tabs", "inventory-units-configs"],
     "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
 
     "/[wsId]/inventory/suppliers": [
