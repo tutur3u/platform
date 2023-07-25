@@ -69,14 +69,24 @@ const NewUnitPage: PageWithLayoutProps = () => {
               })
             }
           />
-          <Checkbox label={nonQuantityUnitText} color="grape" disabled indeterminate />
+          <Checkbox
+            label={nonQuantityUnitText}
+            color="grape"
+            disabled
+            indeterminate
+          />
         </>
       );
     }
     if (type === 'non-quantity') {
       return (
         <>
-          <Checkbox label={quantityUnitText} color="grape" disabled indeterminate />
+          <Checkbox
+            label={quantityUnitText}
+            color="grape"
+            disabled
+            indeterminate
+          />
           <Checkbox
             label={nonQuantityUnitText}
             color="grape"
@@ -116,17 +126,20 @@ const NewUnitPage: PageWithLayoutProps = () => {
     }
   };
 
-  const hasRequiredFields = () => name.length > 0;
+  const hasRequiredFields = () =>
+    name.length > 0 && unitType.type !== 'unChecked';
 
   const showLoaderModal = () => {
-    if (!ws) return;
+    const { type } = unitType;
+
+    if (!ws || type === 'unChecked') return;
     openModal({
       title: <div className="font-semibold">Tạo đơn vị tính mới</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: <UnitCreateModal wsId={ws.id} unit={{ name }} />,
+      children: <UnitCreateModal wsId={ws.id} unit={{ name, type }} />,
     });
   };
 
