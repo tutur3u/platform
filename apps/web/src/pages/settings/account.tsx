@@ -1,6 +1,6 @@
 import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { Checkbox, Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput, Button } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
 import { useSegments } from '../../hooks/useSegments';
 import moment from 'moment';
@@ -25,14 +25,19 @@ import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticat
 import { mutate } from 'swr';
 import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { closeAllModals, openModal } from '@mantine/modals';
 import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
+import AvatarCard from '../../components/settings/AvatarCard';
+import { getInitials } from '../../utils/name-helper';
 
 export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
+  const supabase = useSupabaseClient();
   const { setRootSegment } = useSegments();
+
   const {
     hideExperimentalOnSidebar,
     hideExperimentalOnTopNav,
@@ -58,14 +63,15 @@ const SettingPage: PageWithLayoutProps = () => {
     ]);
   }, [settings, account, setRootSegment]);
 
-  const { user, updateUser } = useUser();
-
+  const { user, updateUser, uploadImageUserBucket } = useUser();
+  const { ws } = useWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
-
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -73,24 +79,39 @@ const SettingPage: PageWithLayoutProps = () => {
       setUsername(user?.handle || '');
       setBirthday(user?.birthday ? moment(user?.birthday).toDate() : null);
       setEmail(user?.email || '');
+      setAvatarUrl(user?.avatar_url || '');
     }
   }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
+    let newAvatarUrl = avatarUrl;
+    const hasNewAvatar = avatarFile !== null;
+
+    if (hasNewAvatar) {
+      newAvatarUrl = (await uploadImageUserBucket?.(avatarFile)) ?? null;
+    }
 
     await updateUser?.({
       display_name: displayName,
       handle,
+      avatar_url: newAvatarUrl,
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
-    if (user?.email !== email) await handleChangeEmail();
+    if (user?.email !== email) {
+      await handleChangeEmail();
+    }
+
+    if (hasNewAvatar) {
+      setAvatarFile(null);
+
+      if (ws?.id)
+        await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
+    }
 
     setIsSaving(false);
   };
-
-  const supabase = useSupabaseClient();
 
   const handleChangeEmail = async () => {
     try {
@@ -140,8 +161,8 @@ const SettingPage: PageWithLayoutProps = () => {
         color: 'green',
       });
 
+      await handleLogout();
       closeAllModals();
-      handleLogout();
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -176,6 +197,8 @@ const SettingPage: PageWithLayoutProps = () => {
   const save = t('common:save');
   const saving = t('common:saving');
 
+  const avatarLabel = t('avatar');
+  const avatarDescription = t('avatar-description');
   const displayNameLabel = t('display-name');
   const displayNameDescription = t('display-name-description');
   const handleDescription = t('handle-description');
@@ -191,16 +214,52 @@ const SettingPage: PageWithLayoutProps = () => {
   const developmentLabel = t('development');
   const developmentDescription = t('development-description');
   const logoutDescription = t('logout-description');
-  const chanegPasswordLabel = t('change-password');
-  const chanegPasswordDescription = t('change-password-description');
+  const changePasswordLabel = t('change-password');
+  const changePasswordDescription = t('change-password-description');
   const deleteAccountLabel = t('delete-account');
   const deleteAccountDescription = t('delete-account-description');
 
+  const removeAvatar = async () => {
+    // If user has an avatar, remove it
+    if (user?.avatar_url) {
+      await updateUser?.({
+        avatar_url: null,
+      });
+
+      // Update workspace members
+      if (ws?.id)
+        await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
+    }
+
+    // If user has a local avatar file, remove it
+    setAvatarFile(null);
+  };
+
+  const isUserDataDirty =
+    user?.display_name !== displayName ||
+    user?.handle !== handle ||
+    (user?.birthday
+      ? moment(user?.birthday)
+          .toDate()
+          .toISOString()
+      : null) != birthday?.toISOString() ||
+    avatarFile !== null;
+
   return (
-    <div className="md:max-w-lg">
+    <>
       <HeaderX label={settings} />
 
-      <div className="grid gap-2">
+      <div className="grid gap-1 md:min-w-max md:max-w-lg">
+        <SettingItemTab title={avatarLabel} description={avatarDescription}>
+          <AvatarCard
+            src={avatarUrl}
+            file={avatarFile}
+            setFile={setAvatarFile}
+            onRemove={removeAvatar}
+            label={getInitials(user?.display_name || user?.email)}
+          />
+        </SettingItemTab>
+
         <SettingItemTab
           title={displayNameLabel}
           description={displayNameDescription}
@@ -242,7 +301,18 @@ const SettingPage: PageWithLayoutProps = () => {
             classNames={{
               input: 'dark:bg-[#25262b]',
             }}
+            clearable
           />
+
+          <Button
+            onClick={handleSave}
+            className={`mt-2 flex w-full items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
+              !isUserDataDirty ? 'opacity-50' : ''
+            }`}
+            disabled={!isUserDataDirty}
+          >
+            {isSaving ? saving : save}
+          </Button>
         </SettingItemTab>
 
         <Divider variant="dashed" className="my-2" />
@@ -281,23 +351,31 @@ const SettingPage: PageWithLayoutProps = () => {
                 </div>
               </>
             )}
+
+            <Button
+              onClick={handleSave}
+              className={`flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
+                user?.email === email ? 'opacity-50' : ''
+              }`}
+              disabled={user?.email === email}
+            >
+              {isSaving ? saving : save}
+            </Button>
           </div>
         </SettingItemTab>
 
-        <div
-          onClick={handleSave}
-          className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
-        >
-          {isSaving ? saving : save}
-        </div>
+        <Divider variant="dashed" className="my-2" />
 
         <SettingItemTab
-          title={chanegPasswordLabel}
-          description={chanegPasswordDescription}
+          title={changePasswordLabel}
+          description={changePasswordDescription}
         >
-          <div className="col-span-full flex cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20">
-            <Link href="/reset-password">{chanegPasswordLabel}</Link>
-          </div>
+          <Link
+            href="/reset-password"
+            className="flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
+          >
+            {changePasswordLabel}
+          </Link>
         </SettingItemTab>
 
         <Divider variant="dashed" className="my-2" />
@@ -332,12 +410,12 @@ const SettingPage: PageWithLayoutProps = () => {
         <Divider className="my-2" />
 
         <SettingItemTab title={logOut} description={logoutDescription}>
-          <div
+          <Button
             onClick={handleLogout}
-            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
+            className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {logOut}
-          </div>
+          </Button>
         </SettingItemTab>
 
         <Divider className="my-2" />
@@ -346,15 +424,15 @@ const SettingPage: PageWithLayoutProps = () => {
           title={deleteAccountLabel}
           description={deleteAccountDescription}
         >
-          <div
+          <Button
             onClick={showDeleteModal}
-            className="col-span-full flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
+            className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {deleteAccountLabel}
-          </div>
+          </Button>
         </SettingItemTab>
       </div>
-    </div>
+    </>
   );
 };
 

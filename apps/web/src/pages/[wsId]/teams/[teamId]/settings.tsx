@@ -49,7 +49,7 @@ const TeamSettingsPage = () => {
 
   const showDeleteTeamModal = async (team: Team) => {
     openModal({
-      title: <div className="font-semibold">Are you absolutely sure?</div>,
+      title: <div className="font-semibold">Confirm team deletion</div>,
       centered: true,
       children: <TeamDeleteForm team={team} onDelete={handleDelete} />,
     });

@@ -3,7 +3,7 @@ import {
   Cog6ToothIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/solid';
-import { Divider, SegmentedControl, Tooltip } from '@mantine/core';
+import { Avatar, Divider, SegmentedControl, Tooltip } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import { useUser } from '@supabase/auth-helpers-react';
@@ -28,6 +28,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import MemberRoleMultiSelector from '../../components/selectors/MemberRoleMultiSelector';
 import useSWR from 'swr';
 import LoadingIndicator from '../../components/common/LoadingIndicator';
+import { getInitials } from '../../utils/name-helper';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -61,21 +62,43 @@ const WorkspaceMembersPage = () => {
     setPage(1);
   }, [view, roles, itemsPerPage]);
 
-  const apiPath = ws?.id
-    ? (view === 'joined'
-        ? `/api/workspaces/${ws.id}/members`
-        : `/api/workspaces/${ws.id}/members/invites`) +
+  const membersApiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/members` +
       // Add query params
       `?roles=${
         roles.length > 0 ? roles.join(',') : ''
       }&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const { data, error } = useSWR<{ data: User[]; count: number }>(apiPath);
+  const invitesApiPath = ws?.id
+    ? `/api/workspaces/${ws.id}/members/invites` +
+      // Add query params
+      `?roles=${
+        roles.length > 0 ? roles.join(',') : ''
+      }&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    : null;
 
-  const isMembersLoading = !data && !error;
+  const apiPath = view === 'joined' ? membersApiPath : invitesApiPath;
 
-  const members = data?.data || [];
+  const { data: membersData, error: membersError } = useSWR<{
+    data: User[];
+    count: number;
+  }>(membersApiPath);
+
+  const { data: invitesData, error: invitesError } = useSWR<{
+    data: User[];
+    count: number;
+  }>(invitesApiPath);
+
+  const isMembersLoading = !membersData && !membersError;
+  const isInvitesLoading = !invitesData && !invitesError;
+
+  const data = view === 'joined' ? membersData : invitesData;
+  const isLoading = view === 'joined' ? isMembersLoading : isInvitesLoading;
+
+  const members = membersData?.data || [];
+  const invites = invitesData?.data || [];
+
   const owners = members?.filter((member) => member?.role === 'OWNER') || [];
   const ownersCount = owners?.length || 0;
 
@@ -182,7 +205,12 @@ const WorkspaceMembersPage = () => {
     openModal({
       title: <div className="font-semibold">{t('invite_member')}</div>,
       centered: true,
-      children: <SelectUserForm wsId={wsId as string} />,
+      children: (
+        <SelectUserForm
+          wsId={wsId as string}
+          onComplete={() => mutate(invitesApiPath)}
+        />
+      ),
     });
   };
 
@@ -250,8 +278,14 @@ const WorkspaceMembersPage = () => {
                 value={view}
                 onChange={(value) => setView(value as 'joined' | 'invited')}
                 data={[
-                  { label: t('joined'), value: 'joined' },
-                  { label: t('invited'), value: 'invited' },
+                  {
+                    label: `${t('joined')} (${membersData?.count ?? '-'})`,
+                    value: 'joined',
+                  },
+                  {
+                    label: `${t('invited')} (${invitesData?.count ?? '-'})`,
+                    value: 'invited',
+                  },
                 ]}
               />
             </div>
@@ -290,12 +324,12 @@ const WorkspaceMembersPage = () => {
             mode === 'grid' ? 'md:grid-cols-2' : ''
           }`}
         >
-          {isMembersLoading ? (
+          {isLoading ? (
             <div className="col-span-full flex items-center justify-center">
               <LoadingIndicator className="h-8" />
             </div>
           ) : (
-            members
+            (view === 'joined' ? members : invites)
               ?.sort(
                 (
                   a: {
@@ -315,17 +349,31 @@ const WorkspaceMembersPage = () => {
                   key={member.id}
                   className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
                 >
-                  <p className="font-semibold lg:text-lg xl:text-xl">
-                    {member.display_name}{' '}
-                    {member?.role_title ? (
-                      <span className="text-orange-300">
-                        ({member.role_title})
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-blue-600 dark:text-blue-300">
-                    @{member.handle}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      alt="Avatar"
+                      src={member?.avatar_url}
+                      size="2xl"
+                      color="blue"
+                      className="aspect-square w-full max-w-[3.5rem] rounded-full text-xl"
+                    >
+                      {getInitials(member?.display_name || '?')}
+                    </Avatar>
+
+                    <div>
+                      <p className="font-semibold lg:text-lg xl:text-xl">
+                        {member.display_name}{' '}
+                        {member?.role_title ? (
+                          <span className="text-orange-300">
+                            ({member.role_title})
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="font-semibold text-blue-600 dark:text-blue-300">
+                        @{member.handle}
+                      </p>
+                    </div>
+                  </div>
 
                   <div className="absolute right-4 top-4 flex gap-2">
                     <button
@@ -352,9 +400,9 @@ const WorkspaceMembersPage = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-300 pt-2 dark:border-zinc-800">
+                  <div className="mt-2 flex flex-col items-center justify-between gap-2 border-t border-zinc-300 pt-2 dark:border-zinc-800 lg:flex-row lg:gap-4">
                     {member?.created_at ? (
-                      <div className="text-zinc-500">
+                      <div className="line-clamp-1 text-zinc-500">
                         {view === 'joined' ? t('member_since') : t('invited')}{' '}
                         <span className="font-semibold text-zinc-600 dark:text-zinc-400">
                           {moment(member.created_at).locale(lang).fromNow()}
@@ -365,7 +413,7 @@ const WorkspaceMembersPage = () => {
 
                     {view === 'joined' && (
                       <div
-                        className={`rounded border px-2 py-0.5 font-semibold ${getRoleColor(
+                        className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
                           member?.role?.toLocaleLowerCase() || 'unknown'
                         )}`}
                       >

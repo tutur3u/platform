@@ -36,6 +36,7 @@
   "error": "Lỗi",
   "back": "Quay lại",
   "untitled": "Chưa đặt tên",
+  "unknown": "Không xác định",
   "completed": "Đã hoàn tất",
   "cancel-completed": "Đã huỷ hoàn tất",
   "pending-completion": "Đang chờ hoàn tất",
@@ -46,5 +47,7 @@
   "branding": "Thương hiệu",
   "developers": "Nhà phát triển",
   "open-source": "Mã nguồn mở",
-  "copied": "Đã sao chép"
+  "copied": "Đã sao chép",
+  "edit": "Chỉnh sửa",
+  "remove": "Xóa"
 }

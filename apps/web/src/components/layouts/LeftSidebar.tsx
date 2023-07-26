@@ -230,6 +230,7 @@ function LeftSidebar({ className }: SidebarProps) {
                                       ? 'border-yellow-500/30 dark:border-yellow-900/20'
                                       : '',
                                   }}
+                                  src={member?.avatar_url}
                                 >
                                   {getInitials(
                                     member?.display_name || member?.email
@@ -439,6 +440,7 @@ function LeftSidebar({ className }: SidebarProps) {
                       userPopover ? 'dark:bg-blue-500/10' : ''
                     }`}
                     onClick={() => setUserPopover((o) => !o)}
+                    src={user?.avatar_url}
                   >
                     {getInitials(user?.display_name || user?.email)}
                   </Avatar>

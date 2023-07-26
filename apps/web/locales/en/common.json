@@ -36,6 +36,7 @@
   "error": "Error",
   "back": "Back",
   "untitled": "Untitled",
+  "unknown": "Unknown",
   "completed": "Completed",
   "cancel-completed": "Cancel completed",
   "pending-completion": "Pending completion",
@@ -46,5 +47,7 @@
   "branding": "Branding",
   "developers": "Developers",
   "open-source": "Open Source",
-  "copied": "Copied"
+  "copied": "Copied",
+  "edit": "Edit",
+  "remove": "Remove"
 }

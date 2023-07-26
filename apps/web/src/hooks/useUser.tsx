@@ -7,11 +7,14 @@ import {
 } from '@supabase/auth-helpers-react';
 import { User } from '../types/primitives/User';
 import { useRouter } from 'next/router';
+import { v4 as uuidv4 } from 'uuid';
 
 const UserDataContext = createContext({
   user: undefined as User | undefined,
   updateUser: undefined as ((data: Partial<User>) => Promise<void>) | undefined,
-
+  uploadImageUserBucket: undefined as
+    | ((file: File) => Promise<string | null>)
+    | undefined,
   isLoading: true,
   isError: false,
 });
@@ -69,6 +72,30 @@ export const UserDataProvider = ({
     return () => subscription?.unsubscribe();
   }, [supabase.auth, router]);
 
+  const uploadImageUserBucket = async (file: File): Promise<string | null> => {
+    const idAvatar = uuidv4();
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(`${idAvatar}`, file);
+
+    if (error) {
+      showNotification({
+        title: 'Failed to upload image',
+        message: 'Please try again later',
+        color: 'red',
+      });
+      return null;
+    }
+
+    console.log('upload image success', data);
+
+    const { data: avatar } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(`${idAvatar}`);
+
+    return avatar.publicUrl;
+  };
+
   const updateUser = async (data: Partial<User>) => {
     if (data?.handle?.length) {
       if (data.handle.length < 3 || data.handle.length > 20) {
@@ -123,7 +150,7 @@ export const UserDataProvider = ({
   const values = {
     user,
     updateUser,
-
+    uploadImageUserBucket,
     isLoading,
     isError: !!userError,
   };
