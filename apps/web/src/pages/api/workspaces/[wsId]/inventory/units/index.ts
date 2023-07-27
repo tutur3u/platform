@@ -88,13 +88,12 @@ const createUnit = async (
     res,
   });
 
-  const { name, type } = req.body;
+  const { name } = req.body;
 
   const { data, error } = await supabase
     .from('inventory_units')
     .insert({
       name,
-      type,
       ws_id: wsId,
     })
     .select('id')

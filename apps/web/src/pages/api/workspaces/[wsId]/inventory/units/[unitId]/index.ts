@@ -1,4 +1,4 @@
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -40,7 +40,7 @@ const fetchUnit = async (
   res: NextApiResponse,
   unitId: string
 ) => {
-  const supabase = createPagesServerClient({ req, res });
+  const supabase = createServerSupabaseClient({ req, res });
 
   const { data, error } = await supabase
     .from('inventory_units')
@@ -59,7 +59,7 @@ const updateUnit = async (
   res: NextApiResponse,
   unitId: string
 ) => {
-  const supabase = createPagesServerClient({
+  const supabase = createServerSupabaseClient({
     req,
     res,
   });
@@ -82,7 +82,7 @@ const deleteUnit = async (
   res: NextApiResponse,
   unitId: string
 ) => {
-  const supabase = createPagesServerClient({
+  const supabase = createServerSupabaseClient({
     req,
     res,
   });

@@ -8,25 +8,18 @@ import { openModal } from '@mantine/modals';
 import UnitCreateModal from '../../../../components/loaders/units/UnitCreateModal';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../hooks/useSegments';
-import UnitItemTab from '../../../../components/inventory/UnitItemTab';
 import useTranslation from 'next-translate/useTranslation';
+import InventoryItemTab from '../../../../components/inventory/InventoryItemTab';
 
 export const getServerSideProps = enforceHasWorkspaces;
-
-type UnitType = {
-  type: 'quantity' | 'non-quantity' | 'unChecked';
-};
 
 const NewUnitPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
-  const { t } = useTranslation('inventory-units-configs');
 
+  const { t } = useTranslation('inventory-units-configs');
   const unitSettingText = t('unit-setting');
   const unitNameText = t('unit-name');
-  const unitTypeSettingText = t('unit-type-setting');
-  const quantityUnitText = t('quantity-unit');
-  const nonQuantityUnitText = t('non-quantity-unit');
   const unitNamePLaceholderText = t('unit-name-placeholder');
 
   useEffect(() => {
@@ -51,95 +44,18 @@ const NewUnitPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [name, setName] = useState<string>('');
-  const [unitType, setUnitType] = useState<UnitType>({
-    type: 'unChecked',
-  });
 
-  const QuantityUnitState = ({ type }: UnitType) => {
-    if (type === 'quantity') {
-      return (
-        <>
-          <Checkbox
-            label={quantityUnitText}
-            color="grape"
-            defaultChecked
-            onChange={() =>
-              setUnitType({
-                type: 'unChecked',
-              })
-            }
-          />
-          <Checkbox
-            label={nonQuantityUnitText}
-            color="grape"
-            disabled
-            indeterminate
-          />
-        </>
-      );
-    }
-    if (type === 'non-quantity') {
-      return (
-        <>
-          <Checkbox
-            label={quantityUnitText}
-            color="grape"
-            disabled
-            indeterminate
-          />
-          <Checkbox
-            label={nonQuantityUnitText}
-            color="grape"
-            defaultChecked
-            onChange={() =>
-              setUnitType({
-                type: 'unChecked',
-              })
-            }
-          />
-        </>
-      );
-    }
-    if (type === 'unChecked') {
-      return (
-        <>
-          <Checkbox
-            label={quantityUnitText}
-            color="grape"
-            onChange={() => {
-              setUnitType({
-                type: 'quantity',
-              });
-            }}
-          />
-          <Checkbox
-            label={nonQuantityUnitText}
-            color="grape"
-            onChange={() => {
-              setUnitType({
-                type: 'non-quantity',
-              });
-            }}
-          />
-        </>
-      );
-    }
-  };
-
-  const hasRequiredFields = () =>
-    name.length > 0 && unitType.type !== 'unChecked';
+  const hasRequiredFields = () => name.length > 0;
 
   const showLoaderModal = () => {
-    const { type } = unitType;
-
-    if (!ws || type === 'unChecked') return;
+    if (!ws) return;
     openModal({
       title: <div className="font-semibold">Tạo đơn vị tính mới</div>,
       centered: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: <UnitCreateModal wsId={ws.id} unit={{ name, type }} />,
+      children: <UnitCreateModal wsId={ws.id} unit={{ name }} />,
     });
   };
 
@@ -163,21 +79,15 @@ const NewUnitPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:w-1/2">
-          <UnitItemTab title={unitSettingText} description={unitNameText}>
+        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
+          <InventoryItemTab title={unitSettingText} description={unitNameText}>
             <TextInput
               placeholder={unitNamePLaceholderText}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
               required
             />
-          </UnitItemTab>
-
-          <UnitItemTab description={unitTypeSettingText}>
-            <div className="flex flex-col gap-3">
-              <QuantityUnitState type={unitType.type} />
-            </div>
-          </UnitItemTab>
+          </InventoryItemTab>
         </div>
       </div>
     </>

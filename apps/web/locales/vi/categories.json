@@ -21,5 +21,8 @@
   "update-category": "Cập nhật danh mục giao dịch",
   "delete-category": "Xóa danh mục giao dịch",
   "delete": "Xóa",
-  "save-changes": "Lưu thay đổi"
+  "save-changes": "Lưu thay đổi",
+  "category-name": "Tên danh mục giao dịch",
+  "category-placeholder": "Ví dụ: \"Thuốc\", \"Thực phẩm\"",
+  "quantity-unit": "Danh mục số lượng"
 }

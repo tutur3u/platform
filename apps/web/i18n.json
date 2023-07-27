@@ -255,8 +255,8 @@
       "inventory-categories-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs"],
+    "/[wsId]/inventory/categories/new": ["sidebar-tabs", "categories"],
+    "/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs", "categories"],
 
     "/[wsId]/inventory/batches": [
       "sidebar-tabs",
@@ -290,7 +290,7 @@
       "inventory-tabs"
     ],
     "/[wsId]/inventory/units/new": ["sidebar-tabs", "inventory-units-configs"],
-    "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
+    "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs", "inventory-units-configs"],
 
     "/[wsId]/inventory/suppliers": [
       "sidebar-tabs",

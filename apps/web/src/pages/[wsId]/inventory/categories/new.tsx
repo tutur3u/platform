@@ -3,17 +3,27 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import CategoryCreateModal from '../../../../components/loaders/categories/CategoryCreateModal';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
+import InventoryItemTab from '../../../../components/inventory/InventoryItemTab';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const NewCategoryPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+  const { t } = useTranslation('categories');
+  const basicInfoText = t('basic-info');
+  const categoryNameText = t('category-name');
+  const categoryNamePLaceholderText = t('category-placeholder');
+
+  const createButtonText = t('create');
+  const categoryTypeText = t('type');
+  const quantityUnitText = t('quantity-unit');
 
   useEffect(() => {
     setRootSegment(
@@ -69,25 +79,33 @@ const NewCategoryPage: PageWithLayoutProps = () => {
               }`}
               onClick={hasRequiredFields() ? showLoaderModal : undefined}
             >
-              Tạo mới
+              {createButtonText}
             </button>
           </div>
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
-
-          <TextInput
-            label="Tên danh mục"
-            placeholder='Ví dụ: "Thuốc", "Thực phẩm"'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-          />
+        <div className="grid h-fit gap-x-4 gap-y-2  md:w-1/2">
+          <InventoryItemTab
+            title={basicInfoText}
+            description={categoryNameText}
+          >
+            <TextInput
+              placeholder={categoryNamePLaceholderText}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              required
+            />
+          </InventoryItemTab>
+          <InventoryItemTab description={categoryTypeText}>
+            <Checkbox
+              label={quantityUnitText}
+              color="grape"
+              onChange={() => {
+                
+              }}
+            />
+          </InventoryItemTab>
         </div>
       </div>
     </>

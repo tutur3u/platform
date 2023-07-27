@@ -2,8 +2,5 @@
   "show-products": "Hiển thị sản phẩm",
   "unit-setting": "Thông tin cơ bản",
   "unit-name": "Tên đơn vị",
-  "unit-type-setting": "Loại đơn vị",
-  "quantity-unit": "Đơn vị quản lý số lượng",
-  "non-quantity-unit": "Đơn vị quản lý không số lượng",
   "unit-name-placeholder": "Ví dụ: \"Thuốc\", \"Thực phẩm\""
 }

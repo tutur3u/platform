@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { openModal } from '@mantine/modals';
 import UnitEditModal from '../../../../components/loaders/units/UnitEditModal';
@@ -12,12 +12,19 @@ import UnitDeleteModal from '../../../../components/loaders/units/UnitDeleteModa
 import { ProductUnit } from '../../../../types/primitives/ProductUnit';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
+import InventoryItemTab from '../../../../components/inventory/InventoryItemTab';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const UnitDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+
+  const { t } = useTranslation('inventory-units-configs');
+  const unitSettingText = t('unit-setting');
+  const unitNameText = t('unit-name');
+  const unitNamePLaceholderText = t('unit-name-placeholder');
 
   const router = useRouter();
   const { unitId } = router.query;
@@ -125,20 +132,15 @@ const UnitDetailsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
-
-          <TextInput
-            label="Tên sản phẩm"
-            placeholder='Ví dụ: "Paracetamol 500mg"'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-            disabled={!unit}
-          />
+        <div className="grid h-fit gap-x-4 gap-y-2 md:w-1/2">
+          <InventoryItemTab title={unitSettingText} description={unitNameText}>
+            <TextInput
+              placeholder={unitNamePLaceholderText}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              required
+            />
+          </InventoryItemTab>
         </div>
       </div>
     </>

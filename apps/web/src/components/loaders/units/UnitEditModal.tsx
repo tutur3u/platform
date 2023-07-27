@@ -42,12 +42,11 @@ const UnitEditModal = ({ wsId, oldUnit, unit }: Props) => {
 
   const updateDetails = async () => {
     // If the unit is not changed, skip this step
-    if (oldUnit.name === unit.name) {
+    if (oldUnit.name === unit.name && oldUnit.type === unit.type) {
       setProgress((progress) => ({ ...progress, updated: 'success' }));
       return true;
     }
-
-    const { id, name } = unit;
+    const { id, name, type } = unit;
 
     const res = await fetch(`/api/workspaces/${wsId}/inventory/units/${id}`, {
       method: 'PUT',
@@ -56,6 +55,7 @@ const UnitEditModal = ({ wsId, oldUnit, unit }: Props) => {
       },
       body: JSON.stringify({
         name,
+        type,
       }),
     });
 

@@ -1,14 +1,14 @@
-interface UnitItemTabProps {
+interface InventoryItemTabProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
 }
 
-export default function UnitItemTab({
+export default function InventoryItemTab({
   title,
   description,
   children,
-}: UnitItemTabProps) {
+}: InventoryItemTabProps) {
   return (
     <>
       <div className="grid">

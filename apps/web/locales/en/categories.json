@@ -21,5 +21,8 @@
   "update-category": "Update category",
   "delete-category": "Delete category",
   "delete": "Delete",
-  "save-changes": "Save changes"
+  "save-changes": "Save changes",
+  "category-name": "Category name",
+  "category-placeholder": "Example: \"Medicine\", \"Food\"",
+  "quantity-unit": "Quantity Category"
 }
