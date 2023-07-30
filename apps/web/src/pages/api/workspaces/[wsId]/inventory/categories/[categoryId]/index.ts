@@ -44,7 +44,7 @@ const fetchCategory = async (
 
   const { data, error } = await supabase
     .from('product_categories')
-    .select('id, name')
+    .select('id, name, type')
     .eq('id', categoryId)
     .single();
 
@@ -64,12 +64,13 @@ const updateCategory = async (
     res,
   });
 
-  const { name } = req.body;
+  const { name, type } = req.body;
 
   const { error } = await supabase
     .from('product_categories')
     .update({
       name,
+      type
     })
     .eq('id', categoryId);
 

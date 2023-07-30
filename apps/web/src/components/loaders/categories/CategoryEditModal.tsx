@@ -42,12 +42,12 @@ const CategoryEditModal = ({ wsId, oldCategory, category }: Props) => {
 
   const updateDetails = async () => {
     // If the category is not changed, skip this step
-    if (oldCategory.name === category.name) {
+    if (oldCategory.name === category.name && oldCategory.type === category.type) {
       setProgress((progress) => ({ ...progress, updated: 'success' }));
       return true;
     }
 
-    const { id, name } = category;
+    const { id, name, type } = category;
 
     const res = await fetch(
       `/api/workspaces/${wsId}/inventory/categories/${id}`,
@@ -58,6 +58,7 @@ const CategoryEditModal = ({ wsId, oldCategory, category }: Props) => {
         },
         body: JSON.stringify({
           name,
+          type,
         }),
       }
     );

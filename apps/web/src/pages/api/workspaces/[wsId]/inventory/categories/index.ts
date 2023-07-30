@@ -45,7 +45,7 @@ const fetchCategories = async (
 
   const queryBuilder = supabase
     .from('product_categories')
-    .select('id, name', { count: 'exact' })
+    .select('id, name, type', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
@@ -84,12 +84,13 @@ const createCategory = async (
     res,
   });
 
-  const { name } = req.body;
+  const { name, type } = req.body;
 
   const { data, error } = await supabase
     .from('product_categories')
     .insert({
       name,
+      type,
       ws_id: wsId,
     })
     .select('id')

@@ -4,7 +4,7 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
-import { Divider, TextInput } from '@mantine/core';
+import { Checkbox, Divider, TextInput } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { openModal } from '@mantine/modals';
 import CategoryEditModal from '../../../../components/loaders/categories/CategoryEditModal';
@@ -12,12 +12,22 @@ import CategoryDeleteModal from '../../../../components/loaders/categories/Categ
 import { ProductCategory } from '../../../../types/primitives/ProductCategory';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
+import InventoryItemTab from '../../../../components/inventory/InventoryItemTab';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const CategoryDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
+  const { t } = useTranslation('categories');
+  const basicInfoText = t('basic-info');
+  const categoryNameText = t('category-name');
+  const categoryNamePLaceholderText = t('category-placeholder');
+
+  const createButtonText = t('create');
+  const categoryTypeText = t('type');
+  const quantityUnitText = t('quantity-unit');
 
   const router = useRouter();
   const { wsId, categoryId } = router.query;
@@ -54,10 +64,12 @@ const CategoryDetailsPage: PageWithLayoutProps = () => {
   }, [ws, category, categoryId, setRootSegment]);
 
   const [name, setName] = useState<string>('');
+  const [type, setType] = useState<'quantity' | 'non-quantity'>('quantity');
 
   useEffect(() => {
     if (category) {
       setName(category?.name || '');
+      setType(category?.type === 'quantity' ? 'quantity' : 'non-quantity');
     }
   }, [category]);
 
@@ -80,6 +92,7 @@ const CategoryDetailsPage: PageWithLayoutProps = () => {
           category={{
             id: categoryId,
             name,
+            type,
           }}
         />
       ),
@@ -131,20 +144,28 @@ const CategoryDetailsPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
-
-          <TextInput
-            label="Tên sản phẩm"
-            placeholder='Ví dụ: "Paracetamol 500mg"'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-            disabled={!category}
-          />
+        <div className="grid h-fit gap-x-4 gap-y-2  md:w-1/2">
+          <InventoryItemTab
+            title={basicInfoText}
+            description={categoryNameText}
+          >
+            <TextInput
+              placeholder={categoryNamePLaceholderText}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              required
+            />
+          </InventoryItemTab>
+          <InventoryItemTab description={categoryTypeText}>
+            <Checkbox
+              label={quantityUnitText}
+              color="grape"
+              checked={type === 'quantity'}
+              onChange={() => {
+                setType(type === 'quantity' ? 'non-quantity' : 'quantity');
+              }}
+            />
+          </InventoryItemTab>
         </div>
       </div>
     </>

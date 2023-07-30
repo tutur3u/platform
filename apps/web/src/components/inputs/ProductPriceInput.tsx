@@ -20,13 +20,14 @@ const ProductPriceInput = ({
   price,
   // minAmount,
   isLast,
-
+  
   updatePrice,
   // updateMinAmount,
   updateUnitId,
   removePrice,
   getUniqueUnitIds,
 }: Props) => {
+
   return (
     <div className="flex gap-2">
       <div className="grid w-full gap-2 md:grid-cols-2 2xl:grid-cols-4">

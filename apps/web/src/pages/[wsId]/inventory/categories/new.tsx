@@ -50,6 +50,7 @@ const NewCategoryPage: PageWithLayoutProps = () => {
   }, [ws, setRootSegment]);
 
   const [name, setName] = useState<string>('');
+  const [type, setType] = useState<'quantity' | 'non-quantity'>('quantity');
 
   const hasRequiredFields = () => name.length > 0;
 
@@ -61,7 +62,7 @@ const NewCategoryPage: PageWithLayoutProps = () => {
       closeOnEscape: false,
       closeOnClickOutside: false,
       withCloseButton: false,
-      children: <CategoryCreateModal wsId={ws.id} category={{ name }} />,
+      children: <CategoryCreateModal wsId={ws.id} category={{ name, type }} />,
     });
   };
 
@@ -101,8 +102,9 @@ const NewCategoryPage: PageWithLayoutProps = () => {
             <Checkbox
               label={quantityUnitText}
               color="grape"
+              checked
               onChange={() => {
-                
+                setType(type === 'quantity' ? 'non-quantity' : 'quantity')
               }}
             />
           </InventoryItemTab>
