@@ -33,11 +33,13 @@ import UserTypeSelector from '../../../../../components/selectors/UserTypeSelect
 import { showNotification } from '@mantine/notifications';
 import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
 import EventParticipantGroupCard from '../../../../../components/cards/EventParticipantGroupCard';
+import { useAppearance } from '../../../../../hooks/useAppearance';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
 const EventDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
+  const { sidebar } = useAppearance();
   const { ws } = useWorkspaces();
 
   const { t, lang } = useTranslation('calendar-event-configs');
@@ -335,7 +337,11 @@ const EventDetailsPage: PageWithLayoutProps = () => {
       <div className="relative grid min-h-full w-full gap-4 pb-32 xl:grid-cols-2">
         {event && hasRequiredFields() && (
           <div
-            className={`absolute inset-x-0 bottom-0 z-[100] mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition duration-300 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mb-4 md:flex-row ${
+            className={`fixed inset-x-0 ${
+              sidebar === 'open'
+                ? 'mx-4 md:ml-72 md:mr-8 lg:ml-80 lg:mr-16 xl:ml-96 xl:mr-32'
+                : 'mx-4 md:ml-24 md:mr-8 lg:ml-32 lg:mr-16 xl:mx-48'
+            } bottom-0 z-[100] mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition-all duration-500 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mb-4 md:flex-row ${
               isDirty() ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
@@ -555,7 +561,6 @@ const EventDetailsPage: PageWithLayoutProps = () => {
                 group={{ id: newGroupId }}
                 setGroup={(group) => setNewGroupId(group?.id || '')}
                 className="w-full"
-                creatable={false}
                 preventPreselect
                 clearable
                 hideLabel

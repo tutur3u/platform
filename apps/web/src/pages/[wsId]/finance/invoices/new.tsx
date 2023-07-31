@@ -23,7 +23,7 @@ import useTranslation from 'next-translate/useTranslation';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const NewPage: PageWithLayoutProps = () => {
+const NewInvoicePage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -84,7 +84,11 @@ const NewPage: PageWithLayoutProps = () => {
         product.id.length > 0 && product?.amount && product?.price !== undefined
     );
 
-  const hasRequiredFields = () => products.length > 0 && allProductsValid();
+  const hasRequiredFields = () =>
+    products.length > 0 &&
+    allProductsValid() &&
+    walletId.length > 0 &&
+    categoryId.length > 0;
 
   const addEmptyProduct = () => {
     setProducts((products) => [
@@ -414,8 +418,8 @@ const NewPage: PageWithLayoutProps = () => {
   );
 };
 
-NewPage.getLayout = function getLayout(page: ReactElement) {
+NewInvoicePage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default NewPage;
+export default NewInvoicePage;

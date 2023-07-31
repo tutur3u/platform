@@ -60,25 +60,27 @@ const WorkspaceUserSelector = ({
 
   const users = fetchedData?.data;
 
-  const data = notEmpty
-    ? [
-        ...(users?.map((user) => ({
-          label: user?.name ?? user?.display_name,
-          value: user.id,
-        })) || []),
-      ]
-    : [
-        {
-          label: t('passersby'),
-          value: '',
-          group: t('common:general'),
-        },
-        ...(users?.map((user) => ({
-          label: user.name,
-          value: user.id,
-          group: t('common:other'),
-        })) || []),
-      ];
+  const data = (
+    notEmpty
+      ? [
+          ...(users?.map((user) => ({
+            label: user?.name ?? user?.display_name ?? user?.handle ?? '',
+            value: user.id,
+          })) || []),
+        ]
+      : [
+          {
+            label: t('passersby'),
+            value: '',
+            group: t('common:general'),
+          },
+          ...(users?.map((user) => ({
+            label: user?.name ?? user?.display_name ?? user?.handle ?? '',
+            value: user.id,
+            group: t('common:other'),
+          })) || []),
+        ]
+  ).filter((item) => item.label);
 
   useEffect(() => {
     if (!users || preventPreselect) return;

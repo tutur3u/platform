@@ -127,7 +127,7 @@ const InvoiceCard = ({
       {showExtraInfo && (
         <div className="flex w-full flex-col items-center justify-center gap-2 p-2">
           {showAmount && (
-            <div className="line-clamp-1 w-full rounded border border-green-300/20 bg-green-300/10 px-4 py-0.5 font-semibold text-green-300">
+            <div className="line-clamp-1 w-full rounded border border-orange-300/20 bg-orange-300/10 px-4 py-0.5 font-semibold text-orange-300">
               {Intl.NumberFormat('vi-VN', {
                 style: 'decimal',
               }).format(items?.count || 0)}

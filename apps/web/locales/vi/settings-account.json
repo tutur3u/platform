@@ -1,5 +1,9 @@
 {
   "account": "Tài khoản",
+  "avatar": "Ảnh đại diện",
+  "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
+  "revert_changes": "Hoàn tác thay đổi",
+  "preview": "Xem trước",
   "display-name": "Tên hiển thị",
   "display-name-description": "Nhập tên bạn muốn hiển thị trên hồ sơ của mình.",
   "handle-description": "Đây là URL tự chọn của bạn trong Tuturuuu.",
@@ -16,5 +20,11 @@
   "development-description": "Tùy chỉnh cài đặt phát triển cục bộ.",
   "hide-experimental-on-sidebar": "Ẩn tính năng thử nghiệm trên thanh bên",
   "hide-experimental-on-top-nav": "Ẩn tính năng thử nghiệm trên thanh điều hướng trên cùng",
-  "logout-description": "Đăng xuất khỏi tài khoản của bạn."
+  "logout-description": "Đăng xuất khỏi tài khoản của bạn.",
+  "confirm-account-deletion": "Xác nhận xóa tài khoản",
+  "change-password": "Đổi mật khẩu",
+  "change-password-description": "Đổi mật khẩu của bạn.",
+  "delete-account": "Xóa tài khoản",
+  "delete-account-description": "Xóa tài khoản của bạn.",
+  "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản."
 }

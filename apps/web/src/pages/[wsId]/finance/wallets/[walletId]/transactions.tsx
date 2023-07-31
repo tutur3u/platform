@@ -22,6 +22,7 @@ import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
 import PlusCardButton from '../../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
+import DateRangeInput from '../../../../../components/selectors/DateRangeInput';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -94,8 +95,15 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
     defaultValue: 15,
   });
 
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
   const transactionsApiPath = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions?walletIds=${walletId}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${
+        ws.id
+      }/finance/transactions?walletIds=${walletId}&query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}&startDate=${
+        startDate?.toISOString() || ''
+      }&endDate=${endDate?.toISOString() || ''}`
     : null;
 
   // const countApi = ws?.id
@@ -122,18 +130,21 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
 
   if (!ws) return null;
 
-  const transactionsByDate = transactions?.reduce((acc, cur) => {
-    const date = moment(cur.taken_at).toDate();
-    const localeDate = date.toLocaleDateString();
+  const transactionsByDate = transactions?.reduce(
+    (acc, cur) => {
+      const date = moment(cur.taken_at).toDate();
+      const localeDate = date.toLocaleDateString();
 
-    if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
+      if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
 
-    acc[localeDate].transactions.push(cur);
+      acc[localeDate].transactions.push(cur);
 
-    acc[localeDate].total += cur?.amount || 0;
+      acc[localeDate].total += cur?.amount || 0;
 
-    return acc;
-  }, {} as Record<string, { transactions: Transaction[]; total: number }>);
+      return acc;
+    },
+    {} as Record<string, { transactions: Transaction[]; total: number }>
+  );
 
   const getRelativeDate = (date: string) => {
     const now = new Date();
@@ -167,6 +178,12 @@ const WalletTransactionsPage: PageWithLayoutProps = () => {
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
+          <DateRangeInput
+            label={t('date-range')}
+            placeholder={t('common:all')}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {

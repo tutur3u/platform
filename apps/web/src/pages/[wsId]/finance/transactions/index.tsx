@@ -20,6 +20,7 @@ import 'moment/locale/vi';
 import PlusCardButton from '../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
+import DateRangeInput from '../../../../components/selectors/DateRangeInput';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
@@ -29,6 +30,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
   const { lang } = useTranslation();
   const { t } = useTranslation('transactions');
+
   const finance = t('finance');
   const transaction = t('transactions');
   const unnamedWorkspace = t('unnamed-ws');
@@ -61,8 +63,15 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
     defaultValue: 15,
   });
 
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
   const apiPath = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces/${
+        ws.id
+      }/finance/transactions?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}&startDate=${
+        startDate?.toISOString() || ''
+      }&endDate=${endDate?.toISOString() || ''}`
     : null;
 
   // const countApi = ws?.id
@@ -94,19 +103,25 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
 
   if (!ws) return null;
 
-  const transactionsByDate = transactions?.reduce((acc, cur) => {
-    const date = moment(cur.taken_at).toDate();
-    const localeDate = date.toLocaleDateString();
+  const transactionsByDate = transactions?.reduce(
+    (acc, cur) => {
+      const date = moment(cur.taken_at).toDate();
+      const localeDate = date.toLocaleDateString();
 
-    if (!acc[localeDate])
-      acc[localeDate] = { transactions: [], total: 0, date };
+      if (!acc[localeDate])
+        acc[localeDate] = { transactions: [], total: 0, date };
 
-    acc[localeDate].transactions.push(cur);
+      acc[localeDate].transactions.push(cur);
 
-    acc[localeDate].total += cur?.amount || 0;
+      acc[localeDate].total += cur?.amount || 0;
 
-    return acc;
-  }, {} as Record<string, { transactions: Transaction[]; total: number; date: Date }>);
+      return acc;
+    },
+    {} as Record<
+      string,
+      { transactions: Transaction[]; total: number; date: Date }
+    >
+  );
 
   const getRelativeDate = (date: Date) => {
     const dateStr = date.toDateString();
@@ -146,6 +161,12 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
           <ModeSelector mode={mode} setMode={setMode} />
+          <DateRangeInput
+            label={t('date-range')}
+            placeholder={t('common:all')}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
           <PaginationSelector
             items={itemsPerPage}
             setItems={(size) => {

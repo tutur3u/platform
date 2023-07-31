@@ -9,6 +9,7 @@ import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 import { mutate } from 'swr';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 interface Props {
   forceLoading?: boolean;
@@ -80,6 +81,7 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
   };
 
   const { t } = useTranslation('onboarding');
+  const { supabaseClient } = useSessionContext();
 
   const displayNameLabel = t('display-name');
   const usernameLabel = t('username');
@@ -94,10 +96,16 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
 
   const currentlyLoggedIn = t('currently-logged-in');
   const noInvites = t('no-invites');
+  const logoutLabel = t('common:logout');
+
+  const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    router.push('/');
+  };
 
   return (
     <>
-      <div className="absolute inset-0 mx-4 my-32 flex items-start justify-center md:mx-4 md:items-center lg:mx-32">
+      <div className="absolute inset-0 mx-4 flex items-center justify-center md:mx-4 lg:mx-32">
         <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
           {forceLoading ||
           !user ||
@@ -202,7 +210,20 @@ const OnboardingForm = ({ forceLoading = false }: Props) => {
               )}
 
               <Divider className="w-full border-zinc-300/20" />
-              <LanguageSelector transparent fullWidth />
+              <div className="grid w-full gap-2">
+                <LanguageSelector transparent fullWidth />
+                <Button
+                  className="w-full border border-red-300/10 bg-red-300/10 text-red-300 hover:bg-red-300/20"
+                  variant="light"
+                  color="red"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
+                >
+                  {logoutLabel}
+                </Button>
+              </div>
             </>
           )}
         </div>

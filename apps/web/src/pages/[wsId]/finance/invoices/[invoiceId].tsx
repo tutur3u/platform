@@ -7,55 +7,58 @@ import { Divider, NumberInput, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import WorkspaceUserSelector from '../../../../components/selectors/WorkspaceUserSelector';
 import { Product } from '../../../../types/primitives/Product';
-import 'dayjs/locale/vi';
 import InvoiceProductInput from '../../../../components/inputs/InvoiceProductInput';
-import { useRouter } from 'next/router';
-import useSWR, { mutate } from 'swr';
-import { Invoice } from '../../../../types/primitives/Invoice';
 import InvoiceEditModal from '../../../../components/loaders/invoices/InvoiceEditModal';
-import InvoiceDeleteModal from '../../../../components/loaders/invoices/InvoiceDeleteModal';
+
+import useSWR, { mutate } from 'swr';
 import { useSegments } from '../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import { DateTimePicker } from '@mantine/dates';
-import useTranslation from 'next-translate/useTranslation';
-import moment from 'moment';
-import { Transaction } from '../../../../types/primitives/Transaction';
+import 'dayjs/locale/vi';
 import WalletSelector from '../../../../components/selectors/WalletSelector';
-import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
 import { Wallet } from '../../../../types/primitives/Wallet';
+import TransactionCategorySelector from '../../../../components/selectors/TransactionCategorySelector';
 import { TransactionCategory } from '../../../../types/primitives/TransactionCategory';
+import { DateTimePicker } from '@mantine/dates';
+import 'dayjs/locale/vi';
+import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
+import { Invoice } from '../../../../types/primitives/Invoice';
+import { Transaction } from '../../../../types/primitives/Transaction';
+import moment from 'moment';
+import InvoiceDeleteModal from '../../../../components/loaders/invoices/InvoiceDeleteModal';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
-const DetailsPage: PageWithLayoutProps = () => {
+const InvoiceDetailsPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
   const router = useRouter();
-  const { wsId, invoiceId } = router.query;
+  const { invoiceId } = router.query;
 
   const { t } = useTranslation('invoices');
+
   const unnamedWorkspace = t('unnamed-ws');
   const invoices = t('invoices');
   const loading = t('common:loading');
-  const checkup = t('checkup');
+  const finance = t('finance');
 
   const apiPath =
-    wsId && invoiceId
-      ? `/api/workspaces/${wsId}/finance/invoices/${invoiceId}`
+    ws?.id && invoiceId
+      ? `/api/workspaces/${ws.id}/finance/invoices/${invoiceId}`
       : null;
 
   const productsApiPath =
-    wsId && invoiceId
-      ? `/api/workspaces/${wsId}/finance/invoices/${invoiceId}/products`
+    ws?.id && invoiceId
+      ? `/api/workspaces/${ws.id}/finance/invoices/${invoiceId}/products`
       : null;
 
   const { data: invoice } = useSWR<Invoice>(apiPath);
   const { data: productPrices } = useSWR<Product[]>(productsApiPath);
 
   const transactionApiPath =
-    wsId && invoice?.transaction_id
-      ? `/api/workspaces/${wsId}/finance/transactions/${invoice?.transaction_id}`
+    ws?.id && invoice?.transaction_id
+      ? `/api/workspaces/${ws.id}/finance/transactions/${invoice?.transaction_id}`
       : null;
 
   const { data: transaction } = useSWR<Transaction>(transactionApiPath);
@@ -68,7 +71,7 @@ const DetailsPage: PageWithLayoutProps = () => {
               content: ws?.name || unnamedWorkspace,
               href: `/${ws.id}`,
             },
-            { content: checkup, href: `/${ws.id}/finance` },
+            { content: finance, href: `/${ws.id}/finance` },
             {
               content: invoices,
               href: `/${ws.id}/finance/invoices`,
@@ -89,7 +92,7 @@ const DetailsPage: PageWithLayoutProps = () => {
     unnamedWorkspace,
     invoices,
     loading,
-    checkup,
+    finance,
   ]);
 
   const [walletId, setWalletId] = useState<string | null>(null);
@@ -133,16 +136,16 @@ const DetailsPage: PageWithLayoutProps = () => {
   }, [transaction]);
 
   const allProductsValid = () =>
-    products?.every(
+    products.every(
       (product) =>
-        (product?.id?.length || 0) > 0 &&
+        product?.id?.length > 0 &&
         product?.unit_id &&
         product?.amount &&
         product?.price !== undefined
     );
 
   const hasRequiredFields = () =>
-    products && products?.length > 0 && allProductsValid();
+    products.length > 0 && allProductsValid() && walletId && categoryId;
 
   const addEmptyProduct = () => {
     if (!products) return;
@@ -171,12 +174,12 @@ const DetailsPage: PageWithLayoutProps = () => {
       products.map((p, i) => (i === index ? product : p))
     );
 
-  const amount = (products || []).reduce(
+  const amount = products.reduce(
     (acc, product) => acc + (product?.amount || 0),
     0
   );
 
-  const price = (products || []).reduce(
+  const price = products.reduce(
     (acc, product) => acc + (product?.price || 0) * (product?.amount || 0),
     0
   );
@@ -272,7 +275,7 @@ const DetailsPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={`${t('invoices')} - ${t('finance')}`} />
+      <HeaderX label={`${invoices} - ${finance}`} />
       <div className="mt-2 flex min-h-full w-full flex-col ">
         <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
           <button
@@ -415,16 +418,13 @@ const DetailsPage: PageWithLayoutProps = () => {
               disabled={!transaction?.category_id}
             />
 
-            {products && products?.length > 0 && (
+            {products?.length > 0 && (
               <div className="col-span-full">
                 <NumberInput
                   label={t('total')}
                   placeholder={t('total-placeholder')}
                   value={price + (diff || 0)}
                   onChange={(e) => setDiff((e || 0) - price)}
-                  classNames={{
-                    input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                  }}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
                   formatter={(value) =>
                     !Number.isNaN(parseFloat(value || ''))
@@ -436,15 +436,15 @@ const DetailsPage: PageWithLayoutProps = () => {
                 {diff != 0 && (
                   <>
                     <button
-                      className="mt-2 w-full rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition hover:bg-red-300/20 md:col-span-2"
+                      className="mt-2 w-full rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-500/20 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20 md:col-span-2"
                       onClick={() => setDiff(0)}
                     >
-                      {t('reorder')}
+                      {t('reset')}
                     </button>
                     <Divider className="my-2" />
-                    <div className="my-2 rounded border border-orange-300/10 bg-orange-300/10 p-2 text-center font-semibold text-orange-300">
+                    <div className="my-2 rounded border border-orange-500/10 bg-orange-500/10 p-2 text-center font-semibold text-orange-400 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300">
                       {diff > 0 ? t('extra-pay') : t('discount')}{' '}
-                      <span className="text-orange-100 underline decoration-orange-100 underline-offset-4">
+                      <span className="text-orange-600 underline decoration-orange-600 underline-offset-4 dark:text-orange-100 dark:decoration-orange-100">
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND',
@@ -462,19 +462,19 @@ const DetailsPage: PageWithLayoutProps = () => {
             <div className="col-span-full">
               <div className="text-2xl font-semibold">
                 {t('products')}{' '}
-                {products && products?.length > 0 && (
+                {products?.length > 0 && (
                   <>
                     (
-                    <span className="text-blue-300">
+                    <span className="text-blue-600 dark:text-blue-300">
                       x
                       {Intl.NumberFormat('vi-VN', {
                         style: 'decimal',
-                      }).format(products?.length || 0)}{' '}
+                      }).format(products?.length || 0)}
                     </span>{' '}
                     {amount != 0 && (
                       <>
                         |{' '}
-                        <span className="text-purple-300">
+                        <span className="text-purple-600 dark:text-purple-300">
                           x
                           {Intl.NumberFormat('vi-VN', {
                             style: 'decimal',
@@ -483,7 +483,7 @@ const DetailsPage: PageWithLayoutProps = () => {
                       </>
                     )}
                     |{' '}
-                    <span className="text-green-300">
+                    <span className="text-green-600 dark:text-green-300">
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND',
@@ -492,14 +492,14 @@ const DetailsPage: PageWithLayoutProps = () => {
                     {diff != null && diff != 0 && (
                       <>
                         {diff > 0 ? ' + ' : ' - '}{' '}
-                        <span className="text-red-300">
+                        <span className="text-red-600 dark:text-red-300">
                           {Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND',
                           }).format(Math.abs(diff))}
                         </span>
                         {' = '}
-                        <span className="text-yellow-300">
+                        <span className="text-yellow-600 dark:text-yellow-300">
                           {Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND',
@@ -526,22 +526,20 @@ const DetailsPage: PageWithLayoutProps = () => {
               </button>
             </div>
 
-            {products && (
-              <div className="mt-4 grid gap-4">
-                {products.map((p, idx) => (
-                  <InvoiceProductInput
-                    key={p.id + idx}
-                    wsId={ws.id}
-                    product={p}
-                    isLast={idx === products.length - 1}
-                    getUniqueWarehouseIds={getUniqueWarehouseIds}
-                    removePrice={() => removePrice(idx)}
-                    updateProduct={(product) => updateProduct(idx, product)}
-                    hideStock
-                  />
-                ))}
-              </div>
-            )}
+            <div className="mt-4 grid gap-4">
+              {products.map((p, idx) => (
+                <InvoiceProductInput
+                  key={p.id + idx}
+                  wsId={ws.id}
+                  product={p}
+                  isLast={idx === products.length - 1}
+                  getUniqueWarehouseIds={getUniqueWarehouseIds}
+                  removePrice={() => removePrice(idx)}
+                  updateProduct={(product) => updateProduct(idx, product)}
+                  hideStock
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -549,8 +547,8 @@ const DetailsPage: PageWithLayoutProps = () => {
   );
 };
 
-DetailsPage.getLayout = function getLayout(page: ReactElement) {
+InvoiceDetailsPage.getLayout = function getLayout(page: ReactElement) {
   return <NestedLayout noTabs>{page}</NestedLayout>;
 };
 
-export default DetailsPage;
+export default InvoiceDetailsPage;

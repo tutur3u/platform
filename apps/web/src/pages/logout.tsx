@@ -67,7 +67,7 @@ const LogOutPage = () => {
 
           <div className="grid w-full gap-2 text-center">
             <Button
-              className="bg-red-300/10 text-red-300 hover:bg-red-300/20"
+              className="border border-red-300/10 bg-red-300/10 text-red-300 hover:bg-red-300/20"
               variant="light"
               color="red"
               onClick={(e) => {

@@ -1,9 +1,10 @@
-import { Button, Divider, Select, TextInput } from '@mantine/core';
+import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { User, UserRole } from '../../types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
+import { getInitials } from '../../utils/name-helper';
 
 interface Props {
   currentUserId: string;
@@ -63,11 +64,25 @@ const WorkspaceMemberEditForm = ({
 
   return (
     <div className="grid gap-2">
-      <div className="rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-xl font-semibold">{user?.display_name}</div>
-        {user?.handle && (
-          <div className="text-blue-600 dark:text-blue-300">@{user.handle}</div>
-        )}
+      <div className="flex gap-2 rounded border border-zinc-300 bg-zinc-500/5 p-2 dark:border-zinc-300/10 dark:bg-zinc-300/5">
+        <Avatar
+          alt="Avatar"
+          src={user?.avatar_url}
+          size="2xl"
+          color="blue"
+          className="aspect-square w-full max-w-[3.5rem] rounded-full text-xl"
+        >
+          {getInitials(user?.display_name || '?')}
+        </Avatar>
+
+        <div>
+          <div className="text-xl font-semibold">{user?.display_name}</div>
+          {user?.handle && (
+            <div className="font-semibold text-blue-600 dark:text-blue-300">
+              @{user.handle}
+            </div>
+          )}
+        </div>
       </div>
 
       <Divider className="my-1" />

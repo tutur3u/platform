@@ -1,6 +1,5 @@
 import moment from 'moment';
 import { Workspace } from '../../types/primitives/Workspace';
-import { Divider } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
@@ -8,13 +7,15 @@ import 'moment/locale/vi';
 
 interface Props {
   ws: Workspace;
-  gray?: boolean;
+  transparent?: boolean;
 }
 
-const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
+const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const { t, lang } = useTranslation('invite');
 
-  const creationDate = moment(ws?.created_at).locale(lang).fromNow();
+  const creationDate = moment(ws?.created_at)
+    .locale(lang)
+    .fromNow();
 
   const invitedTo = t('invited-to');
 
@@ -78,36 +79,33 @@ const WorkspaceInviteSnippet = ({ ws, gray = false }: Props) => {
 
   return (
     <div
-      className={`rounded-lg border p-4 md:p-8 ${
-        gray
-          ? 'border-zinc-300/10 bg-zinc-900'
-          : 'border-blue-300/20 bg-blue-300/10'
+      className={`rounded-lg border p-4 ${
+        transparent
+          ? 'border-zinc-300/10 bg-zinc-300/5'
+          : 'border-zinc-300/10 bg-zinc-900'
       }`}
     >
-      {ws?.created_at ? (
-        <>
-          <div className="w-fit rounded border border-purple-300/10 bg-purple-300/10 px-4 py-0.5 text-purple-300">
-            {creationDate}
-          </div>
-          <Divider className="my-2 border-blue-300/20" />
-        </>
-      ) : null}
-
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-zinc-300/60">{invitedTo} </span>
         <span className="text-zinc-200">{ws?.name || `Unnamed Workspace`}</span>
+        {ws?.created_at ? (
+          <span className="font-normal text-zinc-300/60">
+            {' '}
+            • {creationDate}
+          </span>
+        ) : null}
       </div>
 
-      <div className="mt-4 grid gap-2 md:grid-cols-2">
+      <div className="mt-2 grid gap-2 md:grid-cols-2">
         <div
-          className="flex cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300 transition duration-300 hover:border-red-300/10 hover:bg-red-300/10 hover:text-red-300"
+          className="flex cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-1 font-semibold text-zinc-300 transition duration-300 hover:border-red-300/10 hover:bg-red-300/10 hover:text-red-300"
           onClick={() => declineInvite(ws)}
         >
           {declineInviteLabel}
         </div>
 
         <div
-          className="flex flex-1 cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300 transition duration-300 hover:border-green-300/10 hover:bg-green-300/10 hover:text-green-300"
+          className="flex flex-1 cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-1 font-semibold text-zinc-300 transition duration-300 hover:border-green-300/10 hover:bg-green-300/10 hover:text-green-300"
           onClick={() => acceptInvite(ws)}
         >
           {acceptInviteLabel}

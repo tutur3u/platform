@@ -33,7 +33,7 @@ interface Progress {
   addProducts: Status;
 }
 
-const EditModal = ({
+const InvoiceEditModal = ({
   wsId,
   oldProducts,
   transaction,
@@ -475,4 +475,4 @@ const EditModal = ({
   );
 };
 
-export default EditModal;
+export default InvoiceEditModal;
