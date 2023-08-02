@@ -8,11 +8,11 @@ const handler = async (
   res: NextApiResponse<AuthResponse>
 ) => {
   try {
-    const { email, password }: AuthRequest = req.body;
+    const { email }: AuthRequest = req.body;
 
     //* Basic validation
     // Check if all required fields are present
-    if (!email || !password)
+    if (!email)
       return res.status(400).json({
         error: {
           message: 'Not all required fields are present',
@@ -20,22 +20,12 @@ const handler = async (
       });
 
     // Validate if the email is valid
-    const validEmail = email ? email.match(/^[^@]+@[^@]+\.[^@]+$/) : false;
+    const validEmail = email ? /^[^@]+@[^@]+\.[^@]+$/.test(email) : false;
 
     if (!validEmail)
       return res.status(400).json({
         error: {
-          message: 'Invalid credentials',
-        },
-      });
-
-    // Validate if the password is valid
-    const validPassword = password ? password.match(/^.{8,}$/) : false;
-
-    if (!validPassword)
-      return res.status(400).json({
-        error: {
-          message: 'Invalid credentials',
+          message: 'Invalid email',
         },
       });
 
@@ -44,31 +34,28 @@ const handler = async (
       res,
     });
 
-    // If the identifier is an email, signup with email
-    const session = await signup(supabase, email, password);
+    const session = await sendOtp(supabase, email);
     return res.status(200).json(session);
   } catch (error) {
-    return res.status(500).json({
-      error: { message: (error as Error).message },
+    return res.status(400).json({
+      error: {
+        message: typeof error === 'string' ? error : 'Something went wrong',
+      },
     });
   }
 };
 
-const signup = async (
-  supabase: SupabaseClient,
-  email: string,
-  password: string
-) => {
-  const { data: session, error } = await supabase.auth.signUp({
+const sendOtp = async (supabase: SupabaseClient, email: string) => {
+  const { data: session, error } = await supabase.auth.signInWithOtp({
     email,
-    password,
   });
 
   // Check if there is an error
-  if (error) throw error;
+  if (error) throw error?.message;
 
   // Check if the session is valid
   if (!session) throw 'Something went wrong';
+
   return session;
 };
 

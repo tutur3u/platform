@@ -10,25 +10,34 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 
+export enum AuthFormMode {
+  PasswordReset,
+  AuthWithOTP,
+  AuthWithPassword,
+}
+
 interface AuthFormProps {
   title: string;
   description: string;
   submitLabel: string;
   submittingLabel: string;
-
   secondaryAction?: {
     description?: string;
     label: string;
     href: string;
   };
 
-  disableForgotPassword?: boolean;
-  hideForgotPassword?: boolean;
-  recoveryMode?: boolean;
-  resetPasswordMode?: boolean;
-  disabled?: boolean;
+  mode: AuthFormMode;
+  step?: 1 | 2;
+  steps?: number[];
 
-  onSubmit?: ({ email, password }: AuthFormFields) => Promise<void>;
+  modeProps?: {
+    label: string;
+    onSwitch: () => void;
+  };
+
+  onSubmit?: ({ email, password, otp }: AuthFormFields) => Promise<boolean>;
+  disabled?: boolean;
 }
 
 const AuthForm = ({
@@ -36,16 +45,16 @@ const AuthForm = ({
   description,
   submitLabel,
   submittingLabel,
-
   secondaryAction,
 
-  disableForgotPassword = true,
-  hideForgotPassword = true,
-  recoveryMode = false,
-  resetPasswordMode = false,
-  disabled = false,
+  mode = AuthFormMode.AuthWithOTP,
+  step = 1,
+  steps = [1],
+
+  modeProps,
 
   onSubmit,
+  disabled = false,
 }: AuthFormProps) => {
   const router = useRouter();
   const { supabaseClient } = useSessionContext();
@@ -58,7 +67,7 @@ const AuthForm = ({
         data: { session },
       } = await supabaseClient.auth.getSession();
 
-      if (session && !resetPasswordMode) {
+      if (session) {
         setSubmitting(true);
 
         const userPromise = mutate('/api/user');
@@ -67,13 +76,11 @@ const AuthForm = ({
 
         await Promise.all([userPromise, workspacesPromise, invitesPromise]);
         router.push('/onboarding');
-      } else {
-        setSubmitting(false);
       }
     };
 
-    checkSession();
-  }, [supabaseClient.auth, router, resetPasswordMode]);
+    if (mode !== AuthFormMode.PasswordReset) checkSession();
+  }, [supabaseClient.auth, router, mode]);
 
   const { t } = useTranslation('auth');
 
@@ -81,6 +88,7 @@ const AuthForm = ({
     initialValues: {
       email: '',
       password: '',
+      otp: '',
       terms: true,
     },
 
@@ -93,15 +101,24 @@ const AuthForm = ({
     },
   });
 
-  const isFormInvalid = !!form.errors.email || !!form.errors.password;
+  const isFormInvalid =
+    (mode === AuthFormMode.PasswordReset
+      ? !form.values.password || form.values.password.length < 8
+      : !form.values.email) ||
+    (mode === AuthFormMode.AuthWithPassword &&
+      (!form.values.password || form.values.password.length < 8)) ||
+    (mode === AuthFormMode.AuthWithOTP && !form.values.otp) ||
+    !!form.errors.email ||
+    !!form.errors.password;
 
   const handleSubmit = async () => {
     if (isFormInvalid) return;
-
-    const { email, password } = form.values;
     setSubmitting(true);
-    if (onSubmit) await onSubmit({ email, password });
-    setSubmitting(false);
+
+    if (onSubmit) {
+      const success = await onSubmit(form.values);
+      if (!success) setSubmitting(false);
+    }
   };
 
   // const SupabaseAuthOptions = {
@@ -117,7 +134,14 @@ const AuthForm = ({
   //   });
   // }
 
-  const ctaText = submitting ? submittingLabel : submitLabel;
+  const ctaText =
+    step !== steps[steps.length - 1]
+      ? submitting
+        ? t('common:loading')
+        : t('common:continue')
+      : submitting
+      ? submittingLabel
+      : submitLabel;
 
   const noticeP1 = t('notice-p1');
   const noticeP2 = t('notice-p2');
@@ -127,11 +151,9 @@ const AuthForm = ({
   const tos = t('tos');
   const privacy = t('privacy');
 
-  const forgotPasswordLabel = t('forgot-password');
-
   return (
     <div className="absolute inset-0 mx-2 my-4 flex items-center justify-center md:mx-8 md:my-16 lg:mx-32">
-      <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-lg border border-zinc-300/10 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+      <div className="flex w-full max-w-xl flex-col items-center gap-2 rounded-lg border border-zinc-300/10 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
         <div className="text-center">
           <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
             {title}
@@ -143,7 +165,7 @@ const AuthForm = ({
         </div>
 
         <div className="grid w-full gap-2">
-          {resetPasswordMode || (
+          {mode !== AuthFormMode.PasswordReset && (
             <TextInput
               id="email"
               icon={<UserCircleIcon className="h-5" />}
@@ -159,13 +181,16 @@ const AuthForm = ({
                 input:
                   'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
               }}
-              disabled={submitting}
+              disabled={
+                submitting || (step === 2 && mode === AuthFormMode.AuthWithOTP)
+              }
               withAsterisk={false}
               required
             />
           )}
 
-          {recoveryMode || (
+          {(mode === AuthFormMode.PasswordReset ||
+            mode === AuthFormMode.AuthWithPassword) && (
             <PasswordInput
               id="password"
               icon={<LockClosedIcon className="h-5" />}
@@ -193,25 +218,30 @@ const AuthForm = ({
             />
           )}
 
-          {disableForgotPassword || (
-            <Link
-              href="/recover"
-              className={`${
-                hideForgotPassword && 'pointer-events-none opacity-0'
-              } ${
-                submitting
-                  ? 'cursor-not-allowed text-zinc-200/30'
-                  : 'text-zinc-200/50 hover:text-zinc-200'
-              } w-fit place-self-end transition`}
-            >
-              {forgotPasswordLabel}
-            </Link>
+          {step === 2 && mode === AuthFormMode.AuthWithOTP && (
+            <TextInput
+              label="Verification code"
+              placeholder="••••••"
+              classNames={{
+                label: 'text-zinc-200/80 mb-1',
+                input:
+                  'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
+              }}
+              icon={<LockClosedIcon className="h-5" />}
+              disabled={submitting}
+              value={form.values.otp}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('otp', event.currentTarget.value)
+              }
+            />
           )}
         </div>
 
         <div className="grid w-full gap-2 text-center">
+          <Divider className="w-full border-zinc-300/10" />
+
           <Button
-            className="bg-blue-300/10 text-blue-300 transition hover:bg-blue-300/20"
+            className="border border-blue-300/10 bg-blue-300/5 text-blue-300 hover:bg-blue-300/10"
             variant="light"
             loading={submitting}
             onClick={(e) => {
@@ -223,8 +253,19 @@ const AuthForm = ({
             {ctaText}
           </Button>
 
+          {step === 2 && modeProps && (
+            <Button
+              variant="light"
+              className="border border-zinc-300/10 bg-transparent font-semibold text-zinc-300 hover:bg-zinc-300/10"
+              disabled={!modeProps?.onSwitch || submitting}
+              onClick={modeProps.onSwitch}
+            >
+              {modeProps.label}
+            </Button>
+          )}
+
           {secondaryAction && (
-            <div>
+            <div className="mt-2">
               {secondaryAction.description && (
                 <>
                   <span className="text-zinc-200/30">
@@ -280,7 +321,7 @@ const AuthForm = ({
             >
               {privacy}
             </Link>{' '}
-            {noticeP2}
+            {noticeP2}.
           </div>
           <LanguageSelector fullWidth transparent />
         </div>

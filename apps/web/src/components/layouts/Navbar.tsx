@@ -1,20 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUser } from '@supabase/auth-helpers-react';
 import UserProfilePopover from './UserProfilePopover';
 import useTranslation from 'next-translate/useTranslation';
 import { Bars3Icon } from '@heroicons/react/24/solid';
 import { Popover } from '@mantine/core';
 import { useState } from 'react';
+import { User } from '../../types/primitives/User';
 
 interface NavbarProps {
+  user?: User;
   hideNavLinks?: boolean;
 }
 
-const Navbar = ({ hideNavLinks }: NavbarProps) => {
+const Navbar = ({ user, hideNavLinks }: NavbarProps) => {
   const { t } = useTranslation();
-
-  const user = useUser();
 
   const login = t('common:login');
   const getStarted = t('common:get-started');
@@ -41,7 +40,7 @@ const Navbar = ({ hideNavLinks }: NavbarProps) => {
         </Link>
       </div>
 
-      {hideNavLinks ? null : user ? (
+      {hideNavLinks ? null : !!user?.id ? (
         <UserProfilePopover />
       ) : (
         <>

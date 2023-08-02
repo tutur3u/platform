@@ -4,7 +4,7 @@ import React from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
-import AuthForm from '../components/auth/AuthForm';
+import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
@@ -37,7 +37,9 @@ const ResetPasswordPage = () => {
   const supabaseClient = useSupabaseClient();
   const router = useRouter();
 
-  const handleResetPassword = async ({ password }: AuthFormFields) => {
+  const handleResetPassword = async ({
+    password,
+  }: AuthFormFields): Promise<boolean> => {
     try {
       if (!password) throw new Error('Please fill in all fields');
 
@@ -54,6 +56,7 @@ const ResetPasswordPage = () => {
       });
 
       router.push('/onboarding');
+      return true;
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -61,7 +64,13 @@ const ResetPasswordPage = () => {
           message: e?.message || 'Something went wrong',
           color: 'red',
         });
-      else alert(e);
+      else
+        showNotification({
+          title: 'Error',
+          message: 'Something went wrong',
+          color: 'red',
+        });
+      return false;
     }
   };
 
@@ -87,8 +96,8 @@ const ResetPasswordPage = () => {
         description={resetPasswordDesc}
         submitLabel={resetPassword}
         submittingLabel={resetting}
+        mode={AuthFormMode.PasswordReset}
         onSubmit={handleResetPassword}
-        resetPasswordMode
       />
     </>
   );

@@ -8,11 +8,14 @@ const handler = async (
   res: NextApiResponse<AuthResponse>
 ) => {
   try {
-    const { handle, email, password }: AuthRequest = req.body;
+    const { handle, email, password, otp }: AuthRequest = req.body;
+
+    const hasAccountIdentifier = !!handle || !!email;
+    const hasCredentials = !!password || !!otp;
 
     //* Basic validation
     // Check if all required fields are present
-    if ((!handle && !email) || !password)
+    if (!hasAccountIdentifier || !hasCredentials)
       return res.status(400).json({
         error: {
           message: 'Not all required fields are present',
@@ -29,20 +32,24 @@ const handler = async (
         handle.length <= 20
       : false;
 
-    if (!validEmail && !validUsername)
+    const validIdentifier = validEmail || validUsername;
+
+    if (!validIdentifier)
       return res.status(400).json({
         error: {
-          message: 'Invalid email or handle',
+          message: !validEmail ? 'Invalid email' : 'Invalid handle',
         },
       });
 
-    // Validate if the password is valid
     const validPassword = password ? /^.{8,}$/.test(password) : false;
+    const validOTP = otp ? /^[0-9]{6}$/.test(otp) : false;
 
-    if (!validPassword)
+    const validCredentials = validPassword || validOTP;
+
+    if (!validCredentials)
       return res.status(400).json({
         error: {
-          message: 'Invalid password',
+          message: !validPassword ? 'Invalid password' : 'Invalid OTP',
         },
       });
 
@@ -53,13 +60,19 @@ const handler = async (
 
     // If the identifier is an email, login with email~
     if (email) {
-      const session = await loginWithEmail(supabase, email, password);
+      const session = await loginWithEmail({ supabase, email, password, otp });
       return res.status(200).json(session);
     }
 
     // If the identifier is a handle, login with handle
     if (handle) {
-      const session = await loginWithUsername(supabase, handle, password);
+      const session = await loginWithUsername({
+        supabase,
+        handle,
+        password,
+        otp,
+      });
+
       return res.status(200).json(session);
     }
 
@@ -74,15 +87,31 @@ const handler = async (
   }
 };
 
-const loginWithEmail = async (
-  supabase: SupabaseClient,
-  email: string,
-  password: string
-) => {
-  const { data: session, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+const loginWithEmail = async ({
+  supabase,
+  email,
+  password,
+  otp,
+}: {
+  supabase: SupabaseClient;
+  email: string;
+  password?: string;
+  otp?: string;
+}) => {
+  if (!password && !otp) throw 'Missing required fields: password or otp';
+
+  const { data: session, error } = password
+    ? await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+    : otp
+    ? await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'email',
+      })
+    : { data: null, error: null };
 
   // Check if there is an error
   if (error) throw error?.message;
@@ -93,11 +122,17 @@ const loginWithEmail = async (
   return session;
 };
 
-const loginWithUsername = async (
-  supabase: SupabaseClient,
-  handle: string,
-  password: string
-) => {
+const loginWithUsername = async ({
+  supabase,
+  handle,
+  password,
+  otp,
+}: {
+  supabase: SupabaseClient;
+  handle: string;
+  password?: string;
+  otp?: string;
+}) => {
   const { data, error } = await supabase
     .from('users')
     .select('email')
@@ -116,7 +151,7 @@ const loginWithUsername = async (
   // Check if the email is valid
   if (!email) throw 'Something went wrong';
 
-  return loginWithEmail(supabase, email, password);
+  return loginWithEmail({ supabase, email, password, otp });
 };
 
 export default handler;
