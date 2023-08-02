@@ -38,7 +38,6 @@ export const UserDataProvider = ({
   } = useSWR<User>(apiPath, {
     onError: () => {
       userMutate(undefined);
-      router.push('/login');
     },
   });
 

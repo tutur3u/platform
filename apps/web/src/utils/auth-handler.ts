@@ -16,11 +16,7 @@ interface AuthProps {
   otp?: string;
 }
 
-export const sendOtp = async ({
-  email,
-}: {
-  email: string;
-}) => {
+export const sendOTP = async ({ email }: { email: string }) => {
   await fetch('/api/auth/send-otp', {
     method: 'POST',
     headers: {

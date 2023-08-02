@@ -2,7 +2,9 @@
   "welcome-back": "Chào mừng trở lại",
   "welcome-back-desc": "Đăng nhập để tiếp tục",
   "signup": "Đăng ký",
-  "logging-in": "Đang đăng nhập",
   "login": "Đăng nhập",
+  "login-with-otp": "Đăng nhập bằng OTP",
+  "login-with-password": "Đăng nhập bằng mật khẩu",
+  "logging-in": "Đang đăng nhập",
   "no-account": "Chưa có tài khoản?"
 }

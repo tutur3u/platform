@@ -1,7 +1,7 @@
 import { TextInput, Button, PasswordInput, Divider } from '@mantine/core';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
-import { AuthFormFields, AuthMethod } from '../../utils/auth-handler';
+import { AuthFormFields } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
@@ -11,7 +11,6 @@ import { useRouter } from 'next/router';
 import { mutate } from 'swr';
 
 export enum AuthFormMode {
-  PasswordRecovery,
   PasswordReset,
   AuthWithOTP,
   AuthWithPassword,
@@ -22,16 +21,22 @@ interface AuthFormProps {
   description: string;
   submitLabel: string;
   submittingLabel: string;
-
   secondaryAction?: {
     description?: string;
     label: string;
     href: string;
   };
-  onSubmit?: ({ email, password }: AuthFormFields) => Promise<void>;
 
-  defaultMode: AuthFormMode;
-  method: AuthMethod;
+  mode: AuthFormMode;
+  step?: 1 | 2;
+  steps?: number[];
+
+  modeProps?: {
+    label: string;
+    onSwitch: () => void;
+  };
+
+  onSubmit?: ({ email, password, otp }: AuthFormFields) => Promise<boolean>;
   disabled?: boolean;
 }
 
@@ -40,21 +45,21 @@ const AuthForm = ({
   description,
   submitLabel,
   submittingLabel,
-
   secondaryAction,
-  onSubmit,
 
-  defaultMode = AuthFormMode.AuthWithOTP,
-  method,
+  mode = AuthFormMode.AuthWithOTP,
+  step = 1,
+  steps = [1],
+
+  modeProps,
+
+  onSubmit,
   disabled = false,
 }: AuthFormProps) => {
   const router = useRouter();
   const { supabaseClient } = useSessionContext();
 
   const [submitting, setSubmitting] = useState(false);
-
-  const [step, setStep] = useState<1 | 2>(1);
-  const [mode, setMode] = useState<AuthFormMode>(defaultMode);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -71,8 +76,6 @@ const AuthForm = ({
 
         await Promise.all([userPromise, workspacesPromise, invitesPromise]);
         router.push('/onboarding');
-      } else {
-        setSubmitting(false);
       }
     };
 
@@ -98,47 +101,24 @@ const AuthForm = ({
     },
   });
 
-  const isFormInvalid = !!form.errors.email || !!form.errors.password;
-
-  const handlePasswordlessAuth = async () => {
-    const { email } = form.values;
-    if (onSubmit) await onSubmit({ email });
-    setStep(2);
-  };
-
-  const handleSubmitWithOTP = async () => {
-    const { email, otp } = form.values;
-    if (onSubmit) await onSubmit({ email, otp });
-  };
-
-  const handleSubmitWithPassword = async () => {
-    const { email, password } = form.values;
-    if (onSubmit) await onSubmit({ email, password });
-  };
+  const isFormInvalid =
+    (mode === AuthFormMode.PasswordReset
+      ? !form.values.password || form.values.password.length < 8
+      : !form.values.email) ||
+    (mode === AuthFormMode.AuthWithPassword &&
+      (!form.values.password || form.values.password.length < 8)) ||
+    (mode === AuthFormMode.AuthWithOTP && !form.values.otp) ||
+    !!form.errors.email ||
+    !!form.errors.password;
 
   const handleSubmit = async () => {
     if (isFormInvalid) return;
     setSubmitting(true);
 
-    switch (mode) {
-      case AuthFormMode.PasswordRecovery:
-        await handlePasswordlessAuth();
-        break;
-
-      case AuthFormMode.PasswordReset:
-        await handleSubmitWithPassword();
-        break;
-
-      case AuthFormMode.AuthWithOTP:
-        await handleSubmitWithOTP();
-        break;
-
-      case AuthFormMode.AuthWithPassword:
-        await handleSubmitWithPassword();
-        break;
+    if (onSubmit) {
+      const success = await onSubmit(form.values);
+      if (!success) setSubmitting(false);
     }
-
-    setSubmitting(false);
   };
 
   // const SupabaseAuthOptions = {
@@ -154,7 +134,14 @@ const AuthForm = ({
   //   });
   // }
 
-  const ctaText = submitting ? submittingLabel : submitLabel;
+  const ctaText =
+    step !== steps[steps.length - 1]
+      ? submitting
+        ? t('common:loading')
+        : t('common:continue')
+      : submitting
+      ? submittingLabel
+      : submitLabel;
 
   const noticeP1 = t('notice-p1');
   const noticeP2 = t('notice-p2');
@@ -164,11 +151,9 @@ const AuthForm = ({
   const tos = t('tos');
   const privacy = t('privacy');
 
-  const forgotPasswordLabel = t('forgot-password');
-
   return (
     <div className="absolute inset-0 mx-2 my-4 flex items-center justify-center md:mx-8 md:my-16 lg:mx-32">
-      <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-lg border border-zinc-300/10 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
+      <div className="flex w-full max-w-xl flex-col items-center gap-2 rounded-lg border border-zinc-300/10 bg-zinc-700/50 p-4 backdrop-blur-2xl md:p-8">
         <div className="text-center">
           <div className="bg-gradient-to-br from-yellow-200 via-green-200 to-green-300 bg-clip-text py-2 text-4xl font-semibold text-transparent md:text-5xl">
             {title}
@@ -197,9 +182,7 @@ const AuthForm = ({
                   'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
               }}
               disabled={
-                submitting ||
-                mode === AuthFormMode.AuthWithPassword ||
-                (step === 2 && mode === AuthFormMode.AuthWithOTP)
+                submitting || (step === 2 && mode === AuthFormMode.AuthWithOTP)
               }
               withAsterisk={false}
               required
@@ -238,7 +221,7 @@ const AuthForm = ({
           {step === 2 && mode === AuthFormMode.AuthWithOTP && (
             <TextInput
               label="Verification code"
-              placeholder="••••••••"
+              placeholder="••••••"
               classNames={{
                 label: 'text-zinc-200/80 mb-1',
                 input:
@@ -252,26 +235,13 @@ const AuthForm = ({
               }
             />
           )}
-
-          {mode === AuthFormMode.AuthWithPassword || (
-            <Link
-              href="/recover"
-              className={`${
-                method === 'signup' && 'pointer-events-none opacity-0'
-              } ${
-                submitting
-                  ? 'cursor-not-allowed text-zinc-200/30'
-                  : 'text-zinc-200/50 hover:text-zinc-200'
-              } w-fit place-self-end transition`}
-            >
-              {forgotPasswordLabel}
-            </Link>
-          )}
         </div>
 
         <div className="grid w-full gap-2 text-center">
+          <Divider className="w-full border-zinc-300/10" />
+
           <Button
-            className="bg-blue-300/10 text-blue-300 transition hover:bg-blue-300/20"
+            className="border border-blue-300/10 bg-blue-300/5 text-blue-300 hover:bg-blue-300/10"
             variant="light"
             loading={submitting}
             onClick={(e) => {
@@ -283,8 +253,19 @@ const AuthForm = ({
             {ctaText}
           </Button>
 
+          {step === 2 && modeProps && (
+            <Button
+              variant="light"
+              className="border border-zinc-300/10 bg-transparent font-semibold text-zinc-300 hover:bg-zinc-300/10"
+              disabled={!modeProps?.onSwitch || submitting}
+              onClick={modeProps.onSwitch}
+            >
+              {modeProps.label}
+            </Button>
+          )}
+
           {secondaryAction && (
-            <div>
+            <div className="mt-2">
               {secondaryAction.description && (
                 <>
                   <span className="text-zinc-200/30">
@@ -340,7 +321,7 @@ const AuthForm = ({
             >
               {privacy}
             </Link>{' '}
-            {noticeP2}
+            {noticeP2}.
           </div>
           <LanguageSelector fullWidth transparent />
         </div>

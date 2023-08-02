@@ -2,7 +2,9 @@
   "welcome-back": "Welcome back!",
   "welcome-back-desc": "Log in to your account",
   "signup": "Sign up",
-  "logging-in": "Logging in",
   "login": "Login",
+  "login-with-otp": "Login with OTP",
+  "login-with-password": "Login with password",
+  "logging-in": "Logging in",
   "no-account": "Don't have an account?"
 }
