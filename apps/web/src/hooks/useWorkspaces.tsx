@@ -125,7 +125,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     if (user && !wsId) mutate('/api/workspaces/current');
   }, [user, wsId]);
 
-  const validWsId = typeof wsId === 'string' && wsId.length > 0;
+  const validWsId = user && typeof wsId === 'string' && wsId.length > 0;
 
   const { data: ws, error: wsError } = useSWR<Workspace>(
     validWsId ? `/api/workspaces/${wsId}` : null

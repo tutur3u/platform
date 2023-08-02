@@ -4,11 +4,10 @@ import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
-import AuthForm from '../components/auth/AuthForm';
+import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
-import { mutate } from 'swr';
 import AuthEmailSent from '../components/auth/AuthEmailSent';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
@@ -37,10 +36,14 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const SignupPage = () => {
   const supabaseClient = useSupabaseClient();
+  const method = 'signup';
 
   const [email, setEmail] = useState<string | null>(null);
 
-  const handleSignup = async ({ email, password }: AuthFormFields) => {
+  const handleSignup = async ({
+    email,
+    password,
+  }: AuthFormFields): Promise<boolean> => {
     try {
       if (!password || !email) throw new Error('Please fill in all fields');
 
@@ -48,15 +51,13 @@ const SignupPage = () => {
 
       await authenticate({
         supabaseClient,
-        method: 'signup',
+        method,
         email,
         password,
       });
 
       setEmail(email);
-
-      mutate('/api/user');
-      mutate('/api/workspaces/current');
+      return true;
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -70,6 +71,8 @@ const SignupPage = () => {
           message: `${e}` || 'Something went wrong',
           color: 'red',
         });
+
+      return false;
     }
   };
 
@@ -109,9 +112,8 @@ const SignupPage = () => {
             label: login,
             href: '/login',
           }}
+          mode={AuthFormMode.AuthWithPassword}
           onSubmit={handleSignup}
-          disableForgotPassword={false}
-          hideForgotPassword
         />
       )}
     </>
