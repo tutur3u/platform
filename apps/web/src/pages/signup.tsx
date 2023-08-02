@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
-import AuthForm from '../components/auth/AuthForm';
+import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
@@ -110,8 +110,8 @@ const SignupPage = () => {
             href: '/login',
           }}
           onSubmit={handleSignup}
-          disableForgotPassword={false}
-          hideForgotPassword
+          defaultMode={AuthFormMode.AuthWithOTP}
+          method='signup'
         />
       )}
     </>

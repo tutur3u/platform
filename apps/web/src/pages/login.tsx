@@ -4,7 +4,7 @@ import React from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
-import AuthForm from '../components/auth/AuthForm';
+import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
@@ -69,6 +69,27 @@ const LoginPage = () => {
     }
   };
 
+  const handleLoginWithOTP = async ({ email, otp }: AuthFormFields) => {
+    try {
+      if (!otp || !email) throw new Error('Please fill in all fields');
+
+      const { authenticate } = await import('../utils/auth-handler');
+
+      await authenticate({
+        supabaseClient,
+        method: 'login',
+        email,
+        otp,
+      });
+    } catch (error) {
+      showNotification({
+        title: 'Error',
+        message: typeof error === 'string' ? error : 'Something went wrong',
+        color: 'red',
+      });
+    }
+  };
+
   const { t } = useTranslation('login');
 
   const login = t('login');
@@ -102,8 +123,8 @@ const LoginPage = () => {
           href: '/signup',
         }}
         onSubmit={handleLogin}
-        disableForgotPassword={false}
-        hideForgotPassword={false}
+        defaultMode={AuthFormMode.AuthWithOTP}
+        method='login'
       />
     </>
   );

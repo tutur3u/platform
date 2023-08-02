@@ -1,7 +1,7 @@
 import { TextInput, Button, PasswordInput, Divider } from '@mantine/core';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/solid';
-import { AuthFormFields } from '../../utils/auth-handler';
+import { AuthFormFields, AuthMethod } from '../../utils/auth-handler';
 import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
@@ -9,6 +9,13 @@ import LanguageSelector from '../selectors/LanguageSelector';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
+
+export enum AuthFormMode {
+  PasswordRecovery,
+  PasswordReset,
+  AuthWithOTP,
+  AuthWithPassword,
+}
 
 interface AuthFormProps {
   title: string;
@@ -21,14 +28,11 @@ interface AuthFormProps {
     label: string;
     href: string;
   };
-
-  disableForgotPassword?: boolean;
-  hideForgotPassword?: boolean;
-  recoveryMode?: boolean;
-  resetPasswordMode?: boolean;
-  disabled?: boolean;
-
   onSubmit?: ({ email, password }: AuthFormFields) => Promise<void>;
+
+  defaultMode: AuthFormMode;
+  method: AuthMethod;
+  disabled?: boolean;
 }
 
 const AuthForm = ({
@@ -38,19 +42,19 @@ const AuthForm = ({
   submittingLabel,
 
   secondaryAction,
-
-  disableForgotPassword = true,
-  hideForgotPassword = true,
-  recoveryMode = false,
-  resetPasswordMode = false,
-  disabled = false,
-
   onSubmit,
+
+  defaultMode = AuthFormMode.AuthWithOTP,
+  method,
+  disabled = false,
 }: AuthFormProps) => {
   const router = useRouter();
   const { supabaseClient } = useSessionContext();
 
   const [submitting, setSubmitting] = useState(false);
+
+  const [step, setStep] = useState<1 | 2>(1);
+  const [mode, setMode] = useState<AuthFormMode>(defaultMode);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -58,7 +62,7 @@ const AuthForm = ({
         data: { session },
       } = await supabaseClient.auth.getSession();
 
-      if (session && !resetPasswordMode) {
+      if (session) {
         setSubmitting(true);
 
         const userPromise = mutate('/api/user');
@@ -72,8 +76,8 @@ const AuthForm = ({
       }
     };
 
-    checkSession();
-  }, [supabaseClient.auth, router, resetPasswordMode]);
+    if (mode !== AuthFormMode.PasswordReset) checkSession();
+  }, [supabaseClient.auth, router, mode]);
 
   const { t } = useTranslation('auth');
 
@@ -81,6 +85,7 @@ const AuthForm = ({
     initialValues: {
       email: '',
       password: '',
+      otp: '',
       terms: true,
     },
 
@@ -95,12 +100,44 @@ const AuthForm = ({
 
   const isFormInvalid = !!form.errors.email || !!form.errors.password;
 
+  const handlePasswordlessAuth = async () => {
+    const { email } = form.values;
+    if (onSubmit) await onSubmit({ email });
+    setStep(2);
+  };
+
+  const handleSubmitWithOTP = async () => {
+    const { email, otp } = form.values;
+    if (onSubmit) await onSubmit({ email, otp });
+  };
+
+  const handleSubmitWithPassword = async () => {
+    const { email, password } = form.values;
+    if (onSubmit) await onSubmit({ email, password });
+  };
+
   const handleSubmit = async () => {
     if (isFormInvalid) return;
-
-    const { email, password } = form.values;
     setSubmitting(true);
-    if (onSubmit) await onSubmit({ email, password });
+
+    switch (mode) {
+      case AuthFormMode.PasswordRecovery:
+        await handlePasswordlessAuth();
+        break;
+
+      case AuthFormMode.PasswordReset:
+        await handleSubmitWithPassword();
+        break;
+
+      case AuthFormMode.AuthWithOTP:
+        await handleSubmitWithOTP();
+        break;
+
+      case AuthFormMode.AuthWithPassword:
+        await handleSubmitWithPassword();
+        break;
+    }
+
     setSubmitting(false);
   };
 
@@ -143,7 +180,7 @@ const AuthForm = ({
         </div>
 
         <div className="grid w-full gap-2">
-          {resetPasswordMode || (
+          {mode !== AuthFormMode.PasswordReset && (
             <TextInput
               id="email"
               icon={<UserCircleIcon className="h-5" />}
@@ -159,13 +196,18 @@ const AuthForm = ({
                 input:
                   'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
               }}
-              disabled={submitting}
+              disabled={
+                submitting ||
+                mode === AuthFormMode.AuthWithPassword ||
+                (step === 2 && mode === AuthFormMode.AuthWithOTP)
+              }
               withAsterisk={false}
               required
             />
           )}
 
-          {recoveryMode || (
+          {(mode === AuthFormMode.PasswordReset ||
+            mode === AuthFormMode.AuthWithPassword) && (
             <PasswordInput
               id="password"
               icon={<LockClosedIcon className="h-5" />}
@@ -193,11 +235,29 @@ const AuthForm = ({
             />
           )}
 
-          {disableForgotPassword || (
+          {step === 2 && mode === AuthFormMode.AuthWithOTP && (
+            <TextInput
+              label="Verification code"
+              placeholder="••••••••"
+              classNames={{
+                label: 'text-zinc-200/80 mb-1',
+                input:
+                  'bg-zinc-300/10 border-zinc-300/10 placeholder-zinc-200/30',
+              }}
+              icon={<LockClosedIcon className="h-5" />}
+              disabled={submitting}
+              value={form.values.otp}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                form.setFieldValue('otp', event.currentTarget.value)
+              }
+            />
+          )}
+
+          {mode === AuthFormMode.AuthWithPassword || (
             <Link
               href="/recover"
               className={`${
-                hideForgotPassword && 'pointer-events-none opacity-0'
+                method === 'signup' && 'pointer-events-none opacity-0'
               } ${
                 submitting
                   ? 'cursor-not-allowed text-zinc-200/30'
