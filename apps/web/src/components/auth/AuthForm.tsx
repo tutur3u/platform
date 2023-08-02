@@ -107,7 +107,9 @@ const AuthForm = ({
       : !form.values.email) ||
     (mode === AuthFormMode.AuthWithPassword &&
       (!form.values.password || form.values.password.length < 8)) ||
-    (mode === AuthFormMode.AuthWithOTP && !form.values.otp) ||
+    (mode === AuthFormMode.AuthWithOTP &&
+      ((step === 1 && !form.values.email) ||
+        (step === 2 && !form.values.otp))) ||
     !!form.errors.email ||
     !!form.errors.password;
 
