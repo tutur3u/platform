@@ -107,6 +107,8 @@
     ],
 
     "/[wsId]/tasks": ["sidebar-tabs"],
+    "/[wsId]/boards": ["sidebar-tabs"],
+    "/[wsId]/boards/[boardId]": ["sidebar-tabs"],
 
     "/[wsId]/documents": ["sidebar-tabs", "documents"],
     "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],

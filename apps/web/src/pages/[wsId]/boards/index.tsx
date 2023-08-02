@@ -12,14 +12,16 @@ import { TaskBoard } from '../../../types/primitives/TaskBoard';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
 const WorkspaceBoardsPage = () => {
   const router = useRouter();
-  const { teamId } = router.query;
-
   const { ws } = useWorkspaces();
 
   const { setRootSegment } = useSegments();
+  const { t } = useTranslation();
+
+  const tasksLabel = t('sidebar-tabs:tasks');
 
   useEffect(() => {
     setRootSegment(
@@ -29,25 +31,25 @@ const WorkspaceBoardsPage = () => {
               content: ws.name || 'Unnamed Workspace',
               href: `/${ws.id}`,
             },
-            { content: 'Boards', href: `/${ws.id}/boards` },
+            { content: tasksLabel, href: `/${ws.id}/boards` },
           ]
         : []
     );
-  }, [setRootSegment, teamId, ws]);
+  }, [tasksLabel, setRootSegment, ws]);
 
   const { data: boards } = useSWR<TaskBoard[]>(
-    teamId && ws ? `/api/workspaces/${ws.id}/boards` : null
+    ws ? `/api/workspaces/${ws.id}/boards` : null
   );
 
   const createBoard = async ({
-    teamId,
+    wsId,
     board,
   }: {
-    teamId: string;
+    wsId: string;
     board: TaskBoard;
   }) => {
     if (!ws) return;
-    const res = await fetch(`/api/workspaces/${ws.id}/boards`, {
+    const res = await fetch(`/api/workspaces/${wsId}/boards`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,20 +69,18 @@ const WorkspaceBoardsPage = () => {
     }
 
     const { id } = await res.json();
-    router.push(`/projects/${teamId}/boards/${id}`);
+    router.push(`/${wsId}/boards/${id}`);
   };
 
   const showBoardEditForm = () => {
+    if (!ws) return;
+
     openModal({
       title: <div className="font-semibold">Create new board</div>,
       centered: true,
       children: (
         <BoardEditForm
-          onSubmit={(board) =>
-            teamId && typeof teamId === 'string'
-              ? createBoard({ teamId, board })
-              : null
-          }
+          onSubmit={(board) => createBoard({ wsId: ws.id, board })}
         />
       ),
     });
@@ -88,24 +88,20 @@ const WorkspaceBoardsPage = () => {
 
   return (
     <>
-      <HeaderX label={`Boards – ${ws?.name || 'Untitled Workspace'}`} />
+      <HeaderX label={`${tasksLabel} – ${ws?.name || 'Untitled Workspace'}`} />
 
-      {teamId && (
-        <>
-          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
-            <h1 className="text-2xl font-bold">
-              Boards{' '}
-              <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
-                {boards?.length || 0}
-              </span>
-            </h1>
-            <p className="text-zinc-700 dark:text-zinc-400">
-              A great way to organize your tasks into different categories and
-              easily track their progress.
-            </p>
-          </div>
-        </>
-      )}
+      <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+        <h1 className="text-2xl font-bold">
+          Boards{' '}
+          <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">
+            {boards?.length || 0}
+          </span>
+        </h1>
+        <p className="text-zinc-700 dark:text-zinc-400">
+          A great way to organize your tasks into different categories and
+          easily track their progress.
+        </p>
+      </div>
 
       <Divider className="my-4" />
 
@@ -117,10 +113,11 @@ const WorkspaceBoardsPage = () => {
       </button>
 
       <div className="mb-8 mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {boards &&
+        {ws?.id &&
+          boards &&
           boards?.map((board) => (
             <Link
-              href={`/projects/${teamId}/boards/${board.id}`}
+              href={`/${ws.id}/boards/${board.id}`}
               key={board.id}
               className="relative rounded-lg border border-zinc-800/80 bg-zinc-900 p-4 transition hover:bg-zinc-800/80"
             >
@@ -135,7 +132,7 @@ const WorkspaceBoardsPage = () => {
 };
 
 WorkspaceBoardsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="workspace">{page}</NestedLayout>;
+  return <NestedLayout>{page}</NestedLayout>;
 };
 
 export default WorkspaceBoardsPage;

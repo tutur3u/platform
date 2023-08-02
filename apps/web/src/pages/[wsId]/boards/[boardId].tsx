@@ -5,7 +5,8 @@ import { ReactElement, useEffect, useState } from 'react';
 import { useSegments } from '../../../hooks/useSegments';
 import {
   Accordion,
-  Chip,
+  ActionIcon,
+  Button,
   Divider,
   Loader,
   Menu,
@@ -16,7 +17,6 @@ import {
   Cog6ToothIcon,
   EllipsisHorizontalIcon,
   FolderPlusIcon,
-  PlusIcon,
   QueueListIcon,
   TrashIcon,
   ViewColumnsIcon,
@@ -25,20 +25,22 @@ import { openConfirmModal, openModal } from '@mantine/modals';
 import HeaderX from '../../../components/metadata/HeaderX';
 import { TaskBoard } from '../../../types/primitives/TaskBoard';
 import { TaskList } from '../../../types/primitives/TaskList';
-import SidebarDivider from '../../../components/layouts/SidebarDivider';
 import { Task } from '../../../types/primitives/Task';
 import BoardEditForm from '../../../components/forms/BoardEditForm';
 import TaskListEditForm from '../../../components/forms/TaskListEditForm';
-import TaskWrapper from '../../../components/tasks/core/TaskWrapper';
 import TaskListWrapper from '../../../components/tasks/lists/TaskListWrapper';
 import { useUser } from '../../../hooks/useUser';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
 
 const WorkspaceBoardEditor = () => {
   const router = useRouter();
   const { boardId } = router.query;
 
   const { ws } = useWorkspaces();
+  const { t } = useTranslation();
+
+  const tasksLabel = t('sidebar-tabs:tasks');
 
   const { data: board } = useSWR<TaskBoard>(
     ws && boardId ? `/api/workspaces/${ws.id}/boards/${boardId}` : null
@@ -54,7 +56,7 @@ const WorkspaceBoardEditor = () => {
               content: ws.name || 'Unnamed Workspace',
               href: `/${ws.id}`,
             },
-            { content: 'Boards', href: `/${ws.id}/boards` },
+            { content: tasksLabel, href: `/${ws.id}/boards` },
             {
               content: board ? board?.name || 'Untitled Board' : 'Loading...',
               href: `/${ws.id}/boards/${boardId}`,
@@ -62,7 +64,7 @@ const WorkspaceBoardEditor = () => {
           ]
         : []
     );
-  }, [ws, boardId, board, setRootSegment]);
+  }, [tasksLabel, ws, boardId, board, setRootSegment]);
 
   const [mode, setMode] = useState('list');
 
@@ -70,9 +72,7 @@ const WorkspaceBoardEditor = () => {
 
   const { user } = useUser();
 
-  const [viewOption, setViewOption] = useState('my-tasks');
-
-  const canFetchLists = user?.id && boardId && viewOption === 'all';
+  const canFetchLists = user?.id && boardId;
 
   const { data: lists, error: listsError } = useSWR<TaskList[] | null>(
     canFetchLists && ws
@@ -80,46 +80,15 @@ const WorkspaceBoardEditor = () => {
       : null
   );
 
-  const [listViewOptions, setListViewOption] = useState<
-    {
-      id: string;
-      option: string;
-    }[]
-  >([]);
-
-  const getViewOptionForList = (listId: string) => {
-    const data = listViewOptions.find((o) => o.id === listId);
-    return data?.option || 'todos';
-  };
-
-  const setViewOptionForList = (listId: string, option: string) => {
-    setListViewOption((prev) => {
-      // If the option is already set, update it
-      const existing = prev.find((o) => o.id === listId);
-      if (existing) {
-        existing.option = option;
-        return [...prev];
-      } else {
-        // Otherwise, add a new option
-        return [...prev, { id: listId, option }];
-      }
-    });
-  };
-
-  const buildQuery = (wsId: string, listId: string, option: string) => {
+  const buildQuery = (wsId: string, listId: String) => {
     let query = `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
-
-    if (option === 'todos') query += '&todos=true';
-    if (option === 'completed') query += '&completed=true';
-
     return query;
   };
 
-  const canFetchTasks =
-    user?.id && boardId && selectedListId && viewOption !== 'all';
+  const canFetchTasks = user?.id && boardId && selectedListId;
   const { data: tasks, error: tasksError } = useSWR<Task[] | null>(
     canFetchTasks && ws
-      ? `/api/workspaces/${ws.id}/boards/${boardId}/lists/${selectedListId}/tasks?option=${viewOption}`
+      ? `/api/workspaces/${ws.id}/boards/${boardId}/lists/${selectedListId}/tasks`
       : null
   );
 
@@ -128,26 +97,12 @@ const WorkspaceBoardEditor = () => {
 
   const isContentLoading = isListsLoading || isTasksLoading;
 
-  const deleteBoard = async () => {
-    if (!boardId || !ws) return;
-
-    openConfirmModal({
-      title: <div className="font-semibold">Delete Board</div>,
-      children: 'Are you sure you want to delete this board?',
-      labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
-      },
-      centered: true,
-      onConfirm: () => {
-        fetch(`/api/workspaces/${ws.id}/boards/${boardId}`, {
-          method: 'DELETE',
-        })
-          .then((res) => res.json())
-          .then(() => router.push(`/${ws.id}/boards`));
-      },
-    });
-  };
+  const deleteBoard = async (wsId: string) =>
+    fetch(`/api/workspaces/${wsId}/boards/${boardId}`, {
+      method: 'DELETE',
+    })
+      .then((res) => res.json())
+      .then(() => router.push(`/${wsId}/boards`));
 
   const updateBoard = async (board: TaskBoard) => {
     if (!boardId || !ws) return;
@@ -175,7 +130,8 @@ const WorkspaceBoardEditor = () => {
   };
 
   const showDeleteBoardModal = (board?: TaskBoard) => {
-    if (!board) return;
+    if (!board || !ws) return;
+
     openConfirmModal({
       title: (
         <div className="font-semibold">
@@ -197,7 +153,7 @@ const WorkspaceBoardEditor = () => {
           </p>
         </div>
       ),
-      onConfirm: () => deleteBoard(),
+      onConfirm: () => deleteBoard(ws.id),
       closeOnConfirm: true,
       labels: {
         confirm: 'Delete',
@@ -266,140 +222,86 @@ const WorkspaceBoardEditor = () => {
       {board && (
         <>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex w-full items-center gap-4">
+            <div className="flex w-full items-center gap-4 text-xl font-semibold">
               {board?.name || 'Untitled Board'}
             </div>
 
-            <Menu openDelay={100} closeDelay={400} withArrow>
-              <Menu.Target>
-                <button className="h-fit rounded-lg bg-zinc-300/10 p-2 text-zinc-300 hover:bg-zinc-300/20 hover:text-zinc-100">
-                  <EllipsisHorizontalIcon className="w-5" />
-                </button>
-              </Menu.Target>
+            <div className="flex items-center gap-2">
+              <Button
+                className="border border-blue-300/10 bg-blue-300/10 text-blue-300 hover:bg-blue-300/20"
+                leftIcon={<FolderPlusIcon className="w-5" />}
+                onClick={() => showEditListModal()}
+                disabled={!boardId}
+              >
+                New task list
+              </Button>
 
-              <Menu.Dropdown className="font-semibold">
-                <Menu.Item icon={<ArchiveBoxIcon className="w-5" />} disabled>
-                  Archived lists
-                </Menu.Item>
-                <Menu.Item
-                  icon={<Cog6ToothIcon className="w-5" />}
-                  onClick={() => showEditBoardModal(board)}
-                >
-                  Board settings
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  icon={<TrashIcon className="w-5" />}
-                  color="red"
-                  onClick={() => showDeleteBoardModal(board)}
-                >
-                  Delete board
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </div>
+              <SegmentedControl
+                value={mode}
+                onChange={setMode}
+                data={[
+                  {
+                    label: (
+                      <div className="flex items-center gap-2">
+                        <QueueListIcon className="inline-block h-5" /> List
+                      </div>
+                    ),
+                    value: 'list',
+                  },
+                  {
+                    label: (
+                      <div className="flex items-center gap-2">
+                        <ViewColumnsIcon className="inline-block h-5" /> Board
+                      </div>
+                    ),
+                    value: 'board',
+                    disabled: true,
+                  },
+                ]}
+              />
 
-          <Divider variant="dashed" className="my-2" />
-
-          <SegmentedControl
-            value={mode}
-            onChange={setMode}
-            data={[
-              {
-                label: (
-                  <div className="flex items-center gap-2">
-                    <QueueListIcon className="inline-block h-5" /> List
-                  </div>
-                ),
-                value: 'list',
-              },
-              {
-                label: (
-                  <div className="flex items-center gap-2">
-                    <ViewColumnsIcon className="inline-block h-5" /> Board
-                  </div>
-                ),
-                value: 'board',
-                disabled: true,
-              },
-            ]}
-            className="mb-2"
-          />
-        </>
-      )}
-
-      <div className="relative flex h-full w-full flex-col border-r border-zinc-800/80 pt-2">
-        <div className="relative mx-2 flex gap-2 text-2xl font-semibold">
-          <div className="flex items-center gap-1">
-            {boardId && (
-              <Menu openDelay={100} closeDelay={400} withArrow>
+              <Menu>
                 <Menu.Target>
-                  <button className="h-fit rounded border border-transparent transition hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
-                    <PlusIcon className="w-5" />
-                  </button>
+                  <ActionIcon
+                    size="xl"
+                    className="bg-zinc-300/10 text-zinc-300 hover:bg-zinc-300/20 hover:text-zinc-100"
+                  >
+                    <EllipsisHorizontalIcon className="w-5" />
+                  </ActionIcon>
                 </Menu.Target>
 
-                <Menu.Dropdown>
+                <Menu.Dropdown className="font-semibold">
+                  <Menu.Item icon={<ArchiveBoxIcon className="w-5" />} disabled>
+                    Archived Lists
+                  </Menu.Item>
                   <Menu.Item
-                    icon={<FolderPlusIcon className="w-5" />}
-                    onClick={() => showEditListModal()}
+                    icon={<Cog6ToothIcon className="w-5" />}
+                    onClick={() => showEditBoardModal(board)}
                   >
-                    New task list
+                    Board Settings
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item
+                    icon={<TrashIcon className="w-5" />}
+                    color="red"
+                    onClick={() => showDeleteBoardModal(board)}
+                  >
+                    Delete Board
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
-            )}
+            </div>
           </div>
-        </div>
 
-        <SidebarDivider padBottom={false} padLeft={false} padRight={false} />
+          <Divider className="my-2" />
+        </>
+      )}
 
-        <Chip.Group
-          multiple={false}
-          value={viewOption}
-          onChange={setViewOption}
-        >
-          <div className="mt-2 flex flex-wrap justify-center gap-2 border-b border-zinc-800/80 pb-2">
-            <Chip variant="filled" value="all">
-              All
-            </Chip>
-            <Chip color="cyan" variant="filled" value="my-tasks">
-              My tasks
-            </Chip>
-            <Chip color="teal" variant="filled" value="recently-updated">
-              Recently added
-            </Chip>
-          </div>
-        </Chip.Group>
-
+      <div className="relative mt-4 flex h-full w-full flex-col">
         {isContentLoading ? (
           <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
             <Loader />
           </div>
-        ) : viewOption !== 'all' ? (
-          !tasks || tasks.length === 0 ? (
-            <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
-              You have no assigned tasks in this board.
-            </div>
-          ) : (
-            <div className="scrollbar-none flex flex-col gap-2 overflow-auto p-4">
-              {boardId &&
-                selectedListId &&
-                tasks.map((task) => (
-                  <TaskWrapper
-                    key={task.id}
-                    task={task}
-                    listId={selectedListId}
-                    highlight={viewOption !== 'my-tasks'}
-                    onUpdated={() =>
-                      mutate(
-                        `/api/tasks?boardId=${boardId}&option=${viewOption}`
-                      )
-                    }
-                  />
-                ))}
-            </div>
-          )
         ) : lists?.length === 0 ? (
           <div className="flex h-full items-center justify-center overflow-auto p-8 text-center text-xl font-semibold text-zinc-400/80">
             Create a task list to get started
@@ -416,13 +318,14 @@ const WorkspaceBoardEditor = () => {
               // If the list is being collapsed, don't mutate
               if (!ws || !id || selectedListId === id) return;
 
-              const option = getViewOptionForList(id);
-              const query = buildQuery(ws.id, id, option);
+              const query = buildQuery(ws.id, id);
               mutate(query);
             }}
-            chevronPosition="left"
-            radius="lg"
-            className="scrollbar-none flex flex-col overflow-auto"
+            className="grid gap-4 border-transparent"
+            classNames={{
+              item: 'border bg-zinc-300/5 border-zinc-300/10 rounded',
+              content: 'mt-2',
+            }}
           >
             {ws &&
               boardId &&
@@ -432,8 +335,6 @@ const WorkspaceBoardEditor = () => {
                   ws={ws}
                   boardId={boardId as string}
                   list={list}
-                  option={getViewOptionForList(list.id)}
-                  setOption={(option) => setViewOptionForList(list.id, option)}
                 />
               ))}
           </Accordion>

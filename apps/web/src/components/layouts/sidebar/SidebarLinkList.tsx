@@ -74,15 +74,12 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         }}
       />
 
-      {(wsPreset === 'ALL' || wsPreset === 'GENERAL') && (
-        <SidebarLink
-          href={`/${wsId}/tasks`}
-          activeIcon={<CheckCircleIcon className="w-5" />}
-          label={tasks}
-          showTooltip={!sidebarOpened}
-          disabled
-        />
-      )}
+      <SidebarLink
+        href={`/${wsId}/boards`}
+        activeIcon={<CheckCircleIcon className="w-5" />}
+        label={tasks}
+        showTooltip={!sidebarOpened}
+      />
 
       {(wsPreset === 'ALL' || wsPreset !== 'PHARMACY') && (
         <SidebarLink

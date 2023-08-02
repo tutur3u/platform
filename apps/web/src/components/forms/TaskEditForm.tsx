@@ -376,6 +376,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
             }
             autoComplete="off"
             className="mb-2"
+            data-autofocus
           />
 
           <Textarea
@@ -612,7 +613,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
       {showSaveButton() && (
         <div className="mt-4 flex items-center gap-2">
-          {task?.id && showActionIcons && (
+          {task?.id && !task.completed && showActionIcons && (
             <>
               <ActionIcon
                 onClick={handleComplete}
@@ -624,6 +625,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               </ActionIcon>
             </>
           )}
+
           <Button
             fullWidth
             variant="subtle"
