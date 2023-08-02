@@ -184,10 +184,10 @@ const TaskWrapper = ({
 
   return (
     <div
-      className={`flex items-start justify-between rounded-lg ${
+      className={`flex items-start justify-between rounded border border-zinc-300/10 ${
         isMyTask && highlight && !task.completed
-          ? 'bg-purple-300/10 text-purple-300 hover:bg-purple-300/20'
-          : 'hover:bg-zinc-800'
+          ? 'bg-purple-300/5 text-purple-300 hover:bg-purple-300/10'
+          : 'bg-zinc-300/5 hover:bg-zinc-300/10'
       } transition`}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -244,7 +244,7 @@ const TaskWrapper = ({
               <div
                 className={`${getPriorityColor(
                   task.priority
-                )} flex h-fit items-center justify-center rounded-lg px-2 py-0.5`}
+                )} flex h-fit items-center justify-center rounded px-2 py-0.5`}
               >
                 {getPriorityText(task.priority)}
               </div>
