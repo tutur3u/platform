@@ -3,7 +3,7 @@ name: Supabase CI
 on:
   push:
     branches:
-      - dev
+      - staging
   workflow_dispatch:
 
 jobs:

@@ -3,17 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { teamId } = req.query;
+    const { wsId } = req.query;
 
-    if (!teamId || typeof teamId !== 'string')
-      throw new Error('Invalid teamId');
+    if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
 
     switch (req.method) {
       case 'GET':
-        return await fetchBoards(req, res, teamId);
+        return await fetchBoards(req, res, wsId);
 
       case 'POST':
-        return await createBoard(req, res, teamId);
+        return await createBoard(req, res, wsId);
 
       default:
         throw new Error(
@@ -35,7 +34,7 @@ export default handler;
 const fetchBoards = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  teamId: string
+  wsId: string
 ) => {
   const supabase = createPagesServerClient({
     req,
@@ -45,7 +44,7 @@ const fetchBoards = async (
   const { data, error } = await supabase
     .from('workspace_boards')
     .select('id, name')
-    .eq('project_id', teamId)
+    .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
@@ -55,7 +54,7 @@ const fetchBoards = async (
 const createBoard = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  teamId: string
+  wsId: string
 ) => {
   const supabase = createPagesServerClient({
     req,
@@ -68,7 +67,7 @@ const createBoard = async (
     .from('workspace_boards')
     .insert({
       name,
-      project_id: teamId,
+      ws_id: wsId,
     })
     .select('id')
     .single();

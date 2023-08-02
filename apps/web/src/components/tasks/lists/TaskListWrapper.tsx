@@ -1,4 +1,4 @@
-import { Accordion, Chip, Loader } from '@mantine/core';
+import { Accordion, Button, Loader } from '@mantine/core';
 import { TaskList } from '../../../types/primitives/TaskList';
 import React from 'react';
 import TaskListAccordionControl from './TaskListAccordionControl';
@@ -14,22 +14,11 @@ export interface TaskListWrapperProps {
   ws: Workspace;
   boardId: string;
   list: TaskList;
-  option: string;
-  setOption: (option: string) => void;
 }
 
-const TaskListWrapper = ({
-  ws,
-  boardId,
-  list,
-  option = 'todos',
-  setOption,
-}: TaskListWrapperProps) => {
+const TaskListWrapper = ({ ws, boardId, list }: TaskListWrapperProps) => {
   const buildQuery = (listId: string) => {
     let query = `/api/workspaces/${ws.id}/boards/${boardId}/lists/${listId}/tasks`;
-
-    if (option === 'todos') query += '?todos=true';
-    if (option === 'completed') query += '?completed=true';
 
     return query;
   };
@@ -58,28 +47,15 @@ const TaskListWrapper = ({
     <Accordion.Item
       key={list.id}
       value={list.id}
-      className="border-zinc-800/80"
+      className="border-transparent"
     >
       <TaskListAccordionControl ws={ws} boardId={boardId} list={list}>
         <div className="line-clamp-1 font-semibold">
           {list.name || 'Untitled List'}
         </div>
       </TaskListAccordionControl>
-      <Accordion.Panel>
-        <Chip.Group multiple={false} value={option} onChange={setOption}>
-          <div className="my-2 flex flex-wrap justify-center gap-2">
-            <Chip variant="filled" value="all">
-              All
-            </Chip>
-            <Chip color="yellow" variant="filled" value="todos">
-              Todos
-            </Chip>
-            <Chip color="green" variant="filled" value="completed">
-              Completed
-            </Chip>
-          </div>
-        </Chip.Group>
 
+      <Accordion.Panel>
         {isLoading ? (
           <div className="flex justify-center px-4 py-8">
             <Loader size="lg" />
@@ -92,17 +68,16 @@ const TaskListWrapper = ({
                   key={task.id}
                   task={task}
                   listId={list.id}
-                  showCompleted={option === 'completed'}
                   onUpdated={resync}
                 />
               ))}
-            <button
-              className="flex items-center gap-3 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-400"
+            <Button
+              className="flex items-center gap-2 rounded border border-zinc-300/10 p-2 text-sm font-semibold text-zinc-400 hover:bg-zinc-300/5"
               onClick={() => showAddTaskModal()}
+              leftIcon={<PlusIcon className="w-5" />}
             >
-              <PlusIcon className="w-5" />
-              <div className="text-sm font-semibold">Task</div>
-            </button>
+              Task
+            </Button>
           </div>
         )}
       </Accordion.Panel>
