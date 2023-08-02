@@ -5,7 +5,12 @@ import {
   EllipsisHorizontalIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
-import { Accordion, AccordionControlProps, Menu } from '@mantine/core';
+import {
+  Accordion,
+  AccordionControlProps,
+  ActionIcon,
+  Menu,
+} from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import { mutate } from 'swr';
 import { TaskList } from '../../../types/primitives/TaskList';
@@ -95,9 +100,12 @@ const TaskListAccordionControl = (
       <Accordion.Control {...rest} />
       <Menu openDelay={100} closeDelay={400} withArrow position="right">
         <Menu.Target>
-          <button className="rounded border border-transparent text-zinc-500 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300">
+          <ActionIcon
+            size="lg"
+            className="bg-zinc-300/5 text-zinc-300 hover:bg-zinc-300/10"
+          >
             <EllipsisHorizontalIcon className="w-6" />
-          </button>
+          </ActionIcon>
         </Menu.Target>
 
         <Menu.Dropdown className="font-semibold">
