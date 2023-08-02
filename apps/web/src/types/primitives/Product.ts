@@ -1,3 +1,5 @@
+import { CategoryType } from "./Category";
+
 export interface Product {
   id: string;
   name?: string;
@@ -14,4 +16,5 @@ export interface Product {
   batch_id?: string;
   unit_id?: string;
   created_at?: string;
+  categoryType?: CategoryType;
 }

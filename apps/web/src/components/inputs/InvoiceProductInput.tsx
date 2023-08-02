@@ -1,12 +1,13 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Product } from '../../types/primitives/Product';
 import { NumberInput } from '@mantine/core';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import SettingItemCard from '../settings/SettingItemCard';
 import ProductSelector from '../selectors/ProductSelector';
 import UnitSelector from '../selectors/UnitSelector';
 import WarehouseSelector from '../selectors/WarehouseSelector';
 import useTranslation from 'next-translate/useTranslation';
+import { CategoryType } from '../../types/primitives/Category';
 
 interface Props {
   wsId: string;
@@ -30,10 +31,10 @@ const InvoiceProductInput = ({
 
   hideStock = false,
 }: Props) => {
+
   useEffect(() => {
     const validProduct = p.id && p.unit_id && p.warehouse_id;
-    const hasData =
-      p.price !== null && p.price !== '' && p.stock !== null && p.stock !== '';
+    const hasData = p.price !== null && p.price !== '';
 
     if (!validProduct || hideStock) return;
     if (hasData) return;
@@ -45,7 +46,6 @@ const InvoiceProductInput = ({
       .then((product) => {
         const stock = product?.amount;
         const price = product?.price;
-
         if (price === undefined || stock === undefined) return;
 
         updateProduct({
@@ -86,17 +86,18 @@ const InvoiceProductInput = ({
         <div className="grid w-full gap-2 xl:grid-cols-3">
           <ProductSelector
             productId={p.id}
-            setProductId={(id) =>
+            setProductIdAndCategoryId={(id, categoryId) => {
               updateProduct({
                 ...p,
                 id,
+                category_id: categoryId,
                 unit_id: '',
                 warehouse_id: '',
                 price: '',
                 stock: '',
                 amount: '',
-              })
-            }
+              });
+            }}
           />
 
           <UnitSelector
@@ -164,7 +165,7 @@ const InvoiceProductInput = ({
                       ? t('common:loading')
                       : t('pending-product-selection')
                   }
-                  value={p.stock}
+                  value={p.stock ? p.amount : undefined}
                   min={0}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
                   formatter={(value) =>
@@ -203,7 +204,7 @@ const InvoiceProductInput = ({
                     ? t('pending-amount-loaded')
                     : t('pending-product-selection')
                 }
-                value={p.amount}
+                value={p.amount ? p.amount : undefined}
                 onChange={(val) =>
                   p.id && p.unit_id
                     ? updateProduct({ ...p, amount: val })

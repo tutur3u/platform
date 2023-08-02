@@ -3,14 +3,17 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { wsId } = req.query;
+    const { wsId, categoryId } = req.query;
 
     if (!wsId || typeof wsId !== 'string') throw new Error('Invalid wsId');
+    if (!categoryId || typeof categoryId !== 'string') throw new Error('Invalid categoryId');
 
     switch (req.method) {
       case 'GET':
+        if (categoryId) {
+          return await fetchTypeCategory(req, res, categoryId);
+        }
         return await fetchCategories(req, res, wsId);
-
       case 'POST':
         return await createCategory(req, res, wsId);
 
@@ -30,6 +33,27 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 export default handler;
+
+const fetchTypeCategory = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  categoryId: string
+) => {
+  const supabase = createPagesServerClient({
+    req,
+    res,
+  });
+  const queryBuilder = supabase
+  .from('product_categories')
+  .select('id, name, type')
+  .eq('id', categoryId)
+  .single();
+
+  const { count, data, error } = await queryBuilder;
+
+  if (error) return res.status(401).json({ error: error.message });
+  return res.status(200).json({ data, count });
+};
 
 const fetchCategories = async (
   req: NextApiRequest,
