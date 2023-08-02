@@ -38,30 +38,9 @@ const TaskWrapper = ({
   highlight = true,
   onUpdated,
 }: TaskWrapperProps) => {
-  const { data: rawAssigneesData } = useSWR(
+  const { data: assignees } = useSWR<User[]>(
     task?.id ? `/api/tasks/${task.id}/assignees` : null
   );
-
-  const assignees: User[] | null =
-    rawAssigneesData != null
-      ? rawAssigneesData?.map(
-          (assignee: {
-            id: string;
-            display_name?: string;
-            email?: string;
-            phone?: string;
-            handle?: string;
-            created_at?: string;
-          }) => ({
-            id: assignee.id,
-            display_name: assignee.display_name,
-            email: assignee.email,
-            phone: assignee.phone,
-            handle: assignee.handle,
-            created_at: assignee.created_at,
-          })
-        )
-      : null;
 
   const { user } = useUser();
 
@@ -269,7 +248,7 @@ const TaskWrapper = ({
                     color="#182a3d"
                     withArrow
                   >
-                    <Avatar color="blue" radius="xl">
+                    <Avatar color="blue" radius="xl" src={assignee?.avatar_url}>
                       {getInitials(assignee?.display_name || 'Unknown')}
                     </Avatar>
                   </Tooltip>
