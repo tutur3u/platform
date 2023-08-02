@@ -54,7 +54,10 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
   const [priority, setPriority] = useState<Priority>(task?.priority);
 
-  const [assignees, setAssignees] = useState<User[] | null>(null);
+  const { data: assignees } = useSWR<User[]>(
+    task?.id ? `/api/tasks/${task.id}/assignees` : null
+  );
+
   const [candidateAssignees, setCandidateAssignees] = useState<User[] | null>(
     null
   );
@@ -123,7 +126,9 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     ) => (
       <div ref={ref} {...others}>
         <Group noWrap>
-          <Avatar src={avatar_url} />
+          <Avatar src={avatar_url} size="lg" color="blue">
+            {getInitials(display_name || 'Unknown')}
+          </Avatar>
 
           <div>
             <Text>{display_name}</Text>
@@ -135,40 +140,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       </div>
     )
   );
-
-  const { data: rawAssigneesData } = useSWR(
-    task?.id ? `/api/tasks/${task.id}/assignees` : null
-  );
-
-  useEffect(() => {
-    if (!rawAssigneesData || rawAssigneesData.length === 0) {
-      setAssignees(null);
-      return;
-    }
-
-    const assignees: User[] | null =
-      rawAssigneesData != null
-        ? rawAssigneesData?.map(
-            (assignee: {
-              id: string;
-              display_name?: string;
-              email?: string;
-              phone?: string;
-              handle?: string;
-              created_at?: string;
-            }) => ({
-              id: assignee.id,
-              display_name: assignee.display_name,
-              email: assignee.email,
-              phone: assignee.phone,
-              handle: assignee.handle,
-              created_at: assignee.created_at,
-            })
-          )
-        : null;
-
-    setAssignees(assignees);
-  }, [rawAssigneesData]);
 
   const handleAssignUser = async (userId: string) => {
     if (!task?.id) return;
@@ -493,7 +464,12 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
           ) : (
             <div>
               <div className="mt-4 flex items-center gap-2">
-                <Avatar color="blue" radius="xl">
+                <Avatar
+                  color="blue"
+                  radius="xl"
+                  size="lg"
+                  src={creatorData?.users?.avatar_url}
+                >
                   {getInitials(creatorData?.users?.display_name || 'Unknown')}
                 </Avatar>
 
@@ -583,7 +559,12 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                         href={`/${assignee.handle}`}
                         onClick={() => closeAllModals()}
                       >
-                        <Avatar color="blue" radius="xl">
+                        <Avatar
+                          color="blue"
+                          radius="xl"
+                          size="lg"
+                          src={assignee?.avatar_url}
+                        >
                           {getInitials(assignee?.display_name || 'Unknown')}
                         </Avatar>
                       </Link>
