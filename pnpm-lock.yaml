@@ -69,8 +69,8 @@ importers:
         specifier: ^7.61.0
         version: 7.61.0(next@13.4.12)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
-        specifier: ^0.7.3
-        version: 0.7.3(@supabase/supabase-js@2.31.0)
+        specifier: ^0.7.4
+        version: 0.7.4(@supabase/supabase-js@2.31.0)
       '@supabase/auth-helpers-react':
         specifier: ^0.4.2
         version: 0.4.2(@supabase/supabase-js@2.31.0)
@@ -1965,8 +1965,8 @@ packages:
       '@sinonjs/commons': 3.0.0
     dev: true
 
-  /@supabase/auth-helpers-nextjs@0.7.3(@supabase/supabase-js@2.31.0):
-    resolution: {integrity: sha512-ikuBGHFnvyfneToj0Y2EfiqUnEr1bdqR6JZiFydPnzACQ2Q7TkcOhkoUSc9/sMEeG7EKX5PhH8riAz42oPdKRg==}
+  /@supabase/auth-helpers-nextjs@0.7.4(@supabase/supabase-js@2.31.0):
+    resolution: {integrity: sha512-MyGCkB7LEDcGrKmesKGjyG54Jlbiss8VGTegrNde/ywXujQyRFnzycijoASDBc6i9SmE7eE1qWBsMr2URb07nw==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
