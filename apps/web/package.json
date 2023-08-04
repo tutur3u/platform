@@ -92,7 +92,7 @@
     "jest": "^29.6.2",
     "jest-environment-jsdom": "^29.6.2",
     "lint-staged": "^13.2.3",
-    "next-translate-plugin": "^2.5.2",
+    "next-translate-plugin": "^2.5.3",
     "postcss": "^8.4.27",
     "supabase": "^1.82.5",
     "tailwind-config": "workspace:*",
