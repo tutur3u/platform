@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/auth-helpers-react';
+import { Session, SupabaseClient, User } from '@supabase/auth-helpers-react';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { AuthRequest, AuthResponse } from '../../../types/AuthData';
@@ -58,22 +58,25 @@ const handler = async (
       res,
     });
 
-    // If the identifier is an email, login with email~
+    // If the identifier is an email, login with email
     if (email) {
-      const session = await loginWithEmail({ supabase, email, password, otp });
-      return res.status(200).json(session);
+      const bundle = { email, password, otp };
+      const authData = await loginWithEmail({ supabase, bundle });
+
+      await setGlobalAuthCookie({ res, authData });
+      return res.status(200).json({});
     }
 
     // If the identifier is a handle, login with handle
     if (handle) {
-      const session = await loginWithUsername({
+      const bundle = { handle, password, otp };
+      const authData = await loginWithUsername({
         supabase,
-        handle,
-        password,
-        otp,
+        bundle,
       });
 
-      return res.status(200).json(session);
+      await setGlobalAuthCookie({ res, authData });
+      return res.status(200).json({});
     }
 
     // If the identifier is neither an email nor a handle, throw an error
@@ -87,20 +90,39 @@ const handler = async (
   }
 };
 
+const setGlobalAuthCookie = async ({
+  res,
+  authData,
+}: {
+  res: NextApiResponse;
+  authData: {
+    user: User | null;
+    session: Session | null;
+  };
+}) => {
+  const { user, session } = authData;
+  if (!user || !session) throw 'Something went wrong';
+
+  console.log('Setting global cookie');
+  console.log(res, user, session);
+};
+
 const loginWithEmail = async ({
   supabase,
-  email,
-  password,
-  otp,
+  bundle,
 }: {
   supabase: SupabaseClient;
-  email: string;
-  password?: string;
-  otp?: string;
+  bundle: {
+    email: string;
+    password?: string;
+    otp?: string;
+  };
 }) => {
+  const { email, password, otp } = bundle;
+
   if (!password && !otp) throw 'Missing required fields: password or otp';
 
-  const { data: session, error } = password
+  const { data, error } = password
     ? await supabase.auth.signInWithPassword({
         email,
         password,
@@ -116,23 +138,25 @@ const loginWithEmail = async ({
   // Check if there is an error
   if (error) throw error?.message;
 
-  // Check if the session is valid
-  if (!session) throw 'Something went wrong';
+  // Check if user and session are valid
+  if (!data?.user || !data?.session) throw 'Something went wrong';
 
-  return session;
+  return data;
 };
 
 const loginWithUsername = async ({
   supabase,
-  handle,
-  password,
-  otp,
+  bundle,
 }: {
   supabase: SupabaseClient;
-  handle: string;
-  password?: string;
-  otp?: string;
+  bundle: {
+    handle: string;
+    password?: string;
+    otp?: string;
+  };
 }) => {
+  const { handle, password, otp } = bundle;
+
   const { data, error } = await supabase
     .from('users')
     .select('email')
@@ -151,7 +175,13 @@ const loginWithUsername = async ({
   // Check if the email is valid
   if (!email) throw 'Something went wrong';
 
-  return loginWithEmail({ supabase, email, password, otp });
+  const newBundle = {
+    email,
+    password,
+    otp,
+  };
+
+  return loginWithEmail({ supabase, bundle: newBundle });
 };
 
 export default handler;
