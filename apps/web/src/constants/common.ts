@@ -2,6 +2,7 @@ import { version } from '../core/version';
 
 export const APP_VERSION = version;
 export const DEV_MODE = process.env.NODE_ENV === 'development';
+export const AUTH_DOMAIN = process.env.NEXT_PUBLIC_AUTH_DOMAIN || 'tuturuuu.com'
 export const DEPLOYMENT_ENVIRONMENT =
   process.env.DEPLOYMENT_ENVIRONMENT || 'DEVELOPMENT';
 
