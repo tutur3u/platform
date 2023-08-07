@@ -26,8 +26,8 @@
     "react": "^18.2.0",
     "tailwind-config": "workspace:*",
     "tsconfig": "workspace:*",
-    "tsup": "^7.1.0",
+    "tsup": "^7.2.0",
     "typescript": "^5.1.6"
   },
-  "packageManager": "pnpm@8.6.11"
+  "packageManager": "pnpm@8.6.12"
 }

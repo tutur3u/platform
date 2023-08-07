@@ -113,7 +113,10 @@ const TransactionCategorySelector = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(category),
+      body: JSON.stringify({
+        ...category,
+        is_expense: isExpense,
+      } as TransactionCategory),
     });
 
     if (res.ok) {
@@ -128,7 +131,7 @@ const TransactionCategorySelector = ({
         return null;
       }
 
-      return { ...category, id };
+      return { ...category, is_expense: isExpense, id };
     } else {
       showNotification({
         title: t('common:error'),
