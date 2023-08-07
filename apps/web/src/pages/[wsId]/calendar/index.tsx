@@ -6,6 +6,7 @@ import Calendar from '../../../components/calendar/Calendar';
 import NestedLayout from '../../../components/layouts/NestedLayout';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
+import { CalendarProvider } from '../../../hooks/useCalendar';
 
 const CalendarPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
@@ -37,7 +38,9 @@ const CalendarPage: PageWithLayoutProps = () => {
   return (
     <>
       <HeaderX label={`${overviewLabel} – ${calendarLabel}`} />
-      <Calendar />
+      <CalendarProvider>
+        <Calendar />
+      </CalendarProvider>
     </>
   );
 };

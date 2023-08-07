@@ -15,14 +15,6 @@ const TeamEditForm = ({ team, onSubmit, onDelete }: Props) => {
 
   return (
     <>
-      {team?.id && (
-        <TextInput
-          label="Team ID"
-          value={team?.id}
-          disabled={!!team?.id}
-          className="mb-2"
-        />
-      )}
       <TextInput
         label="Team name"
         placeholder="Enter team name"

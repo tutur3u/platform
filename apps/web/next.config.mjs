@@ -18,6 +18,16 @@ const nextConfig = nextTranslate({
       },
     ];
   },
+
+  redirects() {
+    return [
+      {
+        source: '/rewise',
+        destination: 'https://rewise.tuturuuu.com',
+        permanent: false,
+      },
+    ];
+  },
 });
 
 export default withSentryConfig(
