@@ -8,7 +8,7 @@ import Providers from '../components/common/Providers';
 import Analytics from '../components/common/Analytics';
 import usePersistLocale from '../hooks/usePersistLocale';
 import { Database } from '../types/database.types';
-import { AUTH_DOMAIN, DEV_MODE } from '../constants/common';
+import { AUTH_COOKIE_DOMAIN, DEV_MODE } from '../constants/common';
 
 export default function Application({
   Component,
@@ -19,14 +19,17 @@ export default function Application({
 
   // Create a new supabase browser client on every first render.
   const [supabaseClient] = useState(() =>
-    createPagesBrowserClient<Database>({
+  createPagesBrowserClient<Database>(
+    (DEV_MODE || !AUTH_COOKIE_DOMAIN)
+    ? undefined
+    : {
       cookieOptions: {
-        domain: DEV_MODE ? undefined : AUTH_DOMAIN,
+        domain: AUTH_COOKIE_DOMAIN,
         maxAge: 100000000,
         path: '/',
         sameSite: 'lax',
         secure: true,
-      },
+      },  
     })
   );
 
