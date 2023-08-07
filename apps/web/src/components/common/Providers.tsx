@@ -8,7 +8,6 @@ import { SWRConfig } from 'swr';
 import { UserDataProvider } from '../../hooks/useUser';
 import { AppearanceProvider } from '../../hooks/useAppearance';
 import { WorkspaceProvider } from '../../hooks/useWorkspaces';
-import { CalendarProvider } from '../../hooks/useCalendar';
 import MantineProvider from '../mantine/MantineProvider';
 import { SegmentProvider } from '../../hooks/useSegments';
 
@@ -38,9 +37,7 @@ const Providers = ({
           <AppearanceProvider>
             <MantineProvider>
               <SegmentProvider>
-                <WorkspaceProvider>
-                  <CalendarProvider>{children}</CalendarProvider>
-                </WorkspaceProvider>
+                <WorkspaceProvider>{children}</WorkspaceProvider>
               </SegmentProvider>
             </MantineProvider>
           </AppearanceProvider>
