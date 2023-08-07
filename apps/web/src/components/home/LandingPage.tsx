@@ -1,9 +1,12 @@
 import { Divider } from '@mantine/core';
 import DefaultHead from '../headers/DefaultHead';
 import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
 
 const LandingPage = () => {
   const { t, lang } = useTranslation('home');
+
+  const rewiseIntro = t('rewise-intro');
 
   const headlineMain = t('headline-main');
   const headlineSecondary = t('headline-secondary');
@@ -37,6 +40,24 @@ const LandingPage = () => {
     <>
       <DefaultHead />
       <div className="mx-4 mb-8 mt-24 md:mx-32 lg:mx-64">
+        <div className="mx-4 mb-8 flex items-center justify-center md:mx-8">
+          <Link
+            target="_blank"
+            href="https://rewise.tuturuuu.com"
+            className="group flex w-fit items-center gap-2 rounded-full border border-zinc-700/10 p-1 pr-5 hover:bg-zinc-300/5 dark:border-zinc-300/10"
+          >
+            <div className="relative">
+              <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400/70 to-orange-300/80 opacity-50 blur-lg transition-all duration-500 group-hover:-inset-1 group-hover:opacity-60 dark:from-rose-400/50 dark:to-orange-300/60"></div>
+              <div className="rounded-full bg-gradient-to-r from-rose-400/50 to-orange-300/60 px-4 py-1 font-semibold text-black transition duration-500 dark:from-rose-400/50 dark:to-orange-300/60 dark:text-white">
+                Rewise
+              </div>
+            </div>
+            <div className="text-zinc-900 transition duration-500 group-hover:translate-x-1 dark:text-zinc-200">
+              {rewiseIntro}
+            </div>
+          </Link>
+        </div>
+
         <section className="grid gap-8 2xl:grid-cols-2">
           <div>
             <h1 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 xl:text-3xl">

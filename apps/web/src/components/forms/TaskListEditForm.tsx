@@ -20,22 +20,6 @@ const TaskListEditForm = ({
 
   return (
     <>
-      {list?.board_id && (
-        <TextInput
-          label="Board ID"
-          value={list.board_id}
-          disabled={!!list.board_id}
-          className="mb-2"
-        />
-      )}
-      {list?.id && (
-        <TextInput
-          label="List ID"
-          value={list?.id}
-          disabled={!!list?.id}
-          className="mb-2"
-        />
-      )}
       <TextInput
         label="List name"
         placeholder="Enter list name"
