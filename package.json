@@ -24,7 +24,7 @@
     "eslint": "^8.46.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.0.1",
-    "prettier-plugin-tailwindcss": "^0.5.1",
+    "prettier-plugin-tailwindcss": "^0.5.2",
     "turbo": "^1.10.12"
   },
   "engines": {
