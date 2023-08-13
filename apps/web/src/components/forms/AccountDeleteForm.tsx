@@ -23,9 +23,7 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div>
-        {t('delete-account-message')}
-      </div>
+      <div>{t('delete-account-message')}</div>
       <TextInput
         value={value}
         placeholder={user.email}
