@@ -1,12 +1,13 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { useSessionContext } from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { GetServerSidePropsContext } from 'next';
 import useTranslation from 'next-translate/useTranslation';
-import { useRouter } from 'next/router';
 import HeaderX from '../components/metadata/HeaderX';
 import Image from 'next/image';
 import LanguageSelector from '../components/selectors/LanguageSelector';
 import { Button, Divider } from '@mantine/core';
+import { logout } from '../utils/auth-handler';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const supabase = createPagesServerClient(ctx);
@@ -29,15 +30,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const LogOutPage = () => {
+  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const { t } = useTranslation('logout');
-  const { supabaseClient } = useSessionContext();
-
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
-    router.push('/');
-  };
 
   const logoutLabel = t('logout');
   const description = t('description');
@@ -72,7 +68,7 @@ const LogOutPage = () => {
               color="red"
               onClick={(e) => {
                 e.preventDefault();
-                handleLogout();
+                logout({ supabase, router });
               }}
             >
               {logoutLabel}

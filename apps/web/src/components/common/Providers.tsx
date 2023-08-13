@@ -12,19 +12,15 @@ import MantineProvider from '../mantine/MantineProvider';
 import { SegmentProvider } from '../../hooks/useSegments';
 
 interface ProvidersProps {
-  supabaseClient: SupabaseClient;
+  supabase: SupabaseClient;
   initialSession: Session;
   children: React.ReactNode;
 }
 
-const Providers = ({
-  supabaseClient,
-  initialSession,
-  children,
-}: ProvidersProps) => {
+const Providers = ({ supabase, initialSession, children }: ProvidersProps) => {
   return (
     <SessionContextProvider
-      supabaseClient={supabaseClient}
+      supabaseClient={supabase}
       initialSession={initialSession}
     >
       <SWRConfig
@@ -33,7 +29,7 @@ const Providers = ({
             fetch(resource, init).then((res) => res.json()),
         }}
       >
-        <UserDataProvider>
+        <UserDataProvider supabase={supabase}>
           <AppearanceProvider>
             <MantineProvider>
               <SegmentProvider>

@@ -12,7 +12,6 @@ import {
 
 import SidebarLink from './SidebarLink';
 import Logo from '../common/Logo';
-import { SidebarProps } from '../../types/SidebarProps';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ActionIcon, Avatar, Divider, Popover, Tooltip } from '@mantine/core';
 import { useUser } from '../../hooks/useUser';
@@ -22,7 +21,6 @@ import { useState } from 'react';
 import SidebarButton from './SidebarButton';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useSessionContext } from '@supabase/auth-helpers-react';
 import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import useTranslation from 'next-translate/useTranslation';
 import CreateNewButton from './sidebar/CreateNewButton';
@@ -33,8 +31,15 @@ import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 import { User } from '../../types/primitives/User';
 import useSWR, { mutate } from 'swr';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import { logout } from '../../utils/auth-handler';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
+export interface SidebarProps {
+  className?: string;
+}
 
 function LeftSidebar({ className }: SidebarProps) {
+  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const { wsId } = router.query;
@@ -42,13 +47,7 @@ function LeftSidebar({ className }: SidebarProps) {
   const { sidebar, theme, setSidebar, toggleSidebar, changeTheme } =
     useAppearance();
 
-  const { supabaseClient } = useSessionContext();
   const { user } = useUser();
-
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
-    router.push('/');
-  };
 
   const { ws, workspaceInvites } = useWorkspaces();
 
@@ -78,7 +77,7 @@ function LeftSidebar({ className }: SidebarProps) {
   const expandSidebar = t('expand-sidebar');
 
   const settings = t('common:settings');
-  const logout = t('common:logout');
+  const logoutLabel = t('common:logout');
 
   const isRootWs = ws?.id === ROOT_WORKSPACE_ID;
 
@@ -476,10 +475,10 @@ function LeftSidebar({ className }: SidebarProps) {
                   onClick={() => {
                     setUserPopover(false);
                     closeSidebarOnMobile({ window, setSidebar });
-                    handleLogout();
+                    logout({ supabase, router });
                   }}
                   activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
-                  label={logout}
+                  label={logoutLabel}
                   left
                 />
               </Popover.Dropdown>

@@ -5,7 +5,7 @@ import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
@@ -34,7 +34,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 const ResetPasswordPage = () => {
-  const supabaseClient = useSupabaseClient();
+  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const handleResetPassword = async ({
@@ -43,7 +43,7 @@ const ResetPasswordPage = () => {
     try {
       if (!password) throw new Error('Please fill in all fields');
 
-      const { error } = await supabaseClient.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password,
       });
 

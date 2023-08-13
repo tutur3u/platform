@@ -5,32 +5,27 @@ import {
   Cog6ToothIcon,
   HomeIcon,
 } from '@heroicons/react/24/solid';
-import { useRouter } from 'next/router';
-import { useSessionContext } from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useState } from 'react';
 import SidebarLink from './SidebarLink';
 import SidebarButton from './SidebarButton';
 import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
+import { logout } from '../../utils/auth-handler';
+import { useRouter } from 'next/router';
 
 const UserProfilePopover = () => {
-  const { user, isLoading } = useUser();
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
-  const { supabaseClient } = useSessionContext();
+  const { user, isLoading } = useUser();
+  const { t } = useTranslation('common');
 
   const [userPopover, setUserPopover] = useState(false);
 
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
-    router.push('/');
-  };
-
-  const { t } = useTranslation('common');
-
   const home = t('home');
   const settings = t('settings');
-  const logout = t('logout');
+  const logoutLabel = t('logout');
 
   return (
     <Popover
@@ -46,6 +41,7 @@ const UserProfilePopover = () => {
         ) : (
           <Avatar
             color="blue"
+            src={user?.avatar_url}
             className={`cursor-pointer hover:bg-blue-500/10 ${
               userPopover ? 'bg-blue-500/10' : ''
             }`}
@@ -66,8 +62,6 @@ const UserProfilePopover = () => {
           left
         />
 
-        <Divider variant="dashed" />
-
         <SidebarLink
           href="/settings"
           onClick={() => setUserPopover(false)}
@@ -77,15 +71,15 @@ const UserProfilePopover = () => {
           left
         />
 
-        <Divider variant="dashed" />
+        <Divider />
 
         <SidebarButton
           onClick={() => {
             setUserPopover(false);
-            handleLogout();
+            logout({ supabase, router });
           }}
           activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}
-          label={logout}
+          label={logoutLabel}
           left
         />
       </Popover.Dropdown>

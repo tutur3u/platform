@@ -2,7 +2,7 @@ import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
-  useSupabaseClient,
+  SupabaseClient,
   useUser as useSupabaseUser,
 } from '@supabase/auth-helpers-react';
 import { User } from '../types/primitives/User';
@@ -20,26 +20,21 @@ const UserDataContext = createContext({
 });
 
 export const UserDataProvider = ({
+  supabase,
   children,
 }: {
+  supabase: SupabaseClient;
   children: React.ReactNode;
 }) => {
-  const router = useRouter();
-
-  const supabase = useSupabaseClient();
   const supabaseUser = useSupabaseUser();
+  const router = useRouter();
 
   const apiPath = supabaseUser ? '/api/user' : null;
 
   const {
     data: user,
     error: userError,
-    mutate: userMutate,
-  } = useSWR<User>(apiPath, {
-    onError: () => {
-      userMutate(undefined);
-    },
-  });
+  } = useSWR<User>(apiPath);
 
   const isLoading = !user && !userError;
 

@@ -13,11 +13,7 @@ import HeaderX from '../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
 import NestedLayout from '../../components/layouts/NestedLayout';
 import LanguageSelector from '../../components/selectors/LanguageSelector';
-import { useRouter } from 'next/router';
-import {
-  useSessionContext,
-  useSupabaseClient,
-} from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import useTranslation from 'next-translate/useTranslation';
 import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
@@ -31,11 +27,15 @@ import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
 import AvatarCard from '../../components/settings/AvatarCard';
 import { getInitials } from '../../utils/name-helper';
+import { logout } from '../../utils/auth-handler';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
-  const supabase = useSupabaseClient();
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+
   const { setRootSegment } = useSegments();
 
   const {
@@ -46,6 +46,9 @@ const SettingPage: PageWithLayoutProps = () => {
   } = useAppearance();
 
   const { t } = useTranslation('settings-account');
+
+  const { user, updateUser, uploadImageUserBucket } = useUser();
+  const { ws } = useWorkspaces();
 
   const settings = t('common:settings');
   const account = t('account');
@@ -63,8 +66,6 @@ const SettingPage: PageWithLayoutProps = () => {
     ]);
   }, [settings, account, setRootSegment]);
 
-  const { user, updateUser, uploadImageUserBucket } = useUser();
-  const { ws } = useWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -138,15 +139,6 @@ const SettingPage: PageWithLayoutProps = () => {
     }
   };
 
-  const router = useRouter();
-
-  const { supabaseClient } = useSessionContext();
-
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
-    router.push('/');
-  };
-
   const handleDeleteAccount = async () => {
     try {
       const res = await fetch('/api/user', {
@@ -161,7 +153,7 @@ const SettingPage: PageWithLayoutProps = () => {
         color: 'green',
       });
 
-      await handleLogout();
+      await logout({ supabase, router });
       closeAllModals();
     } catch (e) {
       if (e instanceof Error)
@@ -411,7 +403,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
         <SettingItemTab title={logOut} description={logoutDescription}>
           <Button
-            onClick={handleLogout}
+            onClick={() => logout({ supabase, router })}
             className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
           >
             {logOut}

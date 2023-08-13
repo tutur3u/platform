@@ -1,45 +1,16 @@
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { GetServerSidePropsContext } from 'next';
 import React, { useState } from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
-import { AuthFormFields, AuthMethod } from '../utils/auth-handler';
+import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
-import {
-  SupabaseClient,
-  useSupabaseClient,
-} from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import { mutate } from 'swr';
 
-export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const supabase = createPagesServerClient(ctx);
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (session)
-    return {
-      redirect: {
-        destination: '/onboarding',
-        permanent: false,
-      },
-      props: {
-        initialSession: session,
-        user: session.user,
-      },
-    };
-
-  return {
-    props: {},
-  };
-};
-
 const LoginPage = () => {
-  const supabaseClient = useSupabaseClient();
+  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const method = 'login';
@@ -83,24 +54,13 @@ const LoginPage = () => {
 
       const { authenticate } = await import('../utils/auth-handler');
 
-      const authData: {
-        supabaseClient: SupabaseClient;
-        method: AuthMethod;
-        email: string;
-        password?: string;
-        otp?: string;
-      } = {
-        supabaseClient,
+      await authenticate({
+        supabase,
         method,
         email,
         password,
         otp,
-      };
-
-      if (mode === AuthFormMode.AuthWithOTP) delete authData.password;
-      if (mode === AuthFormMode.AuthWithPassword) delete authData.otp;
-
-      await authenticate(authData);
+      });
 
       mutate('/api/user');
       mutate('/api/workspaces/current');
