@@ -19,18 +19,19 @@ export default function Application({
 
   // Create a new supabase browser client on every first render.
   const [supabaseClient] = useState(() =>
-  createPagesBrowserClient<Database>(
-    (DEV_MODE || !AUTH_COOKIE_DOMAIN)
-    ? undefined
-    : {
-      cookieOptions: {
-        domain: AUTH_COOKIE_DOMAIN,
-        maxAge: 100000000,
-        path: '/',
-        sameSite: 'lax',
-        secure: true,
-      },  
-    })
+    createPagesBrowserClient<Database>(
+      DEV_MODE || !AUTH_COOKIE_DOMAIN
+        ? undefined
+        : {
+            cookieOptions: {
+              domain: AUTH_COOKIE_DOMAIN,
+              maxAge: 100000000,
+              path: '/',
+              sameSite: 'lax',
+              secure: true,
+            },
+          }
+    )
   );
 
   //* Use the layout defined at the page level, if available

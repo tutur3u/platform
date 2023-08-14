@@ -21,10 +21,10 @@
     "sb:status": "cd apps/web && pnpm sb:status"
   },
   "devDependencies": {
-    "eslint": "^8.46.0",
+    "eslint": "^8.47.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.0.1",
-    "prettier-plugin-tailwindcss": "^0.4.1",
+    "prettier-plugin-tailwindcss": "^0.5.2",
     "turbo": "^1.10.12"
   },
   "engines": {
