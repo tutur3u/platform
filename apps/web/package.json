@@ -70,7 +70,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@types/cookie": "^0.5.1",
     "@types/jest": "^29.5.3",
