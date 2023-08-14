@@ -91,7 +91,7 @@
     "genversion": "^3.1.1",
     "jest": "^29.6.2",
     "jest-environment-jsdom": "^29.6.2",
-    "lint-staged": "^13.2.3",
+    "lint-staged": "^14.0.0",
     "next-translate-plugin": "^2.5.3",
     "postcss": "^8.4.27",
     "supabase": "^1.83.7",
