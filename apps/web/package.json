@@ -43,7 +43,7 @@
     "@tiptap/extension-highlight": "^2.0.4",
     "@tiptap/extension-link": "^2.0.4",
     "@tiptap/extension-subscript": "^2.0.4",
-    "@tiptap/extension-superscript": "^2.0.4",
+    "@tiptap/extension-superscript": "^2.1.0",
     "@tiptap/extension-text-align": "^2.0.4",
     "@tiptap/extension-underline": "^2.0.4",
     "@tiptap/pm": "^2.0.4",
