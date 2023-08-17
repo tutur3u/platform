@@ -96,8 +96,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1(@tiptap/core@2.1.1)
       '@tiptap/extension-underline':
-        specifier: ^2.1.1
-        version: 2.1.1(@tiptap/core@2.1.1)
+        specifier: ^2.1.2
+        version: 2.1.2(@tiptap/core@2.1.1)
       '@tiptap/pm':
         specifier: ^2.1.1
         version: 2.1.1
@@ -2326,8 +2326,8 @@ packages:
       '@tiptap/core': 2.1.1(@tiptap/pm@2.1.1)
     dev: false
 
-  /@tiptap/extension-underline@2.1.1(@tiptap/core@2.1.1):
-    resolution: {integrity: sha512-oMYt6jBv8CrycvHiOZKqoWZFpmlmbV7p8ZWI0JPR5pd0XHHpdN82LdifBbg3JMa7ezhezjrbulYr0bhoza33Cw==}
+  /@tiptap/extension-underline@2.1.2(@tiptap/core@2.1.1):
+    resolution: {integrity: sha512-qqTwwDGW5+EACFc/E9OZ7IikTI3zIUfbYyjhkS2FCNPVVTFBHpg3FKOJIbR7NpzREqjTjNFVAg3AbAeI6Xtq6w==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
