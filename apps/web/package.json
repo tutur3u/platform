@@ -41,7 +41,7 @@
     "@supabase/supabase-js": "^2.32.0",
     "@tabler/icons-react": "^2.30.0",
     "@tiptap/extension-highlight": "^2.0.4",
-    "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/extension-link": "^2.1.1",
     "@tiptap/extension-subscript": "^2.0.4",
     "@tiptap/extension-superscript": "^2.1.0",
     "@tiptap/extension-text-align": "^2.0.4",
