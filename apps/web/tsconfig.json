@@ -1,11 +1,9 @@
 {
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "strictNullChecks": true
+  },
   "extends": "tsconfig/nextjs.json",
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
