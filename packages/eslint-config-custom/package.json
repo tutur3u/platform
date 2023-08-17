@@ -10,7 +10,7 @@
     "eslint-plugin-react": "^7.33.2"
   },
   "devDependencies": {
-    "next": "^13.4.16"
+    "next": "^13.4.17"
   },
   "publishConfig": {
     "access": "public"
