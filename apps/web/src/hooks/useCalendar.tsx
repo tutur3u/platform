@@ -107,7 +107,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     ? `/api/workspaces/${ws?.id}/calendar/events${getDateRangeQuery()}`
     : null;
 
-  const { data, mutate } = useSWR<{
+  const { data } = useSWR<{
     data: CalendarEvent[];
     count: number;
   }>(apiPath);
@@ -263,52 +263,45 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateEvent = useCallback(
-    async (eventId: string, data: Partial<CalendarEvent>) => {
+    async (eventId: string, event: Partial<CalendarEvent>) => {
       if (!ws) return;
 
-      mutate((prev) => {
-        const newEvents =
-          prev?.data
-            .map((e) => {
-              if (e.id !== eventId) return e;
+      const newEvents =
+        data?.data
+          .map((e) => {
+            if (e.id !== eventId) return e;
 
-              if (
-                (data.title !== undefined && data.title !== e.title) ||
-                (data.description !== undefined &&
-                  data.description !== e.description) ||
-                (data.start_at !== undefined &&
-                  !moment(data.start_at).isSame(e.start_at)) ||
-                (data.end_at !== undefined &&
-                  !moment(data.end_at).isSame(e.end_at)) ||
-                (data.color !== undefined && data.color !== e.color)
-              ) {
-                return { ...e, ...data, local: true };
-              }
+            if (
+              (event.title !== undefined && event.title !== e.title) ||
+              (event.description !== undefined &&
+                event.description !== e.description) ||
+              (event.start_at !== undefined &&
+                !moment(event.start_at).isSame(e.start_at)) ||
+              (event.end_at !== undefined &&
+                !moment(event.end_at).isSame(e.end_at)) ||
+              (event.color !== undefined && event.color !== e.color)
+            ) {
+              return { ...e, ...event, local: true };
+            }
 
-              return { ...e, ...data };
-            })
-            .sort((a, b) => {
-              if (a.start_at === b.end_at || a.end_at === b.start_at) return 0;
-              if (a.start_at < b.start_at) return -1;
-              if (a.start_at > b.start_at) return 1;
-              if (a.end_at < b.end_at) return 1;
-              if (a.end_at > b.end_at) return -1;
-              return 0;
-            }) ?? [];
+            return { ...e, ...event };
+          })
+          .sort((a, b) => {
+            if (a.start_at === b.end_at || a.end_at === b.start_at) return 0;
+            if (a.start_at < b.start_at) return -1;
+            if (a.start_at > b.start_at) return 1;
+            if (a.end_at < b.end_at) return 1;
+            if (a.end_at > b.end_at) return -1;
+            return 0;
+          }) ?? [];
 
-        return { data: newEvents, count: newEvents?.length ?? 0 };
-      }, false);
+      return { data: newEvents, count: newEvents?.length ?? 0 };
     },
-    [ws, mutate]
+    [ws, data?.data]
   );
 
   const deleteEvent = async (eventId: string) => {
     if (!ws) return;
-
-    mutate((prev) => {
-      const newEvents = prev?.data.filter((e) => e.id !== eventId) ?? [];
-      return { data: newEvents, count: newEvents?.length ?? 0 };
-    }, false);
 
     try {
       const res = await fetch(
@@ -318,14 +311,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         }
       );
 
-      if (!res.ok) {
-        mutate((prev) => {
-          const newEvents = prev?.data.filter((e) => e.id !== eventId) ?? [];
-          return { data: newEvents, count: newEvents?.length ?? 0 };
-        }, false);
-
-        throw new Error('Failed to delete event');
-      }
+      if (!res.ok) throw new Error('Failed to delete event');
 
       await refresh();
     } catch (err) {

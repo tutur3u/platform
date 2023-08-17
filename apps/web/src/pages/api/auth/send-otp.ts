@@ -34,8 +34,8 @@ const handler = async (
       res,
     });
 
-    const session = await sendOtp(supabase, email);
-    return res.status(200).json(session);
+    await sendOtp(supabase, email);
+    return res.status(200).json({});
   } catch (error) {
     return res.status(400).json({
       error: {
@@ -46,17 +46,11 @@ const handler = async (
 };
 
 const sendOtp = async (supabase: SupabaseClient, email: string) => {
-  const { data: session, error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
   });
 
-  // Check if there is an error
   if (error) throw error?.message;
-
-  // Check if the session is valid
-  if (!session) throw 'Something went wrong';
-
-  return session;
 };
 
 export default handler;
