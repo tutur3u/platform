@@ -81,8 +81,8 @@ importers:
         specifier: ^2.30.0
         version: 2.30.0(react@18.2.0)
       '@tiptap/extension-highlight':
-        specifier: ^2.1.1
-        version: 2.1.1(@tiptap/core@2.1.1)
+        specifier: ^2.1.2
+        version: 2.1.2(@tiptap/core@2.1.1)
       '@tiptap/extension-link':
         specifier: ^2.1.1
         version: 2.1.1(@tiptap/core@2.1.1)(@tiptap/pm@2.1.1)
@@ -2215,8 +2215,8 @@ packages:
       '@tiptap/core': 2.1.1(@tiptap/pm@2.1.1)
     dev: false
 
-  /@tiptap/extension-highlight@2.1.1(@tiptap/core@2.1.1):
-    resolution: {integrity: sha512-l4LLCV9XUNzX98A3a0GaJmkq/xZ/ogsX8o5T7s3WslcCQzXM+18L501XlHq9ZZZt2wPuyfmPjKs8NHuIqEBjsg==}
+  /@tiptap/extension-highlight@2.1.2(@tiptap/core@2.1.1):
+    resolution: {integrity: sha512-TmkjTt9QpBPJwCN/98S5XyhidVMw2Xy2QOdByYrX/4CaX5j6qxcaNsloJhRyXn+TqOcX0MZvWAmuHi+R7DGJ9w==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
