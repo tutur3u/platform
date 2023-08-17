@@ -5,7 +5,7 @@ import {
   Cog6ToothIcon,
   HomeIcon,
 } from '@heroicons/react/24/solid';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useState } from 'react';
 import SidebarLink from './SidebarLink';
 import SidebarButton from './SidebarButton';

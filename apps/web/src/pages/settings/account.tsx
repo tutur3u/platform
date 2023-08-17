@@ -13,7 +13,7 @@ import HeaderX from '../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
 import NestedLayout from '../../components/layouts/NestedLayout';
 import LanguageSelector from '../../components/selectors/LanguageSelector';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { showNotification } from '@mantine/notifications';
 import SettingItemTab from '../../components/settings/SettingItemTab';
@@ -47,7 +47,7 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const { t } = useTranslation('settings-account');
 
-  const { user, updateUser, uploadImageUserBucket } = useUser();
+  const { user, updateUser, uploadAvatar } = useUser();
   const { ws } = useWorkspaces();
 
   const settings = t('common:settings');
@@ -86,12 +86,10 @@ const SettingPage: PageWithLayoutProps = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    let newAvatarUrl = avatarUrl;
-    const hasNewAvatar = avatarFile !== null;
 
-    if (hasNewAvatar) {
-      newAvatarUrl = (await uploadImageUserBucket?.(avatarFile)) ?? null;
-    }
+    const newAvatarUrl = avatarFile
+      ? (await uploadAvatar?.(avatarFile)) || null
+      : avatarUrl;
 
     await updateUser?.({
       display_name: displayName,
@@ -100,17 +98,12 @@ const SettingPage: PageWithLayoutProps = () => {
       birthday: birthday ? moment(birthday).format('YYYY-MM-DD') : null,
     });
 
-    if (user?.email !== email) {
-      await handleChangeEmail();
-    }
+    if (user?.email !== email) await handleChangeEmail();
 
-    if (hasNewAvatar) {
-      setAvatarFile(null);
+    if (ws?.id)
+      await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
 
-      if (ws?.id)
-        await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
-    }
-
+    setAvatarFile(null);
     setIsSaving(false);
   };
 

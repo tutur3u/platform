@@ -8,7 +8,7 @@ import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export enum AuthFormMode {
   PasswordReset,

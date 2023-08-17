@@ -9,7 +9,7 @@ import { AuthMethod } from '../../utils/auth-handler';
 import { mutate } from 'swr';
 import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface AuthEmailSentProps {
   email: string;

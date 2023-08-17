@@ -3,7 +3,7 @@ import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
 import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm, { AuthFormMode } from '../components/auth/AuthForm';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import AuthEmailSent from '../components/auth/AuthEmailSent';

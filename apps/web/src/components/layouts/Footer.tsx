@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { ActionIcon, Divider } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';

@@ -1,5 +1,5 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import useTranslation from 'next-translate/useTranslation';
 import HeaderX from '../components/metadata/HeaderX';

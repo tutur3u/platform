@@ -32,7 +32,7 @@ import { User } from '../../types/primitives/User';
 import useSWR, { mutate } from 'swr';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { logout } from '../../utils/auth-handler';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export interface SidebarProps {
   className?: string;

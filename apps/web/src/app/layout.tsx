@@ -1,10 +1,10 @@
 // import { Toaster } from "@/components/ui/toaster";
-import "./globals.css";
+import './globals.css';
 
 export const metadata = {
-  title: "Rewise",
+  title: 'Rewise',
   description:
-    "Brainstorm and organize your ideas at the speed of thought, supercharged by AI.",
+    'Brainstorm and organize your ideas at the speed of thought, supercharged by AI.',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body>
-        <main className="min-h-screen bg-background flex flex-col items-center">
+        <main className="bg-background flex min-h-screen flex-col items-center">
           {children}
         </main>
         {/* <Toaster /> */}

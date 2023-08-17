@@ -8,7 +8,7 @@ import { useUser } from '../../hooks/useUser';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
 import { mutate } from 'swr';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { logout } from '../../utils/auth-handler';
 
 interface Props {
