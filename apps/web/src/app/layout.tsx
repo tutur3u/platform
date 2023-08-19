@@ -1,5 +1,5 @@
 // import { Toaster } from '@ui/components/toaster';
-import './globals.css';
+import '../styles/globals.css';
 
 export const metadata = {
   title: 'Tuturuuu',
