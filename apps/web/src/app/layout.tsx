@@ -1,5 +1,5 @@
-// import { Toaster } from '@ui/components/toaster';
 import '../styles/globals.css';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata = {
   title: 'Tuturuuu',
@@ -18,7 +18,7 @@ export default function RootLayout({
         <main className="bg-background flex min-h-screen flex-col items-center">
           {children}
         </main>
-        {/* <Toaster /> */}
+        <Toaster />
       </body>
     </html>
   );

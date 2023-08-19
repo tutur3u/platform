@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyRootAccess } from '../../../utils/serverless/verify-root-access';
-import { supabaseAdmin } from '../../../utils/supabase/client';
+import { createAdminClient } from '../../../utils/supabase/client';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -28,7 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default handler;
 
 const fetchCount = async (_: NextApiRequest, res: NextApiResponse) => {
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
   if (!supabase) return res.status(401).json({ error: 'Unauthorized' });
 
   const { count, error } = await supabase

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../../utils/supabase/client';
+import { createAdminClient } from '../../../utils/supabase/client';
 import { verifyRootAccess } from '../../../utils/serverless/verify-root-access';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -28,7 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default handler;
 
 const fetchUsers = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
   if (!supabase) return res.status(401).json({ error: 'Unauthorized' });
 
   const { query, page, itemsPerPage } = req.query;
