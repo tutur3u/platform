@@ -22,13 +22,9 @@
     },
     "lint": {},
     "test": {},
-    "check-types": {},
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "clean": {
-      "cache": false
     }
   }
 }
