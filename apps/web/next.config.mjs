@@ -4,7 +4,6 @@ import nextTranslate from 'next-translate-plugin';
 /** @type {import('next').NextConfig} */
 const nextConfig = nextTranslate({
   reactStrictMode: true,
-  transpilePackages: ['ui'],
 
   rewrites() {
     return [
