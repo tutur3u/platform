@@ -1,8 +1,8 @@
-// import { Toaster } from "@/components/ui/toaster";
+// import { Toaster } from '@ui/components/toaster';
 import './globals.css';
 
 export const metadata = {
-  title: 'Rewise',
+  title: 'Tuturuuu',
   description:
     'Brainstorm and organize your ideas at the speed of thought, supercharged by AI.',
 };

@@ -12,15 +12,12 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function Layout({
-  params: { hideNavbar = false, hideFooter = false },
-  children,
-}: LayoutProps) {
+export default function Layout({ children }: LayoutProps) {
   return (
     <div className="relative w-full">
-      {hideNavbar || <Navbar />}
+      <Navbar />
       {children}
-      {hideFooter || <Footer />}
+      <Footer />
     </div>
   );
 }

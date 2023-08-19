@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, Divider, Loader, Popover } from '@mantine/core';
 import { getInitials } from '../../utils/name-helper';
 import {

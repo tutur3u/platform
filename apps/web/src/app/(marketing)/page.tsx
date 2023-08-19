@@ -1,65 +1,22 @@
-import {
-  PencilIcon,
-  CodeBracketIcon,
-  ChatBubbleLeftEllipsisIcon,
-  CheckCircleIcon,
-  BanknotesIcon,
-  SparklesIcon,
-} from '@heroicons/react/20/solid';
 import Link from 'next/link';
+import { features } from './features';
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
-
-const resources = [
-  {
-    title: 'Fully-featured chat',
-    subtitle:
-      'We have a fully-featured chatting experience, with support for markdown, code blocks, and more.',
-    icon: <ChatBubbleLeftEllipsisIcon className="h-6 w-6" />,
-  },
-  {
-    title: 'Powerful task management',
-    subtitle:
-      'We have a powerful task management system, with support for subtasks, due dates, and more.',
-    icon: <CheckCircleIcon className="h-6 w-6" />,
-    comingSoon: true,
-  },
-  {
-    title: 'Intuitive note-taking',
-    subtitle:
-      'We have an intuitive note-taking experience, with support for rich text, code blocks, and more.',
-    icon: <PencilIcon className="h-6 w-6" />,
-    comingSoon: true,
-  },
-  {
-    title: 'Robust finance tracker',
-    subtitle:
-      'We have a robust finance tracker, with support for recurring transactions, budgets, and more.',
-    icon: <BanknotesIcon className="h-6 w-6" />,
-    comingSoon: true,
-  },
-  {
-    title: 'Powered by AI',
-    subtitle:
-      'We use AI to help you brainstorm and organize your ideas at the speed of thought.',
-    icon: <SparklesIcon className="h-6 w-6" />,
-  },
-  {
-    title: 'Flexible and customizable',
-    subtitle:
-      'We are open-source, so you can contribute to our codebase and help us make Rewise better for everyone.',
-    url: 'https://github.com/tutur3u/rewise',
-    icon: <CodeBracketIcon className="h-6 w-6" />,
-  },
-];
 
 export default async function MarketingPage() {
   return (
     <div className="flex w-full flex-col items-center">
       <div className="animate-in text-foreground mt-24 flex max-w-4xl flex-col gap-6 px-3 py-16 opacity-0 lg:gap-14 lg:py-24">
         <div className="mb-4 flex flex-col items-center lg:mb-12">
-          <h1 className="relative mb-8 text-center text-4xl font-bold lg:text-7xl">
-            Tuturuuu
+          <h1 className="relative mb-4 text-center text-4xl font-bold lg:text-7xl">
+            <span className="sr-only">Tuturuuu</span>
+            <Image
+              src="/media/logos/transparent.png"
+              width={160}
+              height={160}
+              alt="logo"
+            />
           </h1>
 
           <p className="mx-auto my-4 max-w-xl text-center text-lg !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
@@ -85,10 +42,10 @@ export default async function MarketingPage() {
 
         <div className="text-foreground flex flex-col gap-8">
           <h2 className="text-center font-bold md:text-lg">
-            What can you do with Rewise?
+            What can you do with Tuturuuu?
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {resources
+            {features
               .sort((a, b) => (a.comingSoon ? 1 : 0) - (b.comingSoon ? 1 : 0))
               .map(({ title, subtitle, url, icon, comingSoon }) =>
                 url ? (

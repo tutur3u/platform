@@ -1,29 +1,24 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import UserProfilePopover from './UserProfilePopover';
 import useTranslation from 'next-translate/useTranslation';
 import { Bars3Icon } from '@heroicons/react/24/solid';
-import { Popover } from '@mantine/core';
-import { useState } from 'react';
 import { User } from '../../types/primitives/User';
 
 interface NavbarProps {
   user?: User;
-  hideNavLinks?: boolean;
 }
 
-const Navbar = ({ user, hideNavLinks }: NavbarProps) => {
+const Navbar = ({ user }: NavbarProps) => {
   const { t } = useTranslation();
 
   const login = t('common:login');
   const getStarted = t('common:get-started');
 
-  const [opened, setOpened] = useState(false);
+  // const [opened, setOpened] = useState(false);
 
-  const toggle = () => setOpened((o) => !o);
-  const close = () => setOpened(false);
+  // const toggle = () => setOpened((o) => !o);
+  // const close = () => setOpened(false);
 
   return (
     <nav className="fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg dark:border-zinc-800 dark:bg-[#111113]/80 dark:text-white md:px-32 lg:px-64">
@@ -42,7 +37,7 @@ const Navbar = ({ user, hideNavLinks }: NavbarProps) => {
         </Link>
       </div>
 
-      {hideNavLinks ? null : !!user?.id ? (
+      {!!user?.id ? (
         <UserProfilePopover />
       ) : (
         <>
@@ -61,23 +56,23 @@ const Navbar = ({ user, hideNavLinks }: NavbarProps) => {
             </Link>
           </div>
 
-          <Popover
+          {/* <Popover
             opened={opened}
             onChange={setOpened}
             width={200}
             offset={8}
             position="top-end"
           >
-            <Popover.Target>
-              <button
-                className="rounded p-1 hover:bg-zinc-300/10 md:hidden"
-                onClick={toggle}
-              >
-                <Bars3Icon className="h-6 w-6" />
-              </button>
-            </Popover.Target>
+            <Popover.Target> */}
+          <button
+            className="rounded p-1 hover:bg-zinc-300/10 md:hidden"
+            // onClick={toggle}
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          {/* </Popover.Target> */}
 
-            <Popover.Dropdown className="grid gap-2 p-2">
+          {/* <Popover.Dropdown className="grid gap-2 p-2">
               <Link
                 href="/login"
                 onClick={close}
@@ -93,7 +88,7 @@ const Navbar = ({ user, hideNavLinks }: NavbarProps) => {
                 {getStarted}
               </Link>
             </Popover.Dropdown>
-          </Popover>
+          </Popover> */}
         </>
       )}
     </nav>
