@@ -19,7 +19,7 @@ const Navbar = async () => {
   // const close = () => setOpened(false);
 
   return (
-    <nav className="border-foreground/10 bg-foreground/5 fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg md:px-32 lg:px-64">
+    <nav className="border-foreground/10 bg-background/80 fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg md:px-32 lg:px-64">
       <Link href="/" className="flex items-center gap-2">
         <Image
           src="/media/logos/transparent.png"
