@@ -11,5 +11,5 @@ export interface User {
   birthday?: string | null;
   role?: UserRole;
   role_title?: string;
-  created_at?: string;
+  created_at?: string | null;
 }

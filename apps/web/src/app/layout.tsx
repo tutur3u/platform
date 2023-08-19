@@ -15,9 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body>
-        <main className="bg-background flex min-h-screen flex-col items-center">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
         <Toaster />
       </body>
     </html>
