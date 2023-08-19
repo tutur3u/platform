@@ -32,7 +32,7 @@ const Error500Page: PageWithLayoutProps = () => {
 };
 
 Error500Page.getLayout = function getLayout(page: ReactElement) {
-  return <Layout hideSlogan>{page}</Layout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default Error500Page;

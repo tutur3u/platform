@@ -32,7 +32,7 @@ const Error404Page: PageWithLayoutProps = () => {
 };
 
 Error404Page.getLayout = function getLayout(page: ReactElement) {
-  return <Layout hideSlogan>{page}</Layout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default Error404Page;
