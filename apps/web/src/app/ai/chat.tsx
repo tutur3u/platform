@@ -11,7 +11,7 @@ interface ChatProps {
 }
 
 const Chat = ({ userData }: ChatProps) => {
-  const { messages, setMessages } = useChat();
+  const { messages } = useChat({ id: 'default' });
 
   return (
     <div className="flex h-screen flex-col overflow-y-auto">
@@ -56,7 +56,7 @@ const Chat = ({ userData }: ChatProps) => {
       </div>
 
       <div className="bg-background flex w-full items-center justify-center px-4 py-2">
-        <ChatForm setMessages={setMessages} />
+        <ChatForm />
       </div>
     </div>
   );

@@ -15,19 +15,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { useChat } from 'ai/react';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
-import { ChangeEvent, useEffect } from 'react';
-import { Message } from 'ai';
+import { useEffect } from 'react';
 
 const FormSchema = z.object({
   prompt: z.string().min(1).max(2048),
 });
 
-interface ChatFormProps {
-  setMessages: (messages: Message[]) => void;
-}
-
-export default function ChatForm({ setMessages }: ChatFormProps) {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+export default function ChatForm() {
+  const { input, setInput, handleSubmit } = useChat({ id: 'default' });
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -36,19 +31,8 @@ export default function ChatForm({ setMessages }: ChatFormProps) {
   const prompt = form.watch('prompt');
 
   useEffect(() => {
-    handleInputChange({
-      target: {
-        name: 'prompt',
-        value: prompt,
-      },
-    } as ChangeEvent<HTMLInputElement>);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prompt]);
-
-  useEffect(() => {
-    setMessages(messages);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
+    setInput(prompt);
+  }, [prompt, setInput]);
 
   return (
     <Form {...form}>
