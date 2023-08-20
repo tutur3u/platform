@@ -9,12 +9,8 @@
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
     "BASE_URL",
-    "AUTH_URL",
     "API_URL",
-    "NODE_ENV",
-    "DEPLOYMENT_ENVIRONMENT",
-    "NEXT_PUBLIC_DEFAULT_DISPLAY_NAME",
-    "NEXT_PUBLIC_DEFAULT_USERNAME"
+    "NODE_ENV"
   ],
   "pipeline": {
     "build": {

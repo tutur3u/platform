@@ -1,8 +1,8 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.auth.verifyOtp({
     email: validatedEmail,
     token: validatedOtp,
-    type: "email",
+    type: 'email',
   });
 
   if (error)
@@ -30,19 +30,19 @@ export async function POST(request: Request) {
 }
 
 const validateEmail = async (email?: string | null) => {
-  if (!email) throw "Email is required";
+  if (!email) throw 'Email is required';
 
   const regex = /\S+@\S+\.\S+/;
-  if (!regex.test(email)) throw "Email is invalid";
+  if (!regex.test(email)) throw 'Email is invalid';
 
   return email;
 };
 
 const validateOtp = async (otp?: string | null) => {
-  if (!otp) throw "OTP is required";
+  if (!otp) throw 'OTP is required';
 
   const regex = /^\d{6}$/;
-  if (!regex.test(otp)) throw "OTP is invalid";
+  if (!regex.test(otp)) throw 'OTP is invalid';
 
   return otp;
 };

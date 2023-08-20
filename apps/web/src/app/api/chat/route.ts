@@ -1,22 +1,22 @@
-import { AnthropicStream, StreamingTextResponse } from "ai";
+import { AnthropicStream, StreamingTextResponse } from 'ai';
 
 // IMPORTANT! Set the runtime to edge
-export const runtime = "edge";
+export const runtime = 'edge';
 
 // Build a prompt from the messages
 function buildPrompt(
-  messages: { content: string; role: "system" | "user" | "assistant" }[]
+  messages: { content: string; role: 'system' | 'user' | 'assistant' }[]
 ) {
   return (
     messages
       .map(({ content, role }) => {
-        if (role === "user") {
+        if (role === 'user') {
           return `Human: ${content}`;
         } else {
           return `Assistant: ${content}`;
         }
       })
-      .join("\n\n") + "Assistant:"
+      .join('\n\n') + 'Assistant:'
   );
 }
 
@@ -24,15 +24,15 @@ export async function POST(req: Request) {
   // Extract the `messages` from the body of the request
   const { messages } = await req.json();
 
-  const response = await fetch("https://api.anthropic.com/v1/complete", {
-    method: "POST",
+  const response = await fetch('https://api.anthropic.com/v1/complete', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
     } as HeadersInit,
     body: JSON.stringify({
       prompt: buildPrompt(messages),
-      model: "claude-2",
+      model: 'claude-2',
       max_tokens_to_sample: 300,
       temperature: 0.9,
       stream: true,
