@@ -11,7 +11,6 @@ import {
   CodeBracketSquareIcon,
   HomeIcon,
   RectangleStackIcon,
-  SparklesIcon,
   UserGroupIcon,
   WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
@@ -45,7 +44,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
   const classes = t('classes');
   const finance = t('finance');
   const databases = t('databases');
-  const ai = t('ai');
   const infrastructure = t('infrastructure');
   const migrations = t('migrations');
 
@@ -140,15 +138,6 @@ const SidebarLinkList = ({ wsId, wsPreset, sidebarOpened }: Props) => {
         showTooltip={!sidebarOpened}
         disabled
       />
-
-      {isRootWs && user?.email?.endsWith('@tuturuuu.com') && (
-        <SidebarLink
-          href={`/${wsId}/ai`}
-          activeIcon={<SparklesIcon className="w-5" />}
-          label={ai}
-          showTooltip={!sidebarOpened}
-        />
-      )}
 
       {isRootWs && user?.email?.endsWith('@tuturuuu.com') && adminLevel && (
         <>
