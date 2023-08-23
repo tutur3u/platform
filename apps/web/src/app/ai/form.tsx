@@ -34,6 +34,11 @@ export default function ChatForm() {
     setInput(prompt);
   }, [prompt, setInput]);
 
+  useEffect(() => {
+    // set prompt to empty string when input is empty
+    if (!input) form.setValue('prompt', '');
+  }, [input, form]);
+
   return (
     <Form {...form}>
       <form

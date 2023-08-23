@@ -3,18 +3,25 @@ import { AnthropicStream, StreamingTextResponse } from 'ai';
 // IMPORTANT! Set the runtime to edge
 export const runtime = 'edge';
 
+interface Message {
+  content: string;
+  role: 'system' | 'user' | 'assistant';
+}
+
+const initialPrompt: Message = {
+  content:
+    'I am Skora, a helpful AI assistant from Tuturuuu, powered by Anthropic. How may I help you today?',
+  role: 'assistant',
+};
+
 // Build a prompt from the messages
-function buildPrompt(
-  messages: { content: string; role: 'system' | 'user' | 'assistant' }[]
-) {
+function buildPrompt(messages: Message[]) {
   return (
-    messages
+    [initialPrompt, ...messages]
       .map(({ content, role }) => {
-        if (role === 'user') {
-          return `Human: ${content}`;
-        } else {
-          return `Assistant: ${content}`;
-        }
+        if (role === 'system') return content;
+        if (role === 'user') return `Human: ${content}`;
+        else return `Assistant: ${content}`;
       })
       .join('\n\n') + 'Assistant:'
   );
@@ -33,7 +40,7 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       prompt: buildPrompt(messages),
       model: 'claude-2',
-      max_tokens_to_sample: 300,
+      max_tokens_to_sample: 32 * 1024,
       temperature: 0.9,
       stream: true,
     }),
@@ -47,7 +54,11 @@ export async function POST(req: Request) {
   }
 
   // Convert the response into a friendly text-stream
-  const stream = AnthropicStream(response);
+  const stream = AnthropicStream(response, {
+    onCompletion: (result) => {
+      console.log(result);
+    },
+  });
 
   // Respond with the stream
   return new StreamingTextResponse(stream);

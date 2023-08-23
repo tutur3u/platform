@@ -5,13 +5,19 @@ import { useChat } from 'ai/react';
 import ChatForm from './form';
 import { User } from '@/types/primitives/User';
 import LogoutButton from '@/components/LogoutButton';
+import { Button } from '@/components/ui/button';
 
 interface ChatProps {
   userData: User;
 }
 
 const Chat = ({ userData }: ChatProps) => {
-  const { messages } = useChat({ id: 'default' });
+  const { messages, setMessages, setInput } = useChat({ id: 'default' });
+
+  const resetChat = () => {
+    setMessages([]);
+    setInput('');
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-y-auto">
@@ -20,7 +26,7 @@ const Chat = ({ userData }: ChatProps) => {
         <LogoutButton />
       </div>
 
-      <div className="border-foreground/10 flex h-full flex-col gap-2 overflow-y-auto border-y p-4">
+      <div className="border-foreground/10 flex h-full flex-col gap-2 overflow-y-auto border-y p-4 md:px-8 lg:px-16 xl:px-32">
         {messages.length > 0 ? (
           messages.map((m) => (
             <div
@@ -55,8 +61,14 @@ const Chat = ({ userData }: ChatProps) => {
         )}
       </div>
 
-      <div className="bg-background flex w-full items-center justify-center px-4 py-2">
+      <div className="bg-background flex w-full items-center justify-between px-4 py-2">
+        <Button variant="ghost" className="pointer-events-none opacity-0">
+          Reset chat
+        </Button>
         <ChatForm />
+        <Button onClick={resetChat} variant="ghost">
+          Reset chat
+        </Button>
       </div>
     </div>
   );
