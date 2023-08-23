@@ -1,6 +1,3 @@
-import Footer from '@/components/layouts/Footer';
-import Navbar from '@/components/layouts/Navbar';
-
 interface LayoutProps {
   params: {
     hideNavbar?: boolean;
@@ -11,10 +8,8 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="relative w-full">
-      <Navbar />
+    <div className="flex justify-center p-4 md:p-8 lg:p-16 xl:px-32">
       {children}
-      <Footer />
     </div>
   );
 }

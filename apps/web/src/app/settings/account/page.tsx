@@ -1,42 +1,32 @@
-import { ChangeEvent, ReactElement, useEffect, useState } from 'react';
-import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
+'use client';
+
+import { ChangeEvent, useEffect, useState } from 'react';
 import { Checkbox, Divider, TextInput, Button } from '@mantine/core';
-import { useUser } from '../../hooks/useUser';
-import { useSegments } from '../../hooks/useSegments';
+import { useUser } from '../../../hooks/useUser';
 import moment from 'moment';
 import {
   AtSymbolIcon,
   CakeIcon,
   EnvelopeIcon,
 } from '@heroicons/react/24/solid';
-import HeaderX from '../../components/metadata/HeaderX';
+import HeaderX from '../../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
-import NestedLayout from '../../components/layouts/NestedLayout';
-import LanguageSelector from '../../components/selectors/LanguageSelector';
+import LanguageSelector from '../../../components/selectors/LanguageSelector';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { showNotification } from '@mantine/notifications';
-import SettingItemTab from '../../components/settings/SettingItemTab';
-import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+import SettingItemTab from '../../../components/settings/SettingItemTab';
 import { mutate } from 'swr';
-import { useAppearance } from '../../hooks/useAppearance';
-import { DEV_MODE } from '../../constants/common';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useAppearance } from '../../../hooks/useAppearance';
+import { DEV_MODE } from '../../../constants/common';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import { closeAllModals, openModal } from '@mantine/modals';
-import AccountDeleteForm from '../../components/forms/AccountDeleteForm';
+import AccountDeleteForm from '../../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
-import AvatarCard from '../../components/settings/AvatarCard';
-import { getInitials } from '../../utils/name-helper';
-import { logout } from '../../utils/auth-handler';
-import { useRouter } from 'next/router';
+import Avatar from './avatar';
 
-export const getServerSideProps = enforceAuthenticated;
-
-const SettingPage: PageWithLayoutProps = () => {
+export default function AccountSettingsPage() {
   const supabase = createClientComponentClient();
-  const router = useRouter();
-
-  const { setRootSegment } = useSegments();
 
   const {
     hideExperimentalOnSidebar,
@@ -51,24 +41,10 @@ const SettingPage: PageWithLayoutProps = () => {
   const { ws } = useWorkspaces();
 
   const settings = t('common:settings');
-  const account = t('account');
-
-  useEffect(() => {
-    setRootSegment([
-      {
-        content: settings,
-        href: '/settings',
-      },
-      {
-        content: account,
-        href: '/settings/account',
-      },
-    ]);
-  }, [settings, account, setRootSegment]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [handle, setUsername] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
@@ -146,7 +122,9 @@ const SettingPage: PageWithLayoutProps = () => {
         color: 'green',
       });
 
-      await logout({ supabase, router });
+      // TODO: Logout user
+      // ...
+
       closeAllModals();
     } catch (e) {
       if (e instanceof Error)
@@ -204,22 +182,6 @@ const SettingPage: PageWithLayoutProps = () => {
   const deleteAccountLabel = t('delete-account');
   const deleteAccountDescription = t('delete-account-description');
 
-  const removeAvatar = async () => {
-    // If user has an avatar, remove it
-    if (user?.avatar_url) {
-      await updateUser?.({
-        avatar_url: null,
-      });
-
-      // Update workspace members
-      if (ws?.id)
-        await mutate(`/api/workspaces/${ws.id}/members?page=1&itemsPerPage=4`);
-    }
-
-    // If user has a local avatar file, remove it
-    setAvatarFile(null);
-  };
-
   const isUserDataDirty =
     user?.display_name !== displayName ||
     user?.handle !== handle ||
@@ -236,12 +198,12 @@ const SettingPage: PageWithLayoutProps = () => {
 
       <div className="grid gap-1 md:min-w-max md:max-w-lg">
         <SettingItemTab title={avatarLabel} description={avatarDescription}>
-          <AvatarCard
-            src={avatarUrl}
-            file={avatarFile}
-            setFile={setAvatarFile}
-            onRemove={removeAvatar}
-            label={getInitials(user?.display_name || user?.email)}
+          <Avatar
+            user={user}
+            updateUser={updateUser}
+            avatarUrl={avatarUrl}
+            avatarFile={avatarFile}
+            setAvatarFile={setAvatarFile}
           />
         </SettingItemTab>
 
@@ -395,10 +357,7 @@ const SettingPage: PageWithLayoutProps = () => {
         <Divider className="my-2" />
 
         <SettingItemTab title={logOut} description={logoutDescription}>
-          <Button
-            onClick={() => logout({ supabase, router })}
-            className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
-          >
+          <Button className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20">
             {logOut}
           </Button>
         </SettingItemTab>
@@ -419,10 +378,4 @@ const SettingPage: PageWithLayoutProps = () => {
       </div>
     </>
   );
-};
-
-SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="settings">{page}</NestedLayout>;
-};
-
-export default SettingPage;
+}

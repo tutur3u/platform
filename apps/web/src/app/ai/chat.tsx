@@ -15,8 +15,8 @@ const Chat = ({ userData }: ChatProps) => {
 
   return (
     <div className="flex h-screen flex-col overflow-y-auto">
-      <div className="bg-background grid w-full px-4 py-2 text-right">
-        <div>{userData.email}</div>
+      <div className="bg-background grid w-full px-4 py-1 text-right">
+        <div className="font-semibold">{userData.email}</div>
         <LogoutButton />
       </div>
 
@@ -25,7 +25,7 @@ const Chat = ({ userData }: ChatProps) => {
           messages.map((m) => (
             <div
               key={m.id}
-              className={`flex gap-2 ${
+              className={`flex gap-2 whitespace-pre-wrap ${
                 m.role === 'user' ? 'flex-row-reverse' : 'flex-row'
               }`}
             >
@@ -44,7 +44,7 @@ const Chat = ({ userData }: ChatProps) => {
                 </Avatar>
               )}
               <div className="border-foreground/5 bg-foreground/5 rounded-xl border px-3 py-2">
-                {m.content}
+                {m.content.trim()}
               </div>
             </div>
           ))

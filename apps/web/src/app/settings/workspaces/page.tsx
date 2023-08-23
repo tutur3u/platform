@@ -1,15 +1,16 @@
+'use client';
+
 import { ReactElement, useEffect, useState } from 'react';
-import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { useSegments } from '../../hooks/useSegments';
-import HeaderX from '../../components/metadata/HeaderX';
-import NestedLayout from '../../components/layouts/NestedLayout';
+import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
+import HeaderX from '../../../components/metadata/HeaderX';
+import NestedLayout from '../../../components/layouts/NestedLayout';
 import useTranslation from 'next-translate/useTranslation';
-import SettingItemTab from '../../components/settings/SettingItemTab';
-import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import SettingItemTab from '../../../components/settings/SettingItemTab';
+import { enforceAuthenticated } from '../../../utils/serverless/enforce-authenticated';
+import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Workspace } from '../../types/primitives/Workspace';
-import { StrictModeDroppable } from '../../components/dnd/StrictModeDroppable';
+import { Workspace } from '../../../types/primitives/Workspace';
+import { StrictModeDroppable } from '../../../components/dnd/StrictModeDroppable';
 import { EyeIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { mutate } from 'swr';
@@ -18,14 +19,12 @@ import { showNotification } from '@mantine/notifications';
 export const getServerSideProps = enforceAuthenticated;
 
 const WorkspacesSettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useSegments();
   const { workspaces: wss, setWsId } = useWorkspaces();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(wss || []);
 
   const { t } = useTranslation('settings-workspaces');
 
-  const settings = t('common:settings');
   const workspacesLabel = t('workspaces');
   const workspacesDescription = t('workspaces-description');
 
@@ -54,23 +53,6 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
 
     setWorkspaces(newWorkspaces);
   };
-
-  useEffect(() => {
-    setRootSegment([
-      {
-        content: settings,
-        href: '/settings',
-      },
-      {
-        content: workspacesLabel,
-        href: '/settings/workspaces',
-      },
-    ]);
-
-    return () => {
-      setRootSegment([]);
-    };
-  }, [workspacesLabel, settings, setRootSegment]);
 
   const [isSaving, setIsSaving] = useState(false);
 

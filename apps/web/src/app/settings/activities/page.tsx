@@ -1,21 +1,22 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { useSegments } from '../../hooks/useSegments';
-import NestedLayout from '../../components/layouts/NestedLayout';
-import PaginationIndicator from '../../components/pagination/PaginationIndicator';
+'use client';
+
+import { ReactElement, useState } from 'react';
+import HeaderX from '../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
+import NestedLayout from '../../../components/layouts/NestedLayout';
+import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
 import { Accordion, Divider } from '@mantine/core';
-import PaginationSelector from '../../components/selectors/PaginationSelector';
-import ModeSelector, { Mode } from '../../components/selectors/ModeSelector';
+import PaginationSelector from '../../../components/selectors/PaginationSelector';
+import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
 import { useLocalStorage } from '@mantine/hooks';
-import AuditLogCard from '../../components/cards/AuditLogCard';
+import AuditLogCard from '../../../components/cards/AuditLogCard';
 import useSWR from 'swr';
-import OperationMultiSelector from '../../components/selectors/OperationMultiSelector';
-import { AuditLog } from '../../types/primitives/AuditLog';
+import OperationMultiSelector from '../../../components/selectors/OperationMultiSelector';
+import { AuditLog } from '../../../types/primitives/AuditLog';
 import useTranslation from 'next-translate/useTranslation';
-import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
-import { useUser } from '../../hooks/useUser';
-import WorkspaceMultiSelector from '../../components/selectors/WorkspaceMultiSelector';
+import { enforceAuthenticated } from '../../../utils/serverless/enforce-authenticated';
+import { useUser } from '../../../hooks/useUser';
+import WorkspaceMultiSelector from '../../../components/selectors/WorkspaceMultiSelector';
 
 export const getServerSideProps = enforceAuthenticated;
 
@@ -23,22 +24,7 @@ const UserActivitiesPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('settings-tabs');
   const { user } = useUser();
 
-  const { setRootSegment } = useSegments();
-
-  const settingsLabel = t('common:settings');
   const activitiesLabel = t('activities');
-
-  useEffect(() => {
-    setRootSegment([
-      {
-        content: settingsLabel,
-        href: '/settings',
-      },
-      { content: activitiesLabel, href: `/settings/activities` },
-    ]);
-
-    return () => setRootSegment([]);
-  }, [user, settingsLabel, activitiesLabel, setRootSegment]);
 
   const [activePage, setPage] = useState(1);
 

@@ -1,35 +1,21 @@
-import { ReactElement, useEffect } from 'react';
-import { PageWithLayoutProps } from '../../types/PageWithLayoutProps';
-import { useSegments } from '../../hooks/useSegments';
-import HeaderX from '../../components/metadata/HeaderX';
-import NestedLayout from '../../components/layouts/NestedLayout';
-import SettingItemCard from '../../components/settings/SettingItemCard';
-import { enforceAuthenticated } from '../../utils/serverless/enforce-authenticated';
+'use client';
+
+import { ReactElement } from 'react';
+import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
+import HeaderX from '../../../components/metadata/HeaderX';
+import NestedLayout from '../../../components/layouts/NestedLayout';
+import SettingItemCard from '../../../components/settings/SettingItemCard';
+import { enforceAuthenticated } from '../../../utils/serverless/enforce-authenticated';
 import useTranslation from 'next-translate/useTranslation';
-import { useAppearance } from '../../hooks/useAppearance';
+import { useAppearance } from '../../../hooks/useAppearance';
 
 export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useSegments();
-
   const { t } = useTranslation('settings-appearance');
 
   const settings = t('common:settings');
   const appearance = t('appearance');
-
-  useEffect(() => {
-    setRootSegment([
-      {
-        content: settings,
-        href: '/settings',
-      },
-      {
-        content: appearance,
-        href: '/settings/appearance',
-      },
-    ]);
-  }, [settings, appearance, setRootSegment]);
 
   const appearanceDescription = t('appearance-description');
 

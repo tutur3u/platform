@@ -39,6 +39,7 @@ const Navbar = async () => {
             <div className="opacity-50">{user.email}</div>
             <div className="flex gap-2">
               <Link href="/onboarding">Dashboard</Link>
+              <Link href="/settings">Settings</Link>
               <LogoutButton />
             </div>
           </div>
