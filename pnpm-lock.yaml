@@ -3207,12 +3207,10 @@ packages:
       '@supabase/node-fetch': 2.6.13
     dev: false
 
-  /@supabase/gotrue-js@2.47.0(encoding@0.1.13):
-    resolution: {integrity: sha512-3e34/vsKH/DoSZCpB85UZpFWSJ2p4GRUUlqgAgeTPagPlx4xS+Nc5v7g7ic7vp3gK0J5PsYVCn9Qu2JQUp4vXg==}
+  /@supabase/gotrue-js@2.47.1:
+    resolution: {integrity: sha512-jIm2e7YsvpqWmmdQG93scHM6D8SASueblieH4KSZb6rRK6hFd75EJ6EDC/sEBqUZVlLi72nG5igHSOao4lSzAA==}
     dependencies:
-      cross-fetch: 3.1.8(encoding@0.1.13)
-    transitivePeerDependencies:
-      - encoding
+      '@supabase/node-fetch': 2.6.13
     dev: false
 
   /@supabase/node-fetch@2.6.13:
@@ -3248,7 +3246,7 @@ packages:
     resolution: {integrity: sha512-jA00rquPTppPOHpBB6KABW98lfg0gYXcuGqP3TB1iiduznRVsi3GGk2qBKXPDLMYSe0kRlQp5xCwWWthaJr8eA==}
     dependencies:
       '@supabase/functions-js': 2.1.3
-      '@supabase/gotrue-js': 2.47.0(encoding@0.1.13)
+      '@supabase/gotrue-js': 2.47.1
       '@supabase/postgrest-js': 1.8.1
       '@supabase/realtime-js': 2.7.4
       '@supabase/storage-js': 2.5.2
