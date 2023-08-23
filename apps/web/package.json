@@ -48,7 +48,7 @@
     "@tiptap/extension-underline": "^2.1.3",
     "@tiptap/pm": "^2.1.3",
     "@tiptap/react": "^2.1.3",
-    "@tiptap/starter-kit": "^2.1.3",
+    "@tiptap/starter-kit": "^2.1.7",
     "@upstash/qstash": "^0.3.6",
     "@vercel/analytics": "^1.0.2",
     "ai": "^2.2.2",
