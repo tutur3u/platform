@@ -80,7 +80,7 @@
     "@tiptap/starter-kit": "^2.1.7",
     "@upstash/qstash": "^0.3.6",
     "@vercel/analytics": "^1.0.2",
-    "ai": "^2.2.8",
+    "ai": "^2.2.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
@@ -115,7 +115,7 @@
     "@types/jest": "^29.5.4",
     "@types/js-cookie": "^3.0.3",
     "@types/lodash": "^4.14.197",
-    "@types/node": "^20.5.4",
+    "@types/node": "^20.5.6",
     "@types/react": "^18.2.21",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.2.7",
@@ -138,7 +138,7 @@
     "tailwind-config": "workspace:*",
     "tailwindcss": "^3.3.3",
     "tsconfig": "workspace:*",
-    "typescript": "^5.1.6"
+    "typescript": "^5.2.2"
   },
   "packageManager": "pnpm@8.6.12"
 }
