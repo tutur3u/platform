@@ -1,12 +1,10 @@
-'use client';
-
 import { Navigation } from '../[wsId]/navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default async function Layout({ children }: LayoutProps) {
   const navLinks = [
     {
       name: 'Home',
