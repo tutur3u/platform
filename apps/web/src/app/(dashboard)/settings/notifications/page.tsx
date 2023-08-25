@@ -1,11 +1,11 @@
 'use client';
 
 import { ReactElement, useEffect } from 'react';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import { useSegments } from '../../../hooks/useSegments';
-import HeaderX from '../../../components/metadata/HeaderX';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { enforceAuthenticated } from '../../../utils/serverless/enforce-authenticated';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import { useSegments } from '../../../../hooks/useSegments';
+import HeaderX from '../../../../components/metadata/HeaderX';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
+import { enforceAuthenticated } from '../../../../utils/serverless/enforce-authenticated';
 
 export const getServerSideProps = enforceAuthenticated;
 

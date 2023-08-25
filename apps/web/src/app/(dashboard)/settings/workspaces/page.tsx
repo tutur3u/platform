@@ -1,16 +1,16 @@
 'use client';
 
 import { ReactElement, useEffect, useState } from 'react';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import HeaderX from '../../../components/metadata/HeaderX';
-import NestedLayout from '../../../components/layouts/NestedLayout';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import HeaderX from '../../../../components/metadata/HeaderX';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useTranslation from 'next-translate/useTranslation';
-import SettingItemTab from '../../../components/settings/SettingItemTab';
-import { enforceAuthenticated } from '../../../utils/serverless/enforce-authenticated';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import SettingItemTab from '../../../../components/settings/SettingItemTab';
+import { enforceAuthenticated } from '../../../../utils/serverless/enforce-authenticated';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Workspace } from '../../../types/primitives/Workspace';
-import { StrictModeDroppable } from '../../../components/dnd/StrictModeDroppable';
+import { Workspace } from '../../../../types/primitives/Workspace';
+import { StrictModeDroppable } from '../../../../components/dnd/StrictModeDroppable';
 import { EyeIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { mutate } from 'swr';

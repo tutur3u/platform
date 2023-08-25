@@ -2,26 +2,26 @@
 
 import { ChangeEvent, useEffect, useState } from 'react';
 import { Checkbox, Divider, TextInput, Button } from '@mantine/core';
-import { useUser } from '../../../hooks/useUser';
+import { useUser } from '../../../../hooks/useUser';
 import moment from 'moment';
 import {
   AtSymbolIcon,
   CakeIcon,
   EnvelopeIcon,
 } from '@heroicons/react/24/solid';
-import HeaderX from '../../../components/metadata/HeaderX';
+import HeaderX from '../../../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
-import LanguageSelector from '../../../components/selectors/LanguageSelector';
+import LanguageSelector from '../../../../components/selectors/LanguageSelector';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { showNotification } from '@mantine/notifications';
-import SettingItemTab from '../../../components/settings/SettingItemTab';
+import SettingItemTab from '../../../../components/settings/SettingItemTab';
 import { mutate } from 'swr';
-import { useAppearance } from '../../../hooks/useAppearance';
-import { DEV_MODE } from '../../../constants/common';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useAppearance } from '../../../../hooks/useAppearance';
+import { DEV_MODE } from '../../../../constants/common';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { closeAllModals, openModal } from '@mantine/modals';
-import AccountDeleteForm from '../../../components/forms/AccountDeleteForm';
+import AccountDeleteForm from '../../../../components/forms/AccountDeleteForm';
 import Link from 'next/link';
 import Avatar from './avatar';
 
