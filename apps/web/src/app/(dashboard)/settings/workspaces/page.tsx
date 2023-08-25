@@ -6,7 +6,6 @@ import HeaderX from '../../../../components/metadata/HeaderX';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import useTranslation from 'next-translate/useTranslation';
 import SettingItemTab from '../../../../components/settings/SettingItemTab';
-import { enforceAuthenticated } from '../../../../utils/serverless/enforce-authenticated';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Workspace } from '../../../../types/primitives/Workspace';
@@ -15,8 +14,6 @@ import { EyeIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
-
-export const getServerSideProps = enforceAuthenticated;
 
 const WorkspacesSettingPage: PageWithLayoutProps = () => {
   const { workspaces: wss, setWsId } = useWorkspaces();

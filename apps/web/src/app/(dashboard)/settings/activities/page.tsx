@@ -16,11 +16,8 @@ import useSWR from 'swr';
 import OperationMultiSelector from '../../../../components/selectors/OperationMultiSelector';
 import { AuditLog } from '../../../../types/primitives/AuditLog';
 import useTranslation from 'next-translate/useTranslation';
-import { enforceAuthenticated } from '../../../../utils/serverless/enforce-authenticated';
 import { useUser } from '../../../../hooks/useUser';
 import WorkspaceMultiSelector from '../../../../components/selectors/WorkspaceMultiSelector';
-
-export const getServerSideProps = enforceAuthenticated;
 
 const UserActivitiesPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('settings-tabs');

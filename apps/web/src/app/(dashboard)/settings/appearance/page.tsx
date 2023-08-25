@@ -5,11 +5,8 @@ import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
 import SettingItemCard from '../../../../components/settings/SettingItemCard';
-import { enforceAuthenticated } from '../../../../utils/serverless/enforce-authenticated';
 import useTranslation from 'next-translate/useTranslation';
 import { useAppearance } from '../../../../hooks/useAppearance';
-
-export const getServerSideProps = enforceAuthenticated;
 
 const SettingPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('settings-appearance');
