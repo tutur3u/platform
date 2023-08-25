@@ -72,7 +72,11 @@
       "ws-members",
       "ws-activities"
     ],
-    "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
+    "/(dashboard)/[wsId]/settings": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-settings"
+    ],
 
     "/[wsId]/calendar": [
       "sidebar-tabs",
