@@ -13,8 +13,6 @@ export async function GET() {
     .order('sort_key')
     .order('created_at', { ascending: false });
 
-  console.log('workspaces:', data);
-
   if (error)
     return NextResponse.json(
       { message: 'Error fetching workspaces' },

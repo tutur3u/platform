@@ -1,11 +1,8 @@
 import useTranslation from 'next-translate/useTranslation';
-import StatisticCard from '../../../components/cards/StatisticCard';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
-import { Workspace } from '@/types/primitives/Workspace';
 import { API_URL } from '@/constants/common';
+import { getWorkspace } from '@/lib/workspace-helper';
+import StatisticCard from '@/components/cards/StatisticCard';
 
 interface Props {
   params: {
@@ -15,7 +12,6 @@ interface Props {
 
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const { t } = useTranslation('ws-home');
-
   const ws = await getWorkspace(wsId);
 
   const homeLabel = t('workspace-tabs:home');
@@ -82,8 +78,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const { data: products } = await fetch(productsCountApi).then((res) => {
     return res.json();
   });
-
-  console.log(products);
 
   const { data: categories } = await fetch(productCategoriesCountApi).then(
     (res) => res.json()
@@ -294,33 +288,4 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       </div>
     </>
   );
-}
-
-async function getWorkspace(id?: string | null) {
-  if (!id) notFound();
-
-  const supabase = createServerComponentClient({ cookies });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name, preset, created_at, workspace_members!inner(role)')
-    .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
-    .single();
-
-  if (error) notFound();
-  if (!data?.workspace_members[0]?.role) notFound();
-
-  const ws = {
-    ...data,
-    role: data.workspace_members[0].role,
-  };
-
-  return ws as Workspace;
 }

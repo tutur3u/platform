@@ -1,3 +1,5 @@
+'use client';
+
 import { Pagination } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 

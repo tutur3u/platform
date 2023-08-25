@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';

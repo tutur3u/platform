@@ -12,24 +12,27 @@
     "/onboarding": ["onboarding", "invite"],
     "/branding": ["branding"],
 
-    "/settings": ["sidebar-tabs", "settings-tabs"],
-    "/settings/account": ["sidebar-tabs", "settings-tabs", "settings-account"],
-    "/settings/appearance": [
+    "/(dashboard)/settings/account": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-account"
+    ],
+    "/(dashboard)/settings/appearance": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-appearance"
     ],
-    "/settings/security": [
+    "/(dashboard)/settings/security": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-security"
     ],
-    "/settings/workspaces": [
+    "/(dashboard)/settings/workspaces": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-workspaces"
     ],
-    "/settings/activities": [
+    "/(dashboard)/settings/activities": [
       "sidebar-tabs",
       "settings-tabs",
       "search",
@@ -39,7 +42,7 @@
       "ws-activities",
       "ws-multi-selector"
     ],
-    "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
+    "/(dashboard)/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
     "/(dashboard)/[wsId]": [
       "sidebar-tabs",
