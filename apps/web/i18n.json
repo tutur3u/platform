@@ -41,7 +41,7 @@
     ],
     "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
-    "/[wsId]": [
+    "/(dashboard)/[wsId]": [
       "sidebar-tabs",
       "workspace-tabs",
       "ws-home",

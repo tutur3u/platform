@@ -29,7 +29,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default handler;
 
 const fetchTasks = async (req: NextApiRequest, res: NextApiResponse) => {
-  const supabase = createPagesServerClient<Database>({
+  const supabase = createPagesServerClient({
     req,
     res,
   });
