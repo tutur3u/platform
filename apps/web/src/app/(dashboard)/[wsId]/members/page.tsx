@@ -1,158 +1,30 @@
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
-import { useUser } from '@supabase/auth-helpers-react';
-import moment from 'moment';
-import { mutate } from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
-import useSWR from 'swr';
 import Filters from './filters';
-import { getRoleColor } from '@/utils/color-helper';
-import { User } from '@/types/primitives/User';
-import WorkspaceMemberEditForm from '@/components/forms/WorkspaceMemberEditForm';
 import PaginationIndicator from '@/components/pagination/PaginationIndicator';
-import { getInitials } from '@/utils/name-helper';
 import InviteMemberButton from './invite-member-button';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import MemberList from './member-list';
 
 interface Props {
   params: {
-    wsId: string;
-    page: string;
-    mode: string;
-    roles: string[];
-    itemsPerPage: string;
+    wsId?: string;
+    page?: string;
+    mode?: string;
+    roles?: string[];
+    itemsPerPage?: string;
   };
 }
 
 export default async function WorkspaceMembersPage({
-  params: { wsId, page, mode, roles, itemsPerPage },
+  params: { wsId, page = '1', mode = 'grid', roles, itemsPerPage = '15' },
 }: Props) {
-  const { t, lang } = useTranslation('ws-members');
+  const { t } = useTranslation('ws-members');
   const ws = await getWorkspace(wsId);
 
   const membersLabel = t('workspace-tabs:members');
-
-  const membersApiPath =
-    `/api/workspaces/${wsId}/members` +
-    `?roles=${
-      roles.length > 0 ? roles.join(',') : ''
-    }&page=${page}&itemsPerPage=${itemsPerPage}`;
-
-  const { data: membersData } = useSWR<{
-    data: User[];
-    count: number;
-  }>(membersApiPath);
-
-  const members = membersData?.data || [];
-
-  const owners = members?.filter((member) => member?.role === 'OWNER') || [];
-  const ownersCount = owners?.length || 0;
-
-  const disallowOwnerChange = ownersCount <= 1;
-
-  const user = useUser();
-
-  const deleteMember = async (member: User, invited: boolean) => {
-    if (!user?.id || !member?.id) return;
-
-    const response = await fetch(
-      `/api/workspaces/${wsId}/members/${member.id}${
-        invited ? '?invited=true' : ''
-      }`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (response.ok) {
-      if (user.id === member.id) mutate(`/api/workspaces/current`);
-
-      // showNotification({
-      //   title: invited ? t('invitation_revoked') : t('member_removed'),
-      //   message: invited
-      //     ? `${t('invitation_to')} ${
-      //         (member?.handle && `@${member?.handle}`) ||
-      //         member?.display_name ||
-      //         member?.email
-      //       } ${t('has_been_revoked')}`
-      //     : `${member?.display_name || member?.email} ${t('has_been_removed')}`,
-      //   color: 'teal',
-      // });
-
-      // if (member.id === user?.id) router.push('/');
-    } else {
-      // showNotification({
-      //   title: t('error'),
-      //   message: invited
-      //     ? t('revoke_error')
-      //     : `${t('remove_error')} ${member?.display_name || member?.email}`,
-      // });
-    }
-  };
-
-  const updateMember = async (wsId: string, member: User) => {
-    if (!ws?.id || !user?.id || !member?.id) return;
-
-    const response = await fetch(
-      `/api/workspaces/${wsId}/members/${member.id}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: member.role,
-          role_title: member.role_title,
-        } as User),
-      }
-    );
-
-    if (response.ok) {
-      if (user.id === member.id) mutate(`/api/workspaces/${wsId}`);
-      // showNotification({
-      //   title: t('member-updated'),
-      //   message: `${member?.display_name || member?.email} ${t(
-      //     'has-been-updated'
-      //   )}`,
-      //   color: 'teal',
-      // });
-    } else {
-      // showNotification({
-      //   title: t('error'),
-      //   message: `${t('update-error')} ${
-      //     member?.display_name || member?.email
-      //   }`,
-      // });
-    }
-  };
-
-  const showEditModal = (member: User) => {
-    if (!ws.role || !user?.id) return;
-
-    // openModal({
-    //   title: <div className="font-semibold">{t('member-settings')}</div>,
-    //   centered: true,
-    //   children: (
-    //     <WorkspaceMemberEditForm
-    //       currentUserId={user.id}
-    //       currentRole={ws.role}
-    //       wsId={wsId}
-    //       user={member}
-    //       onSubmit={async (wsId, user) => await updateMember(wsId, user)}
-    //       onDelete={async () => await deleteMember(member, false)}
-    //       disallowOwnerChange={disallowOwnerChange}
-    //     />
-    //   ),
-    // });
-  };
 
   return (
     <>
@@ -177,94 +49,23 @@ export default async function WorkspaceMembersPage({
       <div className="flex min-h-full w-full flex-col ">
         <Filters />
         <Separator className="mt-4" />
-        <PaginationIndicator totalItems={membersData?.count || 0} />
+        {/* <PaginationIndicator
+          activePage={Number(page)}
+          itemsPerPage={Number(itemsPerPage)}
+        /> */}
 
         <div
           className={`grid items-end gap-4 ${
             mode === 'grid' ? 'md:grid-cols-2' : ''
           }`}
         >
-          {members
-            .sort(
-              (
-                a: {
-                  id: string;
-                },
-                b: {
-                  id: string;
-                }
-              ) => {
-                if (a.id === user?.id) return -1;
-                if (b.id === user?.id) return 1;
-                return 0;
-              }
-            )
-            .map((member) => (
-              <div
-                key={member.id}
-                className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
-              >
-                <div className="flex items-center gap-2">
-                  <Avatar
-                    color="blue"
-                    className="aspect-square w-full max-w-[3.5rem] rounded-full text-xl"
-                  >
-                    <AvatarImage src={member?.avatar_url ?? undefined} />
-                    <AvatarFallback>
-                      {getInitials(member?.display_name || '?')}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <p className="font-semibold lg:text-lg xl:text-xl">
-                      {member.display_name}{' '}
-                      {member?.role_title ? (
-                        <span className="text-orange-300">
-                          ({member.role_title})
-                        </span>
-                      ) : null}
-                    </p>
-                    <p className="font-semibold text-blue-600 dark:text-blue-300">
-                      @{member.handle}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="absolute right-4 top-4 flex gap-2">
-                  <button
-                    className="font-semibold text-zinc-400 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    onClick={() => showEditModal(member)}
-                  >
-                    <Tooltip>
-                      <TooltipContent>{t('common:settings')}</TooltipContent>
-                      <TooltipTrigger>
-                        <Cog6ToothIcon className="h-6 w-6" />
-                      </TooltipTrigger>
-                    </Tooltip>
-                  </button>
-                </div>
-
-                <div className="mt-2 flex flex-col items-center justify-between gap-2 border-t border-zinc-300 pt-2 dark:border-zinc-800 lg:flex-row lg:gap-4">
-                  {member?.created_at ? (
-                    <div className="line-clamp-1 text-zinc-500">
-                      {t('member_since')}{' '}
-                      <span className="font-semibold text-zinc-600 dark:text-zinc-400">
-                        {moment(member.created_at).locale(lang).fromNow()}
-                      </span>
-                      .
-                    </div>
-                  ) : null}
-
-                  <div
-                    className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
-                      member?.role?.toLocaleLowerCase() || 'unknown'
-                    )}`}
-                  >
-                    {t(member?.role?.toLocaleLowerCase() || 'unknown')}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <MemberList
+            wsId={wsId}
+            role={ws.role}
+            page={page}
+            roles={roles}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
       </div>
     </>

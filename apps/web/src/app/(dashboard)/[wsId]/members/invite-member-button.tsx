@@ -1,16 +1,19 @@
+'use client';
+
 import SelectUserForm from '@/components/forms/SelectUserForm';
 import { UserPlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  wsId: string;
+  wsId?: string;
 }
 
 export default function InviteMemberButton({ wsId }: Props) {
   const { t } = useTranslation('ws-members');
 
   const showSelectUserForm = () => {
+    if (!wsId) return;
     openModal({
       title: <div className="font-semibold">{t('invite_member')}</div>,
       centered: true,

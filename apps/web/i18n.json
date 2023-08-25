@@ -54,8 +54,8 @@
       "inventory-overview",
       "workspace-users-tabs"
     ],
-    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
-    "/[wsId]/members": [
+    "/(dashboard)/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
+    "/(dashboard)/[wsId]/members": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
