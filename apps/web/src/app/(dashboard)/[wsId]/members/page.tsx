@@ -1,7 +1,6 @@
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 import Filters from './filters';
-import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 import InviteMemberButton from './invite-member-button';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';

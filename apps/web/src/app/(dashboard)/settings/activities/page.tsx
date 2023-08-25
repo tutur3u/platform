@@ -4,7 +4,6 @@ import { ReactElement, useState } from 'react';
 import HeaderX from '../../../../components/metadata/HeaderX';
 import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import NestedLayout from '../../../../components/layouts/NestedLayout';
-import PaginationIndicator from '../../../../components/pagination/PaginationIndicator';
 import { Accordion, Divider } from '@mantine/core';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import ModeSelector, {
@@ -95,12 +94,12 @@ const UserActivitiesPage: PageWithLayoutProps = () => {
         </div>
 
         <Divider className="mt-4" variant="dashed" />
-        <PaginationIndicator
+        {/* <PaginationIndicator
           activePage={activePage}
           setActivePage={setPage}
           itemsPerPage={itemsPerPage}
           totalItems={logsData?.count}
-        />
+        /> */}
 
         <Accordion
           value={selectedLog}

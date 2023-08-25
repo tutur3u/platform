@@ -12,6 +12,14 @@ interface LayoutProps {
 export default function Layout({ children, params: { wsId } }: LayoutProps) {
   const navLinks = [
     {
+      name: 'Home',
+      href: '/',
+    },
+    {
+      name: 'AI',
+      href: '/ai',
+    },
+    {
       name: 'Workspace',
       href: `/${wsId}`,
     },

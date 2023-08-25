@@ -4,20 +4,27 @@ import { Pagination } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  key?: string;
-  count?: number;
+  totalItems: number | undefined;
+  activePage: number;
+  setActivePage: (page: number) => void;
+  itemsPerPage: number;
 }
 
-const PaginationIndicator = ({ key, count }: Props) => {
+const PaginationIndicator = ({
+  totalItems,
+  activePage,
+  setActivePage,
+  itemsPerPage,
+}: Props) => {
   const { t } = useTranslation('pagination');
 
-  const totalPages = Math.ceil((count || 0) / itemsPerPage);
+  const totalPages = Math.ceil((totalItems || 0) / itemsPerPage);
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 py-4 text-center md:flex-row">
       <div className="py-1 text-zinc-700 dark:text-zinc-400">
-        {count != null ? (
-          count === 0 ? (
+        {totalItems != null ? (
+          totalItems === 0 ? (
             t('no_results') + '.'
           ) : (
             <>
@@ -27,13 +34,13 @@ const PaginationIndicator = ({ key, count }: Props) => {
               </span>{' '}
               {t('to')}{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-200">
-                {activePage * itemsPerPage > count
-                  ? count
+                {activePage * itemsPerPage > totalItems
+                  ? totalItems
                   : activePage * itemsPerPage}
               </span>{' '}
               {t('of')}{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-200">
-                {count}
+                {totalItems}
               </span>{' '}
               {t('results')}.
             </>
@@ -43,7 +50,12 @@ const PaginationIndicator = ({ key, count }: Props) => {
         )}
       </div>
 
-      <Pagination total={totalPages} noWrap />
+      <Pagination
+        value={activePage}
+        onChange={setActivePage}
+        total={totalPages}
+        noWrap
+      />
     </div>
   );
 };
