@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
     userId: user.id,
   });
 
-  if (workspaces.length) redirect(`/${workspaces[0].id}`);
+  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
 
   const workspaceInvites = await getWorkspaceInvites({
     supabase,
