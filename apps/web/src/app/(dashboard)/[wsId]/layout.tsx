@@ -25,8 +25,20 @@ export default async function Layout({
       href: `/${wsId}`,
     },
     {
+      name: 'Teams',
+      href: `/${wsId}/teams`,
+    },
+    {
       name: 'Members',
       href: `/${wsId}/members`,
+    },
+    {
+      name: 'Users',
+      href: `/${wsId}/users`,
+    },
+    {
+      name: 'Calendar',
+      href: `/${wsId}/calendar`,
     },
     {
       name: 'Documents',
@@ -35,6 +47,18 @@ export default async function Layout({
     {
       name: 'Boards',
       href: `/${wsId}/boards`,
+    },
+    {
+      name: 'Inventory',
+      href: `/${wsId}/inventory`,
+    },
+    {
+      name: 'Healthcare',
+      href: `/${wsId}/healthcare`,
+    },
+    {
+      name: 'Finance',
+      href: `/${wsId}/finance`,
     },
     {
       name: 'Infrastructure',
