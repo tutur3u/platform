@@ -1,41 +1,27 @@
-import { useRouter } from 'next/router';
-import React, { ReactElement, useEffect } from 'react';
+'use client';
+
+import React, { ReactElement } from 'react';
 import useSWR from 'swr';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { useSegments } from '../../../hooks/useSegments';
-import HeaderX from '../../../components/metadata/HeaderX';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
-import BoardEditForm from '../../../components/forms/BoardEditForm';
-import { TaskBoard } from '../../../types/primitives/TaskBoard';
+import BoardEditForm from '../../../../components/forms/BoardEditForm';
+import { TaskBoard } from '../../../../types/primitives/TaskBoard';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
 
 const WorkspaceBoardsPage = () => {
   const router = useRouter();
   const { ws } = useWorkspaces();
 
-  const { setRootSegment } = useSegments();
   const { t } = useTranslation();
 
   const tasksLabel = t('sidebar-tabs:tasks');
-
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws.name || 'Unnamed Workspace',
-              href: `/${ws.id}`,
-            },
-            { content: tasksLabel, href: `/${ws.id}/boards` },
-          ]
-        : []
-    );
-  }, [tasksLabel, setRootSegment, ws]);
 
   const { data: boards } = useSWR<TaskBoard[]>(
     ws ? `/api/workspaces/${ws.id}/boards` : null

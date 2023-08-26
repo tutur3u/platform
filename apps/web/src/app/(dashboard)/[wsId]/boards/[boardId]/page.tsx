@@ -1,8 +1,8 @@
-import { useRouter } from 'next/router';
+'use client';
+
 import useSWR, { mutate } from 'swr';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { ReactElement, useEffect, useState } from 'react';
-import { useSegments } from '../../../hooks/useSegments';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { ReactElement, useState } from 'react';
 import {
   Accordion,
   ActionIcon,
@@ -22,49 +22,32 @@ import {
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
 import { openConfirmModal, openModal } from '@mantine/modals';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { TaskBoard } from '../../../types/primitives/TaskBoard';
-import { TaskList } from '../../../types/primitives/TaskList';
-import { Task } from '../../../types/primitives/Task';
-import BoardEditForm from '../../../components/forms/BoardEditForm';
-import TaskListEditForm from '../../../components/forms/TaskListEditForm';
-import TaskListWrapper from '../../../components/tasks/lists/TaskListWrapper';
-import { useUser } from '../../../hooks/useUser';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { TaskBoard } from '../../../../../types/primitives/TaskBoard';
+import { TaskList } from '../../../../../types/primitives/TaskList';
+import { Task } from '../../../../../types/primitives/Task';
+import BoardEditForm from '../../../../../components/forms/BoardEditForm';
+import TaskListEditForm from '../../../../../components/forms/TaskListEditForm';
+import TaskListWrapper from '../../../../../components/tasks/lists/TaskListWrapper';
+import { useUser } from '../../../../../hooks/useUser';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import { useRouter } from 'next/navigation';
 
-const WorkspaceBoardEditor = () => {
+interface Props {
+  params: {
+    wsId?: string;
+    boardId?: string;
+  };
+}
+
+const WorkspaceBoardEditor = ({ params: { wsId, boardId } }: Props) => {
   const router = useRouter();
-  const { boardId } = router.query;
 
   const { ws } = useWorkspaces();
-  const { t } = useTranslation();
-
-  const tasksLabel = t('sidebar-tabs:tasks');
 
   const { data: board } = useSWR<TaskBoard>(
-    ws && boardId ? `/api/workspaces/${ws.id}/boards/${boardId}` : null
+    wsId && boardId ? `/api/workspaces/${wsId}/boards/${boardId}` : null
   );
-
-  const { setRootSegment } = useSegments();
-
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws.name || 'Unnamed Workspace',
-              href: `/${ws.id}`,
-            },
-            { content: tasksLabel, href: `/${ws.id}/boards` },
-            {
-              content: board ? board?.name || 'Untitled Board' : 'Loading...',
-              href: `/${ws.id}/boards/${boardId}`,
-            },
-          ]
-        : []
-    );
-  }, [tasksLabel, ws, boardId, board, setRootSegment]);
 
   const [mode, setMode] = useState('list');
 

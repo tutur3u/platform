@@ -29,6 +29,10 @@ export default async function Layout({
       href: `/${wsId}/members`,
     },
     {
+      name: 'Boards',
+      href: `/${wsId}/boards`,
+    },
+    {
       name: 'Migrations',
       href: `/${wsId}/migrations`,
     },
