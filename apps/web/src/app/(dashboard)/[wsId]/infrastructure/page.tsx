@@ -1,15 +1,14 @@
-import { ReactElement, useEffect } from 'react';
-import { useSegments } from '../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
-import StatisticCard from '../../../components/cards/StatisticCard';
-import useSWR from 'swr';
-import { enforceRootAdmin } from '../../../utils/serverless/enforce-root-admin';
+'use client';
 
-export const getServerSideProps = enforceRootAdmin;
+import { ReactElement, useEffect } from 'react';
+import { useSegments } from '../../../../hooks/useSegments';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../components/metadata/HeaderX';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import useTranslation from 'next-translate/useTranslation';
+import StatisticCard from '../../../../components/cards/StatisticCard';
+import useSWR from 'swr';
 
 const InfrastructureOverviewPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();

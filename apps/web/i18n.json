@@ -442,15 +442,18 @@
       "invoice-product-input"
     ],
 
-    "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
-    "/[wsId]/infrastructure/users": [
+    "/(dashboard)/[wsId]/infrastructure": [
+      "sidebar-tabs",
+      "infrastructure-tabs"
+    ],
+    "/(dashboard)/[wsId]/infrastructure/users": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "infrastructure-tabs"
     ],
-    "/[wsId]/infrastructure/workspaces": [
+    "/(dashboard)/[wsId]/infrastructure/workspaces": [
       "sidebar-tabs",
       "search",
       "view-mode",

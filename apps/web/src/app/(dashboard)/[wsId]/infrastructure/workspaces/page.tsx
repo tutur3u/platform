@@ -1,31 +1,32 @@
+'use client';
+
 import { ReactElement, useEffect, useState } from 'react';
-import { useSegments } from '../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
-import PaginationIndicator from '../../../components/pagination/PaginationIndicator';
 import { Divider } from '@mantine/core';
-import PaginationSelector from '../../../components/selectors/PaginationSelector';
-import ModeSelector, { Mode } from '../../../components/selectors/ModeSelector';
+import ModeSelector, {
+  Mode,
+} from '../../../../../components/selectors/ModeSelector';
+import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
+import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 import { useLocalStorage } from '@mantine/hooks';
-import { User } from '../../../types/primitives/User';
 import useSWR from 'swr';
-import UserCard from '../../../components/cards/UserCard';
-import GeneralSearchBar from '../../../components/inputs/GeneralSearchBar';
-import { enforceRootAdmin } from '../../../utils/serverless/enforce-root-admin';
+import { Workspace } from '../../../../../types/primitives/Workspace';
+import WorkspaceCard from '../../../../../components/cards/WorkspaceCard';
+import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 
-export const getServerSideProps = enforceRootAdmin;
-
-const InfrastructureUsersPage: PageWithLayoutProps = () => {
+const InfrastructureWorkspacesPage: PageWithLayoutProps = () => {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
   const { t } = useTranslation('infrastructure-tabs');
 
   const infrastructureLabel = t('infrastructure');
-  const usersLabel = t('users');
+  const workspacesLabel = t('workspaces');
 
   useEffect(() => {
     setRootSegment(
@@ -36,41 +37,42 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
               href: `/${ws.id}`,
             },
             { content: infrastructureLabel, href: `/${ws.id}/infrastructure` },
-            { content: usersLabel, href: `/${ws.id}/infrastructure/users` },
+            {
+              content: workspacesLabel,
+              href: `/${ws.id}/infrastructure/workspaces`,
+            },
           ]
         : []
     );
 
     return () => setRootSegment([]);
-  }, [infrastructureLabel, usersLabel, ws, setRootSegment]);
+  }, [infrastructureLabel, workspacesLabel, ws, setRootSegment]);
 
   const [query, setQuery] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'infrastructure-users-per-page',
+    key: 'infrastructure-workspaces-per-page',
     defaultValue: 16,
   });
 
   const apiPath = ws?.id
-    ? `/api/users?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+    ? `/api/workspaces?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const { data } = useSWR<{ data: User[]; count: number }>(apiPath);
+  const countApi = ws?.id ? `/api/workspaces/count` : null;
 
-  const users = data?.data;
-  const count = data?.count;
+  const { data: workspaces } = useSWR<Workspace[]>(apiPath);
+  const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-users-mode',
     defaultValue: 'grid',
   });
 
-  if (!ws) return null;
-
   return (
     <>
-      <HeaderX label={`${usersLabel} – ${infrastructureLabel}`} />
+      <HeaderX label={`${workspacesLabel} – ${infrastructureLabel}`} />
       <div className="flex min-h-full w-full flex-col ">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <GeneralSearchBar setQuery={setQuery} />
@@ -99,15 +101,18 @@ const InfrastructureUsersPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          {users?.map((u) => <UserCard key={u.id} user={u} />)}
+          {workspaces &&
+            workspaces?.map((ws) => <WorkspaceCard key={ws.id} ws={ws} />)}
         </div>
       </div>
     </>
   );
 };
 
-InfrastructureUsersPage.getLayout = function getLayout(page: ReactElement) {
+InfrastructureWorkspacesPage.getLayout = function getLayout(
+  page: ReactElement
+) {
   return <NestedLayout mode="infrastructure">{page}</NestedLayout>;
 };
 
-export default InfrastructureUsersPage;
+export default InfrastructureWorkspacesPage;
