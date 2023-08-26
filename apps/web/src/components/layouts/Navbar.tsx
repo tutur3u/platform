@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import LogoutButton from '../LogoutButton';
 
+export const dynamic = 'force-dynamic';
+
 const Navbar = async () => {
   const supabase = createServerComponentClient({ cookies });
 

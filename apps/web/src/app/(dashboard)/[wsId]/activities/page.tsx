@@ -8,6 +8,8 @@ import { AuditLog } from '@/types/primitives/AuditLog';
 import LogList from './log-list';
 import { Separator } from '@/components/ui/separator';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId?: string;

@@ -7,6 +7,8 @@ import InviteMemberButton from '../invite-member-button';
 import Filters from '../filters';
 import MemberList from '../member-list';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId?: string;

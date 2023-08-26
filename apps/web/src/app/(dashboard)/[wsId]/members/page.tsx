@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import MemberList from './member-list';
 import 'moment/locale/vi';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId?: string;

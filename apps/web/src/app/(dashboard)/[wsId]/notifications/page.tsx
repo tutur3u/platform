@@ -7,6 +7,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Database } from '@/types/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NotificationsPage() {
   const { t } = useTranslation('notifications');
   const invites = await getWorkspaceInvites();

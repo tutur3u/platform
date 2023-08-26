@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { DEV_MODE } from '@/constants/common';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId: string;
