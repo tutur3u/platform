@@ -7,7 +7,7 @@ import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 import Providers from '../components/common/Providers';
 import Analytics from '../components/common/Analytics';
 import usePersistLocale from '../hooks/usePersistLocale';
-import { Database } from '../types/database.types';
+import { Database } from '@/types/supabase';
 
 export default function Application({
   Component,

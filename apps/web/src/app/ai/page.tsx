@@ -2,7 +2,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Chat from './chat';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/supabase';
 
 export const dynamic = 'force-dynamic';
 

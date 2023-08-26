@@ -64,7 +64,7 @@
       "member-roles",
       "ws-members"
     ],
-    "/[wsId]/activities": [
+    "/(dashboard)/[wsId]/activities": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
@@ -459,6 +459,10 @@
     ],
 
     "/[wsId]/migrations": ["sidebar-tabs"],
-    "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
+    "/(dashboard)/[wsId]/notifications": [
+      "notifications",
+      "sidebar-tabs",
+      "invite"
+    ]
   }
 }

@@ -3,7 +3,6 @@ import nextTranslate from 'next-translate-plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = nextTranslate({
-  reactStrictMode: true,
   experimental: {
     serverActions: true,
   },
@@ -13,16 +12,6 @@ const nextConfig = nextTranslate({
       {
         source: '/settings',
         destination: '/settings/account',
-      },
-    ];
-  },
-
-  redirects() {
-    return [
-      {
-        source: '/rewise',
-        destination: 'https://rewise.tuturuuu.com',
-        permanent: false,
       },
     ];
   },

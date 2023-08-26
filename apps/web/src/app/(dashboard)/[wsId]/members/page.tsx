@@ -1,11 +1,11 @@
 import useTranslation from 'next-translate/useTranslation';
-import 'moment/locale/vi';
 import Filters from './filters';
 import InviteMemberButton from './invite-member-button';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import MemberList from './member-list';
+import 'moment/locale/vi';
 
 interface Props {
   params: {
