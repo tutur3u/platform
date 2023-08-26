@@ -12,9 +12,8 @@ import useSWR, { mutate as swrMutate } from 'swr';
 import { CalendarEvent } from '../types/primitives/CalendarEvent';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
-import 'moment/locale/vi';
-import { useRouter } from 'next/router';
 import { useLocalStorage } from '@mantine/hooks';
+import 'moment/locale/vi';
 
 const CalendarContext = createContext({
   refresh: async () => console.log('refresh'),
@@ -112,13 +111,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     count: number;
   }>(apiPath);
 
-  const router = useRouter();
-
   const refresh = useCallback(async () => await swrMutate(apiPath), [apiPath]);
-
-  useEffect(() => {
-    if (router.pathname === '/[wsId]/calendar') refresh();
-  }, [router.pathname, refresh]);
 
   const events = useMemo(() => data?.data ?? [], [data]);
 
