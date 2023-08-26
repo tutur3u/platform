@@ -8,16 +8,11 @@ interface Message {
   role: 'system' | 'user' | 'assistant';
 }
 
-const initialPrompt: Message = {
-  content:
-    'I am Skora, a helpful AI assistant from Tuturuuu, powered by Anthropic. How may I help you today?',
-  role: 'assistant',
-};
+const initialPrompt: Message | null = null;
 
-// Build a prompt from the messages
 function buildPrompt(messages: Message[]) {
   return (
-    [initialPrompt, ...messages]
+    (initialPrompt ? [initialPrompt, ...messages] : messages)
       .map(({ content, role }) => {
         if (role === 'system') return content;
         if (role === 'user') return `Human: ${content}`;
@@ -28,7 +23,6 @@ function buildPrompt(messages: Message[]) {
 }
 
 export async function POST(req: Request) {
-  // Extract the `messages` from the body of the request
   const { messages } = await req.json();
 
   const response = await fetch('https://api.anthropic.com/v1/complete', {
@@ -46,20 +40,12 @@ export async function POST(req: Request) {
     }),
   });
 
-  // Check for errors
   if (!response.ok) {
     return new Response(await response.text(), {
       status: response.status,
     });
   }
 
-  // Convert the response into a friendly text-stream
-  const stream = AnthropicStream(response, {
-    onCompletion: (result) => {
-      console.log(result);
-    },
-  });
-
-  // Respond with the stream
+  const stream = AnthropicStream(response);
   return new StreamingTextResponse(stream);
 }

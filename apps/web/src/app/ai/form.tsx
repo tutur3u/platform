@@ -13,7 +13,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useChat } from 'ai/react';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { useEffect } from 'react';
 
@@ -21,9 +20,13 @@ const FormSchema = z.object({
   prompt: z.string().min(1).max(2048),
 });
 
-export default function ChatForm() {
-  const { input, setInput, handleSubmit } = useChat({ id: 'default' });
+interface Props {
+  input: string;
+  setInput: (input: string) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}
 
+export default function ChatForm({ input, setInput, handleSubmit }: Props) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   });
@@ -53,7 +56,6 @@ export default function ChatForm() {
               <FormControl>
                 <Input
                   {...field}
-                  value={input}
                   placeholder="Type your prompt here..."
                   autoComplete="off"
                 />

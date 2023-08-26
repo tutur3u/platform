@@ -12,7 +12,7 @@ interface ChatProps {
 }
 
 const Chat = ({ userData }: ChatProps) => {
-  const { messages, setMessages, setInput } = useChat({ id: 'default' });
+  const { messages, setMessages, input, setInput, handleSubmit } = useChat();
 
   const resetChat = () => {
     setMessages([]);
@@ -65,8 +65,18 @@ const Chat = ({ userData }: ChatProps) => {
         <Button variant="ghost" className="pointer-events-none opacity-0">
           Reset chat
         </Button>
-        <ChatForm />
-        <Button onClick={resetChat} variant="ghost">
+
+        <ChatForm
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+        />
+
+        <Button
+          onClick={resetChat}
+          variant="ghost"
+          disabled={!messages.length && !input}
+        >
           Reset chat
         </Button>
       </div>
