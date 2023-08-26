@@ -1,8 +1,9 @@
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';
-import { API_URL } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -10,33 +11,62 @@ interface Props {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
+  const supabase = createServerComponentClient({ cookies });
+
   const { t } = useTranslation('ws-home');
   const ws = await getWorkspace(wsId);
 
   const homeLabel = t('workspace-tabs:home');
 
-  const incomeApi = `${API_URL}/workspaces/${wsId}/finance/wallets/income`;
-  const expenseApi = `${API_URL}/workspaces/${wsId}/finance/wallets/expense`;
-  const walletsCountApi = `${API_URL}/workspaces/${wsId}/finance/wallets/count`;
-  const categoriesCountApi = `${API_URL}/workspaces/${wsId}/finance/transactions/categories/count`;
-  const transactionsCountApi = `${API_URL}/workspaces/${wsId}/finance/transactions/count`;
-  const invoicesCountApi = `${API_URL}/workspaces/${wsId}/finance/invoices/count`;
+  const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
+    ws_id: wsId,
+    start_date: null,
+    end_date: null,
+  });
 
-  const { data: income } = await fetch(incomeApi).then((res) => res.json());
-  const { data: expense } = await fetch(expenseApi).then((res) => res.json());
-  const { data: walletsCount } = await fetch(walletsCountApi).then((res) =>
-    res.json()
+  const { data: expense } = await supabase.rpc(
+    'get_workspace_wallets_expense',
+    {
+      ws_id: wsId,
+      start_date: null,
+      end_date: null,
+    }
   );
-  const { data: categoriesCount } = await fetch(categoriesCountApi).then(
-    (res) => res.json()
-  );
-  const { data: transactionsCount } = await fetch(transactionsCountApi).then(
-    (res) => res.json()
-  );
-  const { data: invoicesCount } = await fetch(invoicesCountApi).then((res) =>
-    res.json()
-  );
+
+  const { count: walletsCount } = await supabase
+    .from('workspace_wallets')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: categoriesCount } = await supabase
+    .from('transaction_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: transactionsCount } = await supabase
+    .from('wallet_transactions')
+    .select('*, workspace_wallets!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('workspace_wallets.ws_id', wsId);
+
+  const { count: invoicesCount } = await supabase
+    .from('finance_invoices')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   const walletsLabel = t('finance-tabs:wallets');
   const transactionsLabel = t('finance-tabs:transactions');
@@ -47,64 +77,107 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const totalIncome = t('finance-overview:total-income');
   const totalExpense = t('finance-overview:total-expense');
 
-  const checkupsCountApi = `${API_URL}/workspaces/${wsId}/healthcare/checkups/count`;
-  const diagnosesCountApi = `${API_URL}/workspaces/${wsId}/healthcare/diagnoses/count`;
-  const vitalsCountApi = `${API_URL}/workspaces/${wsId}/healthcare/vitals/count`;
-  const groupsCountApi = `${API_URL}/workspaces/${wsId}/healthcare/vital-groups/count`;
+  const { count: checkups } = await supabase
+    .from('healthcare_checkups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: checkups } = await fetch(checkupsCountApi).then((res) =>
-    res.json()
+  const { count: diagnoses } = await supabase
+    .from('healthcare_diagnoses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: vitals } = await supabase
+    .from('healthcare_vitals')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: groups } = await supabase
+    .from('healthcare_vital_groups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { data: workspaceProducts } = await supabase.rpc(
+    'get_workspace_products_count',
+    {
+      ws_id: wsId,
+    }
   );
 
-  const { data: diagnoses } = await fetch(diagnosesCountApi).then((res) =>
-    res.json()
+  const { data: inventoryProducts } = await supabase.rpc(
+    'get_inventory_products_count',
+    {
+      ws_id: wsId,
+    }
   );
 
-  const { data: vitals } = await fetch(vitalsCountApi).then((res) =>
-    res.json()
-  );
+  const { count: categories } = await supabase
+    .from('product_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: groups } = await fetch(groupsCountApi).then((res) =>
-    res.json()
-  );
+  const { count: batches } = await supabase
+    .from('inventory_batches')
+    .select('*, inventory_warehouses!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('inventory_warehouses.ws_id', wsId);
 
-  const productsCountApi = `${API_URL}/workspaces/${wsId}/inventory/products/count`;
-  const productCategoriesCountApi = `${API_URL}/workspaces/${wsId}/inventory/categories/count`;
-  const batchesCountApi = `${API_URL}/workspaces/${wsId}/inventory/batches/count`;
-  const warehousesCountApi = `${API_URL}/workspaces/${wsId}/inventory/warehouses/count`;
-  const unitsCountApi = `${API_URL}/workspaces/${wsId}/inventory/units/count`;
-  const suppliersCountApi = `${API_URL}/workspaces/${wsId}/inventory/suppliers/count`;
+  const { count: warehouses } = await supabase
+    .from('inventory_warehouses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: products } = await fetch(productsCountApi).then((res) => {
-    return res.json();
-  });
+  const { count: units } = await supabase
+    .from('inventory_units')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: categories } = await fetch(productCategoriesCountApi).then(
-    (res) => res.json()
-  );
+  const { count: suppliers } = await supabase
+    .from('inventory_suppliers')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: batches } = await fetch(batchesCountApi).then((res) =>
-    res.json()
-  );
+  const { count: users } = await supabase
+    .from('workspace_users')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: warehouses } = await fetch(warehousesCountApi).then((res) =>
-    res.json()
-  );
-
-  const { data: units } = await fetch(unitsCountApi).then((res) => res.json());
-
-  const { data: suppliers } = await fetch(suppliersCountApi).then((res) =>
-    res.json()
-  );
-
-  const usersCountApi = `${API_URL}/workspaces/${wsId}/users/count`;
-  const userGroupsCountApi = `${API_URL}/workspaces/${wsId}/users/groups/count`;
-
-  const { data: users } = await fetch(usersCountApi).then((res) => res.json());
-
-  const { data: userGroups } = await fetch(userGroupsCountApi).then((res) =>
-    res.json()
-  );
+  const { count: userGroups } = await supabase
+    .from('workspace_user_groups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   const usersLabel = t('sidebar-tabs:users');
   const sum = (income || 0) + (expense || 0);
@@ -225,14 +298,14 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         <StatisticCard
           title={t('inventory-tabs:products')}
           color="blue"
-          value={products?.ws}
+          value={workspaceProducts}
           href={`/${wsId}/inventory/products`}
           className="md:col-span-2"
         />
 
         <StatisticCard
           title={t('inventory-overview:products-with-prices')}
-          value={products?.inventory}
+          value={inventoryProducts}
           href={`/${wsId}/inventory/products`}
         />
 
