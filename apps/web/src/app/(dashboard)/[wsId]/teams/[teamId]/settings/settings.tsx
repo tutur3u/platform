@@ -1,51 +1,30 @@
+'use client';
+
 import { Divider, TextInput } from '@mantine/core';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import { ReactElement, useEffect, useState } from 'react';
+import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
-import { useSegments } from '../../../../hooks/useSegments';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { Team } from '../../../../types/primitives/Team';
+import { Team } from '../../../../../../types/primitives/Team';
 import { openModal } from '@mantine/modals';
-import TeamDeleteForm from '../../../../components/forms/TeamDeleteForm';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import TeamDeleteForm from '../../../../../../components/forms/TeamDeleteForm';
+import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 
-const TeamSettingsPage = () => {
+interface Props {
+  params: {
+    wsId: string;
+    teamId: string;
+  };
+}
+
+export default function TeamSettingsPage({ params: { wsId, teamId } }: Props) {
   const router = useRouter();
-  const { wsId, teamId } = router.query;
 
   const { data: team } = useSWR(
     wsId && teamId ? `/api/workspaces/${wsId}/teams/${teamId}` : null
   );
 
   const { ws } = useWorkspaces();
-  const { setRootSegment } = useSegments();
-
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws.name || 'Unnamed Workspace',
-              href: `/${ws.id}`,
-            },
-            {
-              content: 'Teams',
-              href: `/${ws.id}/teams`,
-            },
-            {
-              content: team?.name || 'Untitled Team',
-              href: `/${ws.id}/teams/${teamId}`,
-            },
-            {
-              content: 'Settings',
-              href: `/${ws.id}/teams/${teamId}/settings`,
-            },
-          ]
-        : []
-    );
-  }, [setRootSegment, ws, teamId, team?.name]);
 
   const showDeleteTeamModal = async (team: Team) => {
     openModal({
@@ -78,26 +57,6 @@ const TeamSettingsPage = () => {
     });
 
     if (res.ok) {
-      setRootSegment(
-        ws
-          ? [
-              {
-                content: ws.name || 'Unnamed Workspace',
-                href: `/${ws.id}`,
-              },
-              {
-                content: 'Teams',
-                href: `/${ws.id}/teams`,
-              },
-              {
-                content: name || 'Untitled Team',
-                href: `/teams/${teamId}`,
-              },
-              { content: 'Settings', href: `/teams/${teamId}/settings` },
-            ]
-          : []
-      );
-
       mutate(`/api/workspaces/${ws.id}/teams/${teamId}`);
       mutate(`/api/workspaces/${ws.id}/teams`);
     }
@@ -124,9 +83,7 @@ const TeamSettingsPage = () => {
   };
 
   return (
-    <div className="">
-      <HeaderX label={`Settings – ${team?.name || 'Untitled Team'}`} />
-
+    <>
       {teamId && (
         <>
           <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
@@ -195,12 +152,6 @@ const TeamSettingsPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
-};
-
-TeamSettingsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="team">{page}</NestedLayout>;
-};
-
-export default TeamSettingsPage;
+}

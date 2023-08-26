@@ -1,50 +1,34 @@
+'use client';
+
 import { SquaresPlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { ReactElement, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ReactElement } from 'react';
 import { mutate } from 'swr';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { useSegments } from '../../../hooks/useSegments';
-import { Team } from '../../../types/primitives/Team';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
+import { Team } from '../../../../types/primitives/Team';
 import moment from 'moment';
-import TeamEditForm from '../../../components/forms/TeamEditForm';
-import HeaderX from '../../../components/metadata/HeaderX';
+import TeamEditForm from '../../../../components/forms/TeamEditForm';
 import { Divider } from '@mantine/core';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 
-const WorkspaceTeamsPage = () => {
+interface Props {
+  params: {
+    wsId: string;
+  };
+}
+
+const WorkspaceTeamsPage = ({ params: { wsId } }: Props) => {
   const { t, lang } = useTranslation('ws-teams');
 
-  const loadingLabel = t('common:loading');
   const teamsLabel = t('workspace-tabs:teams');
 
   const router = useRouter();
-  const { wsId } = router.query;
-
-  const { ws, teams } = useWorkspaces();
-
-  const { setRootSegment } = useSegments();
-
-  useEffect(() => {
-    setRootSegment(
-      wsId
-        ? [
-            {
-              content: ws?.name ?? loadingLabel,
-              href: `/${wsId}`,
-            },
-            {
-              content: teamsLabel,
-              href: `/${wsId}/teams`,
-            },
-          ]
-        : []
-    );
-  }, [setRootSegment, wsId, loadingLabel, teamsLabel, ws?.name]);
+  const { teams } = useWorkspaces();
 
   const createTeam = async (wsId: string, team: Partial<Team>) => {
     const res = await fetch(`/api/workspaces/${wsId}/teams`, {
@@ -85,9 +69,7 @@ const WorkspaceTeamsPage = () => {
   };
 
   return (
-    <div className="">
-      <HeaderX label={`${teamsLabel} – ${ws?.name}`} />
-
+    <>
       {wsId && (
         <>
           <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
@@ -139,7 +121,7 @@ const WorkspaceTeamsPage = () => {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
