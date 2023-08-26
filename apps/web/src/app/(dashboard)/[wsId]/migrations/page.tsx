@@ -1,6 +1,7 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import NestedLayout from '../../../components/layouts/NestedLayout';
-import { useSegments } from '../../../hooks/useSegments';
+'use client';
+
+import { ReactElement, useState } from 'react';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
 import {
   ActionIcon,
   Button,
@@ -9,42 +10,12 @@ import {
   Progress,
   Tooltip,
 } from '@mantine/core';
-import { enforceRootWorkspace } from '../../../utils/serverless/enforce-root-workspace';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
 import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
-import { DEV_MODE } from '../../../constants/common';
-import { Segment } from '../../../types/primitives/Segment';
+import { DEV_MODE } from '../../../../constants/common';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconGitMerge } from '@tabler/icons-react';
 
-export const getServerSideProps = enforceRootWorkspace;
-
 const PlatformMigrationsPage = () => {
-  const { t } = useTranslation('sidebar-tabs');
-  const { ws } = useWorkspaces();
-  const { setRootSegment } = useSegments();
-
-  const aiLabel = t('migrations');
-
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? ([
-            {
-              content: ws?.name || 'Tổ chức không tên',
-              href: `/${ws.id}`,
-            },
-            DEV_MODE
-              ? { content: aiLabel, href: `/${ws.id}/migrations` }
-              : undefined,
-          ].filter((v) => v) as Segment[])
-        : []
-    );
-
-    return () => setRootSegment([]);
-  }, [aiLabel, ws, setRootSegment]);
-
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
     key: 'migration-api-endpoint',
     defaultValue: '',
