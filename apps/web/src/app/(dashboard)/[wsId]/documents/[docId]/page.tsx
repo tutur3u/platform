@@ -1,8 +1,10 @@
-import { useRouter } from 'next/router';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import NestedLayout from '../../../components/layouts/NestedLayout';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { ReactElement, useEffect, useState } from 'react';
-import { useSegments } from '../../../hooks/useSegments';
+import { useSegments } from '../../../../../hooks/useSegments';
 import {
   Divider,
   Loader,
@@ -17,8 +19,8 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useDebouncedValue } from '@mantine/hooks';
-import DocumentEditor from '../../../components/editor/DocumentEditor';
-import { Document } from '../../../types/primitives/Document';
+import DocumentEditor from '../../../../../components/editor/DocumentEditor';
+import { Document } from '../../../../../types/primitives/Document';
 import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -28,18 +30,23 @@ import SubScript from '@tiptap/extension-subscript';
 import { useEditor } from '@tiptap/react';
 import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
-const ProjectDocumentEditor = () => {
-  const router = useRouter();
-  const { docId } = router.query;
+interface Props {
+  params: {
+    wsId?: string;
+    docId?: string;
+  };
+}
 
+const ProjectDocumentEditor = ({ params: { wsId, docId } }: Props) => {
+  const router = useRouter();
   const { ws } = useWorkspaces();
 
   const { data: doc } = useSWR<Document>(
-    ws && docId ? `/api/workspaces/${ws.id}/documents/${docId}` : null
+    wsId && docId ? `/api/workspaces/${wsId}/documents/${docId}` : null
   );
 
   const { setRootSegment } = useSegments();

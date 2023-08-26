@@ -1,23 +1,24 @@
+'use client';
+
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../components/metadata/HeaderX';
-import { useSegments } from '../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../types/PageWithLayoutProps';
-import DocumentCard from '../../../components/document/DocumentCard';
+import { useSegments } from '../../../../hooks/useSegments';
+import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
+import DocumentCard from '../../../../components/document/DocumentCard';
 import { useUser } from '@supabase/auth-helpers-react';
 import useSWR from 'swr';
-import { Document } from '../../../types/primitives/Document';
-import NestedLayout from '../../../components/layouts/NestedLayout';
+import { Document } from '../../../../types/primitives/Document';
+import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { Divider, Loader } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import DocumentEditForm from '../../../components/forms/DocumentEditForm';
+import DocumentEditForm from '../../../../components/forms/DocumentEditForm';
 import { showNotification } from '@mantine/notifications';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import {
   DocumentPlusIcon,
   ListBulletIcon,
   Squares2X2Icon,
 } from '@heroicons/react/24/solid';
-import { useWorkspaces } from '../../../hooks/useWorkspaces';
+import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
 const DocumentsPage: PageWithLayoutProps = () => {
@@ -109,9 +110,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <div className="">
-      <HeaderX label="Documents" />
-
+    <>
       <div className="flex flex-col items-center gap-4 md:flex-row">
         <h1 className="w-full flex-grow rounded-lg bg-zinc-500/5 p-4 text-2xl font-bold dark:bg-zinc-900 md:w-auto">
           {documentsLabel}{' '}
@@ -181,7 +180,7 @@ const DocumentsPage: PageWithLayoutProps = () => {
             />
           ))}
       </div>
-    </div>
+    </>
   );
 };
 
