@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Divider, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
