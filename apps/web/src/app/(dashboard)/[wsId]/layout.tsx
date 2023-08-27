@@ -70,12 +70,19 @@ export default async function Layout({
     {
       name: 'Settings',
       href: `/${wsId}/settings`,
+      aliases: [
+        `/${wsId}/members`,
+        `/${wsId}/teams`,
+        `/${wsId}/infrastructure`,
+        `/${wsId}/migrations`,
+        `/${wsId}/activities`,
+      ],
     },
   ];
 
   return (
     <>
-      <div className="p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="mb-2 flex items-center gap-4">
           <Link href="/">
             <Image

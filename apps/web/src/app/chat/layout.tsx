@@ -27,7 +27,7 @@ export default async function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      <div className="p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <Link href="/" className="mb-2 flex items-center gap-2">
           <Image
             src="/media/logos/transparent.png"
@@ -36,7 +36,7 @@ export default async function Layout({ children }: LayoutProps) {
             alt="logo"
             className="h-7 w-7"
           />
-          <div className="text-2xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
+          <div className="text-xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
             Tuturuuu
           </div>
         </Link>

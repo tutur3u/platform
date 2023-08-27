@@ -43,7 +43,7 @@ export default async function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      <div className="p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <Link href="/" className="mb-2 flex items-center gap-2">
           <Image
             src="/media/logos/transparent.png"

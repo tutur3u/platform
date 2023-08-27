@@ -54,8 +54,12 @@
       "inventory-overview",
       "workspace-users-tabs"
     ],
-    "/(dashboard)/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
-    "/(dashboard)/[wsId]/members": [
+    "/(dashboard)/[wsId]/(workspace-settings)/teams": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-teams"
+    ],
+    "/(dashboard)/[wsId]/(workspace-settings)/members": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
@@ -64,7 +68,7 @@
       "member-roles",
       "ws-members"
     ],
-    "/(dashboard)/[wsId]/activities": [
+    "/(dashboard)/[wsId]/(workspace-settings)/activities": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
@@ -75,7 +79,7 @@
       "ws-members",
       "ws-activities"
     ],
-    "/(dashboard)/[wsId]/settings": [
+    "/(dashboard)/[wsId]/(workspace-settings)/settings": [
       "sidebar-tabs",
       "workspace-tabs",
       "ws-settings"
@@ -119,8 +123,11 @@
     "/(dashboard)/[wsId]/documents": ["sidebar-tabs", "documents"],
     "/(dashboard)/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
 
-    "/(dashboard)/[wsId]/teams/[teamId]": ["sidebar-tabs", "team-tabs"],
-    "/(dashboard)/[wsId]/teams/[teamId]/members": [
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]": [
+      "sidebar-tabs",
+      "team-tabs"
+    ],
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]/members": [
       "sidebar-tabs",
       "team-tabs",
       "search",
@@ -129,7 +136,7 @@
       "member-roles",
       "ws-members"
     ],
-    "/(dashboard)/[wsId]/teams/[teamId]/settings": [
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]/settings": [
       "sidebar-tabs",
       "team-tabs"
     ],
@@ -467,18 +474,18 @@
       "invoice-product-input"
     ],
 
-    "/(dashboard)/[wsId]/infrastructure": [
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure": [
       "sidebar-tabs",
       "infrastructure-tabs"
     ],
-    "/(dashboard)/[wsId]/infrastructure/users": [
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure/users": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "infrastructure-tabs"
     ],
-    "/(dashboard)/[wsId]/infrastructure/workspaces": [
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure/workspaces": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -486,7 +493,7 @@
       "infrastructure-tabs"
     ],
 
-    "/(dashboard)/[wsId]/migrations": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/(workspace-settings)/migrations": ["sidebar-tabs"],
     "/(dashboard)/[wsId]/notifications": [
       "notifications",
       "sidebar-tabs",

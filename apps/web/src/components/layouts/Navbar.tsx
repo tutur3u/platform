@@ -21,7 +21,7 @@ const Navbar = async () => {
   // const close = () => setOpened(false);
 
   return (
-    <nav className="border-foreground/10 bg-background/80 fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b p-4 font-semibold backdrop-blur-lg md:px-32 lg:px-64">
+    <nav className="border-foreground/10 bg-background/80 fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b px-4 py-2 font-semibold backdrop-blur-lg md:px-32 lg:px-64">
       <Link href="/" className="flex items-center gap-2">
         <Image
           src="/media/logos/transparent.png"
@@ -30,7 +30,7 @@ const Navbar = async () => {
           alt="logo"
           className="h-7 w-7"
         />
-        <div className="text-2xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
+        <div className="text-xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
           Tuturuuu
         </div>
       </Link>
