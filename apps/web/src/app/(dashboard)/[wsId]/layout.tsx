@@ -1,4 +1,4 @@
-import { Navigation } from './navigation';
+import { Navigation } from '@/components/navigation';
 
 interface LayoutProps {
   params: {
@@ -64,11 +64,11 @@ export default async function Layout({
 
   return (
     <div>
-      <div className="flex gap-4 p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="flex gap-4 p-4 pb-0 font-semibold md:px-8 lg:px-16 xl:px-32">
         <Navigation navLinks={navLinks} />
       </div>
 
-      <div className="px-4 md:px-8 lg:px-16 xl:px-32">{children}</div>
+      <div className="p-4 pb-8 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </div>
   );
 }

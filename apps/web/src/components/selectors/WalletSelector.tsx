@@ -1,9 +1,10 @@
+'use client';
+
 import { Select } from '@mantine/core';
 import { Wallet } from '../../types/primitives/Wallet';
 import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -46,13 +47,7 @@ const WalletSelector = ({
   searchable = true,
   creatable = true,
 }: Props) => {
-  const router = useRouter();
-
   const { t } = useTranslation('wallet-selector');
-
-  const {
-    query: { walletId },
-  } = router;
 
   const { ws } = useWorkspaces();
 
@@ -82,7 +77,7 @@ const WalletSelector = ({
   useEffect(() => {
     if (!wallets) return;
 
-    const id = wallet?.id || _walletId || (disableQuery ? null : walletId);
+    const id = wallet?.id || _walletId;
 
     const currentWallet =
       wallets.find((w) => w.id === id || w.id === _walletId) || null;
@@ -96,32 +91,12 @@ const WalletSelector = ({
     ) {
       if (setWallet) setWallet(currentWallet);
 
-      router.replace(
-        {
-          query: {
-            ...router.query,
-            walletId: undefined,
-          },
-        },
-        undefined,
-        { shallow: true }
-      );
-
       return;
     }
 
     if (preventPreselected || wallet?.id || !setWallet) return;
     setWallet(wallets?.[0]);
-  }, [
-    router,
-    _walletId,
-    walletId,
-    wallet,
-    wallets,
-    setWallet,
-    preventPreselected,
-    disableQuery,
-  ]);
+  }, [_walletId, wallet, wallets, setWallet, preventPreselected, disableQuery]);
 
   const create = async ({
     wallet,

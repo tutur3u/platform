@@ -13,28 +13,28 @@ export default async function Layout({
 }: LayoutProps) {
   const navLinks = [
     {
-      name: 'Workspace',
-      href: `/${wsId}/settings`,
+      name: 'Overview',
+      href: `/${wsId}/finance`,
     },
     {
-      name: 'Members',
-      href: `/${wsId}/settings/members`,
+      name: 'Wallets',
+      href: `/${wsId}/finance/wallets`,
     },
     {
-      name: 'Teams',
-      href: `/${wsId}/settings/teams`,
+      name: 'Transactions',
+      href: `/${wsId}/finance/transactions`,
     },
     {
-      name: 'Infrastructure',
-      href: `/${wsId}/infrastructure`,
+      name: 'Categories',
+      href: `/${wsId}/finance/transactions/categories`,
     },
     {
-      name: 'Migrations',
-      href: `/${wsId}/migrations`,
+      name: 'Invoices',
+      href: `/${wsId}/finance/invoices`,
     },
     {
-      name: 'Activities',
-      href: `/${wsId}/activities`,
+      name: 'Import',
+      href: `/${wsId}/finance/import`,
     },
   ];
 

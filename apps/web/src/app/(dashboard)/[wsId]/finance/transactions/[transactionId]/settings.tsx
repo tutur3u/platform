@@ -1,8 +1,8 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../../components/layouts/NestedLayout';
 import {
   Button,
   Checkbox,
@@ -12,24 +12,24 @@ import {
   TextInput,
 } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import { useSegments } from '../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
-import WalletSelector from '../../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../../types/primitives/Wallet';
-import SettingItemCard from '../../../../../components/settings/SettingItemCard';
-import TransactionCategorySelector from '../../../../../components/selectors/TransactionCategorySelector';
-import { TransactionCategory } from '../../../../../types/primitives/TransactionCategory';
+import { useSegments } from '../../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import WalletSelector from '../../../../../../components/selectors/WalletSelector';
+import { Wallet } from '../../../../../../types/primitives/Wallet';
+import SettingItemCard from '../../../../../../components/settings/SettingItemCard';
+import TransactionCategorySelector from '../../../../../../components/selectors/TransactionCategorySelector';
+import { TransactionCategory } from '../../../../../../types/primitives/TransactionCategory';
 import { useRouter } from 'next/router';
-import { Transaction } from '../../../../../types/primitives/Transaction';
+import { Transaction } from '../../../../../../types/primitives/Transaction';
 import useSWR from 'swr';
-import TransactionDeleteModal from '../../../../../components/loaders/transactions/TransactionDeleteModal';
-import TransactionEditModal from '../../../../../components/loaders/transactions/TransactionEditModal';
+import TransactionDeleteModal from '../../../../../../components/loaders/transactions/TransactionDeleteModal';
+import TransactionEditModal from '../../../../../../components/loaders/transactions/TransactionEditModal';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { EyeIcon } from '@heroicons/react/24/outline';
-import ThousandMultiplierChips from '../../../../../components/chips/ThousandMultiplierChips';
+import ThousandMultiplierChips from '../../../../../../components/chips/ThousandMultiplierChips';
 
 export const getServerSideProps = enforceHasWorkspaces;
 

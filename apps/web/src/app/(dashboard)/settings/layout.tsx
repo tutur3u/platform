@@ -1,4 +1,4 @@
-import { Navigation } from '../[wsId]/navigation';
+import { Navigation } from '@/components/navigation';
 
 interface LayoutProps {
   children: React.ReactNode;

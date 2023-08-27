@@ -1,8 +1,8 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../../components/layouts/NestedLayout';
 import {
   Button,
   Checkbox,
@@ -11,14 +11,14 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { useSegments } from '../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
-import WalletSelector from '../../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../../types/primitives/Wallet';
-import SettingItemCard from '../../../../../components/settings/SettingItemCard';
-import TransactionCategorySelector from '../../../../../components/selectors/TransactionCategorySelector';
+import { useSegments } from '../../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import WalletSelector from '../../../../../../components/selectors/WalletSelector';
+import { Wallet } from '../../../../../../types/primitives/Wallet';
+import SettingItemCard from '../../../../../../components/settings/SettingItemCard';
+import TransactionCategorySelector from '../../../../../../components/selectors/TransactionCategorySelector';
 import { useRouter } from 'next/router';
-import { Transaction } from '../../../../../types/primitives/Transaction';
+import { Transaction } from '../../../../../../types/primitives/Transaction';
 import useSWR from 'swr';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
