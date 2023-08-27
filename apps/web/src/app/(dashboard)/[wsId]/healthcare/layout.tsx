@@ -13,29 +13,25 @@ export default async function Layout({
 }: LayoutProps) {
   const navLinks = [
     {
-      name: 'Workspace',
-      href: `/${wsId}/settings`,
+      name: 'Overview',
+      href: `/${wsId}/healthcare`,
       matchExact: true,
     },
     {
-      name: 'Members',
-      href: `/${wsId}/settings/members`,
+      name: 'Checkups',
+      href: `/${wsId}/healthcare/checkups`,
     },
     {
-      name: 'Teams',
-      href: `/${wsId}/settings/teams`,
+      name: 'Diagnoses',
+      href: `/${wsId}/healthcare/diagnoses`,
     },
     {
-      name: 'Infrastructure',
-      href: `/${wsId}/infrastructure`,
+      name: 'Vitals',
+      href: `/${wsId}/healthcare/vitals`,
     },
     {
-      name: 'Migrations',
-      href: `/${wsId}/migrations`,
-    },
-    {
-      name: 'Activities',
-      href: `/${wsId}/activities`,
+      name: 'Vital groups',
+      href: `/${wsId}/healthcare/vital-groups`,
     },
   ];
 

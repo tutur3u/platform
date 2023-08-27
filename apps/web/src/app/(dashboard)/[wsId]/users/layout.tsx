@@ -15,6 +15,7 @@ export default async function Layout({
     {
       name: 'Overview',
       href: `/${wsId}/users`,
+      matchExact: true,
     },
     {
       name: 'Database',

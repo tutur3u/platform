@@ -4,16 +4,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 interface LayoutProps {
-  params: {
-    wsId?: string;
-  };
   children: React.ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children }: LayoutProps) {
   const navLinks = [
     {
       name: 'Home',
@@ -26,44 +20,8 @@ export default async function Layout({
     },
     {
       name: 'Dashboard',
-      href: `/${wsId}`,
+      href: '/onboarding',
       matchExact: true,
-    },
-    {
-      name: 'Users',
-      href: `/${wsId}/users`,
-    },
-    {
-      name: 'Calendar',
-      href: `/${wsId}/calendar`,
-    },
-    {
-      name: 'Documents',
-      href: `/${wsId}/documents`,
-    },
-    {
-      name: 'Boards',
-      href: `/${wsId}/boards`,
-    },
-    {
-      name: 'Inventory',
-      href: `/${wsId}/inventory`,
-    },
-    {
-      name: 'Healthcare',
-      href: `/${wsId}/healthcare`,
-    },
-    {
-      name: 'Finance',
-      href: `/${wsId}/finance`,
-    },
-    {
-      name: 'Notifications',
-      href: `/${wsId}/notifications`,
-    },
-    {
-      name: 'Settings',
-      href: `/${wsId}/settings`,
     },
   ];
 

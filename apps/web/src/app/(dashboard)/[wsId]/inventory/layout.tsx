@@ -14,28 +14,36 @@ export default async function Layout({
   const navLinks = [
     {
       name: 'Overview',
-      href: `/${wsId}/finance`,
+      href: `/${wsId}/inventory`,
       matchExact: true,
     },
     {
-      name: 'Wallets',
-      href: `/${wsId}/finance/wallets`,
-    },
-    {
-      name: 'Transactions',
-      href: `/${wsId}/finance/transactions`,
+      name: 'Products',
+      href: `/${wsId}/inventory/products`,
     },
     {
       name: 'Categories',
-      href: `/${wsId}/finance/transactions/categories`,
+      href: `/${wsId}/inventory/categories`,
     },
     {
-      name: 'Invoices',
-      href: `/${wsId}/finance/invoices`,
+      name: 'Units',
+      href: `/${wsId}/inventory/units`,
     },
     {
-      name: 'Import',
-      href: `/${wsId}/finance/import`,
+      name: 'Suppliers',
+      href: `/${wsId}/inventory/suppliers`,
+    },
+    {
+      name: 'Warehouses',
+      href: `/${wsId}/inventory/warehouses`,
+    },
+    {
+      name: 'Batches',
+      href: `/${wsId}/inventory/batches`,
+    },
+    {
+      name: 'Promotions',
+      href: `/${wsId}/inventory/promotions`,
     },
   ];
 
