@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
@@ -18,9 +14,7 @@ import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import BatchProductInput from '../../../../../components/inputs/BatchProductInput';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const BatchDetailsPage: PageWithLayoutProps = () => {
+export default function BatchDetailsPage() {
   const router = useRouter();
 
   const { setRootSegment } = useSegments();
@@ -189,105 +183,96 @@ const BatchDetailsPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="mt-2 flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                batch && batchProducts
-                  ? 'hover:bg-red-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={batch && batchProducts ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
+    <div className="mt-2 flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4">
+        <div className="flex items-end justify-end gap-2">
+          <button
+            className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
+              batch && batchProducts
+                ? 'hover:bg-red-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={batch && batchProducts ? showDeleteModal : undefined}
+          >
+            Xoá
+          </button>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              Lưu thay đổi
-            </button>
-          </div>
-        </div>
-
-        <Divider className="my-4" />
-        <div className="grid gap-x-8 gap-y-4 lg:grid-cols-4 xl:gap-x-16">
-          <div className="grid h-fit gap-2">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-              <Divider className="my-2" variant="dashed" />
-            </div>
-
-            <WarehouseSelector
-              warehouseId={warehouseId}
-              setWarehouseId={setWarehouseId}
-              disabled
-              required
-            />
-
-            <SupplierSelector
-              supplierId={supplierId}
-              setSupplierId={setSupplierId}
-              required
-            />
-
-            <NumberInput
-              label="Giá nhập lô"
-              placeholder="Nhập giá lô hàng"
-              value={price}
-              onChange={setPrice}
-              className="w-full"
-              min={0}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-            />
-          </div>
-
-          <div className="grid h-fit gap-x-4 gap-y-2 lg:col-span-3">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Sản phẩm</div>
-              <Divider className="mb-4 mt-2" variant="dashed" />
-
-              <button
-                className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
-                onClick={addEmptyProduct}
-              >
-                + Thêm sản phẩm
-              </button>
-            </div>
-
-            {products.map((p, idx) => (
-              <BatchProductInput
-                warehouseId={warehouseId}
-                key={p.id + idx}
-                product={p}
-                getUniqueUnitIds={getUniqueIds}
-                updateProduct={(product) => updateProduct(idx, product)}
-                removePrice={() => removePrice(idx)}
-                isLast={idx === products.length - 1}
-              />
-            ))}
-          </div>
+          <button
+            className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
+              hasRequiredFields()
+                ? 'hover:bg-blue-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={hasRequiredFields() ? showEditModal : undefined}
+          >
+            Lưu thay đổi
+          </button>
         </div>
       </div>
-    </>
+
+      <Divider className="my-4" />
+      <div className="grid gap-x-8 gap-y-4 lg:grid-cols-4 xl:gap-x-16">
+        <div className="grid h-fit gap-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <Divider className="my-2" variant="dashed" />
+          </div>
+
+          <WarehouseSelector
+            warehouseId={warehouseId}
+            setWarehouseId={setWarehouseId}
+            disabled
+            required
+          />
+
+          <SupplierSelector
+            supplierId={supplierId}
+            setSupplierId={setSupplierId}
+            required
+          />
+
+          <NumberInput
+            label="Giá nhập lô"
+            placeholder="Nhập giá lô hàng"
+            value={price}
+            onChange={setPrice}
+            className="w-full"
+            min={0}
+            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+            formatter={(value) =>
+              !Number.isNaN(parseFloat(value || ''))
+                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                : ''
+            }
+          />
+        </div>
+
+        <div className="grid h-fit gap-x-4 gap-y-2 lg:col-span-3">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Sản phẩm</div>
+            <Divider className="mb-4 mt-2" variant="dashed" />
+
+            <button
+              className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
+              onClick={addEmptyProduct}
+            >
+              + Thêm sản phẩm
+            </button>
+          </div>
+
+          {products.map((p, idx) => (
+            <BatchProductInput
+              warehouseId={warehouseId}
+              key={p.id + idx}
+              product={p}
+              getUniqueUnitIds={getUniqueIds}
+              updateProduct={(product) => updateProduct(idx, product)}
+              removePrice={() => removePrice(idx)}
+              isLast={idx === products.length - 1}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   );
-};
-
-BatchDetailsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default BatchDetailsPage;
+}

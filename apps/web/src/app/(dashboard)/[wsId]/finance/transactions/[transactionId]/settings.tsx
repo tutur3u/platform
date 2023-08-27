@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -31,9 +27,7 @@ import moment from 'moment';
 import { EyeIcon } from '@heroicons/react/24/outline';
 import ThousandMultiplierChips from '../../../../../../components/chips/ThousandMultiplierChips';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const TransactionSettingsPage: PageWithLayoutProps = () => {
+export default function TransactionSettingsPage() {
   const router = useRouter();
 
   const { setRootSegment } = useSegments();
@@ -203,183 +197,174 @@ const TransactionSettingsPage: PageWithLayoutProps = () => {
   const { lang } = useTranslation();
 
   return (
-    <>
-      <HeaderX label={`${transactions} - ${finance}`} />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                transaction
-                  ? 'hover:bg-red-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={transaction ? showDeleteModal : undefined}
-            >
-              {t('delete')}
-            </button>
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
+        <div className="flex items-end justify-end gap-2">
+          <button
+            className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
+              transaction
+                ? 'hover:bg-red-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={transaction ? showDeleteModal : undefined}
+          >
+            {t('delete')}
+          </button>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              {t('save-changes')}
-            </button>
-          </div>
+          <button
+            className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
+              hasRequiredFields()
+                ? 'hover:bg-blue-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={hasRequiredFields() ? showEditModal : undefined}
+          >
+            {t('save-changes')}
+          </button>
+        </div>
+      </div>
+
+      <Divider className="my-4" />
+      <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="col-span-full">
+          <div className="text-2xl font-semibold">{t('basic-info')}</div>
+          <Divider className="my-2" variant="dashed" />
         </div>
 
-        <Divider className="my-4" />
-        <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">{t('basic-info')}</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
-
-          <SettingItemCard
-            title={t('wallets')}
-            description={t('wallet-description')}
-          >
-            <div className="flex gap-2">
-              <WalletSelector
-                walletId={transaction?.wallet_id}
-                wallet={wallet}
-                setWallet={setWallet}
-                className="w-full"
-                preventPreselected
-                hideLabel
-              />
-              {ws?.id && wallet?.id && (
-                <Button
-                  variant="light"
-                  className="bg-blue-300/10"
-                  onClick={() =>
-                    router.push(`/${ws.id}/finance/wallets/${wallet.id}`)
-                  }
-                >
-                  <EyeIcon className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          </SettingItemCard>
-
-          <SettingItemCard
-            title={t('description')}
-            description={t('description-description')}
-            disabled={!wallet}
-          >
-            <TextInput
-              placeholder={t('description-placeholder')}
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              disabled={!wallet}
-            />
-          </SettingItemCard>
-
-          <SettingItemCard
-            title={t('datetime')}
-            description={t('datetime-description')}
-            disabled={!wallet}
-          >
-            <DateTimePicker
-              value={takenAt}
-              onChange={(date) => setTakenAt(date || new Date())}
+        <SettingItemCard
+          title={t('wallets')}
+          description={t('wallet-description')}
+        >
+          <div className="flex gap-2">
+            <WalletSelector
+              walletId={transaction?.wallet_id}
+              wallet={wallet}
+              setWallet={setWallet}
               className="w-full"
-              disabled={!wallet}
-              valueFormat="HH:mm - dddd, DD/MM/YYYY"
-              locale={lang}
-            />
-          </SettingItemCard>
-
-          <SettingItemCard
-            title={t('amount')}
-            description={t('amount-description')}
-            disabled={!wallet}
-          >
-            <div className="grid gap-2">
-              <NumberInput
-                placeholder={t('amount-placeholder')}
-                value={amount}
-                onChange={(num) =>
-                  category
-                    ? setAmount(
-                        Number(num) * (category?.is_expense === false ? 1 : -1)
-                      )
-                    : setAmount(Number(num))
-                }
-                className="w-full"
-                classNames={{
-                  input: 'bg-white/5 border-zinc-300/20 font-semibold',
-                }}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                formatter={(value) =>
-                  !Number.isNaN(parseFloat(value || ''))
-                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                    : ''
-                }
-                disabled={!wallet}
-              />
-
-              {amount != 0 && (
-                <ThousandMultiplierChips
-                  amount={amount}
-                  setAmount={setAmount}
-                  hidden={!transaction?.amount || amount === transaction.amount}
-                />
-              )}
-
-              <Divider className="my-1" variant="dashed" />
-              <Checkbox
-                label={t('report-opt-out')}
-                checked={reportOptOut}
-                onChange={(e) => setReportOptOut(e.currentTarget.checked)}
-              />
-            </div>
-          </SettingItemCard>
-
-          <SettingItemCard
-            title={t('category')}
-            description={t('category-description')}
-            disabled={!wallet}
-          >
-            <TransactionCategorySelector
-              categoryId={transaction?.category_id}
-              category={category}
-              setCategory={setCategory}
               preventPreselected
               hideLabel
             />
-          </SettingItemCard>
+            {ws?.id && wallet?.id && (
+              <Button
+                variant="light"
+                className="bg-blue-300/10"
+                onClick={() =>
+                  router.push(`/${ws.id}/finance/wallets/${wallet.id}`)
+                }
+              >
+                <EyeIcon className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+        </SettingItemCard>
 
-          <SettingItemCard
-            title={t('currency')}
-            description={t('currency-description')}
+        <SettingItemCard
+          title={t('description')}
+          description={t('description-description')}
+          disabled={!wallet}
+        >
+          <TextInput
+            placeholder={t('description-placeholder')}
+            value={description}
+            onChange={(e) => setDescription(e.currentTarget.value)}
             disabled={!wallet}
-          >
-            <Select
-              placeholder={t('currency-placeholder')}
-              value={wallet?.currency}
-              data={[
-                {
-                  label: 'Việt Nam Đồng (VND)',
-                  value: 'VND',
-                },
-              ]}
-              disabled
-              required
+          />
+        </SettingItemCard>
+
+        <SettingItemCard
+          title={t('datetime')}
+          description={t('datetime-description')}
+          disabled={!wallet}
+        >
+          <DateTimePicker
+            value={takenAt}
+            onChange={(date) => setTakenAt(date || new Date())}
+            className="w-full"
+            disabled={!wallet}
+            valueFormat="HH:mm - dddd, DD/MM/YYYY"
+            locale={lang}
+          />
+        </SettingItemCard>
+
+        <SettingItemCard
+          title={t('amount')}
+          description={t('amount-description')}
+          disabled={!wallet}
+        >
+          <div className="grid gap-2">
+            <NumberInput
+              placeholder={t('amount-placeholder')}
+              value={amount}
+              onChange={(num) =>
+                category
+                  ? setAmount(
+                      Number(num) * (category?.is_expense === false ? 1 : -1)
+                    )
+                  : setAmount(Number(num))
+              }
+              className="w-full"
+              classNames={{
+                input: 'bg-white/5 border-zinc-300/20 font-semibold',
+              }}
+              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+              formatter={(value) =>
+                !Number.isNaN(parseFloat(value || ''))
+                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                  : ''
+              }
+              disabled={!wallet}
             />
-          </SettingItemCard>
-        </div>
+
+            {amount != 0 && (
+              <ThousandMultiplierChips
+                amount={amount}
+                setAmount={setAmount}
+                hidden={!transaction?.amount || amount === transaction.amount}
+              />
+            )}
+
+            <Divider className="my-1" variant="dashed" />
+            <Checkbox
+              label={t('report-opt-out')}
+              checked={reportOptOut}
+              onChange={(e) => setReportOptOut(e.currentTarget.checked)}
+            />
+          </div>
+        </SettingItemCard>
+
+        <SettingItemCard
+          title={t('category')}
+          description={t('category-description')}
+          disabled={!wallet}
+        >
+          <TransactionCategorySelector
+            categoryId={transaction?.category_id}
+            category={category}
+            setCategory={setCategory}
+            preventPreselected
+            hideLabel
+          />
+        </SettingItemCard>
+
+        <SettingItemCard
+          title={t('currency')}
+          description={t('currency-description')}
+          disabled={!wallet}
+        >
+          <Select
+            placeholder={t('currency-placeholder')}
+            value={wallet?.currency}
+            data={[
+              {
+                label: 'Việt Nam Đồng (VND)',
+                value: 'VND',
+              },
+            ]}
+            disabled
+            required
+          />
+        </SettingItemCard>
       </div>
-    </>
+    </div>
   );
-};
-
-TransactionSettingsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="transaction_details">{page}</NestedLayout>;
-};
-
-export default TransactionSettingsPage;
+}

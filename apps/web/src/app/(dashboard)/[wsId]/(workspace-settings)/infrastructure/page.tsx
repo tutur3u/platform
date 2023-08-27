@@ -1,16 +1,13 @@
 'use client';
 
-import { ReactElement, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSegments } from '../../../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import HeaderX from '../../../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '../../../../../components/cards/StatisticCard';
 import useSWR from 'swr';
 
-const InfrastructureOverviewPage: PageWithLayoutProps = () => {
+export default function InfrastructureOverviewPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -51,29 +48,20 @@ const InfrastructureOverviewPage: PageWithLayoutProps = () => {
   const isWorkspacesLoading = workspaces === undefined && !workspacesError;
 
   return (
-    <>
-      <HeaderX label={`${overviewLabel} – ${infrastructureLabel}`} />
-      <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatisticCard
-          title={usersLabel}
-          value={users}
-          loading={isUsersLoading}
-          href={`/${ws?.id}/infrastructure/users`}
-        />
+    <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <StatisticCard
+        title={usersLabel}
+        value={users}
+        loading={isUsersLoading}
+        href={`/${ws?.id}/infrastructure/users`}
+      />
 
-        <StatisticCard
-          title={workspacesLabel}
-          value={workspaces}
-          loading={isWorkspacesLoading}
-          href={`/${ws?.id}/infrastructure/workspaces`}
-        />
-      </div>
-    </>
+      <StatisticCard
+        title={workspacesLabel}
+        value={workspaces}
+        loading={isWorkspacesLoading}
+        href={`/${ws?.id}/infrastructure/workspaces`}
+      />
+    </div>
   );
-};
-
-InfrastructureOverviewPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="infrastructure">{page}</NestedLayout>;
-};
-
-export default InfrastructureOverviewPage;
+}

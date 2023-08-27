@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
@@ -18,9 +14,7 @@ import PaginationSelector from '../../../../../components/selectors/PaginationSe
 import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const MiscVitalsPage: PageWithLayoutProps = () => {
+export default function MiscVitalsPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -76,61 +70,52 @@ const MiscVitalsPage: PageWithLayoutProps = () => {
   if (!ws) return null;
 
   return (
-    <>
-      <HeaderX label="Chỉ số – Khám bệnh" />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-          />
-          <div className="hidden xl:block" />
-          <Divider variant="dashed" className="col-span-full" />
-          <Switch
-            label="Hiển thị đơn vị"
-            checked={showUnit}
-            onChange={(event) => setShowUnit(event.currentTarget.checked)}
-          />
-        </div>
-
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={count}
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <GeneralSearchBar setQuery={setQuery} />
+        <ModeSelector mode={mode} setMode={setMode} />
+        <PaginationSelector
+          items={itemsPerPage}
+          setItems={(size) => {
+            setPage(1);
+            setItemsPerPage(size);
+          }}
         />
-
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          <PlusCardButton href={`/${ws.id}/healthcare/vitals/new`} />
-
-          {vitals &&
-            vitals?.map((v) => (
-              <GeneralItemCard
-                key={v.id}
-                name={v.name}
-                hint={v.unit}
-                href={`/${ws.id}/healthcare/vitals/${v.id}`}
-                showHint={showUnit}
-              />
-            ))}
-        </div>
+        <div className="hidden xl:block" />
+        <Divider variant="dashed" className="col-span-full" />
+        <Switch
+          label="Hiển thị đơn vị"
+          checked={showUnit}
+          onChange={(event) => setShowUnit(event.currentTarget.checked)}
+        />
       </div>
-    </>
+
+      <Divider className="mt-4" />
+      <PaginationIndicator
+        activePage={activePage}
+        setActivePage={setPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={count}
+      />
+
+      <div
+        className={`grid gap-4 ${
+          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+        }`}
+      >
+        <PlusCardButton href={`/${ws.id}/healthcare/vitals/new`} />
+
+        {vitals &&
+          vitals?.map((v) => (
+            <GeneralItemCard
+              key={v.id}
+              name={v.name}
+              hint={v.unit}
+              href={`/${ws.id}/healthcare/vitals/${v.id}`}
+              showHint={showUnit}
+            />
+          ))}
+      </div>
+    </div>
   );
-};
-
-MiscVitalsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="healthcare">{page}</NestedLayout>;
-};
-
-export default MiscVitalsPage;
+}

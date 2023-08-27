@@ -9,7 +9,6 @@ import {
   CakeIcon,
   EnvelopeIcon,
 } from '@heroicons/react/24/solid';
-import HeaderX from '../../../../components/metadata/HeaderX';
 import { DatePickerInput } from '@mantine/dates';
 import LanguageSelector from '../../../../components/selectors/LanguageSelector';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -39,8 +38,6 @@ export default function AccountSettingsPage() {
 
   const { user, updateUser, uploadAvatar } = useUser();
   const { ws } = useWorkspaces();
-
-  const settings = t('common:settings');
 
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -193,189 +190,185 @@ export default function AccountSettingsPage() {
     avatarFile !== null;
 
   return (
-    <>
-      <HeaderX label={settings} />
+    <div className="grid gap-1 md:min-w-max md:max-w-lg">
+      <SettingItemTab title={avatarLabel} description={avatarDescription}>
+        <Avatar
+          user={user}
+          updateUser={updateUser}
+          avatarUrl={avatarUrl}
+          avatarFile={avatarFile}
+          setAvatarFile={setAvatarFile}
+        />
+      </SettingItemTab>
 
-      <div className="grid gap-1 md:min-w-max md:max-w-lg">
-        <SettingItemTab title={avatarLabel} description={avatarDescription}>
-          <Avatar
-            user={user}
-            updateUser={updateUser}
-            avatarUrl={avatarUrl}
-            avatarFile={avatarFile}
-            setAvatarFile={setAvatarFile}
-          />
-        </SettingItemTab>
+      <SettingItemTab
+        title={displayNameLabel}
+        description={displayNameDescription}
+      >
+        <TextInput
+          placeholder="John Doe"
+          value={displayName}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDisplayName(event.currentTarget.value)
+          }
+        />
+      </SettingItemTab>
 
-        <SettingItemTab
-          title={displayNameLabel}
-          description={displayNameDescription}
+      <SettingItemTab title="Handle" description={handleDescription}>
+        <TextInput
+          placeholder="tuturuuu"
+          // replace all characters that are not a-z, 0-9, underscore(_), or dash(-) with empty string
+          value={handle.replace(/[^a-z0-9_-]/gi, '').toLowerCase()}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            const handle = event.currentTarget.value.replace(
+              /[^a-z0-9_-]/gi,
+              ''
+            );
+
+            // Limit to 20 characters
+            if (handle.length > 20) return;
+            setUsername(handle.toLowerCase());
+          }}
+          icon={<AtSymbolIcon className="h-5 w-5" />}
+        />
+      </SettingItemTab>
+
+      <SettingItemTab title={birthdayLabel} description={birthdayDescription}>
+        <DatePickerInput
+          placeholder={birthdayPlaceholder}
+          icon={<CakeIcon className="h-5 w-5" />}
+          value={birthday}
+          onChange={setBirthday}
+          classNames={{
+            input: 'dark:bg-[#25262b]',
+          }}
+          clearable
+        />
+
+        <Button
+          onClick={handleSave}
+          className={`mt-2 flex w-full items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
+            !isUserDataDirty ? 'opacity-50' : ''
+          }`}
+          disabled={!isUserDataDirty}
         >
+          {isSaving ? saving : save}
+        </Button>
+      </SettingItemTab>
+
+      <Divider variant="dashed" className="my-2" />
+
+      <SettingItemTab title="Email" description={emailDescription}>
+        <div className="grid gap-2">
           <TextInput
-            placeholder="John Doe"
-            value={displayName}
+            placeholder="example@tuturuuu.com"
+            label={
+              user?.new_email
+                ? user?.email === email
+                  ? currentEmail
+                  : newEmail
+                : undefined
+            }
+            value={email || ''}
+            icon={<EnvelopeIcon className="h-5 w-5" />}
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setDisplayName(event.currentTarget.value)
+              setEmail(event.currentTarget.value)
             }
           />
-        </SettingItemTab>
 
-        <SettingItemTab title="Handle" description={handleDescription}>
-          <TextInput
-            placeholder="tuturuuu"
-            // replace all characters that are not a-z, 0-9, underscore(_), or dash(-) with empty string
-            value={handle.replace(/[^a-z0-9_-]/gi, '').toLowerCase()}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              const handle = event.currentTarget.value.replace(
-                /[^a-z0-9_-]/gi,
-                ''
-              );
+          {user?.email === email && user?.new_email && (
+            <>
+              <TextInput
+                value={user.new_email}
+                label={newEmail}
+                icon={<EnvelopeIcon className="h-5 w-5" />}
+                disabled
+              />
 
-              // Limit to 20 characters
-              if (handle.length > 20) return;
-              setUsername(handle.toLowerCase());
-            }}
-            icon={<AtSymbolIcon className="h-5 w-5" />}
-          />
-        </SettingItemTab>
+              <Divider variant="dashed" className="mt-1" />
 
-        <SettingItemTab title={birthdayLabel} description={birthdayDescription}>
-          <DatePickerInput
-            placeholder={birthdayPlaceholder}
-            icon={<CakeIcon className="h-5 w-5" />}
-            value={birthday}
-            onChange={setBirthday}
-            classNames={{
-              input: 'dark:bg-[#25262b]',
-            }}
-            clearable
-          />
+              <div className="text-zinc-700 dark:text-zinc-400">
+                {changeEmailDescription}
+              </div>
+            </>
+          )}
 
           <Button
             onClick={handleSave}
-            className={`mt-2 flex w-full items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
-              !isUserDataDirty ? 'opacity-50' : ''
+            className={`flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
+              user?.email === email ? 'opacity-50' : ''
             }`}
-            disabled={!isUserDataDirty}
+            disabled={user?.email === email}
           >
             {isSaving ? saving : save}
           </Button>
-        </SettingItemTab>
+        </div>
+      </SettingItemTab>
 
-        <Divider variant="dashed" className="my-2" />
+      <Divider variant="dashed" className="my-2" />
 
-        <SettingItemTab title="Email" description={emailDescription}>
-          <div className="grid gap-2">
-            <TextInput
-              placeholder="example@tuturuuu.com"
-              label={
-                user?.new_email
-                  ? user?.email === email
-                    ? currentEmail
-                    : newEmail
-                  : undefined
-              }
-              value={email || ''}
-              icon={<EnvelopeIcon className="h-5 w-5" />}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                setEmail(event.currentTarget.value)
-              }
-            />
-
-            {user?.email === email && user?.new_email && (
-              <>
-                <TextInput
-                  value={user.new_email}
-                  label={newEmail}
-                  icon={<EnvelopeIcon className="h-5 w-5" />}
-                  disabled
-                />
-
-                <Divider variant="dashed" className="mt-1" />
-
-                <div className="text-zinc-700 dark:text-zinc-400">
-                  {changeEmailDescription}
-                </div>
-              </>
-            )}
-
-            <Button
-              onClick={handleSave}
-              className={`flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20 ${
-                user?.email === email ? 'opacity-50' : ''
-              }`}
-              disabled={user?.email === email}
-            >
-              {isSaving ? saving : save}
-            </Button>
-          </div>
-        </SettingItemTab>
-
-        <Divider variant="dashed" className="my-2" />
-
-        <SettingItemTab
-          title={changePasswordLabel}
-          description={changePasswordDescription}
+      <SettingItemTab
+        title={changePasswordLabel}
+        description={changePasswordDescription}
+      >
+        <Link
+          href="/reset-password"
+          className="flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
         >
-          <Link
-            href="/reset-password"
-            className="flex items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition duration-300 hover:border-blue-500/30 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-300/20"
+          {changePasswordLabel}
+        </Link>
+      </SettingItemTab>
+
+      <Divider variant="dashed" className="my-2" />
+
+      <SettingItemTab title={languageLabel} description={languageDescription}>
+        <LanguageSelector fullWidth />
+      </SettingItemTab>
+
+      {DEV_MODE ? (
+        <>
+          <Divider className="my-2" />
+          <SettingItemTab
+            title={developmentLabel}
+            description={developmentDescription}
           >
-            {changePasswordLabel}
-          </Link>
-        </SettingItemTab>
+            <div className="grid gap-2">
+              <Checkbox
+                label={t('hide-experimental-on-sidebar')}
+                checked={hideExperimentalOnSidebar}
+                onChange={toggleHideExperimentalOnSidebar}
+              />
+              <Checkbox
+                label={t('hide-experimental-on-top-nav')}
+                checked={hideExperimentalOnTopNav}
+                onChange={toggleHideExperimentalOnTopNav}
+              />
+            </div>
+          </SettingItemTab>
+        </>
+      ) : null}
 
-        <Divider variant="dashed" className="my-2" />
+      <Divider className="my-2" />
 
-        <SettingItemTab title={languageLabel} description={languageDescription}>
-          <LanguageSelector fullWidth />
-        </SettingItemTab>
+      <SettingItemTab title={logOut} description={logoutDescription}>
+        <Button className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20">
+          {logOut}
+        </Button>
+      </SettingItemTab>
 
-        {DEV_MODE ? (
-          <>
-            <Divider className="my-2" />
-            <SettingItemTab
-              title={developmentLabel}
-              description={developmentDescription}
-            >
-              <div className="grid gap-2">
-                <Checkbox
-                  label={t('hide-experimental-on-sidebar')}
-                  checked={hideExperimentalOnSidebar}
-                  onChange={toggleHideExperimentalOnSidebar}
-                />
-                <Checkbox
-                  label={t('hide-experimental-on-top-nav')}
-                  checked={hideExperimentalOnTopNav}
-                  onChange={toggleHideExperimentalOnTopNav}
-                />
-              </div>
-            </SettingItemTab>
-          </>
-        ) : null}
+      <Divider className="my-2" />
 
-        <Divider className="my-2" />
-
-        <SettingItemTab title={logOut} description={logoutDescription}>
-          <Button className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20">
-            {logOut}
-          </Button>
-        </SettingItemTab>
-
-        <Divider className="my-2" />
-
-        <SettingItemTab
-          title={deleteAccountLabel}
-          description={deleteAccountDescription}
+      <SettingItemTab
+        title={deleteAccountLabel}
+        description={deleteAccountDescription}
+      >
+        <Button
+          onClick={showDeleteModal}
+          className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
         >
-          <Button
-            onClick={showDeleteModal}
-            className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
-          >
-            {deleteAccountLabel}
-          </Button>
-        </SettingItemTab>
-      </div>
-    </>
+          {deleteAccountLabel}
+        </Button>
+      </SettingItemTab>
+    </div>
   );
 }

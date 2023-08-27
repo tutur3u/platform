@@ -5,9 +5,7 @@ import { openModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ReactElement } from 'react';
 import { mutate } from 'swr';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import { Team } from '../../../../../types/primitives/Team';
 import moment from 'moment';
 import TeamEditForm from '../../../../../components/forms/TeamEditForm';
@@ -22,7 +20,7 @@ interface Props {
   };
 }
 
-const WorkspaceTeamsPage = ({ params: { wsId } }: Props) => {
+export default function WorkspaceTeamsPage({ params: { wsId } }: Props) {
   const { t, lang } = useTranslation('ws-teams');
 
   const teamsLabel = t('workspace-tabs:teams');
@@ -123,10 +121,4 @@ const WorkspaceTeamsPage = ({ params: { wsId } }: Props) => {
       </div>
     </>
   );
-};
-
-WorkspaceTeamsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="workspace">{page}</NestedLayout>;
-};
-
-export default WorkspaceTeamsPage;
+}

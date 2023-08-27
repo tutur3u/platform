@@ -2,8 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSegments } from '../../../../../hooks/useSegments';
 import {
   Divider,
@@ -30,7 +29,6 @@ import SubScript from '@tiptap/extension-subscript';
 import { useEditor } from '@tiptap/react';
 import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
-import HeaderX from '../../../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -41,7 +39,9 @@ interface Props {
   };
 }
 
-const ProjectDocumentEditor = ({ params: { wsId, docId } }: Props) => {
+export default function ProjectDocumentEditor({
+  params: { wsId, docId },
+}: Props) {
   const router = useRouter();
   const { ws } = useWorkspaces();
 
@@ -188,12 +188,6 @@ const ProjectDocumentEditor = ({ params: { wsId, docId } }: Props) => {
 
   return (
     <>
-      <HeaderX
-        label={`${name || 'Untitled Document'} - ${
-          ws?.name || 'Untitled Project'
-        }`}
-      />
-
       {doc && (
         <>
           <div className="flex items-center justify-between gap-4">
@@ -268,10 +262,4 @@ const ProjectDocumentEditor = ({ params: { wsId, docId } }: Props) => {
       )}
     </>
   );
-};
-
-ProjectDocumentEditor.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default ProjectDocumentEditor;
+}

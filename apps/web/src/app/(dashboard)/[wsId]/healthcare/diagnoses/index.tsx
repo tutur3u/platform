@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import { Divider, Switch } from '@mantine/core';
 import ModeSelector, {
   Mode,
@@ -18,9 +14,7 @@ import PaginationSelector from '../../../../../components/selectors/PaginationSe
 import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const HealthcareDiagnosesPage: PageWithLayoutProps = () => {
+export default function HealthcareDiagnosesPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -81,70 +75,59 @@ const HealthcareDiagnosesPage: PageWithLayoutProps = () => {
   if (!ws) return null;
 
   return (
-    <>
-      <HeaderX label="Chẩn đoán – Khám bệnh" />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-          />
-          <div className="hidden xl:block" />
-          <Divider variant="dashed" className="col-span-full" />
-          <Switch
-            label="Hiển thị mô tả"
-            checked={showDescription}
-            onChange={(event) =>
-              setShowDescription(event.currentTarget.checked)
-            }
-          />
-          <Switch
-            label="Hiển thị ghi chú"
-            checked={showNote}
-            onChange={(event) => setShowNote(event.currentTarget.checked)}
-          />
-        </div>
-
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={count}
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <GeneralSearchBar setQuery={setQuery} />
+        <ModeSelector mode={mode} setMode={setMode} />
+        <PaginationSelector
+          items={itemsPerPage}
+          setItems={(size) => {
+            setPage(1);
+            setItemsPerPage(size);
+          }}
         />
-
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          <PlusCardButton href={`/${ws.id}/healthcare/diagnoses/new`} />
-
-          {diagnoses &&
-            diagnoses?.map((d) => (
-              <GeneralItemCard
-                key={d.id}
-                name={d.name}
-                href={`/${ws.id}/healthcare/diagnoses/${d.id}`}
-                secondaryLabel={d.description}
-                tertiaryLabel={d.note}
-                showSecondaryLabel={showDescription}
-                showTertiaryLabel={showNote}
-              />
-            ))}
-        </div>
+        <div className="hidden xl:block" />
+        <Divider variant="dashed" className="col-span-full" />
+        <Switch
+          label="Hiển thị mô tả"
+          checked={showDescription}
+          onChange={(event) => setShowDescription(event.currentTarget.checked)}
+        />
+        <Switch
+          label="Hiển thị ghi chú"
+          checked={showNote}
+          onChange={(event) => setShowNote(event.currentTarget.checked)}
+        />
       </div>
-    </>
+
+      <Divider className="mt-4" />
+      <PaginationIndicator
+        activePage={activePage}
+        setActivePage={setPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={count}
+      />
+
+      <div
+        className={`grid gap-4 ${
+          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+        }`}
+      >
+        <PlusCardButton href={`/${ws.id}/healthcare/diagnoses/new`} />
+
+        {diagnoses &&
+          diagnoses?.map((d) => (
+            <GeneralItemCard
+              key={d.id}
+              name={d.name}
+              href={`/${ws.id}/healthcare/diagnoses/${d.id}`}
+              secondaryLabel={d.description}
+              tertiaryLabel={d.note}
+              showSecondaryLabel={showDescription}
+              showTertiaryLabel={showNote}
+            />
+          ))}
+      </div>
+    </div>
   );
-};
-
-HealthcareDiagnosesPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="healthcare">{page}</NestedLayout>;
-};
-
-export default HealthcareDiagnosesPage;
+}

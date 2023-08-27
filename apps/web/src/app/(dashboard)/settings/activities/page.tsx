@@ -1,9 +1,6 @@
 'use client';
 
-import { ReactElement, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import { useState } from 'react';
 import { Accordion, Divider } from '@mantine/core';
 import PaginationSelector from '../../../../components/selectors/PaginationSelector';
 import ModeSelector, {
@@ -18,7 +15,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { useUser } from '../../../../hooks/useUser';
 import WorkspaceMultiSelector from '../../../../components/selectors/WorkspaceMultiSelector';
 
-const UserActivitiesPage: PageWithLayoutProps = () => {
+export default function UserActivitiesPage() {
   const { t } = useTranslation('settings-tabs');
   const { user } = useUser();
 
@@ -53,8 +50,6 @@ const UserActivitiesPage: PageWithLayoutProps = () => {
 
   return (
     <>
-      <HeaderX label={activitiesLabel} />
-
       {user?.id && (
         <>
           <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
@@ -128,10 +123,4 @@ const UserActivitiesPage: PageWithLayoutProps = () => {
       </div>
     </>
   );
-};
-
-UserActivitiesPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="settings">{page}</NestedLayout>;
-};
-
-export default UserActivitiesPage;
+}

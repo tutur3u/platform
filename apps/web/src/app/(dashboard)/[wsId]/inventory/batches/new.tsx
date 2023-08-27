@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import WarehouseSelector from '../../../../../components/selectors/WarehouseSelector';
@@ -14,9 +10,7 @@ import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../../hooks/useSegments';
 import BatchProductInput from '../../../../../components/inputs/BatchProductInput';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const NewBatchPage: PageWithLayoutProps = () => {
+export default function NewBatchPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -146,101 +140,92 @@ const NewBatchPage: PageWithLayoutProps = () => {
     setProducts((products) => products.filter((_, i) => i !== index));
 
   return (
-    <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="mt-2 flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end">
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showLoaderModal : undefined}
-            >
-              Tạo mới
-            </button>
-          </div>
-        </div>
-
-        <Divider className="my-4" />
-        <div className="grid gap-x-8 gap-y-4 lg:grid-cols-4 xl:gap-x-16">
-          <div className="grid h-fit gap-2">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-              <Divider className="my-2" variant="dashed" />
-            </div>
-
-            <WarehouseSelector
-              warehouseId={warehouseId}
-              setWarehouseId={setWarehouseId}
-              required
-            />
-
-            <SupplierSelector
-              supplierId={supplierId}
-              setSupplierId={setSupplierId}
-              required
-            />
-
-            <NumberInput
-              label="Giá nhập lô"
-              placeholder="Nhập giá lô hàng"
-              value={price}
-              onChange={setPrice}
-              className="w-full"
-              min={0}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
-            />
-          </div>
-
-          <div className="grid h-fit gap-x-4 gap-y-2 lg:col-span-3">
-            {warehouseId ? (
-              <>
-                <div className="col-span-full">
-                  <div className="text-2xl font-semibold">Sản phẩm</div>
-                  <Divider className="mb-4 mt-2" variant="dashed" />
-
-                  <button
-                    className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
-                    onClick={addEmptyProduct}
-                  >
-                    + Thêm sản phẩm
-                  </button>
-                </div>
-
-                {products.map((p, idx) => (
-                  <BatchProductInput
-                    warehouseId={warehouseId}
-                    key={p.id + idx}
-                    product={p}
-                    getUniqueUnitIds={getUniqueIds}
-                    updateProduct={(product) => updateProduct(idx, product)}
-                    removePrice={() => removePrice(idx)}
-                    isLast={idx === products.length - 1}
-                  />
-                ))}
-              </>
-            ) : (
-              <div className="col-span-full h-full w-full rounded border border-zinc-300/10 bg-zinc-800 p-4 text-center">
-                Chọn kho chứa để thêm sản phẩm
-              </div>
-            )}
-          </div>
+    <div className="mt-2 flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
+        <div className="flex items-end justify-end">
+          <button
+            className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
+              hasRequiredFields()
+                ? 'hover:bg-blue-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={hasRequiredFields() ? showLoaderModal : undefined}
+          >
+            Tạo mới
+          </button>
         </div>
       </div>
-    </>
+
+      <Divider className="my-4" />
+      <div className="grid gap-x-8 gap-y-4 lg:grid-cols-4 xl:gap-x-16">
+        <div className="grid h-fit gap-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <Divider className="my-2" variant="dashed" />
+          </div>
+
+          <WarehouseSelector
+            warehouseId={warehouseId}
+            setWarehouseId={setWarehouseId}
+            required
+          />
+
+          <SupplierSelector
+            supplierId={supplierId}
+            setSupplierId={setSupplierId}
+            required
+          />
+
+          <NumberInput
+            label="Giá nhập lô"
+            placeholder="Nhập giá lô hàng"
+            value={price}
+            onChange={setPrice}
+            className="w-full"
+            min={0}
+            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
+            formatter={(value) =>
+              !Number.isNaN(parseFloat(value || ''))
+                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                : ''
+            }
+          />
+        </div>
+
+        <div className="grid h-fit gap-x-4 gap-y-2 lg:col-span-3">
+          {warehouseId ? (
+            <>
+              <div className="col-span-full">
+                <div className="text-2xl font-semibold">Sản phẩm</div>
+                <Divider className="mb-4 mt-2" variant="dashed" />
+
+                <button
+                  className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
+                  onClick={addEmptyProduct}
+                >
+                  + Thêm sản phẩm
+                </button>
+              </div>
+
+              {products.map((p, idx) => (
+                <BatchProductInput
+                  warehouseId={warehouseId}
+                  key={p.id + idx}
+                  product={p}
+                  getUniqueUnitIds={getUniqueIds}
+                  updateProduct={(product) => updateProduct(idx, product)}
+                  removePrice={() => removePrice(idx)}
+                  isLast={idx === products.length - 1}
+                />
+              ))}
+            </>
+          ) : (
+            <div className="col-span-full h-full w-full rounded border border-zinc-300/10 bg-zinc-800 p-4 text-center">
+              Chọn kho chứa để thêm sản phẩm
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
-};
-
-NewBatchPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default NewBatchPage;
+}

@@ -1,7 +1,6 @@
 'use client';
 
-import { ReactElement, useState } from 'react';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useState } from 'react';
 import {
   ActionIcon,
   Button,
@@ -15,7 +14,7 @@ import { DEV_MODE } from '../../../../../constants/common';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconGitMerge } from '@tabler/icons-react';
 
-const PlatformMigrationsPage = () => {
+export default function PlatformMigrationsPage() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
     key: 'migration-api-endpoint',
     defaultValue: '',
@@ -639,10 +638,4 @@ const PlatformMigrationsPage = () => {
       </div>
     </div>
   );
-};
-
-PlatformMigrationsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default PlatformMigrationsPage;
+}

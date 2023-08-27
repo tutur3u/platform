@@ -1,9 +1,6 @@
 'use client';
 
-import React, { ReactElement } from 'react';
 import useSWR from 'swr';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
-import HeaderX from '../../../../components/metadata/HeaderX';
 import { Divider } from '@mantine/core';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
@@ -12,16 +9,11 @@ import { TaskBoard } from '../../../../types/primitives/TaskBoard';
 import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 
-const WorkspaceBoardsPage = () => {
+export default function WorkspaceBoardsPage() {
   const router = useRouter();
   const { ws } = useWorkspaces();
-
-  const { t } = useTranslation();
-
-  const tasksLabel = t('sidebar-tabs:tasks');
 
   const { data: boards } = useSWR<TaskBoard[]>(
     ws ? `/api/workspaces/${ws.id}/boards` : null
@@ -74,8 +66,6 @@ const WorkspaceBoardsPage = () => {
 
   return (
     <>
-      <HeaderX label={`${tasksLabel} – ${ws?.name || 'Untitled Workspace'}`} />
-
       <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
         <h1 className="text-2xl font-bold">
           Boards{' '}
@@ -115,10 +105,4 @@ const WorkspaceBoardsPage = () => {
       </div>
     </>
   );
-};
-
-WorkspaceBoardsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout>{page}</NestedLayout>;
-};
-
-export default WorkspaceBoardsPage;
+}

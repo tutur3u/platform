@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, Select, TextInput, Textarea } from '@mantine/core';
 import {
@@ -20,8 +16,6 @@ import { WorkspaceUser } from '../../../../../types/primitives/WorkspaceUser';
 import { UserGroup } from '../../../../../types/primitives/UserGroup';
 import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
 const genders = [
   {
     label: 'Nam',
@@ -37,7 +31,7 @@ const genders = [
   },
 ];
 
-const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
+export default function WorkspaceUserDetailsPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -129,164 +123,155 @@ const WorkspaceUserDetailsPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
-          <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-              <Divider className="my-2" variant="dashed" />
-            </div>
-
-            <TextInput
-              label="Tên người dùng"
-              placeholder='Ví dụ: "Nguyễn Văn A"'
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-              required
-              disabled
-            />
-            <Select
-              label="Giới tính"
-              placeholder="Chọn giới tính của người dùng"
-              value={gender}
-              data={genders}
-              onChange={(val) => setGender(val || '')}
-              required
-              disabled
-            />
-
-            <DatePickerInput
-              label="Ngày sinh"
-              placeholder="Chọn ngày sinh của người dùng"
-              value={birthday}
-              onChange={setBirthday}
-              locale="vi"
-              monthLabelFormat={(date) => moment(date).format('MMMM, YYYY')}
-              monthsListFormat="MMMM"
-              valueFormat="DD/MM/YYYY"
-              className={ws?.preset !== 'PHARMACY' ? 'md:col-span-2' : ''}
-              classNames={{
-                input: 'dark:bg-[#25262b]',
-              }}
-              disabled
-            />
-
-            {ws?.preset === 'PHARMACY' && (
-              <TextInput
-                label="Dân tộc"
-                placeholder='Ví dụ: "Kinh"'
-                value={ethnicity}
-                onChange={(e) => setEthnicity(e.currentTarget.value)}
-                disabled
-              />
-            )}
-
-            {ws?.preset === 'PHARMACY' && (
-              <TextInput
-                label="CMND/CCCD"
-                placeholder="Nhập số CMND/CCCD của người dùng"
-                value={nationalId}
-                onChange={(e) => setNationalId(e.currentTarget.value)}
-                className="md:col-span-2"
-                icon={<IdentificationIcon className="h-5 w-5" />}
-                disabled
-              />
-            )}
-
-            {ws?.preset === 'PHARMACY' && (
-              <TextInput
-                label="Người giám hộ"
-                placeholder="Nhập tên người giám hộ của người dùng"
-                value={guardian}
-                onChange={(e) => setGuardian(e.currentTarget.value)}
-                className="md:col-span-2"
-                icon={<ShieldCheckIcon className="h-5 w-5" />}
-                disabled
-              />
-            )}
-
-            <div className="hidden xl:col-span-2 xl:block" />
-
-            <Textarea
-              label="Ghi chú"
-              placeholder="Ghi chú về người dùng"
-              value={note}
-              onChange={(e) => setNote(e.currentTarget.value)}
-              className="md:col-span-2"
-              minRows={5}
-              disabled
-            />
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
+        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <Divider className="my-2" variant="dashed" />
           </div>
 
-          <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin liên hệ</div>
-              <Divider className="my-2" variant="dashed" />
-            </div>
+          <TextInput
+            label="Tên người dùng"
+            placeholder='Ví dụ: "Nguyễn Văn A"'
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            required
+            disabled
+          />
+          <Select
+            label="Giới tính"
+            placeholder="Chọn giới tính của người dùng"
+            value={gender}
+            data={genders}
+            onChange={(val) => setGender(val || '')}
+            required
+            disabled
+          />
 
+          <DatePickerInput
+            label="Ngày sinh"
+            placeholder="Chọn ngày sinh của người dùng"
+            value={birthday}
+            onChange={setBirthday}
+            locale="vi"
+            monthLabelFormat={(date) => moment(date).format('MMMM, YYYY')}
+            monthsListFormat="MMMM"
+            valueFormat="DD/MM/YYYY"
+            className={ws?.preset !== 'PHARMACY' ? 'md:col-span-2' : ''}
+            classNames={{
+              input: 'dark:bg-[#25262b]',
+            }}
+            disabled
+          />
+
+          {ws?.preset === 'PHARMACY' && (
             <TextInput
-              label="Số điện thoại"
-              placeholder='Ví dụ: "0987654321"'
-              value={phone}
-              onChange={(e) => setPhone(e.currentTarget.value)}
-              icon={<PhoneIcon className="h-5 w-5" />}
+              label="Dân tộc"
+              placeholder='Ví dụ: "Kinh"'
+              value={ethnicity}
+              onChange={(e) => setEthnicity(e.currentTarget.value)}
               disabled
             />
+          )}
 
+          {ws?.preset === 'PHARMACY' && (
             <TextInput
-              label="Email"
-              placeholder='Ví dụ: "nguyenvana@gmail.com"'
-              value={email}
-              onChange={(e) => setEmail(e.currentTarget.value)}
-              icon={<EnvelopeIcon className="h-5 w-5" />}
-              disabled
-            />
-
-            <div className="hidden xl:col-span-2 xl:block" />
-
-            <Textarea
-              label="Địa chỉ"
-              placeholder="Nhập địa chỉ của người dùng"
-              value={address}
-              onChange={(e) => setAddress(e.currentTarget.value)}
+              label="CMND/CCCD"
+              placeholder="Nhập số CMND/CCCD của người dùng"
+              value={nationalId}
+              onChange={(e) => setNationalId(e.currentTarget.value)}
               className="md:col-span-2"
-              minRows={5}
+              icon={<IdentificationIcon className="h-5 w-5" />}
               disabled
             />
+          )}
 
-            {groups.length > 0 && (
-              <>
-                <Divider className="col-span-full my-2" />
-                <div className="col-span-full grid gap-2">
-                  <div className="text-2xl font-semibold">Nhóm người dùng</div>
-                  <Divider className="mb-2" variant="dashed" />
+          {ws?.preset === 'PHARMACY' && (
+            <TextInput
+              label="Người giám hộ"
+              placeholder="Nhập tên người giám hộ của người dùng"
+              value={guardian}
+              onChange={(e) => setGuardian(e.currentTarget.value)}
+              className="md:col-span-2"
+              icon={<ShieldCheckIcon className="h-5 w-5" />}
+              disabled
+            />
+          )}
 
-                  {groups.map((r, idx) => (
-                    <div key={`group-${idx}`} className="flex items-end gap-2">
-                      <UserGroupSelector
-                        group={r}
-                        setGroup={(r) => updateGroup(idx, r)}
-                        blacklist={getUniqueUnitIds()}
-                        className="w-full"
-                        hideLabel
-                        disabled
-                      />
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+          <div className="hidden xl:col-span-2 xl:block" />
+
+          <Textarea
+            label="Ghi chú"
+            placeholder="Ghi chú về người dùng"
+            value={note}
+            onChange={(e) => setNote(e.currentTarget.value)}
+            className="md:col-span-2"
+            minRows={5}
+            disabled
+          />
+        </div>
+
+        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Thông tin liên hệ</div>
+            <Divider className="my-2" variant="dashed" />
           </div>
+
+          <TextInput
+            label="Số điện thoại"
+            placeholder='Ví dụ: "0987654321"'
+            value={phone}
+            onChange={(e) => setPhone(e.currentTarget.value)}
+            icon={<PhoneIcon className="h-5 w-5" />}
+            disabled
+          />
+
+          <TextInput
+            label="Email"
+            placeholder='Ví dụ: "nguyenvana@gmail.com"'
+            value={email}
+            onChange={(e) => setEmail(e.currentTarget.value)}
+            icon={<EnvelopeIcon className="h-5 w-5" />}
+            disabled
+          />
+
+          <div className="hidden xl:col-span-2 xl:block" />
+
+          <Textarea
+            label="Địa chỉ"
+            placeholder="Nhập địa chỉ của người dùng"
+            value={address}
+            onChange={(e) => setAddress(e.currentTarget.value)}
+            className="md:col-span-2"
+            minRows={5}
+            disabled
+          />
+
+          {groups.length > 0 && (
+            <>
+              <Divider className="col-span-full my-2" />
+              <div className="col-span-full grid gap-2">
+                <div className="text-2xl font-semibold">Nhóm người dùng</div>
+                <Divider className="mb-2" variant="dashed" />
+
+                {groups.map((r, idx) => (
+                  <div key={`group-${idx}`} className="flex items-end gap-2">
+                    <UserGroupSelector
+                      group={r}
+                      setGroup={(r) => updateGroup(idx, r)}
+                      blacklist={getUniqueUnitIds()}
+                      className="w-full"
+                      hideLabel
+                      disabled
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
-};
-
-WorkspaceUserDetailsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="user_details">{page}</NestedLayout>;
-};
-
-export default WorkspaceUserDetailsPage;
+}

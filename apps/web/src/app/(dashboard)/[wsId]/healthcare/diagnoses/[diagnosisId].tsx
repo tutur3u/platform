@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import { useRouter } from 'next/router';
@@ -13,9 +9,7 @@ import DiagnosisDeleteModal from '../../../../../components/loaders/diagnoses/Di
 import { useSegments } from '../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const NewDiagnosisPage: PageWithLayoutProps = () => {
+export default function NewDiagnosisPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -105,76 +99,67 @@ const NewDiagnosisPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <>
-      <HeaderX label="Chẩn đoán mới - Khám bệnh" />
-      <div className="mt-2 flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
-          <div className="flex items-end justify-end gap-2">
-            <button
-              className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
-                diagnosis
-                  ? 'hover:bg-red-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={diagnosis ? showDeleteModal : undefined}
-            >
-              Xoá
-            </button>
+    <div className="mt-2 flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
+        <div className="flex items-end justify-end gap-2">
+          <button
+            className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
+              diagnosis
+                ? 'hover:bg-red-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={diagnosis ? showDeleteModal : undefined}
+          >
+            Xoá
+          </button>
 
-            <button
-              className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
-                hasRequiredFields()
-                  ? 'hover:bg-blue-300/20'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
-            >
-              Lưu thay đổi
-            </button>
-          </div>
-        </div>
-
-        <Divider className="my-4" />
-        <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
-          <div className="col-span-full">
-            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-            <Divider className="my-2" variant="dashed" />
-          </div>
-
-          <TextInput
-            label="Tên chỉ số"
-            placeholder='Ví dụ: "Nhiệt độ", "Huyết áp", "Huyết đường", "Cholesterol", "Triglyceride", "Creatinine"'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-            disabled={!diagnosis}
-          />
-
-          <div />
-
-          <Textarea
-            label="Mô tả"
-            placeholder="Mô tả về chẩn đoán"
-            value={description}
-            onChange={(e) => setDescription(e.currentTarget.value)}
-            minRows={5}
-          />
-
-          <Textarea
-            label="Ghi chú"
-            placeholder="Ghi chú về chẩn đoán"
-            value={note}
-            onChange={(e) => setNote(e.currentTarget.value)}
-            minRows={5}
-          />
+          <button
+            className={`rounded border border-blue-300/10 bg-blue-300/10 px-4 py-1 font-semibold text-blue-300 transition ${
+              hasRequiredFields()
+                ? 'hover:bg-blue-300/20'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+            onClick={hasRequiredFields() ? showEditModal : undefined}
+          >
+            Lưu thay đổi
+          </button>
         </div>
       </div>
-    </>
+
+      <Divider className="my-4" />
+      <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
+        <div className="col-span-full">
+          <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+          <Divider className="my-2" variant="dashed" />
+        </div>
+
+        <TextInput
+          label="Tên chỉ số"
+          placeholder='Ví dụ: "Nhiệt độ", "Huyết áp", "Huyết đường", "Cholesterol", "Triglyceride", "Creatinine"'
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+          required
+          disabled={!diagnosis}
+        />
+
+        <div />
+
+        <Textarea
+          label="Mô tả"
+          placeholder="Mô tả về chẩn đoán"
+          value={description}
+          onChange={(e) => setDescription(e.currentTarget.value)}
+          minRows={5}
+        />
+
+        <Textarea
+          label="Ghi chú"
+          placeholder="Ghi chú về chẩn đoán"
+          value={note}
+          onChange={(e) => setNote(e.currentTarget.value)}
+          minRows={5}
+        />
+      </div>
+    </div>
   );
-};
-
-NewDiagnosisPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default NewDiagnosisPage;
+}

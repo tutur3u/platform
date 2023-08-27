@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, Switch } from '@mantine/core';
 import CategoryMultiSelector from '../../../../../components/selectors/CategoryMultiSelector';
@@ -21,9 +17,7 @@ import WarehouseMultiSelector from '../../../../../components/selectors/Warehous
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const ProductsPage: PageWithLayoutProps = () => {
+export default function ProductsPage() {
   const { t } = useTranslation();
 
   const inventoryLabel = t('sidebar-tabs:inventory');
@@ -106,87 +100,78 @@ const ProductsPage: PageWithLayoutProps = () => {
     warehouseIds.length > 0 && warehouseIds[0] !== '' && showPrice;
 
   return (
-    <>
-      <HeaderX label={`${productsLabel} – ${inventoryLabel}`} />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-          />
-          <CategoryMultiSelector
-            categoryIds={categoryIds}
-            setCategoryIds={setCategoryIds}
-          />
-          <WarehouseMultiSelector
-            warehouseIds={warehouseIds}
-            setWarehouseIds={setWarehouseIds}
-          />
-          <Divider variant="dashed" className="col-span-full" />
-          <Switch
-            label={t('inventory-products-configs:show-amount')}
-            checked={showAmount}
-            onChange={(event) => setShowAmount(event.currentTarget.checked)}
-          />
-          <Switch
-            label={t('inventory-products-configs:show-supplier')}
-            checked={showSupplier}
-            onChange={(event) => setShowSupplier(event.currentTarget.checked)}
-          />
-          <Switch
-            label={t('inventory-products-configs:show-category')}
-            checked={showCategory}
-            onChange={(event) => setShowCategory(event.currentTarget.checked)}
-          />
-          <Switch
-            label={t('inventory-products-configs:show-price')}
-            checked={enablePrice}
-            onChange={(event) => setShowPrice(event.currentTarget.checked)}
-            disabled={!enablePrice}
-          />
-        </div>
-
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={productsData?.count}
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <GeneralSearchBar setQuery={setQuery} />
+        <ModeSelector mode={mode} setMode={setMode} />
+        <PaginationSelector
+          items={itemsPerPage}
+          setItems={(size) => {
+            setPage(1);
+            setItemsPerPage(size);
+          }}
         />
-
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          <PlusCardButton href={`/${ws.id}/inventory/products/new`} />
-          {productsData &&
-            productsData.data?.map((p: Product, idx) => (
-              <ProductCard
-                key={`${p.id}-${p.unit}-${idx}`}
-                product={p}
-                showSupplier={showSupplier}
-                showCategory={showCategory}
-                showAmount={
-                  warehouseIds.filter((id) => id !== '' && id !== 'all')
-                    .length > 0 && showAmount
-                }
-                showPrice={enablePrice}
-              />
-            ))}
-        </div>
+        <CategoryMultiSelector
+          categoryIds={categoryIds}
+          setCategoryIds={setCategoryIds}
+        />
+        <WarehouseMultiSelector
+          warehouseIds={warehouseIds}
+          setWarehouseIds={setWarehouseIds}
+        />
+        <Divider variant="dashed" className="col-span-full" />
+        <Switch
+          label={t('inventory-products-configs:show-amount')}
+          checked={showAmount}
+          onChange={(event) => setShowAmount(event.currentTarget.checked)}
+        />
+        <Switch
+          label={t('inventory-products-configs:show-supplier')}
+          checked={showSupplier}
+          onChange={(event) => setShowSupplier(event.currentTarget.checked)}
+        />
+        <Switch
+          label={t('inventory-products-configs:show-category')}
+          checked={showCategory}
+          onChange={(event) => setShowCategory(event.currentTarget.checked)}
+        />
+        <Switch
+          label={t('inventory-products-configs:show-price')}
+          checked={enablePrice}
+          onChange={(event) => setShowPrice(event.currentTarget.checked)}
+          disabled={!enablePrice}
+        />
       </div>
-    </>
+
+      <Divider className="mt-4" />
+      <PaginationIndicator
+        activePage={activePage}
+        setActivePage={setPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={productsData?.count}
+      />
+
+      <div
+        className={`grid gap-4 ${
+          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+        }`}
+      >
+        <PlusCardButton href={`/${ws.id}/inventory/products/new`} />
+        {productsData &&
+          productsData.data?.map((p: Product, idx) => (
+            <ProductCard
+              key={`${p.id}-${p.unit}-${idx}`}
+              product={p}
+              showSupplier={showSupplier}
+              showCategory={showCategory}
+              showAmount={
+                warehouseIds.filter((id) => id !== '' && id !== 'all').length >
+                  0 && showAmount
+              }
+              showPrice={enablePrice}
+            />
+          ))}
+      </div>
+    </div>
   );
-};
-
-ProductsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="inventory">{page}</NestedLayout>;
-};
-
-export default ProductsPage;
+}

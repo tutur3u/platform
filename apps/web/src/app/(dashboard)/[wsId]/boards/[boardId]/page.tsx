@@ -1,8 +1,7 @@
 'use client';
 
 import useSWR, { mutate } from 'swr';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
-import { ReactElement, useState } from 'react';
+import { useState } from 'react';
 import {
   Accordion,
   ActionIcon,
@@ -22,7 +21,6 @@ import {
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
 import { openConfirmModal, openModal } from '@mantine/modals';
-import HeaderX from '../../../../../components/metadata/HeaderX';
 import { TaskBoard } from '../../../../../types/primitives/TaskBoard';
 import { TaskList } from '../../../../../types/primitives/TaskList';
 import { Task } from '../../../../../types/primitives/Task';
@@ -40,7 +38,9 @@ interface Props {
   };
 }
 
-const WorkspaceBoardEditor = ({ params: { wsId, boardId } }: Props) => {
+export default function WorkspaceBoardEditor({
+  params: { wsId, boardId },
+}: Props) {
   const router = useRouter();
 
   const { ws } = useWorkspaces();
@@ -196,12 +196,6 @@ const WorkspaceBoardEditor = ({ params: { wsId, boardId } }: Props) => {
 
   return (
     <>
-      <HeaderX
-        label={`${board?.name || 'Untitled Board'} - ${
-          ws?.name || 'Untitled Workspace'
-        }`}
-      />
-
       {board && (
         <>
           <div className="flex items-center justify-between gap-4">
@@ -325,10 +319,4 @@ const WorkspaceBoardEditor = ({ params: { wsId, boardId } }: Props) => {
       </div>
     </>
   );
-};
-
-WorkspaceBoardEditor.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default WorkspaceBoardEditor;
+}

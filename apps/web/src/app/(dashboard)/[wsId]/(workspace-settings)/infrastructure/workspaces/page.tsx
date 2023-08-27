@@ -1,10 +1,7 @@
 'use client';
 
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSegments } from '../../../../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../../../../types/PageWithLayoutProps';
-import NestedLayout from '../../../../../../components/layouts/NestedLayout';
-import HeaderX from '../../../../../../components/metadata/HeaderX';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 import { Divider } from '@mantine/core';
@@ -19,7 +16,7 @@ import { Workspace } from '../../../../../../types/primitives/Workspace';
 import WorkspaceCard from '../../../../../../components/cards/WorkspaceCard';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 
-const InfrastructureWorkspacesPage: PageWithLayoutProps = () => {
+export default function InfrastructureWorkspacesPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -71,48 +68,37 @@ const InfrastructureWorkspacesPage: PageWithLayoutProps = () => {
   });
 
   return (
-    <>
-      <HeaderX label={`${workspacesLabel} – ${infrastructureLabel}`} />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GeneralSearchBar setQuery={setQuery} />
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-            evenNumbers
-          />
-          <div className="hidden xl:block" />
-        </div>
-
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={count}
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <GeneralSearchBar setQuery={setQuery} />
+        <ModeSelector mode={mode} setMode={setMode} />
+        <PaginationSelector
+          items={itemsPerPage}
+          setItems={(size) => {
+            setPage(1);
+            setItemsPerPage(size);
+          }}
+          evenNumbers
         />
-
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          {workspaces &&
-            workspaces?.map((ws) => <WorkspaceCard key={ws.id} ws={ws} />)}
-        </div>
+        <div className="hidden xl:block" />
       </div>
-    </>
+
+      <Divider className="mt-4" />
+      <PaginationIndicator
+        activePage={activePage}
+        setActivePage={setPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={count}
+      />
+
+      <div
+        className={`grid gap-4 ${
+          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+        }`}
+      >
+        {workspaces &&
+          workspaces?.map((ws) => <WorkspaceCard key={ws.id} ws={ws} />)}
+      </div>
+    </div>
   );
-};
-
-InfrastructureWorkspacesPage.getLayout = function getLayout(
-  page: ReactElement
-) {
-  return <NestedLayout mode="infrastructure">{page}</NestedLayout>;
-};
-
-export default InfrastructureWorkspacesPage;
+}

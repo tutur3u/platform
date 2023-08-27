@@ -1,31 +1,6 @@
-'use client';
-
-import { ReactElement, useEffect } from 'react';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { useSegments } from '../../../../hooks/useSegments';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
-
-const SettingPage: PageWithLayoutProps = () => {
-  const { setRootSegment } = useSegments();
-
-  useEffect(() => {
-    setRootSegment([
-      {
-        content: 'Settings',
-        href: '/settings',
-      },
-      {
-        content: 'Notifications',
-        href: '/settings/notifications',
-      },
-    ]);
-  }, [setRootSegment]);
-
+export default async function NotificationsSettingsPage() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <HeaderX label="Settings" />
-
       <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="mb-1 text-2xl font-bold">Notifications</div>
         <div className="mb-4 font-semibold text-zinc-500">
@@ -48,10 +23,4 @@ const SettingPage: PageWithLayoutProps = () => {
       </div>
     </div>
   );
-};
-
-SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="settings">{page}</NestedLayout>;
-};
-
-export default SettingPage;
+}

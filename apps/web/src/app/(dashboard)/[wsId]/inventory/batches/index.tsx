@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, Switch } from '@mantine/core';
 import WarehouseMultiSelector from '../../../../../components/selectors/WarehouseMultiSelector';
@@ -19,9 +15,7 @@ import PaginationSelector from '../../../../../components/selectors/PaginationSe
 import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
 import useTranslation from 'next-translate/useTranslation';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const BatchesPage: PageWithLayoutProps = () => {
+export default function BatchesPage() {
   const { t } = useTranslation();
 
   const inventoryLabel = t('sidebar-tabs:inventory');
@@ -89,67 +83,58 @@ const BatchesPage: PageWithLayoutProps = () => {
   if (!ws) return null;
 
   return (
-    <>
-      <HeaderX label={`${batchesLabel} – ${inventoryLabel}`} />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-          />
-          <WarehouseMultiSelector
-            warehouseIds={warehouseIds}
-            setWarehouseIds={setWarehouseIds}
-          />
-          <Divider variant="dashed" className="col-span-full" />
-          <Switch
-            label={t('inventory-batches-configs:show-products')}
-            checked={showProducts}
-            onChange={(event) => setShowProducts(event.currentTarget.checked)}
-          />
-          <Switch
-            label={t('inventory-batches-configs:show-warehouse')}
-            checked={showWarehouse}
-            onChange={(event) => setShowWarehouse(event.currentTarget.checked)}
-          />
-        </div>
-
-        <Divider className="mt-4" />
-        <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={count}
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ModeSelector mode={mode} setMode={setMode} />
+        <PaginationSelector
+          items={itemsPerPage}
+          setItems={(size) => {
+            setPage(1);
+            setItemsPerPage(size);
+          }}
         />
-
-        <div
-          className={`grid gap-4 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
-        >
-          <PlusCardButton href={`/${ws.id}/inventory/batches/new`} />
-          {batches &&
-            batches?.map((batch: ProductBatch) => (
-              <GeneralItemCard
-                key={batch.id}
-                href={`/${ws.id}/inventory/batches/${batch.id}`}
-                name={batch.id.replace(/-/g, '')}
-                showAmount={showProducts}
-                productAmountFetchPath={`/api/workspaces/${ws.id}/inventory/batches/${batch.id}/products/count`}
-              />
-            ))}
-        </div>
+        <WarehouseMultiSelector
+          warehouseIds={warehouseIds}
+          setWarehouseIds={setWarehouseIds}
+        />
+        <Divider variant="dashed" className="col-span-full" />
+        <Switch
+          label={t('inventory-batches-configs:show-products')}
+          checked={showProducts}
+          onChange={(event) => setShowProducts(event.currentTarget.checked)}
+        />
+        <Switch
+          label={t('inventory-batches-configs:show-warehouse')}
+          checked={showWarehouse}
+          onChange={(event) => setShowWarehouse(event.currentTarget.checked)}
+        />
       </div>
-    </>
+
+      <Divider className="mt-4" />
+      <PaginationIndicator
+        activePage={activePage}
+        setActivePage={setPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={count}
+      />
+
+      <div
+        className={`grid gap-4 ${
+          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
+        }`}
+      >
+        <PlusCardButton href={`/${ws.id}/inventory/batches/new`} />
+        {batches &&
+          batches?.map((batch: ProductBatch) => (
+            <GeneralItemCard
+              key={batch.id}
+              href={`/${ws.id}/inventory/batches/${batch.id}`}
+              name={batch.id.replace(/-/g, '')}
+              showAmount={showProducts}
+              productAmountFetchPath={`/api/workspaces/${ws.id}/inventory/batches/${batch.id}/products/count`}
+            />
+          ))}
+      </div>
+    </div>
   );
-};
-
-BatchesPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="inventory">{page}</NestedLayout>;
-};
-
-export default BatchesPage;
+}

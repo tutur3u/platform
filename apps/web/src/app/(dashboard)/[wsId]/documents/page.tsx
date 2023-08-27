@@ -1,13 +1,11 @@
 'use client';
 
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSegments } from '../../../../hooks/useSegments';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
 import DocumentCard from '../../../../components/document/DocumentCard';
 import { useUser } from '@supabase/auth-helpers-react';
 import useSWR from 'swr';
 import { Document } from '../../../../types/primitives/Document';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
 import { Divider, Loader } from '@mantine/core';
 import { openModal } from '@mantine/modals';
 import DocumentEditForm from '../../../../components/forms/DocumentEditForm';
@@ -21,7 +19,7 @@ import {
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
-const DocumentsPage: PageWithLayoutProps = () => {
+export default function DocumentsPage() {
   const router = useRouter();
   const user = useUser();
 
@@ -182,10 +180,4 @@ const DocumentsPage: PageWithLayoutProps = () => {
       </div>
     </>
   );
-};
-
-DocumentsPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout noTabs>{page}</NestedLayout>;
-};
-
-export default DocumentsPage;
+}

@@ -1,9 +1,6 @@
 'use client';
 
-import { ReactElement, useEffect, useState } from 'react';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import SettingItemTab from '../../../../components/settings/SettingItemTab';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -15,7 +12,7 @@ import Link from 'next/link';
 import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
 
-const WorkspacesSettingPage: PageWithLayoutProps = () => {
+export default function WorkspacesSettingPage() {
   const { workspaces: wss, setWsId } = useWorkspaces();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(wss || []);
@@ -90,8 +87,6 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
 
   return (
     <div className="md:max-w-lg">
-      <HeaderX label="Settings" />
-
       <div className="grid">
         <SettingItemTab
           title={workspacesLabel}
@@ -149,10 +144,4 @@ const WorkspacesSettingPage: PageWithLayoutProps = () => {
       </div>
     </div>
   );
-};
-
-WorkspacesSettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="settings">{page}</NestedLayout>;
-};
-
-export default WorkspacesSettingPage;
+}

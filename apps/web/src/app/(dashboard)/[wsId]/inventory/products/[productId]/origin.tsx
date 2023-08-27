@@ -1,8 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../../../components/layouts/NestedLayout';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, TextInput, Textarea } from '@mantine/core';
 import CategorySelector from '../../../../../../components/selectors/CategorySelector';
@@ -17,9 +13,7 @@ import { ProductWarehouse } from '../../../../../../types/primitives/ProductWare
 import WarehouseProductsInput from '../../../../../../components/inputs/WarehouseProductsInput';
 import { TrashIcon } from '@heroicons/react/24/solid';
 
-export const getServerSideProps = enforceHasWorkspaces;
-
-const ProductOriginPage: PageWithLayoutProps = () => {
+export default function ProductOriginPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
@@ -131,107 +125,98 @@ const ProductOriginPage: PageWithLayoutProps = () => {
   };
 
   return (
-    <>
-      <HeaderX label="Sản phẩm – Kho hàng" />
-      <div className="flex min-h-full w-full flex-col ">
-        <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
-          <div className="grid h-fit gap-x-4 gap-y-2">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Thông tin cơ bản</div>
-              <Divider className="my-2" variant="dashed" />
-            </div>
-
-            <TextInput
-              label="Tên sản phẩm"
-              placeholder='Ví dụ: "Paracetamol 500mg"'
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-              required
-              disabled={!product}
-            />
-            <CategorySelector
-              categoryId={categoryId}
-              setCategoryId={setCategoryId}
-              required
-            />
-
-            <TextInput
-              label="Đơn vị sản xuất"
-              placeholder='Ví dụ: "Công ty TNHH ABC"'
-              value={manufacturer}
-              onChange={(e) => setManufacturer(e.currentTarget.value)}
-              disabled={!product}
-            />
-
-            <Textarea
-              label="Mô tả"
-              placeholder="Giới thiệu sản phẩm, đặc điểm nổi bật, ..."
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              minRows={5}
-              disabled={!product}
-            />
-
-            <Textarea
-              label="Cách dùng"
-              placeholder="Hướng dẫn cách sử dụng sản phẩm"
-              value={usage}
-              onChange={(e) => setUsage(e.currentTarget.value)}
-              minRows={5}
-              disabled={!product}
-            />
-
-            <div className="flex gap-2">
-              <button
-                className={`w-fit rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition ${
-                  product
-                    ? 'hover:bg-red-300/20'
-                    : 'cursor-not-allowed opacity-50'
-                }`}
-                onClick={product ? showDeleteModal : undefined}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-
-              <button
-                className={`w-full rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
-                  hasRequiredFields()
-                    ? 'hover:bg-green-300/20'
-                    : 'cursor-not-allowed opacity-50'
-                }`}
-                onClick={hasRequiredFields() ? showEditModal : undefined}
-              >
-                Lưu thay đổi
-              </button>
-            </div>
+    <div className="flex min-h-full w-full flex-col ">
+      <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
+        <div className="grid h-fit gap-x-4 gap-y-2">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Thông tin cơ bản</div>
+            <Divider className="my-2" variant="dashed" />
           </div>
 
-          <div className="grid h-fit gap-4 xl:col-span-3">
-            <div className="col-span-full">
-              <div className="text-2xl font-semibold">Đơn giá</div>
-              <Divider className="mb-4 mt-2" variant="dashed" />
-            </div>
+          <TextInput
+            label="Tên sản phẩm"
+            placeholder='Ví dụ: "Paracetamol 500mg"'
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            required
+            disabled={!product}
+          />
+          <CategorySelector
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            required
+          />
 
-            {ws &&
-              product &&
-              warehouses &&
-              warehouses.map((w) => (
-                <WarehouseProductsInput
-                  key={w.id}
-                  wsId={ws.id}
-                  productId={product.id}
-                  warehouse={w}
-                />
-              ))}
+          <TextInput
+            label="Đơn vị sản xuất"
+            placeholder='Ví dụ: "Công ty TNHH ABC"'
+            value={manufacturer}
+            onChange={(e) => setManufacturer(e.currentTarget.value)}
+            disabled={!product}
+          />
+
+          <Textarea
+            label="Mô tả"
+            placeholder="Giới thiệu sản phẩm, đặc điểm nổi bật, ..."
+            value={description}
+            onChange={(e) => setDescription(e.currentTarget.value)}
+            minRows={5}
+            disabled={!product}
+          />
+
+          <Textarea
+            label="Cách dùng"
+            placeholder="Hướng dẫn cách sử dụng sản phẩm"
+            value={usage}
+            onChange={(e) => setUsage(e.currentTarget.value)}
+            minRows={5}
+            disabled={!product}
+          />
+
+          <div className="flex gap-2">
+            <button
+              className={`w-fit rounded border border-red-300/10 bg-red-300/10 px-4 py-2 font-semibold text-red-300 transition ${
+                product
+                  ? 'hover:bg-red-300/20'
+                  : 'cursor-not-allowed opacity-50'
+              }`}
+              onClick={product ? showDeleteModal : undefined}
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+
+            <button
+              className={`w-full rounded border border-green-300/10 bg-green-300/10 px-4 py-2 font-semibold text-green-300 transition ${
+                hasRequiredFields()
+                  ? 'hover:bg-green-300/20'
+                  : 'cursor-not-allowed opacity-50'
+              }`}
+              onClick={hasRequiredFields() ? showEditModal : undefined}
+            >
+              Lưu thay đổi
+            </button>
           </div>
         </div>
+
+        <div className="grid h-fit gap-4 xl:col-span-3">
+          <div className="col-span-full">
+            <div className="text-2xl font-semibold">Đơn giá</div>
+            <Divider className="mb-4 mt-2" variant="dashed" />
+          </div>
+
+          {ws &&
+            product &&
+            warehouses &&
+            warehouses.map((w) => (
+              <WarehouseProductsInput
+                key={w.id}
+                wsId={ws.id}
+                productId={product.id}
+                warehouse={w}
+              />
+            ))}
+        </div>
       </div>
-    </>
+    </div>
   );
-};
-
-ProductOriginPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="product_details">{page}</NestedLayout>;
-};
-
-export default ProductOriginPage;
+}

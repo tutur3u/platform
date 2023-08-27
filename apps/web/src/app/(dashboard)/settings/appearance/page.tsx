@@ -1,17 +1,12 @@
 'use client';
 
-import { ReactElement } from 'react';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
 import SettingItemCard from '../../../../components/settings/SettingItemCard';
 import useTranslation from 'next-translate/useTranslation';
 import { useAppearance } from '../../../../hooks/useAppearance';
 
-const SettingPage: PageWithLayoutProps = () => {
+export default function SettingPage() {
   const { t } = useTranslation('settings-appearance');
 
-  const settings = t('common:settings');
   const appearance = t('appearance');
 
   const appearanceDescription = t('appearance-description');
@@ -23,8 +18,6 @@ const SettingPage: PageWithLayoutProps = () => {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <HeaderX label={settings} />
-
       <SettingItemCard title={appearance} description={appearanceDescription}>
         <div className="grid gap-4 text-center md:grid-cols-2">
           <div
@@ -47,10 +40,4 @@ const SettingPage: PageWithLayoutProps = () => {
       </SettingItemCard>
     </div>
   );
-};
-
-SettingPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="settings">{page}</NestedLayout>;
-};
-
-export default SettingPage;
+}
