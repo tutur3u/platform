@@ -53,10 +53,6 @@ export default async function Layout({
       href: `/${wsId}/finance`,
     },
     {
-      name: 'Migrations',
-      href: `/${wsId}/migrations`,
-    },
-    {
       name: 'Notifications',
       href: `/${wsId}/notifications`,
     },
