@@ -28,7 +28,7 @@ export default async function Layout({
     },
     {
       name: 'Chat',
-      href: '/ai',
+      href: '/chat',
     },
     {
       name: 'Dashboard',

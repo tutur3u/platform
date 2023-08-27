@@ -16,7 +16,7 @@ export default async function Layout({ children }: LayoutProps) {
     },
     {
       name: 'Chat',
-      href: '/ai',
+      href: '/chat',
     },
     {
       name: 'Dashboard',
