@@ -1,8 +1,8 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
 import { Divider, Select, TextInput, Textarea } from '@mantine/core';
 import {
@@ -13,12 +13,12 @@ import {
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
 import { DatePickerInput } from '@mantine/dates';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import moment from 'moment';
-import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
-import { UserGroup } from '../../../../types/primitives/UserGroup';
-import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
+import { WorkspaceUser } from '../../../../../types/primitives/WorkspaceUser';
+import { UserGroup } from '../../../../../types/primitives/UserGroup';
+import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
 
 export const getServerSideProps = enforceHasWorkspaces;
 

@@ -21,16 +21,8 @@ export default async function Layout({
       href: '/ai',
     },
     {
-      name: 'Workspace',
+      name: 'Dashboard',
       href: `/${wsId}`,
-    },
-    {
-      name: 'Teams',
-      href: `/${wsId}/teams`,
-    },
-    {
-      name: 'Members',
-      href: `/${wsId}/members`,
     },
     {
       name: 'Users',
@@ -61,20 +53,12 @@ export default async function Layout({
       href: `/${wsId}/finance`,
     },
     {
-      name: 'Infrastructure',
-      href: `/${wsId}/infrastructure`,
-    },
-    {
       name: 'Migrations',
       href: `/${wsId}/migrations`,
     },
     {
       name: 'Notifications',
       href: `/${wsId}/notifications`,
-    },
-    {
-      name: 'Activities',
-      href: `/${wsId}/activities`,
     },
     {
       name: 'Settings',
@@ -88,7 +72,7 @@ export default async function Layout({
         <Navigation navLinks={navLinks} />
       </div>
 
-      <div className="p-4 md:p-8 lg:p-16 xl:px-32">{children}</div>
+      <div className="px-4 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </div>
   );
 }

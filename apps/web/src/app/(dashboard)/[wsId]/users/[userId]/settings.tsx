@@ -1,8 +1,8 @@
 import { ReactElement, useEffect, useState } from 'react';
-import HeaderX from '../../../../components/metadata/HeaderX';
-import { PageWithLayoutProps } from '../../../../types/PageWithLayoutProps';
-import { enforceHasWorkspaces } from '../../../../utils/serverless/enforce-has-workspaces';
-import NestedLayout from '../../../../components/layouts/NestedLayout';
+import HeaderX from '../../../../../components/metadata/HeaderX';
+import { PageWithLayoutProps } from '../../../../../types/PageWithLayoutProps';
+import { enforceHasWorkspaces } from '../../../../../utils/serverless/enforce-has-workspaces';
+import NestedLayout from '../../../../../components/layouts/NestedLayout';
 import useSWR from 'swr';
 import { Divider, Select, TextInput, Textarea } from '@mantine/core';
 import {
@@ -15,16 +15,16 @@ import {
 import { useRouter } from 'next/router';
 import { openModal } from '@mantine/modals';
 import { DatePickerInput } from '@mantine/dates';
-import { useSegments } from '../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../hooks/useWorkspaces';
+import { useSegments } from '../../../../../hooks/useSegments';
+import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
 import moment from 'moment';
-import { WorkspaceUser } from '../../../../types/primitives/WorkspaceUser';
-import WorkspaceUserEditModal from '../../../../components/loaders/users/WorkspaceUserEditModal';
-import WorkspaceUserDeleteModal from '../../../../components/loaders/users/WorkspaceUserDeleteModal';
-import { UserGroup } from '../../../../types/primitives/UserGroup';
-import UserGroupSelector from '../../../../components/selectors/UserGroupSelector';
+import { WorkspaceUser } from '../../../../../types/primitives/WorkspaceUser';
+import WorkspaceUserEditModal from '../../../../../components/loaders/users/WorkspaceUserEditModal';
+import WorkspaceUserDeleteModal from '../../../../../components/loaders/users/WorkspaceUserDeleteModal';
+import { UserGroup } from '../../../../../types/primitives/UserGroup';
+import UserGroupSelector from '../../../../../components/selectors/UserGroupSelector';
 import useTranslation from 'next-translate/useTranslation';
-import { useAppearance } from '../../../../hooks/useAppearance';
+import { useAppearance } from '../../../../../hooks/useAppearance';
 
 export const getServerSideProps = enforceHasWorkspaces;
 
