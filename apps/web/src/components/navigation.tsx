@@ -27,7 +27,7 @@ export function Navigation({ navLinks }: Props) {
           <Link
             className={`${
               isActive
-                ? 'text-foreground bg-foreground/10 hover:bg-foreground/5'
+                ? 'text-foreground bg-foreground/10'
                 : 'text-foreground/30 hover:text-foreground'
             } rounded-full px-3 py-1 transition duration-300`}
             href={link.href}

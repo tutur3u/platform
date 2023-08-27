@@ -1,7 +1,9 @@
 import { Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
+import { getWorkspace } from '@/lib/workspace-helper';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 interface LayoutProps {
   params: {
@@ -10,10 +12,14 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
+  const workspace = await getWorkspace(wsId);
+
   const navLinks = [
     {
       name: 'Home',
@@ -70,18 +76,21 @@ export default async function Layout({
   return (
     <>
       <div className="p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
-        <Link href="/" className="mb-2 flex items-center gap-2">
-          <Image
-            src="/media/logos/transparent.png"
-            width={320}
-            height={320}
-            alt="logo"
-            className="h-7 w-7"
-          />
-          <div className="text-2xl text-black hover:text-zinc-700 dark:text-white dark:hover:text-zinc-200">
-            Tuturuuu
-          </div>
-        </Link>
+        <div className="mb-2 flex items-center gap-4">
+          <Link href="/">
+            <Image
+              src="/media/logos/transparent.png"
+              width={320}
+              height={320}
+              alt="logo"
+              className="h-7 w-7"
+            />
+          </Link>
+          <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
+          <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
+            <Link href={`/${workspace.id}`}>{workspace.name}</Link>
+          </Suspense>
+        </div>
 
         <div className="flex gap-1">
           <Navigation navLinks={navLinks} />
