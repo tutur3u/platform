@@ -10,11 +10,6 @@ interface LayoutProps {
 export default async function Layout({ children }: LayoutProps) {
   const navLinks = [
     {
-      name: 'Home',
-      href: '/',
-      matchExact: true,
-    },
-    {
       name: 'Chat',
       href: '/chat',
     },
