@@ -22,11 +22,6 @@ export default async function Layout({
 
   const navLinks = [
     {
-      name: 'Home',
-      href: '/',
-      matchExact: true,
-    },
-    {
       name: 'Chat',
       href: '/chat',
     },
