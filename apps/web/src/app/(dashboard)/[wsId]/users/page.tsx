@@ -1,8 +1,7 @@
-'use client';
-
-import StatisticCard from '../../../../components/cards/StatisticCard';
-import useSWR from 'swr';
+import StatisticCard from '@/components/cards/StatisticCard';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -10,22 +9,29 @@ interface Props {
   };
 }
 
-export default function WorkspaceUsersPage({ params: { wsId } }: Props) {
+export const dynamic = 'force-dynamic';
+
+export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
+  const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
   const usersLabel = t('sidebar-tabs:users');
 
-  const usersCountApi = wsId ? `/api/workspaces/${wsId}/users/count` : null;
+  const { count: users } = await supabase
+    .from('workspace_users')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const groupsCountApi = wsId
-    ? `/api/workspaces/${wsId}/users/groups/count`
-    : null;
-
-  const { data: users, error: usersError } = useSWR<number>(usersCountApi);
-  const { data: groups, error: groupsError } = useSWR<number>(groupsCountApi);
-
-  const isUsersLoading = users === undefined && !usersError;
-  const isGroupsLoading = groups === undefined && !groupsError;
+  const { count: groups } = await supabase
+    .from('workspace_user_groups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <div className="flex min-h-full w-full flex-col ">
@@ -35,7 +41,6 @@ export default function WorkspaceUsersPage({ params: { wsId } }: Props) {
           color="blue"
           value={users}
           href={`/${wsId}/users/list`}
-          loading={isUsersLoading}
         />
 
         <StatisticCard
@@ -43,7 +48,6 @@ export default function WorkspaceUsersPage({ params: { wsId } }: Props) {
           color="green"
           value={groups}
           href={`/${wsId}/users/groups`}
-          loading={isGroupsLoading}
         />
       </div>
     </div>
