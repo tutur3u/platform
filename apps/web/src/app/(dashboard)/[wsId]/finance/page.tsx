@@ -1,82 +1,30 @@
-'use client';
-
-import { useState } from 'react';
-import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
-import { Divider } from '@mantine/core';
-import moment from 'moment';
 import TransactionCard from '@/components/cards/TransactionCard';
 import StatisticCard from '@/components/cards/StatisticCard';
-import DateRangePicker from '@/components/calendar/DateRangePicker';
 import { Transaction } from '@/types/primitives/Transaction';
-import { DateRange } from '@/utils/date-helper';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { Separator } from '@/components/ui/separator';
 
-export default function WorkspaceFinancePage() {
+export const dynamic = 'force-dynamic';
+
+interface Props {
+  params: {
+    wsId: string;
+  };
+}
+
+export default async function WorkspaceFinancePage({
+  params: { wsId },
+}: Props) {
+  const supabase = createServerComponentClient({ cookies });
+
   const { t } = useTranslation('finance-overview');
-  const { ws } = useWorkspaces();
 
-  const [dateRange, setDateRange] = useState<DateRange>([null, null]);
+  // const [dateRange, setDateRange] = useState<DateRange>([null, null]);
 
-  const startDate = dateRange?.[0]
-    ? moment(dateRange[0]).format('YYYY-MM-DD')
-    : '';
-
-  const endDate = dateRange?.[1]
-    ? moment(dateRange[1]).format('YYYY-MM-DD')
-    : '';
-
-  const dateRangeQuery = `?startDate=${startDate}&endDate=${endDate}`;
-
-  const incomeApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/wallets/income${dateRangeQuery}`
-    : null;
-
-  const expenseApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/wallets/expense${dateRangeQuery}`
-    : null;
-
-  const walletsCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/wallets/count`
-    : null;
-
-  const categoriesCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions/categories/count`
-    : null;
-
-  const transactionsCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions/count${dateRangeQuery}`
-    : null;
-
-  const invoicesCountApi = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/invoices/count${dateRangeQuery}`
-    : null;
-
-  const { data: income, error: incomeError } = useSWR<number>(incomeApi);
-  const { data: expense, error: expenseError } = useSWR<number>(expenseApi);
-
-  const { data: walletsCount, error: walletsError } =
-    useSWR<number>(walletsCountApi);
-
-  const { data: categoriesCount, error: categoriesError } =
-    useSWR<number>(categoriesCountApi);
-
-  const { data: transactionsCount, error: transactionsError } =
-    useSWR<number>(transactionsCountApi);
-
-  const { data: invoicesCount, error: invoicesError } =
-    useSWR<number>(invoicesCountApi);
-
-  const isIncomeLoading = income === undefined && !incomeError;
-  const isExpenseLoading = expense === undefined && !expenseError;
-  const isWalletsCountLoading = walletsCount === undefined && !walletsError;
-  const isCategoriesCountLoading =
-    categoriesCount === undefined && !categoriesError;
-
-  const isTransactionsCountLoading =
-    transactionsCount === undefined && !transactionsError;
-
-  const isInvoicesCountLoading = invoicesCount === undefined && !invoicesError;
+  // const startDate = dateRange?.[0]?.toISOString() ?? null;
+  // const endDate = dateRange?.[1]?.toISOString() ?? null;
 
   const walletsLabel = t('finance-tabs:wallets');
   const transactionsLabel = t('finance-tabs:transactions');
@@ -89,20 +37,70 @@ export default function WorkspaceFinancePage() {
   const recentTransactions = t('recent-transactions');
   const noTransaction = t('no-transaction');
 
-  const page = 1;
-  const itemsPerPage = 16;
+  const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
+    ws_id: wsId,
+    start_date: null,
+    end_date: null,
+    // start_date: startDate,
+    // end_date: endDate,
+  });
 
-  const apiPath = ws?.id
-    ? `/api/workspaces/${ws.id}/finance/transactions?page=${page}&itemsPerPage=${itemsPerPage}`
-    : null;
+  const { data: expense } = await supabase.rpc(
+    'get_workspace_wallets_expense',
+    {
+      ws_id: wsId,
+      start_date: null,
+      end_date: null,
+      // start_date: startDate,
+      // end_date: endDate,
+    }
+  );
 
-  const { data: transactions } = useSWR<Transaction[]>(apiPath);
+  const { count: walletsCount } = await supabase
+    .from('workspace_wallets')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: categoriesCount } = await supabase
+    .from('transaction_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  const { count: transactionsCount } = await supabase
+    .from('wallet_transactions')
+    .select('*, workspace_wallets!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('workspace_wallets.ws_id', wsId);
+
+  const { count: invoicesCount } = await supabase
+    .from('finance_invoices')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   const sum = (income || 0) + (expense || 0);
 
+  const { data: transactions } = await supabase
+    .from('wallet_transactions')
+    .select(
+      'id, description, amount, category_id, wallet_id, taken_at, created_at, transaction_categories(name), workspace_wallets!inner(ws_id)'
+    )
+    .order('taken_at', { ascending: false })
+    .eq('workspace_wallets.ws_id', wsId);
+
   return (
     <div className="flex min-h-full w-full flex-col ">
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DateRangePicker
           defaultUnit="month"
           defaultOption="present"
@@ -111,7 +109,7 @@ export default function WorkspaceFinancePage() {
         />
       </div>
 
-      <Divider className="my-4" />
+      <Divider className="my-4" /> */}
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
           title={totalBalance}
@@ -120,7 +118,6 @@ export default function WorkspaceFinancePage() {
             style: 'currency',
             currency: 'VND',
           }).format(sum || 0)}
-          loading={isIncomeLoading || isExpenseLoading}
           className="md:col-span-2"
         />
 
@@ -132,7 +129,6 @@ export default function WorkspaceFinancePage() {
             currency: 'VND',
             signDisplay: 'exceptZero',
           }).format(income || 0)}
-          loading={isIncomeLoading}
         />
 
         <StatisticCard
@@ -143,49 +139,44 @@ export default function WorkspaceFinancePage() {
             currency: 'VND',
             signDisplay: 'exceptZero',
           }).format(expense || 0)}
-          loading={isExpenseLoading}
         />
 
         <StatisticCard
           title={walletsLabel}
           value={walletsCount}
-          href={`/${ws?.id}/finance/wallets`}
-          loading={isWalletsCountLoading}
+          href={`/${wsId}/finance/wallets`}
         />
 
         <StatisticCard
           title={categoriesLabel}
           value={categoriesCount}
-          href={`/${ws?.id}/finance/transactions/categories`}
-          loading={isCategoriesCountLoading}
+          href={`/${wsId}/finance/transactions/categories`}
         />
 
         <StatisticCard
           title={transactionsLabel}
           value={transactionsCount}
-          href={`/${ws?.id}/finance/transactions`}
-          loading={isTransactionsCountLoading}
+          href={`/${wsId}/finance/transactions`}
         />
 
         <StatisticCard
           title={invoicesLabel}
           value={invoicesCount}
-          href={`/${ws?.id}/finance/invoices`}
-          loading={isInvoicesCountLoading}
+          href={`/${wsId}/finance/invoices`}
         />
 
         <div className="col-span-full">
-          <Divider className="mb-4" />
+          <Separator className="mb-4" />
           <div className="text-lg font-semibold md:text-2xl">
             {recentTransactions}
           </div>
         </div>
 
         {transactions && transactions.length > 0 ? (
-          transactions.map((c) => (
+          transactions.map((c: Transaction) => (
             <TransactionCard
               key={c.id}
-              wsId={ws?.id}
+              wsId={wsId}
               transaction={c}
               showAmount
               showDatetime
