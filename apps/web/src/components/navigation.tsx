@@ -10,22 +10,30 @@ export interface NavLink {
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
+  requireRootWorkspace?: boolean;
   allowedPresets?: WorkspacePreset[];
 }
 
 interface Props {
+  currentWsId?: string;
   currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }
 
-export function Navigation({ currentPreset, navLinks }: Props) {
+export function Navigation({ currentWsId, currentPreset, navLinks }: Props) {
   const pathname = usePathname();
+  
+  const rootWorkspaceId = '00000000-0000-0000-0000-000000000000';
+  const isRootWorkspace = currentWsId === rootWorkspaceId;
 
   return (
     <>
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
+
+        // If the link requires the root workspace, render accordingly
+        if (link?.requireRootWorkspace && !isRootWorkspace) return null;
 
         // If the link is only allowed for certain presets, check if the current preset is allowed
         if (

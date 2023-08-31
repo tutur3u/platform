@@ -28,10 +28,12 @@ export default async function Layout({
     {
       name: 'Infrastructure',
       href: `/${wsId}/infrastructure`,
+      requireRootWorkspace: true,
     },
     {
       name: 'Migrations',
       href: `/${wsId}/migrations`,
+      requireRootWorkspace: true,
     },
     {
       name: 'Activities',
@@ -42,7 +44,7 @@ export default async function Layout({
   return (
     <div>
       <div className="mb-4 flex gap-1 font-semibold">
-        <Navigation navLinks={navLinks} />
+        <Navigation currentWsId={wsId} navLinks={navLinks} />
       </div>
       {children}
     </div>
