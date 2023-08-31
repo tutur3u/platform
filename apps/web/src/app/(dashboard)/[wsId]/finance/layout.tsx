@@ -24,6 +24,7 @@ export default async function Layout({
     {
       name: 'Transactions',
       href: `/${wsId}/finance/transactions`,
+      matchExact: true,
     },
     {
       name: 'Categories',

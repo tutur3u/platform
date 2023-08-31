@@ -1,6 +1,12 @@
-import { Squares2X2Icon } from '@heroicons/react/24/solid';
-import { Select } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export type Mode = 'list' | 'grid';
 
@@ -13,7 +19,7 @@ interface Props {
 const ModeSelector = ({ mode, setMode, showAll = false }: Props) => {
   const { t } = useTranslation('view-mode');
 
-  const data = showAll
+  const options = showAll
     ? [
         {
           label: t('list_view'),
@@ -39,32 +45,21 @@ const ModeSelector = ({ mode, setMode, showAll = false }: Props) => {
       ];
 
   return (
-    <Select
-      label={t('view_mode')}
-      placeholder={t('select_view_mode')}
-      icon={<Squares2X2Icon className="h-5" />}
-      data={data}
-      value={mode}
-      onChange={setMode}
-      styles={{
-        item: {
-          // applies styles to selected item
-          '&[data-selected]': {
-            '&, &:hover': {
-              backgroundColor: '#6b686b',
-              color: '#fff',
-              fontWeight: 600,
-            },
-          },
-
-          // applies styles to hovered item
-          '&:hover': {
-            backgroundColor: '#454345',
-            color: '#fff',
-          },
-        },
-      }}
-    />
+    <div className="grid w-full max-w-sm items-center gap-1.5">
+      <Label>{t('view_mode')}</Label>
+      <Select value={mode} onValueChange={setMode}>
+        <SelectTrigger>
+          <SelectValue placeholder={t('select_view_mode')} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 

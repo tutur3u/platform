@@ -4,7 +4,7 @@ import moment from 'moment';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
-import { Separator } from '../ui/separator';
+import { Separator } from '@/components/ui/separator';
 
 interface Props {
   wsId: string;

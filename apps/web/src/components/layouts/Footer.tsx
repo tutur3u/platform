@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Separator } from '../ui/separator';
+import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 // import { MoonIcon, SunIcon } from "@heroicons/react/24/solid";
 // import { useAppearance } from "../../hooks/useAppearance";
