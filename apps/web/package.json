@@ -101,5 +101,5 @@
     "tsconfig": "workspace:*",
     "typescript": "^5.1.6"
   },
-  "packageManager": "pnpm@8.7.0"
+  "packageManager": "pnpm@8.7.1"
 }
