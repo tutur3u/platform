@@ -8,6 +8,7 @@ interface NavLink {
   href: string;
   matchExact?: boolean;
   aliases?: string[];
+  disabled?: boolean;
 }
 
 interface Props {
@@ -20,6 +21,8 @@ export function Navigation({ navLinks }: Props) {
   return (
     <>
       {navLinks.map((link) => {
+        if (link?.disabled) return null;
+
         const links = [...(link.aliases || []), link.href];
         const matchExact = link.matchExact ?? false;
 

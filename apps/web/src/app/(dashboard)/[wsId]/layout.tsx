@@ -37,6 +37,7 @@ export default async function Layout({
     {
       name: 'Calendar',
       href: `/${wsId}/calendar`,
+      disabled: true,
     },
     {
       name: 'Documents',

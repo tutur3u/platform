@@ -1,7 +1,6 @@
 'use client';
 
 import useSWR from 'swr';
-import { Divider } from '@mantine/core';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import BoardEditForm from '../../../../components/forms/BoardEditForm';
@@ -10,6 +9,7 @@ import { showNotification } from '@mantine/notifications';
 import Link from 'next/link';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
 import { useRouter } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
 
 export default function WorkspaceBoardsPage() {
   const router = useRouter();
@@ -79,7 +79,7 @@ export default function WorkspaceBoardsPage() {
         </p>
       </div>
 
-      <Divider className="my-4" />
+      <Separator className="my-4" />
 
       <button
         onClick={showBoardEditForm}
