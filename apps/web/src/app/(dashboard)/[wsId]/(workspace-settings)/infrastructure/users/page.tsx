@@ -1,102 +1,63 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
-import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
-import { Divider } from '@mantine/core';
-import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../components/selectors/ModeSelector';
-import { useLocalStorage } from '@mantine/hooks';
 import { User } from '../../../../../../types/primitives/User';
-import useSWR from 'swr';
 import UserCard from '../../../../../../components/cards/UserCard';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
+import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import { Separator } from '@/components/ui/separator';
+import { createAdminClient } from '@/utils/supabase/client';
+import { notFound } from 'next/navigation';
+import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 
-export default function InfrastructureUsersPage() {
-  const { setRootSegment } = useSegments();
-  const { ws } = useWorkspaces();
+interface Props {
+  params: {
+    wsId: string;
+  };
+}
 
-  const { t } = useTranslation('infrastructure-tabs');
+export const dynamic = 'force-dynamic';
 
-  const infrastructureLabel = t('infrastructure');
-  const usersLabel = t('users');
+export default async function InfrastructureUsersPage({
+  params: { wsId },
+}: Props) {
+  await enforceRootWorkspaceAdmin(wsId);
 
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws?.name || 'Tổ chức không tên',
-              href: `/${ws.id}`,
-            },
-            { content: infrastructureLabel, href: `/${ws.id}/infrastructure` },
-            { content: usersLabel, href: `/${ws.id}/infrastructure/users` },
-          ]
-        : []
-    );
-
-    return () => setRootSegment([]);
-  }, [infrastructureLabel, usersLabel, ws, setRootSegment]);
-
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
-
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'infrastructure-users-per-page',
-    defaultValue: 16,
-  });
-
-  const apiPath = ws?.id
-    ? `/api/users?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
-  const { data } = useSWR<{ data: User[]; count: number }>(apiPath);
-
-  const users = data?.data;
-  const count = data?.count;
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'workspace-users-mode',
-    defaultValue: 'grid',
-  });
-
-  if (!ws) return null;
+  const users = await getUsers();
+  const count = await getUserCount();
 
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-          evenNumbers
-        />
-        <div className="hidden xl:block" />
+        <GeneralSearchBar />
       </div>
 
-      <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <Separator className="mt-4" />
+      <PaginationIndicator totalItems={count} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
-        {users?.map((u) => <UserCard key={u.id} user={u} />)}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {users.map((u) => (
+          <UserCard key={u.id} user={u} />
+        ))}
       </div>
     </div>
   );
+}
+
+async function getUsers() {
+  const supabaseAdmin = createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { data } = await supabaseAdmin.from('users').select('*');
+
+  return data as User[];
+}
+
+async function getUserCount() {
+  const supabaseAdmin = createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { count } = await supabaseAdmin.from('users').select('*', {
+    count: 'exact',
+    head: true,
+  });
+
+  return count;
 }

@@ -1,104 +1,63 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import useTranslation from 'next-translate/useTranslation';
-import { Divider } from '@mantine/core';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../components/selectors/ModeSelector';
-import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
-import { useLocalStorage } from '@mantine/hooks';
-import useSWR from 'swr';
 import { Workspace } from '../../../../../../types/primitives/Workspace';
 import WorkspaceCard from '../../../../../../components/cards/WorkspaceCard';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
+import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import { Separator } from '@/components/ui/separator';
+import { createAdminClient } from '@/utils/supabase/client';
+import { notFound } from 'next/navigation';
 
-export default function InfrastructureWorkspacesPage() {
-  const { setRootSegment } = useSegments();
-  const { ws } = useWorkspaces();
+interface Props {
+  params: {
+    wsId: string;
+  };
+}
 
-  const { t } = useTranslation('infrastructure-tabs');
+export const dynamic = 'force-dynamic';
 
-  const infrastructureLabel = t('infrastructure');
-  const workspacesLabel = t('workspaces');
+export default async function InfrastructureWorkspacesPage({
+  params: { wsId },
+}: Props) {
+  await enforceRootWorkspaceAdmin(wsId);
 
-  useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws?.name || 'Tổ chức không tên',
-              href: `/${ws.id}`,
-            },
-            { content: infrastructureLabel, href: `/${ws.id}/infrastructure` },
-            {
-              content: workspacesLabel,
-              href: `/${ws.id}/infrastructure/workspaces`,
-            },
-          ]
-        : []
-    );
-
-    return () => setRootSegment([]);
-  }, [infrastructureLabel, workspacesLabel, ws, setRootSegment]);
-
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
-
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'infrastructure-workspaces-per-page',
-    defaultValue: 16,
-  });
-
-  const apiPath = ws?.id
-    ? `/api/workspaces?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
-  const countApi = ws?.id ? `/api/workspaces/count` : null;
-
-  const { data: workspaces } = useSWR<Workspace[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'workspace-users-mode',
-    defaultValue: 'grid',
-  });
+  const workspaces = await getWorkspaces();
+  const count = await getWorkspaceCount();
 
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-          evenNumbers
-        />
-        <div className="hidden xl:block" />
+        <GeneralSearchBar />
       </div>
 
-      <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <Separator className="mt-4" />
+      <PaginationIndicator totalItems={count} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
-        {workspaces &&
-          workspaces?.map((ws) => <WorkspaceCard key={ws.id} ws={ws} />)}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {workspaces.map((ws) => (
+          <WorkspaceCard key={ws.id} ws={ws} />
+        ))}
       </div>
     </div>
   );
+}
+
+async function getWorkspaces() {
+  const supabaseAdmin = createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { data } = await supabaseAdmin.from('workspaces').select('*');
+
+  return data as Workspace[];
+}
+
+async function getWorkspaceCount() {
+  const supabaseAdmin = createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { count } = await supabaseAdmin.from('workspaces').select('*', {
+    count: 'exact',
+    head: true,
+  });
+
+  return count;
 }

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 
 export interface NavLink {
   name: string;
@@ -22,9 +23,7 @@ interface Props {
 
 export function Navigation({ currentWsId, currentPreset, navLinks }: Props) {
   const pathname = usePathname();
-  
-  const rootWorkspaceId = '00000000-0000-0000-0000-000000000000';
-  const isRootWorkspace = currentWsId === rootWorkspaceId;
+  const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
   return (
     <>

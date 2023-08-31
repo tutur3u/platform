@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 
 interface Props {
   params: {
-    wsId: string | null;
+    wsId: string;
   };
 }
 
