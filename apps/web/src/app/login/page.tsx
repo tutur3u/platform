@@ -16,7 +16,7 @@ export default async function Login() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect('/chat');
+  if (user) redirect('/onboarding');
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center p-8">

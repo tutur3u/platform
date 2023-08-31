@@ -25,7 +25,7 @@ export default async function Layout({
   const navLinks: NavLink[] = [
     {
       name: 'Chat',
-      href: '/chat',
+      href: `/${wsId}/chat`,
     },
     {
       name: 'Dashboard',
