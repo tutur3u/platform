@@ -31,3 +31,22 @@ export async function getWorkspace(id?: string | null) {
 
   return ws as Workspace;
 }
+
+export async function getWorkspaces() {
+  const supabase = createServerComponentClient({ cookies });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id, name, preset, created_at, workspace_members!inner(role)')
+    .eq('workspace_members.user_id', user.id);
+
+  if (error) notFound();
+
+  return data as Workspace[];
+}

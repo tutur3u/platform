@@ -1,9 +1,10 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getWorkspace, getWorkspaces } from '@/lib/workspace-helper';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import WorkspaceSelect from './_components/workspace-select';
 
 interface LayoutProps {
   params: {
@@ -19,6 +20,7 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
+  const workspaces = await getWorkspaces();
 
   const navLinks: NavLink[] = [
     {
@@ -94,13 +96,13 @@ export default async function Layout({
           </Link>
           <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
           <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
-            <Link href={`/${workspace.id}`}>{workspace.name}</Link>
+            <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
           </Suspense>
         </div>
 
         <div className="flex gap-1">
           <Navigation
-            currentPreset={workspace?.preset ?? 'GENERAL'}
+            currentPreset={workspace.preset ?? 'GENERAL'}
             navLinks={navLinks}
           />
         </div>
@@ -108,7 +110,7 @@ export default async function Layout({
 
       <Separator />
 
-      <div className="p-4 md:px-8 lg:px-16 xl:px-32">{children}</div>
+      <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </>
   );
 }
