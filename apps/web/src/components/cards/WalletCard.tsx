@@ -1,7 +1,8 @@
+'use client';
+
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import { Wallet } from '../../types/primitives/Wallet';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -20,22 +21,19 @@ const WalletCard = ({
   showBalance = false,
   showAmount = false,
 }: Props) => {
-  const { ws } = useWorkspaces();
-
   const { t } = useTranslation('finance-tabs');
 
-  const countApi =
-    showAmount && ws?.id && wallet?.id && amount === undefined
-      ? `/api/workspaces/${ws.id}/finance/wallets/${wallet.id}/transactions/count`
-      : null;
+  // const countApi =
+  //   showAmount && ws?.id && wallet?.id && amount === undefined
+  //     ? `/api/workspaces/${ws.id}/finance/wallets/${wallet.id}/transactions/count`
+  //     : null;
 
-  const { data: count } = useSWR<number>(countApi);
-
-  if (!ws) return null;
+  // const { data: count } = useSWR<number>(countApi);
 
   return (
     <Link
-      href={disableLink ? '#' : `/${ws.id}/finance/wallets/${wallet.id}`}
+      href={disableLink ? '#' : `/`}
+      // href={disableLink ? '#' : `/${ws.id}/finance/wallets/${wallet.id}`}
       className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
@@ -63,11 +61,11 @@ const WalletCard = ({
           </div>
         )}
 
-        {showAmount && (
+        {/* {showAmount && (
           <div className="m-2 rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
             {`${amount ?? count} ${t('transactions').toLowerCase()}`}
           </div>
-        )}
+        )} */}
       </div>
     </Link>
   );

@@ -1,15 +1,5 @@
-'use client';
-
-import { useState } from 'react';
-import { Divider, Switch } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
 import { Transaction } from '../../../../../types/primitives/Transaction';
-import useSWR from 'swr';
 import TransactionCard from '../../../../../components/cards/TransactionCard';
-import ModeSelector, {
-  Mode,
-} from '../../../../../components/selectors/ModeSelector';
-import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
 import moment from 'moment';
 import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
 import 'moment/locale/vi';
@@ -17,60 +7,30 @@ import PlusCardButton from '../../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
 import DateRangeInput from '../../../../../components/selectors/DateRangeInput';
+import { Separator } from '@/components/ui/separator';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {
     wsId: string;
   };
+  searchParams: {
+    q: string;
+    from: string;
+    to: string;
+  };
 }
 
-export default function FinanceTransactionsPage({ params: { wsId } }: Props) {
+export default async function FinanceTransactionsPage({
+  params: { wsId },
+  searchParams,
+}: Props) {
   const { lang } = useTranslation();
   const { t } = useTranslation('transactions');
 
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
-
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'finance-transactions-items-per-page',
-    defaultValue: 15,
-  });
-
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-
-  const apiPath = wsId
-    ? `/api/workspaces/${wsId}/finance/transactions?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}&startDate=${
-        startDate?.toISOString() || ''
-      }&endDate=${endDate?.toISOString() || ''}`
-    : null;
-
-  // const countApi = wsId
-  //   ? `/api/workspaces/${wsId}/finance/transactions/count`
-  //   : null;
-
-  const { data: transactions } = useSWR<Transaction[]>(apiPath);
-  // const { data: count } = useSWR<number>(countApi);
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'finance-transactions-mode',
-    defaultValue: 'grid',
-  });
-
-  const [showAmount, setShowAmount] = useLocalStorage({
-    key: 'finance-transactions-showAmount',
-    defaultValue: true,
-  });
-
-  const [showDatetime, setShowDatetime] = useLocalStorage({
-    key: 'finance-transactions-showDatetime',
-    defaultValue: true,
-  });
-
-  const [showWallet, setShowWallet] = useLocalStorage({
-    key: 'finance-transactions-showWallet',
-    defaultValue: true,
-  });
+  const transactions = await getTransactions(wsId, searchParams);
 
   const transactionsByDate = transactions?.reduce(
     (acc, cur) => {
@@ -126,47 +86,13 @@ export default function FinanceTransactionsPage({ params: { wsId } }: Props) {
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <DateRangeInput
-          label={t('date-range')}
-          placeholder={t('common:all')}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-        />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-        />
-
-        <Divider variant="dashed" className="col-span-full" />
-        <Switch
-          label={t('show-amount')}
-          checked={showAmount}
-          onChange={(event) => setShowAmount(event.currentTarget.checked)}
-        />
-        <Switch
-          label={t('show-datetime')}
-          checked={showDatetime}
-          onChange={(event) => setShowDatetime(event.currentTarget.checked)}
-        />
-        <Switch
-          label={t('show-wallet')}
-          checked={showWallet}
-          onChange={(event) => setShowWallet(event.currentTarget.checked)}
-        />
+        <GeneralSearchBar />
+        <DateRangeInput label={t('date-range')} placeholder={t('common:all')} />
       </div>
 
-      <Divider className="my-4" />
+      <Separator className="my-4" />
 
-      <div
-        className={`grid gap-x-4 gap-y-2 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className="grid gap-x-4 gap-y-2 md:grid-cols-2 xl:grid-cols-4">
         <h3 className="col-span-full text-lg font-semibold text-zinc-700 dark:text-zinc-300">
           {t('new-transaction')}
         </h3>
@@ -210,21 +136,17 @@ export default function FinanceTransactionsPage({ params: { wsId } }: Props) {
                 </div>
               </h3>
 
-              <Divider variant="dashed" className="mb-4 mt-2" />
+              <Separator className="mb-4 mt-2" />
 
-              <div
-                className={`grid gap-4 ${
-                  mode === 'grid' && 'lg:grid-cols-2 xl:grid-cols-3'
-                }`}
-              >
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
                 {data.transactions.map((c) => (
                   <TransactionCard
                     key={c.id}
                     wsId={wsId}
                     transaction={c}
-                    showAmount={showAmount}
-                    showDatetime={showDatetime}
-                    showWallet={showWallet}
+                    showAmount={true}
+                    showDatetime={true}
+                    showWallet={true}
                   />
                 ))}
               </div>
@@ -233,4 +155,23 @@ export default function FinanceTransactionsPage({ params: { wsId } }: Props) {
       </div>
     </div>
   );
+}
+
+async function getTransactions(
+  wsId: string,
+  { q, from, to }: { q: string; from: string; to: string }
+) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase
+    .from('workspace_transactions')
+    .select('*')
+    .eq('ws_id', wsId);
+
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (from) queryBuilder.gte('taken_at', from);
+  if (to) queryBuilder.lte('taken_at', to);
+
+  const { data } = await queryBuilder;
+  return data as Transaction[];
 }
