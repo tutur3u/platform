@@ -2,26 +2,37 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
 
-interface NavLink {
+export interface NavLink {
   name: string;
   href: string;
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
+  allowedPresets?: WorkspacePreset[];
 }
 
 interface Props {
+  currentPreset: WorkspacePreset;
   navLinks: NavLink[];
 }
 
-export function Navigation({ navLinks }: Props) {
+export function Navigation({ currentPreset, navLinks }: Props) {
   const pathname = usePathname();
 
   return (
     <>
       {navLinks.map((link) => {
+        // If the link is disabled, don't render it
         if (link?.disabled) return null;
+
+        // If the link is only allowed for certain presets, check if the current preset is allowed
+        if (
+          currentPreset !== 'ALL' &&
+          link?.allowedPresets?.includes(currentPreset) === false
+        )
+          return null;
 
         const links = [...(link.aliases || []), link.href];
         const matchExact = link.matchExact ?? false;

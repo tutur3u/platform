@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
 import { getWorkspace } from '@/lib/workspace-helper';
 import Image from 'next/image';
@@ -20,7 +20,7 @@ export default async function Layout({
 }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
 
-  const navLinks = [
+  const navLinks: NavLink[] = [
     {
       name: 'Chat',
       href: '/chat',
@@ -37,15 +37,17 @@ export default async function Layout({
     {
       name: 'Calendar',
       href: `/${wsId}/calendar`,
-      disabled: true,
+      allowedPresets: ['ALL'],
     },
     {
       name: 'Documents',
       href: `/${wsId}/documents`,
+      allowedPresets: ['ALL'],
     },
     {
       name: 'Boards',
       href: `/${wsId}/boards`,
+      allowedPresets: ['ALL'],
     },
     {
       name: 'Inventory',
@@ -54,6 +56,7 @@ export default async function Layout({
     {
       name: 'Healthcare',
       href: `/${wsId}/healthcare`,
+      allowedPresets: ['PHARMACY'],
     },
     {
       name: 'Finance',
@@ -96,7 +99,10 @@ export default async function Layout({
         </div>
 
         <div className="flex gap-1">
-          <Navigation navLinks={navLinks} />
+          <Navigation
+            currentPreset={workspace?.preset ?? 'GENERAL'}
+            navLinks={navLinks}
+          />
         </div>
       </div>
 
