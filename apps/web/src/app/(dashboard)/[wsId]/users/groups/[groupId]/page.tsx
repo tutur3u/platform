@@ -80,7 +80,7 @@ export default function UserGroupDetailsPage({
       <SettingItemCard title={group?.name || untitledLabel} />
 
       <div className="mt-4 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
+        <GeneralSearchBar />
         <ModeSelector mode={mode} setMode={setMode} />
         <PaginationSelector
           items={itemsPerPage}

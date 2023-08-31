@@ -114,7 +114,7 @@ export default function WalletTransactionsPage({
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
+        <GeneralSearchBar />
         <ModeSelector mode={mode} setMode={setMode} />
         <DateRangeInput
           label={t('date-range')}

@@ -22,74 +22,27 @@ interface Props {
 export default function WorkspaceUsersPage({ params: { wsId } }: Props) {
   const { t } = useTranslation();
 
-  const [query, setQuery] = useState('');
-  const [activePage, setPage] = useState(1);
+  // const apiPath = wsId
+  //   ? `/api/workspaces/${wsId}/users/groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+  //   : null;
 
-  useEffect(() => {
-    setPage(1);
-  }, [query]);
+  // const { data } = useSWR<{ data: UserGroup[]; count: number }>(apiPath);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
-    key: 'users-groups-items-per-page',
-    defaultValue: 15,
-  });
-
-  const apiPath = wsId
-    ? `/api/workspaces/${wsId}/users/groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
-  const { data } = useSWR<{ data: UserGroup[]; count: number }>(apiPath);
-
-  const groups = data?.data;
-  const count = data?.count;
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'workspace-users-mode',
-    defaultValue: 'grid',
-  });
-
-  const [showUsers, setShowUsers] = useLocalStorage({
-    key: 'workspace-users-groups-showUsers',
-    defaultValue: true,
-  });
+  // const groups = data?.data;
+  // const count = data?.count;
 
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-        />
-        <div className="hidden xl:block" />
-        <Divider variant="dashed" className="col-span-full" />
-        <Switch
-          label={t('ws-user-groups-configs:show-users')}
-          checked={showUsers}
-          onChange={(event) => setShowUsers(event.currentTarget.checked)}
-        />
+        <GeneralSearchBar />
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      {/* <PaginationIndicator totalItems={count} /> */}
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PlusCardButton href={`/${wsId}/users/groups/new`} />
-        {groups &&
-          groups?.map((group) => (
+        {/* {          groups.map((group) => (
             <GeneralItemCard
               key={group.id}
               name={group.name}
@@ -98,7 +51,7 @@ export default function WorkspaceUsersPage({ params: { wsId } }: Props) {
               amountTrailing={t('sidebar-tabs:users').toLowerCase()}
               showAmount={showUsers}
             />
-          ))}
+          ))} */}
       </div>
     </div>
   );

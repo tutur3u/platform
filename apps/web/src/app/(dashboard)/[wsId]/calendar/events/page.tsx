@@ -43,7 +43,7 @@ export default function CalendarEventsPage() {
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar setQuery={setQuery} />
+        <GeneralSearchBar />
         <ModeSelector
           setMode={setMode}
           showAll={window.innerWidth > 768}
@@ -60,12 +60,7 @@ export default function CalendarEventsPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={events?.count}
-      />
+      <PaginationIndicator totalItems={events?.count} />
 
       <div
         className={`grid ${
