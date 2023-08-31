@@ -1,10 +1,7 @@
-'use client';
-
-import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '@/components/cards/StatisticCard';
-import Link from 'next/link';
-import { Divider } from '@mantine/core';
+import { cookies } from 'next/headers';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface Props {
   params: {
@@ -12,62 +9,67 @@ interface Props {
   };
 }
 
-export default function InventoryPage({ params: { wsId } }: Props) {
+export default async function InventoryPage({ params: { wsId } }: Props) {
+  const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation('inventory-tabs');
 
-  const productsCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/products/count`
-    : null;
+  const { data: workspaceProducts } = await supabase.rpc(
+    'get_workspace_products_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
-  const categoriesCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/categories/count`
-    : null;
+  const { data: inventoryProducts } = await supabase.rpc(
+    'get_inventory_products_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
-  const batchesCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/batches/count`
-    : null;
+  const { count: categories } = await supabase
+    .from('product_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const warehousesCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/warehouses/count`
-    : null;
+  const { count: batches } = await supabase
+    .from('inventory_batches')
+    .select('*, inventory_warehouses!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('inventory_warehouses.ws_id', wsId);
 
-  const unitsCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/units/count`
-    : null;
+  const { count: warehouses } = await supabase
+    .from('inventory_warehouses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const suppliersCountApi = wsId
-    ? `/api/workspaces/${wsId}/inventory/suppliers/count`
-    : null;
+  const { count: units } = await supabase
+    .from('inventory_units')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: products, error: productsError } = useSWR<{
-    ws: number;
-    inventory: number;
-  }>(productsCountApi);
-
-  const { data: categories, error: categoriesError } =
-    useSWR<number>(categoriesCountApi);
-
-  const { data: batches, error: batchesError } =
-    useSWR<number>(batchesCountApi);
-
-  const { data: warehouses, error: warehousesError } =
-    useSWR<number>(warehousesCountApi);
-
-  const { data: units, error: unitsError } = useSWR<number>(unitsCountApi);
-
-  const { data: suppliers, error: suppliersError } =
-    useSWR<number>(suppliersCountApi);
-
-  const isProductsLoading = products === undefined && !productsError;
-  const isCategoriesLoading = categories === undefined && !categoriesError;
-  const isBatchesLoading = batches === undefined && !batchesError;
-  const isWarehousesLoading = warehouses === undefined && !warehousesError;
-  const isUnitsLoading = units === undefined && !unitsError;
-  const isSuppliersLoading = suppliers === undefined && !suppliersError;
+  const { count: suppliers } = await supabase
+    .from('inventory_suppliers')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Link
+      {/* <Link
         href="/warehouse/attention"
         className="rounded bg-yellow-300/10 transition duration-300 hover:-translate-y-1 hover:bg-yellow-300/20 lg:col-span-2"
       >
@@ -91,57 +93,50 @@ export default function InventoryPage({ params: { wsId } }: Props) {
         </div>
       </Link>
 
-      <Divider className="col-span-full" variant="dashed" />
+      <Separator className="col-span-full" /> */}
 
       <StatisticCard
         title={t('products')}
         color="blue"
-        value={products?.ws}
+        value={workspaceProducts}
         href={`/${wsId}/inventory/products`}
-        loading={isProductsLoading}
         className="md:col-span-2"
       />
 
       <StatisticCard
         title={t('inventory-overview:products-with-prices')}
-        value={products?.inventory}
+        value={inventoryProducts}
         href={`/${wsId}/inventory/products`}
-        loading={isProductsLoading}
       />
 
       <StatisticCard
         title={t('product-categories')}
         value={categories}
         href={`/${wsId}/inventory/categories`}
-        loading={isCategoriesLoading}
       />
 
       <StatisticCard
         title={t('batches')}
         value={batches}
         href={`/${wsId}/inventory/batches`}
-        loading={isBatchesLoading}
       />
 
       <StatisticCard
         title={t('warehouses')}
         value={warehouses}
         href={`/${wsId}/inventory/warehouses`}
-        loading={isWarehousesLoading}
       />
 
       <StatisticCard
         title={t('units')}
         value={units}
         href={`/${wsId}/inventory/units`}
-        loading={isUnitsLoading}
       />
 
       <StatisticCard
         title={t('suppliers')}
         value={suppliers}
         href={`/${wsId}/inventory/suppliers`}
-        loading={isSuppliersLoading}
       />
     </div>
   );
