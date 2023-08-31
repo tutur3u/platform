@@ -14,7 +14,7 @@ export interface NavLink {
 }
 
 interface Props {
-  currentPreset: WorkspacePreset;
+  currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }
 
@@ -30,6 +30,7 @@ export function Navigation({ currentPreset, navLinks }: Props) {
         // If the link is only allowed for certain presets, check if the current preset is allowed
         if (
           currentPreset !== 'ALL' &&
+          currentPreset !== undefined &&
           link?.allowedPresets?.includes(currentPreset) === false
         )
           return null;

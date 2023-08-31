@@ -1,8 +1,8 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import { TextInput } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import useTranslation from 'next-translate/useTranslation';
 import { useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Props {
   setQuery: (query: string) => void;
@@ -21,13 +21,14 @@ const GeneralSearchBar = ({ setQuery }: Props) => {
   }, [value, setQuery]);
 
   return (
-    <TextInput
-      label={searchLabel}
-      placeholder={searchPlaceholder}
-      defaultValue={value}
-      onChange={(e) => setValue(e.target.value)}
-      icon={<MagnifyingGlassIcon className="h-5" />}
-    />
+    <div className="grid w-full max-w-sm items-center gap-1.5">
+      <Label htmlFor="email">{searchLabel}</Label>
+      <Input
+        placeholder={searchPlaceholder}
+        defaultValue={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+    </div>
   );
 };
 
