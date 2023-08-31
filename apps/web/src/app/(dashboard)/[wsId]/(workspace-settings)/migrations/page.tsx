@@ -1,18 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ActionIcon,
-  Button,
-  Divider,
-  PasswordInput,
-  Progress,
-  Tooltip,
-} from '@mantine/core';
+import { Tooltip } from '@mantine/core';
 import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
-import { DEV_MODE } from '../../../../../constants/common';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconGitMerge } from '@tabler/icons-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
+import { DEV_MODE } from '@/constants/common';
 
 export default function PlatformMigrationsPage() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
@@ -264,10 +263,7 @@ export default function PlatformMigrationsPage() {
     disabled,
   }: ModulePackage) => {
     return (
-      <div
-        key={name}
-        className="rounded border p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
-      >
+      <Card key={name} className="p-4">
         <div className="flex items-center justify-between gap-2">
           <div className="font-semibold">{name}</div>
 
@@ -281,14 +277,7 @@ export default function PlatformMigrationsPage() {
             ) : null}
 
             <Tooltip label="Migrate data">
-              <ActionIcon
-                variant="subtle"
-                color="grape"
-                className={
-                  disabled
-                    ? ''
-                    : 'border border-purple-600/10 bg-purple-600/10 hover:bg-purple-600/20 dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20'
-                }
+              <Button
                 onClick={() =>
                   handleMigrate({
                     name,
@@ -300,11 +289,11 @@ export default function PlatformMigrationsPage() {
                     mapping,
                   })
                 }
-                loading={getLoading(module)}
-                disabled={disabled}
+                size="icon"
+                disabled={disabled || getLoading(module)}
               >
                 <IconGitMerge className="h-4 w-4" />
-              </ActionIcon>
+              </Button>
             </Tooltip>
 
             <Tooltip
@@ -312,14 +301,7 @@ export default function PlatformMigrationsPage() {
                 getData('external', module) ? 'Refresh data' : 'Fetch data'
               }
             >
-              <ActionIcon
-                variant="subtle"
-                color="green"
-                className={
-                  disabled
-                    ? ''
-                    : 'border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20'
-                }
+              <Button
                 onClick={() =>
                   handleMigrate({
                     name,
@@ -331,89 +313,61 @@ export default function PlatformMigrationsPage() {
                     mapping,
                   })
                 }
-                loading={getLoading(module)}
-                disabled={disabled}
+                size="icon"
+                disabled={disabled || getLoading(module)}
               >
                 {getData('external', module) ? (
                   <ArrowPathIcon className="h-4 w-4" />
                 ) : (
                   <PlayIcon className="h-4 w-4" />
                 )}
-              </ActionIcon>
+              </Button>
             </Tooltip>
           </div>
         </div>
 
         {disabled || (
           <>
-            <Divider className="my-2" />
+            <Separator className="my-2" />
 
             <div className="grid gap-2">
               <div className="grid gap-1">
                 External Data
                 <Progress
-                  sections={[
-                    {
-                      value: getData('external', module)
-                        ? ((getData('external', module)?.length ?? 0) /
-                            getCount('external', module)) *
-                          100
-                        : 0,
-                      color:
-                        getData('external', module)?.length ===
-                        getCount('external', module)
-                          ? 'teal'
-                          : 'blue',
-                      tooltip: getData('external', module)
-                        ? `Fetched (${
-                            getData('external', module)?.length ?? 0
-                          }/${getCount('external', module)})`
-                        : 'Loading',
-                    },
-                  ]}
-                  size="lg"
+                  value={
+                    getData('external', module)
+                      ? ((getData('external', module)?.length ?? 0) /
+                          getCount('external', module)) *
+                        100
+                      : 0
+                  }
                 />
               </div>
 
               <div className="grid gap-1">
                 Synchronized
                 <Progress
-                  sections={[
-                    {
-                      value:
-                        ((getData('external', module) ?? []).filter((v) =>
+                  value={
+                    getData('external', module)
+                      ? ((getData('external', module) ?? []).filter((v) =>
                           (getData('internal', module) ?? []).find(
                             (iv) => iv.id === v.id
                           )
                         ).length /
                           (getData('external', module)?.length ?? 0)) *
-                        100,
-                      color: 'teal',
-                      tooltip: `Synchronized (${
-                        (getData('external', module) ?? []).filter((v) =>
-                          (getData('internal', module) ?? []).find(
-                            (iv) => iv.id === v.id
-                          )
-                        ).length
-                      }/${getData('external', module)?.length ?? 0})`,
-                    },
-                  ]}
-                  size="lg"
+                        100
+                      : 0
+                  }
                 />
               </div>
 
-              <Divider className="mt-2" />
+              <Separator className="mt-2" />
 
-              <Button
-                variant="light"
-                className="bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-300/10 dark:hover:bg-blue-300/20"
-              >
-                View data
-              </Button>
+              <Button>View data</Button>
             </div>
           </>
         )}
-      </div>
+      </Card>
     );
   };
 
@@ -567,34 +521,42 @@ export default function PlatformMigrationsPage() {
     <div className="flex flex-col gap-4 ">
       <div className="flex h-full flex-col gap-2">
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          <PasswordInput
-            label="API endpoint"
-            placeholder="https://tuturuuu.com/api/v1"
-            value={apiEndpoint}
-            onChange={(e) => setApiEndpoint(e.currentTarget.value)}
-          />
-          <PasswordInput
-            label="API key"
-            placeholder="API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.currentTarget.value)}
-          />
-          <PasswordInput
-            label="Workspace ID"
-            placeholder="Workspace ID"
-            value={workspaceId}
-            onChange={(e) => setWorkspaceId(e.currentTarget.value)}
-            className="col-span-full xl:col-span-1"
-          />
+          <div className="grid w-full items-center gap-1.5">
+            <Label>API endpoint</Label>
+            <Input
+              placeholder="https://tuturuuu.com/api/v1"
+              value={apiEndpoint}
+              onChange={(e) => setApiEndpoint(e.currentTarget.value)}
+            />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label>API key</Label>
+            <Input
+              placeholder="API key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.currentTarget.value)}
+            />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label>Workspace ID</Label>
+            <Input
+              placeholder="Workspace ID"
+              value={workspaceId}
+              onChange={(e) => setWorkspaceId(e.currentTarget.value)}
+              className="col-span-full xl:col-span-1"
+            />
+          </div>
         </div>
 
-        <h2 className="mt-4 flex items-center gap-1 text-2xl font-semibold text-blue-500 dark:text-blue-300">
+        <h2 className="mt-4 flex items-center gap-1 text-2xl font-semibold">
           <div className="mr-1">Migrate data</div>
           {Object.values(migrationData ?? {}).reduce(
             (acc, v) => acc + (v?.externalTotal ?? 0),
             0
           ) !== 0 && (
-            <div className="rounded border border-blue-500/10 bg-blue-500/10 px-1 py-0.5 text-sm text-blue-600 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300">
+            <div className="rounded border px-1 py-0.5 text-sm">
               {Object.values(migrationData ?? {}).reduce(
                 (acc, v) => acc + (v?.externalData?.length ?? 0),
                 0
@@ -607,33 +569,21 @@ export default function PlatformMigrationsPage() {
             </div>
           )}
 
-          <ActionIcon
-            variant="subtle"
-            color="grape"
-            className="border border-purple-600/10 bg-purple-600/10 hover:bg-purple-600/20 dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20"
-            onClick={handleMigrateAll}
-            loading={loading}
-          >
+          <Button onClick={handleMigrateAll} size="icon" disabled={loading}>
             <IconGitMerge className="h-4 w-4" />
-          </ActionIcon>
+          </Button>
 
-          <ActionIcon
-            variant="subtle"
-            color="green"
-            className="border border-green-600/10 bg-green-600/10 hover:bg-green-600/20 dark:border-green-300/10 dark:bg-green-300/10 dark:hover:bg-green-300/20"
-            onClick={handleMigrateAll}
-            loading={loading}
-          >
+          <Button onClick={handleMigrateAll} size="icon" disabled={loading}>
             {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
               .length ? (
               <ArrowPathIcon className="h-4 w-4" />
             ) : (
               <PlayIcon className="h-4 w-4" />
             )}
-          </ActionIcon>
+          </Button>
         </h2>
 
-        <Divider className="mb-2" />
+        <Separator className="mb-2" />
         {generateModules()}
       </div>
     </div>
