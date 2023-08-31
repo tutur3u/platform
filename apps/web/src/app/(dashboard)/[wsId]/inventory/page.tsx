@@ -9,6 +9,8 @@ interface Props {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function InventoryPage({ params: { wsId } }: Props) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation('inventory-tabs');

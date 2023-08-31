@@ -1,7 +1,6 @@
-'use client';
-
 import StatisticCard from '@/components/cards/StatisticCard';
-import useSWR from 'swr';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -9,34 +8,44 @@ interface Props {
   };
 }
 
-export default function HealthcareOverviewPage({ params: { wsId } }: Props) {
-  const checkupsCountApi = wsId
-    ? `/api/workspaces/${wsId}/healthcare/checkups/count`
-    : null;
+export const dynamic = 'force-dynamic';
 
-  const diagnosesCountApi = wsId
-    ? `/api/workspaces/${wsId}/healthcare/diagnoses/count`
-    : null;
+export default async function HealthcareOverviewPage({
+  params: { wsId },
+}: Props) {
+  const supabase = createServerComponentClient({ cookies });
 
-  const vitalsCountApi = wsId
-    ? `/api/workspaces/${wsId}/healthcare/vitals/count`
-    : null;
+  const { count: checkups } = await supabase
+    .from('healthcare_checkups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const groupsCountApi = wsId
-    ? `/api/workspaces/${wsId}/healthcare/vital-groups/count`
-    : null;
+  const { count: diagnoses } = await supabase
+    .from('healthcare_diagnoses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const { data: checkups, error: checkupsError } =
-    useSWR<number>(checkupsCountApi);
-  const { data: diagnoses, error: diagnosesError } =
-    useSWR<number>(diagnosesCountApi);
-  const { data: vitals, error: vitalsError } = useSWR<number>(vitalsCountApi);
-  const { data: groups, error: groupsError } = useSWR<number>(groupsCountApi);
+  const { count: vitals } = await supabase
+    .from('healthcare_vitals')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  const isCheckupsLoading = checkups === undefined && !checkupsError;
-  const isDiagnosesLoading = diagnoses === undefined && !diagnosesError;
-  const isVitalsLoading = vitals === undefined && !vitalsError;
-  const isGroupsLoading = groups === undefined && !groupsError;
+  const { count: groups } = await supabase
+    .from('healthcare_vital_groups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <div className="flex min-h-full w-full flex-col ">
@@ -46,28 +55,24 @@ export default function HealthcareOverviewPage({ params: { wsId } }: Props) {
           color="blue"
           value={checkups}
           href={`/${wsId}/healthcare/checkups`}
-          loading={isCheckupsLoading}
         />
 
         <StatisticCard
           title="Chẩn đoán"
           value={diagnoses}
           href={`/${wsId}/healthcare/diagnoses`}
-          loading={isDiagnosesLoading}
         />
 
         <StatisticCard
           title="Chỉ số"
           value={vitals}
           href={`/${wsId}/healthcare/vitals`}
-          loading={isVitalsLoading}
         />
 
         <StatisticCard
           title="Nhóm chỉ số"
           value={groups}
           href={`/${wsId}/healthcare/vital-groups`}
-          loading={isGroupsLoading}
         />
       </div>
     </div>
