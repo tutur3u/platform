@@ -101,7 +101,7 @@ export default async function Layout({
           </Suspense>
         </div>
 
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           <Navigation
             currentPreset={workspace.preset ?? 'GENERAL'}
             navLinks={navLinks}

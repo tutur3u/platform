@@ -37,7 +37,7 @@ export default async function Layout({
 
   return (
     <div>
-      <div className="mb-4 flex gap-1 font-semibold">
+      <div className="mb-4 flex gap-1 overflow-x-auto font-semibold">
         <Navigation navLinks={navLinks} />
       </div>
       {children}
