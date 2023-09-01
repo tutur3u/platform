@@ -79,7 +79,7 @@ const StatusSelector = ({ preset }: Props) => {
         ];
 
   return (
-    <div className="grid w-full max-w-sm items-center gap-1.5">
+    <div className="grid w-full items-center gap-1.5">
       <Label>{t('status')}</Label>
       <Select value={status} onValueChange={setStatus}>
         <SelectTrigger>

@@ -37,7 +37,7 @@ const GeneralSearchBar = () => {
   const searchPlaceholder = t('search-placeholder');
 
   return (
-    <div className="grid w-full max-w-sm items-center gap-1.5">
+    <div className="grid w-full items-center gap-1.5">
       <Label>{searchLabel}</Label>
       <Input
         placeholder={searchPlaceholder}

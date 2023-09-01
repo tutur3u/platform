@@ -45,7 +45,7 @@ const ModeSelector = ({ mode, setMode, showAll = false }: Props) => {
       ];
 
   return (
-    <div className="grid w-full max-w-sm items-center gap-1.5">
+    <div className="grid w-full items-center gap-1.5">
       <Label>{t('view_mode')}</Label>
       <Select value={mode} onValueChange={setMode}>
         <SelectTrigger>

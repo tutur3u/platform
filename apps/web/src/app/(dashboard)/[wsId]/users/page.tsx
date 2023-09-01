@@ -12,26 +12,12 @@ interface Props {
 export const dynamic = 'force-dynamic';
 
 export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
-  const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
   const usersLabel = t('sidebar-tabs:users');
 
-  const { count: users } = await supabase
-    .from('workspace_users')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
-
-  const { count: groups } = await supabase
-    .from('workspace_user_groups')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const users = await getUsersCount(wsId);
+  const groups = await getGroupsCount(wsId);
 
   return (
     <div className="flex min-h-full w-full flex-col ">
@@ -52,4 +38,32 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
       </div>
     </div>
   );
+}
+
+async function getUsersCount(wsId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { count } = await supabase
+    .from('workspace_users')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  return count;
+}
+
+async function getGroupsCount(wsId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { count } = await supabase
+    .from('workspace_user_groups')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  return count;
 }
