@@ -37,6 +37,7 @@ export default async function Layout({
     {
       name: 'Import',
       href: `/${wsId}/finance/import`,
+      disabled: true,
     },
     {
       name: 'Settings',

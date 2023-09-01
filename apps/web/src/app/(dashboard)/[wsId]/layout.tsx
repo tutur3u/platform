@@ -59,6 +59,7 @@ export default async function Layout({
       name: 'Healthcare',
       href: `/${wsId}/healthcare`,
       allowedPresets: ['PHARMACY'],
+      disabled: true,
     },
     {
       name: 'Finance',

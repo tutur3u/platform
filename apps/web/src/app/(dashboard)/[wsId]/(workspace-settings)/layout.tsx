@@ -24,6 +24,7 @@ export default async function Layout({
     {
       name: 'Teams',
       href: `/${wsId}/teams`,
+      disabled: true,
     },
     {
       name: 'Infrastructure',
@@ -38,6 +39,7 @@ export default async function Layout({
     {
       name: 'Activities',
       href: `/${wsId}/activities`,
+      disabled: true,
     },
   ];
 
