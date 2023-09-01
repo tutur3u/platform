@@ -234,8 +234,8 @@ importers:
         specifier: ^2.3.3
         version: 2.3.3(next@13.4.19)(react@18.2.0)
       openai:
-        specifier: ^4.3.1
-        version: 4.3.1(encoding@0.1.13)
+        specifier: ^4.4.0
+        version: 4.4.0(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -7674,8 +7674,8 @@ packages:
       - encoding
     dev: false
 
-  /openai@4.3.1(encoding@0.1.13):
-    resolution: {integrity: sha512-64iI2LbJLk0Ss4Nv5IrdGFe6ALNnKlMuXoGuH525bJYxdupJfDCAtra/Jigex1z8it0U82M87tR2TMGU+HYeFQ==}
+  /openai@4.4.0(encoding@0.1.13):
+    resolution: {integrity: sha512-JN0t628Kh95T0IrXl0HdBqnlJg+4Vq0Bnh55tio+dfCnyzHvMLiWyCM9m726MAJD2YkDU4/8RQB6rNbEq9ct2w==}
     hasBin: true
     dependencies:
       '@types/node': 18.17.12
