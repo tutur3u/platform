@@ -79,7 +79,7 @@
     "@tiptap/starter-kit": "^2.1.7",
     "@upstash/qstash": "^0.3.6",
     "@vercel/analytics": "^1.0.2",
-    "ai": "^2.2.10",
+    "ai": "^2.2.11",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
@@ -138,5 +138,5 @@
     "tsconfig": "workspace:*",
     "typescript": "^5.2.2"
   },
-  "packageManager": "pnpm@8.7.0"
+  "packageManager": "pnpm@8.7.1"
 }
