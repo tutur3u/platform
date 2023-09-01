@@ -1,6 +1,6 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../../utils/supabase/client';
+import { createAdminClient } from '../../../utils/supabase/client';
 
 const fetchUser = async (req: NextApiRequest, res: NextApiResponse) => {
   const supabase = createPagesServerClient({
@@ -88,7 +88,7 @@ const deleteUser = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!user?.id || userError)
     return res.status(401).json({ error: 'Unauthorized.' });
 
-  const adminClient = supabaseAdmin();
+  const adminClient = createAdminClient();
   if (!adminClient) return res.status(401).json({ error: 'Unauthorized.' });
 
   const { error } = await adminClient.auth.admin.deleteUser(user.id);

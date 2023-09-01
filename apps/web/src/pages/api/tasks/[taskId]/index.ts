@@ -1,6 +1,6 @@
+import { Database } from '@/types/supabase';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Database } from '../../../../types/database.types';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {

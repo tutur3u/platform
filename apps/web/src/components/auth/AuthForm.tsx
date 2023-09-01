@@ -6,9 +6,9 @@ import { useForm } from '@mantine/form';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import LanguageSelector from '../selectors/LanguageSelector';
-import { useSessionContext } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 import { mutate } from 'swr';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export enum AuthFormMode {
   PasswordReset,
@@ -57,7 +57,7 @@ const AuthForm = ({
   disabled = false,
 }: AuthFormProps) => {
   const router = useRouter();
-  const { supabaseClient } = useSessionContext();
+  const supabase = createClientComponentClient();
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,7 +65,7 @@ const AuthForm = ({
     const checkSession = async () => {
       const {
         data: { session },
-      } = await supabaseClient.auth.getSession();
+      } = await supabase.auth.getSession();
 
       if (session) {
         setSubmitting(true);
@@ -80,7 +80,7 @@ const AuthForm = ({
     };
 
     if (mode !== AuthFormMode.PasswordReset) checkSession();
-  }, [supabaseClient.auth, router, mode]);
+  }, [supabase.auth, router, mode]);
 
   const { t } = useTranslation('auth');
 
@@ -130,7 +130,7 @@ const AuthForm = ({
   // };
 
   // async function handleSignInWithGoogle() {
-  //   await supabaseClient.auth.signInWithOAuth({
+  //   await supabase.auth.signInWithOAuth({
   //     provider: 'google',
   //     options: SupabaseAuthOptions,
   //   });

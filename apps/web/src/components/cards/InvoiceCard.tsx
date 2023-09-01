@@ -1,3 +1,5 @@
+'use client';
+
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import moment from 'moment';

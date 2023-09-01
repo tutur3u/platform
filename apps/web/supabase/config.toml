@@ -83,6 +83,27 @@ message_service_sid = ""
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
+# Auth templates
+[auth.email.template.confirmation]
+subject = "Confirm your Tuturuuu account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.email_change]
+subject = "Email Change Confirmation"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.invite]
+subject = "Invitation to Tuturuuu"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Tuturuuu Verification Code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Tuturuuu Password Recovery"
+content_path = "./supabase/templates/recovery.html"
+
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin`, `notion`, `twitch`,
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.

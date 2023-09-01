@@ -9,14 +9,14 @@ import { AuthMethod } from '../../utils/auth-handler';
 import { mutate } from 'swr';
 import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface AuthEmailSentProps {
   email: string;
 }
 
 const AuthEmailSent = ({ email }: AuthEmailSentProps) => {
-  const supabaseClient = useSupabaseClient();
+  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const { t } = useTranslation('auth-email-sent');
@@ -46,12 +46,12 @@ const AuthEmailSent = ({ email }: AuthEmailSentProps) => {
       const { authenticate } = await import('../../utils/auth-handler');
 
       const authData: {
-        supabaseClient: SupabaseClient;
+        supabase: SupabaseClient;
         method: AuthMethod;
         email: string;
         otp: string;
       } = {
-        supabaseClient,
+        supabase,
         method: 'login',
         email,
         otp: code,

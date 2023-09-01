@@ -1,3 +1,5 @@
+'use client';
+
 import moment from 'moment';
 import { Workspace } from '../../types/primitives/Workspace';
 import useTranslation from 'next-translate/useTranslation';

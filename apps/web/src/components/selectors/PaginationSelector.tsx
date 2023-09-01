@@ -1,6 +1,12 @@
-import { ListBulletIcon } from '@heroicons/react/24/solid';
-import { Select } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export type Mode = 'list' | 'grid';
 
@@ -30,34 +36,24 @@ const PaginationSelector = ({
   }));
 
   return (
-    <Select
-      label={t('items_per_page')}
-      placeholder={t('select_items_per_page')}
-      icon={<ListBulletIcon className="h-5" />}
-      data={data}
-      value={items.toString()}
-      onChange={(value) => {
-        setItems(parseInt(value || '15'));
-      }}
-      styles={{
-        item: {
-          // applies styles to selected item
-          '&[data-selected]': {
-            '&, &:hover': {
-              backgroundColor: '#6b686b',
-              color: '#fff',
-              fontWeight: 600,
-            },
-          },
-
-          // applies styles to hovered item
-          '&:hover': {
-            backgroundColor: '#454345',
-            color: '#fff',
-          },
-        },
-      }}
-    />
+    <div className="grid w-full items-center gap-1.5">
+      <Label>{t('items_per_page')}</Label>
+      <Select
+        value={items.toString()}
+        onValueChange={(value) => setItems(parseInt(value || '15'))}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={t('select_items_per_page')} />
+        </SelectTrigger>
+        <SelectContent>
+          {data.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 

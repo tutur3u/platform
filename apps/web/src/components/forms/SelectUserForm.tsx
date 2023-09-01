@@ -1,3 +1,5 @@
+'use client';
+
 import { Text, Button, Autocomplete, Avatar, Group } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { closeAllModals } from '@mantine/modals';

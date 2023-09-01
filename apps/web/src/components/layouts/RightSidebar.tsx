@@ -1,7 +1,10 @@
 import { Avatar, Indicator, Tooltip } from '@mantine/core';
-import { SidebarProps } from '../../types/SidebarProps';
 import { getInitials } from '../../utils/name-helper';
 import { User } from '../../types/primitives/User';
+
+export interface SidebarProps {
+  className?: string;
+}
 
 function RightSidebar({ className }: SidebarProps) {
   const users: User[] = [];
