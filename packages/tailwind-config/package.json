@@ -9,5 +9,5 @@
     "tailwindcss-themer": "^3.1.0",
     "tailwindcss-animate": "^1.0.6"
   },
-  "packageManager": "pnpm@8.7.0"
+  "packageManager": "pnpm@8.7.1"
 }
