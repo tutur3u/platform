@@ -1,31 +1,29 @@
-import useTranslation from 'next-translate/useTranslation';
-import Filters from './filters';
-import InviteMemberButton from './invite-member-button';
-import { getWorkspace } from '@/lib/workspace-helper';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import MemberList from './invitations/member-list';
-import 'moment/locale/vi';
+import MemberRoleMultiSelector from '@/components/selectors/MemberRoleMultiSelector';
+import useTranslation from 'next-translate/useTranslation';
+import InviteMemberButton from './invite-member-button';
+import MemberTabs from './_components/member-tabs';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: {
-    wsId?: string;
-    page?: string;
-    mode?: string;
-    roles?: string[];
-    itemsPerPage?: string;
+    wsId: string;
   };
 }
 
 export default async function WorkspaceMembersPage({
-  params: { wsId, page = '1', mode = 'grid', roles, itemsPerPage = '15' },
+  params: { wsId },
 }: Props) {
+  // const ws = await getWorkspace(wsId);
+
   const { t } = useTranslation('ws-members');
-  const ws = await getWorkspace(wsId);
 
   const membersLabel = t('workspace-tabs:members');
+  const inviteLabel = t('invite_member');
+
+  const joinedLabel = t('joined');
+  const invitedLabel = t('invited');
 
   return (
     <>
@@ -36,37 +34,28 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <InviteMemberButton wsId={wsId} />
-          <Tabs value={'joined'}>
-            <TabsList>
-              <TabsTrigger value="joined">{t('joined')}</TabsTrigger>
-              <TabsTrigger value="invited">{t('invited')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <InviteMemberButton wsId={wsId} label={inviteLabel} />
+          <MemberTabs
+            wsId={wsId}
+            joinedLabel={joinedLabel}
+            invitedLabel={invitedLabel}
+          />
         </div>
       </div>
       <Separator className="my-4" />
 
       <div className="flex min-h-full w-full flex-col ">
-        <Filters />
+        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MemberRoleMultiSelector />
+        </div>
         <Separator className="mt-4" />
         {/* <PaginationIndicator
           activePage={Number(page)}
           itemsPerPage={Number(itemsPerPage)}
         /> */}
 
-        <div
-          className={`grid items-end gap-4 ${
-            mode === 'grid' ? 'md:grid-cols-2' : ''
-          }`}
-        >
-          <MemberList
-            wsId={wsId}
-            role={ws.role}
-            page={page}
-            roles={roles}
-            itemsPerPage={itemsPerPage}
-          />
+        <div className="grid items-end gap-4 lg:grid-cols-2">
+          {/* <MemberList wsId={ws.id} role={ws.role} /> */}
         </div>
       </div>
     </>

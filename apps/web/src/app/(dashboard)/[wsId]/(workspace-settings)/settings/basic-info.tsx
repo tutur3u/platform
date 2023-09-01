@@ -1,9 +1,13 @@
 'use client';
 
-import { Workspace } from '@/types/primitives/Workspace';
-import { Button, TextInput } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { Workspace } from '@/types/primitives/Workspace';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context';
 
 interface Props {
   workspace: Workspace;
@@ -13,6 +17,7 @@ export default function BasicInfo({ workspace }: Props) {
   const isSystemWs = workspace.id === '00000000-0000-0000-0000-000000000000';
 
   const { t } = useTranslation('ws-settings');
+  const router = useRouter();
 
   const [name, setName] = useState(workspace.name);
   const [isSaving, setIsSaving] = useState(false);
@@ -21,7 +26,7 @@ export default function BasicInfo({ workspace }: Props) {
     if (isSystemWs) return;
 
     setIsSaving(true);
-    await updateWorkspace({
+    await updateWorkspace(router, {
       id: workspace.id,
       name,
     });
@@ -35,13 +40,16 @@ export default function BasicInfo({ workspace }: Props) {
         {t('basic_info_description')}
       </div>
 
-      <TextInput
-        label={t('name')}
-        placeholder={workspace.name || name || t('name_placeholder')}
-        value={name}
-        onChange={(e) => setName(e.currentTarget.value)}
-        disabled={isSystemWs}
-      />
+      <div className="grid w-full items-center gap-1.5">
+        <Label>{t('name')}</Label>
+        <Input
+          placeholder={workspace.name || name || t('name_placeholder')}
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+          disabled={isSystemWs}
+        />
+      </div>
+
       <div className="h-full" />
 
       {isSystemWs || (
@@ -61,14 +69,7 @@ export default function BasicInfo({ workspace }: Props) {
   );
 }
 
-const updateWorkspace = async (
-  ws: Workspace,
-  options?: {
-    onSuccess?: () => void;
-    onError?: () => void;
-    onCompleted?: () => void;
-  }
-) => {
+const updateWorkspace = async (router: AppRouterInstance, ws: Workspace) => {
   try {
     const res = await fetch(`/api/workspaces/${ws.id}`, {
       method: 'PUT',
@@ -76,15 +77,12 @@ const updateWorkspace = async (
     });
 
     if (!res.ok) throw new Error('Failed to update workspace');
-    if (options?.onSuccess) options.onSuccess();
+    router.refresh();
   } catch (e) {
-    if (options?.onError) options.onError();
     // showNotification({
     //   title: 'Failed to update workspace',
     //   message: 'Make sure you have permission to update this workspace',
     //   color: 'red',
     // });
-  } finally {
-    if (options?.onCompleted) options.onCompleted();
   }
 };

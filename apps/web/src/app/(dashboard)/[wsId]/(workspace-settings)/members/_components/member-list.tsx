@@ -7,8 +7,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/name-helper';
-import useSWR, { mutate } from 'swr';
-import { User, UserRole } from '@/types/primitives/User';
+import { User } from '@/types/primitives/User';
 import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
@@ -16,37 +15,30 @@ import { getRoleColor } from '@/utils/color-helper';
 import WorkspaceMemberEditForm from '@/components/forms/WorkspaceMemberEditForm';
 import { openModal } from '@mantine/modals';
 import { useUser } from '@supabase/auth-helpers-react';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 
 interface Props {
-  wsId?: string;
-  role?: UserRole;
-  page?: string;
-  roles?: string[];
-  itemsPerPage?: string;
+  wsId: string;
+  role?: string;
 }
 
-export default function MemberList({
-  wsId,
-  role,
-  page,
-  roles,
-  itemsPerPage,
-}: Props) {
+export default function MemberList({ wsId, role }: Props) {
   const { t, lang } = useTranslation('ws-members');
   const user = useUser();
 
-  const membersApiPath =
-    `/api/workspaces/${wsId}/members` +
-    `?roles=${
-      roles && roles.length > 0 ? roles.join(',') : ''
-    }&page=${page}&itemsPerPage=${itemsPerPage}`;
+  // const membersApiPath =
+  //   `/api/workspaces/${wsId}/members` +
+  //   `?roles=${
+  //     roles && roles.length > 0 ? roles.join(',') : ''
+  //   }&page=${page}&itemsPerPage=${itemsPerPage}`;
 
-  const { data: membersData } = useSWR<{
-    data: User[];
-    count: number;
-  }>(membersApiPath);
+  // const { data: membersData } = useSWR<{
+  //   data: User[];
+  //   count: number;
+  // }>(membersApiPath);
 
-  const members = membersData?.data || [];
+  // const members = membersData?.data || [];
+  const members: WorkspaceUser[] = [];
 
   const deleteMember = async (member: User, invited: boolean) => {
     if (!member.id) return;
@@ -61,8 +53,6 @@ export default function MemberList({
     );
 
     if (response.ok) {
-      mutate(`/api/workspaces/current`);
-
       // showNotification({
       //   title: invited ? t('invitation_revoked') : t('member_removed'),
       //   message: invited
@@ -74,7 +64,6 @@ export default function MemberList({
       //     : `${member?.display_name || member?.email} ${t('has_been_removed')}`,
       //   color: 'teal',
       // });
-
       // if (member.id === user?.id) router.push('/');
     } else {
       // showNotification({
@@ -104,7 +93,6 @@ export default function MemberList({
     );
 
     if (response.ok) {
-      mutate(`/api/workspaces/${wsId}`);
       // showNotification({
       //   title: t('member-updated'),
       //   message: `${member?.display_name || member?.email} ${t(

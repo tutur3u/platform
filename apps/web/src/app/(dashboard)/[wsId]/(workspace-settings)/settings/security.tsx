@@ -1,7 +1,7 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Workspace } from '@/types/primitives/Workspace';
-import { Button } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 

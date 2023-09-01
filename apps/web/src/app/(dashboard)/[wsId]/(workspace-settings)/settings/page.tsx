@@ -1,5 +1,4 @@
 import useTranslation from 'next-translate/useTranslation';
-import 'moment/locale/vi';
 import FeatureToggles from './feature-toggles';
 import BasicInfo from './basic-info';
 import Security from './security';
