@@ -1,10 +1,3 @@
-'use client';
-
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/name-helper';
 import { User } from '@/types/primitives/User';
@@ -12,122 +5,102 @@ import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import { getRoleColor } from '@/utils/color-helper';
-import WorkspaceMemberEditForm from '@/components/forms/WorkspaceMemberEditForm';
-import { openModal } from '@mantine/modals';
-import { useUser } from '@supabase/auth-helpers-react';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 
 interface Props {
-  wsId: string;
-  role?: string;
+  currentRole?: string;
+  members: User[];
 }
 
-export default function MemberList({ wsId, role }: Props) {
+export default async function MemberList({ currentRole: _, members }: Props) {
   const { t, lang } = useTranslation('ws-members');
-  const user = useUser();
 
-  // const membersApiPath =
-  //   `/api/workspaces/${wsId}/members` +
-  //   `?roles=${
-  //     roles && roles.length > 0 ? roles.join(',') : ''
-  //   }&page=${page}&itemsPerPage=${itemsPerPage}`;
+  // const deleteMember = async (member: User, invited: boolean) => {
+  //   if (!member.id) return;
 
-  // const { data: membersData } = useSWR<{
-  //   data: User[];
-  //   count: number;
-  // }>(membersApiPath);
+  //   const response = await fetch(
+  //     `/api/workspaces/${wsId}/members/${member.id}${
+  //       invited ? '?invited=true' : ''
+  //     }`,
+  //     {
+  //       method: 'DELETE',
+  //     }
+  //   );
 
-  // const members = membersData?.data || [];
-  const members: WorkspaceUser[] = [];
+  //   if (response.ok) {
+  // showNotification({
+  //   title: invited ? t('invitation_revoked') : t('member_removed'),
+  //   message: invited
+  //     ? `${t('invitation_to')} ${
+  //         (member?.handle && `@${member?.handle}`) ||
+  //         member?.display_name ||
+  //         member?.email
+  //       } ${t('has_been_revoked')}`
+  //     : `${member?.display_name || member?.email} ${t('has_been_removed')}`,
+  //   color: 'teal',
+  // });
+  // if (member.id === user?.id) router.push('/');
+  // } else {
+  // showNotification({
+  //   title: t('error'),
+  //   message: invited
+  //     ? t('revoke_error')
+  //     : `${t('remove_error')} ${member?.display_name || member?.email}`,
+  // });
+  // }
+  // };
 
-  const deleteMember = async (member: User, invited: boolean) => {
-    if (!member.id) return;
+  // const updateMember = async (wsId: string, member: User) => {
+  //   if (!wsId || !member.id) return;
 
-    const response = await fetch(
-      `/api/workspaces/${wsId}/members/${member.id}${
-        invited ? '?invited=true' : ''
-      }`,
-      {
-        method: 'DELETE',
-      }
-    );
+  //   const response = await fetch(
+  //     `/api/workspaces/${wsId}/members/${member.id}`,
+  //     {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         role: member.role,
+  //         role_title: member.role_title,
+  //       } as User),
+  //     }
+  //   );
 
-    if (response.ok) {
-      // showNotification({
-      //   title: invited ? t('invitation_revoked') : t('member_removed'),
-      //   message: invited
-      //     ? `${t('invitation_to')} ${
-      //         (member?.handle && `@${member?.handle}`) ||
-      //         member?.display_name ||
-      //         member?.email
-      //       } ${t('has_been_revoked')}`
-      //     : `${member?.display_name || member?.email} ${t('has_been_removed')}`,
-      //   color: 'teal',
-      // });
-      // if (member.id === user?.id) router.push('/');
-    } else {
-      // showNotification({
-      //   title: t('error'),
-      //   message: invited
-      //     ? t('revoke_error')
-      //     : `${t('remove_error')} ${member?.display_name || member?.email}`,
-      // });
-    }
-  };
+  //   if (response.ok) {
+  // showNotification({
+  //   title: t('member-updated'),
+  //   message: `${member?.display_name || member?.email} ${t(
+  //     'has-been-updated'
+  //   )}`,
+  //   color: 'teal',
+  // });
+  // } else {
+  // showNotification({
+  //   title: t('error'),
+  //   message: `${t('update-error')} ${
+  //     member?.display_name || member?.email
+  //   }`,
+  // });
+  // }
+  // };
 
-  const updateMember = async (wsId: string, member: User) => {
-    if (!wsId || !member.id) return;
-
-    const response = await fetch(
-      `/api/workspaces/${wsId}/members/${member.id}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: member.role,
-          role_title: member.role_title,
-        } as User),
-      }
-    );
-
-    if (response.ok) {
-      // showNotification({
-      //   title: t('member-updated'),
-      //   message: `${member?.display_name || member?.email} ${t(
-      //     'has-been-updated'
-      //   )}`,
-      //   color: 'teal',
-      // });
-    } else {
-      // showNotification({
-      //   title: t('error'),
-      //   message: `${t('update-error')} ${
-      //     member?.display_name || member?.email
-      //   }`,
-      // });
-    }
-  };
-
-  const showEditModal = (member: User) => {
-    if (!wsId || !role || !user?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('member-settings')}</div>,
-      centered: true,
-      children: (
-        <WorkspaceMemberEditForm
-          currentUserId={user.id}
-          currentRole={role}
-          wsId={wsId}
-          user={member}
-          onSubmit={async (wsId, user) => await updateMember(wsId, user)}
-          onDelete={async () => await deleteMember(member, false)}
-        />
-      ),
-    });
-  };
+  // const showEditModal = (member: User) => {
+  //   if (!wsId || !currentRole) return;
+  //
+  // openModal({
+  //   title: <div className="font-semibold">{t('member-settings')}</div>,
+  //   centered: true,
+  //   children: (
+  //     <WorkspaceMemberEditForm
+  //       currentRole={currentRole as UserRole}
+  //       wsId={wsId}
+  //       user={member}
+  //       onSubmit={async (wsId, user) => await updateMember(wsId, user)}
+  //       onDelete={async () => await deleteMember(member, false)}
+  //     />
+  //   ),
+  // });
+  // };
 
   return members.map((member) => (
     <div
@@ -161,14 +134,9 @@ export default function MemberList({ wsId, role }: Props) {
       <div className="absolute right-4 top-4 flex gap-2">
         <button
           className="font-semibold text-zinc-400 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200"
-          onClick={() => showEditModal(member)}
+          // onClick={() => showEditModal(member)}
         >
-          <Tooltip>
-            <TooltipContent>{t('common:settings')}</TooltipContent>
-            <TooltipTrigger>
-              <Cog6ToothIcon className="h-6 w-6" />
-            </TooltipTrigger>
-          </Tooltip>
+          <Cog6ToothIcon className="h-6 w-6" />
         </button>
       </div>
 

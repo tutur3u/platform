@@ -9,7 +9,6 @@ import useTranslation from 'next-translate/useTranslation';
 import { getInitials } from '../../utils/name-helper';
 
 interface Props {
-  currentUserId: string;
   currentRole: UserRole;
   wsId: string;
   user?: User;
@@ -19,7 +18,6 @@ interface Props {
 }
 
 const WorkspaceMemberEditForm = ({
-  currentUserId,
   currentRole,
   wsId,
   user,
@@ -141,10 +139,9 @@ const WorkspaceMemberEditForm = ({
       </Button>
 
       {user?.id &&
-        (user.id === currentUserId ||
-          (getRolePriority(currentRole) > 0 &&
-            user?.role &&
-            getRolePriority(user.role) <= getRolePriority(currentRole))) &&
+        getRolePriority(currentRole) > 0 &&
+        user?.role &&
+        getRolePriority(user.role) <= getRolePriority(currentRole) &&
         onDelete && (
           <>
             <Divider variant="dashed" className="my-1" />
