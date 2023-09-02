@@ -108,24 +108,21 @@ export default async function MemberList({ currentRole: _, members }: Props) {
       className="relative rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900"
     >
       <div className="flex items-center gap-2">
-        <Avatar
-          color="blue"
-          className="aspect-square w-full max-w-[3.5rem] rounded-full text-xl"
-        >
+        <Avatar>
           <AvatarImage src={member?.avatar_url ?? undefined} />
-          <AvatarFallback>
+          <AvatarFallback className="font-semibold">
             {getInitials(member?.display_name || '?')}
           </AvatarFallback>
         </Avatar>
 
         <div>
-          <p className="font-semibold lg:text-lg xl:text-xl">
+          <p className="font-semibold lg:text-lg">
             {member.display_name}{' '}
             {member?.role_title ? (
               <span className="text-orange-300">({member.role_title})</span>
             ) : null}
           </p>
-          <p className="font-semibold text-blue-600 dark:text-blue-300">
+          <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">
             @{member.handle}
           </p>
         </div>
@@ -143,7 +140,7 @@ export default async function MemberList({ currentRole: _, members }: Props) {
       <div className="mt-2 flex flex-col items-center justify-between gap-2 border-t border-zinc-300 pt-2 dark:border-zinc-800 lg:flex-row lg:gap-4">
         {member?.created_at ? (
           <div className="line-clamp-1 text-zinc-500">
-            {t('member_since')}{' '}
+            {t(member?.pending ? 'invited' : 'member_since')}{' '}
             <span className="font-semibold text-zinc-600 dark:text-zinc-400">
               {moment(member.created_at).locale(lang).fromNow()}
             </span>
@@ -153,7 +150,9 @@ export default async function MemberList({ currentRole: _, members }: Props) {
 
         <div
           className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
-            member?.role?.toLocaleLowerCase() || 'unknown'
+            member?.pending
+              ? 'unknown'
+              : member?.role?.toLocaleLowerCase() ?? 'unknown'
           )}`}
         >
           {t(member?.role?.toLocaleLowerCase() || 'unknown')}

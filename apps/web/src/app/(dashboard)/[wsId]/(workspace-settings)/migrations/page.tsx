@@ -289,6 +289,7 @@ export default function PlatformMigrationsPage() {
                     mapping,
                   })
                 }
+                variant="secondary"
                 size="icon"
                 disabled={disabled || getLoading(module)}
               >
@@ -313,6 +314,7 @@ export default function PlatformMigrationsPage() {
                     mapping,
                   })
                 }
+                variant="secondary"
                 size="icon"
                 disabled={disabled || getLoading(module)}
               >
@@ -344,7 +346,7 @@ export default function PlatformMigrationsPage() {
                 />
               </div>
 
-              <div className="grid gap-1">
+              <div className="mb-2 grid gap-1">
                 Synchronized
                 <Progress
                   value={
@@ -361,9 +363,7 @@ export default function PlatformMigrationsPage() {
                 />
               </div>
 
-              <Separator className="mt-2" />
-
-              <Button>View data</Button>
+              <Button variant="outline">View data</Button>
             </div>
           </>
         )}
@@ -569,11 +569,21 @@ export default function PlatformMigrationsPage() {
             </div>
           )}
 
-          <Button onClick={handleMigrateAll} size="icon" disabled={loading}>
+          <Button
+            onClick={handleMigrateAll}
+            variant="secondary"
+            size="icon"
+            disabled={loading}
+          >
             <IconGitMerge className="h-4 w-4" />
           </Button>
 
-          <Button onClick={handleMigrateAll} size="icon" disabled={loading}>
+          <Button
+            onClick={handleMigrateAll}
+            variant="secondary"
+            size="icon"
+            disabled={loading}
+          >
             {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
               .length ? (
               <ArrowPathIcon className="h-4 w-4" />

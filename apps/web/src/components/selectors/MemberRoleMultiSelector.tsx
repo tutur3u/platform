@@ -37,11 +37,11 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
     [searchParams]
   );
 
-  const role = searchParams.get('role') || '';
+  const roles = searchParams.get('roles') || '';
 
   const setRole = useCallback(
     (value: string) => {
-      const query = createQueryString('role', value);
+      const query = createQueryString('roles', value);
       router.push(`${pathname}?${query}`);
     },
     [createQueryString, pathname, router]
@@ -73,7 +73,7 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
   return (
     <div className="grid w-full items-center gap-1.5">
       <Label>{t('roles')}</Label>
-      <Select value={role} onValueChange={setRole} disabled={disabled}>
+      <Select value={roles} onValueChange={setRole} disabled={disabled}>
         <SelectTrigger>
           <SelectValue placeholder={t('select-roles')} />
         </SelectTrigger>

@@ -9,6 +9,7 @@ export interface User {
   display_name?: string | null;
   avatar_url?: string | null;
   birthday?: string | null;
+  pending?: boolean;
   role?: UserRole;
   role_title?: string;
   created_at?: string | null;

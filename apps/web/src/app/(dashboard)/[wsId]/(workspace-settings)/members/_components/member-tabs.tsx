@@ -1,25 +1,24 @@
-'use client';
-
 import { Tabs, TabsList } from '@/components/ui/tabs';
-import JoinedTabTrigger from './joined-tab-trigger';
-import InvitedTabTrigger from './invited-tab-trigger';
-import { usePathname } from 'next/navigation';
+import TabNavigation from './tab-navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  wsId: string;
-  joinedLabel: string;
-  invitedLabel: string;
+  value: string;
 }
 
-export default function MemberTabs({ wsId, joinedLabel, invitedLabel }: Props) {
-  const pathname = usePathname();
-  const isInvitedTab = pathname?.includes('invitations');
+export default function MemberTabs({ value }: Props) {
+  const { t } = useTranslation('ws-members');
+
+  const allLabel = t('all');
+  const joinedLabel = t('joined');
+  const invitedLabel = t('invited');
 
   return (
-    <Tabs value={isInvitedTab ? 'invited' : 'joined'}>
+    <Tabs value={value} defaultValue="all">
       <TabsList>
-        <JoinedTabTrigger wsId={wsId} label={joinedLabel} />
-        <InvitedTabTrigger wsId={wsId} label={invitedLabel} />
+        <TabNavigation value="all" label={allLabel} />
+        <TabNavigation value="joined" label={joinedLabel} />
+        <TabNavigation value="invited" label={invitedLabel} />
       </TabsList>
     </Tabs>
   );

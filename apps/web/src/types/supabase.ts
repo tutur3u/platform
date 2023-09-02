@@ -1331,28 +1331,40 @@ export interface Database {
       workspace_invites: {
         Row: {
           created_at: string | null;
+          role: string;
+          role_title: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
-          user_id: string;
+          role?: string;
+          role_title?: string;
+          user_id?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
+          role?: string;
+          role_title?: string;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_invites_user_id_fkey';
+            foreignKeyName: 'workspace_members_role_fkey';
+            columns: ['role'];
+            referencedRelation: 'workspace_default_roles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_members_user_id_fkey';
             columns: ['user_id'];
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_invites_ws_id_fkey';
+            foreignKeyName: 'workspace_members_ws_id_fkey';
             columns: ['ws_id'];
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];

@@ -7,7 +7,6 @@ import MemberList from './_components/member-list';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
-import { UserRole } from '@/types/primitives/User';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +16,7 @@ interface Props {
     wsId: string;
   };
   searchParams: {
+    status: string;
     roles: string;
   };
 }
@@ -33,9 +33,6 @@ export default async function WorkspaceMembersPage({
   const membersLabel = t('workspace-tabs:members');
   const inviteLabel = t('invite_member');
 
-  const joinedLabel = t('joined');
-  const invitedLabel = t('invited');
-
   return (
     <>
       <div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900 md:flex-row md:items-start">
@@ -46,16 +43,12 @@ export default async function WorkspaceMembersPage({
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
           <InviteMemberButton wsId={wsId} label={inviteLabel} />
-          <MemberTabs
-            wsId={wsId}
-            joinedLabel={joinedLabel}
-            invitedLabel={invitedLabel}
-          />
+          <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
       <Separator className="my-4" />
 
-      <div className="flex min-h-full w-full flex-col ">
+      <div className="flex min-h-full w-full flex-col">
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MemberRoleMultiSelector />
         </div>
@@ -73,22 +66,27 @@ export default async function WorkspaceMembersPage({
   );
 }
 
-const getMembers = async (wsId: string, { roles }: { roles: string }) => {
+const getMembers = async (
+  wsId: string,
+  { status, roles }: { status: string; roles: string }
+) => {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('workspace_members')
+    .from('workspace_members_and_invites')
     .select(
-      'role, role_title, created_at, users(id, handle, display_name, avatar_url)',
+      'id, handle, display_name, avatar_url, pending, role, role_title, created_at',
       {
         count: 'exact',
       }
     )
     .eq('ws_id', wsId);
 
-  if (roles && typeof roles === 'string') {
+  if (status && status !== 'all')
+    queryBuilder.eq('pending', status === 'invited');
+
+  if (roles && typeof roles === 'string')
     queryBuilder.in('role', roles.split(','));
-  }
 
   const { data, error } = await queryBuilder;
 
@@ -96,11 +94,5 @@ const getMembers = async (wsId: string, { roles }: { roles: string }) => {
     throw error;
   }
 
-  return data.map((member) => ({
-    id: member?.users?.id ?? '',
-    ...member.users,
-    role: member.role as UserRole,
-    role_title: member.role_title,
-    created_at: member.created_at,
-  }));
+  return data;
 };
