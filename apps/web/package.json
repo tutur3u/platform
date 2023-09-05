@@ -77,7 +77,7 @@
     "@tiptap/pm": "^2.1.8",
     "@tiptap/react": "^2.1.8",
     "@tiptap/starter-kit": "^2.1.8",
-    "@upstash/qstash": "^0.3.6",
+    "@upstash/qstash": "^2.1.0",
     "@vercel/analytics": "^1.0.2",
     "ai": "^2.2.11",
     "class-variance-authority": "^0.7.0",
