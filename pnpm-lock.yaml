@@ -9280,7 +9280,6 @@ packages:
   /turbo@1.10.13:
     resolution: {integrity: sha512-vOF5IPytgQPIsgGtT0n2uGZizR2N3kKuPIn4b5p5DdeLoI0BV7uNiydT7eSzdkPRpdXNnO8UwS658VaI4+YSzQ==}
     hasBin: true
-    requiresBuild: true
     optionalDependencies:
       turbo-darwin-64: 1.10.13
       turbo-darwin-arm64: 1.10.13
