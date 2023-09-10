@@ -37,11 +37,6 @@ export default async function Layout({
       href: `/${wsId}/users`,
     },
     {
-      name: 'Calendar',
-      href: `/${wsId}/calendar`,
-      allowedPresets: ['ALL'],
-    },
-    {
       name: 'Documents',
       href: `/${wsId}/documents`,
       allowedPresets: ['ALL'],
