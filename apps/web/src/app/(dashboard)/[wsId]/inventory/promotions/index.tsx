@@ -37,8 +37,6 @@ export default function PromotionsPage() {
 
   const [query, setQuery] = useState('');
 
-  const [status, setStatus] = useState<string>('');
-
   const [showProjectName, setShowProjectName] = useLocalStorage({
     key: 'inventory-promotions-showProjectName',
     defaultValue: false,
@@ -84,7 +82,7 @@ export default function PromotionsPage() {
           icon={<MagnifyingGlassIcon className="h-5" />}
         />
         <ModeSelector mode={mode} setMode={setMode} />
-        <StatusSelector status={status} setStatus={setStatus} preset="status" />
+        <StatusSelector preset="status" />
         <Switch
           label="Hiển thị dự án"
           checked={showProjectName}

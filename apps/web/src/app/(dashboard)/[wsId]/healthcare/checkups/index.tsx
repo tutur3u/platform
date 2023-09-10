@@ -48,12 +48,12 @@ export default function MiscExaminationPage() {
     ? `/api/workspaces/${ws?.id}/healthcare/checkups?page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/healthcare/checkups/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/healthcare/checkups/count`
+  //   : null;
 
   const { data: checkups } = useSWR<Checkup[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'healthcare-checkups-mode',
@@ -146,12 +146,7 @@ export default function MiscExaminationPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${

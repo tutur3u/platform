@@ -189,8 +189,8 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@tiptap/pm@2.1.8)
       '@upstash/qstash':
-        specifier: ^0.3.6
-        version: 0.3.6
+        specifier: ^2.1.2
+        version: 2.1.2
       '@vercel/analytics':
         specifier: ^1.0.2
         version: 1.0.2
@@ -734,10 +734,6 @@ packages:
   /@bcoe/v8-coverage@0.2.3:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
-
-  /@deno/shim-crypto@0.3.1:
-    resolution: {integrity: sha512-ed4pNnfur6UbASEgF34gVxR9p7Mc3qF+Ygbmjiil8ws5IhNFhPDFy5vE5hQAUA9JmVsSxXPcVLM5Rf8LOZqQ5Q==}
-    dev: false
 
   /@emotion/babel-plugin@11.11.0:
     resolution: {integrity: sha512-m4HEDZleaaCH+XgDDsPF15Ht6wTLsgDTeR3WYj9Q/k76JtWhrJjcP4+/XlG8LGT/Rol9qUfOIztXeA84ATpqPQ==}
@@ -3962,10 +3958,11 @@ packages:
       '@typescript-eslint/types': 6.6.0
       eslint-visitor-keys: 3.4.3
 
-  /@upstash/qstash@0.3.6:
-    resolution: {integrity: sha512-NKN4jbPhB5lfHoSIaU7AuQ3F+yGS20e/FBRiUuPetcKoi354wHhKj9AJFfkFT5SSeLq0XEsXRNynm8gqCS4HjQ==}
+  /@upstash/qstash@2.1.2:
+    resolution: {integrity: sha512-Ngu+P+oOrdqOgaXW+dpuFRu0D8QfDfeNbkMrT1CcWJr+xH7LO2YG3cS2VqqS3hbTNcJW1QwssdUnNgSTv5CFtg==}
     dependencies:
-      '@deno/shim-crypto': 0.3.1
+      crypto-js: 4.1.1
+      jose: 4.14.6
     dev: false
 
   /@vercel/analytics@1.0.2:
@@ -4826,6 +4823,10 @@ packages:
 
   /crypt@0.0.2:
     resolution: {integrity: sha512-mCxBlsHFYh9C+HVpiEacem8FEBnMXgU9gy4zmNC+SXAZNB/1idgp/aulFJ4FgCi7GPEVbfyng092GqL2k2rmow==}
+    dev: false
+
+  /crypto-js@4.1.1:
+    resolution: {integrity: sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==}
     dev: false
 
   /css-box-model@1.2.1:
@@ -9280,7 +9281,6 @@ packages:
   /turbo@1.10.13:
     resolution: {integrity: sha512-vOF5IPytgQPIsgGtT0n2uGZizR2N3kKuPIn4b5p5DdeLoI0BV7uNiydT7eSzdkPRpdXNnO8UwS658VaI4+YSzQ==}
     hasBin: true
-    requiresBuild: true
     optionalDependencies:
       turbo-darwin-64: 1.10.13
       turbo-darwin-arm64: 1.10.13

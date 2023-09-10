@@ -46,7 +46,7 @@ export default function ProductsPage() {
     return () => setRootSegment([]);
   }, [ws, inventoryLabel, productsLabel, setRootSegment]);
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
@@ -144,12 +144,7 @@ export default function ProductsPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={productsData?.count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${

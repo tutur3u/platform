@@ -44,7 +44,7 @@ export default function SuppliersPage() {
     return () => setRootSegment([]);
   }, [ws, inventoryLabel, suppliersLabel, setRootSegment]);
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -56,12 +56,12 @@ export default function SuppliersPage() {
     ? `/api/workspaces/${ws?.id}/inventory/suppliers?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/inventory/suppliers/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/inventory/suppliers/count`
+  //   : null;
 
   const { data: suppliers } = useSWR<ProductSupplier[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [showProducts, setShowProducts] = useLocalStorage({
     key: 'inventory-suppliers-showProducts',
@@ -107,12 +107,7 @@ export default function SuppliersPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${
