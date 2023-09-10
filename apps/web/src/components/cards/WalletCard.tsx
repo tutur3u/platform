@@ -3,8 +3,6 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import { Wallet } from '../../types/primitives/Wallet';
-import useSWR from 'swr';
-import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   wallet: Wallet;
@@ -16,13 +14,10 @@ interface Props {
 
 const WalletCard = ({
   wallet,
-  amount,
   disableLink = false,
   showBalance = false,
   showAmount = false,
 }: Props) => {
-  const { t } = useTranslation('finance-tabs');
-
   // const countApi =
   //   showAmount && ws?.id && wallet?.id && amount === undefined
   //     ? `/api/workspaces/${ws.id}/finance/wallets/${wallet.id}/transactions/count`

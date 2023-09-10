@@ -38,7 +38,7 @@ export default function HealthcareDiagnosesPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -50,12 +50,12 @@ export default function HealthcareDiagnosesPage() {
     ? `/api/workspaces/${ws?.id}/healthcare/diagnoses?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/healthcare/diagnoses/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/healthcare/diagnoses/count`
+  //   : null;
 
   const { data: diagnoses } = useSWR<Diagnosis[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'healthcare-diagnoses-mode',
@@ -101,12 +101,7 @@ export default function HealthcareDiagnosesPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${
