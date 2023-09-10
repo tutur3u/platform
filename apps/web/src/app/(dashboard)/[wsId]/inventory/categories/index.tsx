@@ -19,7 +19,7 @@ export default function CategoriesPage() {
 
   const { ws } = useWorkspaces();
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -70,12 +70,7 @@ export default function CategoriesPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={categories?.count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${

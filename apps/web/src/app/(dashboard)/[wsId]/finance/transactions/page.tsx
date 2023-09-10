@@ -1,16 +1,16 @@
-import { Transaction } from '../../../../../types/primitives/Transaction';
-import TransactionCard from '../../../../../components/cards/TransactionCard';
 import moment from 'moment';
-import MiniPlusButton from '../../../../../components/common/MiniPlusButton';
 import 'moment/locale/vi';
-import PlusCardButton from '../../../../../components/common/PlusCardButton';
-import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
 import useTranslation from 'next-translate/useTranslation';
-import DateRangeInput from '../../../../../components/selectors/DateRangeInput';
 import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
+import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
+import DateRangeInput from '@/components/selectors/DateRangeInput';
+import PlusCardButton from '@/components/common/PlusCardButton';
+import MiniPlusButton from '@/components/common/MiniPlusButton';
+import TransactionCard from '@/components/cards/TransactionCard';
+import { Transaction } from '@/types/primitives/Transaction';
 
 interface Props {
   params: {
@@ -164,9 +164,9 @@ async function getTransactions(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('workspace_transactions')
-    .select('*')
-    .eq('ws_id', wsId);
+    .from('wallet_transactions')
+    .select('*, workspace_wallets!inner(ws_id)')
+    .eq('workspace_wallets.ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
   if (from) queryBuilder.gte('taken_at', from);
