@@ -1,5 +1,4 @@
 import useTranslation from 'next-translate/useTranslation';
-import HeaderX from '../metadata/HeaderX';
 import LogoTab from './LogoTab';
 import { Button, CopyButton, Divider } from '@mantine/core';
 import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid';
@@ -9,7 +8,6 @@ const LandingPage = () => {
 
   return (
     <>
-      <HeaderX label={t('branding')} />
       <div className="mx-4 flex flex-col gap-8 pt-24 md:mx-32 lg:mx-64">
         <div>
           <h1 className="text-4xl font-semibold text-zinc-700 dark:text-zinc-200">

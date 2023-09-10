@@ -1,6 +1,6 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../../../../utils/supabase/client';
+import { createAdminClient } from '../../../../../utils/supabase/client';
 
 const fetchMembers = async (
   req: NextApiRequest,
@@ -87,7 +87,7 @@ const inviteMember = async (
   }
 
   if (email) {
-    const sbAdmin = supabaseAdmin();
+    const sbAdmin = createAdminClient();
     if (!sbAdmin) throw new Error('Could not create admin client');
 
     const { data, error } = await sbAdmin

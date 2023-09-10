@@ -1,4 +1,6 @@
+import { NextRouter } from 'next/router';
 import { SupabaseClient } from '@supabase/auth-helpers-react';
+import { mutate } from 'swr';
 
 export type AuthMethod = 'login' | 'signup';
 
@@ -9,7 +11,7 @@ export interface AuthFormFields {
 }
 
 interface AuthProps {
-  supabaseClient: SupabaseClient;
+  supabase: SupabaseClient;
   method: AuthMethod;
   email: string;
   password?: string;
@@ -36,7 +38,7 @@ export const sendOTP = async ({ email }: { email: string }) => {
 };
 
 export const authenticate = async ({
-  supabaseClient,
+  supabase,
   method,
   email,
   password,
@@ -59,9 +61,30 @@ export const authenticate = async ({
     .then((res) => res.json())
     .then(async (data) => {
       if (data?.error) throw data?.error;
-      if (data?.session) await supabaseClient.auth.setSession(data?.session);
+      if (data?.session) await supabase.auth.setSession(data?.session);
     })
     .catch((err) => {
       throw err?.message || err || 'Something went wrong';
     });
+};
+
+export const logout = async ({
+  supabase,
+  router,
+}: {
+  supabase: SupabaseClient;
+  router: NextRouter;
+}) => {
+  // Sign out from Supabase
+  await supabase.auth.signOut();
+
+  const userPromise = mutate('/api/user', null);
+  const workspacePromise = mutate('/api/workspaces/current', null);
+  const invitesPromise = mutate('/api/workspaces/invites', null);
+
+  // Wait for all mutations to complete
+  await Promise.all([userPromise, workspacePromise, invitesPromise]);
+
+  // Redirect to homepage
+  router.push('/');
 };

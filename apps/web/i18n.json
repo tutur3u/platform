@@ -12,24 +12,27 @@
     "/onboarding": ["onboarding", "invite"],
     "/branding": ["branding"],
 
-    "/settings": ["sidebar-tabs", "settings-tabs"],
-    "/settings/account": ["sidebar-tabs", "settings-tabs", "settings-account"],
-    "/settings/appearance": [
+    "/(dashboard)/settings/account": [
+      "sidebar-tabs",
+      "settings-tabs",
+      "settings-account"
+    ],
+    "/(dashboard)/settings/appearance": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-appearance"
     ],
-    "/settings/security": [
+    "/(dashboard)/settings/security": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-security"
     ],
-    "/settings/workspaces": [
+    "/(dashboard)/settings/workspaces": [
       "sidebar-tabs",
       "settings-tabs",
       "settings-workspaces"
     ],
-    "/settings/activities": [
+    "/(dashboard)/settings/activities": [
       "sidebar-tabs",
       "settings-tabs",
       "search",
@@ -39,9 +42,9 @@
       "ws-activities",
       "ws-multi-selector"
     ],
-    "/settings/notifications": ["sidebar-tabs", "settings-tabs"],
+    "/(dashboard)/settings/notifications": ["sidebar-tabs", "settings-tabs"],
 
-    "/[wsId]": [
+    "/(dashboard)/[wsId]": [
       "sidebar-tabs",
       "workspace-tabs",
       "ws-home",
@@ -51,8 +54,12 @@
       "inventory-overview",
       "workspace-users-tabs"
     ],
-    "/[wsId]/teams": ["sidebar-tabs", "workspace-tabs", "ws-teams"],
-    "/[wsId]/members": [
+    "/(dashboard)/[wsId]/(workspace-settings)/teams": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-teams"
+    ],
+    "/(dashboard)/[wsId]/(workspace-settings)/members": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
@@ -61,7 +68,7 @@
       "member-roles",
       "ws-members"
     ],
-    "/[wsId]/activities": [
+    "/(dashboard)/[wsId]/(workspace-settings)/activities": [
       "sidebar-tabs",
       "workspace-tabs",
       "search",
@@ -72,22 +79,26 @@
       "ws-members",
       "ws-activities"
     ],
-    "/[wsId]/settings": ["sidebar-tabs", "workspace-tabs", "ws-settings"],
+    "/(dashboard)/[wsId]/(workspace-settings)/settings": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-settings"
+    ],
 
-    "/[wsId]/calendar": [
+    "/(dashboard)/[wsId]/calendar": [
       "sidebar-tabs",
       "calendar-tabs",
       "calendar",
       "calendar-event-configs"
     ],
-    "/[wsId]/calendar/events": [
+    "/(dashboard)/[wsId]/calendar/events": [
       "sidebar-tabs",
       "calendar-tabs",
       "search",
       "view-mode",
       "pagination"
     ],
-    "/[wsId]/calendar/events/new": [
+    "/(dashboard)/[wsId]/calendar/events/new": [
       "sidebar-tabs",
       "calendar-tabs",
       "ws-selector",
@@ -95,7 +106,7 @@
       "calendar-event-configs",
       "calendar-event-create-form"
     ],
-    "/[wsId]/calendar/events/[eventId]": [
+    "/(dashboard)/[wsId]/calendar/events/[eventId]": [
       "sidebar-tabs",
       "calendar-tabs",
       "ws-selector",
@@ -105,15 +116,18 @@
       "calendar-event-delete-form"
     ],
 
-    "/[wsId]/tasks": ["sidebar-tabs"],
-    "/[wsId]/boards": ["sidebar-tabs"],
-    "/[wsId]/boards/[boardId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/tasks": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/boards": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/boards/[boardId]": ["sidebar-tabs"],
 
-    "/[wsId]/documents": ["sidebar-tabs", "documents"],
-    "/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
+    "/(dashboard)/[wsId]/documents": ["sidebar-tabs", "documents"],
+    "/(dashboard)/[wsId]/documents/[docId]": ["sidebar-tabs", "documents"],
 
-    "/[wsId]/teams/[teamId]": ["sidebar-tabs", "team-tabs"],
-    "/[wsId]/teams/[teamId]/members": [
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]": [
+      "sidebar-tabs",
+      "team-tabs"
+    ],
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]/members": [
       "sidebar-tabs",
       "team-tabs",
       "search",
@@ -122,10 +136,13 @@
       "member-roles",
       "ws-members"
     ],
-    "/[wsId]/teams/[teamId]/settings": ["sidebar-tabs", "team-tabs"],
+    "/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]/settings": [
+      "sidebar-tabs",
+      "team-tabs"
+    ],
 
-    "/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
-    "/[wsId]/users/list": [
+    "/(dashboard)/[wsId]/users": ["sidebar-tabs", "workspace-users-tabs"],
+    "/(dashboard)/[wsId]/users/list": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -134,7 +151,7 @@
       "workspace-users-tabs"
     ],
 
-    "/[wsId]/users/groups": [
+    "/(dashboard)/[wsId]/users/groups": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -142,12 +159,12 @@
       "ws-user-groups-configs",
       "workspace-users-tabs"
     ],
-    "/[wsId]/users/groups/new": [
+    "/(dashboard)/[wsId]/users/groups/new": [
       "sidebar-tabs",
       "workspace-users-tabs",
       "ws-user-groups-details"
     ],
-    "/[wsId]/users/groups/[groupId]": [
+    "/(dashboard)/[wsId]/users/groups/[groupId]": [
       "sidebar-tabs",
       "workspace-users-tabs",
       "search",
@@ -157,82 +174,100 @@
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"
     ],
-    "/[wsId]/users/groups/[groupId]/settings": [
+    "/(dashboard)/[wsId]/users/groups/[groupId]/settings": [
       "sidebar-tabs",
       "workspace-users-tabs",
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"
     ],
 
-    "/[wsId]/users/new": ["sidebar-tabs"],
-    "/[wsId]/users/[userId]": ["sidebar-tabs", "ws-user-details-tabs"],
-    "/[wsId]/users/[userId]/settings": ["sidebar-tabs", "ws-user-details-tabs"],
+    "/(dashboard)/[wsId]/users/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/users/[userId]": [
+      "sidebar-tabs",
+      "ws-user-details-tabs"
+    ],
+    "/(dashboard)/[wsId]/users/[userId]/settings": [
+      "sidebar-tabs",
+      "ws-user-details-tabs"
+    ],
 
-    "/[wsId]/attendance": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/attendance": ["sidebar-tabs"],
 
-    "/[wsId]/healthcare": ["sidebar-tabs", "healthcare-tabs"],
+    "/(dashboard)/[wsId]/healthcare": ["sidebar-tabs", "healthcare-tabs"],
 
-    "/[wsId]/healthcare/checkups": [
+    "/(dashboard)/[wsId]/healthcare/checkups": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
     ],
-    "/[wsId]/healthcare/checkups/new": [
+    "/(dashboard)/[wsId]/healthcare/checkups/new": [
       "sidebar-tabs",
       "healthcare-tabs",
       "ws-selector"
     ],
-    "/[wsId]/healthcare/checkups/[checkupId]": [
+    "/(dashboard)/[wsId]/healthcare/checkups/[checkupId]": [
       "sidebar-tabs",
       "healthcare-tabs",
       "ws-selector"
     ],
 
-    "/[wsId]/healthcare/diagnoses": [
+    "/(dashboard)/[wsId]/healthcare/diagnoses": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
     ],
-    "/[wsId]/healthcare/diagnoses/new": ["sidebar-tabs", "healthcare-tabs"],
-    "/[wsId]/healthcare/diagnoses/[diagnosisId]": [
+    "/(dashboard)/[wsId]/healthcare/diagnoses/new": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
+    "/(dashboard)/[wsId]/healthcare/diagnoses/[diagnosisId]": [
       "sidebar-tabs",
       "healthcare-tabs"
     ],
 
-    "/[wsId]/healthcare/vitals": [
+    "/(dashboard)/[wsId]/healthcare/vitals": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
     ],
-    "/[wsId]/healthcare/vitals/new": ["sidebar-tabs", "healthcare-tabs"],
-    "/[wsId]/healthcare/vitals/[vitalId]": ["sidebar-tabs", "healthcare-tabs"],
+    "/(dashboard)/[wsId]/healthcare/vitals/new": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
+    "/(dashboard)/[wsId]/healthcare/vitals/[vitalId]": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
 
-    "/[wsId]/healthcare/vital-groups": [
+    "/(dashboard)/[wsId]/healthcare/vital-groups": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "healthcare-tabs"
     ],
-    "/[wsId]/healthcare/vital-groups/new": ["sidebar-tabs", "healthcare-tabs"],
-    "/[wsId]/healthcare/vital-groups/[groupId]": [
+    "/(dashboard)/[wsId]/healthcare/vital-groups/new": [
+      "sidebar-tabs",
+      "healthcare-tabs"
+    ],
+    "/(dashboard)/[wsId]/healthcare/vital-groups/[groupId]": [
       "sidebar-tabs",
       "healthcare-tabs"
     ],
 
-    "/[wsId]/inventory": [
+    "/(dashboard)/[wsId]/inventory": [
       "sidebar-tabs",
       "inventory-tabs",
       "inventory-overview"
     ],
 
-    "/[wsId]/inventory/products": [
+    "/(dashboard)/[wsId]/inventory/products": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -242,13 +277,13 @@
       "inventory-products-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/products/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/products/[productId]": [
+    "/(dashboard)/[wsId]/inventory/products/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/products/[productId]": [
       "sidebar-tabs",
       "product-details-tabs"
     ],
 
-    "/[wsId]/inventory/categories": [
+    "/(dashboard)/[wsId]/inventory/categories": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -256,10 +291,10 @@
       "inventory-categories-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/categories/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/categories/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/categories/[categoryId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/batches": [
+    "/(dashboard)/[wsId]/inventory/batches": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -268,10 +303,10 @@
       "inventory-batches-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/batches/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/batches/[batchId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/batches/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/batches/[batchId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/warehouses": [
+    "/(dashboard)/[wsId]/inventory/warehouses": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -279,10 +314,10 @@
       "inventory-warehouses-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/warehouses/[warehouseId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/warehouses/[warehouseId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/units": [
+    "/(dashboard)/[wsId]/inventory/units": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -290,10 +325,10 @@
       "inventory-units-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/units/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/units/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
 
-    "/[wsId]/inventory/suppliers": [
+    "/(dashboard)/[wsId]/inventory/suppliers": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -301,18 +336,18 @@
       "inventory-suppliers-configs",
       "inventory-tabs"
     ],
-    "/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
-    "/[wsId]/inventory/suppliers/[supplierId]": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/inventory/suppliers/[supplierId]": ["sidebar-tabs"],
 
-    "/[wsId]/classes": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/classes": ["sidebar-tabs"],
 
-    "/[wsId]/finance": [
+    "/(dashboard)/[wsId]/finance": [
       "sidebar-tabs",
       "finance-tabs",
       "finance-overview",
       "date-helper"
     ],
-    "/[wsId]/finance/import": [
+    "/(dashboard)/[wsId]/finance/import": [
       "sidebar-tabs",
       "finance-tabs",
       "finance-overview",
@@ -321,7 +356,7 @@
       "finance-import-modal"
     ],
 
-    "/[wsId]/finance/wallets": [
+    "/(dashboard)/[wsId]/finance/wallets": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -329,13 +364,17 @@
       "finance-tabs",
       "wallets"
     ],
-    "/[wsId]/finance/wallets/new": ["sidebar-tabs", "wallets", "wallet-modal"],
-    "/[wsId]/finance/wallets/[walletId]": [
+    "/(dashboard)/[wsId]/finance/wallets/new": [
+      "sidebar-tabs",
+      "wallets",
+      "wallet-modal"
+    ],
+    "/(dashboard)/[wsId]/finance/wallets/[walletId]": [
       "sidebar-tabs",
       "wallet-details-tabs",
       "wallet"
     ],
-    "/[wsId]/finance/wallets/[walletId]/transactions": [
+    "/(dashboard)/[wsId]/finance/wallets/[walletId]/transactions": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -344,14 +383,14 @@
       "transactions",
       "transaction-card"
     ],
-    "/[wsId]/finance/wallets/[walletId]/settings": [
+    "/(dashboard)/[wsId]/finance/wallets/[walletId]/settings": [
       "sidebar-tabs",
       "wallet-details-tabs",
       "wallets",
       "wallet-modal"
     ],
 
-    "/[wsId]/finance/transactions": [
+    "/(dashboard)/[wsId]/finance/transactions": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -359,14 +398,14 @@
       "finance-tabs",
       "transactions"
     ],
-    "/[wsId]/finance/transactions/new": [
+    "/(dashboard)/[wsId]/finance/transactions/new": [
       "sidebar-tabs",
       "transactions",
       "wallet-selector",
       "category-selector",
       "transaction-modal"
     ],
-    "/[wsId]/finance/transactions/[transactionId]": [
+    "/(dashboard)/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
       "transactions",
       "transaction-details-tabs",
@@ -374,7 +413,7 @@
       "category-selector",
       "transaction-modal"
     ],
-    "/[wsId]/finance/transactions/[transactionId]/settings": [
+    "/(dashboard)/[wsId]/finance/transactions/[transactionId]/settings": [
       "sidebar-tabs",
       "transactions",
       "transaction-details-tabs",
@@ -383,7 +422,7 @@
       "transaction-modal"
     ],
 
-    "/[wsId]/finance/transactions/categories": [
+    "/(dashboard)/[wsId]/finance/transactions/categories": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -391,20 +430,20 @@
       "finance-tabs",
       "categories"
     ],
-    "/[wsId]/finance/transactions/categories/new": [
+    "/(dashboard)/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
       "finance-tabs",
       "categories",
       "category-modal"
     ],
-    "/[wsId]/finance/transactions/categories/[categoryId]": [
+    "/(dashboard)/[wsId]/finance/transactions/categories/[categoryId]": [
       "sidebar-tabs",
       "finance-tabs",
       "categories",
       "category-modal"
     ],
 
-    "/[wsId]/finance/invoices": [
+    "/(dashboard)/[wsId]/finance/invoices": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -414,7 +453,7 @@
       "status-selector",
       "invoice-card"
     ],
-    "/[wsId]/finance/invoices/new": [
+    "/(dashboard)/[wsId]/finance/invoices/new": [
       "sidebar-tabs",
       "finance-tabs",
       "invoices",
@@ -424,7 +463,7 @@
       "category-selector",
       "invoice-product-input"
     ],
-    "/[wsId]/finance/invoices/[invoiceId]": [
+    "/(dashboard)/[wsId]/finance/invoices/[invoiceId]": [
       "sidebar-tabs",
       "finance-tabs",
       "invoices",
@@ -435,15 +474,18 @@
       "invoice-product-input"
     ],
 
-    "/[wsId]/infrastructure": ["sidebar-tabs", "infrastructure-tabs"],
-    "/[wsId]/infrastructure/users": [
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure": [
+      "sidebar-tabs",
+      "infrastructure-tabs"
+    ],
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure/users": [
       "sidebar-tabs",
       "search",
       "view-mode",
       "pagination",
       "infrastructure-tabs"
     ],
-    "/[wsId]/infrastructure/workspaces": [
+    "/(dashboard)/[wsId]/(workspace-settings)/infrastructure/workspaces": [
       "sidebar-tabs",
       "search",
       "view-mode",
@@ -451,8 +493,11 @@
       "infrastructure-tabs"
     ],
 
-    "/[wsId]/ai": ["sidebar-tabs"],
-    "/[wsId]/migrations": ["sidebar-tabs"],
-    "/[wsId]/notifications": ["notifications", "sidebar-tabs", "invite"]
+    "/(dashboard)/[wsId]/(workspace-settings)/migrations": ["sidebar-tabs"],
+    "/(dashboard)/[wsId]/notifications": [
+      "notifications",
+      "sidebar-tabs",
+      "invite"
+    ]
   }
 }

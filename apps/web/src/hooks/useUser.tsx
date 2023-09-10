@@ -2,7 +2,7 @@ import { showNotification } from '@mantine/notifications';
 import { createContext, useContext, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
-  useSupabaseClient,
+  SupabaseClient,
   useUser as useSupabaseUser,
 } from '@supabase/auth-helpers-react';
 import { User } from '../types/primitives/User';
@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 const UserDataContext = createContext({
   user: undefined as User | undefined,
   updateUser: undefined as ((data: Partial<User>) => Promise<void>) | undefined,
-  uploadImageUserBucket: undefined as
+  uploadAvatar: undefined as
     | ((file: File) => Promise<string | null>)
     | undefined,
   isLoading: true,
@@ -20,26 +20,18 @@ const UserDataContext = createContext({
 });
 
 export const UserDataProvider = ({
+  supabase,
   children,
 }: {
+  supabase: SupabaseClient;
   children: React.ReactNode;
 }) => {
-  const router = useRouter();
-
-  const supabase = useSupabaseClient();
   const supabaseUser = useSupabaseUser();
+  const router = useRouter();
 
   const apiPath = supabaseUser ? '/api/user' : null;
 
-  const {
-    data: user,
-    error: userError,
-    mutate: userMutate,
-  } = useSWR<User>(apiPath, {
-    onError: () => {
-      userMutate(undefined);
-    },
-  });
+  const { data: user, error: userError } = useSWR<User>(apiPath);
 
   const isLoading = !user && !userError;
 
@@ -71,11 +63,12 @@ export const UserDataProvider = ({
     return () => subscription?.unsubscribe();
   }, [supabase.auth, router]);
 
-  const uploadImageUserBucket = async (file: File): Promise<string | null> => {
-    const idAvatar = uuidv4();
-    const { data, error } = await supabase.storage
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    const randomId = uuidv4();
+
+    const { error } = await supabase.storage
       .from('avatars')
-      .upload(`${idAvatar}`, file);
+      .upload(`${randomId}`, file);
 
     if (error) {
       showNotification({
@@ -86,11 +79,9 @@ export const UserDataProvider = ({
       return null;
     }
 
-    console.log('upload image success', data);
-
     const { data: avatar } = supabase.storage
       .from('avatars')
-      .getPublicUrl(`${idAvatar}`);
+      .getPublicUrl(`${randomId}`);
 
     return avatar.publicUrl;
   };
@@ -149,7 +140,7 @@ export const UserDataProvider = ({
   const values = {
     user,
     updateUser,
-    uploadImageUserBucket,
+    uploadAvatar,
     isLoading,
     isError: !!userError,
   };
