@@ -58,12 +58,12 @@ export default function BatchesPage() {
       )}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/inventory/batches/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/inventory/batches/count`
+  //   : null;
 
   const { data: batches } = useSWR<ProductBatch[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [showProducts, setShowProducts] = useLocalStorage({
     key: 'inventory-batches-showProducts',
@@ -111,12 +111,7 @@ export default function BatchesPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${

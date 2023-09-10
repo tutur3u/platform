@@ -38,7 +38,7 @@ export default function MiscVitalGroupsPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -50,12 +50,12 @@ export default function MiscVitalGroupsPage() {
     ? `/api/workspaces/${ws?.id}/healthcare/vital-groups?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
     : null;
 
-  const countApi = ws?.id
-    ? `/api/workspaces/${ws.id}/healthcare/vital-groups/count`
-    : null;
+  // const countApi = ws?.id
+  //   ? `/api/workspaces/${ws.id}/healthcare/vital-groups/count`
+  //   : null;
 
   const { data: groups } = useSWR<VitalGroup[]>(apiPath);
-  const { data: count } = useSWR<number>(countApi);
+  // const { data: count } = useSWR<number>(countApi);
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'healthcare-vital-groups-mode',
@@ -111,12 +111,7 @@ export default function MiscVitalGroupsPage() {
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${

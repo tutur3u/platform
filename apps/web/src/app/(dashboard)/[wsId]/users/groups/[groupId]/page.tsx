@@ -35,7 +35,7 @@ export default function UserGroupDetailsPage({
 
   const { data: group } = useSWR<UserGroup>(apiPath);
 
-  const [query, setQuery] = useState('');
+  const [query] = useState('');
   const [activePage, setPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useLocalStorage({
@@ -53,7 +53,7 @@ export default function UserGroupDetailsPage({
   );
 
   const users = data?.data;
-  const count = data?.count;
+  // const count = data?.count;
 
   const [mode, setMode] = useLocalStorage<Mode>({
     key: 'workspace-user-groups-mode',
@@ -110,12 +110,7 @@ export default function UserGroupDetailsPage({
       </div>
 
       <Divider className="mt-4" />
-      <PaginationIndicator
-        activePage={activePage}
-        setActivePage={setPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={count}
-      />
+      <PaginationIndicator totalItems={0} />
 
       <div
         className={`grid gap-4 ${
@@ -127,6 +122,7 @@ export default function UserGroupDetailsPage({
           users?.map((p) => (
             <WorkspaceUserCard
               key={p.id}
+              wsId={wsId}
               user={p}
               showAddress={showAddress}
               showGender={showGender}
