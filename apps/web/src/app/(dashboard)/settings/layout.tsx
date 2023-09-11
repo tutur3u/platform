@@ -9,10 +9,9 @@ interface LayoutProps {
 
 export default async function Layout({ children }: LayoutProps) {
   const navLinks = [
-        {
+    {
       name: 'Account',
-      href: '/settings',
-      matchExact: true,
+      href: '/settings/account',
     },
     {
       name: 'Appearance',
@@ -55,7 +54,9 @@ export default async function Layout({ children }: LayoutProps) {
 
       <Separator />
 
-      <div className="p-4 md:px-8 lg:px-16 xl:px-32">{children}</div>
+      <div className="flex items-center justify-center p-4 md:px-8 lg:px-16 xl:px-32">
+        {children}
+      </div>
     </>
   );
 }

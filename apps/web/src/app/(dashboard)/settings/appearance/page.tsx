@@ -17,27 +17,29 @@ export default function SettingPage() {
   const { theme, changeTheme } = useAppearance();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <SettingItemCard title={appearance} description={appearanceDescription}>
-        <div className="grid gap-4 text-center md:grid-cols-2">
-          <div
-            onClick={() => changeTheme('dark')}
-            className={`flex w-full cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/30 dark:bg-blue-300/20 dark:text-blue-300 ${
-              theme === 'dark' ? '' : 'opacity-50 hover:opacity-80'
-            }`}
-          >
-            {darkMode}
-          </div>
-          <div
-            onClick={() => changeTheme('light')}
-            className={`flex w-full cursor-pointer items-center justify-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/30 dark:bg-blue-300/20 dark:text-blue-300 ${
-              theme === 'light' ? '' : 'opacity-50 hover:opacity-80'
-            }`}
-          >
-            {lightMode}
-          </div>
+    <SettingItemCard
+      title={appearance}
+      description={appearanceDescription}
+      className="w-full max-w-2xl"
+    >
+      <div className="grid gap-4 text-center md:grid-cols-2">
+        <div
+          onClick={() => changeTheme('dark')}
+          className={`flex w-full cursor-pointer items-center justify-center rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/30 dark:bg-blue-300/20 dark:text-blue-300 ${
+            theme === 'dark' ? '' : 'opacity-50 hover:opacity-80'
+          }`}
+        >
+          {darkMode}
         </div>
-      </SettingItemCard>
-    </div>
+        <div
+          onClick={() => changeTheme('light')}
+          className={`flex w-full cursor-pointer items-center justify-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 p-2 font-semibold text-blue-600 transition dark:border-blue-300/30 dark:bg-blue-300/20 dark:text-blue-300 ${
+            theme === 'light' ? '' : 'opacity-50 hover:opacity-80'
+          }`}
+        >
+          {lightMode}
+        </div>
+      </div>
+    </SettingItemCard>
   );
 }
