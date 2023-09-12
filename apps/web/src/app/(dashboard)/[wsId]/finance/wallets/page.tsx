@@ -7,6 +7,15 @@ import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { CreateWalletForm } from './CreateWalletForm';
 
 interface Props {
   params: {
@@ -36,7 +45,24 @@ export default async function FinanceWalletsPage({
       <PaginationIndicator totalItems={count} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <PlusCardButton href={`/${wsId}/finance/wallets/new`} />
+        <Dialog>
+          <DialogTrigger>
+            <PlusCardButton href={`/${wsId}/finance/wallets/new`} />
+            <PlusCardButton />
+          </DialogTrigger>
+
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create wallet</DialogTitle>
+              <DialogDescription>
+                You can create a wallet to track your cash, bank accounts, and
+                credit cards.
+              </DialogDescription>
+            </DialogHeader>
+            <CreateWalletForm />
+          </DialogContent>
+        </Dialog>
+
         {wallets.map((w) => (
           <WalletCard
             key={w.id}

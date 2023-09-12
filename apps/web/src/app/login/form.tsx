@@ -63,7 +63,7 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      router.push('/onboarding');
+      router.refresh();
       toast({
         title: 'Success',
         description: 'You have successfully logged in.',
