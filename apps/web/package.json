@@ -96,7 +96,7 @@
     "react": "18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",
-    "react-day-picker": "^8.8.1",
+    "react-day-picker": "^8.8.2",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.46.1",
     "react-resizable": "^3.0.5",
