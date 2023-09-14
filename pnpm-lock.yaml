@@ -331,8 +331,8 @@ importers:
         specifier: ^8.4.29
         version: 8.4.29
       supabase:
-        specifier: ^1.98.0
-        version: 1.98.0
+        specifier: ^1.98.1
+        version: 1.98.1
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -3079,11 +3079,11 @@ packages:
     resolution: {integrity: sha512-trNJ/vtMZYMLhfN45uLq4ShQSw0/S7xCTLLVM+WM1rmFpba/VS42jVUgaO3w/NOLiWR/09lnYk0yMaA/atdIsg==}
     dev: true
 
-  /@types/node-fetch@2.6.4:
-    resolution: {integrity: sha512-1ZX9fcN4Rvkvgv4E6PAY5WXUFWFcRWxZa3EW83UjycOB9ljJCedb2CupIP4RZMEwF/M3eTcCihbBRgwtGbg5Rg==}
+  /@types/node-fetch@2.6.5:
+    resolution: {integrity: sha512-OZsUlr2nxvkqUFLSaY2ZbA+P1q22q+KrlxWOn/38RX+u5kTkYL2mTujEpzUhGkS+K/QCYp9oagfXG39XOzyySg==}
     dependencies:
       '@types/node': 20.6.0
-      form-data: 3.0.1
+      form-data: 4.0.0
     dev: false
 
   /@types/node@18.17.15:
@@ -3148,8 +3148,8 @@ packages:
   /@types/scheduler@0.16.3:
     resolution: {integrity: sha512-5cJ8CB4yAx7BH1oMvdU0Jh9lrEXyPkar6F9G/ERswkCuvP4KQZfZkSjcMbAICCpQTN4OuZn8tz0HiKv9TGZgrQ==}
 
-  /@types/semver@7.5.1:
-    resolution: {integrity: sha512-cJRQXpObxfNKkFAZbJl2yjWtJCqELQIdShsogr1d2MilP8dKD9TE/nEKHkJgUNHdGKCQaf9HbIynuV2csLGVLg==}
+  /@types/semver@7.5.2:
+    resolution: {integrity: sha512-7aqorHYgdNO4DM36stTiGO3DvKoex9TQRwsJU6vMaFGyqpBA1MNZkz+PG3gaNUPpTAOYhT1WR7M1JyA3fbS9Cw==}
     dev: true
 
   /@types/throttle-debounce@2.1.0:
@@ -3274,7 +3274,7 @@ packages:
     dependencies:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.49.0)
       '@types/json-schema': 7.0.12
-      '@types/semver': 7.5.1
+      '@types/semver': 7.5.2
       '@typescript-eslint/scope-manager': 6.7.0
       '@typescript-eslint/types': 6.7.0
       '@typescript-eslint/typescript-estree': 6.7.0(typescript@5.2.2)
@@ -3728,7 +3728,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001534
-      electron-to-chromium: 1.4.519
+      electron-to-chromium: 1.4.520
       node-releases: 2.0.13
       update-browserslist-db: 1.0.11(browserslist@4.21.10)
     dev: true
@@ -4247,8 +4247,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /electron-to-chromium@1.4.519:
-    resolution: {integrity: sha512-kqs9oGYL4UFVkLKhqCTgBCYZv+wZ374yABDMqlDda9HvlkQxvSr7kgf4hfWVjMieDbX+1MwPHFBsOGCMIBaFKg==}
+  /electron-to-chromium@1.4.520:
+    resolution: {integrity: sha512-Frfus2VpYADsrh1lB3v/ft/WVFlVzOIm+Q0p7U7VqHI6qr7NWHYKe+Wif3W50n7JAFoBsWVsoU0+qDks6WQ60g==}
     dev: true
 
   /emoji-regex@9.2.2:
@@ -4327,8 +4327,8 @@ packages:
       which-typed-array: 1.1.11
     dev: false
 
-  /es-iterator-helpers@1.0.14:
-    resolution: {integrity: sha512-JgtVnwiuoRuzLvqelrvN3Xu7H9bu2ap/kQ2CrM62iidP8SKuD99rWU3CJy++s7IVL2qb/AjXPGR/E7i9ngd/Cw==}
+  /es-iterator-helpers@1.0.15:
+    resolution: {integrity: sha512-GhoY8uYqd6iwUl2kgjTm4CZAf6oo5mHK7BPqx3rKgx893YSsy0LGHV6gfqqQvZt/8xM8xeOnfXBCfqclMKkJ5g==}
     dependencies:
       asynciterator.prototype: 1.0.0
       call-bind: 1.0.2
@@ -4342,7 +4342,7 @@ packages:
       has-proto: 1.0.1
       has-symbols: 1.0.3
       internal-slot: 1.0.5
-      iterator.prototype: 1.1.1
+      iterator.prototype: 1.1.2
       safe-array-concat: 1.0.1
     dev: false
 
@@ -4606,7 +4606,7 @@ packages:
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
-      es-iterator-helpers: 1.0.14
+      es-iterator-helpers: 1.0.15
       eslint: 8.49.0
       estraverse: 5.3.0
       jsx-ast-utils: 3.3.5
@@ -4841,8 +4841,8 @@ packages:
     resolution: {integrity: sha512-qfqtYan3rxrnCk1VYaA4H+Ms9xdpPqvLZa6xmMgFvhO32x7/3J/ExcTd6qpxM0vH2GdMI+poehyBZvqfMTto8A==}
     dev: false
 
-  /form-data@3.0.1:
-    resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
+  /form-data@4.0.0:
+    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
     engines: {node: '>= 6'}
     dependencies:
       asynckit: 0.4.0
@@ -5471,13 +5471,14 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: false
 
-  /iterator.prototype@1.1.1:
-    resolution: {integrity: sha512-9E+nePc8C9cnQldmNl6bgpTY6zI4OPRZd97fhJ/iVZ1GifIUDVV5F6x1nEDqpe8KaMEZGT4xgrwKQDxXnjOIZQ==}
+  /iterator.prototype@1.1.2:
+    resolution: {integrity: sha512-DR33HMMr8EzwuRL8Y9D3u2BMj8+RqSE850jfGu59kS7tbmPLzGkZmVSfyCFSDxuZiEY6Rzt3T2NA/qU+NwVj1w==}
     dependencies:
       define-properties: 1.2.1
       get-intrinsic: 1.2.1
       has-symbols: 1.0.3
       reflect.getprototypeof: 1.0.4
+      set-function-name: 2.0.1
     dev: false
 
   /jiti@1.20.0:
@@ -6112,7 +6113,7 @@ packages:
     hasBin: true
     dependencies:
       '@types/node': 18.17.15
-      '@types/node-fetch': 2.6.4
+      '@types/node-fetch': 2.6.5
       abort-controller: 3.0.0
       agentkeepalive: 4.5.0
       digest-fetch: 1.3.0
@@ -6128,7 +6129,7 @@ packages:
     hasBin: true
     dependencies:
       '@types/node': 18.17.15
-      '@types/node-fetch': 2.6.4
+      '@types/node-fetch': 2.6.5
       abort-controller: 3.0.0
       agentkeepalive: 4.5.0
       digest-fetch: 1.3.0
@@ -7297,8 +7298,8 @@ packages:
       pirates: 4.0.6
       ts-interface-checker: 0.1.13
 
-  /supabase@1.98.0:
-    resolution: {integrity: sha512-0gxAxPB6SElpZBgZp9lVngdPq9U6JIgW0g+XHdjV61rsY/F1DFNGLQ0Mu6ry2i6c/mM1/8GylwZOEiiCpldsFQ==}
+  /supabase@1.98.1:
+    resolution: {integrity: sha512-VS/joaHqzgNZ7DVxYfD1mFeZCETpSQNgCy0vRq0PpGkL2380RW75gB/i5ojiwYF8gSTow94NXPxABeqyJk3JYw==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
