@@ -75,7 +75,7 @@
     "@tiptap/extension-text-align": "^2.1.8",
     "@tiptap/extension-underline": "^2.1.8",
     "@tiptap/pm": "^2.1.8",
-    "@tiptap/react": "^2.1.8",
+    "@tiptap/react": "^2.1.9",
     "@tiptap/starter-kit": "^2.1.8",
     "@upstash/qstash": "^2.1.2",
     "@vercel/analytics": "^1.0.2",
