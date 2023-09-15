@@ -174,8 +174,8 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@tiptap/core@2.1.8)
       '@tiptap/extension-text-align':
-        specifier: ^2.1.8
-        version: 2.1.8(@tiptap/core@2.1.8)
+        specifier: ^2.1.10
+        version: 2.1.10(@tiptap/core@2.1.8)
       '@tiptap/extension-underline':
         specifier: ^2.1.8
         version: 2.1.8(@tiptap/core@2.1.8)
@@ -2955,8 +2955,8 @@ packages:
       '@tiptap/core': 2.1.8(@tiptap/pm@2.1.8)
     dev: false
 
-  /@tiptap/extension-text-align@2.1.8(@tiptap/core@2.1.8):
-    resolution: {integrity: sha512-AUoZglsh9YXpBbft2KWJaAm/Gz6Mtj9CiBkSQhxrBaMm+sAHeE+EmWdYVzU+Q+FpUPoGMf89hknyo3M9RVsglQ==}
+  /@tiptap/extension-text-align@2.1.10(@tiptap/core@2.1.8):
+    resolution: {integrity: sha512-dp+9ru5mJnJ7XHXP7Qs7W14RP610LDca4mHRJtaMbUZTCHhDgqVDOb9oPYaSH76Adl/5s/ey6oKgyAaNqF5H3w==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
