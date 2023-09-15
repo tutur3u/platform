@@ -171,8 +171,8 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@tiptap/core@2.1.8)
       '@tiptap/extension-superscript':
-        specifier: ^2.1.8
-        version: 2.1.8(@tiptap/core@2.1.8)
+        specifier: ^2.1.10
+        version: 2.1.10(@tiptap/core@2.1.8)
       '@tiptap/extension-text-align':
         specifier: ^2.1.8
         version: 2.1.8(@tiptap/core@2.1.8)
@@ -2947,8 +2947,8 @@ packages:
       '@tiptap/core': 2.1.8(@tiptap/pm@2.1.8)
     dev: false
 
-  /@tiptap/extension-superscript@2.1.8(@tiptap/core@2.1.8):
-    resolution: {integrity: sha512-3FwSnwbQ33qqewKXYlowmKgCzZB3LtN+Dew6rm8hTziCvQJ+CkDS/+XK6UymXDyvcKk9X7JnCo+/SrqjCT/T5g==}
+  /@tiptap/extension-superscript@2.1.10(@tiptap/core@2.1.8):
+    resolution: {integrity: sha512-L3EER28R5zjepvPNx+nwFGlS4gtcoTenq+yedFwcGetIqgMmP+7e6HMvvJjDNYV4fNqJGOpdLswFKVNayrhRTw==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
