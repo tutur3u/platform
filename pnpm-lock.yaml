@@ -219,8 +219,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       lucide-react:
-        specifier: ^0.276.0
-        version: 0.276.0(react@18.2.0)
+        specifier: ^0.279.0
+        version: 0.279.0(react@18.2.0)
       moment:
         specifier: ^2.29.4
         version: 2.29.4
@@ -3056,8 +3056,8 @@ packages:
     resolution: {integrity: sha512-LG4opVs2ANWZ1TJoKc937iMmNstM/d0ae1vNbnBvBhqCSezgVUOzcLCqbI5elV8Vy6WKwKjaqR+zO9VKirBBCA==}
     dev: false
 
-  /@types/hoist-non-react-statics@3.3.1:
-    resolution: {integrity: sha512-iMIqiko6ooLrTh1joXodJK5X9xeEALT1kM5G3ZLhD3hszxBdIEd5C75U834D9mLcINgD4OyZf5uQXjkuYydWvA==}
+  /@types/hoist-non-react-statics@3.3.2:
+    resolution: {integrity: sha512-YIQtIg4PKr7ZyqNPZObpxfHsHEmuB8dXCxd6qVcGuQVDK2bpsF7bYNnBJ4Nn7giuACZg+WewExgrtAJ3XnA4Xw==}
     dependencies:
       '@types/react': 18.2.21
       hoist-non-react-statics: 3.3.2
@@ -3126,7 +3126,7 @@ packages:
   /@types/react-redux@7.1.26:
     resolution: {integrity: sha512-UKPo7Cm7rswYU6PH6CmTNCRv5NYF3HrgKuHEYTK8g/3czYLrUux50gQ2pkxc9c7ZpQZi+PNhgmI8oNIRoiVIxg==}
     dependencies:
-      '@types/hoist-non-react-statics': 3.3.1
+      '@types/hoist-non-react-statics': 3.3.2
       '@types/react': 18.2.21
       hoist-non-react-statics: 3.3.2
       redux: 4.2.1
@@ -4824,12 +4824,12 @@ packages:
     resolution: {integrity: sha512-OHx4Qwrrt0E4jEIcI5/Xb+f+QmJYNj2rrK8wiIdQOIrB9WrrJL8cjZvXdXuBTkkEwEqLycb5BeZDV1o2i9bTew==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      flatted: 3.2.8
+      flatted: 3.2.9
       keyv: 4.5.3
       rimraf: 3.0.2
 
-  /flatted@3.2.8:
-    resolution: {integrity: sha512-6qu0W+A94UKNJRs3ffE8s/fWSHQbjqdNx8elGAe95IqnJA77P68TFz4+2cwC28ouAibiZdGBeV6DsvvMg+4vhQ==}
+  /flatted@3.2.9:
+    resolution: {integrity: sha512-36yxDn5H7OFZQla0/jFJmbIKTdZAQHngCedGxiMmpNfEZM0sdEeT+WczLQrjK6D7o2aiyLYDnkw0R3JK0Qv1RQ==}
 
   /for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -5684,8 +5684,8 @@ packages:
     resolution: {integrity: sha512-Pn9cox5CsMYngeDbmChANltQl+5pi6XmTrraMSzhPmMBbmgcxmqWry0U3PGapCU1yB4/LqCcom7qhHZiF/jGfQ==}
     dev: false
 
-  /lucide-react@0.276.0(react@18.2.0):
-    resolution: {integrity: sha512-ubP1Tyj67nsy84/ikelrFcjj7eEkD6hg9H/1Mhk22CGpbvPtEd3r8sMFQQ1YdpePx70Nt4oYIMfTPHZlag+ZLQ==}
+  /lucide-react@0.279.0(react@18.2.0):
+    resolution: {integrity: sha512-LJ8g66+Bxc3t3x9vKTeK3wn3xucrOQGfJ9ou9GsBwCt2offsrT2BB90XrTrIzE1noYYDe2O8jZaRHi6sAHXNxw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
     dependencies:
