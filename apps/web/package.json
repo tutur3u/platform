@@ -111,7 +111,7 @@
     "@types/cookie": "^0.5.2",
     "@types/js-cookie": "^3.0.4",
     "@types/lodash": "^4.14.198",
-    "@types/node": "^20.6.1",
+    "@types/node": "^20.6.2",
     "@types/react": "^18.2.21",
     "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.2.7",
