@@ -1,11 +1,14 @@
+import { generateUUID } from '@/utils/uuid-helper';
+
 export type MigrationModule =
   | 'users'
   | 'user-linked-coupons'
   | 'roles'
   | 'classes'
   | 'class-members'
+  | 'class-score-groups'
   | 'class-score-names'
-  | 'class-user-scores'
+  | 'class-scores'
   | 'class-user-feedbacks'
   | 'class-user-attendances'
   | 'class-lessons'
@@ -22,8 +25,8 @@ export interface ModulePackage {
   name: string;
   module: MigrationModule;
   externalAlias?: string;
-  internalAlias?: string;
   externalPath: string;
+  internalAlias?: string;
   internalPath?: string;
   mapping?: (data: any[]) => any[];
   disabled?: boolean;
@@ -51,11 +54,11 @@ export const modules: ModulePackage[] = [
       })),
   },
   {
-    name: 'User Groups (Roles + Classes)',
+    name: 'User Groups',
     module: 'roles',
     externalAlias: 'roles',
-    internalAlias: 'groups',
     externalPath: '/dashboard/data/users/roles',
+    internalAlias: 'groups',
     internalPath: '/api/workspaces/[wsId]/users/groups/migrate',
     mapping: (items) =>
       items.map((i) => ({
@@ -78,19 +81,36 @@ export const modules: ModulePackage[] = [
       })),
   },
   {
-    name: 'User Group Indicator Groups',
+    name: 'User Indicators',
     module: 'class-score-names',
     externalAlias: 'names',
     externalPath: '/dashboard/data/classes/score-names',
+    internalAlias: 'indicators',
+    internalPath: '/api/workspaces/[wsId]/users/indicators/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'User Group Indicators',
-    module: 'class-user-scores',
-    externalAlias: 'scores',
-    externalPath: '/dashboard/data/classes/scores',
+    module: 'class-score-groups',
+    externalAlias: 'names',
+    externalPath: '/dashboard/data/classes/score-names',
+    internalAlias: 'indicators',
+    internalPath: '/api/workspaces/[wsId]/users/groups/indicators/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        indicator_id: i?.id,
+        group_id: i?.class_id,
+        created_at: i?.created_at,
+      })),
   },
   {
-    name: 'User Group Feedbacks',
+    name: 'User Feedbacks',
     module: 'class-user-feedbacks',
     externalAlias: 'feedbacks',
     externalPath: '/dashboard/data/classes/feedbacks',

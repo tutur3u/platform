@@ -155,7 +155,9 @@ export default function PlatformMigrationsPage() {
       (externalData.length < externalCount || externalCount === -1)
     ) {
       await fetchData(
-        `${externalUrl}?from=${externalData.length}&limit=${limit}`,
+        `${externalUrl}?from=${externalData.length}&limit=${limit}`
+          // if there are 2 or more '?' in url, replace the second and next ones with '&'
+          .replace(/\?([^?]*)(\?)/g, '?$1&'),
         {
           onSuccess: (newData) => {
             if (externalCount === -1) externalCount = newData.count;
@@ -333,7 +335,9 @@ export default function PlatformMigrationsPage() {
                 />
               </div>
 
-              <Button variant="outline">View data</Button>
+              <Button variant="outline" disabled>
+                View data
+              </Button>
             </div>
           </>
         )}
