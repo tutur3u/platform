@@ -13,27 +13,15 @@ interface Params {
 export async function GET(_: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json(
-      { message: 'Error fetching user' },
-      { status: 500 }
-    );
-  }
-
   const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name, preset, created_at, workspace_members!inner(role)')
-    .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
+    .from('workspace_users')
+    .select('*')
+    .eq('ws_id', id)
     .single();
 
-  if (error || !data?.workspace_members[0]?.role)
+  if (error)
     return NextResponse.json(
-      { message: 'Error fetching workspaces' },
+      { message: 'Error fetching workspace users' },
       { status: 500 }
     );
 
@@ -43,22 +31,19 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   });
 }
 
-export async function PUT(req: Request, { params: { wsId: id } }: Params) {
+export async function POST(req: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const { name, preset } = await req.json();
+  const data = await req.json();
 
-  const { error } = await supabase
-    .from('workspaces')
-    .update({
-      name,
-      preset,
-    })
-    .eq('id', id);
+  const { error } = await supabase.from('workspace_users').insert({
+    ...data,
+    ws_id: id,
+  });
 
   if (error)
     return NextResponse.json(
-      { message: 'Error updating workspace' },
+      { message: 'Error creating workspace users' },
       { status: 500 }
     );
 
@@ -68,11 +53,14 @@ export async function PUT(req: Request, { params: { wsId: id } }: Params) {
 export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const { error } = await supabase.from('workspaces').delete().eq('id', id);
+  const { error } = await supabase
+    .from('workspace_users')
+    .delete()
+    .eq('ws_id', id);
 
   if (error)
     return NextResponse.json(
-      { message: 'Error deleting workspace' },
+      { message: 'Error deleting workspace users' },
       { status: 500 }
     );
 

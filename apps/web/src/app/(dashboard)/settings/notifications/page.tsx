@@ -1,6 +1,6 @@
 export default async function NotificationsSettingsPage() {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="w-full max-w-2xl">
       <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="mb-1 text-2xl font-bold">Notifications</div>
         <div className="mb-4 font-semibold text-zinc-500">
