@@ -1,5 +1,3 @@
-import { generateUUID } from '@/utils/uuid-helper';
-
 export type MigrationModule =
   | 'users'
   | 'user-linked-coupons'
