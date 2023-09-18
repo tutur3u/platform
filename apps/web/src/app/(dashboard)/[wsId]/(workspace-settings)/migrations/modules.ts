@@ -35,20 +35,20 @@ export const modules: ModulePackage[] = [
     module: 'users',
     externalAlias: 'users',
     externalPath: '/dashboard/data/users',
-    // internalPath: '/api/workspaces/[wsId]/migrate/users',
-    // mapping: (items) =>
-    //   items.map((i) => ({
-    //     id: i?.id,
-    //     email: i?.email,
-    //     name: i?.display_name,
-    //     phone: i?.phone_number,
-    //     gender: i?.gender,
-    //     birthday: i?.birthday,
-    //     created_at: i?.created_at,
-    //     note: `${i?.nickname ? `Nickname: ${i.nickname}\n` : ''}${
-    //       i?.relationship ? `Relationship: ${i.relationship}\n` : ''
-    //     }${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
-    //   })),
+    internalPath: '/api/workspaces/[wsId]/users/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        email: i?.email,
+        name: i?.display_name,
+        phone: i?.phone_number,
+        gender: i?.gender,
+        birthday: i?.birthday,
+        created_at: i?.created_at,
+        note: `${i?.nickname ? `Nickname: ${i.nickname}\n` : ''}${
+          i?.relationship ? `Relationship: ${i.relationship}\n` : ''
+        }${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
+      })),
   },
   {
     name: 'User Groups (Roles + Classes)',
@@ -56,26 +56,26 @@ export const modules: ModulePackage[] = [
     externalAlias: 'roles',
     internalAlias: 'groups',
     externalPath: '/dashboard/data/users/roles',
-    // internalPath: '/api/workspaces/[wsId]/migrate/users/groups',
-    // mapping: (items) =>
-    //   items.map((i) => ({
-    //     id: i?.id,
-    //     name: i?.name,
-    //     created_at: i?.created_at,
-    //   })),
+    internalPath: '/api/workspaces/[wsId]/users/groups/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'User Group Members',
     module: 'class-members',
     externalAlias: 'members',
     externalPath: '/migrate/members',
-    // internalPath: '/api/workspaces/[wsId]/migrate/users/groups/members',
-    // mapping: (items) =>
-    //   items.map((i) => ({
-    //     user_id: i?.user_id,
-    //     group_id: i?.class_id,
-    //     created_at: i?.created_at,
-    //   })),
+    internalPath: '/api/workspaces/[wsId]/users/groups/members/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        user_id: i?.user_id,
+        group_id: i?.class_id,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'User Group Indicator Groups',

@@ -193,7 +193,7 @@ export default function PlatformMigrationsPage() {
       ) {
         const newInternalData = mapping ? mapping(externalData) : externalData;
         const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
