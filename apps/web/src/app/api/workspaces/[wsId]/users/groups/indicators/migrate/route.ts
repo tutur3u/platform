@@ -12,7 +12,7 @@ export async function PUT(req: Request) {
   const { error } = await supabase
     .from('user_group_indicators')
     .upsert(
-      data?.indicators.map(({ id, ...rest }) => ({
+      data?.indicators.map(({ id, ...rest }: { id: string }) => ({
         ...rest,
       })) || []
     )
