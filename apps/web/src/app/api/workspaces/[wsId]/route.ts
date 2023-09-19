@@ -70,11 +70,13 @@ export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
 
   const { error } = await supabase.from('workspaces').delete().eq('id', id);
 
-  if (error)
+  if (error) {
+    console.log(error);
     return NextResponse.json(
       { message: 'Error deleting workspace' },
       { status: 500 }
     );
+  }
 
   return NextResponse.json({ message: 'success' });
 }

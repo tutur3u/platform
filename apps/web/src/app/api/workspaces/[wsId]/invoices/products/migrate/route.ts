@@ -10,14 +10,18 @@ export async function PUT(req: Request) {
   const data = await req.json();
 
   const { error } = await supabase
-    .from('workspace_user_groups_users')
-    .upsert(data?.members || [])
+    .from('finance_invoice_products')
+    .upsert(
+      (data?.products || []).map(({ _id, ...rest }: { _id: string }) => ({
+        ...rest,
+      }))
+    )
     .eq('id', data.id);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace members' },
+      { message: 'Error migrating invoice products' },
       { status: 500 }
     );
   }

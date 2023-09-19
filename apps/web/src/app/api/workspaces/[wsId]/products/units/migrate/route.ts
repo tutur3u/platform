@@ -1,23 +1,35 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { ProductCategory } from '@/types/primitives/ProductCategory';
 
 export const dynamic = 'force-dynamic';
 
-export async function PUT(req: Request) {
+interface Params {
+  params: {
+    wsId: string;
+  };
+}
+
+export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
   const { error } = await supabase
-    .from('workspace_user_groups_users')
-    .upsert(data?.members || [])
+    .from('inventory_units')
+    .upsert(
+      (data?.units || []).map((c: ProductCategory) => ({
+        ...c,
+        ws_id: id,
+      }))
+    )
     .eq('id', data.id);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace members' },
+      { message: 'Error migrating product units' },
       { status: 500 }
     );
   }

@@ -223,8 +223,8 @@ export default function InvoiceDetailsPage({
         mutate(`/api/workspaces/${wsId}/invoices/${invoiceId}`);
         setCompleted((completed) => !completed);
       }
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
   };
 
