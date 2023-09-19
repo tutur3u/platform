@@ -1,3 +1,5 @@
+import { generateUUID } from '@/utils/uuid-helper';
+
 export type MigrationModule =
   | 'users'
   | 'user-linked-coupons'
@@ -14,6 +16,7 @@ export type MigrationModule =
   | 'packages'
   | 'package-categories'
   | 'payment-methods'
+  | 'transactions'
   | 'coupons'
   | 'bills'
   | 'bill-packages'
@@ -112,42 +115,128 @@ export const modules: ModulePackage[] = [
     module: 'class-user-feedbacks',
     externalAlias: 'feedbacks',
     externalPath: '/dashboard/data/classes/feedbacks',
+    internalPath: '/api/workspaces/[wsId]/users/feedbacks/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        user_id: i?.user_id,
+        group_id: i?.class_id,
+        content: i?.content,
+        require_attention: i?.performance === 'NEED_HELP',
+        // creator_id: i?.creator_id,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'User Group Attendances',
     module: 'class-user-attendances',
     externalAlias: 'attendance',
     externalPath: '/dashboard/data/classes/attendance',
+    internalPath: '/api/workspaces/[wsId]/users/groups/attendance/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        group_id: i?.class_id,
+        user_id: i?.user_id,
+        date: i?.date,
+        status: i?.status,
+        notes: i?.notes || '',
+        created_at: i?.created_at,
+      })),
   },
   {
-    name: 'User Group Content',
+    name: 'User Group Posts',
     module: 'class-lessons',
     externalAlias: 'lessons',
     externalPath: '/dashboard/data/classes/lessons',
-  },
-  {
-    name: 'User Group Linked Products',
-    module: 'class-linked-packages',
-    externalAlias: 'packages',
-    externalPath: '/dashboard/data/classes/packages',
-  },
-  {
-    name: 'Products',
-    module: 'packages',
-    externalAlias: 'packages',
-    externalPath: '/dashboard/data/packages',
+    internalAlias: 'posts',
+    internalPath: '/api/workspaces/[wsId]/users/groups/posts/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        group_id: i?.class_id,
+        title: i?.title || '',
+        content: i?.content || '',
+        notes: i?.notes || '',
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'Product Categories',
     module: 'package-categories',
     externalAlias: 'categories',
     externalPath: '/dashboard/data/packages/categories',
+    internalPath: '/api/workspaces/[wsId]/products/categories/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+      })),
+  },
+  {
+    name: 'Products',
+    module: 'packages',
+    externalAlias: 'packages',
+    externalPath: '/dashboard/data/packages',
+    // internalAlias: 'products',
+    // internalPath: '/api/workspaces/[wsId]/products/migrate',
+    // mapping: (items) =>
+    //   items.map((i) => ({
+    //     id: i?.id,
+    //     name: i?.name,
+    // }))
+  },
+  {
+    name: 'User Group Linked Products',
+    module: 'class-linked-packages',
+    externalAlias: 'packages',
+    externalPath: '/dashboard/data/classes/packages',
+    // internalAlias: 'products',
+    // internalPath: '/api/workspaces/[wsId]/users/groups/products/migrate',
   },
   {
     name: 'Wallets',
     module: 'payment-methods',
     externalAlias: 'methods',
     externalPath: '/dashboard/data/payment-methods',
+    internalAlias: 'wallets',
+    internalPath: '/api/workspaces/[wsId]/wallets/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+      })),
+  },
+  {
+    name: 'Wallet transactions',
+    module: 'transactions',
+    externalAlias: 'bills',
+    externalPath: '/dashboard/data/bills',
+    internalAlias: 'transactions',
+    internalPath: '/api/workspaces/[wsId]/wallets/transactions/migrate',
+    mapping: (items) =>
+      items.map((i) => {
+        const walletId =
+          i?.method === 'CASH'
+            ? '354f92e4-8e7c-404a-b461-cfe6a8b67ba8'
+            : i?.method === 'BANKING'
+            ? '8ca90c9e-de28-4284-b388-294b704d78bc'
+            : '';
+
+        // There is a "valid_until" field on item, which is type of date
+        // convert it to timestamptz (+7) and use it as "taken_at" field
+        const takenAt = i?.valid_until ? new Date(i?.valid_until) : null;
+
+        return {
+          id: generateUUID(i?.id, walletId),
+          wallet_id: walletId,
+          amount: i?.total + i?.price_diff,
+          description: i?.content,
+          // category_id: i?.category_id,
+          taken_at: takenAt ? takenAt.toISOString() : i?.created_at,
+          created_at: i?.created_at,
+          _id: i?.id,
+        };
+      }),
   },
   {
     name: 'Invoices',
@@ -166,12 +255,32 @@ export const modules: ModulePackage[] = [
     module: 'coupons',
     externalAlias: 'coupons',
     externalPath: '/dashboard/data/coupons',
+    internalAlias: 'promotions',
+    internalPath: '/api/workspaces/[wsId]/promotions/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+        description: i?.content,
+        code: i?.code,
+        value: i?.value,
+        use_ratio: i?.use_ratio,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'Virtual Users Linked Promotions',
     module: 'user-linked-coupons',
     externalAlias: 'coupons',
     externalPath: '/dashboard/data/users/coupons',
+    internalAlias: 'promotions',
+    internalPath: '/api/workspaces/[wsId]/users/promotions/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        user_id: i?.user_id,
+        promo_id: i?.coupon_id,
+        created_at: i?.created_at,
+      })),
   },
   {
     name: 'Invoice Promotions',

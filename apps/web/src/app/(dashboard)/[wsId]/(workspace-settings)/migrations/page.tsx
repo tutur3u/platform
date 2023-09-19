@@ -325,7 +325,7 @@ export default function PlatformMigrationsPage() {
                     getData('external', module)
                       ? ((getData('external', module) ?? []).filter((v) =>
                           (getData('internal', module) ?? []).find(
-                            (iv) => iv.id === v.id
+                            (iv) => iv.id === v.id || iv._id === v.id
                           )
                         ).length /
                           (getData('external', module)?.length ?? 0)) *
