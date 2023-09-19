@@ -306,7 +306,7 @@ export default function PlatformMigrationsPage() {
 
             <div className="grid gap-2">
               <div className="grid gap-1">
-                External Data
+                External
                 <Progress
                   value={
                     getData('external', module)
@@ -325,7 +325,7 @@ export default function PlatformMigrationsPage() {
                     getData('external', module)
                       ? ((getData('external', module) ?? []).filter((v) =>
                           (getData('internal', module) ?? []).find(
-                            (iv) => iv.id === v.id
+                            (iv) => iv.id === v.id || iv._id === v.id
                           )
                         ).length /
                           (getData('external', module)?.length ?? 0)) *
@@ -335,9 +335,9 @@ export default function PlatformMigrationsPage() {
                 />
               </div>
 
-              <Button variant="outline" disabled>
+              {/* <Button variant="outline" disabled>
                 View data
-              </Button>
+              </Button> */}
             </div>
           </>
         )}

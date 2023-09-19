@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { Product } from '@/types/primitives/Product';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,10 @@ export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   const data = await req.json();
 
   const { error } = await supabase
-    .from('workspace_user_groups')
+    .from('inventory_warehouses')
     .upsert(
-      (data?.groups || []).map((u: UserGroup) => ({
-        ...u,
+      (data?.warehouses || []).map((p: Product) => ({
+        ...p,
         ws_id: id,
       }))
     )
@@ -29,7 +29,7 @@ export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace groups' },
+      { message: 'Error migrating workspace warehouses' },
       { status: 500 }
     );
   }

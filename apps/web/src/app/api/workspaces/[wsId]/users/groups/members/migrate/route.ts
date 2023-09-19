@@ -14,13 +14,13 @@ export async function PUT(req: Request) {
     .upsert(data?.members || [])
     .eq('id', data.id);
 
-  console.log(error);
-
-  if (error)
+  if (error) {
+    console.log(error);
     return NextResponse.json(
       { message: 'Error migrating workspace members' },
       { status: 500 }
     );
+  }
 
   return NextResponse.json({ message: 'success' });
 }

@@ -1,27 +1,19 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { UserGroup } from '@/types/primitives/UserGroup';
 
 export const dynamic = 'force-dynamic';
 
-interface Params {
-  params: {
-    wsId: string;
-  };
-}
-
-export async function PUT(req: Request, { params: { wsId: id } }: Params) {
+export async function PUT(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
   const { error } = await supabase
-    .from('workspace_user_groups')
+    .from('finance_invoice_promotions')
     .upsert(
-      (data?.groups || []).map((u: UserGroup) => ({
-        ...u,
-        ws_id: id,
+      (data?.promotions || []).map(({ _id, ...rest }: { _id: string }) => ({
+        ...rest,
       }))
     )
     .eq('id', data.id);
@@ -29,7 +21,7 @@ export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace groups' },
+      { message: 'Error migrating invoice promotions' },
       { status: 500 }
     );
   }
