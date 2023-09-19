@@ -16,12 +16,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const FormSchema = z.object({
   email: z.string().email(),
-  otp: z.string().min(1).max(6).optional(),
+  otp: z.string().optional(),
 });
 
 export default function LoginForm() {
@@ -34,6 +34,26 @@ export default function LoginForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Resend cooldown
+  const cooldown = 60;
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Update resend cooldown OTP is sent
+  useEffect(() => {
+    if (otpSent) setResendCooldown(cooldown);
+  }, [otpSent]);
+
+  // Reduce cooldown by 1 every second
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
   const sendOtp = async (data: { email: string }) => {
     setLoading(true);
 
@@ -43,6 +63,19 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
+      // Reset form state
+      form.reset({
+        email: data.email,
+        otp: '',
+      });
+
+      // Notify user
+      toast({
+        title: 'Success',
+        description: 'An OTP has been sent to your email address.',
+      });
+
+      // OTP has been sent
       setOtpSent(true);
     } else {
       toast({
@@ -129,7 +162,22 @@ export default function LoginForm() {
               <FormItem>
                 <FormLabel>Verification Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="••••••" {...field} />
+                  <div className="flex flex-col gap-2 md:flex-row">
+                    <Input placeholder="••••••" {...field} disabled={loading} />
+                    <Button
+                      onClick={() =>
+                        sendOtp({ email: form.getValues('email') })
+                      }
+                      disabled={loading || resendCooldown > 0}
+                      className="md:w-40"
+                      variant="secondary"
+                      type="button"
+                    >
+                      {resendCooldown > 0
+                        ? `Resend (${resendCooldown})`
+                        : 'Resend'}
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormDescription>
                   Enter the verification code sent to your email address.
