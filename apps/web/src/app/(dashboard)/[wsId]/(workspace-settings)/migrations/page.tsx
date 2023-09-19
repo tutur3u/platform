@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { DEV_MODE } from '@/constants/common';
 import { MigrationModule, ModulePackage, modules } from './modules';
 
 export default function PlatformMigrationsPage() {
@@ -44,8 +43,6 @@ export default function PlatformMigrationsPage() {
   const loading = migrationData
     ? Object.values(migrationData).some((v) => v?.loading)
     : false;
-
-  if (!DEV_MODE) return null;
 
   const fetchData = async (
     url: string,
