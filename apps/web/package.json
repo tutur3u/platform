@@ -68,7 +68,7 @@
     "@supabase/auth-helpers-react": "^0.4.2",
     "@supabase/supabase-js": "^2.36.0",
     "@tabler/icons-react": "^2.34.0",
-    "@tiptap/extension-highlight": "^2.1.10",
+    "@tiptap/extension-highlight": "^2.1.11",
     "@tiptap/extension-link": "^2.1.10",
     "@tiptap/extension-subscript": "^2.1.10",
     "@tiptap/extension-superscript": "^2.1.10",
