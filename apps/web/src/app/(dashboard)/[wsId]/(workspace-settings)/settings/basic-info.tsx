@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context';
 
 interface Props {
   workspace: Workspace;
@@ -17,7 +16,9 @@ export default function BasicInfo({ workspace }: Props) {
   const isSystemWs = workspace.id === '00000000-0000-0000-0000-000000000000';
 
   const { t } = useTranslation('ws-settings');
+
   const router = useRouter();
+  const refresh = () => router.refresh();
 
   const [name, setName] = useState(workspace.name);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,10 +27,15 @@ export default function BasicInfo({ workspace }: Props) {
     if (isSystemWs) return;
 
     setIsSaving(true);
-    await updateWorkspace(router, {
-      id: workspace.id,
-      name,
-    });
+    await updateWorkspace(
+      {
+        id: workspace.id,
+        name,
+      },
+      {
+        onSuccess: refresh,
+      }
+    );
     setIsSaving(false);
   };
 
@@ -69,7 +75,14 @@ export default function BasicInfo({ workspace }: Props) {
   );
 }
 
-const updateWorkspace = async (router: AppRouterInstance, ws: Workspace) => {
+const updateWorkspace = async (
+  ws: Workspace,
+  {
+    onSuccess,
+  }: {
+    onSuccess?: () => void;
+  }
+) => {
   try {
     const res = await fetch(`/api/workspaces/${ws.id}`, {
       method: 'PUT',
@@ -77,7 +90,7 @@ const updateWorkspace = async (router: AppRouterInstance, ws: Workspace) => {
     });
 
     if (!res.ok) throw new Error('Failed to update workspace');
-    router.refresh();
+    else onSuccess?.();
   } catch (e) {
     // showNotification({
     //   title: 'Failed to update workspace',
