@@ -18,7 +18,9 @@ export const dynamic = 'force-dynamic';
 export default async function InfrastructureUsersPage({
   params: { wsId },
 }: Props) {
-  await enforceRootWorkspaceAdmin(wsId);
+  await enforceRootWorkspaceAdmin(wsId, {
+    redirectTo: `/${wsId}/settings`,
+  });
 
   const users = await getUsers();
   const count = await getUserCount();

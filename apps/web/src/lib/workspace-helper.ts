@@ -51,12 +51,27 @@ export async function getWorkspaces() {
 
   return data as Workspace[];
 }
-export function enforceRootWorkspace(wsId: string) {
-  if (wsId !== ROOT_WORKSPACE_ID) notFound();
+export function enforceRootWorkspace(
+  wsId: string,
+  options: {
+    redirectTo?: string;
+  } = {}
+) {
+  // Check if the workspace is the root workspace
+  if (wsId === ROOT_WORKSPACE_ID) return;
+
+  // If not, redirect to the provided path or 404
+  if (options.redirectTo) redirect(options.redirectTo);
+  else notFound();
 }
 
-export async function enforceRootWorkspaceAdmin(wsId: string) {
-  enforceRootWorkspace(wsId);
+export async function enforceRootWorkspaceAdmin(
+  wsId: string,
+  options: {
+    redirectTo?: string;
+  } = {}
+) {
+  enforceRootWorkspace(wsId, options);
 
   const supabase = createServerComponentClient({ cookies });
 
@@ -74,5 +89,8 @@ export async function enforceRootWorkspaceAdmin(wsId: string) {
     .in('role', ['OWNER', 'ADMIN'])
     .single();
 
-  if (error) notFound();
+  if (error) {
+    if (options.redirectTo) redirect(options.redirectTo);
+    else notFound();
+  }
 }
