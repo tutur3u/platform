@@ -13,15 +13,22 @@ export interface NavLink {
   disabled?: boolean;
   requireRootWorkspace?: boolean;
   allowedPresets?: WorkspacePreset[];
+  allowedRoles?: string[];
 }
 
 interface Props {
   currentWsId?: string;
+  currentRole?: string;
   currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }
 
-export function Navigation({ currentWsId, currentPreset, navLinks }: Props) {
+export function Navigation({
+  currentWsId,
+  currentRole,
+  currentPreset,
+  navLinks,
+}: Props) {
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
@@ -39,6 +46,15 @@ export function Navigation({ currentWsId, currentPreset, navLinks }: Props) {
           currentPreset !== 'ALL' &&
           currentPreset !== undefined &&
           link?.allowedPresets?.includes(currentPreset) === false
+        )
+          return null;
+
+        // If the link is only allowed for certain roles, check if the current role is allowed
+        if (
+          currentRole &&
+          link?.allowedRoles &&
+          link.allowedRoles.length > 0 &&
+          link?.allowedRoles?.includes(currentRole) === false
         )
           return null;
 
