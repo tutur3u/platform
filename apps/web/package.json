@@ -92,7 +92,7 @@
     "next": "^13.5.2",
     "next-translate": "^2.5.3",
     "nextjs-google-analytics": "^2.3.3",
-    "openai": "^4.9.0",
+    "openai": "^4.9.1",
     "react": "18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",
