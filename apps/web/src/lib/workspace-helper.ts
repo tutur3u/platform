@@ -71,7 +71,7 @@ export async function enforceRootWorkspaceAdmin(wsId: string) {
     .select('role')
     .eq('ws_id', ROOT_WORKSPACE_ID)
     .eq('user_id', user.id)
-    .eq('role', 'OWNER')
+    .in('role', ['OWNER', 'ADMIN'])
     .single();
 
   if (error) notFound();
