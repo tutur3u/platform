@@ -139,7 +139,7 @@ export default function LoginForm() {
               <FormControl>
                 <Input
                   placeholder="rewise@tuturuuu.com"
-                  disabled={otpSent}
+                  disabled={otpSent || loading}
                   {...field}
                 />
               </FormControl>
@@ -198,7 +198,7 @@ export default function LoginForm() {
             (otpSent && !form.formState.dirtyFields.otp)
           }
         >
-          {loading ? 'Loading...' : 'Continue'}
+          {loading ? 'Processing...' : 'Continue'}
         </Button>
       </form>
     </Form>

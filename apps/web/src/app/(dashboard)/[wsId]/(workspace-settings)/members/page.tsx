@@ -1,7 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import MemberRoleMultiSelector from '@/components/selectors/MemberRoleMultiSelector';
 import useTranslation from 'next-translate/useTranslation';
-import InviteMemberButton from './invite-member-button';
+import InviteMemberButton from './_components/invite-member-button';
 import MemberTabs from './_components/member-tabs';
 import MemberList from './_components/member-list';
 import { getWorkspace } from '@/lib/workspace-helper';
@@ -59,7 +59,7 @@ export default async function WorkspaceMembersPage({
         /> */}
 
         <div className="grid items-end gap-4 lg:grid-cols-2">
-          <MemberList members={members} currentRole={ws.role} />
+          <MemberList workspace={ws} members={members} />
         </div>
       </div>
     </>
@@ -80,7 +80,9 @@ const getMembers = async (
         count: 'exact',
       }
     )
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: true });
 
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');

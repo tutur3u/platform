@@ -8,6 +8,7 @@
   "joined": "Joined",
   "all": "All",
   "leave": "Leave",
+  "no_members_found": "No members found",
   "remove_member": "Remove member",
   "member_removed": "Member removed",
   "revoke_invitation": "Revoke invitation",
