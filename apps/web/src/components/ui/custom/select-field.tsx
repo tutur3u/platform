@@ -32,11 +32,11 @@ interface SelectFieldProps {
   classNames?: ClassNames;
 }
 
-export interface InputProps
+export interface SelectProps
   extends React.ComponentPropsWithoutRef<typeof Root> {}
 
 // Merge the two interfaces
-type Props = SelectFieldProps & InputProps;
+type Props = SelectFieldProps & SelectProps;
 
 const SelectField = forwardRef<React.ElementRef<typeof Root>, Props>(
   ({ id, label, placeholder, options, classNames, ...props }, ref) => {

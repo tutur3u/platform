@@ -20,8 +20,8 @@ type DatePickerProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 export function DatePickerWithRange({
-    range,
-    setRange,
+  range,
+  setRange,
   className,
 }: DatePickerProps) {
   return (

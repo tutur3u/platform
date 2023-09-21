@@ -12,11 +12,9 @@ export async function PUT(req: Request) {
   const { error } = await supabase
     .from('wallet_transactions')
     .upsert(
-      data?.transactions.map(
-        ({ _id, ...rest }: { _id: string }) => ({
-          ...rest,
-        })
-      ) || []
+      data?.transactions.map(({ _id, ...rest }: { _id: string }) => ({
+        ...rest,
+      })) || []
     )
     .eq('id', data.id);
 

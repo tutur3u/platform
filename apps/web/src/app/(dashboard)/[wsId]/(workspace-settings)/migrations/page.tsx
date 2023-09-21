@@ -124,6 +124,11 @@ export default function PlatformMigrationsPage() {
     }));
   };
 
+  const resetData = (module: MigrationModule) => {
+    setData('external', module, null, 0);
+    setData('internal', module, null, 0);
+  };
+
   const handleMigrate = async ({
     module,
     externalPath,
@@ -133,13 +138,10 @@ export default function PlatformMigrationsPage() {
     mapping,
   }: ModulePackage) => {
     setLoading(module, true);
+    resetData(module);
 
     const externalUrl = `${apiEndpoint}${externalPath}`;
-    const limit = 1000;
-
-    // Reset module data
-    setData('external', module, null, 0);
-    setData('internal', module, null, 0);
+    const chunkSize = 100;
 
     // Initialize external variables
     let externalCount = -1;
@@ -152,7 +154,7 @@ export default function PlatformMigrationsPage() {
       (externalData.length < externalCount || externalCount === -1)
     ) {
       await fetchData(
-        `${externalUrl}?from=${externalData.length}&limit=${limit}`
+        `${externalUrl}?from=${externalData.length}&limit=${chunkSize}`
           // if there are 2 or more '?' in url, replace the second and next ones with '&'
           .replace(/\?([^?]*)(\?)/g, '?$1&'),
         {
@@ -186,35 +188,45 @@ export default function PlatformMigrationsPage() {
 
     // Fetch internal data
     if (internalPath && workspaceId) {
-      while (
-        internalError === null &&
-        internalData.length < externalData.length
-      ) {
-        const newInternalData = mapping ? mapping(externalData) : externalData;
-        const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            [internalAlias ?? externalAlias ?? 'data']: newInternalData,
-          }),
-        });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      for (let i = 0; i < externalData.length; i += chunkSize) {
+        if (internalError !== null) break;
 
-        const data = await res.json();
+        const chunkMax = Math.min(i + chunkSize, externalData.length);
+        const chunk = externalData.slice(i, chunkMax);
 
-        if (!res.ok) {
+        const newInternalData = mapping ? mapping(chunk) : chunk;
+
+        try {
+          const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              [internalAlias ?? externalAlias ?? 'data']: newInternalData,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            setLoading(module, false);
+            setError(module, data);
+            internalError = data?.error;
+            return;
+          }
+
+          internalData.push(...newInternalData);
+          setData('internal', module, internalData, internalData.length);
+        } catch (error) {
           setLoading(module, false);
-          setError(module, data);
-          internalError = data?.error;
+          setError(module, error);
+          internalError = error;
           return;
+        } finally {
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
-
-        internalData = [...internalData, ...newInternalData];
-        setData('internal', module, internalData, internalData.length);
-
-        // wait 200ms
-        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 

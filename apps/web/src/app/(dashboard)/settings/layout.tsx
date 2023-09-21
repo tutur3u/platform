@@ -1,7 +1,5 @@
 import { Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -10,11 +8,6 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: LayoutProps) {
-  const supabase = createServerComponentClient({ cookies });
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const navLinks = [
     {
       name: 'Account',
@@ -23,21 +16,17 @@ export default async function Layout({ children }: LayoutProps) {
     {
       name: 'Appearance',
       href: '/settings/appearance',
-    },
-    {
-      name: 'Notifications',
-      href: '/settings/notifications',
+      disabled: true,
     },
     {
       name: 'Workspaces',
       href: '/settings/workspaces',
+      disabled: true,
     },
     {
       name: 'Activities',
       href: '/settings/activities',
-
-      // Only allow user that has email ends with @tuturuuu.com
-      disabled: !user?.email?.endsWith('@tuturuuu.com'),
+      disabled: true,
     },
   ];
 

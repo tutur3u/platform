@@ -87,6 +87,9 @@ export const getCardColor = (color = defaultColor) => {
 
 export const getRoleColor = (role: string) => {
   switch (role) {
+    case 'you':
+      return 'border-green-500/20 bg-green-500/10 dark:border-green-300/10 dark:bg-green-300/10 text-green-600 dark:text-green-300';
+
     case 'member':
       return 'border-blue-500/20 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/10 text-blue-600 dark:text-blue-300';
 
@@ -97,6 +100,6 @@ export const getRoleColor = (role: string) => {
       return 'border-purple-500/20 bg-purple-500/10 dark:border-purple-300/10 dark:bg-purple-300/10 text-purple-600 dark:text-purple-300';
 
     default:
-      return 'border-zinc-500/80 bg-zinc-500/10 text dark:border-zinc-800/80 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400';
+      return 'border-zinc-500/80 bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400';
   }
 };

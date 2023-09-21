@@ -15,7 +15,9 @@ export const dynamic = 'force-dynamic';
 export default async function InfrastructureOverviewPage({
   params: { wsId },
 }: Props) {
-  await enforceRootWorkspaceAdmin(wsId);
+  await enforceRootWorkspaceAdmin(wsId, {
+    redirectTo: `/${wsId}/settings`,
+  });
 
   const { t } = useTranslation('infrastructure-tabs');
 

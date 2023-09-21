@@ -14,6 +14,8 @@ export interface NavLink {
   requireRootWorkspace?: boolean;
   allowedPresets?: WorkspacePreset[];
   allowedRoles?: string[];
+  disabledPresets?: WorkspacePreset[];
+  disabledRoles?: string[];
 }
 
 interface Props {
@@ -45,7 +47,8 @@ export function Navigation({
         if (
           currentPreset !== 'ALL' &&
           currentPreset !== undefined &&
-          link?.allowedPresets?.includes(currentPreset) === false
+          (link?.allowedPresets?.includes(currentPreset) === false ||
+            link?.disabledPresets?.includes(currentPreset) === true)
         )
           return null;
 
@@ -54,7 +57,8 @@ export function Navigation({
           currentRole &&
           link?.allowedRoles &&
           link.allowedRoles.length > 0 &&
-          link?.allowedRoles?.includes(currentRole) === false
+          (link?.allowedRoles?.includes(currentRole) === false ||
+            link?.disabledRoles?.includes(currentRole) === true)
         )
           return null;
 

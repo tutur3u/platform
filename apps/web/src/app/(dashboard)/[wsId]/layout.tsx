@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import WorkspaceSelect from './_components/workspace-select';
+import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
 
 interface LayoutProps {
   params: {
@@ -26,6 +27,7 @@ export default async function Layout({
     {
       name: 'Chat',
       href: `/${wsId}/chat`,
+      disabledPresets: AI_CHAT_DISABLED_PRESETS,
     },
     {
       name: 'Dashboard',
