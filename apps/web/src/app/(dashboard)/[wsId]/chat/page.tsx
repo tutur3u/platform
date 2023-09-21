@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import Chat from './chat';
 import { Database } from '@/types/supabase';
 import { getWorkspace } from '@/lib/workspace-helper';
-import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
+import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,11 +13,6 @@ interface Props {
     wsId: string;
   };
 }
-
-export const AI_CHAT_DISABLED_PRESETS: WorkspacePreset[] = [
-  'EDUCATION',
-  'PHARMACY',
-];
 
 export default async function AIPage({ params: { wsId } }: Props) {
   const supabase = createServerComponentClient<Database>({ cookies });

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import WorkspaceSelect from './_components/workspace-select';
-import { AI_CHAT_DISABLED_PRESETS } from './chat/page';
+import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
 
 interface LayoutProps {
   params: {
