@@ -13,9 +13,14 @@ import InviteMemberButton from './invite-member-button';
 interface Props {
   workspace: Workspace;
   members: User[];
+  invited: boolean;
 }
 
-export default async function MemberList({ workspace, members }: Props) {
+export default async function MemberList({
+  workspace,
+  members,
+  invited,
+}: Props) {
   const supabase = createServerComponentClient({ cookies });
 
   const { t, lang } = useTranslation('ws-members');
@@ -27,7 +32,7 @@ export default async function MemberList({ workspace, members }: Props) {
     return (
       <div className="border-primary/10 bg-primary-foreground/20 col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
         <p className="text-center text-zinc-500 dark:text-zinc-400">
-          {t('no_members_found')}.
+          {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
         <InviteMemberButton wsId={workspace.id} label={t('invite_member')} />
       </div>

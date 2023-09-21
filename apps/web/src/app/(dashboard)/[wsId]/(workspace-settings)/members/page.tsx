@@ -59,7 +59,11 @@ export default async function WorkspaceMembersPage({
         /> */}
 
         <div className="grid items-end gap-4 lg:grid-cols-2">
-          <MemberList workspace={ws} members={members} />
+          <MemberList
+            workspace={ws}
+            members={members}
+            invited={searchParams?.status === 'invited'}
+          />
         </div>
       </div>
     </>
