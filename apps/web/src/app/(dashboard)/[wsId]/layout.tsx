@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import WorkspaceSelect from './_components/workspace-select';
 import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
+import { UserNav } from './_components/user-nav';
 
 interface LayoutProps {
   params: {
@@ -81,20 +82,25 @@ export default async function Layout({
   return (
     <>
       <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
-        <div className="mb-2 flex items-center gap-4">
-          <Link href="/">
-            <Image
-              src="/media/logos/transparent.png"
-              width={320}
-              height={320}
-              alt="logo"
-              className="h-7 w-7"
-            />
-          </Link>
-          <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
-          <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
-            <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
-          </Suspense>
+        <div className="mb-2 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Image
+                src="/media/logos/transparent.png"
+                width={320}
+                height={320}
+                alt="logo"
+                className="h-7 w-7"
+              />
+            </Link>
+
+            <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
+            <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
+              <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
+            </Suspense>
+          </div>
+
+          <UserNav />
         </div>
 
         <div className="flex gap-1 overflow-x-auto">
