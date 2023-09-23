@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { getInitials } from '../../../utils/name-helper';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,13 @@ export default async function UserProfilePage({ params: { handle } }: Props) {
               src={user.avatar_url}
               alt={user?.handle || user?.display_name}
             />
-            <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
+            <AvatarFallback className='font-semibold'>
+              {user?.display_name ? (
+                getInitials(user.display_name)
+              ) : (
+                <User className="h-5 w-5" />
+              )}
+            </AvatarFallback>
           </Avatar>
           <div className="text-3xl font-bold text-zinc-300">
             {user.display_name}

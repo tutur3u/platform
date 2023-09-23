@@ -9,6 +9,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import InviteMemberButton from './invite-member-button';
+import { User as UserIcon } from 'lucide-react';
 
 interface Props {
   workspace: Workspace;
@@ -52,7 +53,11 @@ export default async function MemberList({
         <Avatar>
           <AvatarImage src={member?.avatar_url ?? undefined} />
           <AvatarFallback className="font-semibold">
-            {getInitials(member?.display_name || '?')}
+            {member?.display_name ? (
+              getInitials(member.display_name)
+            ) : (
+              <UserIcon className="h-5 w-5" />
+            )}
           </AvatarFallback>
         </Avatar>
 

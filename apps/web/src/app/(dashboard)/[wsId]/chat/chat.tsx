@@ -5,6 +5,8 @@ import { useChat } from 'ai/react';
 import ChatForm from './form';
 import { User } from '@/types/primitives/User';
 import { Button } from '@/components/ui/button';
+import { User as UserIcon } from 'lucide-react';
+import { getInitials } from '@/utils/name-helper';
 
 interface ChatProps {
   userData: User;
@@ -35,12 +37,18 @@ const Chat = ({ userData }: ChatProps) => {
                     src={userData?.avatar_url || '/dark.png'}
                     alt="Tuturuuu Logo"
                   />
-                  <AvatarFallback>T</AvatarFallback>
+                  <AvatarFallback className="font-semibold">
+                    {userData?.display_name ? (
+                      getInitials(userData.display_name)
+                    ) : (
+                      <UserIcon className="h-5 w-5" />
+                    )}
+                  </AvatarFallback>
                 </Avatar>
               ) : (
                 <Avatar>
                   <AvatarImage src="/rewise-green.png" alt="Tuturuuu Logo" />
-                  <AvatarFallback>RW</AvatarFallback>
+                  <AvatarFallback className="font-semibold">AI</AvatarFallback>
                 </Avatar>
               )}
               <div className="border-foreground/5 bg-foreground/5 rounded-xl border px-3 py-2">

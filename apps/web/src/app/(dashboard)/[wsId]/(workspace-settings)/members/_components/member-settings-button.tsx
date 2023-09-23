@@ -34,6 +34,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { User as UserIcon } from 'lucide-react';
 
 interface Props {
   workspace: Workspace;
@@ -165,7 +166,11 @@ export function MemberSettingsButton({
           <Avatar>
             <AvatarImage src={user?.avatar_url || undefined} />
             <AvatarFallback className="font-semibold">
-              {getInitials(user?.display_name || '?')}
+              {user?.display_name ? (
+                getInitials(user.display_name)
+              ) : (
+                <UserIcon className="h-5 w-5" />
+              )}
             </AvatarFallback>
           </Avatar>
 

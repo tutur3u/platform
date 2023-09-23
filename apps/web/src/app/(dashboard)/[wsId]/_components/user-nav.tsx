@@ -22,6 +22,7 @@ import {
   Settings,
   Sparkle,
   Sun,
+  User,
   UserPlus,
 } from 'lucide-react';
 import { Suspense } from 'react';
@@ -41,8 +42,12 @@ export async function UserNav({ wsId }: Props) {
         <Avatar className="cursor-pointer font-semibold">
           <Suspense fallback={<AvatarFallback>...</AvatarFallback>}>
             <AvatarImage src={user?.avatar_url ?? undefined} />
-            <AvatarFallback>
-              {getInitials(user?.display_name || '?')}
+            <AvatarFallback className="font-semibold">
+              {user?.display_name ? (
+                getInitials(user.display_name)
+              ) : (
+                <User className="h-5 w-5" />
+              )}
             </AvatarFallback>
           </Suspense>
         </Avatar>
