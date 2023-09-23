@@ -76,7 +76,9 @@ export default async function MemberList({
             ) : null}
           </p>
           <p className="text-muted-foreground text-sm font-semibold">
-            @{member.handle || member.id.replace(/-/g, '')}
+            {member?.handle
+              ? `@${member.handle}`
+              : member?.email ?? `@${member?.id?.replace(/-/g, '')}`}
           </p>
         </div>
       </div>

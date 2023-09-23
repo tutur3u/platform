@@ -84,7 +84,7 @@ const getMembers = async (
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, display_name, avatar_url, pending, role, role_title, created_at',
+      'id, handle, email, display_name, avatar_url, pending, role, role_title, created_at',
       {
         count: 'exact',
       }

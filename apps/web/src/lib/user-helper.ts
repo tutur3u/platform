@@ -24,10 +24,13 @@ export async function getCurrentUser() {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, avatar_url, handle, created_at')
+    .select(
+      'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
+    )
     .eq('id', user.id)
     .single();
 
   if (error) notFound();
-  return { ...data, email: user.email } as User;
+  const { user_private_details, ...rest } = data;
+  return { ...rest, ...user_private_details } as User;
 }

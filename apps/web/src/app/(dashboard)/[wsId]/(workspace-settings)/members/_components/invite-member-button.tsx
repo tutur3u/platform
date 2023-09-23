@@ -175,7 +175,9 @@ export default function InviteMemberButton({
                     </p>
 
                     <p className="text-muted-foreground line-clamp-1 break-all text-sm">
-                      @{user?.handle || user?.id.replace(/-/g, '')}
+                      {user?.handle
+                        ? `@${user.handle}`
+                        : user?.email ?? `@${user?.id?.replace(/-/g, '')}`}
                     </p>
                   </div>
                 </div>

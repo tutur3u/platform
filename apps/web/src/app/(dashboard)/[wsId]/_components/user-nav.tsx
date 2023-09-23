@@ -54,11 +54,11 @@ export async function UserNav({ wsId }: Props) {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="line-clamp-1 text-sm font-medium leading-none">
+          <div className="flex flex-col">
+            <p className="line-clamp-1 break-all text-sm font-medium">
               {user?.display_name || user?.handle || `@${user?.id}`}
             </p>
-            <p className="text-muted-foreground line-clamp-1 text-xs leading-none">
+            <p className="text-muted-foreground line-clamp-1 break-all text-xs">
               {user?.email}
             </p>
           </div>
