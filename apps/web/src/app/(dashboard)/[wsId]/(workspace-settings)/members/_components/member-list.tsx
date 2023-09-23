@@ -35,7 +35,11 @@ export default async function MemberList({
         <p className="text-center text-zinc-500 dark:text-zinc-400">
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
-        <InviteMemberButton wsId={workspace.id} label={t('invite_member')} />
+        <InviteMemberButton
+          wsId={workspace.id}
+          label={t('invite_member')}
+          variant="outline"
+        />
       </div>
     );
   }

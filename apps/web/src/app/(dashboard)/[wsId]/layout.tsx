@@ -30,6 +30,7 @@ export default async function Layout({
       name: 'Chat',
       href: `/${wsId}/chat`,
       disabledPresets: AI_CHAT_DISABLED_PRESETS,
+      disabled: process.env.ANTHROPIC_API_KEY === undefined,
     },
     {
       name: 'Dashboard',

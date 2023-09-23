@@ -71,9 +71,7 @@ export function MemberSettingsButton({
     const invited = user?.pending;
 
     const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}${
-        invited ? '?invited=true' : ''
-      }`,
+      `/api/workspaces/${ws.id}/members/${user.id}`,
       {
         method: 'DELETE',
       }
@@ -114,6 +112,7 @@ export function MemberSettingsButton({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          pending: user.pending,
           role_title: data.role,
           role: data.accessLevel,
         } as User),
@@ -214,7 +213,6 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
-              disabled={user?.pending}
             />
 
             <Separator />
@@ -237,7 +235,6 @@ export function MemberSettingsButton({
                         { value: 'OWNER', label: 'Owner' },
                       ]}
                       classNames={{ root: 'w-full' }}
-                      disabled={user?.pending}
                     />
                   </FormControl>
                   <FormMessage />
@@ -247,7 +244,6 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
-              disabled={user?.pending}
             />
 
             <div className="flex gap-2">
@@ -256,11 +252,10 @@ export function MemberSettingsButton({
                 variant="destructive"
                 className="flex-none"
                 onClick={deleteMember}
-                disabled={user?.pending}
               >
-                Remove Member
+                {user.pending ? 'Revoke Invitation' : 'Remove Member'}
               </Button>
-              <Button type="submit" className="w-full" disabled={user?.pending}>
+              <Button type="submit" className="w-full">
                 Save changes
               </Button>
             </div>

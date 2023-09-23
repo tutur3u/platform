@@ -53,10 +53,6 @@ export default async function WorkspaceMembersPage({
           <MemberRoleMultiSelector />
         </div>
         <Separator className="my-4" />
-        {/* <PaginationIndicator
-          activePage={Number(page)}
-          itemsPerPage={Number(itemsPerPage)}
-        /> */}
 
         <div className="grid items-end gap-4 lg:grid-cols-2">
           <MemberList
@@ -85,6 +81,7 @@ const getMembers = async (
       }
     )
     .eq('ws_id', wsId)
+    .order('pending')
     .order('created_at', { ascending: false })
     .order('id', { ascending: true });
 
