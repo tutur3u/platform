@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 
 export interface NavLink {
   name: string;
@@ -11,6 +11,7 @@ export interface NavLink {
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
+  disableOnProduction?: boolean;
   requireRootWorkspace?: boolean;
   allowedPresets?: WorkspacePreset[];
   allowedRoles?: string[];
@@ -39,6 +40,9 @@ export function Navigation({
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
+
+        // If the link is disabled on production, don't render it
+        if (link?.disableOnProduction && PROD_MODE) return null;
 
         // If the link requires the root workspace, render accordingly
         if (link?.requireRootWorkspace && !isRootWorkspace) return null;
@@ -74,12 +78,16 @@ export function Navigation({
             )
             .filter(Boolean).length > 0;
 
+        const isDevOnly = link.disableOnProduction;
+
         return (
           <Link
             className={`${
               isActive
                 ? 'text-foreground border-foreground/10 bg-foreground/10'
                 : 'text-foreground/30 hover:text-foreground hover:border-foreground/5 hover:bg-foreground/5 border-transparent'
+            } ${
+              isDevOnly ? 'underline decoration-dashed underline-offset-4' : ''
             } rounded-full border px-3 py-1 transition duration-300`}
             href={link.href}
             key={link.name}

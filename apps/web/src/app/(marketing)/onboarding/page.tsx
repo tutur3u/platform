@@ -1,6 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import useTranslation from 'next-translate/useTranslation';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
@@ -10,14 +8,6 @@ import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
 export const dynamic = 'force-dynamic';
 
 export default async function OnboardingPage() {
-  const supabase = createServerComponentClient({ cookies });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
-
   const workspaces = await getWorkspaces();
   if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
 

@@ -56,7 +56,7 @@ export default async function Layout({
     {
       name: 'Inventory',
       href: `/${wsId}/inventory`,
-      disabled: true,
+      disableOnProduction: true,
     },
     {
       name: 'Healthcare',
@@ -67,7 +67,7 @@ export default async function Layout({
     {
       name: 'Finance',
       href: `/${wsId}/finance`,
-      disabled: true,
+      disableOnProduction: true,
     },
     {
       name: 'Settings',
