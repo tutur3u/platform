@@ -9,10 +9,10 @@ import { User as UserIcon } from 'lucide-react';
 import { getInitials } from '@/utils/name-helper';
 
 interface ChatProps {
-  userData: User;
+  user: User;
 }
 
-const Chat = ({ userData }: ChatProps) => {
+const Chat = ({ user }: ChatProps) => {
   const { messages, setMessages, input, setInput, handleSubmit } = useChat();
 
   const resetChat = () => {
@@ -34,12 +34,12 @@ const Chat = ({ userData }: ChatProps) => {
               {m.role === 'user' ? (
                 <Avatar>
                   <AvatarImage
-                    src={userData?.avatar_url || '/dark.png'}
+                    src={user?.avatar_url || '/dark.png'}
                     alt="Tuturuuu Logo"
                   />
                   <AvatarFallback className="font-semibold">
-                    {userData?.display_name ? (
-                      getInitials(userData.display_name)
+                    {user?.display_name ? (
+                      getInitials(user.display_name)
                     ) : (
                       <UserIcon className="h-5 w-5" />
                     )}

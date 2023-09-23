@@ -2,9 +2,10 @@ import { User } from '@/types/primitives/User';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { Database } from '@/types/supabase';
 
 export async function getCurrentSupabaseUser() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
@@ -14,7 +15,7 @@ export async function getCurrentSupabaseUser() {
 }
 
 export async function getCurrentUser() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
