@@ -15,8 +15,8 @@ import {
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
 import {
+  ActivitySquare,
   Globe,
-  LifeBuoy,
   Moon,
   Palette,
   Settings,
@@ -58,6 +58,19 @@ export async function UserNav({ wsId }: Props) {
             </p>
           </div>
         </DropdownMenuLabel>
+        {wsId === undefined && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <Link href="/onboarding">
+                <DropdownMenuItem className="cursor-pointer">
+                  <ActivitySquare className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuGroup>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>
@@ -67,15 +80,15 @@ export async function UserNav({ wsId }: Props) {
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled>
                   <Sun className="mr-2 h-4 w-4" />
                   <span>Light</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <Moon className="mr-2 h-4 w-4" />
                   <span>Dark</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled>
                   <Sparkle className="mr-2 h-4 w-4" />
                   <span>Automatic</span>
                 </DropdownMenuItem>
@@ -89,35 +102,39 @@ export async function UserNav({ wsId }: Props) {
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
-                <DropdownMenuItem>English</DropdownMenuItem>
-                <DropdownMenuItem>Tiếng Việt</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>Tiếng Việt</DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
+          <Link href="/settings/account">
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {wsId && (
+        {wsId !== undefined && (
           <>
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Link href={`/${wsId}/members`}>
+              <Link href={`/${wsId}/members`}>
+                <DropdownMenuItem className="cursor-pointer">
                   <UserPlus className="mr-2 h-4 w-4" />
                   <span>Invite users</span>
-                </Link>
-              </DropdownMenuItem>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem disabled>
+        {/* <DropdownMenuItem disabled>
           <LifeBuoy className="mr-2 h-4 w-4" />
           <span>Support</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
         <LogoutDropdownItem />
       </DropdownMenuContent>
     </DropdownMenu>
