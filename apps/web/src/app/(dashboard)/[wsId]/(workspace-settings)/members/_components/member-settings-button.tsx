@@ -31,7 +31,6 @@ import { SelectField } from '@/components/ui/custom/select-field';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { Workspace } from '@/types/primitives/Workspace';
-import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { User as UserIcon } from 'lucide-react';
@@ -39,7 +38,7 @@ import { User as UserIcon } from 'lucide-react';
 interface Props {
   workspace: Workspace;
   user: User;
-  currentUser: SupabaseUser | null;
+  currentUser: User;
 }
 
 const FormSchema = z.object({
@@ -213,10 +212,12 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
+              disabled={
+                currentUser.role === 'MEMBER' ||
+                (currentUser.role === 'ADMIN' && user.role === 'OWNER')
+              }
             />
-
             <Separator />
-
             <FormField
               control={form.control}
               name="accessLevel"
@@ -229,12 +230,26 @@ export function MemberSettingsButton({
                       placeholder="Select an access level"
                       defaultValue={field.value}
                       onValueChange={field.onChange}
-                      options={[
-                        { value: 'MEMBER', label: 'Member' },
-                        { value: 'ADMIN', label: 'Admin' },
-                        { value: 'OWNER', label: 'Owner' },
-                      ]}
+                      options={
+                        user.role === 'OWNER' || currentUser.role === 'OWNER'
+                          ? [
+                              { value: 'MEMBER', label: 'Member' },
+                              { value: 'ADMIN', label: 'Admin' },
+                              {
+                                value: 'OWNER',
+                                label: 'Owner',
+                              },
+                            ]
+                          : [
+                              { value: 'MEMBER', label: 'Member' },
+                              { value: 'ADMIN', label: 'Admin' },
+                            ]
+                      }
                       classNames={{ root: 'w-full' }}
+                      disabled={
+                        currentUser.role === 'MEMBER' ||
+                        (currentUser.role === 'ADMIN' && user.role === 'OWNER')
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -244,21 +259,32 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
+              disabled={currentUser.role === 'MEMBER'}
             />
+            {(currentUser.role === 'ADMIN' && user.role === 'OWNER') ||
+              ((currentUser.role !== 'MEMBER' ||
+                currentUser.id === user.id) && (
+                <div className="flex justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="flex-none"
+                    onClick={deleteMember}
+                  >
+                    {currentUser.id === user.id
+                      ? 'Leave Workspace'
+                      : user.pending
+                      ? 'Revoke Invitation'
+                      : 'Remove Member'}
+                  </Button>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="destructive"
-                className="flex-none"
-                onClick={deleteMember}
-              >
-                {user.pending ? 'Revoke Invitation' : 'Remove Member'}
-              </Button>
-              <Button type="submit" className="w-full">
-                Save changes
-              </Button>
-            </div>
+                  {currentUser.role === 'MEMBER' || (
+                    <Button type="submit" className="w-full">
+                      Save changes
+                    </Button>
+                  )}
+                </div>
+              ))}
           </form>
         </Form>
       </DialogContent>

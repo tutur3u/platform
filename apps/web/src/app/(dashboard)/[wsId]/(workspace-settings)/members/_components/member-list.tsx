@@ -6,10 +6,9 @@ import useTranslation from 'next-translate/useTranslation';
 import { getRoleColor } from '@/utils/color-helper';
 import { MemberSettingsButton } from './member-settings-button';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import InviteMemberButton from './invite-member-button';
 import { User as UserIcon } from 'lucide-react';
+import { getCurrentUser } from '@/lib/user-helper';
 
 interface Props {
   workspace: Workspace;
@@ -22,12 +21,8 @@ export default async function MemberList({
   members,
   invited,
 }: Props) {
-  const supabase = createServerComponentClient({ cookies });
-
   const { t, lang } = useTranslation('ws-members');
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!members || members.length === 0) {
     return (
@@ -37,6 +32,10 @@ export default async function MemberList({
         </p>
         <InviteMemberButton
           wsId={workspace.id}
+          currentUser={{
+            ...user,
+            role: workspace.role,
+          }}
           label={t('invite_member')}
           variant="outline"
         />
@@ -86,7 +85,7 @@ export default async function MemberList({
         <MemberSettingsButton
           workspace={workspace}
           user={member}
-          currentUser={user}
+          currentUser={{ ...user, role: workspace.role }}
         />
       </div>
 

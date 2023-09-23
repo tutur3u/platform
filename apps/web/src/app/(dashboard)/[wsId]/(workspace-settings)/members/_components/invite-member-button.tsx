@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation';
 
 interface Props {
   wsId: string;
+  currentUser: User;
   label?: string;
   variant?: 'outline';
 }
@@ -46,7 +47,12 @@ const FormSchema = z.object({
   accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
-export default function InviteMemberButton({ wsId, label, variant }: Props) {
+export default function InviteMemberButton({
+  wsId,
+  currentUser,
+  label,
+  variant,
+}: Props) {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -140,127 +146,152 @@ export default function InviteMemberButton({ wsId, label, variant }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        {user ? (
-          <>
-            <div className="flex items-center gap-2 rounded-md border p-4">
-              <Avatar>
-                <AvatarImage src={user?.avatar_url || undefined} />
-                <AvatarFallback className="font-semibold">
-                  {user?.display_name ? (
-                    getInitials(user.display_name)
-                  ) : (
-                    <UserIcon className="h-5 w-5" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
+        {currentUser?.role !== 'MEMBER' ? (
+          user ? (
+            <>
+              <div className="flex items-center justify-between gap-2 rounded-md border p-4">
+                <div className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage src={user?.avatar_url || undefined} />
+                    <AvatarFallback className="font-semibold">
+                      {user?.display_name ? (
+                        getInitials(user.display_name)
+                      ) : (
+                        <UserIcon className="h-5 w-5" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
 
-              <div className="flex-shrink space-y-1">
-                <p className="line-clamp-1 text-sm font-medium leading-none">
-                  {user?.display_name ? (
-                    user.display_name
-                  ) : (
-                    <span className="opacity-50">Unknown</span>
-                  )}{' '}
-                  {role ? (
-                    <span className="text-orange-300">({role})</span>
-                  ) : null}
-                </p>
+                  <div className="flex-shrink space-y-1">
+                    <p className="line-clamp-1 text-sm font-medium leading-none">
+                      {user?.display_name ? (
+                        user.display_name
+                      ) : (
+                        <span className="opacity-50">Unknown</span>
+                      )}{' '}
+                      {role ? (
+                        <span className="text-orange-300">({role})</span>
+                      ) : null}
+                    </p>
 
-                <p className="text-muted-foreground line-clamp-1 break-all text-sm">
-                  @{user?.handle || user?.id.replace(/-/g, '')}
-                  {user?.handle || user?.id.replace(/-/g, '')}
-                </p>
-              </div>
-
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setUser(undefined);
-                }}
-              >
-                Change
-              </Button>
-            </div>
-
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(inviteMember)}
-                className="space-y-3"
-              >
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Workspace Role</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Graphic Designer, Marketing Manager, etc."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        The role of the member in the workspace is only for
-                        display purposes and does not affect workspace
-                        permissions.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                  disabled={user?.pending}
-                />
-
-                <Separator />
-
-                <FormField
-                  control={form.control}
-                  name="accessLevel"
-                  render={({ field }) => (
-                    <FormItem className="w-full">
-                      <FormLabel>Access Level</FormLabel>
-                      <FormControl>
-                        <SelectField
-                          id="access-level"
-                          placeholder="Select an access level"
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          options={[
-                            { value: 'MEMBER', label: 'Member' },
-                            { value: 'ADMIN', label: 'Admin' },
-                            { value: 'OWNER', label: 'Owner' },
-                          ]}
-                          classNames={{ root: 'w-full' }}
-                          disabled={user?.pending}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        This will affect the member&apos;s permissions in the
-                        workspace.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                  disabled={user?.pending}
-                />
+                    <p className="text-muted-foreground line-clamp-1 break-all text-sm">
+                      @{user?.handle || user?.id.replace(/-/g, '')}
+                    </p>
+                  </div>
+                </div>
 
                 <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={user?.pending || !user}
+                  variant="secondary"
+                  onClick={() => {
+                    setUser(undefined);
+                  }}
                 >
-                  Invite Member
+                  Change
                 </Button>
-              </form>
-            </Form>
-          </>
+              </div>
+
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(inviteMember)}
+                  className="space-y-3"
+                >
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Workspace Role</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Graphic Designer, Marketing Manager, etc."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <FormDescription>
+                          The role of the member in the workspace is only for
+                          display purposes and does not affect workspace
+                          permissions.
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                    disabled={
+                      currentUser.role === 'ADMIN' && user.role === 'OWNER'
+                    }
+                  />
+
+                  <Separator />
+
+                  <FormField
+                    control={form.control}
+                    name="accessLevel"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Access Level</FormLabel>
+                        <FormControl>
+                          <SelectField
+                            id="access-level"
+                            placeholder="Select an access level"
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            options={
+                              user.role === 'OWNER' ||
+                              currentUser.role === 'OWNER'
+                                ? [
+                                    { value: 'MEMBER', label: 'Member' },
+                                    { value: 'ADMIN', label: 'Admin' },
+                                    {
+                                      value: 'OWNER',
+                                      label: 'Owner',
+                                    },
+                                  ]
+                                : [
+                                    { value: 'MEMBER', label: 'Member' },
+                                    { value: 'ADMIN', label: 'Admin' },
+                                  ]
+                            }
+                            classNames={{ root: 'w-full' }}
+                            disabled={
+                              currentUser.role === 'MEMBER' ||
+                              (currentUser.role === 'ADMIN' &&
+                                user.role === 'OWNER')
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <FormDescription>
+                          This will affect the member&apos;s permissions in the
+                          workspace.
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={user?.pending || !user}
+                  >
+                    Invite Member
+                  </Button>
+                </form>
+              </Form>
+            </>
+          ) : (
+            <UserSearchCombobox
+              query={query}
+              user={user}
+              users={users}
+              setUser={setUser}
+              setQuery={setQuery}
+            />
+          )
         ) : (
-          <UserSearchCombobox
-            query={query}
-            user={user}
-            users={users}
-            setUser={setUser}
-            setQuery={setQuery}
-          />
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
+            <p className="text-muted-foreground text-center">
+              You must be an admin or higher to invite members.
+            </p>
+          </div>
         )}
       </DialogContent>
     </Dialog>

@@ -5,7 +5,5 @@ export async function StaffToolbar() {
   const user = await getCurrentSupabaseUser();
   const isEmployee = user?.email?.endsWith('@tuturuuu.com');
 
-  console.log('isEmployee', isEmployee);
-
   return isEmployee ? <VercelToolbar /> : null;
 }
