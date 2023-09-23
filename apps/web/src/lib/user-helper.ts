@@ -3,6 +3,16 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
+export async function getCurrentSupabaseUser() {
+  const supabase = createServerComponentClient({ cookies });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user;
+}
+
 export async function getCurrentUser() {
   const supabase = createServerComponentClient({ cookies });
 
