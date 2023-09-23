@@ -4,9 +4,10 @@ import {
   createServerComponentClient,
 } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
-import { getInitials } from '../../../utils/name-helper';
+import { getInitials } from '../../../../utils/name-helper';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +51,7 @@ export default async function UserProfilePage({ params: { handle } }: Props) {
   // };
 
   return (
-    <div className="absolute inset-0 top-[4.5rem] flex h-full w-full flex-col border-zinc-800 md:static">
+    <div className="mt-14 flex h-full w-full flex-col border-zinc-800">
       <div className="relative flex h-64 items-center justify-center">
         <div className="m-4 max-h-64 w-full overflow-hidden rounded-lg md:mt-14">
           <Image
@@ -68,7 +69,13 @@ export default async function UserProfilePage({ params: { handle } }: Props) {
               src={user.avatar_url}
               alt={user?.handle || user?.display_name}
             />
-            <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
+            <AvatarFallback className="font-semibold">
+              {user?.display_name ? (
+                getInitials(user.display_name)
+              ) : (
+                <User className="h-5 w-5" />
+              )}
+            </AvatarFallback>
           </Avatar>
           <div className="text-3xl font-bold text-zinc-300">
             {user.display_name}

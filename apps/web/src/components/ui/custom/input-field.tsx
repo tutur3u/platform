@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 
 interface InputFieldProps {
   id: string;
-  label: string;
+  label?: string;
   placeholder?: string;
 }
 
@@ -17,8 +17,8 @@ type Props = InputFieldProps & InputProps;
 const InputField = forwardRef<HTMLInputElement, Props>(
   ({ id, label, ...props }, ref) => {
     return (
-      <div className="grid gap-2">
-        <Label htmlFor={id}>{label}</Label>
+      <div className="grid w-full gap-2">
+        {label && <Label htmlFor={id}>{label}</Label>}
         <Input id={id} ref={ref} {...props} />
       </div>
     );

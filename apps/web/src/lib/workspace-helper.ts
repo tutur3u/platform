@@ -3,11 +3,12 @@ import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Workspace } from '@/types/primitives/Workspace';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { Database } from '@/types/supabase';
 
 export async function getWorkspace(id?: string) {
   if (!id) notFound();
 
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
@@ -34,7 +35,7 @@ export async function getWorkspace(id?: string) {
 }
 
 export async function getWorkspaces() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
@@ -51,6 +52,31 @@ export async function getWorkspaces() {
 
   return data as Workspace[];
 }
+
+export async function getWorkspaceInvites() {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  const { data, error } = await supabase
+    .from('workspace_invites')
+    .select('workspaces(id, name), created_at')
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+
+  const workspaces = data.map(({ workspaces, created_at }) => ({
+    ...workspaces,
+    created_at,
+  }));
+
+  return workspaces as Workspace[];
+}
+
 export function enforceRootWorkspace(
   wsId: string,
   options: {
@@ -73,7 +99,7 @@ export async function enforceRootWorkspaceAdmin(
 ) {
   enforceRootWorkspace(wsId, options);
 
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },

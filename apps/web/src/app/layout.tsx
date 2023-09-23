@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import '../styles/globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { StaffToolbar } from './staff-toolbar';
 
 export const metadata = {
   title: 'Tuturuuu',
@@ -15,8 +17,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body>
-        <main className="min-h-screen">{children}</main>
-        <Toaster />
+        <div className="min-h-screen">{children}</div>
+
+        <Suspense>
+          <StaffToolbar />
+        </Suspense>
+        <Suspense>
+          <Toaster />
+        </Suspense>
       </body>
     </html>
   );

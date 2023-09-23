@@ -31,14 +31,14 @@ import { SelectField } from '@/components/ui/custom/select-field';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { Workspace } from '@/types/primitives/Workspace';
-import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { User as UserIcon } from 'lucide-react';
 
 interface Props {
   workspace: Workspace;
   user: User;
-  currentUser: SupabaseUser | null;
+  currentUser: User;
 }
 
 const FormSchema = z.object({
@@ -70,9 +70,7 @@ export function MemberSettingsButton({
     const invited = user?.pending;
 
     const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}${
-        invited ? '?invited=true' : ''
-      }`,
+      `/api/workspaces/${ws.id}/members/${user.id}`,
       {
         method: 'DELETE',
       }
@@ -113,6 +111,7 @@ export function MemberSettingsButton({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          pending: user.pending,
           role_title: data.role,
           role: data.accessLevel,
         } as User),
@@ -165,7 +164,11 @@ export function MemberSettingsButton({
           <Avatar>
             <AvatarImage src={user?.avatar_url || undefined} />
             <AvatarFallback className="font-semibold">
-              {getInitials(user?.display_name || '?')}
+              {user?.display_name ? (
+                getInitials(user.display_name)
+              ) : (
+                <UserIcon className="h-5 w-5" />
+              )}
             </AvatarFallback>
           </Avatar>
 
@@ -180,7 +183,9 @@ export function MemberSettingsButton({
             </p>
 
             <p className="text-muted-foreground line-clamp-1 text-sm">
-              @{user.handle || user.id.replace(/-/g, '')}
+              {user?.handle
+                ? `@${user.handle}`
+                : user?.email ?? `@${user?.id?.replace(/-/g, '')}`}
             </p>
           </div>
         </div>
@@ -209,11 +214,12 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
-              disabled={user?.pending}
+              disabled={
+                currentUser.role === 'MEMBER' ||
+                (currentUser.role === 'ADMIN' && user.role === 'OWNER')
+              }
             />
-
             <Separator />
-
             <FormField
               control={form.control}
               name="accessLevel"
@@ -226,13 +232,26 @@ export function MemberSettingsButton({
                       placeholder="Select an access level"
                       defaultValue={field.value}
                       onValueChange={field.onChange}
-                      options={[
-                        { value: 'MEMBER', label: 'Member' },
-                        { value: 'ADMIN', label: 'Admin' },
-                        { value: 'OWNER', label: 'Owner' },
-                      ]}
+                      options={
+                        user.role === 'OWNER' || currentUser.role === 'OWNER'
+                          ? [
+                              { value: 'MEMBER', label: 'Member' },
+                              { value: 'ADMIN', label: 'Admin' },
+                              {
+                                value: 'OWNER',
+                                label: 'Owner',
+                              },
+                            ]
+                          : [
+                              { value: 'MEMBER', label: 'Member' },
+                              { value: 'ADMIN', label: 'Admin' },
+                            ]
+                      }
                       classNames={{ root: 'w-full' }}
-                      disabled={user?.pending}
+                      disabled={
+                        currentUser.role === 'MEMBER' ||
+                        (currentUser.role === 'ADMIN' && user.role === 'OWNER')
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -242,23 +261,32 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
-              disabled={user?.pending}
+              disabled={currentUser.role === 'MEMBER'}
             />
+            {(currentUser.role === 'ADMIN' && user.role === 'OWNER') ||
+              ((currentUser.role !== 'MEMBER' ||
+                currentUser.id === user.id) && (
+                <div className="flex justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="flex-none"
+                    onClick={deleteMember}
+                  >
+                    {currentUser.id === user.id
+                      ? 'Leave Workspace'
+                      : user.pending
+                      ? 'Revoke Invitation'
+                      : 'Remove Member'}
+                  </Button>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="destructive"
-                className="flex-none"
-                onClick={deleteMember}
-                disabled={user?.pending}
-              >
-                Remove Member
-              </Button>
-              <Button type="submit" className="w-full" disabled={user?.pending}>
-                Save changes
-              </Button>
-            </div>
+                  {currentUser.role === 'MEMBER' || (
+                    <Button type="submit" className="w-full">
+                      Save changes
+                    </Button>
+                  )}
+                </div>
+              ))}
           </form>
         </Form>
       </DialogContent>

@@ -6,7 +6,7 @@ export interface User {
   new_email?: string | null;
   phone?: string | null;
   handle?: string | null;
-  display_name?: string | null;
+  display_name?: string;
   avatar_url?: string | null;
   birthday?: string | null;
   pending?: boolean;

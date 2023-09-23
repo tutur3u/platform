@@ -13,7 +13,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="relative w-full">
       <Navbar />
-      {children}
+      <div className="min-h-screen">{children}</div>
       <Footer />
     </div>
   );

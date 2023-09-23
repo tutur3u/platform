@@ -6,9 +6,9 @@ import useTranslation from 'next-translate/useTranslation';
 import { getRoleColor } from '@/utils/color-helper';
 import { MemberSettingsButton } from './member-settings-button';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import InviteMemberButton from './invite-member-button';
+import { User as UserIcon } from 'lucide-react';
+import { getCurrentUser } from '@/lib/user-helper';
 
 interface Props {
   workspace: Workspace;
@@ -21,12 +21,8 @@ export default async function MemberList({
   members,
   invited,
 }: Props) {
-  const supabase = createServerComponentClient({ cookies });
-
   const { t, lang } = useTranslation('ws-members');
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!members || members.length === 0) {
     return (
@@ -34,7 +30,15 @@ export default async function MemberList({
         <p className="text-center text-zinc-500 dark:text-zinc-400">
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
-        <InviteMemberButton wsId={workspace.id} label={t('invite_member')} />
+        <InviteMemberButton
+          wsId={workspace.id}
+          currentUser={{
+            ...user,
+            role: workspace.role,
+          }}
+          label={t('invite_member')}
+          variant="outline"
+        />
       </div>
     );
   }
@@ -52,7 +56,11 @@ export default async function MemberList({
         <Avatar>
           <AvatarImage src={member?.avatar_url ?? undefined} />
           <AvatarFallback className="font-semibold">
-            {getInitials(member?.display_name || '?')}
+            {member?.display_name ? (
+              getInitials(member.display_name)
+            ) : (
+              <UserIcon className="h-5 w-5" />
+            )}
           </AvatarFallback>
         </Avatar>
 
@@ -68,7 +76,9 @@ export default async function MemberList({
             ) : null}
           </p>
           <p className="text-muted-foreground text-sm font-semibold">
-            @{member.handle || member.id.replace(/-/g, '')}
+            {member?.handle
+              ? `@${member.handle}`
+              : member?.email ?? `@${member?.id?.replace(/-/g, '')}`}
           </p>
         </div>
       </div>
@@ -77,7 +87,7 @@ export default async function MemberList({
         <MemberSettingsButton
           workspace={workspace}
           user={member}
-          currentUser={user}
+          currentUser={{ ...user, role: workspace.role }}
         />
       </div>
 

@@ -8,6 +8,7 @@ import { getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
+import { getCurrentUser } from '@/lib/user-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export default async function WorkspaceMembersPage({
   searchParams,
 }: Props) {
   const ws = await getWorkspace(wsId);
+  const user = await getCurrentUser();
   const members = await getMembers(wsId, searchParams);
 
   const { t } = useTranslation('ws-members');
@@ -42,7 +44,14 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <InviteMemberButton wsId={wsId} label={inviteLabel} />
+          <InviteMemberButton
+            wsId={wsId}
+            currentUser={{
+              ...user,
+              role: ws.role,
+            }}
+            label={inviteLabel}
+          />
           <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
@@ -53,10 +62,6 @@ export default async function WorkspaceMembersPage({
           <MemberRoleMultiSelector />
         </div>
         <Separator className="my-4" />
-        {/* <PaginationIndicator
-          activePage={Number(page)}
-          itemsPerPage={Number(itemsPerPage)}
-        /> */}
 
         <div className="grid items-end gap-4 lg:grid-cols-2">
           <MemberList
@@ -79,12 +84,13 @@ const getMembers = async (
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, display_name, avatar_url, pending, role, role_title, created_at',
+      'id, handle, email, display_name, avatar_url, pending, role, role_title, created_at',
       {
         count: 'exact',
       }
     )
     .eq('ws_id', wsId)
+    .order('pending')
     .order('created_at', { ascending: false })
     .order('id', { ascending: true });
 

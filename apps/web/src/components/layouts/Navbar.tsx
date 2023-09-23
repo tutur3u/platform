@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import LogoutButton from '../LogoutButton';
+import NotificationPopover from '@/app/(dashboard)/[wsId]/_components/notification-popover';
+import { UserNav } from '@/app/(dashboard)/[wsId]/_components/user-nav';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +15,6 @@ const Navbar = async () => {
   } = await supabase.auth.getUser();
 
   const getStarted = 'Get started';
-
-  // const [opened, setOpened] = useState(false);
-
-  // const toggle = () => setOpened((o) => !o);
-  // const close = () => setOpened(false);
 
   return (
     <nav className="border-foreground/10 bg-background/80 fixed inset-x-0 top-0 z-10 flex items-center justify-between border-b px-4 py-2 font-semibold backdrop-blur-lg md:px-32 lg:px-64">
@@ -37,13 +33,9 @@ const Navbar = async () => {
 
       <>
         {user ? (
-          <div className="grid text-right">
-            <div className="opacity-50">{user.email}</div>
-            <div className="flex gap-2">
-              <Link href="/onboarding">Dashboard</Link>
-              <Link href="/settings/account">Settings</Link>
-              <LogoutButton />
-            </div>
+          <div className="flex items-center gap-2">
+            <NotificationPopover />
+            <UserNav />
           </div>
         ) : (
           <Link
@@ -53,40 +45,6 @@ const Navbar = async () => {
             {getStarted}
           </Link>
         )}
-
-        {/* <Popover
-            opened={opened}
-            onChange={setOpened}
-            width={200}
-            offset={8}
-            position="top-end"
-          >
-            <Popover.Target>
-              <button
-                className="rounded p-1 hover:bg-zinc-300/10 md:hidden"
-                onClick={toggle}
-              >
-                <Bars3Icon className="h-6 w-6" />
-              </button>
-            </Popover.Target>
-
-            <Popover.Dropdown className="grid gap-2 p-2">
-              <Link
-                href="/login"
-                onClick={close}
-                className="rounded border border-zinc-300/10 bg-zinc-300/10 p-2 text-center font-semibold transition hover:bg-zinc-300/20"
-              >
-                {login}
-              </Link>
-              <Link
-                href="/signup"
-                onClick={close}
-                className="rounded border border-blue-300/20 bg-blue-300/20 p-2 text-center font-semibold text-blue-300 transition hover:bg-blue-300/30"
-              >
-                {getStarted}
-              </Link>
-            </Popover.Dropdown>
-          </Popover> */}
       </>
     </nav>
   );
