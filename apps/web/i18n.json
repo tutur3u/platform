@@ -2,7 +2,7 @@
   "locales": ["en", "vi"],
   "defaultLocale": "en",
   "pages": {
-    "*": ["common"],
+    "*": ["common", "notifications"],
     "/": ["home"],
 
     "/logout": ["logout"],
@@ -493,11 +493,6 @@
       "infrastructure-tabs"
     ],
 
-    "/(dashboard)/[wsId]/(workspace-settings)/migrations": ["sidebar-tabs"],
-    "/(dashboard)/[wsId]/notifications": [
-      "notifications",
-      "sidebar-tabs",
-      "invite"
-    ]
+    "/(dashboard)/[wsId]/(workspace-settings)/migrations": ["sidebar-tabs"]
   }
 }

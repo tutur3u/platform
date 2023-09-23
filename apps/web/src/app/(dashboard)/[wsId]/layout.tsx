@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import WorkspaceSelect from './_components/workspace-select';
 import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
 import { UserNav } from './_components/user-nav';
+import NotificationPopover from './_components/notification-popover';
 
 interface LayoutProps {
   params: {
@@ -43,28 +44,29 @@ export default async function Layout({
       name: 'Documents',
       href: `/${wsId}/documents`,
       allowedPresets: ['ALL'],
+      disabled: true,
     },
     {
       name: 'Boards',
       href: `/${wsId}/boards`,
       allowedPresets: ['ALL'],
+      disabled: true,
     },
     {
       name: 'Inventory',
       href: `/${wsId}/inventory`,
+      disabled: true,
     },
     {
       name: 'Healthcare',
       href: `/${wsId}/healthcare`,
       allowedPresets: ['ALL', 'PHARMACY'],
+      disabled: true,
     },
     {
       name: 'Finance',
       href: `/${wsId}/finance`,
-    },
-    {
-      name: 'Notifications',
-      href: `/${wsId}/notifications`,
+      disabled: true,
     },
     {
       name: 'Settings',
@@ -100,7 +102,10 @@ export default async function Layout({
             </Suspense>
           </div>
 
-          <UserNav />
+          <div className="flex items-center gap-2">
+            <NotificationPopover />
+            <UserNav wsId={wsId} />
+          </div>
         </div>
 
         <div className="flex gap-1 overflow-x-auto">
