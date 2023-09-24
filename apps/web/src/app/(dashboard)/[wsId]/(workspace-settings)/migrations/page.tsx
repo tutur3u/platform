@@ -141,7 +141,7 @@ export default function PlatformMigrationsPage() {
     resetData(module);
 
     const externalUrl = `${apiEndpoint}${externalPath}`;
-    const chunkSize = 100;
+    const chunkSize = 1000;
 
     // Initialize external variables
     let externalCount = -1;

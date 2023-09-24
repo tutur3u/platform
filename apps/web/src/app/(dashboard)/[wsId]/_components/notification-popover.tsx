@@ -34,14 +34,14 @@ export default async function NotificationPopover() {
     ),
     actions: [
       {
-        label: 'Accept',
-        type: 'WORKSPACE_INVITE_ACCEPT',
-        payload: { wsId: invite.id },
-      },
-      {
         label: 'Decline',
         variant: 'outline',
         type: 'WORKSPACE_INVITE_DECLINE',
+        payload: { wsId: invite.id },
+      },
+      {
+        label: 'Accept',
+        type: 'WORKSPACE_INVITE_ACCEPT',
         payload: { wsId: invite.id },
       },
     ] as NotificationAction[],
@@ -59,7 +59,7 @@ export default async function NotificationPopover() {
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-full md:w-96">
         <div className="font-semibold">
           Notifications
           {notifications.length > 0 && ` (${notifications.length})`}
@@ -70,17 +70,17 @@ export default async function NotificationPopover() {
             notifications.map((notification, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"
+                className="grid grid-cols-[25px_1fr] items-start pb-2 last:mb-0 last:pb-0"
               >
                 <span className="flex h-2 w-2 translate-y-1 rounded-full bg-sky-500" />
                 <div>
                   <p className="text-sm font-medium leading-none">
                     {notification.title}
                   </p>
-                  <p className="text-muted-foreground my-1 text-sm">
+                  <p className="text-muted-foreground mb-2 mt-1 text-sm">
                     {notification.description}
                   </p>
-                  <Separator className="mb-2" />
+
                   <NotificationActionList actions={notification.actions} />
                 </div>
               </div>

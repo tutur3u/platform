@@ -77,37 +77,37 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   // const totalIncome = t('finance-overview:total-income');
   // const totalExpense = t('finance-overview:total-expense');
 
-  const { count: checkups } = await supabase
-    .from('healthcare_checkups')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  // const { count: checkups } = await supabase
+  //   .from('healthcare_checkups')
+  //   .select('*', {
+  //     count: 'exact',
+  //     head: true,
+  //   })
+  //   .eq('ws_id', wsId);
 
-  const { count: diagnoses } = await supabase
-    .from('healthcare_diagnoses')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  // const { count: diagnoses } = await supabase
+  //   .from('healthcare_diagnoses')
+  //   .select('*', {
+  //     count: 'exact',
+  //     head: true,
+  //   })
+  //   .eq('ws_id', wsId);
 
-  const { count: vitals } = await supabase
-    .from('healthcare_vitals')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  // const { count: vitals } = await supabase
+  //   .from('healthcare_vitals')
+  //   .select('*', {
+  //     count: 'exact',
+  //     head: true,
+  //   })
+  //   .eq('ws_id', wsId);
 
-  const { count: groups } = await supabase
-    .from('healthcare_vital_groups')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  // const { count: groups } = await supabase
+  //   .from('healthcare_vital_groups')
+  //   .select('*', {
+  //     count: 'exact',
+  //     head: true,
+  //   })
+  //   .eq('ws_id', wsId);
 
   // const { data: workspaceProducts } = await supabase.rpc(
   //   'get_workspace_products_count',
@@ -255,7 +255,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         />
       </div> */}
 
-      {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
+      {/* {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
         <>
           <Separator className="mb-8 mt-4" />
           <div className="mb-2 text-2xl font-semibold">
@@ -288,7 +288,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
             />
           </div>
         </>
-      )}
+      )} */}
 
       {/* <Separator className="mb-8 mt-4" />
       <div className="mb-2 text-2xl font-semibold">

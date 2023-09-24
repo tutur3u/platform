@@ -68,7 +68,6 @@ export default function EmailInput({ oldEmail, newEmail }: Props) {
             : 'Email change has been reverted.',
       });
 
-      form.reset();
       router.refresh();
     } else {
       toast({
@@ -77,6 +76,7 @@ export default function EmailInput({ oldEmail, newEmail }: Props) {
       });
     }
 
+    form.reset();
     setSaving(false);
   }
 
