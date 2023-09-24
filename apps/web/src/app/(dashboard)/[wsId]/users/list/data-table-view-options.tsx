@@ -20,6 +20,10 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const isShowingAll = table
+    .getAllColumns()
+    .every((column) => column.getIsVisible());
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -53,6 +57,22 @@ export function DataTableViewOptions<TData>({
               </DropdownMenuCheckboxItem>
             );
           })}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>
+          <Button
+            className="w-full"
+            size="sm"
+            onClick={() => {
+              table
+                .getAllColumns()
+                .forEach((column) =>
+                  column.toggleVisibility(isShowingAll ? false : true)
+                );
+            }}
+          >
+            {isShowingAll ? 'Hide all' : 'Show all'}
+          </Button>
+        </DropdownMenuLabel>
       </DropdownMenuContent>
     </DropdownMenu>
   );
