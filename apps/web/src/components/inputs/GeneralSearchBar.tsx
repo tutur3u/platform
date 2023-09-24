@@ -6,8 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { debounce } from 'lodash';
+import { cn } from '@/lib/utils';
 
-const GeneralSearchBar = () => {
+interface Props {
+  beforeValueChange?: (value: string) => void;
+  className?: string;
+}
+
+const GeneralSearchBar = ({ beforeValueChange, className }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams()!;
@@ -37,12 +43,15 @@ const GeneralSearchBar = () => {
   const searchPlaceholder = t('search-placeholder');
 
   return (
-    <div className="grid w-full items-center gap-1.5">
+    <div className={cn('grid w-full items-center gap-1.5', className)}>
       <Label>{searchLabel}</Label>
       <Input
         placeholder={searchPlaceholder}
         defaultValue={searchParams.get('q') || ''}
-        onChange={(e) => updateQuery(e.target.value)}
+        onChange={(e) => {
+          if (beforeValueChange) beforeValueChange(e.target.value);
+          updateQuery(e.target.value);
+        }}
       />
     </div>
   );

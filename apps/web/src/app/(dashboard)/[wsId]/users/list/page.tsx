@@ -1,19 +1,18 @@
-import WorkspaceUserCard from '@/components/cards/WorkspaceUserCard';
-import PlusCardButton from '@/components/common/PlusCardButton';
-import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
+import { columns } from './columns';
+import { DataTable } from './data-table';
 
 interface Props {
   params: {
     wsId: string;
   };
   searchParams: {
-    q: string;
+    q?: string;
+    page?: string;
+    pageSize?: string;
   };
 }
 
@@ -21,62 +20,44 @@ export default async function WorkspaceUsersPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const users = await getUsers(wsId, searchParams);
-  const count = await getCount(wsId, searchParams);
-
-  return (
-    <div className="flex min-h-full w-full flex-col ">
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar />
-      </div>
-
-      <Separator className="my-4" />
-      <PaginationIndicator totalItems={count} />
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <PlusCardButton href={`/${wsId}/users/new`} />
-        {users.map((u) => (
-          <WorkspaceUserCard
-            key={u.id}
-            wsId={wsId}
-            user={u}
-            showAddress={true}
-            showGender={true}
-            showPhone={true}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  const { data: users, count } = await getUsers(wsId, searchParams);
+  return <DataTable data={users} columns={columns} count={count} />;
 }
 
-async function getUsers(wsId: string, { q }: { q: string }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
-
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  const { data } = await queryBuilder;
-  return data as WorkspaceUser[];
-}
-
-async function getCount(wsId: string, { q }: { q: string }) {
+async function getUsers(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
     .from('workspace_users')
     .select('*', {
       count: 'exact',
-      head: true,
     })
     .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
-  const { count } = await queryBuilder;
-  return count;
+  if (
+    page &&
+    pageSize &&
+    typeof page === 'string' &&
+    typeof pageSize === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: WorkspaceUser[]; count: number };
 }

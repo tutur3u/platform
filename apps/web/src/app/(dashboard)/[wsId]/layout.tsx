@@ -39,7 +39,7 @@ export default async function Layout({
     },
     {
       name: 'Users',
-      href: `/${wsId}/users`,
+      href: `/${wsId}/users/list`,
     },
     {
       name: 'Documents',
