@@ -144,6 +144,7 @@ export function DataTable<TData, TValue>({
       />
       <DataTablePagination
         table={table}
+        count={count}
         className="bg-foreground/5 fixed inset-x-0 bottom-0 border-t px-4 py-2 backdrop-blur-xl"
       />
     </div>

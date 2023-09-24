@@ -79,6 +79,9 @@ export function Navigation({
             .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;
+        const isRootOnly = link.requireRootWorkspace;
+
+        const notPublic = isDevOnly || isRootOnly;
 
         return (
           <Link
@@ -87,7 +90,7 @@ export function Navigation({
                 ? 'text-foreground border-foreground/10 bg-foreground/10'
                 : 'text-foreground/30 hover:text-foreground hover:border-foreground/5 hover:bg-foreground/5 border-transparent'
             } ${
-              isDevOnly ? 'underline decoration-dashed underline-offset-4' : ''
+              notPublic ? 'underline decoration-dashed underline-offset-4' : ''
             } rounded-full border px-3 py-1 transition duration-300`}
             href={link.href}
             key={link.name}
