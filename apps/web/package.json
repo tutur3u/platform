@@ -93,7 +93,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.279.0",
     "moment": "^2.29.4",
-    "next": "^13.5.2",
+    "next": "^13.5.3",
     "next-translate": "^2.5.3",
     "nextjs-google-analytics": "^2.3.3",
     "openai": "^4.10.0",
