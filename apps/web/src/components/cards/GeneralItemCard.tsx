@@ -1,3 +1,5 @@
+'use client';
+
 import { Divider } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';

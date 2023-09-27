@@ -31,19 +31,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   )
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -52,53 +52,53 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
   if (data.table_name === 'transaction_categories')
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.is_expense != null && (
-            <p>
+            <div>
               • {t('set_expense_type_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.is_expense ? t('expense') : t('income')}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -107,19 +107,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'UPDATE' &&
             data?.record?.is_expense != data?.old_record?.is_expense && (
-              <p>
+              <div>
                 • {t('change_expense_type_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.is_expense ? 'Chi phí' : 'Thu nhập'}
@@ -128,46 +128,46 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.is_expense ? 'Chi phí' : 'Thu nhập'}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
   if (data.table_name === 'healthcare_vitals')
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.unit != null && (
-            <p>
+            <div>
               • {t('set_unit_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.unit}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -176,19 +176,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'UPDATE' &&
             data?.record?.unit != data?.old_record?.unit && (
-              <p>
+              <div>
                 • {t('change_unit_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.unit}
@@ -197,64 +197,64 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.unit}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
   if (data.table_name === 'workspace_products')
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.manufacturer && (
-            <p>
+            <div>
               • {t('set_manufacturer_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.manufacturer}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.usage && (
-            <p>
+            <div>
               • {t('set_usage_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.usage}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.description && (
-            <p>
+            <div>
               • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.description}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -263,20 +263,20 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'UPDATE' &&
             (data?.record?.manufacturer || '') !=
               (data?.old_record?.manufacturer || '') && (
-              <p>
+              <div>
                 • {t('change_manufacturer_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.manufacturer}
@@ -285,12 +285,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.manufacturer}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             (data?.record?.usage || '') != (data?.old_record?.usage || '') && (
-              <p>
+              <div>
                 • {t('change_usage_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.usage}
@@ -299,13 +299,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.usage}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             (data?.record?.description || '') !=
               (data?.old_record?.description || '') && (
-              <p>
+              <div>
                 • {t('change_description_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.description}
@@ -314,18 +314,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.description}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
@@ -335,37 +335,37 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   )
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.note && (
-            <p>
+            <div>
               • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.note}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.description && (
-            <p>
+            <div>
               • {t('set_description_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.description}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -374,19 +374,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'UPDATE' &&
             (data?.record?.note || '') != (data?.old_record?.note || '') && (
-              <p>
+              <div>
                 • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.note}
@@ -395,13 +395,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.note}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             (data?.record?.description || '') !=
               (data?.old_record?.description || '') && (
-              <p>
+              <div>
                 • {t('change_description_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.description}
@@ -410,81 +410,81 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.description}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
   if (data.table_name === 'workspace_users')
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.note != null && (
-            <p>
+            <div>
               • {t('set_note_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.note}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.email != null && (
-            <p>
+            <div>
               • {t('set_email_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.email}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.phone != null && (
-            <p>
+            <div>
               • {t('set_phone_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.phone}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.gender != null && (
-            <p>
+            <div>
               • {t('set_gender_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.gender}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.address != null && (
-            <p>
+            <div>
               • {t('set_address_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.address}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.balance != null && (
-            <p>
+            <div>
               • {t('set_balance_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {Intl.NumberFormat(lang, {
@@ -492,48 +492,48 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                   currency: 'VND',
                 }).format(data.record.balance)}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.birthday != null && (
-            <p>
+            <div>
               • {t('set_birthday_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.birthday}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.guardian != null && (
-            <p>
+            <div>
               • {t('set_guardian_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.guardian}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.ethnicity != null && (
-            <p>
+            <div>
               • {t('set_ethnicity_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.ethnicity}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'INSERT' && data?.record?.national_id != null && (
-            <p>
+            <div>
               • {t('set_national_id_to')}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.national_id}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -542,19 +542,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ))}
 
           {data.op === 'UPDATE' &&
             (data?.record?.note || '') != (data?.old_record?.note || '') && (
-              <p>
+              <div>
                 • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.note}
@@ -563,12 +563,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.note}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.email != data?.old_record?.email && (
-              <p>
+              <div>
                 • {t('change_email_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.email}
@@ -577,12 +577,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.email}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.phone != data?.old_record?.phone && (
-              <p>
+              <div>
                 • {t('change_phone_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.phone}
@@ -591,12 +591,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.phone}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.gender != data?.old_record?.gender && (
-              <p>
+              <div>
                 • {t('change_gender_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.gender}
@@ -605,12 +605,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.gender}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.address != data?.old_record?.address && (
-              <p>
+              <div>
                 • {t('change_address_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.address}
@@ -619,12 +619,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.address}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.balance != data?.old_record?.balance && (
-              <p>
+              <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {Intl.NumberFormat(lang, {
@@ -639,12 +639,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     currency: 'VND',
                   }).format(data.record.balance)}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.birthday != data?.old_record?.birthday && (
-              <p>
+              <div>
                 • {t('change_birthday_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.birthday}
@@ -653,12 +653,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.birthday}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.guardian != data?.old_record?.guardian && (
-              <p>
+              <div>
                 • {t('change_guardian_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.guardian}
@@ -667,12 +667,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.guardian}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.ethnicity != data?.old_record?.ethnicity && (
-              <p>
+              <div>
                 • {t('change_ethnicity_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.ethnicity}
@@ -681,12 +681,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.ethnicity}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'UPDATE' &&
             data?.record?.national_id != data?.old_record?.national_id && (
-              <p>
+              <div>
                 • {t('change_national_id_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.national_id}
@@ -695,18 +695,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.email}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
@@ -716,34 +716,34 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         {data.op === 'INSERT' && (
           <>
             {data?.record?.name != null && (
-              <p>
+              <div>
                 • {t('set_wallet_name_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.type != null && (
-              <p>
+              <div>
                 • {t('set_wallet_type_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.type}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.currency != null && (
-              <p>
+              <div>
                 • {t('set_wallet_currency_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.currency}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.balance != null && (
-              <p>
+              <div>
                 • {t('set_wallet_balance_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {Intl.NumberFormat(lang, {
@@ -751,7 +751,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
                 </span>
-              </p>
+              </div>
             )}
           </>
         )}
@@ -759,7 +759,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
         {data.op === 'UPDATE' && (
           <>
             {(data?.record?.name || '') != (data?.old_record?.name || '') ? (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -768,18 +768,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 • {t('name')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.type != data?.old_record?.type && (
-              <p>
+              <div>
                 • {t('change_type_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.type}
@@ -788,11 +788,11 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.type}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.currency != data?.old_record?.currency && (
-              <p>
+              <div>
                 • {t('change_currency_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.currency}
@@ -801,11 +801,11 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.currency}
                 </span>
-              </p>
+              </div>
             )}
 
             {data?.record?.balance != data?.old_record?.balance && (
-              <p>
+              <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {Intl.NumberFormat(lang, {
@@ -820,23 +820,23 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
                 </span>
-              </p>
+              </div>
             )}
 
             {JSON.stringify(data?.record) ===
             JSON.stringify(data?.old_record) ? (
-              <p>• {t('no_changes')}</p>
+              <div>• {t('no_changes')}</div>
             ) : null}
           </>
         )}
 
         {data.op === 'DELETE' && data?.old_record?.name != null && (
-          <p>
+          <div>
             • {t('removed')}{' '}
             <span className="font-semibold text-zinc-700 dark:text-zinc-200">
               {data.old_record.name}
             </span>
-          </p>
+          </div>
         )}
       </div>
     );
@@ -844,19 +844,19 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'workspaces')
     return (
       <div className="flex flex-col rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-zinc-700 dark:text-zinc-400">
           {data.op === 'INSERT' && data?.record?.name != null && (
-            <p>
+            <div>
               • {t('set_name_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.record.name}
               </span>
-            </p>
+            </div>
           )}
 
           {data.op === 'UPDATE' &&
             (data?.record?.name || '') != (data?.old_record?.name || '') && (
-              <p>
+              <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.old_record.name}
@@ -865,18 +865,18 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                   {data.record.name}
                 </span>
-              </p>
+              </div>
             )}
 
           {data.op === 'DELETE' && data?.old_record?.name != null && (
-            <p>
+            <div>
               • {t('removed')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                 {data.old_record.name}
               </span>
-            </p>
+            </div>
           )}
-        </p>
+        </div>
       </div>
     );
 
@@ -894,7 +894,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           {user != null && (
             <>
               {data.op === 'INSERT' && (
-                <p>
+                <div>
                   •{' '}
                   {data.table_name === 'workspace_members'
                     ? t('added')
@@ -908,13 +908,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     {user?.handle ? `@${user.handle}` : t('no_handle')}
                   </span>
                   )
-                </p>
+                </div>
               )}
 
               {data.op === 'UPDATE' && (
                 <>
                   {data?.record?.role != data?.old_record?.role && (
-                    <p>
+                    <div>
                       • {t('change_role_from')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                         {t('ws-members:' + data.old_record.role.toLowerCase())}
@@ -923,12 +923,12 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                         {t('ws-members:' + data.record.role.toLowerCase())}
                       </span>
-                    </p>
+                    </div>
                   )}
 
                   {data?.record?.role_title != data?.old_record?.role_title &&
                     data?.record?.role_title != null && (
-                      <p>
+                      <div>
                         • {t('change_role_title_from')}{' '}
                         <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                           {data.old_record.role_title}
@@ -937,13 +937,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                         <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                           {data.record.role_title}
                         </span>
-                      </p>
+                      </div>
                     )}
                 </>
               )}
 
               {data.op === 'DELETE' && (
-                <p>
+                <div>
                   •{' '}
                   {data.table_name === 'workspace_members'
                     ? t('removed')
@@ -957,7 +957,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     {user?.handle ? `@${user.handle}` : t('no_handle')}
                   </span>
                   )
-                </p>
+                </div>
               )}
             </>
           )}

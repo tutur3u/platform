@@ -1,65 +1,54 @@
-import { ActionIcon, Divider } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
 import Image from 'next/image';
 import Link from 'next/link';
-import LanguageSelector from '../selectors/LanguageSelector';
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
-import { useAppearance } from '../../hooks/useAppearance';
+import { Separator } from '@/components/ui/separator';
+import useTranslation from 'next-translate/useTranslation';
+// import { MoonIcon, SunIcon } from "@heroicons/react/24/solid";
+// import { useAppearance } from "../../hooks/useAppearance";
 
-interface FooterProps {
-  hideSlogan?: boolean;
-}
+const Footer = () => {
+  const { t } = useTranslation('common');
+  // const { theme, changeTheme } = useAppearance();
 
-const Footer = ({ hideSlogan = false }: FooterProps) => {
-  const { t } = useTranslation();
-  const { theme, changeTheme } = useAppearance();
+  const maximize = t('maximize');
+  const productivity = t('productivity');
+  const minimize = t('minimize');
+  const stress = t('stress');
 
-  const maximize = t('common:maximize');
-  const productivity = t('common:productivity');
-  const minimize = t('common:minimize');
-  const stress = t('common:stress');
+  const getStarted = t('get-started');
+  const getStartedDesc = t('get-started-desc');
 
-  const getStarted = t('common:get-started');
-  const getStartedDesc = t('common:get-started-desc');
-
-  const copyright = t('common:copyright');
+  // const copyright = t("common:copyright");
 
   return (
     <div className="w-full text-center">
-      <Divider className="mb-8 border-zinc-500/30 dark:border-zinc-500/10" />
+      <Separator className="bg-foreground/5 mb-8" />
 
-      {hideSlogan || (
-        <>
-          <div className="flex flex-col items-center p-8">
-            <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
-              <span className="text-green-500 dark:text-green-300">
-                {maximize}
-              </span>{' '}
-              <span className="text-blue-500 dark:text-blue-300">
-                {productivity}
-              </span>
-              ,{' '}
-              <span className="text-orange-500 dark:text-orange-300">
-                {minimize}
-              </span>{' '}
-              <span className="text-red-500 dark:text-red-300">{stress}</span>.
-            </div>
+      <div className="flex flex-col items-center p-8">
+        <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
+          <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
+          <span className="text-blue-500 dark:text-blue-300">
+            {productivity}
+          </span>
+          ,{' '}
+          <span className="text-orange-500 dark:text-orange-300">
+            {minimize}
+          </span>{' '}
+          <span className="text-red-500 dark:text-red-300">{stress}</span>.
+        </div>
 
-            <div className="mt-2 text-zinc-700 dark:text-zinc-300 md:text-xl">
-              {getStartedDesc}
-            </div>
+        <div className="mt-2 text-zinc-700 dark:text-zinc-300 md:text-xl">
+          {getStartedDesc}
+        </div>
 
-            <Link
-              href="/signup"
-              className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
-            >
-              {getStarted}
-            </Link>
-          </div>
+        <Link
+          href="/login"
+          className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
+        >
+          {getStarted}
+        </Link>
+      </div>
 
-          <Divider className="my-8 w-full border-zinc-500/20 dark:border-zinc-300/10" />
-        </>
-      )}
+      <Separator className="bg-foreground/5 my-8" />
 
       <div className="flex flex-col items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
@@ -69,10 +58,10 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
           >
             <Image
               src="/media/logos/transparent.png"
-              width={320}
-              height={320}
+              width={64}
+              height={64}
               alt="logo"
-              className="w-12"
+              className="h-12 w-12"
             />
             <div className="text-4xl font-semibold">Tuturuuu</div>
           </Link>
@@ -80,7 +69,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
           <div className="flex gap-8">
             <Link
               href="https://www.facebook.com/Tuturuuu"
-              className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +82,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
             <Link
               href="https://twitter.com/tutur3u"
-              className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +95,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
             <Link
               href="https://github.com/Tutur3u"
-              className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +108,7 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
 
             <Link
               href="https://www.linkedin.com/company/Tuturuuu/"
-              className="fill-zinc-700/50 transition duration-300 hover:fill-zinc-700 dark:fill-zinc-200/40 dark:hover:fill-zinc-200"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -149,10 +138,10 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
             <div className="text-xl font-semibold">
               {t('common:developers')}
             </div>
-            <div>
+            <div className="opacity-50">
               <Link
-                href="https://github.com/tutur3u/tutur3u"
-                className="mt-2 block text-zinc-700 hover:text-zinc-500 dark:text-zinc-300 dark:hover:text-zinc-400"
+                href="https://github.com/tutur3u/rewise"
+                className="mt-2 block"
               >
                 {t('common:open-source')}
               </Link>
@@ -161,25 +150,25 @@ const Footer = ({ hideSlogan = false }: FooterProps) => {
         </div>
       </div>
 
-      <Divider className="mt-8 border-zinc-500/30 dark:border-zinc-500/10" />
+      <Separator className="bg-foreground/10 mt-8" />
 
-      <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center text-zinc-700 dark:text-zinc-400 md:flex-row md:px-32 xl:px-64">
-        <div>{copyright}</div>
+      <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center opacity-75 md:flex-row md:px-32 xl:px-64">
+        <div>Copyright © 2023 Tuturuuu LLC. All rights reserved.</div>
 
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <LanguageSelector fullWidthOnMobile />
           <ActionIcon
-            onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => changeTheme(theme === "dark" ? "light" : "dark")}
             className="border border-zinc-300 bg-transparent hover:bg-zinc-200 dark:border-zinc-300/10 dark:bg-[#25262b] dark:hover:bg-[#454751]/40"
             size="lg"
           >
-            {theme === 'dark' ? (
+            {theme === "dark" ? (
               <SunIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
             ) : (
               <MoonIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
             )}
           </ActionIcon>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -3,8 +3,8 @@ export interface AuditLog {
   record_id?: string | null;
   old_record_id?: string | null;
   op: Operation;
-  table_oid: number;
-  table_schema: string;
+  table_oid?: number;
+  table_schema?: string;
   table_name: string;
   record?: any;
   old_record?: any;

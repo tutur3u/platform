@@ -1,9 +1,11 @@
+'use client';
+
 import moment from 'moment';
 import { Workspace } from '../../types/primitives/Workspace';
 import useTranslation from 'next-translate/useTranslation';
-import { mutate } from 'swr';
-import { showNotification } from '@mantine/notifications';
 import 'moment/locale/vi';
+import { toast } from '../ui/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   ws: Workspace;
@@ -11,6 +13,7 @@ interface Props {
 }
 
 const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
+  const router = useRouter();
   const { t, lang } = useTranslation('invite');
 
   const creationDate = moment(ws?.created_at)
@@ -35,43 +38,42 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const declineInviteErrorMessage = t('invite:decline-invite-error-msg');
 
   const acceptInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
+    const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
       method: 'POST',
     });
 
     if (response.ok) {
-      mutate('/api/workspaces/invites');
-      mutate('/api/workspaces/current');
-      showNotification({
+      toast({
         title: acceptInviteSuccessTitle,
-        message: acceptInviteSuccessMessage,
+        description: acceptInviteSuccessMessage,
         color: 'teal',
       });
+      router.refresh();
     } else {
-      showNotification({
+      toast({
         title: acceptInviteErrorTitle,
-        message: acceptInviteErrorMessage,
+        description: acceptInviteErrorMessage,
         color: 'red',
       });
     }
   };
 
   const declineInvite = async (ws: Workspace) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/invites`, {
-      method: 'DELETE',
+    const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
+      method: 'POST',
     });
 
     if (response.ok) {
-      mutate('/api/workspaces/invites');
-      showNotification({
+      toast({
         title: declineInviteSuccessTitle,
-        message: declineInviteSuccessMessage,
+        description: declineInviteSuccessMessage,
         color: 'teal',
       });
+      router.refresh();
     } else {
-      showNotification({
+      toast({
         title: declineInviteErrorTitle,
-        message: declineInviteErrorMessage,
+        description: declineInviteErrorMessage,
         color: 'red',
       });
     }

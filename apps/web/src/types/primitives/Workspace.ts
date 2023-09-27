@@ -8,5 +8,5 @@ export interface Workspace {
   role?: UserRole;
   preset?: WorkspacePreset;
   sort_key?: number;
-  created_at?: string;
+  created_at?: string | null;
 }

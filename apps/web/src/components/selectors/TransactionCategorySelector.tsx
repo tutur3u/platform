@@ -1,11 +1,13 @@
+'use client';
+
 import { Select } from '@mantine/core';
 import { TransactionCategory } from '../../types/primitives/TransactionCategory';
 import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { useRouter } from 'next/router';
 import { showNotification } from '@mantine/notifications';
 import useTranslation from 'next-translate/useTranslation';
+import { useParams } from 'next/navigation';
 
 interface Props {
   categoryId?: string | null;
@@ -46,9 +48,8 @@ const TransactionCategorySelector = ({
   searchable = true,
   creatable = true,
 }: Props) => {
-  const {
-    query: { categoryId },
-  } = useRouter();
+  const params = useParams();
+  const categoryId = params?.categoryId;
 
   const { ws } = useWorkspaces();
 

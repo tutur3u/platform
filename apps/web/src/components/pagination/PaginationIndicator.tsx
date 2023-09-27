@@ -1,20 +1,17 @@
+'use client';
+
 import { Pagination } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  totalItems: number | undefined;
-  activePage: number;
-  setActivePage: (page: number) => void;
-  itemsPerPage: number;
+  totalItems: number | null;
 }
 
-const PaginationIndicator = ({
-  totalItems,
-  activePage,
-  setActivePage,
-  itemsPerPage,
-}: Props) => {
+export default function PaginationIndicator({ totalItems }: Props) {
   const { t } = useTranslation('pagination');
+
+  const activePage = 1;
+  const itemsPerPage = 15;
 
   const totalPages = Math.ceil((totalItems || 0) / itemsPerPage);
 
@@ -50,12 +47,10 @@ const PaginationIndicator = ({
 
       <Pagination
         value={activePage}
-        onChange={setActivePage}
+        // onChange={setActivePage}
         total={totalPages}
         noWrap
       />
     </div>
   );
-};
-
-export default PaginationIndicator;
+}

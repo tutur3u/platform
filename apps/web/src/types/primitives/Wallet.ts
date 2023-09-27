@@ -9,6 +9,6 @@ export interface Wallet {
   report_opt_in?: boolean;
   limit?: number | null;
   type?: string;
-  created_at?: Date;
+  created_at?: string;
   project_id?: string;
 }

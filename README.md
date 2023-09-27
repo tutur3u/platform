@@ -100,13 +100,13 @@ If you want to have the same procedure without the backup, you can run `pnpm dev
 
 #### Local development
 
-There are 5 seed accounts that are already set up on running the local development stack (formatted as email:password):
+There are 5 seed accounts that are already set up for local development:
 
-1. <local@tuturuuu.com>:password123
-2. <user1@tuturuuu.com>:password123
-3. <user2@tuturuuu.com>:password123
-4. <user3@tuturuuu.com>:password123
-5. <user4@tuturuuu.com>:password123
+1. <local@tuturuuu.com>
+2. <user1@tuturuuu.com>
+3. <user2@tuturuuu.com>
+4. <user3@tuturuuu.com>
+5. <user4@tuturuuu.com>
 
 ### Test
 

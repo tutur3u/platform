@@ -6,15 +6,11 @@
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
     "SUPABASE_SERVICE_KEY",
-    "NEXT_PUBLIC_AUTH_COOKIE_DOMAIN",
+    "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
     "BASE_URL",
-    "AUTH_URL",
     "API_URL",
-    "NODE_ENV",
-    "DEPLOYMENT_ENVIRONMENT",
-    "NEXT_PUBLIC_DEFAULT_DISPLAY_NAME",
-    "NEXT_PUBLIC_DEFAULT_USERNAME"
+    "NODE_ENV"
   ],
   "pipeline": {
     "build": {
@@ -23,13 +19,9 @@
     },
     "lint": {},
     "test": {},
-    "check-types": {},
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "clean": {
-      "cache": false
     }
   }
 }

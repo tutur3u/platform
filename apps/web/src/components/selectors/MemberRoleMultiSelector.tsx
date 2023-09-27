@@ -1,26 +1,56 @@
-import { UserCircleIcon } from '@heroicons/react/24/solid';
-import { MultiSelect } from '@mantine/core';
+'use client';
+
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { useCallback } from 'react';
+import { Label } from '../ui/label';
 
 interface Props {
-  roles: string[];
-  setRoles: (roles: string[]) => void;
-  className?: string;
   disabled?: boolean;
 }
 
-const MemberRoleMultiSelector = ({
-  roles,
-  setRoles,
-  className,
-  disabled,
-}: Props) => {
+export default function MemberRoleMultiSelector({ disabled }: Props) {
   const { t } = useTranslation('member-roles');
 
-  const data = [
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams()!;
+
+  // Get a new searchParams string by merging the current
+  // searchParams with a provided key/value pair
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams);
+
+      if (value) params.set(name, value);
+      else params.delete(name);
+
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  const roles = searchParams.get('roles') || 'ALL';
+
+  const setRole = useCallback(
+    (value: string) => {
+      const query = createQueryString('roles', value === 'ALL' ? '' : value);
+      router.push(`${pathname}?${query}`);
+    },
+    [createQueryString, pathname, router]
+  );
+
+  const options = [
     {
       label: t('common:all'),
-      value: '',
+      value: 'ALL',
       group: t('common:general'),
     },
     {
@@ -40,58 +70,21 @@ const MemberRoleMultiSelector = ({
     },
   ];
 
-  const handleIdsChange = (ids: string[]) => {
-    if (ids.length === 0) return setRoles(['']);
-
-    // Only allow either all, or multiple categories to be selected
-    if (ids[0] === '') {
-      if (ids.length === 1) {
-        // "All" is selected, so clear all other selections
-        setRoles(ids);
-        return;
-      }
-
-      // "All" is not selected, so remove it from the list
-      setRoles(ids.filter((id) => id !== ''));
-    } else if (ids.length > 1 && ids.includes('')) {
-      // Since "All" is selected, remove all other selections
-      setRoles(['']);
-    } else {
-      setRoles(ids);
-    }
-  };
-
   return (
-    <MultiSelect
-      label={t('roles')}
-      placeholder={t('select-roles')}
-      icon={<UserCircleIcon className="h-5" />}
-      data={data}
-      value={roles.length > 0 ? roles : ['']}
-      onChange={handleIdsChange}
-      className={className}
-      styles={{
-        item: {
-          // applies styles to selected item
-          '&[data-selected]': {
-            '&, &:hover': {
-              backgroundColor: '#6b686b',
-              color: '#fff',
-              fontWeight: 600,
-            },
-          },
-
-          // applies styles to hovered item
-          '&:hover': {
-            backgroundColor: '#454345',
-            color: '#fff',
-          },
-        },
-      }}
-      disabled={disabled}
-      searchable
-    />
+    <div className="grid w-full items-center gap-1.5">
+      <Label>{t('roles')}</Label>
+      <Select value={roles} onValueChange={setRole} disabled={disabled}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
-};
-
-export default MemberRoleMultiSelector;
+}
