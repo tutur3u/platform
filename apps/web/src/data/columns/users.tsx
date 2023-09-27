@@ -4,7 +4,6 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '../../app/(dashboard)/[wsId]/users/list/data-table-column-header';
-import { UserRowActions } from '../../components/row-actions/users';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import moment from 'moment';
 
@@ -35,7 +34,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="ID" />
     ),
-    cell: ({ row }) => <div>{row.getValue('id')}</div>,
+    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
@@ -189,8 +188,8 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   //     return value.includes(row.getValue(id));
   //   },
   // },
-  {
-    id: 'actions',
-    cell: ({ row }) => <UserRowActions row={row} />,
-  },
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => <UserRowActions row={row} />,
+  // },
 ];

@@ -24,7 +24,6 @@ export default async function Layout({
     {
       name: 'Groups',
       href: `/${wsId}/users/groups`,
-      disableOnProduction: true,
     },
     {
       name: 'Reports',
