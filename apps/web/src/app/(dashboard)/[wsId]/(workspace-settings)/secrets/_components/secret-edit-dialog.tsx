@@ -12,19 +12,19 @@ import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ApiConfig } from '@/types/primitives/ApiConfig';
-import ApiConfigForm, { ApiConfigFormSchema } from './api-config-form';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import SecretForm, { ApiConfigFormSchema } from './secret-form';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  data: ApiConfig;
+  data: WorkspaceSecret;
   trigger?: React.ReactNode;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   submitLabel?: string;
 }
 
-export default function ApiConfigEditDialog({
+export default function SecretEditDialog({
   data,
   trigger,
   open: externalOpen,
@@ -32,7 +32,7 @@ export default function ApiConfigEditDialog({
   submitLabel,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('ws-api-configs');
+  const { t } = useTranslation('ws-secrets');
 
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -42,8 +42,8 @@ export default function ApiConfigEditDialog({
   const handleSubmit = async (values: z.infer<typeof ApiConfigFormSchema>) => {
     const res = await fetch(
       data.id
-        ? `/api/workspaces/${data.ws_id}/api/configs/${data.id}`
-        : `/api/workspaces/${data.ws_id}/api/configs`,
+        ? `/api/workspaces/${data.ws_id}/secrets/${data.id}`
+        : `/api/workspaces/${data.ws_id}/secrets`,
       {
         method: data.id ? 'PUT' : 'POST',
         body: JSON.stringify(values),
@@ -56,7 +56,7 @@ export default function ApiConfigEditDialog({
     } else {
       const data = await res.json();
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} API Configuration`,
+        title: `Failed to ${data.id ? 'edit' : 'create'} secret`,
         description: data.message,
       });
     }
@@ -67,15 +67,15 @@ export default function ApiConfigEditDialog({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('api_config')}</DialogTitle>
+          <DialogTitle>{t('workspace_secret')}</DialogTitle>
           <DialogDescription>
             {data.id
-              ? t('edit_existing_workspace_api_config')
-              : t('add_new_workspace_api_config')}
+              ? t('edit_existing_workspace_secret')
+              : t('add_new_workspace_secret')}
           </DialogDescription>
         </DialogHeader>
 
-        <ApiConfigForm
+        <SecretForm
           data={data}
           onSubmit={handleSubmit}
           submitLabel={submitLabel}

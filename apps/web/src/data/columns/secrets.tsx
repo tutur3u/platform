@@ -4,11 +4,11 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '../../app/(dashboard)/[wsId]/users/list/data-table-column-header';
-import { ApiConfigRowActions } from '../../components/row-actions/api-configs';
-import { ApiConfig } from '@/types/primitives/ApiConfig';
+import { SecretRowActions } from '../../components/row-actions/secrets';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
 
-export const apiConfigColumns: ColumnDef<ApiConfig>[] = [
+export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -66,6 +66,6 @@ export const apiConfigColumns: ColumnDef<ApiConfig>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ApiConfigRowActions row={row} />,
+    cell: ({ row }) => <SecretRowActions row={row} />,
   },
 ];

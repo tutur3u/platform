@@ -1,4 +1,4 @@
-export interface ApiConfig {
+export interface WorkspaceSecret {
   id?: string;
   ws_id?: string;
   name?: string;

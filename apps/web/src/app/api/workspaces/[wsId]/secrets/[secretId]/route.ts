@@ -6,17 +6,17 @@ export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
-    configId: string;
+    secretId: string;
   };
 }
 
-export async function PUT(req: Request, { params: { configId: id } }: Params) {
+export async function PUT(req: Request, { params: { secretId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
   const { error } = await supabase
-    .from('workspace_external_api_configs')
+    .from('workspace_secrets')
     .update(data)
     .eq('id', id);
 
@@ -31,11 +31,11 @@ export async function PUT(req: Request, { params: { configId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { configId: id } }: Params) {
+export async function DELETE(_: Request, { params: { secretId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { error } = await supabase
-    .from('workspace_external_api_configs')
+    .from('workspace_secrets')
     .delete()
     .eq('id', id);
 

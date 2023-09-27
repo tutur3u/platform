@@ -14,7 +14,7 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { data, error } = await supabase
-    .from('workspace_external_api_configs')
+    .from('workspace_secrets')
     .select('*')
     .eq('ws_id', id)
     .single();
@@ -35,12 +35,10 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
 
   const data = await req.json();
 
-  const { error } = await supabase
-    .from('workspace_external_api_configs')
-    .insert({
-      ...data,
-      ws_id: id,
-    });
+  const { error } = await supabase.from('workspace_secrets').insert({
+    ...data,
+    ws_id: id,
+  });
 
   if (error) {
     console.log(error);

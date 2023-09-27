@@ -13,24 +13,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '../ui/use-toast';
 import { useRouter } from 'next/navigation';
-import { ApiConfig } from '@/types/primitives/ApiConfig';
-import ApiConfigEditDialog from '@/app/(dashboard)/[wsId]/(workspace-settings)/api/_components/api-config-edit-dialog';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import SecretEditDialog from '@/app/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
 import { useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 
-interface ApiConfigRowActionsProps {
-  row: Row<ApiConfig>;
+interface SecretRowActionsProps {
+  row: Row<WorkspaceSecret>;
 }
 
-export function ApiConfigRowActions({ row }: ApiConfigRowActionsProps) {
+export function SecretRowActions({ row }: SecretRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-api-configs');
+  const { t } = useTranslation('ws-secrets');
 
-  const apiConfig = row.original;
+  const secret = row.original;
 
-  const deleteApiConfig = async () => {
+  const deleteSecret = async () => {
     const res = await fetch(
-      `/api/workspaces/${apiConfig.ws_id}/api/configs/${apiConfig.id}`,
+      `/api/workspaces/${secret.ws_id}/secrets/${secret.id}`,
       {
         method: 'DELETE',
       }
@@ -49,7 +49,7 @@ export function ApiConfigRowActions({ row }: ApiConfigRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!apiConfig.id || !apiConfig.ws_id) return null;
+  if (!secret.id || !secret.ws_id) return null;
 
   return (
     <>
@@ -69,20 +69,18 @@ export function ApiConfigRowActions({ row }: ApiConfigRowActionsProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={deleteApiConfig}
-            disabled={
-              apiConfig.id === undefined || apiConfig.ws_id === undefined
-            }
+            onClick={deleteSecret}
+            disabled={secret.id === undefined || secret.ws_id === undefined}
           >
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ApiConfigEditDialog
-        data={apiConfig}
+      <SecretEditDialog
+        data={secret}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_config')}
+        submitLabel={t('edit_secret')}
       />
     </>
   );

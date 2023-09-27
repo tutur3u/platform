@@ -32,8 +32,8 @@ export default async function Layout({
       disabled: true,
     },
     {
-      name: 'API',
-      href: `/${wsId}/api`,
+      name: 'Secrets',
+      href: `/${wsId}/secrets`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootMember: true,
     },

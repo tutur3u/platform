@@ -84,10 +84,10 @@
       "workspace-tabs",
       "ws-settings"
     ],
-    "/(dashboard)/[wsId]/(workspace-settings)/api": [
+    "/(dashboard)/[wsId]/(workspace-settings)/secrets": [
       "sidebar-tabs",
       "workspace-tabs",
-      "ws-api-configs"
+      "ws-secrets"
     ],
 
     "/(dashboard)/[wsId]/calendar": [

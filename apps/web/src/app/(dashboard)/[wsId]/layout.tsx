@@ -75,6 +75,7 @@ export default async function Layout({
       aliases: [
         `/${wsId}/members`,
         `/${wsId}/teams`,
+        `/${wsId}/secrets`,
         `/${wsId}/infrastructure`,
         `/${wsId}/migrations`,
         `/${wsId}/activities`,

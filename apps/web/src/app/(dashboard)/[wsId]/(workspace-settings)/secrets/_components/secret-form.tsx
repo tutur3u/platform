@@ -13,12 +13,12 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { ApiConfig } from '@/types/primitives/ApiConfig';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { Button } from '@/components/ui/button';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  data: ApiConfig;
+  data: WorkspaceSecret;
   submitLabel?: string;
   onSubmit: (values: z.infer<typeof FormSchema>) => void;
 }
@@ -30,8 +30,8 @@ const FormSchema = z.object({
 
 export const ApiConfigFormSchema = FormSchema;
 
-export default function ApiConfigForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-api-configs');
+export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
+  const { t } = useTranslation('ws-secrets');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
