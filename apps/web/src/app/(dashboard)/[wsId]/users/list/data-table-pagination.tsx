@@ -19,11 +19,13 @@ import { cn } from '@/lib/utils';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
+  count?: number;
   className?: string;
 }
 
 export function DataTablePagination<TData>({
   table,
+  count,
   className,
 }: DataTablePaginationProps<TData>) {
   const query = useQuery();
@@ -32,7 +34,8 @@ export function DataTablePagination<TData>({
     <div className={cn('flex items-center justify-between px-2', className)}>
       <div className="text-muted-foreground flex-1 text-sm">
         {table.getFilteredSelectedRowModel().rows.length} of{' '}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
+        {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
+        {count} row(s) selected.
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">

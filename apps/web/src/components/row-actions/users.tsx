@@ -12,12 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface DataTableRowActionsProps<TData> {
+interface UserRowActionsProps<TData> {
   row: Row<TData>;
 }
 
-export function DataTableRowActions<TData>({} // row,
-: DataTableRowActionsProps<TData>) {
+export function UserRowActions<TData>({} // row,
+: UserRowActionsProps<TData>) {
   // const task = taskSchema.parse(row.original);
 
   return (
@@ -32,7 +32,7 @@ export function DataTableRowActions<TData>({} // row,
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem>View</DropdownMenuItem>
+        <DropdownMenuItem disabled>View</DropdownMenuItem>
         <DropdownMenuItem disabled>Edit</DropdownMenuItem>
         {/* <DropdownMenuItem>Make a copy</DropdownMenuItem> */}
         {/* <DropdownMenuItem>Favorite</DropdownMenuItem> */}

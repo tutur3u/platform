@@ -32,26 +32,20 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   count?: number;
+  defaultVisibility?: VisibilityState;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   count,
+  defaultVisibility = {},
 }: DataTableProps<TData, TValue>) {
   const query = useQuery();
 
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    id: false,
-    gender: false,
-    birthday: false,
-    ethnicity: false,
-    guardian: false,
-    address: false,
-    national_id: false,
-    note: false,
-  });
+  const [columnVisibility, setColumnVisibility] =
+    useState<VisibilityState>(defaultVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -71,7 +65,10 @@ export function DataTable<TData, TValue>({
         pageSize,
       },
     },
-    pageCount: count ? Math.ceil(count / pageSize) : undefined,
+    pageCount:
+      count !== undefined
+        ? Math.max(Math.ceil(count / pageSize), 1)
+        : undefined,
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,
@@ -144,6 +141,7 @@ export function DataTable<TData, TValue>({
       />
       <DataTablePagination
         table={table}
+        count={count}
         className="bg-foreground/5 fixed inset-x-0 bottom-0 border-t px-4 py-2 backdrop-blur-xl"
       />
     </div>

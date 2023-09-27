@@ -7,7 +7,7 @@
     "tailwind-scrollbar": "^3.0.5",
     "tailwindcss": "^3.3.3",
     "tailwindcss-animate": "^1.0.7",
-    "tailwindcss-themer": "^3.1.0"
+    "tailwindcss-themer": "^3.1.1"
   },
-  "packageManager": "pnpm@8.7.6"
+  "packageManager": "pnpm@8.8.0"
 }
