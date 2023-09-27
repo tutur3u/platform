@@ -10,9 +10,10 @@ import { useRouter } from 'next/navigation';
 
 interface Props {
   workspace: Workspace;
+  allowEdit?: boolean;
 }
 
-export default function BasicInfo({ workspace }: Props) {
+export default function BasicInfo({ workspace, allowEdit }: Props) {
   const isSystemWs = workspace.id === '00000000-0000-0000-0000-000000000000';
 
   const { t } = useTranslation('ws-settings');
@@ -52,13 +53,13 @@ export default function BasicInfo({ workspace }: Props) {
           placeholder={workspace.name || name || t('name_placeholder')}
           value={name}
           onChange={(e) => setName(e.currentTarget.value)}
-          disabled={isSystemWs}
+          disabled={!allowEdit || isSystemWs}
         />
       </div>
 
       <div className="h-full" />
 
-      {isSystemWs || (
+      {!allowEdit || isSystemWs || (
         <Button
           onClick={isSaving || name === workspace.name ? undefined : handleSave}
           disabled={isSaving || name === workspace.name}
