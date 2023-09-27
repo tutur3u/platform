@@ -84,6 +84,11 @@
       "workspace-tabs",
       "ws-settings"
     ],
+    "/(dashboard)/[wsId]/(workspace-settings)/api": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-api-configs"
+    ],
 
     "/(dashboard)/[wsId]/calendar": [
       "sidebar-tabs",

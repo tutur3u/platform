@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { User } from '@/types/primitives/User';
 
 export interface NavLink {
   name: string;
@@ -12,6 +13,7 @@ export interface NavLink {
   aliases?: string[];
   disabled?: boolean;
   disableOnProduction?: boolean;
+  requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
   allowedPresets?: WorkspacePreset[];
   allowedRoles?: string[];
@@ -22,6 +24,7 @@ export interface NavLink {
 interface Props {
   currentWsId?: string;
   currentRole?: string;
+  currentUser?: User;
   currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }
@@ -29,6 +32,7 @@ interface Props {
 export function Navigation({
   currentWsId,
   currentRole,
+  currentUser,
   currentPreset,
   navLinks,
 }: Props) {
@@ -44,7 +48,14 @@ export function Navigation({
         // If the link is disabled on production, don't render it
         if (link?.disableOnProduction && PROD_MODE) return null;
 
-        // If the link requires the root workspace, render accordingly
+        // If the link requires root membership, check if user email ends with @tuturuuu.com
+        if (
+          link?.requireRootMember &&
+          !currentUser?.email?.endsWith('@tuturuuu.com')
+        )
+          return null;
+
+        // If the link requires the root workspace, check if the current workspace is the root workspace
         if (link?.requireRootWorkspace && !isRootWorkspace) return null;
 
         // If the link is only allowed for certain presets, check if the current preset is allowed

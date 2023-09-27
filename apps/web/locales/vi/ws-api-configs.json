@@ -1,0 +1,10 @@
+{
+  "api_config": "Cấu hình API",
+  "description": "Quản lý cấu hình API và thông tin đăng nhập.",
+  "name": "Tên",
+  "value": "Giá trị",
+  "create_config": "Tạo cấu hình",
+  "edit_config": "Chỉnh sửa cấu hình",
+  "add_new_workspace_api_config": "Thêm cấu hình API mới cho không gian làm việc này.",
+  "edit_existing_workspace_api_config": "Chỉnh sửa cấu hình API hiện có cho không gian làm việc này."
+}

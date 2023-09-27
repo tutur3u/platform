@@ -1,4 +1,5 @@
 import { Navigation } from '@/components/navigation';
+import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
 
 interface LayoutProps {
@@ -13,6 +14,7 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
+  const user = await getCurrentUser();
 
   const navLinks = [
     {
@@ -28,6 +30,12 @@ export default async function Layout({
       name: 'Teams',
       href: `/${wsId}/teams`,
       disabled: true,
+    },
+    {
+      name: 'API',
+      href: `/${wsId}/api`,
+      allowedRoles: ['ADMIN', 'OWNER'],
+      requireRootMember: true,
     },
     {
       name: 'Infrastructure',
@@ -56,6 +64,7 @@ export default async function Layout({
         <Navigation
           currentWsId={wsId}
           currentRole={workspace.role}
+          currentUser={user}
           navLinks={navLinks}
         />
       </div>
