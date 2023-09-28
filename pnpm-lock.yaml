@@ -69,8 +69,8 @@ importers:
         specifier: ^6.0.21
         version: 6.0.21(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(react-dom@18.2.0)(react@18.2.0)
       '@mantine/tiptap':
-        specifier: ^6.0.21
-        version: 6.0.21(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(@tabler/icons-react@2.36.0)(@tiptap/extension-link@2.1.11)(@tiptap/react@2.1.11)(react@18.2.0)
+        specifier: ^7.0.2
+        version: 7.0.2(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(@tabler/icons-react@2.36.0)(@tiptap/extension-link@2.1.11)(@tiptap/react@2.1.11)(react-dom@18.2.0)(react@18.2.0)
       '@radix-ui/react-accordion':
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@18.2.8)(@types/react@18.2.23)(react-dom@18.2.0)(react@18.2.0)
@@ -884,23 +884,24 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@mantine/tiptap@6.0.21(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(@tabler/icons-react@2.36.0)(@tiptap/extension-link@2.1.11)(@tiptap/react@2.1.11)(react@18.2.0):
-    resolution: {integrity: sha512-SeVoMN+STXeeVTg2H4bxLJUjDuZ9ykAm6TSTqDi/vTRxp/v3aokAU8DCD8Z207DNXaRfZ50YByxfo1/uIyndYw==}
+  /@mantine/tiptap@7.0.2(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(@tabler/icons-react@2.36.0)(@tiptap/extension-link@2.1.11)(@tiptap/react@2.1.11)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-HjixXQqmmA7zBeaVAzBXv8W6XRPjd5UHuCjAPb88VZQGD5x1oZwr/YSqPs0x+kbO+tL4/X23ek2uiHTUk1vDaA==}
     peerDependencies:
-      '@mantine/core': 6.0.21
-      '@mantine/hooks': 6.0.21
-      '@tabler/icons-react': '>=2.1.0'
-      '@tiptap/extension-link': ^2.0.0-beta.202
-      '@tiptap/react': ^2.0.0-beta.202
-      react: '>=16.8.0'
+      '@mantine/core': 7.0.2
+      '@mantine/hooks': 7.0.2
+      '@tabler/icons-react': ^2.29.0
+      '@tiptap/extension-link': ^2.0.4
+      '@tiptap/react': ^2.0.4
+      react: ^18.2.0
+      react-dom: ^18.2.0
     dependencies:
       '@mantine/core': 6.0.21(@emotion/react@11.11.1)(@mantine/hooks@6.0.21)(@types/react@18.2.23)(react-dom@18.2.0)(react@18.2.0)
       '@mantine/hooks': 6.0.21(react@18.2.0)
-      '@mantine/utils': 6.0.21(react@18.2.0)
       '@tabler/icons-react': 2.36.0(react@18.2.0)
       '@tiptap/extension-link': 2.1.11(@tiptap/core@2.1.11)(@tiptap/pm@2.1.11)
       '@tiptap/react': 2.1.11(@tiptap/core@2.1.11)(@tiptap/pm@2.1.11)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /@mantine/utils@6.0.21(react@18.2.0):
