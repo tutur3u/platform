@@ -16,7 +16,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceUsersPage({
+export default async function WorkspaceUserGroupsPage({
   params: { wsId },
   searchParams,
 }: Props) {
