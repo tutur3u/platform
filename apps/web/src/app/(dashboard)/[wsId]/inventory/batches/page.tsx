@@ -2,8 +2,8 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
-import { Invoice } from '@/types/primitives/Invoice';
+import { ProductBatch } from '@/types/primitives/ProductBatch';
+import { batchColumns } from '@/data/columns/batches';
 
 interface Props {
   params: {
@@ -16,7 +16,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceBatchesPage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -25,12 +25,10 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={invoiceColumns}
+      columns={batchColumns}
       count={count}
       defaultVisibility={{
         id: false,
-        customer_id: false,
-        note: false,
         created_at: false,
       }}
     />
@@ -48,11 +46,14 @@ async function getData(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('finance_invoices')
-    .select('*, customer:workspace_users!customer_id(name)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
+    .from('inventory_batches')
+    .select(
+      '*, inventory_warehouses!inner(name, ws_id), inventory_suppliers(name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('inventory_warehouses.ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -72,11 +73,14 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map(({ customer, ...rest }) => ({
-    ...rest,
-    // @ts-ignore
-    customer: customer?.name || '-',
-  }));
+  const data = rawData.map(
+    ({ inventory_warehouses, inventory_suppliers, ...rest }) => ({
+      ...rest,
+      ws_id: inventory_warehouses?.ws_id,
+      warehouse: inventory_warehouses?.name,
+      supplier: inventory_suppliers?.name,
+    })
+  );
 
-  return { data, count } as { data: Invoice[]; count: number };
+  return { data, count } as { data: ProductBatch[]; count: number };
 }

@@ -11,7 +11,7 @@ import NotificationPopover from './_components/notification-popover';
 
 interface LayoutProps {
   params: {
-    wsId?: string;
+    wsId: string;
   };
   children: React.ReactNode;
 }
@@ -56,7 +56,6 @@ export default async function Layout({
     {
       name: 'Inventory',
       href: `/${wsId}/inventory`,
-      disableOnProduction: true,
     },
     {
       name: 'Healthcare',
@@ -67,7 +66,6 @@ export default async function Layout({
     {
       name: 'Finance',
       href: `/${wsId}/finance`,
-      disableOnProduction: true,
     },
     {
       name: 'Settings',

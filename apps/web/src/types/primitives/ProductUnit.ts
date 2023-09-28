@@ -1,6 +1,5 @@
-export interface ProductUnit {
-  id: string;
-  name?: string;
+import { Entity } from './Entity';
+
+export interface ProductUnit extends Entity {
   ws_id?: string;
-  created_at?: string;
 }

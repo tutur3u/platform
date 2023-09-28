@@ -3,7 +3,7 @@
 import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableColumnHeader } from '../../app/(dashboard)/[wsId]/users/list/data-table-column-header';
+import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import moment from 'moment';
 

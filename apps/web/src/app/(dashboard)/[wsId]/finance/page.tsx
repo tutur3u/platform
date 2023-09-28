@@ -1,10 +1,7 @@
 import useTranslation from 'next-translate/useTranslation';
-import TransactionCard from '@/components/cards/TransactionCard';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { Transaction } from '@/types/primitives/Transaction';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { Separator } from '@/components/ui/separator';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,8 +31,6 @@ export default async function WorkspaceFinancePage({
   const totalBalance = t('total-balance');
   const totalIncome = t('total-income');
   const totalExpense = t('total-expense');
-  const recentTransactions = t('recent-transactions');
-  const noTransaction = t('no-transaction');
 
   const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
     ws_id: wsId,
@@ -89,14 +84,6 @@ export default async function WorkspaceFinancePage({
     .eq('ws_id', wsId);
 
   const sum = (income || 0) + (expense || 0);
-
-  const { data: transactions } = await supabase
-    .from('wallet_transactions')
-    .select(
-      'id, description, amount, category_id, wallet_id, taken_at, created_at, transaction_categories(name), workspace_wallets!inner(ws_id)'
-    )
-    .order('taken_at', { ascending: false })
-    .eq('workspace_wallets.ws_id', wsId);
 
   return (
     <div className="flex min-h-full w-full flex-col ">
@@ -164,29 +151,6 @@ export default async function WorkspaceFinancePage({
           value={invoicesCount}
           href={`/${wsId}/finance/invoices`}
         />
-
-        <div className="col-span-full">
-          <Separator className="mb-4" />
-          <div className="text-lg font-semibold md:text-2xl">
-            {recentTransactions}
-          </div>
-        </div>
-
-        {transactions && transactions.length > 0 ? (
-          transactions.map((c: Transaction) => (
-            <TransactionCard
-              key={c.id}
-              wsId={wsId}
-              transaction={c}
-              showAmount
-              showDatetime
-            />
-          ))
-        ) : (
-          <div className="col-span-full -mt-2 text-zinc-400">
-            {noTransaction}
-          </div>
-        )}
       </div>
     </div>
   );

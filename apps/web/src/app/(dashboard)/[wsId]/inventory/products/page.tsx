@@ -1,9 +1,9 @@
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
-import { Invoice } from '@/types/primitives/Invoice';
+import { productColumns } from '@/data/columns/products';
 
 interface Props {
   params: {
@@ -16,7 +16,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceProductsPage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -25,12 +25,10 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={invoiceColumns}
+      columns={productColumns}
       count={count}
       defaultVisibility={{
         id: false,
-        customer_id: false,
-        note: false,
         created_at: false,
       }}
     />
@@ -48,8 +46,8 @@ async function getData(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('finance_invoices')
-    .select('*, customer:workspace_users!customer_id(name)', {
+    .from('workspace_products')
+    .select('*, product_categories(name)', {
       count: 'exact',
     })
     .eq('ws_id', wsId);
@@ -72,11 +70,10 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map(({ customer, ...rest }) => ({
+  const data = rawData.map(({ product_categories, ...rest }) => ({
     ...rest,
-    // @ts-ignore
-    customer: customer?.name || '-',
+    category: product_categories?.name,
   }));
 
-  return { data, count } as { data: Invoice[]; count: number };
+  return { data, count } as { data: UserGroup[]; count: number };
 }

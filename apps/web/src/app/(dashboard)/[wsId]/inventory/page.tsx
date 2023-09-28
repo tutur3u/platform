@@ -69,6 +69,14 @@ export default async function InventoryPage({ params: { wsId } }: Props) {
     })
     .eq('ws_id', wsId);
 
+  const { count: promotions } = await supabase
+    .from('workspace_promotions')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
   return (
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
       {/* <Link
@@ -98,11 +106,9 @@ export default async function InventoryPage({ params: { wsId } }: Props) {
       <Separator className="col-span-full" /> */}
 
       <StatisticCard
-        title={t('products')}
-        color="blue"
+        title={t('inventory-tabs:products')}
         value={workspaceProducts}
         href={`/${wsId}/inventory/products`}
-        className="md:col-span-2"
       />
 
       <StatisticCard
@@ -112,33 +118,39 @@ export default async function InventoryPage({ params: { wsId } }: Props) {
       />
 
       <StatisticCard
-        title={t('product-categories')}
+        title={t('inventory-tabs:product-categories')}
         value={categories}
         href={`/${wsId}/inventory/categories`}
       />
 
       <StatisticCard
-        title={t('batches')}
+        title={t('inventory-tabs:batches')}
         value={batches}
         href={`/${wsId}/inventory/batches`}
       />
 
       <StatisticCard
-        title={t('warehouses')}
+        title={t('inventory-tabs:warehouses')}
         value={warehouses}
         href={`/${wsId}/inventory/warehouses`}
       />
 
       <StatisticCard
-        title={t('units')}
+        title={t('inventory-tabs:units')}
         value={units}
         href={`/${wsId}/inventory/units`}
       />
 
       <StatisticCard
-        title={t('suppliers')}
+        title={t('inventory-tabs:suppliers')}
         value={suppliers}
         href={`/${wsId}/inventory/suppliers`}
+      />
+
+      <StatisticCard
+        title={t('inventory-tabs:promotions')}
+        value={promotions}
+        href={`/${wsId}/inventory/promotions`}
       />
     </div>
   );

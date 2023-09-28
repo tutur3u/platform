@@ -1,6 +1,5 @@
-export interface ProductWarehouse {
-  id: string;
-  name?: string;
+import { Entity } from './Entity';
+
+export interface ProductWarehouse extends Entity {
   ws_id?: string;
-  created_at?: string;
 }

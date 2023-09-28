@@ -1,10 +1,10 @@
-import { Navigation } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
 
 interface LayoutProps {
   params: {
-    wsId?: string;
+    wsId: string;
   };
   children: React.ReactNode;
 }
@@ -16,7 +16,7 @@ export default async function Layout({
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const navLinks = [
+  const navLinks: NavLink[] = [
     {
       name: 'Workspace',
       href: `/${wsId}/settings`,

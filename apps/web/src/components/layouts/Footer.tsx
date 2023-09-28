@@ -138,9 +138,9 @@ const Footer = () => {
             <div className="text-xl font-semibold">
               {t('common:developers')}
             </div>
-            <div className="opacity-50">
+            <div>
               <Link
-                href="https://github.com/tutur3u/rewise"
+                href="https://github.com/tutur3u/tutur3u"
                 className="mt-2 block"
               >
                 {t('common:open-source')}

@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
 import {
   Select,
@@ -9,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { useCallback } from 'react';
 import { Label } from '../ui/label';
+import useQuery from '@/hooks/useQuery';
 
 interface Props {
   disabled?: boolean;
@@ -19,33 +18,13 @@ interface Props {
 export default function MemberRoleMultiSelector({ disabled }: Props) {
   const { t } = useTranslation('member-roles');
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams()!;
+  const query = useQuery();
 
-  // Get a new searchParams string by merging the current
-  // searchParams with a provided key/value pair
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams);
+  const roles = query.get('roles') || 'ALL';
 
-      if (value) params.set(name, value);
-      else params.delete(name);
-
-      return params.toString();
-    },
-    [searchParams]
-  );
-
-  const roles = searchParams.get('roles') || 'ALL';
-
-  const setRole = useCallback(
-    (value: string) => {
-      const query = createQueryString('roles', value === 'ALL' ? '' : value);
-      router.push(`${pathname}?${query}`);
-    },
-    [createQueryString, pathname, router]
-  );
+  const setRole = (value: string) => {
+    query.set({ roles: value });
+  };
 
   const options = [
     {

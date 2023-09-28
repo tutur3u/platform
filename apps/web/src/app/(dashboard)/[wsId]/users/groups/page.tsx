@@ -2,8 +2,8 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../list/data-table';
 import { userGroupColumns } from '@/data/columns/user-groups';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {
@@ -16,15 +16,15 @@ interface Props {
   };
 }
 
-export default async function WorkspaceUsersPage({
+export default async function WorkspaceUserGroupsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: groups, count } = await getGroups(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
 
   return (
     <DataTable
-      data={groups}
+      data={data}
       columns={userGroupColumns}
       count={count}
       defaultVisibility={{
@@ -35,7 +35,7 @@ export default async function WorkspaceUsersPage({
   );
 }
 
-async function getGroups(
+async function getData(
   wsId: string,
   {
     q,

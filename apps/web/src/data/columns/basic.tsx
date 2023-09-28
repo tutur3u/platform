@@ -4,11 +4,10 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { Entity } from '@/types/primitives/Entity';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const basicColumns: ColumnDef<Entity>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -45,13 +44,6 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
-    accessorKey: 'value',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
-    ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
-  },
-  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Created at" />
@@ -64,8 +56,8 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <SecretRowActions row={row} />,
-  },
+  //   {
+  //     id: 'actions',
+  //     cell: ({ row }) => <SecretRowActions row={row} />,
+  //   },
 ];

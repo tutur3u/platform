@@ -4,11 +4,10 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { Product } from '@/types/primitives/Product';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const productColumns: ColumnDef<Product>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -45,11 +44,32 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
-    accessorKey: 'value',
+    accessorKey: 'category',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title="Category" />
     ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
+    cell: ({ row }) => <div>{row.getValue('category') || '-'}</div>,
+  },
+  {
+    accessorKey: 'description',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Description" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
+  },
+  {
+    accessorKey: 'manufacturer',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Manufacturer" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('manufacturer') || '-'}</div>,
+  },
+  {
+    accessorKey: 'usage',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Usage" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('usage') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
@@ -64,8 +84,8 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <SecretRowActions row={row} />,
-  },
+  //   {
+  //     id: 'actions',
+  //     cell: ({ row }) => <SecretRowActions row={row} />,
+  //   },
 ];

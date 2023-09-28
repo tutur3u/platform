@@ -10,7 +10,7 @@
     "/signup": ["auth", "signup", "auth-email-sent"],
     "/reset-password": ["auth", "reset-password"],
     "/(marketing)/onboarding": ["onboarding", "invite"],
-    "/branding": ["branding"],
+    "/(marketing)/branding": ["branding"],
 
     "/(dashboard)/settings/account": [
       "sidebar-tabs",
@@ -150,6 +150,7 @@
     "/(dashboard)/[wsId]/users/list": [
       "sidebar-tabs",
       "search",
+      "gender",
       "view-mode",
       "pagination",
       "ws-users-list-configs",
