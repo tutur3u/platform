@@ -1,9 +1,9 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../list/data-table';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { userReportColumns } from '@/data/columns/user-reports';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {

@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../../users/list/data-table';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { batchColumns } from '@/data/columns/batches';
 

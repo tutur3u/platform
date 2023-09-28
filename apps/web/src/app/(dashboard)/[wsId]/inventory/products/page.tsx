@@ -2,7 +2,7 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../../users/list/data-table';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { productColumns } from '@/data/columns/products';
 
 interface Props {

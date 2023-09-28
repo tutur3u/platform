@@ -3,8 +3,8 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { userColumns } from '../../../../../data/columns/users';
-import { DataTable } from './data-table';
 import useTranslation from 'next-translate/useTranslation';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {

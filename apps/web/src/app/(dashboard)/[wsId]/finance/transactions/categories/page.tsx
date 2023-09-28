@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../../../users/list/data-table';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { transactionCategoryColumns } from '@/data/columns/transaction-categories';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 
@@ -69,7 +69,6 @@ async function getData(
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
-
 
   return { data, count } as { data: TransactionCategory[]; count: number };
 }

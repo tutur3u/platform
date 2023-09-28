@@ -2,8 +2,8 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '../list/data-table';
 import { userGroupColumns } from '@/data/columns/user-groups';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {
