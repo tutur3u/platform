@@ -331,13 +331,13 @@ create policy "Enable delete for workspace owners" on "public"."workspaces" as p
   )
 );
 drop policy "Enable all access for organization members" on "public"."finance_invoice_products";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_prescription_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_product_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_unit_id_fkey";
-alter table "public"."finance_invoices" drop constraint "healthcare_prescriptions_creator_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "finance_invoice_products_warehouse_id_fkey";
-alter table "public"."inventory_products" drop constraint "inventory_products_amount_check";
-alter table "public"."finance_invoice_products" drop constraint "finance_invoice_products_pkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_prescription_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_product_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_unit_id_fkey";
+alter table "public"."finance_invoices" drop constraint if exists "healthcare_prescriptions_creator_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "finance_invoice_products_warehouse_id_fkey";
+alter table "public"."inventory_products" drop constraint if exists "inventory_products_amount_check";
+alter table "public"."finance_invoice_products" drop constraint if exists "finance_invoice_products_pkey";
 drop index if exists "public"."finance_invoice_products_pkey";
 create table "public"."finance_invoice_promotions" (
   "code" text not null default ''::text,
@@ -364,9 +364,6 @@ alter table "public"."finance_invoices"
 alter column "creator_id" drop not null;
 alter table "public"."inventory_products"
 alter column "amount" drop not null;
-CREATE UNIQUE INDEX finance_invoice_products_pkey ON public.finance_invoice_products USING btree (invoice_id, product_name, product_unit);
-alter table "public"."finance_invoice_products"
-add constraint "finance_invoice_products_pkey" PRIMARY KEY using index "finance_invoice_products_pkey";
 alter table "public"."finance_invoice_products"
 add constraint "finance_invoice_products_invoice_id_fkey" FOREIGN KEY (invoice_id) REFERENCES finance_invoices(id) not valid;
 alter table "public"."finance_invoice_products" validate constraint "finance_invoice_products_invoice_id_fkey";
