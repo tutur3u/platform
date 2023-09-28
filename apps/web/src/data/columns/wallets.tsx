@@ -4,11 +4,11 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { Wallet } from '@/types/primitives/Wallet';
+import { Check, X } from 'lucide-react';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const walletColumns: ColumnDef<Wallet>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -45,11 +45,48 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
-    accessorKey: 'value',
+    accessorKey: 'description',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title="Description" />
     ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
+    cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
+  },
+  {
+    accessorKey: 'balance',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Balance" />
+    ),
+    cell: ({ row }) => (
+      <div>
+        {Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND',
+        }).format(row.getValue('balance'))}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'type',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Type" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
+  },
+  {
+    accessorKey: 'currency',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Currency" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('currency') || '-'}</div>,
+  },
+  {
+    accessorKey: 'report_opt_in',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Show in Reports" />
+    ),
+    cell: ({ row }) => (
+      <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
+    ),
   },
   {
     accessorKey: 'created_at',
@@ -64,8 +101,8 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <SecretRowActions row={row} />,
-  },
+  //   {
+  //     id: 'actions',
+  //     cell: ({ row }) => <SecretRowActions row={row} />,
+  //   },
 ];

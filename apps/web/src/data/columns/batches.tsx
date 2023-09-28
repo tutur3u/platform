@@ -4,11 +4,10 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { ProductBatch } from '@/types/primitives/ProductBatch';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const batchColumns: ColumnDef<ProductBatch>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -38,18 +37,46 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title="Price" />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div>
+        {Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND',
+        }).format(row.getValue('price') || 0)}
+      </div>
+    ),
   },
   {
-    accessorKey: 'value',
+    accessorKey: 'total_diff',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title="Price Difference" />
     ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
+    cell: ({ row }) => (
+      <div>
+        {Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND',
+        }).format(row.getValue('total_diff') || 0)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'warehouse',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Warehouse" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('warehouse')}</div>,
+  },
+  {
+    accessorKey: 'supplier',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Supplier" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('supplier')}</div>,
   },
   {
     accessorKey: 'created_at',
@@ -64,8 +91,8 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <SecretRowActions row={row} />,
-  },
+  //   {
+  //     id: 'actions',
+  //     cell: ({ row }) => <SecretRowActions row={row} />,
+  //   },
 ];

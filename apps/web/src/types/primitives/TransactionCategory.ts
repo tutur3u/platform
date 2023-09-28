@@ -1,7 +1,6 @@
-export interface TransactionCategory {
-  id: string;
-  name?: string;
+import { Entity } from './Entity';
+
+export interface TransactionCategory extends Entity {
   is_expense?: boolean;
   ws_id?: string;
-  created_at?: string;
 }

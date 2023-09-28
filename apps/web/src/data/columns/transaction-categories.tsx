@@ -4,11 +4,11 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { Check, X } from 'lucide-react';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const transactionCategoryColumns: ColumnDef<TransactionCategory>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -40,16 +40,18 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title="Category" />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
-    accessorKey: 'value',
+    accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title="Is Expense" />
     ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
+    cell: ({ row }) => (
+      <div>{row.getValue('is_expense') ? <Check /> : <X />}</div>
+    ),
   },
   {
     accessorKey: 'created_at',
@@ -64,8 +66,8 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <SecretRowActions row={row} />,
-  },
+  //   {
+  //     id: 'actions',
+  //     cell: ({ row }) => <SecretRowActions row={row} />,
+  //   },
 ];

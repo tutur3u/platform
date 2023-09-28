@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 
 interface LayoutProps {
   params: {
@@ -11,7 +11,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const navLinks = [
+  const navLinks: NavLink[] = [
     {
       name: 'Overview',
       href: `/${wsId}/users`,
@@ -28,7 +28,7 @@ export default async function Layout({
     {
       name: 'Reports',
       href: `/${wsId}/users/reports`,
-      disableOnProduction: true,
+      allowedPresets: ['EDUCATION'],
     },
   ];
 

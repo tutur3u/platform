@@ -1,7 +1,7 @@
-export interface UserGroup {
+import { Entity } from './Entity';
+
+export interface UserGroup extends Entity {
   id: string;
-  name?: string;
   ws_id?: string;
   amount?: number;
-  created_at?: string;
 }

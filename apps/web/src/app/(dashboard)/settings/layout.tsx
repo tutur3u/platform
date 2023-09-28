@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: LayoutProps) {
-  // const navLinks = [
+  // const navLinks: NavLink[] = [
   //   {
   //     name: 'Account',
   //     href: '/settings/account',

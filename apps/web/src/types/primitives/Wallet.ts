@@ -1,6 +1,6 @@
-export interface Wallet {
-  id?: string;
-  name?: string;
+import { Entity } from './Entity';
+
+export interface Wallet extends Entity {
   balance?: number;
   currency?: string;
   description?: string;
@@ -9,6 +9,5 @@ export interface Wallet {
   report_opt_in?: boolean;
   limit?: number | null;
   type?: string;
-  created_at?: string;
-  project_id?: string;
+  ws_id?: string;
 }

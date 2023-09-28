@@ -7,7 +7,7 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
 
-export const userGroupColumns: ColumnDef<UserGroup>[] = [
+export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -37,18 +37,61 @@ export const userGroupColumns: ColumnDef<UserGroup>[] = [
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'user_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title="User ID" />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1">{row.getValue('user_id')}</div>
+    ),
   },
   {
-    accessorKey: 'amount',
+    accessorKey: 'user_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Users" />
+      <DataTableColumnHeader column={column} title="User" />
     ),
-    cell: ({ row }) => <div>{row.getValue('amount') || '-'}</div>,
+    cell: ({ row }) => <div>{row.getValue('user_name') || '-'}</div>,
+  },
+  {
+    accessorKey: 'title',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Title" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('title') || '-'}</div>,
+  },
+  {
+    accessorKey: 'content',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Content" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('content') || '-'}</div>,
+  },
+  {
+    accessorKey: 'feedback',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Feedback" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('feedback') || '-'}</div>,
+  },
+  {
+    accessorKey: 'creator_name',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Creator" />
+    ),
+    cell: ({ row }) => <div>{row.getValue('creator_name') || '-'}</div>,
+  },
+  {
+    accessorKey: 'updated_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Updated at" />
+    ),
+    cell: ({ row }) => (
+      <div>
+        {row.getValue('updated_at')
+          ? moment(row.getValue('updated_at')).format('DD/MM/YYYY, HH:mm:ss')
+          : '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'created_at',
