@@ -44,7 +44,7 @@ export function DataTablePagination<TData>({
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
               table.setPageSize(Number(value));
-              query.set('pageSize', value);
+              query.set({ pageSize: value });
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
@@ -70,7 +70,7 @@ export function DataTablePagination<TData>({
             onClick={() => {
               table.resetRowSelection();
               table.setPageIndex(0);
-              query.set('page', '1');
+              query.set({ page: 1 });
             }}
             disabled={!table.getCanPreviousPage()}
           >
@@ -83,7 +83,7 @@ export function DataTablePagination<TData>({
             onClick={() => {
               table.resetRowSelection();
               table.previousPage();
-              query.set('page', `${table.getState().pagination.pageIndex}`);
+              query.set({ page: table.getState().pagination.pageIndex });
             }}
             disabled={!table.getCanPreviousPage()}
           >
@@ -96,7 +96,7 @@ export function DataTablePagination<TData>({
             onClick={() => {
               table.resetRowSelection();
               table.nextPage();
-              query.set('page', `${table.getState().pagination.pageIndex + 2}`);
+              query.set({ page: table.getState().pagination.pageIndex + 2 });
             }}
             disabled={!table.getCanNextPage()}
           >
@@ -109,7 +109,7 @@ export function DataTablePagination<TData>({
             onClick={() => {
               table.resetRowSelection();
               table.setPageIndex(table.getPageCount() - 1);
-              query.set('page', `${table.getPageCount()}`);
+              query.set({ page: table.getPageCount() });
             }}
             disabled={!table.getCanNextPage()}
           >

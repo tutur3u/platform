@@ -6,7 +6,6 @@ import { Table } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { DataTableViewOptions } from './data-table-view-options';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import useQuery from '@/hooks/useQuery';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 
 interface DataTableToolbarProps<TData> {
@@ -16,21 +15,12 @@ interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
-  const query = useQuery();
   const isFiltered = table.getState().columnFilters.length > 0;
-
-  const resetPage = () => {
-    table.setPageIndex(0);
-    query.set('page', '1');
-  };
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        <GeneralSearchBar
-          beforeValueChange={resetPage}
-          className="w-[150px] lg:w-[250px]"
-        />
+        <GeneralSearchBar className="w-[150px] lg:w-[250px]" />
         {/* {table.getColumn('status') && (
           <DataTableFacetedFilter
             column={table.getColumn('status')}

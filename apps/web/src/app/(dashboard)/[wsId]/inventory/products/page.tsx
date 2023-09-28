@@ -3,7 +3,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '../../users/list/data-table';
-import { transactionColumns } from '@/data/columns/transactions';
+import { productColumns } from '@/data/columns/products';
 
 interface Props {
   params: {
@@ -16,7 +16,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceProductsPage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -25,11 +25,10 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={transactionColumns}
+      columns={productColumns}
       count={count}
       defaultVisibility={{
         id: false,
-        report_opt_in: false,
         created_at: false,
       }}
     />
@@ -47,14 +46,11 @@ async function getData(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('wallet_transactions')
-    .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_wallets.ws_id', wsId);
+    .from('workspace_products')
+    .select('*, product_categories(name)', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -74,13 +70,10 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
-  );
+  const data = rawData.map(({ product_categories, ...rest }) => ({
+    ...rest,
+    category: product_categories?.name,
+  }));
 
   return { data, count } as { data: UserGroup[]; count: number };
 }

@@ -150,6 +150,7 @@
     "/(dashboard)/[wsId]/users/list": [
       "sidebar-tabs",
       "search",
+      "gender",
       "view-mode",
       "pagination",
       "ws-users-list-configs",

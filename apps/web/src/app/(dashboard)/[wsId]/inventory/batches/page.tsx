@@ -1,9 +1,9 @@
-import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '../../users/list/data-table';
-import { transactionColumns } from '@/data/columns/transactions';
+import { ProductBatch } from '@/types/primitives/ProductBatch';
+import { batchColumns } from '@/data/columns/batches';
 
 interface Props {
   params: {
@@ -16,7 +16,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceBatchesPage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -25,11 +25,10 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={transactionColumns}
+      columns={batchColumns}
       count={count}
       defaultVisibility={{
         id: false,
-        report_opt_in: false,
         created_at: false,
       }}
     />
@@ -47,14 +46,14 @@ async function getData(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('wallet_transactions')
+    .from('inventory_batches')
     .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      '*, inventory_warehouses!inner(name, ws_id), inventory_suppliers(name)',
       {
         count: 'exact',
       }
     )
-    .eq('workspace_wallets.ws_id', wsId);
+    .eq('inventory_warehouses.ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -75,12 +74,13 @@ async function getData(
   if (error) throw error;
 
   const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+    ({ inventory_warehouses, inventory_suppliers, ...rest }) => ({
       ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
+      ws_id: inventory_warehouses?.ws_id,
+      warehouse: inventory_warehouses?.name,
+      supplier: inventory_suppliers?.name,
     })
   );
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: ProductBatch[]; count: number };
 }

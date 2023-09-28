@@ -4,6 +4,7 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { userColumns } from '../../../../../data/columns/users';
 import { DataTable } from './data-table';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   params: {
@@ -20,7 +21,13 @@ export default async function WorkspaceUsersPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: users, count } = await getUsers(wsId, searchParams);
+  const { t } = useTranslation('gender');
+  const { data, count } = await getData(wsId, searchParams);
+
+  const users = data.map(({ gender, ...rest }) => ({
+    ...rest,
+    gender: gender ? t(gender) : '',
+  }));
 
   return (
     <DataTable
@@ -29,8 +36,6 @@ export default async function WorkspaceUsersPage({
       count={count}
       defaultVisibility={{
         id: false,
-        gender: false,
-        birthday: false,
         ethnicity: false,
         guardian: false,
         address: false,
@@ -41,7 +46,7 @@ export default async function WorkspaceUsersPage({
   );
 }
 
-async function getUsers(
+async function getData(
   wsId: string,
   {
     q,

@@ -1,13 +1,9 @@
-import PlusCardButton from '../../../../../components/common/PlusCardButton';
-import InvoiceCard from '../../../../../components/cards/InvoiceCard';
-import { Invoice } from '../../../../../types/primitives/Invoice';
-import StatusSelector from '../../../../../components/selectors/StatusSelector';
-import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
-import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
-import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
+import { DataTable } from '../../users/list/data-table';
+import { invoiceColumns } from '@/data/columns/invoices';
+import { Invoice } from '@/types/primitives/Invoice';
 
 interface Props {
   params: {
@@ -15,84 +11,72 @@ interface Props {
   };
   searchParams: {
     q: string;
-    status: string;
+    page: string;
+    pageSize: string;
   };
 }
 
-export default async function WorkspaceInvoicesPage({
+export default async function WorkspaceWalletsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const invoices = await getInvoices(wsId, searchParams);
-  const count = await getCount(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar />
-        <StatusSelector preset="completion" />
-      </div>
-
-      <Separator className="mt-4" />
-      <PaginationIndicator totalItems={count} />
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <PlusCardButton href={`/${wsId}/finance/invoices/new`} />
-
-        {invoices.map((p) => (
-          <InvoiceCard
-            key={p.id}
-            invoice={p}
-            showAddress={true}
-            showGender={true}
-            showPhone={true}
-            showTime={true}
-            showStatus={true}
-            showAmount={true}
-            showPrice={true}
-            showCreator={true}
-          />
-        ))}
-      </div>
-    </div>
+    <DataTable
+      data={data}
+      columns={invoiceColumns}
+      count={count}
+      defaultVisibility={{
+        id: false,
+        customer_id: false,
+        note: false,
+        created_at: false,
+      }}
+    />
   );
 }
 
-async function getInvoices(
+async function getData(
   wsId: string,
-  { q, status }: { q: string; status: string }
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
 ) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
     .from('finance_invoices')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-  if (status) queryBuilder.eq('status', status);
-
-  const { data } = await queryBuilder;
-  return data as Invoice[];
-}
-
-async function getCount(
-  wsId: string,
-  { q, status }: { q: string; status: string }
-) {
-  const supabase = createServerComponentClient<Database>({ cookies });
-
-  const queryBuilder = supabase
-    .from('finance_invoices')
-    .select('*', {
+    .select('*, customer:workspace_users!customer_id(name)', {
       count: 'exact',
-      head: true,
     })
     .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
-  if (status) queryBuilder.eq('status', status);
 
-  const { count } = await queryBuilder;
-  return count;
+  if (
+    page &&
+    pageSize &&
+    typeof page === 'string' &&
+    typeof pageSize === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data: rawData, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  const data = rawData.map(({ customer, ...rest }) => ({
+    ...rest,
+    // @ts-ignore
+    customer: customer?.name || '-',
+  }));
+
+  return { data, count } as { data: Invoice[]; count: number };
 }

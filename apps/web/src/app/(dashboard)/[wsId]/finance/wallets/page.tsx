@@ -1,21 +1,9 @@
-import PlusCardButton from '../../../../../components/common/PlusCardButton';
-import { Wallet } from '../../../../../types/primitives/Wallet';
-import WalletCard from '../../../../../components/cards/WalletCard';
-import PaginationIndicator from '../../../../../components/pagination/PaginationIndicator';
-import GeneralSearchBar from '../../../../../components/inputs/GeneralSearchBar';
-import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { CreateWalletForm } from './CreateWalletForm';
+import { cookies } from 'next/headers';
+import { DataTable } from '../../users/list/data-table';
+import { walletColumns } from '@/data/columns/wallets';
+import { Wallet } from '@/types/primitives/Wallet';
 
 interface Props {
   params: {
@@ -23,86 +11,65 @@ interface Props {
   };
   searchParams: {
     q: string;
+    page: string;
+    pageSize: string;
   };
 }
 
-export const dynamic = 'force-dynamic';
-
-export default async function FinanceWalletsPage({
+export default async function WorkspaceWalletsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const wallets = await getWallets(wsId, searchParams);
-  const count = await getCount(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar />
-      </div>
-
-      <Separator className="mt-4" />
-      <PaginationIndicator totalItems={count} />
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Dialog>
-          <DialogTrigger>
-            <PlusCardButton href={`/${wsId}/finance/wallets/new`} />
-            <PlusCardButton />
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create wallet</DialogTitle>
-              <DialogDescription>
-                You can create a wallet to track your cash, bank accounts, and
-                credit cards.
-              </DialogDescription>
-            </DialogHeader>
-            <CreateWalletForm />
-          </DialogContent>
-        </Dialog>
-
-        {wallets.map((w) => (
-          <WalletCard
-            key={w.id}
-            wallet={w}
-            showBalance={true}
-            showAmount={true}
-          />
-        ))}
-      </div>
-    </div>
+    <DataTable
+      data={data}
+      columns={walletColumns}
+      count={count}
+      defaultVisibility={{
+        id: false,
+        description: false,
+        created_at: false,
+      }}
+    />
   );
 }
 
-async function getWallets(wsId: string, { q }: { q: string }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
-
-  const queryBuilder = supabase
-    .from('workspace_wallets')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  const { data } = await queryBuilder;
-  return data as Wallet[];
-}
-
-async function getCount(wsId: string, { q }: { q: string }) {
+async function getData(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
     .from('workspace_wallets')
     .select('*', {
       count: 'exact',
-      head: true,
     })
     .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
-  const { count } = await queryBuilder;
-  return count;
+  if (
+    page &&
+    pageSize &&
+    typeof page === 'string' &&
+    typeof pageSize === 'string'
+  ) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: Wallet[]; count: number };
 }

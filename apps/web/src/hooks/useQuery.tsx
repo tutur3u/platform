@@ -6,20 +6,6 @@ const useQuery = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams()!;
 
-  // Get a new searchParams string by merging the current
-  // searchParams with a provided key/value pair
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams);
-
-      if (value) params.set(name, value);
-      else params.delete(name);
-
-      return params.toString();
-    },
-    [searchParams]
-  );
-
   const get = useCallback(
     (data: { key: string; fallbackValue?: string } | string) => {
       if (typeof data === 'string') return searchParams.get(data) || '';
@@ -31,12 +17,18 @@ const useQuery = () => {
   );
 
   const set = useCallback(
-    (key: string, value: string) => {
-      const query = createQueryString(key, value);
-      router.push(`${pathname}?${query}`);
-      // router.refresh();
+    (data: Record<string, string | number | undefined>) => {
+      const params = new URLSearchParams(searchParams);
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined) return;
+        if (value) params.set(key, value.toString());
+        else params.delete(key);
+      });
+
+      router.push(`${pathname}?${params.toString()}`);
     },
-    [createQueryString, pathname, router]
+    [pathname, router, searchParams]
   );
 
   return { get, set };

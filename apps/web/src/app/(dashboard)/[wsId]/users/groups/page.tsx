@@ -20,11 +20,11 @@ export default async function WorkspaceUserGroupsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: groups, count } = await getGroups(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
 
   return (
     <DataTable
-      data={groups}
+      data={data}
       columns={userGroupColumns}
       count={count}
       defaultVisibility={{
@@ -35,7 +35,7 @@ export default async function WorkspaceUserGroupsPage({
   );
 }
 
-async function getGroups(
+async function getData(
   wsId: string,
   {
     q,

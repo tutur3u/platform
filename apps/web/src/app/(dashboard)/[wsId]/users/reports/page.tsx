@@ -94,7 +94,6 @@ async function getReports(
     if (!response.ok) throw new Error('Failed to fetch');
 
     const { reports: data, count } = await response.json();
-    console.log(data, count);
 
     return { data, count } as { data: any[]; count: number };
   } catch (error) {

@@ -1,10 +1,9 @@
-export interface ProductPromotion {
-  id: string;
-  name: string;
+import { Entity } from './Entity';
+
+export interface ProductPromotion extends Entity {
   description?: string;
   code?: string;
-  value: number;
+  value: number | string;
   use_ratio: boolean;
   ws_id?: string;
-  created_at?: string;
 }
