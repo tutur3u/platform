@@ -2,7 +2,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { columns } from './columns';
+import { userColumns } from '../../../../../data/columns/users';
 import { DataTable } from './data-table';
 
 interface Props {
@@ -21,7 +21,24 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   const { data: users, count } = await getUsers(wsId, searchParams);
-  return <DataTable data={users} columns={columns} count={count} />;
+
+  return (
+    <DataTable
+      data={users}
+      columns={userColumns}
+      count={count}
+      defaultVisibility={{
+        id: false,
+        gender: false,
+        birthday: false,
+        ethnicity: false,
+        guardian: false,
+        address: false,
+        national_id: false,
+        note: false,
+      }}
+    />
+  );
 }
 
 async function getUsers(

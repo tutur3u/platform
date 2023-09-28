@@ -37,11 +37,11 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
     [searchParams]
   );
 
-  const roles = searchParams.get('roles') || '';
+  const roles = searchParams.get('roles') || 'ALL';
 
   const setRole = useCallback(
     (value: string) => {
-      const query = createQueryString('roles', value);
+      const query = createQueryString('roles', value === 'ALL' ? '' : value);
       router.push(`${pathname}?${query}`);
     },
     [createQueryString, pathname, router]
@@ -50,7 +50,7 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
   const options = [
     {
       label: t('common:all'),
-      value: '',
+      value: 'ALL',
       group: t('common:general'),
     },
     {
@@ -75,7 +75,7 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
       <Label>{t('roles')}</Label>
       <Select value={roles} onValueChange={setRole} disabled={disabled}>
         <SelectTrigger>
-          <SelectValue placeholder={t('select-roles')} />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (

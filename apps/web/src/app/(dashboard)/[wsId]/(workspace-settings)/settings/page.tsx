@@ -18,7 +18,9 @@ export default async function WorkspaceSettingsPage({
   params: { wsId },
 }: Props) {
   const { t } = useTranslation('ws-settings');
+
   const ws = await getWorkspace(wsId);
+  const isWorkspaceOwner = ws.role === 'OWNER';
 
   const settingsLabel = t('common:settings');
 
@@ -30,9 +32,9 @@ export default async function WorkspaceSettingsPage({
       </div>
       <Separator className="my-4" />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BasicInfo workspace={ws} />
-        <Security workspace={ws} />
+      <div className={`grid gap-4 ${isWorkspaceOwner ? 'lg:grid-cols-2' : ''}`}>
+        <BasicInfo workspace={ws} allowEdit={ws.role !== 'MEMBER'} />
+        {isWorkspaceOwner && <Security workspace={ws} />}
 
         {DEV_MODE && (
           <>

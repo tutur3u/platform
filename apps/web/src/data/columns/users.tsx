@@ -3,12 +3,11 @@
 import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableColumnHeader } from './data-table-column-header';
-import { DataTableRowActions } from './data-table-row-actions';
+import { DataTableColumnHeader } from '../../app/(dashboard)/[wsId]/users/list/data-table-column-header';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import moment from 'moment';
 
-export const columns: ColumnDef<WorkspaceUser>[] = [
+export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -35,14 +34,14 @@ export const columns: ColumnDef<WorkspaceUser>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="ID" />
     ),
-    cell: ({ row }) => <div>{row.getValue('id')}</div>,
+    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => <div>{row.getValue('name')}</div>,
+    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'email',
@@ -189,8 +188,8 @@ export const columns: ColumnDef<WorkspaceUser>[] = [
   //     return value.includes(row.getValue(id));
   //   },
   // },
-  {
-    id: 'actions',
-    cell: ({ row }) => <DataTableRowActions row={row} />,
-  },
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => <UserRowActions row={row} />,
+  // },
 ];

@@ -84,6 +84,11 @@
       "workspace-tabs",
       "ws-settings"
     ],
+    "/(dashboard)/[wsId]/(workspace-settings)/secrets": [
+      "sidebar-tabs",
+      "workspace-tabs",
+      "ws-secrets"
+    ],
 
     "/(dashboard)/[wsId]/calendar": [
       "sidebar-tabs",
