@@ -364,9 +364,6 @@ alter table "public"."finance_invoices"
 alter column "creator_id" drop not null;
 alter table "public"."inventory_products"
 alter column "amount" drop not null;
-CREATE UNIQUE INDEX finance_invoice_products_pkey ON public.finance_invoice_products USING btree (invoice_id, product_name, product_unit);
-alter table "public"."finance_invoice_products"
-add constraint "finance_invoice_products_pkey" PRIMARY KEY using index "finance_invoice_products_pkey";
 alter table "public"."finance_invoice_products"
 add constraint "finance_invoice_products_invoice_id_fkey" FOREIGN KEY (invoice_id) REFERENCES finance_invoices(id) not valid;
 alter table "public"."finance_invoice_products" validate constraint "finance_invoice_products_invoice_id_fkey";
