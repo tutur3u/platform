@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DataTableViewOptions } from './data-table-view-options';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import useQuery from '@/hooks/useQuery';
+import { DataTableRefreshButton } from './data-table-refresh-button';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -55,7 +56,10 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className="flex gap-2">
+        <DataTableRefreshButton />
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   );
 }
