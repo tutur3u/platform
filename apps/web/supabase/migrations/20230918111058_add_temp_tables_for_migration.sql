@@ -331,13 +331,13 @@ create policy "Enable delete for workspace owners" on "public"."workspaces" as p
   )
 );
 drop policy "Enable all access for organization members" on "public"."finance_invoice_products";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_prescription_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_product_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "healthcare_prescription_products_unit_id_fkey";
-alter table "public"."finance_invoices" drop constraint "healthcare_prescriptions_creator_id_fkey";
-alter table "public"."finance_invoice_products" drop constraint "finance_invoice_products_warehouse_id_fkey";
-alter table "public"."inventory_products" drop constraint "inventory_products_amount_check";
-alter table "public"."finance_invoice_products" drop constraint "finance_invoice_products_pkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_prescription_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_product_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "healthcare_prescription_products_unit_id_fkey";
+alter table "public"."finance_invoices" drop constraint if exists "healthcare_prescriptions_creator_id_fkey";
+alter table "public"."finance_invoice_products" drop constraint if exists "finance_invoice_products_warehouse_id_fkey";
+alter table "public"."inventory_products" drop constraint if exists "inventory_products_amount_check";
+alter table "public"."finance_invoice_products" drop constraint if exists "finance_invoice_products_pkey";
 drop index if exists "public"."finance_invoice_products_pkey";
 create table "public"."finance_invoice_promotions" (
   "code" text not null default ''::text,
