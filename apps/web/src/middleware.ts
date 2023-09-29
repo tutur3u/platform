@@ -14,15 +14,21 @@ export async function middleware(req: NextRequest) {
   // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
   await supabase.auth.getSession();
 
-  // search might have a ?lang=xx or &lang=xx
-  const search = req.nextUrl.search;
-  const lang = search.match(/lang=([a-z]{2})/)?.[1];
-  const locale = lang || req.nextUrl.locale || i18n.defaultLocale;
+  const langInCookie = req.cookies.get('lang');
+  const locale =
+    langInCookie?.value || req.nextUrl.locale || i18n.defaultLocale;
 
   console.log('locale', locale);
 
+  // if lang is not in cookie, set it
+  if (!langInCookie) {
+    const search = req.nextUrl.search;
+    const lang = search.match(/lang=([a-z]{2})/)?.[1];
+    res.cookies.set('lang', lang);
+  }
+
   req.nextUrl.searchParams.set('lang', locale);
-  // return NextResponse.rewrite(req.nextUrl);
+  // NextResponse.rewrite(req.nextUrl);
 
   return res;
 }
