@@ -24,14 +24,12 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
       <div className="grid items-end gap-4 md:grid-cols-2">
         <StatisticCard
           title={usersLabel}
-          color="blue"
           value={users}
           href={`/${wsId}/users/list`}
         />
 
         <StatisticCard
           title={t('workspace-users-tabs:groups')}
-          color="green"
           value={groups}
           href={`/${wsId}/users/groups`}
         />

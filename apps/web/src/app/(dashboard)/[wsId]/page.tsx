@@ -210,7 +210,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
           title={totalBalance}
-          color="blue"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -220,7 +219,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
         <StatisticCard
           title={totalIncome}
-          color="green"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -230,7 +228,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
         <StatisticCard
           title={totalExpense}
-          color="red"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -272,7 +269,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatisticCard
               title="Kiểm tra sức khoẻ"
-              color="blue"
               value={checkups}
               href={`/${wsId}/healthcare/checkups`}
             />
@@ -359,14 +355,12 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       <div className="grid items-end gap-4 md:grid-cols-2">
         <StatisticCard
           title={usersLabel}
-          color="blue"
           value={users}
           href={`/${wsId}/users/list`}
         />
 
         <StatisticCard
           title={t('workspace-users-tabs:groups')}
-          color="green"
           value={userGroups}
           href={`/${wsId}/users/groups`}
         />

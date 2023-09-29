@@ -52,7 +52,6 @@ export default async function HealthcareOverviewPage({
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
           title="Kiểm tra sức khoẻ"
-          color="blue"
           value={checkups}
           href={`/${wsId}/healthcare/checkups`}
         />

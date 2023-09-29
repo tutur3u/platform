@@ -100,7 +100,6 @@ export default async function WorkspaceFinancePage({
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
           title={totalBalance}
-          color="blue"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -110,7 +109,6 @@ export default async function WorkspaceFinancePage({
 
         <StatisticCard
           title={totalIncome}
-          color="green"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -120,7 +118,6 @@ export default async function WorkspaceFinancePage({
 
         <StatisticCard
           title={totalExpense}
-          color="red"
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
