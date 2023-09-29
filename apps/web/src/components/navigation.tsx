@@ -98,8 +98,8 @@ export function Navigation({
           <Link
             className={`${
               isActive
-                ? 'text-foreground border-foreground/10 bg-foreground/10'
-                : 'text-foreground/30 hover:text-foreground hover:border-foreground/5 hover:bg-foreground/5 border-transparent'
+                ? 'text-foreground border-foreground/10 bg-foreground/5'
+                : 'text-foreground/40 hover:text-foreground hover:bg-foreground/5 border-transparent'
             } ${
               notPublic ? 'underline decoration-dashed underline-offset-4' : ''
             } rounded-full border px-3 py-1 transition duration-300`}

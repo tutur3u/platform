@@ -149,7 +149,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Cog6ToothIcon className="h-6 w-6" />
+          <Cog6ToothIcon className="text-foreground/70 h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

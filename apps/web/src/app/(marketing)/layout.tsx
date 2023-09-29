@@ -11,10 +11,10 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="relative w-full">
-      <Navbar />
+    <>
+            <Navbar />
       <div className="min-h-screen">{children}</div>
       <Footer />
-    </div>
+    </>
   );
 }

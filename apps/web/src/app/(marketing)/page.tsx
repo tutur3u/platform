@@ -19,19 +19,19 @@ export default async function MarketingPage() {
             />
           </h1>
 
-          <p className="mx-auto my-4 max-w-xl text-center text-lg !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
+          <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
             Take control of your workflow,{' '}
-            <span className="bg-gradient-to-r from-pink-300 via-amber-300 to-blue-300 bg-clip-text font-semibold text-transparent">
+            <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
               supercharged by AI
             </span>
             .
           </p>
 
           <div className="group relative inline-flex">
-            <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400/60 to-orange-300/60 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200"></div>
+            <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
             <Link
               href="/login"
-              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400/60 to-orange-300/60 px-8 py-2 font-bold text-white transition-all md:text-lg"
+              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all dark:from-rose-400/60 dark:to-orange-300/60 md:text-lg"
             >
               Get started
             </Link>
@@ -52,7 +52,7 @@ export default async function MarketingPage() {
                   <Link
                     href={url}
                     key={title}
-                    className={`border-foreground/30 group relative flex flex-col rounded-lg border p-6 ${
+                    className={`border-foreground/20 group relative flex flex-col rounded-lg border p-6 ${
                       comingSoon
                         ? 'cursor-default opacity-50'
                         : 'hover:border-foreground'
@@ -60,7 +60,7 @@ export default async function MarketingPage() {
                   >
                     <h3 className="min-h-[40px] font-bold">{title}</h3>
                     <div className="flex grow flex-col justify-between gap-4">
-                      <p className="text-sm opacity-70">{subtitle}</p>
+                      <p className="text-sm opacity-80">{subtitle}</p>
                       <div className="opacity-60 group-hover:opacity-100">
                         {icon}
                       </div>
@@ -69,7 +69,7 @@ export default async function MarketingPage() {
                 ) : (
                   <div
                     key={title}
-                    className={`border-foreground/30 group relative flex flex-col rounded-lg border p-6 ${
+                    className={`border-foreground/20 group relative flex flex-col rounded-lg border p-6 ${
                       comingSoon
                         ? 'cursor-default opacity-30'
                         : 'hover:border-foreground'
@@ -77,7 +77,7 @@ export default async function MarketingPage() {
                   >
                     <h3 className="min-h-[40px] font-bold">{title}</h3>
                     <div className="flex grow flex-col justify-between gap-4">
-                      <p className="text-sm opacity-70">{subtitle}</p>
+                      <p className="text-sm opacity-80">{subtitle}</p>
                       <div
                         className={`opacity-60 ${
                           comingSoon || 'group-hover:opacity-100'
