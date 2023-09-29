@@ -17,17 +17,15 @@ import { getInitials } from '@/utils/name-helper';
 import {
   ActivitySquare,
   Globe,
-  Moon,
   Palette,
   Settings,
-  Sparkle,
-  Sun,
   User,
   UserPlus,
 } from 'lucide-react';
 import { Suspense } from 'react';
 import { LogoutDropdownItem } from './logout-dropdown-item';
 import Link from 'next/link';
+import { ThemeDropdownItems } from './theme-dropdown-items';
 
 interface Props {
   wsId?: string;
@@ -85,18 +83,7 @@ export async function UserNav({ wsId }: Props) {
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
-                <DropdownMenuItem disabled>
-                  <Sun className="mr-2 h-4 w-4" />
-                  <span>Light</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Moon className="mr-2 h-4 w-4" />
-                  <span>Dark</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <Sparkle className="mr-2 h-4 w-4" />
-                  <span>Automatic</span>
-                </DropdownMenuItem>
+                <ThemeDropdownItems />
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>

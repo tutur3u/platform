@@ -42,8 +42,8 @@ const StatisticCard = ({
         }`;
 
       default:
-        return `border-zinc-500/10 bg-zinc-500/10 dark:border-zinc-300/10 dark:bg-zinc-300/5 ${
-          enableHoverEffect ? 'hover:bg-zinc-300/10' : ''
+        return `border-foreground/20 ${
+          enableHoverEffect ? 'hover:bg-foreground/5' : ''
         }`;
     }
   };
@@ -60,7 +60,7 @@ const StatisticCard = ({
         return 'border-blue-500/20 bg-blue-500/10 text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300';
 
       default:
-        return 'border-zinc-500/20 bg-zinc-500/10 text-zinc-500 dark:border-zinc-300/20 dark:bg-zinc-300/10 dark:text-zinc-300';
+        return 'border-foreground/5 bg-foreground/5 text-foreground';
     }
   };
 
@@ -76,7 +76,7 @@ const StatisticCard = ({
         return 'text-blue-700 dark:text-blue-300';
 
       default:
-        return 'text-zinc-700 dark:text-zinc-300';
+        return 'text-foreground';
     }
   };
 
@@ -85,7 +85,7 @@ const StatisticCard = ({
       <Link
         href={href}
         onClick={onClick}
-        className={`rounded border transition duration-300 ${
+        className={`rounded-lg border transition duration-300 ${
           onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
         } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
@@ -105,7 +105,7 @@ const StatisticCard = ({
   return (
     <button
       onClick={onClick}
-      className={`rounded border transition duration-300 ${
+      className={`rounded-lg border transition duration-300 ${
         onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
       } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >

@@ -68,18 +68,18 @@ export default async function Login() {
         <LoginForm />
 
         <Separator className="mt-2" />
-        <div className="text-center text-sm font-semibold text-zinc-300/60">
+        <div className="text-foreground/50 text-center text-sm font-semibold">
           By continuing, you agree to Tuturuuu&apos;s{' '}
           <Link
             href="/terms"
-            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             Terms of Service
           </Link>{' '}
           and{' '}
           <Link
             href="/privacy"
-            className="text-zinc-200/80 underline decoration-zinc-200/80 underline-offset-2 transition hover:text-white hover:decoration-white"
+            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             Privacy Policy
           </Link>{' '}

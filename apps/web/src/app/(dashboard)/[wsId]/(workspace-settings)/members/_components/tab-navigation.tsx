@@ -12,7 +12,10 @@ export default function TabNavigation({ value, label }: Props) {
   const query = useQuery();
 
   return (
-    <TabsTrigger value={value} onClick={() => query.set({ status: value })}>
+    <TabsTrigger
+      value={value}
+      onClick={() => query.set({ status: value === 'all' ? '' : value })}
+    >
       {label}
     </TabsTrigger>
   );
