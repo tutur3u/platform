@@ -22,9 +22,8 @@ export default function MemberRoleMultiSelector({ disabled }: Props) {
 
   const roles = query.get('roles') || 'ALL';
 
-  const setRole = (value: string) => {
-    query.set({ roles: value });
-  };
+  const setRole = (value: string) =>
+    query.set({ roles: value === 'ALL' ? '' : value });
 
   const options = [
     {

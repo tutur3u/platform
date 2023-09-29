@@ -24,7 +24,7 @@ const Footer = () => {
       <Separator className="bg-foreground/5 mb-8" />
 
       <div className="flex flex-col items-center p-8">
-        <div className="text-2xl font-semibold text-zinc-500 md:text-4xl">
+        <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
           <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
           <span className="text-blue-500 dark:text-blue-300">
             {productivity}
@@ -36,7 +36,7 @@ const Footer = () => {
           <span className="text-red-500 dark:text-red-300">{stress}</span>.
         </div>
 
-        <div className="mt-2 text-zinc-700 dark:text-zinc-300 md:text-xl">
+        <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
           {getStartedDesc}
         </div>
 
