@@ -6,15 +6,6 @@ const nextConfig = nextTranslate({
   experimental: {
     serverActions: true,
   },
-
-  rewrites() {
-    return [
-      {
-        source: '/settings',
-        destination: '/settings/account',
-      },
-    ];
-  },
 });
 
 export default withSentryConfig(

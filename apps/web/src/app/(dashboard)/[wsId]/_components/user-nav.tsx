@@ -26,6 +26,7 @@ import { Suspense } from 'react';
 import { LogoutDropdownItem } from './logout-dropdown-item';
 import Link from 'next/link';
 import { ThemeDropdownItems } from './theme-dropdown-items';
+import { LanguageDropdownItem } from './language-dropdown-item';
 
 interface Props {
   wsId?: string;
@@ -94,10 +95,8 @@ export async function UserNav({ wsId }: Props) {
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
-                <DropdownMenuItem className="cursor-pointer">
-                  English
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>Tiếng Việt</DropdownMenuItem>
+                <LanguageDropdownItem lang="en" label="English" />
+                <LanguageDropdownItem lang="vi" label="Tiếng Việt" />
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
