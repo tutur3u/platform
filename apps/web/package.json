@@ -28,7 +28,7 @@
     "@faker-js/faker": "^8.1.0",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.1",
-    "@mantine/core": "^6.0.21",
+    "@mantine/core": "^7.1.0",
     "@mantine/dates": "^6.0.21",
     "@mantine/form": "^6.0.21",
     "@mantine/hooks": "^6.0.21",
