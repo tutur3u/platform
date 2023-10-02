@@ -14,3 +14,6 @@ export const AI_CHAT_DISABLED_PRESETS: WorkspacePreset[] = [
   'EDUCATION',
   'PHARMACY',
 ];
+
+export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
+export const THEME_COOKIE_NAME = 'NEXT_THEME';

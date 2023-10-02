@@ -14,7 +14,7 @@ import {
 import { toast } from '../ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import SecretEditDialog from '@/app/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
+import SecretEditDialog from '@/app/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
 import { useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 
