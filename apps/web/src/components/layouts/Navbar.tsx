@@ -2,10 +2,10 @@ import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import NotificationPopover from '@/app/(dashboard)/[wsId]/_components/notification-popover';
-import { UserNav } from '@/app/(dashboard)/[wsId]/_components/user-nav';
+import NotificationPopover from '@/app/[lang]/(dashboard)/_components/notification-popover';
+import { UserNav } from '@/app/[lang]/(dashboard)/_components/user-nav';
 import GetStartedButton from './GetStartedButton';
-import { ThemeToggle } from '@/app/(dashboard)/[wsId]/_components/theme-toggle';
+import { ThemeToggle } from '@/app/[lang]/(dashboard)/_components/theme-toggle';
 
 export const dynamic = 'force-dynamic';
 
