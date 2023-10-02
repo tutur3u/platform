@@ -257,6 +257,8 @@ importers:
       openai:
         specifier: ^4.11.0
         version: 4.11.0(encoding@0.1.13)
+        specifier: ^4.11.0
+        version: 4.11.0(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -2693,28 +2695,35 @@ packages:
     dev: false
 
   /@supabase/auth-helpers-nextjs@0.8.1(@supabase/supabase-js@2.37.0):
+  /@supabase/auth-helpers-nextjs@0.8.1(@supabase/supabase-js@2.37.0):
     resolution: {integrity: sha512-ZO/UGDE9oaVXwPL4gpzGu2NpPwfKOgxTUnuK6no51So8Ah9BUuUUsTj+BdZlx7jJoZEIAkHWdRIx65WuQgWAiQ==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
       '@supabase/auth-helpers-shared': 0.5.0(@supabase/supabase-js@2.37.0)
       '@supabase/supabase-js': 2.37.0
+      '@supabase/auth-helpers-shared': 0.5.0(@supabase/supabase-js@2.37.0)
+      '@supabase/supabase-js': 2.37.0
       set-cookie-parser: 2.6.0
     dev: false
 
+  /@supabase/auth-helpers-react@0.4.2(@supabase/supabase-js@2.37.0):
   /@supabase/auth-helpers-react@0.4.2(@supabase/supabase-js@2.37.0):
     resolution: {integrity: sha512-zRj1leYMKJVYQeHFvZiUzlmHM+ATWFR/V7Q9F0yXSWEnMcNHL0CKnIBqhkjtSQ2trE+YaoCvFEHjxISppxIZXQ==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
       '@supabase/supabase-js': 2.37.0
+      '@supabase/supabase-js': 2.37.0
     dev: false
 
+  /@supabase/auth-helpers-shared@0.5.0(@supabase/supabase-js@2.37.0):
   /@supabase/auth-helpers-shared@0.5.0(@supabase/supabase-js@2.37.0):
     resolution: {integrity: sha512-kioUeYDBZ89cfqOTZFOLEFIO7kGczL0XJYZdVv/bKt5efXqhiY14NbzgGWiMvvD9o9Iluo0+YEV2tG3ZZ5W06A==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
+      '@supabase/supabase-js': 2.37.0
       '@supabase/supabase-js': 2.37.0
       jose: 4.14.6
     dev: false
@@ -2746,7 +2755,10 @@ packages:
 
   /@supabase/realtime-js@2.8.0:
     resolution: {integrity: sha512-j1OP2nRJhqLNEoYSMkIl1+cHK/Ow9fektemazkF2CvrIrmwgfJJGaFGiWGVgwoKtwVcrdknSsYWpxs90hys1EQ==}
+  /@supabase/realtime-js@2.8.0:
+    resolution: {integrity: sha512-j1OP2nRJhqLNEoYSMkIl1+cHK/Ow9fektemazkF2CvrIrmwgfJJGaFGiWGVgwoKtwVcrdknSsYWpxs90hys1EQ==}
     dependencies:
+      '@supabase/node-fetch': 2.6.14
       '@supabase/node-fetch': 2.6.14
       '@types/phoenix': 1.6.2
       '@types/websocket': 1.0.7
@@ -2763,11 +2775,14 @@ packages:
 
   /@supabase/supabase-js@2.37.0:
     resolution: {integrity: sha512-kWXVvGWAkThQodHh3yaSQoNHNDm5bwp+H6f1BfC4tr0k096zzTb3ACMnZLQBS0qOXEEbuAnGxIWUv+RE8GaIhg==}
+  /@supabase/supabase-js@2.37.0:
+    resolution: {integrity: sha512-kWXVvGWAkThQodHh3yaSQoNHNDm5bwp+H6f1BfC4tr0k096zzTb3ACMnZLQBS0qOXEEbuAnGxIWUv+RE8GaIhg==}
     dependencies:
       '@supabase/functions-js': 2.1.5
       '@supabase/gotrue-js': 2.54.0
       '@supabase/node-fetch': 2.6.14
       '@supabase/postgrest-js': 1.8.4
+      '@supabase/realtime-js': 2.8.0
       '@supabase/realtime-js': 2.8.0
       '@supabase/storage-js': 2.5.4
     transitivePeerDependencies:
@@ -6252,6 +6267,8 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
+  /openai@4.11.0(encoding@0.1.13):
+    resolution: {integrity: sha512-zU/MJxZTijL0Ym6CKoQPbnmHDsGZlH9g5zorPszdc41OyLxlhnlrorBcGzmGS9qpnjGGNncJR1hfg/mXq0OONw==}
   /openai@4.11.0(encoding@0.1.13):
     resolution: {integrity: sha512-zU/MJxZTijL0Ym6CKoQPbnmHDsGZlH9g5zorPszdc41OyLxlhnlrorBcGzmGS9qpnjGGNncJR1hfg/mXq0OONw==}
     hasBin: true
