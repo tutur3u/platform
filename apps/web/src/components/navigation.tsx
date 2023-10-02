@@ -1,10 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { User } from '@/types/primitives/User';
+import Link from 'next/link';
 
 export interface NavLink {
   name: string;

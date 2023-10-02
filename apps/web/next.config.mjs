@@ -6,16 +6,10 @@ const nextConfig = nextTranslate({
   experimental: {
     serverActions: true,
   },
-
-  rewrites() {
-    return [
-      {
-        source: '/settings',
-        destination: '/settings/account',
-      },
-    ];
-  },
 });
+
+// Next.js App Directory doesn't need the i18n config
+nextConfig.i18n = undefined;
 
 export default withSentryConfig(
   nextConfig,
