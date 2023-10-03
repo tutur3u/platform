@@ -1,25 +1,21 @@
 'use client';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Check, Hexagon } from 'lucide-react';
+import { Check, Sparkle } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  label: string;
-  locale: string;
   selected?: boolean;
 }
 
-export function LanguageDropdownItem({ label, locale, selected }: Props) {
+export function SystemLanguageDropdownItem({ selected }: Props) {
+  const { t } = useTranslation('common');
   const router = useRouter();
 
-  const useLocale = async () => {
+  const useDefaultLocale = async () => {
     const res = await fetch('/api/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      method: 'DELETE',
     });
 
     if (res.ok) router.refresh();
@@ -28,15 +24,15 @@ export function LanguageDropdownItem({ label, locale, selected }: Props) {
   return (
     <DropdownMenuItem
       className="cursor-pointer"
-      onClick={useLocale}
+      onClick={useDefaultLocale}
       disabled={selected}
     >
       {selected ? (
         <Check className="mr-2 h-4 w-4" />
       ) : (
-        <Hexagon className="mr-2 h-4 w-4" />
+        <Sparkle className="mr-2 h-4 w-4" />
       )}
-      {label}
+      {t('system')}
     </DropdownMenuItem>
   );
 }

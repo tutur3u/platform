@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { ThemeDropdownItems } from './theme-dropdown-items';
 import { LanguageWrapper } from './language-wrapper';
 import useTranslation from 'next-translate/useTranslation';
+import { SystemLanguageWrapper } from './system-language-wrapper';
 
 interface Props {
   wsId?: string;
@@ -100,7 +101,7 @@ export async function UserNav({ wsId }: Props) {
                 <LanguageWrapper locale="en" label="English" />
                 <LanguageWrapper locale="vi" label="Tiếng Việt" />
                 <DropdownMenuSeparator />
-                <LanguageWrapper label="System" />
+                <SystemLanguageWrapper />
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
