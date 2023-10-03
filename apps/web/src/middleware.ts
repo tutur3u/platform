@@ -73,7 +73,6 @@ const hasLocaleFromSearch = (req: NextRequest) => {
 
 const handleLocale = async ({ req }: { req: NextRequest }) => {
   const locale = await getLocale(req);
-  if (!locale) return NextResponse.next();
 
   // redirect to default locale if no locale is found
   if (!hasLocaleFromPathname(req)) {

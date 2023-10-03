@@ -4,6 +4,8 @@ import Link from 'next/link';
 import NotificationPopover from '../_components/notification-popover';
 import { UserNav } from '../_components/user-nav';
 
+export const dynamic = 'force-dynamic';
+
 interface LayoutProps {
   children: React.ReactNode;
 }

@@ -10,14 +10,14 @@ import { UserNav } from '../_components/user-nav';
 import NotificationPopover from '../_components/notification-popover';
 import useTranslation from 'next-translate/useTranslation';
 
+export const dynamic = 'force-dynamic';
+
 interface LayoutProps {
   params: {
     wsId: string;
   };
   children: React.ReactNode;
 }
-
-export const dynamic = 'force-dynamic';
 
 export default async function Layout({
   children,
@@ -32,6 +32,7 @@ export default async function Layout({
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
+      requireRootWorkspace: true,
       disabledPresets: AI_CHAT_DISABLED_PRESETS,
       disabled: process.env.ANTHROPIC_API_KEY === undefined,
     },
@@ -59,6 +60,7 @@ export default async function Layout({
     {
       name: t('inventory'),
       href: `/${wsId}/inventory`,
+      requireRootWorkspace: true,
     },
     {
       name: t('healthcare'),
@@ -69,6 +71,7 @@ export default async function Layout({
     {
       name: t('finance'),
       href: `/${wsId}/finance`,
+      requireRootWorkspace: true,
     },
     {
       name: t('common:settings'),
@@ -113,6 +116,7 @@ export default async function Layout({
 
         <div className="flex gap-1 overflow-x-auto">
           <Navigation
+            currentWsId={wsId}
             currentPreset={workspace.preset ?? 'GENERAL'}
             navLinks={navLinks}
           />

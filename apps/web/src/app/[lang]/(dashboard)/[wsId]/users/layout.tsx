@@ -1,5 +1,7 @@
 import { NavLink, Navigation } from '@/components/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface LayoutProps {
   params: {
     wsId?: string;
