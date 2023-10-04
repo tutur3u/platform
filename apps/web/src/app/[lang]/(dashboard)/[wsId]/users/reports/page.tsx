@@ -52,7 +52,6 @@ async function getSecrets(wsId: string) {
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
-  if (count !== 2) throw new Error('Missing secrets');
 
   return { data, count } as { data: WorkspaceSecret[] };
 }

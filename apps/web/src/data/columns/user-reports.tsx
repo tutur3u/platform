@@ -50,35 +50,49 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="User" />
     ),
-    cell: ({ row }) => <div>{row.getValue('user_name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('user_name') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'title',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Title" />
     ),
-    cell: ({ row }) => <div>{row.getValue('title') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('title') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'content',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Content" />
     ),
-    cell: ({ row }) => <div>{row.getValue('content') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem] whitespace-pre-wrap">
+        {row.getValue('content') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'feedback',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Feedback" />
     ),
-    cell: ({ row }) => <div>{row.getValue('feedback') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem] whitespace-pre-wrap">
+        {row.getValue('feedback') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'creator_name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Creator" />
     ),
-    cell: ({ row }) => <div>{row.getValue('creator_name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('creator_name') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'updated_at',
