@@ -69,7 +69,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
       <DataTableColumnHeader column={column} title="Content" />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
         {row.getValue('content') || '-'}
       </div>
     ),
@@ -80,7 +80,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
       <DataTableColumnHeader column={column} title="Feedback" />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
         {row.getValue('feedback') || '-'}
       </div>
     ),
