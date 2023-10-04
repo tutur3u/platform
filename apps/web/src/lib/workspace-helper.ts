@@ -6,7 +6,7 @@ import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { Database } from '@/types/supabase';
 
 export async function getWorkspace(id: string) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
 
   const {
     data: { user },
@@ -16,7 +16,9 @@ export async function getWorkspace(id: string) {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, preset, created_at, workspace_members!inner(role)')
+    .select(
+      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
     .eq('id', id)
     .eq('workspace_members.user_id', user.id)
     .single();
@@ -33,7 +35,7 @@ export async function getWorkspace(id: string) {
 }
 
 export async function getWorkspaces() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
 
   const {
     data: { user },
@@ -43,7 +45,9 @@ export async function getWorkspaces() {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, preset, created_at, workspace_members!inner(role)')
+    .select(
+      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
     .eq('workspace_members.user_id', user.id);
 
   if (error) notFound();

@@ -12,7 +12,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <>
-            <Navbar />
+      <Navbar />
       <div className="min-h-screen">{children}</div>
       <Footer />
     </>

@@ -6,6 +6,14 @@ const nextConfig = nextTranslate({
   experimental: {
     serverActions: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
+  },
 });
 
 // Next.js App Directory doesn't need the i18n config
