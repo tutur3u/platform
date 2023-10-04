@@ -196,6 +196,12 @@
       "ws-user-groups-details-tabs"
     ],
 
+    "/[lang]/(dashboard)/[wsId]/users/reports": [
+      "sidebar-tabs",
+      "search",
+      "workspace-users-tabs"
+    ],
+
     "/[lang]/(dashboard)/[wsId]/users/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/users/[userId]": [
       "sidebar-tabs",

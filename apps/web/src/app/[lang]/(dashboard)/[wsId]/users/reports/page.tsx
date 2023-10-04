@@ -101,3 +101,12 @@ async function getReports(
     return { data: [], count: 0 };
   }
 }
+
+export async function getReportsCount(wsId: string) {
+  const { count } = await getReports(wsId, {
+    page: '1',
+    pageSize: '1',
+  });
+
+  return count;
+}
