@@ -52,7 +52,6 @@ async function getSecrets(wsId: string) {
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
-  if (count !== 2) throw new Error('Missing secrets');
 
   return { data, count } as { data: WorkspaceSecret[] };
 }
@@ -100,4 +99,13 @@ async function getReports(
     console.error(error);
     return { data: [], count: 0 };
   }
+}
+
+export async function getReportsCount(wsId: string) {
+  const { count } = await getReports(wsId, {
+    page: '1',
+    pageSize: '1',
+  });
+
+  return count;
 }

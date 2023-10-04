@@ -1,10 +1,15 @@
 import useTranslation from 'next-translate/useTranslation';
-import FeatureToggles from './feature-toggles';
 import BasicInfo from './basic-info';
 import Security from './security';
 import { Separator } from '@/components/ui/separator';
 import { getWorkspace } from '@/lib/workspace-helper';
-import { DEV_MODE } from '@/constants/common';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { cookies } from 'next/headers';
+import WorkspaceLogoSettings from './logo';
+import WorkspaceAvatarSettings from './avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +25,23 @@ export default async function WorkspaceSettingsPage({
   const { t } = useTranslation('ws-settings');
 
   const ws = await getWorkspace(wsId);
+  const { data: secrets } = await getSecrets(wsId);
+
+  const preventWorkspaceDeletion =
+    secrets
+      .find((s) => s.name === 'PREVENT_WORKSPACE_DELETION')
+      ?.value?.toLowerCase() === 'true';
+
+  const enableLogo = Boolean(
+    secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_FETCH_API')?.value &&
+      secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_API_KEY')?.value
+  );
+
+  const isRootWorkspace = ws.id === ROOT_WORKSPACE_ID;
   const isWorkspaceOwner = ws.role === 'OWNER';
+
+  const enableSecurity =
+    !isRootWorkspace && isWorkspaceOwner && !preventWorkspaceDeletion;
 
   const settingsLabel = t('common:settings');
 
@@ -32,11 +53,27 @@ export default async function WorkspaceSettingsPage({
       </div>
       <Separator className="my-4" />
 
-      <div className={`grid gap-4 ${isWorkspaceOwner ? 'lg:grid-cols-2' : ''}`}>
-        <BasicInfo workspace={ws} allowEdit={ws.role !== 'MEMBER'} />
-        {isWorkspaceOwner && <Security workspace={ws} />}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BasicInfo
+          workspace={ws}
+          allowEdit={!isRootWorkspace && ws.role !== 'MEMBER'}
+        />
 
-        {DEV_MODE && (
+        <WorkspaceAvatarSettings
+          workspace={ws}
+          allowEdit={ws.role === 'OWNER'}
+        />
+
+        {enableLogo && (
+          <WorkspaceLogoSettings
+            workspace={ws}
+            allowEdit={ws.role === 'OWNER'}
+          />
+        )}
+
+        {enableSecurity && <Security workspace={ws} />}
+
+        {/* {DEV_MODE && (
           <>
             <Separator className="col-span-full" />
 
@@ -51,8 +88,29 @@ export default async function WorkspaceSettingsPage({
               </div>
             </div>
           </>
-        )}
+        )} */}
       </div>
     </>
   );
+}
+
+async function getSecrets(wsId: string) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase
+    .from('workspace_secrets')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .in('name', [
+      'PREVENT_WORKSPACE_DELETION',
+      'EXTERNAL_USER_REPORTS_FETCH_API',
+      'EXTERNAL_USER_REPORTS_API_KEY',
+    ]);
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: WorkspaceSecret[] };
 }

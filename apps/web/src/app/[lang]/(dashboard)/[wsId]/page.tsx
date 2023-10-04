@@ -4,6 +4,7 @@ import { getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { getReportsCount } from './users/reports/page';
 
 interface Props {
   params: {
@@ -187,6 +188,8 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
     })
     .eq('ws_id', wsId);
 
+  const reports = await getReportsCount(wsId);
+
   const usersLabel = t('sidebar-tabs:users');
   // const sum = (income || 0) + (expense || 0);
 
@@ -352,7 +355,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       <div className="mb-2 text-2xl font-semibold">
         {t('sidebar-tabs:users')}
       </div>
-      <div className="grid items-end gap-4 md:grid-cols-2">
+      <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatisticCard
           title={usersLabel}
           value={users}
@@ -363,6 +366,12 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           title={t('workspace-users-tabs:groups')}
           value={userGroups}
           href={`/${wsId}/users/groups`}
+        />
+
+        <StatisticCard
+          title={t('workspace-users-tabs:reports')}
+          value={reports}
+          href={`/${wsId}/users/reports`}
         />
       </div>
     </>

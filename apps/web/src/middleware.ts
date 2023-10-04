@@ -7,8 +7,8 @@ import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 
 export async function middleware(req: NextRequest) {
-  await handleSupabaseAuth({ req });
-  return await handleLocale({ req });
+  const res = await handleSupabaseAuth({ req });
+  return await handleLocale({ req, res });
 }
 
 export const config = {
@@ -36,6 +36,8 @@ const handleSupabaseAuth = async ({ req }: { req: NextRequest }) => {
   // Refresh session if expired - required for Server Components
   // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
   await supabase.auth.getSession();
+
+  return res;
 };
 
 const getLocale = async (req: NextRequest) => {
@@ -71,7 +73,13 @@ const hasLocaleFromSearch = (req: NextRequest) => {
   return i18n.locales.includes(localeFromSearch);
 };
 
-const handleLocale = async ({ req }: { req: NextRequest }) => {
+const handleLocale = async ({
+  req,
+  res,
+}: {
+  req: NextRequest;
+  res: NextResponse;
+}) => {
   const locale = await getLocale(req);
 
   // redirect to default locale if no locale is found
@@ -89,5 +97,5 @@ const handleLocale = async ({ req }: { req: NextRequest }) => {
     );
   }
 
-  return NextResponse.rewrite(req.nextUrl);
+  return NextResponse.rewrite(req.nextUrl, res);
 };

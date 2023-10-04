@@ -69,7 +69,7 @@
     "@sentry/nextjs": "^7.73.0",
     "@supabase/auth-helpers-nextjs": "^0.8.1",
     "@supabase/auth-helpers-react": "^0.4.2",
-    "@supabase/supabase-js": "^2.37.0",
+    "@supabase/supabase-js": "^2.38.0",
     "@tabler/icons-react": "^2.38.0",
     "@tanstack/react-table": "^8.10.3",
     "@tiptap/extension-highlight": "^2.1.11",
@@ -92,7 +92,7 @@
     "dayjs": "^1.11.10",
     "eventsource-parser": "^1.1.1",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.279.0",
+    "lucide-react": "^0.284.0",
     "moment": "^2.29.4",
     "negotiator": "^0.6.3",
     "next": "^13.5.4",
@@ -112,7 +112,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
-    "zod": "^3.22.2"
+    "zod": "^3.22.3"
   },
   "devDependencies": {
     "@types/cookie": "^0.5.2",
@@ -134,7 +134,7 @@
     "lint-staged": "^14.0.1",
     "next-translate-plugin": "^2.6.0",
     "postcss": "^8.4.31",
-    "supabase": "^1.100.1",
+    "supabase": "^1.102.2",
     "tailwind-config": "workspace:*",
     "tailwindcss": "^3.3.3",
     "tsconfig": "workspace:*",

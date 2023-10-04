@@ -102,7 +102,7 @@ export function Navigation({
                 : 'text-foreground/40 hover:text-foreground hover:bg-foreground/5 border-transparent'
             } ${
               notPublic ? 'underline decoration-dashed underline-offset-4' : ''
-            } rounded-full border px-3 py-1 transition duration-300`}
+            } flex-none rounded-full border px-3 py-1 transition duration-300`}
             href={link.href}
             key={link.name}
           >
