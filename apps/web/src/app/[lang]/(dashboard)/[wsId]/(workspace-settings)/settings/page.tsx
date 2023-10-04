@@ -8,6 +8,8 @@ import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { cookies } from 'next/headers';
+import WorkspaceLogoSettings from './logo';
+import WorkspaceAvatarSettings from './avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +32,11 @@ export default async function WorkspaceSettingsPage({
       .find((s) => s.name === 'PREVENT_WORKSPACE_DELETION')
       ?.value?.toLowerCase() === 'true';
 
+  const enableLogo = Boolean(
+    secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_FETCH_API')?.value &&
+      secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_API_KEY')?.value
+  );
+
   const isRootWorkspace = ws.id === ROOT_WORKSPACE_ID;
   const isWorkspaceOwner = ws.role === 'OWNER';
 
@@ -51,6 +58,18 @@ export default async function WorkspaceSettingsPage({
           workspace={ws}
           allowEdit={!isRootWorkspace && ws.role !== 'MEMBER'}
         />
+
+        <WorkspaceAvatarSettings
+          workspace={ws}
+          allowEdit={ws.role === 'OWNER'}
+        />
+
+        {enableLogo && (
+          <WorkspaceLogoSettings
+            workspace={ws}
+            allowEdit={ws.role === 'OWNER'}
+          />
+        )}
 
         {enableSecurity && <Security workspace={ws} />}
 
@@ -84,7 +103,11 @@ async function getSecrets(wsId: string) {
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .in('name', ['PREVENT_WORKSPACE_DELETION']);
+    .in('name', [
+      'PREVENT_WORKSPACE_DELETION',
+      'EXTERNAL_USER_REPORTS_FETCH_API',
+      'EXTERNAL_USER_REPORTS_API_KEY',
+    ]);
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
