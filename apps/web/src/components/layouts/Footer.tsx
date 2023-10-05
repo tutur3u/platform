@@ -153,22 +153,7 @@ const Footer = () => {
       <Separator className="bg-foreground/10 mt-8" />
 
       <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center opacity-75 md:flex-row md:px-32 xl:px-64">
-        <div>Copyright © 2023 Tuturuuu LLC. All rights reserved.</div>
-
-        {/* <div className="flex items-center gap-2">
-          <LanguageSelector fullWidthOnMobile />
-          <ActionIcon
-            onClick={() => changeTheme(theme === "dark" ? "light" : "dark")}
-            className="border border-zinc-300 bg-transparent hover:bg-zinc-200 dark:border-zinc-300/10 dark:bg-[#25262b] dark:hover:bg-[#454751]/40"
-            size="lg"
-          >
-            {theme === "dark" ? (
-              <SunIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
-            ) : (
-              <MoonIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
-            )}
-          </ActionIcon>
-        </div> */}
+        {t('copyright')}
       </div>
     </div>
   );

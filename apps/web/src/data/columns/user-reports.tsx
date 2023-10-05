@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
+import { Translate } from 'next-translate';
 
-export const userReportColumns: ColumnDef<UserGroup>[] = [
+export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,14 +33,14 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'user_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User ID" />
+      <DataTableColumnHeader column={column} title={t('user_id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('user_id')}</div>
@@ -48,7 +49,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'user_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User" />
+      <DataTableColumnHeader column={column} title={t('user_name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('user_name') || '-'}</div>
@@ -57,7 +58,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'title',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Title" />
+      <DataTableColumnHeader column={column} title={t('title')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('title') || '-'}</div>
@@ -66,7 +67,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'content',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Content" />
+      <DataTableColumnHeader column={column} title={t('content')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
@@ -77,7 +78,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'feedback',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Feedback" />
+      <DataTableColumnHeader column={column} title={t('feedback')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
@@ -88,7 +89,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'creator_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Creator" />
+      <DataTableColumnHeader column={column} title={t('creator_name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('creator_name') || '-'}</div>
@@ -97,7 +98,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'updated_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Updated at" />
+      <DataTableColumnHeader column={column} title={t('updated_at')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -110,7 +111,7 @@ export const userReportColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

@@ -7,7 +7,6 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { useSegments } from '../../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../../hooks/useWorkspaces';
 import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
@@ -18,8 +17,6 @@ import { TransactionCategory } from '../../../../../../../types/primitives/Trans
 import { useRouter } from 'next/router';
 import { Transaction } from '../../../../../../../types/primitives/Transaction';
 import useSWR from 'swr';
-import TransactionDeleteModal from '../../../../../../../components/loaders/transactions/TransactionDeleteModal';
-import TransactionEditModal from '../../../../../../../components/loaders/transactions/TransactionEditModal';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
@@ -42,7 +39,7 @@ export default function TransactionSettingsPage() {
 
   const settingsLabel = t('transaction-details-tabs:settings');
 
-  const { wsId, transactionId, redirectToWallets } = router.query;
+  const { wsId, transactionId } = router.query;
 
   const apiPath =
     wsId && transactionId
@@ -134,66 +131,6 @@ export default function TransactionSettingsPage() {
 
   const hasRequiredFields = () => amount != 0 && wallet;
 
-  const showEditModal = () => {
-    if (!transaction) return;
-    if (typeof transactionId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('update-wallet')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <TransactionEditModal
-          wsId={ws.id}
-          transaction={{
-            id: transactionId,
-            description,
-            amount,
-            taken_at: takenAt.toISOString(),
-            category_id: category?.id,
-            wallet_id: wallet?.id,
-            report_opt_in: !reportOptOut,
-          }}
-          redirectUrl={
-            redirectToWallets === 'true'
-              ? `/${ws.id}/finance/wallets/${
-                  wallet?.id || transaction?.wallet_id
-                }/transactions`
-              : `/${ws.id}/finance/transactions`
-          }
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!transaction) return;
-    if (typeof transactionId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('delete-wallet')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <TransactionDeleteModal
-          wsId={ws.id}
-          transactionId={transactionId}
-          redirectUrl={
-            redirectToWallets === 'true'
-              ? `/${ws.id}/finance/wallets/${transaction.wallet_id}/transactions`
-              : `/${ws.id}/finance/transactions`
-          }
-        />
-      ),
-    });
-  };
-
   const { lang } = useTranslation();
 
   return (
@@ -206,7 +143,6 @@ export default function TransactionSettingsPage() {
                 ? 'hover:bg-red-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={transaction ? showDeleteModal : undefined}
           >
             {t('delete')}
           </button>
@@ -217,7 +153,6 @@ export default function TransactionSettingsPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             {t('save-changes')}
           </button>

@@ -9,14 +9,11 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/router';
-import { openModal } from '@mantine/modals';
 import { DatePickerInput } from '@mantine/dates';
 import { useSegments } from '../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 import moment from 'moment';
 import { WorkspaceUser } from '../../../../../../types/primitives/WorkspaceUser';
-import WorkspaceUserEditModal from '../../../../../../components/loaders/users/WorkspaceUserEditModal';
-import WorkspaceUserDeleteModal from '../../../../../../components/loaders/users/WorkspaceUserDeleteModal';
 import { UserGroup } from '../../../../../../types/primitives/UserGroup';
 import UserGroupSelector from '../../../../../../components/selectors/UserGroupSelector';
 import useTranslation from 'next-translate/useTranslation';
@@ -149,63 +146,6 @@ export default function WorkspaceUserSettingsPage() {
   const removeGroup = (index: number) =>
     setGroups((groups) => groups.filter((_, i) => i !== index));
 
-  const showEditModal = () => {
-    if (!user || !userGroups) return;
-    if (typeof userId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật người dùng</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WorkspaceUserEditModal
-          wsId={ws.id}
-          user={{
-            id: userId,
-            name,
-            gender,
-            birthday: birthday
-              ? moment(birthday).format('YYYY/MM/DD') + 'T00:00:00'
-              : undefined,
-            ethnicity,
-            national_id: nationalId,
-            guardian,
-            note,
-            phone,
-            email,
-            address,
-          }}
-          oldGroups={userGroups}
-          groups={groups}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!user) return;
-    if (typeof userId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa người dùng</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WorkspaceUserDeleteModal
-          wsId={ws.id}
-          userId={userId}
-          groups={groups}
-        />
-      ),
-    });
-  };
-
   const reset = () => {
     if (!user) return;
     if (typeof userId !== 'string') return;
@@ -289,7 +229,6 @@ export default function WorkspaceUserSettingsPage() {
                   ? 'hover:bg-blue-300/20'
                   : 'pointer-events-none cursor-not-allowed opacity-50'
               }`}
-              onClick={showEditModal}
             >
               {t('common:save')}
             </button>
@@ -382,10 +321,7 @@ export default function WorkspaceUserSettingsPage() {
             <div className="text-2xl font-semibold">Bảo mật</div>
             <Divider className="my-2" variant="dashed" />
           </div>
-          <div
-            onClick={showDeleteModal}
-            className="flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
-          >
+          <div className="flex cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20">
             {t('common:delete')}
           </div>
         </div>

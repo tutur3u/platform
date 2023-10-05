@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput } from '@mantine/core';
-import { openModal } from '@mantine/modals';
-import VitalCreateModal from '../../../../../../components/loaders/vitals/VitalCreateModal';
 import { useSegments } from '../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 
@@ -38,18 +36,6 @@ export default function NewVitalPage() {
 
   const hasRequiredFields = () => name.length > 0;
 
-  const showLoaderModal = () => {
-    if (!ws) return;
-    openModal({
-      title: <div className="font-semibold">Tạo chỉ số mới</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <VitalCreateModal wsId={ws.id} vital={{ name, unit }} />,
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -60,7 +46,6 @@ export default function NewVitalPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showLoaderModal : undefined}
           >
             Tạo mới
           </button>

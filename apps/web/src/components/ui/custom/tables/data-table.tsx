@@ -27,9 +27,13 @@ import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
 import { useState } from 'react';
 import useQuery from '@/hooks/useQuery';
+import useTranslation from 'next-translate/useTranslation';
+import { Translate } from 'next-translate';
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+  columns?: ColumnDef<TData, TValue>[];
+  columnGenerator?: (t: Translate) => ColumnDef<TData, TValue>[];
+  namespace?: string;
   data: TData[];
   count?: number;
   defaultVisibility?: VisibilityState;
@@ -37,10 +41,13 @@ interface DataTableProps<TData, TValue> {
 
 export function DataTable<TData, TValue>({
   columns,
+  columnGenerator,
+  namespace = 'common',
   data,
   count,
   defaultVisibility = {},
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation(namespace);
   const query = useQuery();
 
   const [rowSelection, setRowSelection] = useState({});
@@ -54,7 +61,7 @@ export function DataTable<TData, TValue>({
 
   const table = useReactTable({
     data,
-    columns,
+    columns: columnGenerator ? columnGenerator(t) : columns || [],
     state: {
       sorting,
       columnVisibility,
@@ -84,7 +91,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar namespace={namespace} table={table} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -125,10 +132,10 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columnGenerator?.(t)?.length || columns?.length || 1}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t('common:no-results')}.
                 </TableCell>
               </TableRow>
             )}

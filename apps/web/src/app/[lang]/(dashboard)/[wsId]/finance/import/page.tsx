@@ -11,8 +11,6 @@ import TransactionCard from '../../../../../../components/cards/TransactionCard'
 import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
 import { read } from 'xlsx';
 import useTranslation from 'next-translate/useTranslation';
-import FinanceImportModal from '../../../../../../components/loaders/finance/FinanceImportModal';
-import { openModal } from '@mantine/modals';
 
 export default function WalletImportPage() {
   const { t } = useTranslation('finance-import');
@@ -255,34 +253,6 @@ export default function WalletImportPage() {
     (transactions?.length || 0) > 0 &&
     (categories?.length || 0) > 0;
 
-  const showLoaderModal = () => {
-    if (!hasRequiredFields()) return;
-    if (!wallets || wallets.length === 0) return;
-    if (!transactions || transactions.length === 0) return;
-    if (!categories || categories.length === 0) return;
-
-    openModal({
-      title: <div className="font-semibold">{importData}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <FinanceImportModal
-          wsId={'ws?.id'}
-          wallets={wallets}
-          categories={categories}
-          transactions={transactions.map((t) => ({
-            ...t,
-            taken_at: t?.taken_at
-              ? t.taken_at.split('/').reverse().join('-')
-              : null,
-          }))}
-        />
-      ),
-    });
-  };
-
   const getWalletTransactionsCount = (walletId?: string) =>
     walletId
       ? transactions?.filter((t) => t.wallet_id === walletId)?.length || 0
@@ -298,7 +268,7 @@ export default function WalletImportPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showLoaderModal : undefined}
+            onClick={undefined}
           >
             {importData}
           </button>

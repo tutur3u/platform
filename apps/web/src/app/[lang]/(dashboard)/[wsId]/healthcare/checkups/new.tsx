@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { Vital } from '../../../../../../types/primitives/Vital';
-import CheckupCreateModal from '../../../../../../components/loaders/checkups/CheckupCreateModal';
 import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
 import WorkspaceUserSelector from '../../../../../../components/selectors/WorkspaceUserSelector';
@@ -160,33 +158,6 @@ export default function NewCheckupPage() {
     });
   };
 
-  const showCreateModal = () => {
-    if (!ws) return;
-    openModal({
-      title: <div className="font-semibold">Tạo đơn kiểm tra sức khoẻ mới</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <CheckupCreateModal
-          wsId={ws.id}
-          checkup={{
-            patient_id: userId,
-            diagnosis_id: diagnosis?.id,
-            checked,
-            checkup_at: checkupAt?.toISOString(),
-            next_checked: nextChecked,
-            next_checkup_at: nextCheckupAt?.toISOString(),
-            note: note || '',
-          }}
-          vitals={vitals}
-          groups={groups}
-        />
-      ),
-    });
-  };
-
   if (!ws) return null;
 
   return (
@@ -199,7 +170,6 @@ export default function NewCheckupPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showCreateModal : undefined}
           >
             Tạo mới
           </button>

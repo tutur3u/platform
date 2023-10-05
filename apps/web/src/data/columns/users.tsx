@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import moment from 'moment';
+import { Translate } from 'next-translate';
 
-export const userColumns: ColumnDef<WorkspaceUser>[] = [
+export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,28 +33,28 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
+      <DataTableColumnHeader column={column} title={t('email')} />
     ),
     cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
   },
   {
     accessorKey: 'phone',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Phone" />
+      <DataTableColumnHeader column={column} title={t('phone')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[100px]">
@@ -64,7 +65,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'gender',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Gender" />
+      <DataTableColumnHeader column={column} title={t('gender')} />
     ),
     cell: ({ row }) => (
       <div className="w-[80px]">{row.getValue('gender') || '-'}</div>
@@ -73,7 +74,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'birthday',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Birthday" />
+      <DataTableColumnHeader column={column} title={t('birthday')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -86,7 +87,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'ethnicity',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Ethnicity" />
+      <DataTableColumnHeader column={column} title={t('ethnicity')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[80px]">
@@ -97,7 +98,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'guardian',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Guardian" />
+      <DataTableColumnHeader column={column} title={t('guardian')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[80px]">
@@ -108,7 +109,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'national_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="National ID" />
+      <DataTableColumnHeader column={column} title={t('national_id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('national_id') || '-'}</div>
@@ -117,7 +118,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'address',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Address" />
+      <DataTableColumnHeader column={column} title={t('address')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[80px]">
@@ -128,7 +129,7 @@ export const userColumns: ColumnDef<WorkspaceUser>[] = [
   {
     accessorKey: 'note',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Note" />
+      <DataTableColumnHeader column={column} title={t('note')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[80px]">{row.getValue('note') || '-'}</div>

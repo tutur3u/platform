@@ -1,10 +1,15 @@
 {
-  "welcome-back": "Welcome back!",
-  "welcome-back-desc": "Log in to your account",
-  "signup": "Sign up",
-  "login": "Login",
-  "login-with-otp": "Login with OTP",
-  "login-with-password": "Login with password",
-  "logging-in": "Logging in",
-  "no-account": "Don't have an account?"
+  "email_placeholder": "username@example.com",
+  "email_description": "Enter your email address to get started with Tuturuuu.",
+  "otp_code": "Verification code",
+  "otp_description": "Enter the verification code sent to your email address.",
+  "success": "Success!",
+  "failed": "Failed!",
+  "otp_sent": "We've sent a verification code to your email address.",
+  "otp_verified": "Your email address has been verified.",
+  "failed_to_send": "Failed to send verification code.",
+  "failed_to_verify": "Failed to verify your email address.",
+  "resend": "Resend",
+  "processing": "Processing...",
+  "continue": "Continue"
 }

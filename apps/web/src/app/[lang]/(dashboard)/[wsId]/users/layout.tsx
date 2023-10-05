@@ -1,4 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,22 +14,24 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
+  const { t } = useTranslation('workspace-users-tabs');
+
   const navLinks: NavLink[] = [
     {
-      name: 'Overview',
+      name: t('overview'),
       href: `/${wsId}/users`,
       matchExact: true,
     },
     {
-      name: 'Database',
+      name: t('list'),
       href: `/${wsId}/users/list`,
     },
     {
-      name: 'Groups',
+      name: t('groups'),
       href: `/${wsId}/users/groups`,
     },
     {
-      name: 'Reports',
+      name: t('reports'),
       href: `/${wsId}/users/reports`,
       allowedPresets: ['EDUCATION'],
     },

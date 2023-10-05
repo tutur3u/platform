@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     images: [siteConfig.ogImage],
     creator: '@tutur3u',
   },
-  viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no',
+  viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, shrink-to-fit=no',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',

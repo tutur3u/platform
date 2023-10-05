@@ -9,10 +9,12 @@ import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 
 interface DataTableToolbarProps<TData> {
+  namespace: string;
   table: Table<TData>;
 }
 
 export function DataTableToolbar<TData>({
+  namespace,
   table,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -48,7 +50,7 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex gap-2">
         <DataTableRefreshButton />
-        <DataTableViewOptions table={table} />
+        <DataTableViewOptions namespace={namespace} table={table} />
       </div>
     </div>
   );

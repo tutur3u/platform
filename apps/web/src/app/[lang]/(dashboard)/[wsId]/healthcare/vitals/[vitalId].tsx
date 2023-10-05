@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Vital } from '../../../../../../types/primitives/Vital';
 import useSWR from 'swr';
-import VitalEditModal from '../../../../../../components/loaders/vitals/VitalEditModal';
-import VitalDeleteModal from '../../../../../../components/loaders/vitals/VitalDeleteModal';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../../../hooks/useSegments';
 
@@ -58,45 +55,6 @@ export default function NewVitalPage() {
 
   const hasRequiredFields = () => vital && name.length > 0;
 
-  const showEditModal = () => {
-    if (!vital) return;
-    if (typeof vitalId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật chỉ số</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <VitalEditModal
-          wsId={ws.id}
-          vital={{
-            id: vitalId,
-            name,
-            unit,
-          }}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!vital) return;
-    if (typeof vitalId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa chỉ số</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <VitalDeleteModal wsId={ws.id} vitalId={vitalId} />,
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -105,7 +63,6 @@ export default function NewVitalPage() {
             className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
               vital ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={vital ? showDeleteModal : undefined}
           >
             Xoá
           </button>
@@ -116,7 +73,6 @@ export default function NewVitalPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             Lưu thay đổi
           </button>

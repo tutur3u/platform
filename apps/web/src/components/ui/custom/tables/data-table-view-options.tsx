@@ -12,14 +12,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import useTranslation from 'next-translate/useTranslation';
 
 interface DataTableViewOptionsProps<TData> {
+  namespace: string;
   table: Table<TData>;
 }
 
 export function DataTableViewOptions<TData>({
+  namespace,
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const { t } = useTranslation(namespace);
+
   const isShowingAll = table
     .getAllColumns()
     .every((column) => column.getIsVisible());
@@ -33,11 +38,11 @@ export function DataTableViewOptions<TData>({
           className="ml-auto hidden h-8 lg:flex"
         >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          View
+          {t('common:view-options')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('common:toggle-columns')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()
@@ -49,11 +54,10 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className="capitalize"
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {t(column.id)}
               </DropdownMenuCheckboxItem>
             );
           })}
@@ -70,7 +74,7 @@ export function DataTableViewOptions<TData>({
                 );
             }}
           >
-            {isShowingAll ? 'Hide all' : 'Show all'}
+            {isShowingAll ? t('common:hide-all') : t('common:show-all')}
           </Button>
         </DropdownMenuLabel>
       </DropdownMenuContent>

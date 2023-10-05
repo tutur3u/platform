@@ -1,0 +1,11 @@
+{
+  "id": "ID",
+  "user_id": "User ID",
+  "user_name": "User Name",
+  "title": "Title",
+  "content": "Content",
+  "feedback": "Feedback",
+  "creator_name": "Creator Name",
+  "updated_at": "Updated At",
+  "created_at": "Created At"
+}

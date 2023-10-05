@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
+import { Translate } from 'next-translate';
 
-export const userGroupColumns: ColumnDef<UserGroup>[] = [
+export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,28 +33,28 @@ export const userGroupColumns: ColumnDef<UserGroup>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Users" />
+      <DataTableColumnHeader column={column} title={t('amount')} />
     ),
     cell: ({ row }) => <div>{row.getValue('amount') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

@@ -5,11 +5,8 @@ import { useLocalStorage } from '@mantine/hooks';
 import WarehouseSelector from '../../../../../../components/selectors/WarehouseSelector';
 import { Product } from '../../../../../../types/primitives/Product';
 import SupplierSelector from '../../../../../../components/selectors/SupplierSelector';
-import { openModal } from '@mantine/modals';
 import { ProductBatch } from '../../../../../../types/primitives/ProductBatch';
 import { useRouter } from 'next/router';
-import BatchDeleteModal from '../../../../../../components/loaders/batches/BatchDeleteModal';
-import BatchEditModal from '../../../../../../components/loaders/batches/BatchEditModal';
 import { useSegments } from '../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 import BatchProductInput from '../../../../../../components/inputs/BatchProductInput';
@@ -103,60 +100,6 @@ export default function BatchDetailsPage() {
     setProducts((products) => products.filter((_, i) => i !== index));
   };
 
-  const showEditModal = () => {
-    if (!batch || !batchProducts) return;
-    if (typeof batchId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật sản phẩm</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <BatchEditModal
-          wsId={ws.id}
-          oldProducts={batchProducts}
-          oldBatch={batch}
-          products={
-            products.map((product) => ({
-              ...product,
-              warehouse_id: warehouseId,
-            })) || []
-          }
-          batch={{
-            id: batchId,
-            price: Number(price),
-            supplier_id: supplierId,
-            warehouse_id: warehouseId,
-          }}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!batch || !batchProducts) return;
-    if (typeof batchId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa sản phẩm</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <BatchDeleteModal
-          wsId={ws.id}
-          batchId={batchId}
-          products={batchProducts}
-        />
-      ),
-    });
-  };
-
   const addEmptyProduct = () => {
     setProducts((products) => [
       ...products,
@@ -192,7 +135,6 @@ export default function BatchDetailsPage() {
                 ? 'hover:bg-red-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={batch && batchProducts ? showDeleteModal : undefined}
           >
             Xoá
           </button>
@@ -203,7 +145,6 @@ export default function BatchDetailsPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             Lưu thay đổi
           </button>
