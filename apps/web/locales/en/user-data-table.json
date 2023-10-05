@@ -1,0 +1,13 @@
+{
+  "id": "ID",
+  "name": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "gender": "Gender",
+  "birthday": "Birthday",
+  "ethnicity": "Ethnicity",
+  "guardian": "Guardian",
+  "national_id": "National ID",
+  "address": "Address",
+  "note": "Note"
+}

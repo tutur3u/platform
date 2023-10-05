@@ -2,7 +2,7 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { userGroupColumns } from '@/data/columns/user-groups';
+import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
@@ -25,7 +25,8 @@ export default async function WorkspaceUserGroupsPage({
   return (
     <DataTable
       data={data}
-      columns={userGroupColumns}
+      columnGenerator={getUserGroupColumns}
+      namespace="user-group-data-table"
       count={count}
       defaultVisibility={{
         id: false,

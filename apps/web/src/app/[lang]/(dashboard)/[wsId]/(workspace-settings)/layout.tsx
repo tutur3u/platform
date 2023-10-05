@@ -1,6 +1,7 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
+import useTranslation from 'next-translate/useTranslation';
 
 interface LayoutProps {
   params: {
@@ -13,44 +14,46 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
+  const { t } = useTranslation('workspace-settings-layout');
+
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
   const navLinks: NavLink[] = [
     {
-      name: 'Workspace',
+      name: t('workspace'),
       href: `/${wsId}/settings`,
       matchExact: true,
     },
     {
-      name: 'Members',
+      name: t('members'),
       href: `/${wsId}/members`,
     },
     {
-      name: 'Teams',
+      name: t('teams'),
       href: `/${wsId}/teams`,
       disabled: true,
     },
     {
-      name: 'Secrets',
+      name: t('secrets'),
       href: `/${wsId}/secrets`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootMember: true,
     },
     {
-      name: 'Infrastructure',
+      name: t('infrastructure'),
       href: `/${wsId}/infrastructure`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
     },
     {
-      name: 'Migrations',
+      name: t('migrations'),
       href: `/${wsId}/migrations`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
     },
     {
-      name: 'Activities',
+      name: t('activities'),
       href: `/${wsId}/activities`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,

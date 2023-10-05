@@ -12,7 +12,7 @@ export default async function MarketingPage() {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="animate-in text-foreground mt-24 flex max-w-4xl flex-col gap-6 px-3 py-16 opacity-0 lg:gap-14 lg:py-24">
+      <div className="animate-in text-foreground mt-24 flex max-w-5xl flex-col gap-6 px-3 py-16 opacity-0 lg:gap-14 lg:py-24">
         <div className="mb-4 flex flex-col items-center lg:mb-12">
           <h1 className="relative mb-4 text-center text-4xl font-bold lg:text-7xl">
             <span className="sr-only">Tuturuuu</span>

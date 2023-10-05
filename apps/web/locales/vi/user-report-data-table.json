@@ -1,0 +1,11 @@
+{
+  "id": "Mã định danh",
+  "user_id": "Mã định danh người dùng",
+  "user_name": "Tên người dùng",
+  "title": "Tiêu đề",
+  "content": "Nội dung",
+  "feedback": "Phản hồi",
+  "creator_name": "Tên người tạo",
+  "updated_at": "Cập nhật lúc",
+  "created_at": "Tạo lúc"
+}

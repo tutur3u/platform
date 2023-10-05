@@ -2,14 +2,15 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import LoginForm from './form';
 import { Separator } from '@/components/ui/separator';
-import { SparklesIcon } from '@heroicons/react/20/solid';
 import Image from 'next/image';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Login() {
+  const { t } = useTranslation('auth');
   const supabase = createServerComponentClient({ cookies });
 
   const {
@@ -38,30 +39,18 @@ export default async function Login() {
         >
           <polyline points="15 18 9 12 15 6" />
         </svg>{' '}
-        Back
+        {t('common:back')}
       </Link>
 
       <div className="grid gap-2 sm:max-w-md">
         <div className="flex items-center justify-center">
-          <h1 className="relative w-fit">
-            <span className="text-4xl font-bold lg:text-7xl">Rewise</span>
-            <SparklesIcon className="absolute -top-1 right-0 h-4 text-amber-300 lg:top-0 lg:h-6" />
-            <span className="text-foreground flex items-center justify-center gap-2 text-lg lg:text-2xl">
-              <span className="text-lg opacity-70">by </span>
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center gap-2 font-semibold hover:underline"
-              >
-                Tuturuuu
-                <Image
-                  src="/media/logos/transparent.png"
-                  width={24}
-                  height={24}
-                  className="translate-y-0.5"
-                  alt="logo"
-                />
-              </Link>
-            </span>
+          <h1 className="relative flex w-fit items-center gap-2">
+            <Image
+              src="/media/logos/transparent.png"
+              width={128}
+              height={128}
+              alt="Tuturuuu Logo"
+            />
           </h1>
         </div>
 
@@ -69,21 +58,21 @@ export default async function Login() {
 
         <Separator className="mt-2" />
         <div className="text-foreground/50 text-center text-sm font-semibold">
-          By continuing, you agree to Tuturuuu&apos;s{' '}
+          {t('notice-p1')}{' '}
           <Link
             href="/terms"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
-            Terms of Service
+            {t('tos')}
           </Link>{' '}
-          and{' '}
+          {t('common:and')}{' '}
           <Link
             href="/privacy"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
-            Privacy Policy
+            {t('privacy')}
           </Link>{' '}
-          to receive periodic emails with updates.
+          {t('notice-p2')}.
         </div>
       </div>
     </div>

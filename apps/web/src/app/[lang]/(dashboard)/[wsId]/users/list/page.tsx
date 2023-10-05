@@ -2,7 +2,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { userColumns } from '../../../../../../data/columns/users';
+import { getUserColumns } from '../../../../../../data/columns/users';
 import useTranslation from 'next-translate/useTranslation';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
@@ -32,7 +32,8 @@ export default async function WorkspaceUsersPage({
   return (
     <DataTable
       data={users}
-      columns={userColumns}
+      namespace="user-data-table"
+      columnGenerator={getUserColumns}
       count={count}
       defaultVisibility={{
         id: false,

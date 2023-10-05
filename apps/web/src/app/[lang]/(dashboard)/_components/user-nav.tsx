@@ -57,9 +57,12 @@ export async function UserNav({ wsId }: Props) {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
-            <p className="line-clamp-1 break-all text-sm font-medium">
-              {user?.display_name || user?.handle || `@${user?.id}`}
-            </p>
+            <Link
+              href="/settings/account"
+              className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
+            >
+              {user?.display_name || user?.handle || t('common:unnamed')}
+            </Link>
             <p className="text-muted-foreground line-clamp-1 break-all text-xs">
               {user?.email}
             </p>

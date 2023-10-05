@@ -1,0 +1,13 @@
+{
+  "id": "Mã định danh",
+  "name": "Tên",
+  "email": "Email",
+  "phone": "SĐT",
+  "gender": "Giới tính",
+  "birthday": "Ngày sinh",
+  "ethnicity": "Dân tộc",
+  "guardian": "Người giám hộ",
+  "national_id": "CMND/CCCD",
+  "address": "Địa chỉ",
+  "note": "Ghi chú"
+}
