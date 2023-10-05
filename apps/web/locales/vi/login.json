@@ -1,10 +1,15 @@
 {
-  "welcome-back": "Chào mừng trở lại",
-  "welcome-back-desc": "Đăng nhập để tiếp tục",
-  "signup": "Đăng ký",
-  "login": "Đăng nhập",
-  "login-with-otp": "Đăng nhập bằng OTP",
-  "login-with-password": "Đăng nhập bằng mật khẩu",
-  "logging-in": "Đang đăng nhập",
-  "no-account": "Chưa có tài khoản?"
+  "email_placeholder": "Địa chỉ email",
+  "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Tuturuuu.",
+  "otp_code": "Mã xác thực",
+  "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
+  "success": "Thành công!",
+  "failed": "Thất bại!",
+  "otp_sent": "Chúng tôi đã gửi mã xác thực đến địa chỉ email của bạn.",
+  "otp_verified": "Địa chỉ email của bạn đã được xác thực.",
+  "failed_to_send": "Không thể gửi mã xác thực.",
+  "failed_to_verify": "Không thể xác thực địa chỉ email của bạn.",
+  "resend": "Gửi lại",
+  "processing": "Đang xử lý...",
+  "continue": "Tiếp tục"
 }

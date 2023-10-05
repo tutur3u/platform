@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Divider, NumberInput, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import WorkspaceUserSelector from '../../../../../../../components/selectors/WorkspaceUserSelector';
 import { Product } from '../../../../../../../types/primitives/Product';
 import InvoiceProductInput from '../../../../../../../components/inputs/InvoiceProductInput';
-import InvoiceEditModal from '../../../../../../../components/loaders/invoices/InvoiceEditModal';
-
 import useSWR, { mutate } from 'swr';
 import 'dayjs/locale/vi';
 import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
@@ -20,7 +17,6 @@ import useTranslation from 'next-translate/useTranslation';
 import { Invoice } from '../../../../../../../types/primitives/Invoice';
 import { Transaction } from '../../../../../../../types/primitives/Transaction';
 import moment from 'moment';
-import InvoiceDeleteModal from '../../../../../../../components/loaders/invoices/InvoiceDeleteModal';
 
 interface Props {
   params: {
@@ -143,65 +139,6 @@ export default function InvoiceDetailsPage({
     0
   );
 
-  const showEditModal = () => {
-    if (!invoice) return;
-    if (typeof invoiceId !== 'string') return;
-    if (!wsId) return;
-    if (!productPrices || !products || !transaction) return;
-    if (!walletId || !categoryId || !takenAt) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('update-invoice')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <InvoiceEditModal
-          wsId={wsId}
-          invoice={{
-            id: invoiceId,
-            customer_id: userId,
-            notice: notice || '',
-            note: note || '',
-            total_diff: diff,
-            price,
-            completed_at: invoice.completed_at,
-          }}
-          transaction={{
-            id: transaction.id,
-            wallet_id: walletId,
-            category_id: categoryId,
-            taken_at: takenAt.toISOString(),
-          }}
-          oldProducts={productPrices}
-          products={products}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!invoice) return;
-    if (typeof invoiceId !== 'string') return;
-    if (!wsId || !productPrices) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('delete-invoice')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <InvoiceDeleteModal
-          wsId={wsId}
-          invoiceId={invoiceId}
-          products={productPrices}
-        />
-      ),
-    });
-  };
-
   const toggleStatus = async () => {
     if (!invoice) return;
     if (typeof invoiceId !== 'string') return;
@@ -251,7 +188,6 @@ export default function InvoiceDetailsPage({
             className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
               invoice ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={invoice ? showDeleteModal : undefined}
           >
             {t('common:delete')}
           </button>
@@ -262,7 +198,6 @@ export default function InvoiceDetailsPage({
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             {t('save-changes')}
           </button>

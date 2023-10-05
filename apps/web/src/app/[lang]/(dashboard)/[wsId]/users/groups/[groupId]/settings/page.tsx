@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Divider, TextInput } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import SettingItemCard from '@/components/settings/SettingItemCard';
-import UserGroupEditModal from '@/components/loaders/users/groups/UserGroupEditModal';
-import UserGroupDeleteModal from '@/components/loaders/users/groups/UserGroupDeleteModal';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
@@ -38,41 +35,6 @@ export default function UserGroupSettingsPage({
   }, [group]);
 
   const hasRequiredFields = () => name.length > 0;
-
-  const showEditModal = () => {
-    if (!group) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('update-user-group')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <UserGroupEditModal
-          wsId={wsId}
-          group={{
-            id: groupId,
-            name,
-          }}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!group) return;
-    if (typeof groupId !== 'string') return;
-
-    openModal({
-      title: <div className="font-semibold">{t('delete-user-group')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <UserGroupDeleteModal wsId={wsId} groupId={groupId} />,
-    });
-  };
 
   const reset = () => {
     if (!group) return;
@@ -116,7 +78,6 @@ export default function UserGroupSettingsPage({
                   ? 'hover:bg-blue-300/20'
                   : 'pointer-events-none cursor-not-allowed opacity-50'
               }`}
-              onClick={showEditModal}
             >
               {t('common:save')}
             </button>
@@ -142,7 +103,6 @@ export default function UserGroupSettingsPage({
         <SettingItemCard
           title={t('security')}
           description={t('security-description')}
-          onDelete={showDeleteModal}
         />
       </div>
     </div>

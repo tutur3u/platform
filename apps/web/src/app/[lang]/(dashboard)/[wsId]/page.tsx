@@ -20,7 +20,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const { t } = useTranslation('ws-home');
   const ws = await getWorkspace(wsId);
 
-  const homeLabel = t('workspace-tabs:home');
+  const homeLabel = t('home');
 
   // const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
   //   ws_id: wsId,

@@ -4,8 +4,6 @@ import ProductPriceInput from './ProductPriceInput';
 import { useEffect, useState } from 'react';
 import { ProductPrice } from '../../types/primitives/ProductPrice';
 import useSWR from 'swr';
-import { openModal } from '@mantine/modals';
-import InventoryProductEditModal from '../loaders/products/InventoryProductEditModal';
 
 interface Props {
   wsId: string;
@@ -126,29 +124,6 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
     );
   };
 
-  const showEditModal = () => {
-    if (!hasRequiredFields()) return;
-    if (!productPrices || !productId) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật đơn giá</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <InventoryProductEditModal
-          wsId={wsId}
-          productId={productId}
-          warehouseId={warehouse.id}
-          oldPrices={productPrices}
-          prices={prices}
-          onSuccess={() => setPricesChanged(false)}
-        />
-      ),
-    });
-  };
-
   return (
     <div className="rounded border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
       <div className="text-2xl font-semibold">{warehouse.name}</div>
@@ -201,7 +176,6 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
                   ? 'hover:bg-green-500/20 dark:hover:bg-green-300/20'
                   : 'cursor-not-allowed opacity-50'
               }`}
-              onClick={hasRequiredFields() ? showEditModal : undefined}
             >
               Lưu
             </button>

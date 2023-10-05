@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -25,6 +26,7 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
+  const { t } = useTranslation('login');
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -71,16 +73,16 @@ export default function LoginForm() {
 
       // Notify user
       toast({
-        title: 'Success',
-        description: 'An OTP has been sent to your email address.',
+        title: t('success'),
+        description: t('otp_sent'),
       });
 
       // OTP has been sent
       setOtpSent(true);
     } else {
       toast({
-        title: 'Error',
-        description: 'Failed to send OTP.',
+        title: t('failed'),
+        description: t('failed_to_send'),
       });
     }
 
@@ -98,14 +100,14 @@ export default function LoginForm() {
     if (res.ok) {
       router.refresh();
       toast({
-        title: 'Success',
-        description: 'You have successfully logged in.',
+        title: t('success'),
+        description: t('otp_verified'),
       });
     } else {
       setLoading(false);
       toast({
-        title: 'Error',
-        description: 'Failed to verify OTP.',
+        title: t('failed'),
+        description: t('failed_to_verify'),
       });
     }
   };
@@ -138,16 +140,14 @@ export default function LoginForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="rewise@tuturuuu.com"
+                  placeholder={t('email_placeholder')}
                   disabled={otpSent || loading}
                   {...field}
                 />
               </FormControl>
 
               {otpSent || (
-                <FormDescription>
-                  Enter your email address to get started with Rewise.
-                </FormDescription>
+                <FormDescription>{t('email_description')}</FormDescription>
               )}
               <FormMessage />
             </FormItem>
@@ -160,7 +160,7 @@ export default function LoginForm() {
             name="otp"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Verification Code</FormLabel>
+                <FormLabel>{t('otp_code')}</FormLabel>
                 <FormControl>
                   <div className="flex flex-col gap-2 md:flex-row">
                     <Input placeholder="••••••" {...field} disabled={loading} />
@@ -174,14 +174,12 @@ export default function LoginForm() {
                       type="button"
                     >
                       {resendCooldown > 0
-                        ? `Resend (${resendCooldown})`
-                        : 'Resend'}
+                        ? `${t('resend')} (${resendCooldown})`
+                        : t('resend')}
                     </Button>
                   </div>
                 </FormControl>
-                <FormDescription>
-                  Enter the verification code sent to your email address.
-                </FormDescription>
+                <FormDescription>{t('otp_description')}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -198,7 +196,7 @@ export default function LoginForm() {
             (otpSent && !form.formState.dirtyFields.otp)
           }
         >
-          {loading ? 'Processing...' : 'Continue'}
+          {loading ? t('processing') : t('continue')}
         </Button>
       </form>
     </Form>

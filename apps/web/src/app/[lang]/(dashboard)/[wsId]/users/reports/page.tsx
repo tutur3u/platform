@@ -2,7 +2,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { userReportColumns } from '@/data/columns/user-reports';
+import { getUserReportColumns } from '@/data/columns/user-reports';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 interface Props {
@@ -25,7 +25,8 @@ export default async function WorkspaceUserReportsPage({
   return (
     <DataTable
       data={data}
-      columns={userReportColumns}
+      columnGenerator={getUserReportColumns}
+      namespace="user-report-data-table"
       count={count}
       defaultVisibility={{
         id: false,

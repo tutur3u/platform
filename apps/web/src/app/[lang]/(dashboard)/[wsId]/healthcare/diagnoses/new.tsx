@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
-import DiagnosisCreateModal from '../../../../../../components/loaders/diagnoses/DiagnosisCreateModal';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 import { useSegments } from '../../../../../../hooks/useSegments';
 
@@ -39,23 +37,6 @@ export default function NewDiagnosisPage() {
 
   const hasRequiredFields = () => name.length > 0;
 
-  const showLoaderModal = () => {
-    if (!ws) return;
-    openModal({
-      title: <div className="font-semibold">Tạo chẩn đoán mới</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <DiagnosisCreateModal
-          wsId={ws.id}
-          diagnosis={{ name, description, note }}
-        />
-      ),
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -66,7 +47,6 @@ export default function NewDiagnosisPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showLoaderModal : undefined}
           >
             Tạo mới
           </button>

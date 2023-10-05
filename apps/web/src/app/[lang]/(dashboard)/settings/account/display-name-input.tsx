@@ -16,6 +16,7 @@ import {
 import { Check, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   defaultValue?: string;
@@ -26,6 +27,7 @@ const FormSchema = z.object({
 });
 
 export default function DisplayNameInput({ defaultValue = '' }: Props) {
+  const { t } = useTranslation('settings-account');
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
@@ -79,7 +81,7 @@ export default function DisplayNameInput({ defaultValue = '' }: Props) {
                 <FormControl>
                   <Input
                     id="display-name"
-                    placeholder="Display name"
+                    placeholder={t('display-name')}
                     {...field}
                   />
                 </FormControl>

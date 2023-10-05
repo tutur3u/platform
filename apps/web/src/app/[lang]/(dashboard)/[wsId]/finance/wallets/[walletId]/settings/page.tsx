@@ -9,13 +9,10 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import SettingItemCard from '../../../../../../../../components/settings/SettingItemCard';
 import { useRouter } from 'next/navigation';
 import { Wallet } from '../../../../../../../../types/primitives/Wallet';
 import useSWR from 'swr';
-import WalletDeleteModal from '../../../../../../../../components/loaders/wallets/WalletDeleteModal';
-import WalletEditModal from '../../../../../../../../components/loaders/wallets/WalletEditModal';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
@@ -65,52 +62,6 @@ export default function WalletSettingsPage({
 
   const hasRequiredFields = () => name.length > 0;
 
-  const showEditModal = () => {
-    if (!wallet) return;
-    if (typeof walletId !== 'string') return;
-
-    openModal({
-      title: <div className="font-semibold">{t('update-wallet')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <WalletEditModal
-          wsId={wsId}
-          oldWallet={wallet}
-          wallet={{
-            id: walletId,
-            name,
-            description,
-            balance,
-            currency,
-            type,
-            limit: limit === '' ? undefined : limit,
-            statement_date: statementDate,
-            payment_date: paymentDate,
-            report_opt_in: !reportOptOut,
-          }}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!wallet) return;
-    if (typeof walletId !== 'string') return;
-    if (!wsId) return;
-
-    openModal({
-      title: <div className="font-semibold">{t('delete-wallet')}</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <WalletDeleteModal wsId={wsId} walletId={walletId} />,
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -119,7 +70,6 @@ export default function WalletSettingsPage({
             className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
               wallet ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={wallet ? showDeleteModal : undefined}
           >
             {t('delete')}
           </button>
@@ -130,7 +80,6 @@ export default function WalletSettingsPage({
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             {t('save-changes')}
           </button>

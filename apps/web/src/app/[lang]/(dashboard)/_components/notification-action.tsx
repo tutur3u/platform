@@ -61,7 +61,7 @@ export default function NotificationAction({
       variant={variant}
       size="sm"
       onClick={handleClick}
-      className={!variant ? 'w-full' : undefined}
+      className={!variant ? 'w-full' : 'flex-none'}
       disabled={disabled}
     >
       {label}

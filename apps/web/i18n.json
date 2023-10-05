@@ -4,7 +4,7 @@
   "pages": {
     "*": ["common", "notifications"],
 
-    "/[lang]/": ["home"],
+    "/[lang]/(marketing)": ["home"],
     "/[lang]/logout": ["logout"],
     "/[lang]/login": ["auth", "login"],
     "/[lang]/signup": ["auth", "signup", "auth-email-sent"],
@@ -49,7 +49,6 @@
 
     "/[lang]/(dashboard)/[wsId]": [
       "sidebar-tabs",
-      "workspace-tabs",
       "ws-home",
       "finance-tabs",
       "finance-overview",
@@ -59,12 +58,12 @@
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/teams": [
       "sidebar-tabs",
-      "workspace-tabs",
+      "workspace-settings-layout",
       "ws-teams"
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/members": [
       "sidebar-tabs",
-      "workspace-tabs",
+      "workspace-settings-layout",
       "search",
       "view-mode",
       "pagination",
@@ -73,7 +72,7 @@
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/activities": [
       "sidebar-tabs",
-      "workspace-tabs",
+      "workspace-settings-layout",
       "search",
       "view-mode",
       "pagination",
@@ -84,12 +83,12 @@
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/settings": [
       "sidebar-tabs",
-      "workspace-tabs",
+      "workspace-settings-layout",
       "ws-settings"
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets": [
       "sidebar-tabs",
-      "workspace-tabs",
+      "workspace-settings-layout",
       "ws-secrets"
     ],
 
@@ -160,6 +159,7 @@
       "sidebar-tabs",
       "search",
       "gender",
+      "user-data-table",
       "view-mode",
       "pagination",
       "ws-users-list-configs",
@@ -169,6 +169,7 @@
     "/[lang]/(dashboard)/[wsId]/users/groups": [
       "sidebar-tabs",
       "search",
+      "user-group-data-table",
       "view-mode",
       "pagination",
       "ws-user-groups-configs",
@@ -199,6 +200,7 @@
     "/[lang]/(dashboard)/[wsId]/users/reports": [
       "sidebar-tabs",
       "search",
+      "user-report-data-table",
       "workspace-users-tabs"
     ],
 

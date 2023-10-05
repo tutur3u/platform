@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { Vital } from '../../../../../../types/primitives/Vital';
-import VitalGroupCreateModal from '../../../../../../components/loaders/vital-groups/VitalGroupCreateModal';
 import 'dayjs/locale/vi';
 import VitalSelector from '../../../../../../components/selectors/VitalSelector';
 import { TrashIcon } from '@heroicons/react/24/solid';
@@ -72,28 +70,6 @@ export default function NewVitalGroupPage() {
     });
   };
 
-  const showCreateModal = () => {
-    if (!ws) return;
-    openModal({
-      title: <div className="font-semibold">Tạo nhóm chỉ số mới</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <VitalGroupCreateModal
-          wsId={ws.id}
-          group={{
-            name,
-            description: description || '',
-            note: note || '',
-          }}
-          vitals={vitals}
-        />
-      ),
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -104,7 +80,6 @@ export default function NewVitalGroupPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showCreateModal : undefined}
           >
             Tạo mới
           </button>

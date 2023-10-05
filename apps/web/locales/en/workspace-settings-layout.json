@@ -1,0 +1,9 @@
+{
+  "workspace": "Workspace",
+  "members": "Members",
+  "teams": "Teams",
+  "secrets": "Secrets",
+  "infrastructure": "Infrastructure",
+  "migrations": "Migrations",
+  "activities": "Activities"
+}

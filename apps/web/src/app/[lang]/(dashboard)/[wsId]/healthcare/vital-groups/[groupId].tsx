@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { Vital } from '../../../../../../types/primitives/Vital';
 import 'dayjs/locale/vi';
 import VitalSelector from '../../../../../../components/selectors/VitalSelector';
@@ -8,8 +7,6 @@ import { useRouter } from 'next/router';
 import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
 import useSWR from 'swr';
 import { TrashIcon } from '@heroicons/react/24/solid';
-import VitalGroupDeleteModal from '../../../../../../components/loaders/vital-groups/VitalGroupDeleteModal';
-import VitalGroupEditModal from '../../../../../../components/loaders/vital-groups/VitalGroupEditModal';
 import { useSegments } from '../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 
@@ -101,55 +98,6 @@ export default function VitalGroupDetailsPage() {
     });
   };
 
-  const showEditModal = () => {
-    if (!group) return;
-    if (typeof groupId !== 'string') return;
-    if (!ws?.id) return;
-    if (!groupVitals || !vitals) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật nhóm chỉ số</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <VitalGroupEditModal
-          wsId={ws.id}
-          group={{
-            id: groupId,
-            name,
-            description: description || '',
-            note: note || '',
-          }}
-          vitals={vitals}
-          oldVitals={groupVitals}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!group) return;
-    if (typeof groupId !== 'string') return;
-    if (!ws?.id || !groupVitals) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa nhóm chỉ số</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <VitalGroupDeleteModal
-          wsId={ws.id}
-          groupId={groupId}
-          vitals={groupVitals}
-        />
-      ),
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -158,7 +106,6 @@ export default function VitalGroupDetailsPage() {
             className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
               group ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={group ? showDeleteModal : undefined}
           >
             Xoá
           </button>
@@ -169,7 +116,6 @@ export default function VitalGroupDetailsPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             Lưu thay đổi
           </button>

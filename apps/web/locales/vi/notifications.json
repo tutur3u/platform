@@ -1,4 +1,9 @@
 {
+  "accept": "Chấp nhận",
+  "decline": "Từ chối",
+  "notifications": "Thông báo",
   "no-notifications": "Không có thông báo",
-  "no-notifications-desc": "Bạn không có thông báo nào."
+  "no-notifications-desc": "Bạn không có thông báo nào.",
+  "workspace-invite": "Lời mời tham gia",
+  "invited-to": "Bạn đã được mời tham gia"
 }
