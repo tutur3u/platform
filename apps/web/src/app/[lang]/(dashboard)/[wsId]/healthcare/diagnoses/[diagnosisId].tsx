@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { useRouter } from 'next/router';
 import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
 import useSWR from 'swr';
-import DiagnosisEditModal from '../../../../../../components/loaders/diagnoses/DiagnosisEditModal';
-import DiagnosisDeleteModal from '../../../../../../components/loaders/diagnoses/DiagnosisDeleteModal';
 import { useSegments } from '../../../../../../hooks/useSegments';
 import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
 
@@ -58,46 +55,6 @@ export default function NewDiagnosisPage() {
 
   const hasRequiredFields = () => diagnosis && name.length > 0;
 
-  const showEditModal = () => {
-    if (!diagnosis) return;
-    if (typeof diagnosisId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Cập nhật chẩn đoán</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <DiagnosisEditModal
-          wsId={ws.id}
-          diagnosis={{
-            id: diagnosisId,
-            name,
-            description,
-            note,
-          }}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!diagnosis) return;
-    if (typeof diagnosisId !== 'string') return;
-    if (!ws?.id) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa chẩn đoán</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: <DiagnosisDeleteModal wsId={ws.id} diagnosisId={diagnosisId} />,
-    });
-  };
-
   return (
     <div className="mt-2 flex min-h-full w-full flex-col ">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
@@ -108,7 +65,6 @@ export default function NewDiagnosisPage() {
                 ? 'hover:bg-red-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={diagnosis ? showDeleteModal : undefined}
           >
             Xoá
           </button>
@@ -119,7 +75,6 @@ export default function NewDiagnosisPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             Lưu thay đổi
           </button>

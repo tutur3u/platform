@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import { Vital } from '../../../../../../types/primitives/Vital';
 import 'dayjs/locale/vi';
 import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
@@ -11,8 +10,6 @@ import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupV
 import { useRouter } from 'next/router';
 import { Checkup } from '../../../../../../types/primitives/Checkup';
 import useSWR from 'swr';
-import CheckupEditModal from '../../../../../../components/loaders/checkups/CheckupEditModal';
-import CheckupDeleteModal from '../../../../../../components/loaders/checkups/CheckupDeleteModal';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
 import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
 import { useSegments } from '../../../../../../hooks/useSegments';
@@ -238,62 +235,6 @@ export default function CheckupDetailsPage() {
     });
   };
 
-  const showEditModal = () => {
-    if (!ws?.id) return;
-    if (!checkup) return;
-    if (!checkupGroups || !checkupVitals) return;
-
-    openModal({
-      title: (
-        <div className="font-semibold">Cập nhật đơn kiểm tra sức khoẻ</div>
-      ),
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <CheckupEditModal
-          wsId={ws.id}
-          checkup={{
-            id: checkup.id,
-            patient_id: userId,
-            diagnosis_id: diagnosis?.id || null,
-            checked: checked,
-            checkup_at: checkupAt?.toISOString() || undefined,
-            next_checked: nextChecked,
-            next_checkup_at: nextCheckupAt?.toISOString() || undefined,
-            note: note || undefined,
-          }}
-          oldGroups={checkupGroups}
-          oldVitals={checkupVitals}
-          groups={groups}
-          vitals={vitals}
-        />
-      ),
-    });
-  };
-
-  const showDeleteModal = () => {
-    if (!ws?.id) return;
-    if (!checkup) return;
-    if (!checkupGroups || !checkupVitals) return;
-
-    openModal({
-      title: <div className="font-semibold">Xóa đơn kiểm tra sức khoẻ</div>,
-      centered: true,
-      closeOnEscape: false,
-      closeOnClickOutside: false,
-      withCloseButton: false,
-      children: (
-        <CheckupDeleteModal
-          wsId={ws.id}
-          checkupId={checkup.id}
-          groups={groups}
-          vitals={vitals}
-        />
-      ),
-    });
-  };
 
   if (!ws) return null;
 
@@ -305,7 +246,6 @@ export default function CheckupDetailsPage() {
             className={`rounded border border-red-300/10 bg-red-300/10 px-4 py-1 font-semibold text-red-300 transition ${
               checkup ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={checkup ? showDeleteModal : undefined}
           >
             Xoá
           </button>
@@ -316,7 +256,6 @@ export default function CheckupDetailsPage() {
                 ? 'hover:bg-blue-300/20'
                 : 'cursor-not-allowed opacity-50'
             }`}
-            onClick={hasRequiredFields() ? showEditModal : undefined}
           >
             Lưu thay đổi
           </button>
