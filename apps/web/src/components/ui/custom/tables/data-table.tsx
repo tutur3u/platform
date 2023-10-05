@@ -27,6 +27,7 @@ import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
 import { useState } from 'react';
 import useQuery from '@/hooks/useQuery';
+import useTranslation from 'next-translate/useTranslation';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -41,6 +42,7 @@ export function DataTable<TData, TValue>({
   count,
   defaultVisibility = {},
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation('common');
   const query = useQuery();
 
   const [rowSelection, setRowSelection] = useState({});
@@ -128,7 +130,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t('no-results')}.
                 </TableCell>
               </TableRow>
             )}

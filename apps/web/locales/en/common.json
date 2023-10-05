@@ -57,5 +57,16 @@
   "open-source": "Open Source",
   "copied": "Copied",
   "edit": "Edit",
-  "remove": "Remove"
+  "remove": "Remove",
+  "refresh": "Refresh",
+  "view-options": "View",
+  "show-all": "Show All",
+  "hide-all": "Hide All",
+  "toggle-columns": "Toggle Columns",
+  "no-results": "No Results",
+  "of": "of",
+  "selected": "Selected",
+  "page": "Page",
+  "row(s)": "row(s)",
+  "rows-per-page": "Rows per page"
 }

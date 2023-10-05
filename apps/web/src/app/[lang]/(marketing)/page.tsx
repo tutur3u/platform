@@ -1,10 +1,15 @@
 import Link from 'next/link';
-import { features } from './features';
+import { getFeatures } from './features';
 import Image from 'next/image';
+import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MarketingPage() {
+  const { t } = useTranslation('home');
+
+  const features = getFeatures(t);
+
   return (
     <div className="flex w-full flex-col items-center">
       <div className="animate-in text-foreground mt-24 flex max-w-4xl flex-col gap-6 px-3 py-16 opacity-0 lg:gap-14 lg:py-24">
@@ -20,9 +25,9 @@ export default async function MarketingPage() {
           </h1>
 
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            Take control of your workflow,{' '}
+            {t('headline-p1')} <br />
             <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
-              supercharged by AI
+              {t('headline-p2')}
             </span>
             .
           </p>
@@ -33,7 +38,7 @@ export default async function MarketingPage() {
               href="/login"
               className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all dark:from-rose-400/60 dark:to-orange-300/60 md:text-lg"
             >
-              Get started
+              {t('get-started')}
             </Link>
           </div>
         </div>
@@ -42,7 +47,7 @@ export default async function MarketingPage() {
 
         <div className="text-foreground flex flex-col gap-8">
           <h2 className="text-center font-bold md:text-lg">
-            What can you do with Tuturuuu?
+            {t('features-lead')}
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {features

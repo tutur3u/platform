@@ -7,25 +7,31 @@ import {
 import { Bell } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { getWorkspaceInvites } from '@/lib/workspace-helper';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import NotificationActionList, {
   NotificationAction,
 } from './notification-action-list';
 import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
 
 export default async function NotificationPopover() {
-  const { t } = useTranslation('notifications');
+  const { t, lang: locale } = useTranslation('notifications');
+
+  // Configure dayjs
+  dayjs.locale(locale);
+  dayjs.extend(relativeTime);
 
   const noNotifications = t('no-notifications');
   const desc = t('no-notifications-desc');
 
   const invites = await getWorkspaceInvites();
   const notifications = invites.map((invite) => ({
-    title: `Workspace Invite • ${moment(invite.created_at).fromNow()}`,
+    title: `${t('workspace-invite')} • ${dayjs(invite.created_at).fromNow()}.`,
     description: (
       <div>
-        You have been invited to join{' '}
-        <span className="text-primary font-semibold underline">
+        {t('invited-to')}{' '}
+        <span className="text-primary/70 font-semibold underline">
           {invite.name}
         </span>
         .
@@ -33,13 +39,13 @@ export default async function NotificationPopover() {
     ),
     actions: [
       {
-        label: 'Decline',
+        label: t('decline'),
         variant: 'outline',
         type: 'WORKSPACE_INVITE_DECLINE',
         payload: { wsId: invite.id },
       },
       {
-        label: 'Accept',
+        label: t('accept'),
         type: 'WORKSPACE_INVITE_ACCEPT',
         payload: { wsId: invite.id },
       },
@@ -60,7 +66,7 @@ export default async function NotificationPopover() {
       </PopoverTrigger>
       <PopoverContent className="w-full md:w-96">
         <div className="font-semibold">
-          Notifications
+          {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
         <Separator className="mb-4 mt-1" />

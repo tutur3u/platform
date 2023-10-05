@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import useQuery from '@/hooks/useQuery';
 import { cn } from '@/lib/utils';
+import useTranslation from 'next-translate/useTranslation';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
@@ -28,6 +29,7 @@ export function DataTablePagination<TData>({
   count,
   className,
 }: DataTablePaginationProps<TData>) {
+  const { t, lang } = useTranslation('common');
   const query = useQuery();
 
   return (
@@ -37,14 +39,28 @@ export function DataTablePagination<TData>({
         className
       )}
     >
-      <div className="text-muted-foreground flex-none text-sm">
-        {table.getFilteredSelectedRowModel().rows.length} of{' '}
-        {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
-        {count} row(s) selected.
-      </div>
+      {count !== undefined && count > 0 ? (
+        <div className="text-muted-foreground flex-none text-sm">
+          {lang === 'vi' || lang === 'vi-VN' ? t('selected') : null}{' '}
+          <span className="text-primary font-semibold">
+            {table.getFilteredSelectedRowModel().rows.length}
+          </span>{' '}
+          {t('of')}{' '}
+          {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
+          <span className="text-primary font-semibold">{count}</span>{' '}
+          {t('row(s)')}
+          {lang !== 'vi' && lang !== 'vi-VN'
+            ? ' ' + t('selected').toLowerCase()
+            : null}
+          .
+        </div>
+      ) : (
+        <div />
+      )}
+
       <div className="flex items-center gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{t('rows-per-page')}</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -64,9 +80,15 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-full items-center justify-center text-sm font-medium md:w-[100px]">
-          Page {table.getState().pagination.pageIndex + 1} of{' '}
-          {table.getPageCount()}
+        <div className="text-muted-foreground w-fit text-sm">
+          {t('page')}{' '}
+          <span className="text-primary font-semibold">
+            {table.getState().pagination.pageIndex + 1}
+          </span>{' '}
+          {t('of')}{' '}
+          <span className="text-primary font-semibold">
+            {table.getPageCount()}
+          </span>
         </div>
         <div className="flex items-center space-x-2">
           <Button

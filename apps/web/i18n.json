@@ -4,7 +4,7 @@
   "pages": {
     "*": ["common", "notifications"],
 
-    "/[lang]/": ["home"],
+    "/[lang]/(marketing)": ["home"],
     "/[lang]/logout": ["logout"],
     "/[lang]/login": ["auth", "login"],
     "/[lang]/signup": ["auth", "signup", "auth-email-sent"],
