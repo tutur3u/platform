@@ -15,6 +15,7 @@ export function ThemeDropdownItems() {
 
   // get "theme" from localStorage
   const theme = localStorage.getItem('theme');
+  const isSystem = theme === null || theme === 'system';
 
   return (
     <>
@@ -28,6 +29,7 @@ export function ThemeDropdownItems() {
         ) : (
           <Sun className="mr-2 h-4 w-4" />
         )}
+
         {t('light')}
       </DropdownMenuItem>
       <DropdownMenuItem
@@ -40,19 +42,21 @@ export function ThemeDropdownItems() {
         ) : (
           <Moon className="mr-2 h-4 w-4" />
         )}
+
         {t('dark')}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem
         className="cursor-pointer"
         onClick={() => setTheme('system')}
-        disabled={theme === 'system'}
+        disabled={isSystem}
       >
-        {theme === 'system' ? (
+        {isSystem ? (
           <Check className="mr-2 h-4 w-4" />
         ) : (
           <Sparkle className="mr-2 h-4 w-4" />
         )}
+
         {t('system')}
       </DropdownMenuItem>
     </>

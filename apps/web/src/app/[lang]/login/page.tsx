@@ -1,23 +1,19 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import LoginForm from './form';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
+import { getWorkspaces } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Login() {
   const { t } = useTranslation('auth');
-  const supabase = createServerComponentClient({ cookies });
+  const workspaces = await getWorkspaces(true);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) redirect('/onboarding');
+  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
+  if (workspaces?.length === 0) redirect('/onboarding');
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center p-8">

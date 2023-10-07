@@ -102,10 +102,14 @@ export default async function Layout({
               />
             </Link>
 
-            <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
-            <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
-              <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
-            </Suspense>
+            {workspaces && (
+              <>
+                <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
+                <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
+                  <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
+                </Suspense>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
