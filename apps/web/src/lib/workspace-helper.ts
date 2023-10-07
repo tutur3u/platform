@@ -43,7 +43,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 
   if (!user) {
     if (noRedirect) return null;
-    else return redirect('/login');
+    redirect('/login');
   }
 
   const { data, error } = await supabase
