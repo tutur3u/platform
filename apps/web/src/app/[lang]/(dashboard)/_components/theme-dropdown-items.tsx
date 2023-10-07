@@ -11,11 +11,9 @@ import useTranslation from 'next-translate/useTranslation';
 
 export function ThemeDropdownItems() {
   const { t } = useTranslation('common');
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
-  // get "theme" from localStorage
-  const theme = localStorage.getItem('theme');
-  const isSystem = theme === null || theme === 'system';
+  const isSystem = theme === 'system' || theme === null;
 
   return (
     <>

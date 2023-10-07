@@ -1,7 +1,11 @@
+import { DEV_MODE } from './common';
+
 export const siteConfig = {
   name: 'Tuturuuu',
-  url: 'https://tuturuuu.com',
-  ogImage: 'https://tuturuuu.com/media/logos/og-image.png',
+  url: DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com',
+  ogImage: DEV_MODE
+    ? 'http://localhost:7803/media/logos/og-image.png'
+    : 'https://tuturuuu.com/media/logos/og-image.png',
   description:
     'Brainstorm and organize your ideas at the speed of thought, supercharged by AI.',
   links: {

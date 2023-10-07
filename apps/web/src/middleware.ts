@@ -40,37 +40,59 @@ const handleSupabaseAuth = async ({ req }: { req: NextRequest }) => {
   return res;
 };
 
-const getLocale = async (req: NextRequest) => {
-  // Get locale from cookie
-  const localeFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value;
-  const localeFromSearch = req.nextUrl.search.split('lang=')?.[1];
+const getSupportedLocale = (locale: string) => {
+  return i18n.locales.includes(locale) ? locale : null;
+};
 
-  const locale = localeFromSearch || localeFromCookie;
+const getExistingLocale = (req: NextRequest) => {
+  // Get raw locale from pathname and cookie
+  const rawLocaleFromPathname = req.nextUrl.pathname.split('/')?.[1] || '';
+  const rawRocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
 
-  // Check if locale is supported
-  if (locale && i18n.locales.includes(locale)) {
-    return locale;
-  }
+  // Get supported locale from pathname and cookie
+  const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
+  const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
 
+  return {
+    data: localeFromPathname || localeFromCookie,
+    cookie: localeFromCookie,
+    pathname: localeFromPathname,
+  };
+};
+
+const getDefaultLocale = (req: NextRequest) => {
   // Get browser languages
   let headers = {
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
   const languages = new Negotiator({ headers }).languages();
-
-  // Match browser languages with supported locales
-  return match(languages, i18n.locales, i18n.defaultLocale);
+  return { data: match(languages, i18n.locales, i18n.defaultLocale) };
 };
 
-const hasLocaleFromPathname = (req: NextRequest) => {
-  const localeFromPathname = req.nextUrl.pathname.split('/')?.[1];
-  return i18n.locales.includes(localeFromPathname);
-};
+const getLocale = async (req: NextRequest) => {
+  // Get locale from pathname and cookie
+  const { data: existingLocale, cookie, pathname } = getExistingLocale(req);
 
-const hasLocaleFromSearch = (req: NextRequest) => {
-  const localeFromSearch = req.nextUrl.search.split('lang=')?.[1];
-  return i18n.locales.includes(localeFromSearch);
+  // If locale is found, return it
+  if (existingLocale) {
+    return {
+      data: existingLocale,
+      cookie,
+      pathname,
+      default: false,
+    };
+  }
+
+  // If locale is not found, return default locale
+  const { data: defaultLocale } = getDefaultLocale(req);
+
+  return {
+    data: defaultLocale,
+    cookie,
+    pathname,
+    default: true,
+  };
 };
 
 const handleLocale = async ({
@@ -80,22 +102,16 @@ const handleLocale = async ({
   req: NextRequest;
   res: NextResponse;
 }) => {
-  const locale = await getLocale(req);
+  // Get locale from cookie or browser languages
+  const { data: locale, pathname } = await getLocale(req);
 
-  // redirect to default locale if no locale is found
-  if (!hasLocaleFromPathname(req)) {
-    req.nextUrl.searchParams.set('lang', locale);
-    req.nextUrl.pathname = `/${locale}${req.nextUrl.pathname}`;
-    NextResponse.redirect(req.nextUrl);
-  }
+  // Update locale in search params to load correct translations
+  req.nextUrl.searchParams.set('lang', locale);
 
-  if (hasLocaleFromSearch(req)) {
-    req.nextUrl.searchParams.set('lang', locale);
-    req.nextUrl.pathname = req.nextUrl.pathname.replace(
-      `/${req.nextUrl.pathname.split('/')?.[1]}`,
-      `/${locale}`
-    );
-  }
+  // Construct nextUrl with locale and redirect
+  req.nextUrl.pathname = !pathname
+    ? `/${locale}${req.nextUrl.pathname}`
+    : req.nextUrl.pathname.replace(pathname, locale);
 
   return NextResponse.rewrite(req.nextUrl, res);
 };
