@@ -34,14 +34,17 @@ export async function getWorkspace(id: string) {
   return ws as Workspace;
 }
 
-export async function getWorkspaces() {
+export async function getWorkspaces(noRedirect?: boolean) {
   const supabase = createServerComponentClient({ cookies });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) {
+    if (noRedirect) return null;
+    redirect('/login');
+  }
 
   const { data, error } = await supabase
     .from('workspaces')

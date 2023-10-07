@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
 
+export const dynamic = 'force-dynamic';
+
 interface LayoutProps {
   params: {
     wsId: string;
