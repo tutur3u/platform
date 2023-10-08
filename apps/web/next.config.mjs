@@ -5,6 +5,10 @@ import nextTranslate from 'next-translate-plugin';
 const nextConfig = nextTranslate({
   experimental: {
     serverActions: true,
+    // logging: {
+    //   level: 'verbose',
+    //   fullUrl: true,
+    // },
   },
   images: {
     remotePatterns: [

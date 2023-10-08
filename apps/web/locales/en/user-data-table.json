@@ -9,5 +9,7 @@
   "guardian": "Guardian",
   "national_id": "National ID",
   "address": "Address",
-  "note": "Note"
+  "note": "Note",
+  "linked_users": "Linked Users",
+  "linked_to": "Linked to"
 }

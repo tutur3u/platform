@@ -20,8 +20,8 @@ export function DataTableToolbar<TData>({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
+    <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
+      <div className="flex w-full flex-1 items-center gap-2 space-x-2">
         <GeneralSearchBar className="w-full md:max-w-xs" />
         {/* {table.getColumn('status') && (
           <DataTableFacetedFilter
@@ -48,7 +48,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
         <DataTableRefreshButton />
         <DataTableViewOptions namespace={namespace} table={table} />
       </div>

@@ -1,5 +1,6 @@
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { LanguageDropdownItem } from './language-dropdown-item';
+import i18n from '../../../../../i18n.json';
 import { cookies as c } from 'next/headers';
 
 interface Props {
@@ -9,9 +10,16 @@ interface Props {
 
 export async function LanguageWrapper({ label, locale }: Props) {
   const cookies = c();
+
   const currentLocale = cookies.get(LOCALE_COOKIE_NAME)?.value;
 
-  const isCurrentLocale = locale === currentLocale;
+  const isLocaleSupported = currentLocale
+    ? i18n.locales.includes(currentLocale)
+    : true; // user is using system locale
+
+  const isCurrentLocale = isLocaleSupported
+    ? locale === currentLocale
+    : locale === 'en';
 
   return (
     <LanguageDropdownItem

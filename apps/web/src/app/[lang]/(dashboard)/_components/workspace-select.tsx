@@ -26,14 +26,14 @@ export default function WorkspaceSelect({ wsId, workspaces }: Props) {
 
   return (
     <Select value={wsId} onValueChange={onValueChange}>
-      <SelectTrigger className="w-48">
+      <SelectTrigger className="w-full md:w-48">
         <SelectValue placeholder="Select a workspace" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
           {workspaces.map((workspace) => (
             <SelectItem key={workspace.id} value={workspace.id}>
-              {workspace.name}
+              <span className="line-clamp-1">{workspace.name}</span>
             </SelectItem>
           ))}
         </SelectGroup>

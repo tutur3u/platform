@@ -92,7 +92,7 @@ export default async function Layout({
       <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="mb-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link href="/">
+            <Link href="/" className="flex-none">
               <Image
                 src="/media/logos/transparent.png"
                 width={320}
