@@ -125,7 +125,7 @@
     "@types/react-dom": "^18.2.11",
     "@types/react-resizable": "^3.0.5",
     "@types/uuid": "^9.0.5",
-    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
     "@typescript-eslint/parser": "^6.7.4",
     "autoprefixer": "^10.4.16",
     "encoding": "^0.1.13",
