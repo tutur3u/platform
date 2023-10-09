@@ -122,7 +122,7 @@
     "@types/node": "^20.8.3",
     "@types/react": "^18.2.25",
     "@types/react-beautiful-dnd": "^13.1.5",
-    "@types/react-dom": "^18.2.11",
+    "@types/react-dom": "^18.2.12",
     "@types/react-resizable": "^3.0.5",
     "@types/uuid": "^9.0.5",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
