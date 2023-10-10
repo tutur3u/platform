@@ -1,5 +1,6 @@
 {
   "id": "Mã định danh",
+  "avatar_url": "Ảnh đại diện",
   "name": "Tên",
   "email": "Email",
   "phone": "SĐT",
@@ -9,5 +10,7 @@
   "guardian": "Người giám hộ",
   "national_id": "CMND/CCCD",
   "address": "Địa chỉ",
-  "note": "Ghi chú"
+  "note": "Ghi chú",
+  "linked_users": "Người dùng liên kết",
+  "linked_to": "Đã liên kết với"
 }

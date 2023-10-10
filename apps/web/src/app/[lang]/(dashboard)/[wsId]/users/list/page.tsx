@@ -1,6 +1,5 @@
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getUserColumns } from '../../../../../../data/columns/users';
 import useTranslation from 'next-translate/useTranslation';
@@ -37,11 +36,13 @@ export default async function WorkspaceUsersPage({
       count={count}
       defaultVisibility={{
         id: false,
+        avatar_url: false,
         ethnicity: false,
         guardian: false,
         address: false,
         national_id: false,
         note: false,
+        linked_users: false,
       }}
     />
   );
@@ -55,14 +56,18 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
 
   const queryBuilder = supabase
     .from('workspace_users')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
+    .select(
+      '*, linked_users:workspace_user_linked_users(platform_user_id, users(display_name, workspace_members!inner(user_id, ws_id)))',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('ws_id', wsId)
+    .eq('linked_users.users.workspace_members.ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -79,8 +84,28 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
+  const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
+
+  const data = rawData.map(({ linked_users, ...rest }) => ({
+    ...rest,
+    linked_users: linked_users
+      .map(
+        ({
+          platform_user_id,
+          users,
+        }: {
+          platform_user_id: string;
+          users: {
+            display_name: string;
+          } | null;
+        }) =>
+          users
+            ? { id: platform_user_id, display_name: users.display_name }
+            : null
+      )
+      .filter((v: WorkspaceUser | null) => v),
+  }));
 
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }

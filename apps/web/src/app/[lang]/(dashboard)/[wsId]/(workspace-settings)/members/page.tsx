@@ -32,7 +32,7 @@ export default async function WorkspaceMembersPage({
 
   const { t } = useTranslation('ws-members');
 
-  const membersLabel = t('workspace-tabs:members');
+  const membersLabel = t('workspace-settings-layout:members');
   const inviteLabel = t('invite_member');
 
   return (

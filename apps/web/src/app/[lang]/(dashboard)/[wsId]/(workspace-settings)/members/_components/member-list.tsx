@@ -115,10 +115,8 @@ export default async function MemberList({
 
           <div
             className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
-              member?.pending
-                ? 'unknown'
-                : member?.role?.toLocaleLowerCase() ?? 'unknown'
-            )}`}
+              'unknown'
+            )} ${member?.pending ? 'border-dashed opacity-60' : ''}`}
           >
             {t(member?.role?.toLocaleLowerCase() || 'unknown')}
           </div>

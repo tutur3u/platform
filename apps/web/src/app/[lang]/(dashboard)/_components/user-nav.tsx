@@ -29,6 +29,7 @@ import { ThemeDropdownItems } from './theme-dropdown-items';
 import { LanguageWrapper } from './language-wrapper';
 import useTranslation from 'next-translate/useTranslation';
 import { SystemLanguageWrapper } from './system-language-wrapper';
+import { getWorkspaces } from '@/lib/workspace-helper';
 
 interface Props {
   wsId?: string;
@@ -36,7 +37,9 @@ interface Props {
 
 export async function UserNav({ wsId }: Props) {
   const { t } = useTranslation('common');
+
   const user = await getCurrentUser();
+  const workspaces = await getWorkspaces(true);
 
   return (
     <DropdownMenu>
@@ -68,11 +71,11 @@ export async function UserNav({ wsId }: Props) {
             </p>
           </div>
         </DropdownMenuLabel>
-        {wsId === undefined && (
+        {wsId === undefined && workspaces?.[0]?.id !== undefined && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="/onboarding">
+              <Link href={`/${workspaces[0].id}`}>
                 <DropdownMenuItem className="cursor-pointer">
                   <ActivitySquare className="mr-2 h-4 w-4" />
                   <span>{t('dashboard')}</span>

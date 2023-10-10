@@ -5,12 +5,20 @@ import nextTranslate from 'next-translate-plugin';
 const nextConfig = nextTranslate({
   experimental: {
     serverActions: true,
+    // logging: {
+    //   level: 'verbose',
+    //   fullUrl: true,
+    // },
   },
   images: {
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'yjbjpmwbfimjcdsjxfst.supabase.co',
       },
     ],
   },

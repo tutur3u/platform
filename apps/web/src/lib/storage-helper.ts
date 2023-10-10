@@ -25,6 +25,7 @@ export async function downloadPublicObject({
     } = supabase.storage.from(bucket).getPublicUrl(path);
 
     onSuccess?.(url);
+    return url;
   } catch (error) {
     console.log('Error downloading object: ', error);
     onError?.(error);
