@@ -19,6 +19,7 @@
     "sb:diff": "cd apps/web && pnpm sb:diff",
     "sb:new": "cd apps/web && pnpm sb:new",
     "sb:status": "cd apps/web && pnpm sb:status",
+    "sb:typegen": "cd apps/web && pnpm sb:typegen",
     "ui:add": "pnpm --filter ui ui:add",
     "ui:diff": "pnpm --filter ui ui:diff"
   },

@@ -56,6 +56,12 @@ export interface Database {
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
         ];
       };
       calendar_event_platform_participants: {
@@ -187,54 +193,109 @@ export interface Database {
           created_at: string | null;
           invoice_id: string;
           price: number;
-          product_id: string;
+          product_id: string | null;
+          product_name: string;
+          product_unit: string;
           total_diff: number;
-          unit_id: string;
-          warehouse_id: string;
+          unit_id: string | null;
+          warehouse: string;
+          warehouse_id: string | null;
         };
         Insert: {
           amount: number;
           created_at?: string | null;
           invoice_id: string;
           price: number;
-          product_id: string;
+          product_id?: string | null;
+          product_name?: string;
+          product_unit?: string;
           total_diff?: number;
-          unit_id: string;
-          warehouse_id: string;
+          unit_id?: string | null;
+          warehouse?: string;
+          warehouse_id?: string | null;
         };
         Update: {
           amount?: number;
           created_at?: string | null;
           invoice_id?: string;
           price?: number;
-          product_id?: string;
+          product_id?: string | null;
+          product_name?: string;
+          product_unit?: string;
           total_diff?: number;
-          unit_id?: string;
-          warehouse_id?: string;
+          unit_id?: string | null;
+          warehouse?: string;
+          warehouse_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'finance_invoice_products_invoice_id_fkey';
+            columns: ['invoice_id'];
+            referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_products_product_id_fkey';
+            columns: ['product_id'];
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_products_unit_id_fkey';
+            columns: ['unit_id'];
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'finance_invoice_products_warehouse_id_fkey';
             columns: ['warehouse_id'];
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
+        ];
+      };
+      finance_invoice_promotions: {
+        Row: {
+          code: string;
+          created_at: string;
+          description: string | null;
+          invoice_id: string | null;
+          name: string | null;
+          promo_id: string | null;
+          use_ratio: boolean;
+          value: number;
+        };
+        Insert: {
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          invoice_id?: string | null;
+          name?: string | null;
+          promo_id?: string | null;
+          use_ratio: boolean;
+          value: number;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          invoice_id?: string | null;
+          name?: string | null;
+          promo_id?: string | null;
+          use_ratio?: boolean;
+          value?: number;
+        };
+        Relationships: [
           {
-            foreignKeyName: 'healthcare_prescription_products_prescription_id_fkey';
+            foreignKeyName: 'finance_invoice_promotions_invoice_id_fkey';
             columns: ['invoice_id'];
             referencedRelation: 'finance_invoices';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'healthcare_prescription_products_product_id_fkey';
-            columns: ['product_id'];
-            referencedRelation: 'workspace_products';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_prescription_products_unit_id_fkey';
-            columns: ['unit_id'];
-            referencedRelation: 'inventory_units';
+            foreignKeyName: 'finance_invoice_promotions_promo_id_fkey';
+            columns: ['promo_id'];
+            referencedRelation: 'workspace_promotions';
             referencedColumns: ['id'];
           },
         ];
@@ -243,7 +304,7 @@ export interface Database {
         Row: {
           completed_at: string | null;
           created_at: string | null;
-          creator_id: string;
+          creator_id: string | null;
           customer_id: string | null;
           id: string;
           note: string | null;
@@ -256,7 +317,7 @@ export interface Database {
         Insert: {
           completed_at?: string | null;
           created_at?: string | null;
-          creator_id: string;
+          creator_id?: string | null;
           customer_id?: string | null;
           id?: string;
           note?: string | null;
@@ -269,7 +330,7 @@ export interface Database {
         Update: {
           completed_at?: string | null;
           created_at?: string | null;
-          creator_id?: string;
+          creator_id?: string | null;
           customer_id?: string | null;
           id?: string;
           note?: string | null;
@@ -281,15 +342,15 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: 'finance_invoices_transaction_id_fkey';
-            columns: ['transaction_id'];
-            referencedRelation: 'wallet_transactions';
+            foreignKeyName: 'finance_invoices_creator_id_fkey';
+            columns: ['creator_id'];
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'healthcare_prescriptions_creator_id_fkey';
-            columns: ['creator_id'];
-            referencedRelation: 'users';
+            foreignKeyName: 'finance_invoices_transaction_id_fkey';
+            columns: ['transaction_id'];
+            referencedRelation: 'wallet_transactions';
             referencedColumns: ['id'];
           },
           {
@@ -653,7 +714,7 @@ export interface Database {
       };
       inventory_products: {
         Row: {
-          amount: number;
+          amount: number | null;
           created_at: string | null;
           min_amount: number;
           price: number;
@@ -662,7 +723,7 @@ export interface Database {
           warehouse_id: string;
         };
         Insert: {
-          amount?: number;
+          amount?: number | null;
           created_at?: string | null;
           min_amount?: number;
           price?: number;
@@ -671,7 +732,7 @@ export interface Database {
           warehouse_id: string;
         };
         Update: {
-          amount?: number;
+          amount?: number | null;
           created_at?: string | null;
           min_amount?: number;
           price?: number;
@@ -1052,6 +1113,261 @@ export interface Database {
           },
         ];
       };
+      user_feedbacks: {
+        Row: {
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          group_id: string | null;
+          id: string;
+          require_attention: boolean;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string | null;
+          id?: string;
+          require_attention?: boolean;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string | null;
+          id?: string;
+          require_attention?: boolean;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_feedbacks_creator_id_fkey';
+            columns: ['creator_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_attendance: {
+        Row: {
+          created_at: string;
+          date: string;
+          group_id: string;
+          notes: string;
+          status: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          date: string;
+          group_id: string;
+          notes?: string;
+          status: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          date?: string;
+          group_id?: string;
+          notes?: string;
+          status?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_attendance_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_indicators: {
+        Row: {
+          created_at: string;
+          group_id: string;
+          indicator_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          group_id: string;
+          indicator_id: string;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string;
+          indicator_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_indicators_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_indicators_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_indicators_indicator_id_fkey';
+            columns: ['indicator_id'];
+            referencedRelation: 'healthcare_vitals';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_linked_products: {
+        Row: {
+          created_at: string;
+          group_id: string;
+          product_id: string;
+          unit_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          group_id: string;
+          product_id: string;
+          unit_id: string;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string;
+          product_id?: string;
+          unit_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_linked_products_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_linked_products_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_linked_products_product_id_fkey';
+            columns: ['product_id'];
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_linked_products_unit_id_fkey';
+            columns: ['unit_id'];
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_posts: {
+        Row: {
+          content: string | null;
+          created_at: string;
+          group_id: string;
+          id: string;
+          notes: string | null;
+          title: string | null;
+        };
+        Insert: {
+          content?: string | null;
+          created_at?: string;
+          group_id: string;
+          id?: string;
+          notes?: string | null;
+          title?: string | null;
+        };
+        Update: {
+          content?: string | null;
+          created_at?: string;
+          group_id?: string;
+          id?: string;
+          notes?: string | null;
+          title?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_posts_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_group_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_linked_promotions: {
+        Row: {
+          created_at: string;
+          promo_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          promo_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          promo_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_linked_promotions_promo_id_fkey';
+            columns: ['promo_id'];
+            referencedRelation: 'workspace_promotions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_linked_promotions_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_private_details: {
         Row: {
           birthday: string | null;
@@ -1105,7 +1421,14 @@ export interface Database {
           handle?: string | null;
           id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'users_handle_fkey';
+            columns: ['handle'];
+            referencedRelation: 'handles';
+            referencedColumns: ['value'];
+          },
+        ];
       };
       vital_group_vitals: {
         Row: {
@@ -1332,39 +1655,39 @@ export interface Database {
         Row: {
           created_at: string | null;
           role: string;
-          role_title: string;
+          role_title: string | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
           role?: string;
-          role_title?: string;
-          user_id?: string;
+          role_title?: string | null;
+          user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
           role?: string;
-          role_title?: string;
+          role_title?: string | null;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_members_role_fkey';
+            foreignKeyName: 'workspace_invites_role_fkey';
             columns: ['role'];
             referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_members_user_id_fkey';
+            foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_members_ws_id_fkey';
+            foreignKeyName: 'workspace_invites_ws_id_fkey';
             columns: ['ws_id'];
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
@@ -1478,6 +1801,77 @@ export interface Database {
           },
         ];
       };
+      workspace_promotions: {
+        Row: {
+          code: string | null;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string | null;
+          use_ratio: boolean;
+          value: number;
+          ws_id: string;
+        };
+        Insert: {
+          code?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string | null;
+          use_ratio?: boolean;
+          value: number;
+          ws_id: string;
+        };
+        Update: {
+          code?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string | null;
+          use_ratio?: boolean;
+          value?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            columns: ['ws_id'];
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_secrets: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          value: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          value?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          value?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_secrets_ws_id_fkey';
+            columns: ['ws_id'];
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_teams: {
         Row: {
           created_at: string | null;
@@ -1561,6 +1955,12 @@ export interface Database {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
+            columns: ['group_id'];
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
             columns: ['user_id'];
             referencedRelation: 'workspace_users';
@@ -1568,9 +1968,50 @@ export interface Database {
           },
         ];
       };
+      workspace_user_linked_users: {
+        Row: {
+          created_at: string;
+          platform_user_id: string;
+          virtual_user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          platform_user_id: string;
+          virtual_user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          platform_user_id?: string;
+          virtual_user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_linked_users_platform_user_id_fkey';
+            columns: ['platform_user_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_virtual_user_id_fkey';
+            columns: ['virtual_user_id'];
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_ws_id_fkey';
+            columns: ['ws_id'];
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_users: {
         Row: {
           address: string | null;
+          avatar_url: string | null;
           balance: number | null;
           birthday: string | null;
           created_at: string | null;
@@ -1587,6 +2028,7 @@ export interface Database {
         };
         Insert: {
           address?: string | null;
+          avatar_url?: string | null;
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
@@ -1603,6 +2045,7 @@ export interface Database {
         };
         Update: {
           address?: string | null;
+          avatar_url?: string | null;
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
@@ -1714,26 +2157,32 @@ export interface Database {
       };
       workspaces: {
         Row: {
+          avatar_url: string | null;
           created_at: string | null;
           deleted: boolean | null;
           handle: string | null;
           id: string;
+          logo_url: string | null;
           name: string | null;
           preset: string;
         };
         Insert: {
+          avatar_url?: string | null;
           created_at?: string | null;
           deleted?: boolean | null;
           handle?: string | null;
           id?: string;
+          logo_url?: string | null;
           name?: string | null;
           preset?: string;
         };
         Update: {
+          avatar_url?: string | null;
           created_at?: string | null;
           deleted?: boolean | null;
           handle?: string | null;
           id?: string;
+          logo_url?: string | null;
           name?: string | null;
           preset?: string;
         };
@@ -1808,6 +2257,38 @@ export interface Database {
           type: string | null;
         };
         Relationships: [];
+      };
+      workspace_members_and_invites: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string | null;
+          display_name: string | null;
+          email: string | null;
+          handle: string | null;
+          id: string | null;
+          pending: boolean | null;
+          role: string | null;
+          role_title: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [];
+      };
+      workspace_user_groups_with_amount: {
+        Row: {
+          amount: number | null;
+          created_at: string | null;
+          id: string | null;
+          name: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Functions: {
