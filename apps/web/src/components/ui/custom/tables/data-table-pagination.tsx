@@ -32,6 +32,8 @@ export function DataTablePagination<TData>({
   const { t, lang } = useTranslation('common');
   const query = useQuery();
 
+  const sizes = [5, 10, 20, 50, 100, 200, 500, 1000];
+
   return (
     <div
       className={cn(
@@ -64,15 +66,16 @@ export function DataTablePagination<TData>({
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
+              table.setPageIndex(0);
               table.setPageSize(Number(value));
-              query.set({ pageSize: value });
+              query.set({ page: 1, pageSize: value });
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[5, 10, 20, 50, 100, 200, 500, 1000].map((pageSize) => (
+              {sizes.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
