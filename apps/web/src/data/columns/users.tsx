@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
 export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   {
@@ -44,38 +45,66 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
+    accessorKey: 'avatar_url',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('avatar_url')} />
+    ),
+    cell: async ({ row }) => {
+      const avatarUrl = row.getValue('avatar_url') as string | undefined;
+      if (!avatarUrl) return <div>-</div>;
+
+      return (
+        <Image
+          width={128}
+          height={128}
+          src={avatarUrl}
+          alt="Avatar"
+          className="aspect-square rounded-lg object-cover"
+        />
+      );
+    },
+  },
+  {
     accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
-    cell: ({ row }) =>
-      Array.isArray(row.getValue('linked_users')) &&
-      row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger className="font-semibold underline">
-              {row.getValue('name') || '-'}
-            </TooltipTrigger>
-            <TooltipContent className="text-center">
-              {t('linked_to')}{' '}
-              <div>
-                {row.getValue<WorkspaceUser[]>('linked_users').map((u, idx) => (
-                  <>
-                    <span key={u.id} className="font-semibold hover:underline">
-                      {u.display_name}
-                    </span>
-                    {idx !==
-                      row.getValue<WorkspaceUser[]>('linked_users').length -
-                        1 && <span>, </span>}
-                  </>
-                ))}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : (
-        <div>{row.getValue('name') || '-'}</div>
-      ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {Array.isArray(row.getValue('linked_users')) &&
+        row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
+          <TooltipProvider>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger className="font-semibold underline">
+                {row.getValue('name') || '-'}
+              </TooltipTrigger>
+              <TooltipContent className="text-center">
+                {t('linked_to')}{' '}
+                <div>
+                  {row
+                    .getValue<WorkspaceUser[]>('linked_users')
+                    .map((u, idx) => (
+                      <>
+                        <span
+                          key={u.id}
+                          className="font-semibold hover:underline"
+                        >
+                          {u.display_name}
+                        </span>
+                        {idx !==
+                          row.getValue<WorkspaceUser[]>('linked_users').length -
+                            1 && <span>, </span>}
+                      </>
+                    ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          row.getValue('name') || '-'
+        )}
+      </div>
+    ),
   },
   {
     accessorKey: 'email',
@@ -175,14 +204,13 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
     ),
     cell: ({ row }) => (
       <div>
-        {Array.isArray(row.getValue('linked_users'))
-          ? row.getValue<WorkspaceUser[]>('linked_users').length === 0
-            ? '-'
-            : (row.getValue('linked_users') as any[]).map((u) => (
-                <span key={u.id} className="font-semibold hover:underline">
-                  {u.display_name}
-                </span>
-              ))
+        {Array.isArray(row.getValue('linked_users')) &&
+        row.getValue<WorkspaceUser[]>('linked_users').length !== 0
+          ? row.getValue<WorkspaceUser[]>('linked_users').map((u) => (
+              <span key={u.id} className="font-semibold hover:underline">
+                {u.display_name}
+              </span>
+            ))
           : '-'}
       </div>
     ),

@@ -45,7 +45,7 @@ export function DataTableViewOptions<TData>({
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>{t('common:toggle-columns')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <ScrollArea className="h-32">
+        <ScrollArea className="h-36">
           {table
             .getAllColumns()
             .filter(

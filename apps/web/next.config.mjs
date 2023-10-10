@@ -16,6 +16,10 @@ const nextConfig = nextTranslate({
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'https',
+        hostname: 'yjbjpmwbfimjcdsjxfst.supabase.co',
+      },
     ],
   },
 });
