@@ -49,6 +49,7 @@ export const modules: ModulePackage[] = [
         email: i?.email,
         name: i?.display_name,
         phone: i?.phone_number,
+        avatar_url: i?.avatar_url,
         gender: i?.gender,
         birthday: i?.birthday,
         created_at: i?.created_at,

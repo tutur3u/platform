@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
 export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   {
@@ -42,6 +43,26 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+  },
+  {
+    accessorKey: 'avatar_url',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('avatar_url')} />
+    ),
+    cell: async ({ row }) => {
+      const avatarUrl = row.getValue('avatar_url') as string | undefined;
+      if (!avatarUrl) return <div>-</div>;
+
+      return (
+        <Image
+          width={128}
+          height={128}
+          src={avatarUrl}
+          alt="Avatar"
+          className="aspect-square rounded-lg object-cover"
+        />
+      );
+    },
   },
   {
     accessorKey: 'name',

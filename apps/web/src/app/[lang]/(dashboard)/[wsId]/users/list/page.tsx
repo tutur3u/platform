@@ -36,6 +36,7 @@ export default async function WorkspaceUsersPage({
       count={count}
       defaultVisibility={{
         id: false,
+        avatar_url: false,
         ethnicity: false,
         guardian: false,
         address: false,
