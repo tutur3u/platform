@@ -99,7 +99,7 @@ export function Navigation({
             className={`${
               isActive
                 ? 'text-foreground border-foreground/10 bg-foreground/5'
-                : 'text-foreground/40 hover:text-foreground hover:bg-foreground/5 border-transparent'
+                : 'text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
             } ${
               notPublic ? 'underline decoration-dashed underline-offset-4' : ''
             } flex-none rounded-full border px-3 py-1 transition duration-300`}
