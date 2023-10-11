@@ -180,8 +180,8 @@ importers:
         specifier: ^2.1.11
         version: 2.1.11(@tiptap/core@2.1.11)(@tiptap/pm@2.1.11)
       '@tiptap/extension-subscript':
-        specifier: ^2.1.11
-        version: 2.1.11(@tiptap/core@2.1.11)
+        specifier: ^2.1.12
+        version: 2.1.12(@tiptap/core@2.1.11)
       '@tiptap/extension-superscript':
         specifier: ^2.1.11
         version: 2.1.11(@tiptap/core@2.1.11)
@@ -3120,8 +3120,8 @@ packages:
       '@tiptap/core': 2.1.11(@tiptap/pm@2.1.11)
     dev: false
 
-  /@tiptap/extension-subscript@2.1.11(@tiptap/core@2.1.11):
-    resolution: {integrity: sha512-KXPrcN2i9edOyjsYc+WmXtRNod5rcA402NJEXKsSg/Lr7ezstdeE9CqVVpipdKDRBv5avJcSdCe3TiDLnFggBw==}
+  /@tiptap/extension-subscript@2.1.12(@tiptap/core@2.1.11):
+    resolution: {integrity: sha512-tb1jysEvf4SIiXwEOgDTXiyrG39RVNHvn/zsGMg5wy5t9qUp9m1k7kKYTH084ktuKDAPQonCcpn3hwc+ngTFzg==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
