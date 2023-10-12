@@ -2,11 +2,12 @@ import '../../styles/globals.css';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { StaffToolbar } from './staff-toolbar';
 import { ReactNode, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import GoogleAnalytics from '@/components/google-analytics';
 
 export const metadata: Metadata = {
   title: {
@@ -55,7 +56,8 @@ export const metadata: Metadata = {
     images: [siteConfig.ogImage],
     creator: '@tutur3u',
   },
-  viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, shrink-to-fit=no',
+  viewport:
+    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, shrink-to-fit=no',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
@@ -84,20 +86,21 @@ export default function RootLayout({ children, params }: Props) {
           // fontSans.variable
         )}
       >
+        <VercelAnalytics />
+        <GoogleAnalytics />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           disableTransitionOnChange
           enableSystem
         >
-          <div className="relative flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
-          </div>
+          {children}
         </ThemeProvider>
 
-        <Suspense>
+        {/* <Suspense>
           <StaffToolbar />
-        </Suspense>
+        </Suspense> */}
+
         <Suspense>
           <Toaster />
         </Suspense>

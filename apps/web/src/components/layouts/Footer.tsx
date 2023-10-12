@@ -141,7 +141,7 @@ const Footer = () => {
             <div>
               <Link
                 href="https://github.com/tutur3u/tutur3u"
-                className="mt-2 block"
+                className="mt-2 block text-zinc-700 hover:text-zinc-500 dark:text-zinc-300 dark:hover:text-zinc-400"
               >
                 {t('common:open-source')}
               </Link>
