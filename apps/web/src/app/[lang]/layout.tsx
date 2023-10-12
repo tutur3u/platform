@@ -6,7 +6,8 @@ import { ReactNode, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import GoogleAnalytics from '@/components/google-analytics';
 
 export const metadata: Metadata = {
   title: {
@@ -85,7 +86,8 @@ export default function RootLayout({ children, params }: Props) {
           // fontSans.variable
         )}
       >
-        <Analytics />
+        <VercelAnalytics />
+        <GoogleAnalytics />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
