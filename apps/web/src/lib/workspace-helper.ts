@@ -5,7 +5,9 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { Database } from '@/types/supabase';
 
-export async function getWorkspace(id: string) {
+export async function getWorkspace(id?: string) {
+  if (!id) return null;
+
   const supabase = createServerComponentClient({ cookies });
 
   const {

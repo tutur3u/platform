@@ -305,7 +305,6 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           className={`w-full border ${getInputColor()}`}
           variant="light"
           leftIcon={<EyeIcon className="h-5 w-5" />}
-          onClick={() => router.push(`/${wsId}/calendar/events/${event.id}`)}
         >
           {t('view-event')}
         </Button>

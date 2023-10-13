@@ -5,12 +5,17 @@ import { Workspace } from '@/types/primitives/Workspace';
 import AvatarInput from './avatar-input';
 
 interface Props {
-  workspace: Workspace;
+  workspace: Workspace | null;
   allowEdit?: boolean;
 }
 
-export default function WorkspaceAvatarSettings({ workspace, allowEdit }: Props) {
+export default function WorkspaceAvatarSettings({
+  workspace,
+  allowEdit,
+}: Props) {
   const { t } = useTranslation('ws-settings');
+
+  if (!workspace) return null;
 
   return (
     <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">

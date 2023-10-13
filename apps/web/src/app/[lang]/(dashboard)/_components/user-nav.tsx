@@ -42,7 +42,7 @@ export async function UserNav({ wsId }: Props) {
   const workspaces = await getWorkspaces(true);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Avatar className="cursor-pointer font-semibold">
           <Suspense fallback={<AvatarFallback>...</AvatarFallback>}>

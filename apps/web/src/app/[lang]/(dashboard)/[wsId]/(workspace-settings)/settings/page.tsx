@@ -37,8 +37,8 @@ export default async function WorkspaceSettingsPage({
       secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_API_KEY')?.value
   );
 
-  const isRootWorkspace = ws.id === ROOT_WORKSPACE_ID;
-  const isWorkspaceOwner = ws.role === 'OWNER';
+  const isRootWorkspace = ws?.id === ROOT_WORKSPACE_ID;
+  const isWorkspaceOwner = ws?.role === 'OWNER';
 
   const enableSecurity =
     !isRootWorkspace && isWorkspaceOwner && !preventWorkspaceDeletion;
@@ -56,18 +56,18 @@ export default async function WorkspaceSettingsPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <BasicInfo
           workspace={ws}
-          allowEdit={!isRootWorkspace && ws.role !== 'MEMBER'}
+          allowEdit={!isRootWorkspace && ws?.role !== 'MEMBER'}
         />
 
         <WorkspaceAvatarSettings
           workspace={ws}
-          allowEdit={ws.role === 'OWNER'}
+          allowEdit={ws?.role === 'OWNER'}
         />
 
         {enableLogo && (
           <WorkspaceLogoSettings
             workspace={ws}
-            allowEdit={ws.role === 'OWNER'}
+            allowEdit={ws?.role === 'OWNER'}
           />
         )}
 
