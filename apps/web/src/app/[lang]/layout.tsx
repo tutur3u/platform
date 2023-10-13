@@ -34,6 +34,7 @@ export async function generateMetadata({
       default: siteConfig.name,
       template: `%s - ${siteConfig.name}`,
     },
+    metadataBase: new URL(siteConfig.url),
     description,
     keywords: [
       'Next.js',

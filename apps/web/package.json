@@ -109,7 +109,6 @@
     "react-resizable": "^3.0.5",
     "swr": "^2.2.4",
     "tailwind-merge": "^1.14.0",
-    "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
@@ -136,6 +135,8 @@
     "postcss": "^8.4.31",
     "supabase": "^1.104.2",
     "tailwind-config": "workspace:*",
+    "tailwind-scrollbar": "^3.0.5",
+    "tailwindcss-animate": "^1.0.7",
     "tailwindcss": "^3.3.3",
     "tsconfig": "workspace:*",
     "typescript": "^5.2.2"
