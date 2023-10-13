@@ -5,12 +5,14 @@ import { Workspace } from '@/types/primitives/Workspace';
 import NameInput from './name-input';
 
 interface Props {
-  workspace: Workspace;
+  workspace: Workspace | null;
   allowEdit?: boolean;
 }
 
 export default function BasicInfo({ workspace, allowEdit }: Props) {
   const { t } = useTranslation('ws-settings');
+
+  if (!workspace) return null;
 
   return (
     <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
