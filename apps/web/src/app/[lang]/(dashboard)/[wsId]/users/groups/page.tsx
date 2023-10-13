@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId: string;
@@ -42,7 +44,8 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
@@ -69,7 +72,10 @@ async function getData(
   }
 
   const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, pageSize, retry: false });
+  }
 
   return { data, count } as { data: UserGroup[]; count: number };
 }

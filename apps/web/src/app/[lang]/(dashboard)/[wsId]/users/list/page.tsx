@@ -2,8 +2,9 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { getUserColumns } from '../../../../../../data/columns/users';
-import useTranslation from 'next-translate/useTranslation';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: {
@@ -20,13 +21,7 @@ export default async function WorkspaceUsersPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { t } = useTranslation('gender');
-  const { data, count } = await getData(wsId, searchParams);
-
-  const users = data.map(({ gender, ...rest }) => ({
-    ...rest,
-    gender: gender ? t(gender) : '',
-  }));
+  const { data: users, count } = await getData(wsId, searchParams);
 
   return (
     <DataTable
@@ -54,7 +49,8 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
   const supabase = createServerComponentClient({ cookies });
 
@@ -85,7 +81,11 @@ async function getData(
   }
 
   const { data: rawData, error, count } = await queryBuilder;
-  if (error) throw error;
+
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, pageSize, retry: false });
+  }
 
   const data = rawData.map(({ linked_users, ...rest }) => ({
     ...rest,

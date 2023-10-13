@@ -174,7 +174,11 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('gender')} />
     ),
     cell: ({ row }) => (
-      <div className="w-[8rem]">{row.getValue('gender') || '-'}</div>
+      <div className="w-[8rem]">
+        {row.getValue('gender')
+          ? t(row.getValue<string>('gender').toLowerCase())
+          : '-'}
+      </div>
     ),
   },
   {

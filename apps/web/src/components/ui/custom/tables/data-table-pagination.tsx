@@ -33,6 +33,8 @@ export function DataTablePagination<TData>({
   const query = useQuery();
 
   const sizes = [5, 10, 20, 50, 100, 200, 500, 1000];
+  const isPageOutOfRange =
+    table.getState().pagination.pageIndex + 1 > table.getPageCount();
 
   return (
     <div
@@ -86,7 +88,7 @@ export function DataTablePagination<TData>({
         <div className="text-muted-foreground w-fit text-sm">
           {t('page')}{' '}
           <span className="text-primary font-semibold">
-            {table.getState().pagination.pageIndex + 1}
+            {isPageOutOfRange ? 1 : table.getState().pagination.pageIndex + 1}
           </span>{' '}
           {t('of')}{' '}
           <span className="text-primary font-semibold">
@@ -102,7 +104,7 @@ export function DataTablePagination<TData>({
               table.setPageIndex(0);
               query.set({ page: 1 });
             }}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!table.getCanPreviousPage() || isPageOutOfRange}
           >
             <span className="sr-only">Go to first page</span>
             <DoubleArrowLeftIcon className="h-4 w-4" />
@@ -115,7 +117,7 @@ export function DataTablePagination<TData>({
               table.previousPage();
               query.set({ page: table.getState().pagination.pageIndex });
             }}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!table.getCanPreviousPage() || isPageOutOfRange}
           >
             <span className="sr-only">Go to previous page</span>
             <ChevronLeftIcon className="h-4 w-4" />
@@ -126,9 +128,13 @@ export function DataTablePagination<TData>({
             onClick={() => {
               table.resetRowSelection();
               table.nextPage();
-              query.set({ page: table.getState().pagination.pageIndex + 2 });
+              query.set({
+                page: isPageOutOfRange
+                  ? 2
+                  : table.getState().pagination.pageIndex + 2,
+              });
             }}
-            disabled={!table.getCanNextPage()}
+            disabled={!table.getCanNextPage() && !isPageOutOfRange}
           >
             <span className="sr-only">Go to next page</span>
             <ChevronRightIcon className="h-4 w-4" />
@@ -141,7 +147,7 @@ export function DataTablePagination<TData>({
               table.setPageIndex(table.getPageCount() - 1);
               query.set({ page: table.getPageCount() });
             }}
-            disabled={!table.getCanNextPage()}
+            disabled={!table.getCanNextPage() && !isPageOutOfRange}
           >
             <span className="sr-only">Go to last page</span>
             <DoubleArrowRightIcon className="h-4 w-4" />
