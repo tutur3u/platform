@@ -70,7 +70,7 @@
     "@sentry/nextjs": "^7.73.0",
     "@supabase/auth-helpers-nextjs": "^0.8.1",
     "@supabase/auth-helpers-react": "^0.4.2",
-    "@supabase/supabase-js": "^2.38.0",
+    "@supabase/supabase-js": "^2.38.1",
     "@tabler/icons-react": "^2.39.0",
     "@tanstack/react-table": "^8.10.6",
     "@tiptap/extension-highlight": "^2.1.12",
