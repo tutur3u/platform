@@ -159,8 +159,7 @@ export default async function Footer() {
       </div>
 
       <Separator className="bg-foreground/5 mt-8" />
-
-      <div className="flex flex-col items-center justify-between gap-x-8 gap-y-4 p-4 text-center opacity-75 md:flex-row md:px-32 xl:px-64">
+      <div className="p-4 text-center opacity-75 md:px-32 xl:px-64">
         {t('copyright')}
       </div>
     </div>
