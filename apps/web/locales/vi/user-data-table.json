@@ -1,7 +1,8 @@
 {
   "id": "Mã định danh",
   "avatar_url": "Ảnh đại diện",
-  "name": "Tên",
+  "full_name": "Họ và tên",
+  "display_name": "Tên hiển thị",
   "email": "Email",
   "phone": "SĐT",
   "gender": "Giới tính",

@@ -1,7 +1,8 @@
 {
   "id": "ID",
   "avatar_url": "Avatar",
-  "name": "Name",
+  "full_name": "Full Name",
+  "display_name": "Display Name",
   "email": "Email",
   "phone": "Phone",
   "gender": "Gender",

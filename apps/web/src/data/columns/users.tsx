@@ -42,7 +42,9 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('id')} />
     ),
-    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+    ),
   },
   {
     accessorKey: 'avatar_url',
@@ -51,7 +53,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
     ),
     cell: async ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
-      if (!avatarUrl) return <div>-</div>;
+      if (!avatarUrl) return <div className="min-w-[8rem]">-</div>;
 
       return (
         <Image
@@ -59,15 +61,15 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
           height={128}
           src={avatarUrl}
           alt="Avatar"
-          className="aspect-square rounded-lg object-cover"
+          className="aspect-square min-w-[8rem] rounded-lg object-cover"
         />
       );
     },
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'full_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader column={column} title={t('full_name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -76,7 +78,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
           <TooltipProvider>
             <Tooltip delayDuration={0}>
               <TooltipTrigger className="font-semibold underline">
-                {row.getValue('name') || '-'}
+                {row.getValue('full_name') || '-'}
               </TooltipTrigger>
               <TooltipContent className="text-center">
                 {t('linked_to')}{' '}
@@ -101,7 +103,49 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
             </Tooltip>
           </TooltipProvider>
         ) : (
-          row.getValue('name') || '-'
+          row.getValue('full_name') || '-'
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'display_name',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('display_name')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {Array.isArray(row.getValue('linked_users')) &&
+        row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
+          <TooltipProvider>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger className="font-semibold underline">
+                {row.getValue('display_name') || '-'}
+              </TooltipTrigger>
+              <TooltipContent className="text-center">
+                {t('linked_to')}{' '}
+                <div>
+                  {row
+                    .getValue<WorkspaceUser[]>('linked_users')
+                    .map((u, idx) => (
+                      <>
+                        <span
+                          key={u.id}
+                          className="font-semibold hover:underline"
+                        >
+                          {u.display_name}
+                        </span>
+                        {idx !==
+                          row.getValue<WorkspaceUser[]>('linked_users').length -
+                            1 && <span>, </span>}
+                      </>
+                    ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          row.getValue('display_name') || '-'
         )}
       </div>
     ),
@@ -139,7 +183,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('birthday')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {row.getValue('birthday')
           ? moment(row.getValue('birthday')).format('DD/MM/YYYY')
           : '-'}
@@ -203,7 +247,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('linked_users')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0
           ? row.getValue<WorkspaceUser[]>('linked_users').map((u) => (
