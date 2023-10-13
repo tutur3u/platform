@@ -7,8 +7,9 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { Wallet } from '@/types/primitives/Wallet';
 import { Check, X } from 'lucide-react';
+import { Translate } from 'next-translate';
 
-export const walletColumns: ColumnDef<Wallet>[] = [
+export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -33,28 +34,28 @@ export const walletColumns: ColumnDef<Wallet>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'description',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Description" />
+      <DataTableColumnHeader column={column} title={t('description')} />
     ),
     cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
   },
   {
     accessorKey: 'balance',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Balance" />
+      <DataTableColumnHeader column={column} title={t('balance')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -68,21 +69,21 @@ export const walletColumns: ColumnDef<Wallet>[] = [
   {
     accessorKey: 'type',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Type" />
+      <DataTableColumnHeader column={column} title={t('type')} />
     ),
     cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
   },
   {
     accessorKey: 'currency',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Currency" />
+      <DataTableColumnHeader column={column} title={t('currency')} />
     ),
     cell: ({ row }) => <div>{row.getValue('currency') || '-'}</div>,
   },
   {
     accessorKey: 'report_opt_in',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Show in Reports" />
+      <DataTableColumnHeader column={column} title={t('report_opt_in')} />
     ),
     cell: ({ row }) => (
       <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
@@ -91,7 +92,7 @@ export const walletColumns: ColumnDef<Wallet>[] = [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

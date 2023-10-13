@@ -1,0 +1,10 @@
+{
+  "id": "ID",
+  "customer_id": "Customer ID",
+  "customer": "Customer",
+  "price": "Price",
+  "total_diff": "Price difference",
+  "notice": "Description",
+  "note": "Note",
+  "created_at": "Created at"
+}

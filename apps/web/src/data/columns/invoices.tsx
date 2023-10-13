@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { Invoice } from '@/types/primitives/Invoice';
+import { Translate } from 'next-translate';
 
-export const invoiceColumns: ColumnDef<Invoice>[] = [
+export const invoiceColumns = (t: Translate): ColumnDef<Invoice>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,14 +33,16 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
-    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+    ),
   },
   {
     accessorKey: 'customer_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Customer ID" />
+      <DataTableColumnHeader column={column} title={t('customer_id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('customer_id')}</div>
@@ -48,17 +51,19 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     accessorKey: 'customer',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Customer" />
+      <DataTableColumnHeader column={column} title={t('customer')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('customer') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('customer') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Price" />
+      <DataTableColumnHeader column={column} title={t('price')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',
@@ -69,10 +74,10 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     accessorKey: 'total_diff',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Price Difference" />
+      <DataTableColumnHeader column={column} title={t('total_diff')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',
@@ -83,24 +88,28 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     accessorKey: 'notice',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Description" />
+      <DataTableColumnHeader column={column} title={t('notice')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('notice') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('notice') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'note',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Note" />
+      <DataTableColumnHeader column={column} title={t('note')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('note') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('note') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
