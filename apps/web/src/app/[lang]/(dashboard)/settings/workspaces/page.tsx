@@ -13,7 +13,7 @@ import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
 
 export default function WorkspacesSettingPage() {
-  const { workspaces: wss, setWsId } = useWorkspaces();
+  const { workspaces: wss } = useWorkspaces();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(wss || []);
 
@@ -117,7 +117,6 @@ export default function WorkspacesSettingPage() {
 
                         <Link
                           href={`/${ws.id}`}
-                          onClick={() => setWsId(ws.id)}
                           className="hover:purple-500/30 rounded border border-purple-500/20 bg-purple-500/10 p-2 transition dark:border-purple-300/10 dark:bg-purple-300/10 dark:hover:bg-purple-300/20"
                         >
                           <EyeIcon className="h-5 w-5 text-purple-500 dark:text-purple-300" />

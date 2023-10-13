@@ -21,7 +21,6 @@ import { useState } from 'react';
 import SidebarButton from './SidebarButton';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import WorkspaceSelector from '../selectors/WorkspaceSelector';
 import useTranslation from 'next-translate/useTranslation';
 import CreateNewButton from './sidebar/CreateNewButton';
 import SidebarLinkList from './sidebar/SidebarLinkList';
@@ -404,13 +403,6 @@ function LeftSidebar({ className }: SidebarProps) {
         <div className="fixed inset-x-0 bottom-2 md:static">
           <Divider className="my-2" variant="dashed" />
           <div className="mx-2 flex items-center justify-center gap-2">
-            {sidebar === 'open' && (
-              <WorkspaceSelector
-                className="w-full md:w-auto"
-                onChange={() => closeSidebarOnMobile({ window, setSidebar })}
-              />
-            )}
-
             <Popover
               opened={userPopover}
               onChange={setUserPopover}
@@ -447,20 +439,6 @@ function LeftSidebar({ className }: SidebarProps) {
               </Popover.Target>
 
               <Popover.Dropdown className="grid gap-1 p-1">
-                {sidebar !== 'open' && (
-                  <>
-                    <WorkspaceSelector
-                      showLabel
-                      className="mx-2 mb-2"
-                      onChange={() => {
-                        setUserPopover(false);
-                        closeSidebarOnMobile({ window, setSidebar });
-                      }}
-                    />
-                    <Divider variant="dashed" />
-                  </>
-                )}
-
                 <SidebarLink
                   href="/settings"
                   onClick={() => setUserPopover(false)}
