@@ -25,7 +25,8 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={transactionColumns}
+      columnGenerator={transactionColumns}
+      namespace="transaction-data-table"
       count={count}
       defaultVisibility={{
         id: false,

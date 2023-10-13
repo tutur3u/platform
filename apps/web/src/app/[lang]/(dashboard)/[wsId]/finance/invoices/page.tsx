@@ -25,7 +25,8 @@ export default async function WorkspaceWalletsPage({
   return (
     <DataTable
       data={data}
-      columns={invoiceColumns}
+      columnGenerator={invoiceColumns}
+      namespace="invoice-data-table"
       count={count}
       defaultVisibility={{
         id: false,
@@ -49,7 +50,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('finance_invoices')
-    .select('*, customer:workspace_users!customer_id(name)', {
+    .select('*, customer:workspace_users!customer_id(full_name)', {
       count: 'exact',
     })
     .eq('ws_id', wsId);
@@ -75,7 +76,7 @@ async function getData(
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
     // @ts-ignore
-    customer: customer?.name || '-',
+    customer: customer?.full_name || '-',
   }));
 
   return { data, count } as { data: Invoice[]; count: number };

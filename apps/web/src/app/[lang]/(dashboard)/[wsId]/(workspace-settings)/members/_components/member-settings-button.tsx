@@ -152,7 +152,10 @@ export function MemberSettingsButton({
           <Cog6ToothIcon className="text-foreground/70 h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Member Settings</DialogTitle>
           <DialogDescription>
