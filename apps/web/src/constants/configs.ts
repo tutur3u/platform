@@ -6,8 +6,6 @@ export const siteConfig = {
   ogImage: DEV_MODE
     ? 'http://localhost:7803/media/logos/og-image.png'
     : 'https://tuturuuu.com/media/logos/og-image.png',
-  description:
-    'Brainstorm and organize your ideas at the speed of thought, supercharged by AI.',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/tutur3u',

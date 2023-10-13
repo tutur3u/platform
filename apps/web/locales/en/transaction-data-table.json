@@ -1,0 +1,10 @@
+{
+  "id": "ID",
+  "category": "Category",
+  "wallet": "Wallet",
+  "amount": "Amount",
+  "description": "Description",
+  "report_opt_in": "Show in reports",
+  "taken_at": "Taken at",
+  "created_at": "Created at"
+}

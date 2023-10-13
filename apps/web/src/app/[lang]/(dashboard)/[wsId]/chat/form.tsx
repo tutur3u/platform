@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { useEffect } from 'react';
+import useTranslation from 'next-translate/useTranslation';
 
 const FormSchema = z.object({
   prompt: z.string().min(1).max(2048),
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export default function ChatForm({ input, setInput, handleSubmit }: Props) {
+  const { t } = useTranslation('ai-chat');
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   });
@@ -46,7 +49,7 @@ export default function ChatForm({ input, setInput, handleSubmit }: Props) {
     <Form {...form}>
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-xl items-end gap-2"
+        className="flex w-full items-end gap-2 md:max-w-xl"
       >
         <FormField
           control={form.control}
@@ -56,7 +59,7 @@ export default function ChatForm({ input, setInput, handleSubmit }: Props) {
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="Type your prompt here..."
+                  placeholder={t('prompt_placeholder')}
                   autoComplete="off"
                 />
               </FormControl>

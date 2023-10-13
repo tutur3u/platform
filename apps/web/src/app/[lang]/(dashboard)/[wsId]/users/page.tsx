@@ -4,13 +4,13 @@ import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import { getReportsCount } from './reports/page';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId: string;
   };
 }
-
-export const dynamic = 'force-dynamic';
 
 export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
   const { t } = useTranslation();

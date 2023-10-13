@@ -5,6 +5,8 @@ import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     wsId: string;

@@ -71,7 +71,6 @@ export default async function Layout({
     {
       name: t('finance'),
       href: `/${wsId}/finance`,
-      requireRootWorkspace: true,
     },
     {
       name: t('common:settings'),
@@ -118,7 +117,7 @@ export default async function Layout({
           </div>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="scrollbar-none flex gap-1 overflow-x-auto">
           <Navigation
             currentWsId={wsId}
             currentPreset={workspace.preset ?? 'GENERAL'}

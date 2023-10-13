@@ -1,4 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 interface LayoutProps {
   params: {
@@ -11,36 +12,38 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
+  const { t } = useTranslation('workspace-finance-tabs');
+
   const navLinks: NavLink[] = [
     {
-      name: 'Overview',
+      name: t('overview'),
       href: `/${wsId}/finance`,
       matchExact: true,
     },
     {
-      name: 'Wallets',
+      name: t('wallets'),
       href: `/${wsId}/finance/wallets`,
     },
     {
-      name: 'Transactions',
+      name: t('transactions'),
       href: `/${wsId}/finance/transactions`,
       matchExact: true,
     },
     {
-      name: 'Categories',
+      name: t('categories'),
       href: `/${wsId}/finance/transactions/categories`,
     },
     {
-      name: 'Invoices',
+      name: t('invoices'),
       href: `/${wsId}/finance/invoices`,
     },
     {
-      name: 'Import',
+      name: t('import'),
       href: `/${wsId}/finance/import`,
       disabled: true,
     },
     {
-      name: 'Settings',
+      name: t('settings'),
       href: `/${wsId}/finance/settings`,
       disabled: true,
     },
@@ -48,7 +51,7 @@ export default async function Layout({
 
   return (
     <>
-      <div className="mb-4 flex gap-1 overflow-x-auto font-semibold">
+      <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto font-semibold">
         <Navigation navLinks={navLinks} />
       </div>
       {children}

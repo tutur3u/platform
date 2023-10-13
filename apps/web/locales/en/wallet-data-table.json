@@ -1,0 +1,10 @@
+{
+  "id": "ID",
+  "name": "Name",
+  "description": "Description",
+  "balance": "Balance",
+  "type": "Type",
+  "currency": "Currency",
+  "report_opt_in": "Show in reports",
+  "created_at": "Created at"
+}

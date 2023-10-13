@@ -7,8 +7,11 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { Check, X } from 'lucide-react';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { Translate } from 'next-translate';
 
-export const transactionCategoryColumns: ColumnDef<TransactionCategory>[] = [
+export const transactionCategoryColumns = (
+  t: Translate
+): ColumnDef<TransactionCategory>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -33,21 +36,21 @@ export const transactionCategoryColumns: ColumnDef<TransactionCategory>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Category" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Is Expense" />
+      <DataTableColumnHeader column={column} title={t('is_expense')} />
     ),
     cell: ({ row }) => (
       <div>{row.getValue('is_expense') ? <Check /> : <X />}</div>
@@ -56,7 +59,7 @@ export const transactionCategoryColumns: ColumnDef<TransactionCategory>[] = [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

@@ -7,12 +7,14 @@ import { User } from '@/types/primitives/User';
 import { Button } from '@/components/ui/button';
 import { User as UserIcon } from 'lucide-react';
 import { getInitials } from '@/utils/name-helper';
+import useTranslation from 'next-translate/useTranslation';
 
 interface ChatProps {
   user: User;
 }
 
 const Chat = ({ user }: ChatProps) => {
+  const { t } = useTranslation('ai-chat');
   const { messages, setMessages, input, setInput, handleSubmit } = useChat();
 
   const resetChat = () => {
@@ -57,15 +59,18 @@ const Chat = ({ user }: ChatProps) => {
             </div>
           ))
         ) : (
-          <div className="text-foreground/50 text-center text-2xl font-semibold">
-            Enter a prompt to start chatting with Rewise AI
+          <div className="text-foreground/50 mt-32 text-center text-xl font-semibold md:text-2xl">
+            {t('prompt')}
           </div>
         )}
       </div>
 
-      <div className="border-foreground/10 bg-background fixed inset-x-0 bottom-0 flex w-full items-center justify-between border-t px-4 py-2">
-        <Button variant="ghost" className="pointer-events-none opacity-0">
-          Reset chat
+      <div className="border-foreground/10 bg-background fixed inset-x-0 bottom-0 flex w-full items-center justify-between border-t px-2 py-2 md:px-4">
+        <Button
+          variant="ghost"
+          className="pointer-events-none hidden opacity-0 md:block"
+        >
+          {t('reset_chat')}
         </Button>
 
         <ChatForm
@@ -77,9 +82,10 @@ const Chat = ({ user }: ChatProps) => {
         <Button
           onClick={resetChat}
           variant="ghost"
+          className="hidden md:block"
           disabled={!messages.length && !input}
         >
-          Reset chat
+          {t('reset_chat')}
         </Button>
       </div>
     </div>
