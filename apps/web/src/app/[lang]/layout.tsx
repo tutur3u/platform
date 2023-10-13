@@ -8,6 +8,9 @@ import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import GoogleAnalytics from '@/components/google-analytics';
+import Navbar from './navbar';
+import NavbarPadding from './navbar-padding';
+import Footer from '@/components/layouts/Footer';
 
 interface Props {
   children: ReactNode;
@@ -92,7 +95,7 @@ export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];
 }
 
-export default function RootLayout({ children, params }: Props) {
+export default async function RootLayout({ children, params }: Props) {
   return (
     <html lang={params.lang}>
       <body
@@ -109,7 +112,9 @@ export default function RootLayout({ children, params }: Props) {
           disableTransitionOnChange
           enableSystem
         >
-          {children}
+          <Navbar />
+          <NavbarPadding>{children}</NavbarPadding>
+          <Footer />
         </ThemeProvider>
 
         {/* <Suspense>
