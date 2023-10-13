@@ -957,7 +957,7 @@ values (
     );
 -- Populate workspace_users
 insert into public.workspace_users (
-        name,
+        full_name,
         email,
         phone,
         birthday,

@@ -11,7 +11,6 @@ import {
 } from 'react';
 import { Workspace } from '../types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
-import { showNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import { Team } from '../types/primitives/Team';
 
@@ -28,74 +27,6 @@ const WorkspaceContext = createContext({
 
   teams: undefined as Team[] | undefined,
   teamsLoading: true,
-
-  setWsId: (wsId: string) => console.log('setWsId', wsId),
-
-  createWorkspace: async (
-    ws: Workspace,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('createWorkspace', ws, options);
-  },
-
-  updateWorkspace: async (
-    ws: Workspace,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('updateWorkspace', ws, options);
-  },
-
-  deleteWorkspace: async (
-    id: string,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('deleteWorkspace', id, options);
-  },
-
-  createTeam: async (
-    team: Partial<Team>,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('createTeam', team, options);
-  },
-
-  updateTeam: async (
-    team: Partial<Team>,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('updateTeam', team, options);
-  },
-
-  deleteTeam: async (
-    id: string,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    console.log('deleteTeam', id, options);
-  },
 });
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
@@ -127,13 +58,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     if (user && !wsId) mutate('/api/workspaces/current');
   }, [user, wsId]);
 
-  const validWsId = user && typeof wsId === 'string' && wsId.length > 0;
-
-  const { data: ws, error: wsError } = useSWR<Workspace>(
-    validWsId ? `/api/workspaces/${wsId}` : null
-  );
-
-  const wsLoading = !ws && !wsError;
+  const ws = workspaces?.find((ws) => ws.id === wsId);
 
   const { data: workspaceInvites, error: workspaceInvitesError } = useSWR<
     Workspace[]
@@ -147,209 +72,19 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const teamsLoading = !teams && !teamsError;
 
-  const createWorkspace = async (
-    ws: Workspace,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch('/api/workspaces/current', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: ws?.name || '',
-        }),
-      });
-
-      if (!res.ok) throw new Error('Failed to create workspace');
-      if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces/current');
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to create workspace',
-        message: 'Make sure you have permission to create new workspaces',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
-  const updateWorkspace = async (
-    ws: Workspace,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch(`/api/workspaces/${ws.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(ws),
-      });
-
-      if (!res.ok) throw new Error('Failed to update workspace');
-      if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces/current');
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to update workspace',
-        message: 'Make sure you have permission to update this workspace',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
-  const deleteWorkspace = async (
-    wsId: string,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) throw new Error('Failed to delete workspace');
-      if (options?.onSuccess) options.onSuccess();
-      mutate('/api/workspaces/current');
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to delete workspace',
-        message: 'Make sure there are no teams in this workspace',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
-  const createTeam = async (
-    team: Partial<Team>,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}/teams`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(team),
-      });
-
-      if (!res.ok) throw new Error('Failed to create team');
-      if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/teams`);
-
-      const data = await res.json();
-      router.push(`/${wsId}/teams/${data.id}`);
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to create team',
-        message: 'Make sure you have permission to create new teams',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
-  const updateTeam = async (
-    team: Partial<Team>,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}/teams/${team.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(team),
-      });
-
-      if (!res.ok) throw new Error('Failed to update team');
-      if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/teams`);
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to update team',
-        message: 'Make sure you have permission to update this team',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
-  const deleteTeam = async (
-    teamId: string,
-    options?: {
-      onSuccess?: () => void;
-      onError?: () => void;
-      onCompleted?: () => void;
-    }
-  ) => {
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}/teams/${teamId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) throw new Error('Failed to delete team');
-      if (options?.onSuccess) options.onSuccess();
-      mutate(`/api/workspaces/${wsId}/teams`);
-    } catch (e) {
-      if (options?.onError) options.onError();
-      showNotification({
-        title: 'Failed to delete team',
-        message: 'Make sure there are no teams in this team',
-        color: 'red',
-      });
-    } finally {
-      if (options?.onCompleted) options.onCompleted();
-    }
-  };
-
   const values = {
     workspaces,
     workspacesLoading,
 
     ws,
     wsId,
-    wsLoading,
+    wsLoading: workspacesLoading,
 
     workspaceInvites,
     workspaceInvitesLoading,
 
     teams,
     teamsLoading,
-
-    setWsId,
-
-    createWorkspace,
-    updateWorkspace,
-    deleteWorkspace,
-
-    createTeam,
-    updateTeam,
-    deleteTeam,
   };
 
   return (

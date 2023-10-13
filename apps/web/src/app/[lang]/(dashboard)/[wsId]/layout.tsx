@@ -1,13 +1,7 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspace, getWorkspaces } from '@/lib/workspace-helper';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import WorkspaceSelect from '../_components/workspace-select';
+import { getWorkspace } from '@/lib/workspace-helper';
 import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
-import { UserNav } from '../_components/user-nav';
-import NotificationPopover from '../_components/notification-popover';
 import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +20,6 @@ export default async function Layout({
   const { t } = useTranslation('sidebar-tabs');
 
   const workspace = await getWorkspace(wsId);
-  const workspaces = await getWorkspaces();
 
   const navLinks: NavLink[] = [
     {
@@ -88,45 +81,17 @@ export default async function Layout({
 
   return (
     <>
-      <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
-        <div className="mb-2 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex-none">
-              <Image
-                src="/media/logos/transparent.png"
-                width={320}
-                height={320}
-                alt="logo"
-                className="h-7 w-7"
-              />
-            </Link>
-
-            {workspaces && (
-              <>
-                <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
-                <Suspense fallback={<Link href={`/${wsId}`}>Loading...</Link>}>
-                  <WorkspaceSelect wsId={wsId} workspaces={workspaces} />
-                </Suspense>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <NotificationPopover />
-            <UserNav wsId={wsId} />
-          </div>
-        </div>
-
+      <div className="px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="scrollbar-none flex gap-1 overflow-x-auto">
           <Navigation
             currentWsId={wsId}
-            currentPreset={workspace.preset ?? 'GENERAL'}
+            currentPreset={workspace?.preset ?? 'GENERAL'}
             navLinks={navLinks}
           />
         </div>
       </div>
 
-      <Separator />
+      <Separator className="opacity-50" />
 
       <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </>

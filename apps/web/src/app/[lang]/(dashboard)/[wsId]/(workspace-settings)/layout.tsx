@@ -68,7 +68,7 @@ export default async function Layout({
       <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto font-semibold">
         <Navigation
           currentWsId={wsId}
-          currentRole={workspace.role}
+          currentRole={workspace?.role}
           currentUser={user}
           navLinks={navLinks}
         />

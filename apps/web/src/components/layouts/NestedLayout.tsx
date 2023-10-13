@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router';
-import { FC, useEffect, useState } from 'react';
-import { useSegments } from '../../hooks/useSegments';
+import { FC } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import { getTabs } from '../../utils/tab-helper';
 import { Mode, Tab } from '../../types/Tab';
@@ -8,8 +7,6 @@ import { DEV_MODE } from '../../constants/common';
 import BottomNavbar from './BottomNavbar';
 import { useAppearance } from '../../hooks/useAppearance';
 import LeftSidebar from './LeftSidebar';
-import TopNavbar from './TopNavbar';
-import ScrollToTopButton from './ScrollToTopButton';
 
 interface Props {
   children: React.ReactNode;
@@ -21,18 +18,11 @@ interface Props {
   noTabs?: boolean;
 }
 
-const NestedLayout: FC<Props> = ({
-  children,
-  mode,
-  isFavorite = false,
-  onFavorite,
-  noTabs = false,
-}: Props) => {
+const NestedLayout: FC<Props> = ({ children, mode, noTabs = false }: Props) => {
   const router = useRouter();
 
   const { t } = useTranslation();
 
-  const { segments } = useSegments();
   const { sidebar, hideExperimentalOnTopNav } = useAppearance();
 
   const tabs = mode ? getTabs({ t, router, mode }) : [];
@@ -48,53 +38,10 @@ const NestedLayout: FC<Props> = ({
 
   const defaultNoTabs = noTabs || filteredTabs.length === 0;
 
-  const [disableTabs, setDisableTabs] = useState(defaultNoTabs);
-  const [cachedDisableTabs, setCachedDisableTabs] = useState(defaultNoTabs);
-
-  const elementId = 'content';
-  const [prevScrollPos, setPrevScrollPos] = useState(0);
-
-  useEffect(() => {
-    if (defaultNoTabs) {
-      setDisableTabs(true);
-      setCachedDisableTabs(true);
-    } else {
-      setDisableTabs(false);
-      setCachedDisableTabs(false);
-    }
-
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    const handleScroll = () => {
-      const pos = el.scrollTop;
-      setPrevScrollPos(pos);
-
-      const disable = pos > 0;
-
-      setDisableTabs(disable);
-      setCachedDisableTabs(disable);
-    };
-
-    el.addEventListener('scroll', handleScroll);
-    return () => el.removeEventListener('scroll', handleScroll);
-  }, [defaultNoTabs, elementId]);
-
   return (
     <div className="flex max-h-screen min-h-full">
-      <ScrollToTopButton elementId={elementId} prevScrollPos={prevScrollPos} />
       <LeftSidebar />
       <BottomNavbar />
-      <TopNavbar
-        cachedDisableTabs={cachedDisableTabs}
-        defaultNoTabs={defaultNoTabs}
-        disableTabs={disableTabs}
-        isFavorite={isFavorite}
-        onFavorite={onFavorite}
-        setDisableTabs={setDisableTabs}
-        segments={segments}
-        tabs={filteredTabs}
-      />
 
       <main
         id="content"

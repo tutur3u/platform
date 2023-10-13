@@ -11,7 +11,7 @@ import { User as UserIcon } from 'lucide-react';
 import { getCurrentUser } from '@/lib/user-helper';
 
 interface Props {
-  workspace: Workspace;
+  workspace: Workspace | null;
   members: User[];
   invited: boolean;
 }
@@ -23,6 +23,8 @@ export default async function MemberList({
 }: Props) {
   const { t, lang } = useTranslation('ws-members');
   const user = await getCurrentUser();
+
+  if (!workspace) return null;
 
   if (!members || members.length === 0) {
     return (

@@ -1,9 +1,11 @@
 'use client';
 
 import useTranslation from 'next-translate/useTranslation';
-import { Button, CopyButton, Divider } from '@mantine/core';
+import { CopyButton } from '@mantine/core';
 import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid';
 import LogoTab from '@/components/branding/LogoTab';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 
 const LandingPage = () => {
   const { t } = useTranslation('branding');
@@ -15,7 +17,7 @@ const LandingPage = () => {
           {t('branding')}
         </h1>
 
-        <Divider variant="dashed" className="mt-4" />
+        <Separator className="mt-4" />
       </div>
 
       <section>
@@ -51,7 +53,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#4180E9] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -66,7 +68,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#4ACA3F] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -81,7 +83,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#FB7B05] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -96,7 +98,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#E94646] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -111,7 +113,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#26292F] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -126,7 +128,7 @@ const LandingPage = () => {
               <Button
                 className="flex h-32 items-center justify-center rounded-lg bg-[#FFFFFF] text-[#363636] md:h-48"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />
@@ -141,7 +143,7 @@ const LandingPage = () => {
               <Button
                 className="col-span-full flex h-32 items-center justify-center rounded-lg bg-[#363636] md:h-48 xl:col-span-2"
                 onClick={copy}
-                unstyled
+                variant="link"
               >
                 {copied ? (
                   <ClipboardDocumentCheckIcon className="h-16 w-16" />

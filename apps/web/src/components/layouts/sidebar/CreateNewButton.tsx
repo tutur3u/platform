@@ -1,6 +1,5 @@
 import { Divider, Popover } from '@mantine/core';
 import SidebarButton from '../SidebarButton';
-import { openModal } from '@mantine/modals';
 import { useWorkspaces } from '../../../hooks/useWorkspaces';
 import {
   BanknotesIcon,
@@ -13,7 +12,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
-import TeamEditForm from '../../forms/TeamEditForm';
 import SidebarLink from '../SidebarLink';
 import { useAppearance } from '../../../hooks/useAppearance';
 
@@ -35,23 +33,7 @@ const CreateNewButton = () => {
     }
   }, []);
 
-  const { ws, createTeam } = useWorkspaces();
-
-  // const showEditWorkspaceModal = () => {
-  //   openModal({
-  //     title: <div className="font-semibold">New workspace</div>,
-  //     centered: true,
-  //     children: <WorkspaceEditForm onSubmit={createWorkspace} />,
-  //   });
-  // };
-
-  const showTeamEditForm = () => {
-    openModal({
-      title: <div className="font-semibold">Create new team</div>,
-      centered: true,
-      children: <TeamEditForm onSubmit={createTeam} />,
-    });
-  };
+  const { ws } = useWorkspaces();
 
   const { t } = useTranslation('sidebar-tabs');
 
@@ -107,7 +89,6 @@ const CreateNewButton = () => {
           <SidebarButton
             onClick={() => {
               setPopover(false);
-              showTeamEditForm();
             }}
             activeIcon={<Squares2X2Icon className="w-5" />}
             label={newTeam}
