@@ -71,7 +71,6 @@ export default async function Layout({
     {
       name: t('finance'),
       href: `/${wsId}/finance`,
-      requireRootWorkspace: true,
     },
     {
       name: t('common:settings'),

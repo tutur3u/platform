@@ -50,11 +50,9 @@
     "/[lang]/(dashboard)/[wsId]": [
       "sidebar-tabs",
       "ws-home",
-      "finance-tabs",
       "finance-overview",
       "inventory-tabs",
-      "inventory-overview",
-      "workspace-users-tabs"
+      "inventory-overview"
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",
@@ -166,8 +164,7 @@
       "user-data-table",
       "view-mode",
       "pagination",
-      "ws-users-list-configs",
-      "workspace-users-tabs"
+      "ws-users-list-configs"
     ],
 
     "/[lang]/(dashboard)/[wsId]/users/groups": [
@@ -176,17 +173,14 @@
       "user-group-data-table",
       "view-mode",
       "pagination",
-      "ws-user-groups-configs",
-      "workspace-users-tabs"
+      "ws-user-groups-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/users/groups/new": [
       "sidebar-tabs",
-      "workspace-users-tabs",
       "ws-user-groups-details"
     ],
     "/[lang]/(dashboard)/[wsId]/users/groups/[groupId]": [
       "sidebar-tabs",
-      "workspace-users-tabs",
       "search",
       "view-mode",
       "pagination",
@@ -196,7 +190,6 @@
     ],
     "/[lang]/(dashboard)/[wsId]/users/groups/[groupId]/settings": [
       "sidebar-tabs",
-      "workspace-users-tabs",
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"
     ],
@@ -204,8 +197,7 @@
     "/[lang]/(dashboard)/[wsId]/users/reports": [
       "sidebar-tabs",
       "search",
-      "user-report-data-table",
-      "workspace-users-tabs"
+      "user-report-data-table"
     ],
 
     "/[lang]/(dashboard)/[wsId]/users/new": ["sidebar-tabs"],
@@ -379,13 +371,12 @@
 
     "/[lang]/(dashboard)/[wsId]/finance": [
       "sidebar-tabs",
-      "finance-tabs",
+      "workspace-finance-tabs",
       "finance-overview",
       "date-helper"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/import": [
       "sidebar-tabs",
-      "finance-tabs",
       "finance-overview",
       "finance-import",
       "transaction-card",
@@ -397,7 +388,6 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs",
       "wallets"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/wallets/new": [
@@ -431,7 +421,6 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs",
       "transactions"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/new": [
@@ -463,18 +452,15 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs",
       "categories"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/categories/new": [
       "sidebar-tabs",
-      "finance-tabs",
       "categories",
       "category-modal"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/categories/[categoryId]": [
       "sidebar-tabs",
-      "finance-tabs",
       "categories",
       "category-modal"
     ],
@@ -484,14 +470,12 @@
       "search",
       "view-mode",
       "pagination",
-      "finance-tabs",
       "invoices",
       "status-selector",
       "invoice-card"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/invoices/new": [
       "sidebar-tabs",
-      "finance-tabs",
       "invoices",
       "invoice-modal",
       "ws-selector",
@@ -501,7 +485,6 @@
     ],
     "/[lang]/(dashboard)/[wsId]/finance/invoices/[invoiceId]": [
       "sidebar-tabs",
-      "finance-tabs",
       "invoices",
       "invoice-modal",
       "ws-selector",

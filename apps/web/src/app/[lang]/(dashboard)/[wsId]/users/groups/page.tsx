@@ -54,7 +54,8 @@ async function getData(
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('name');
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
