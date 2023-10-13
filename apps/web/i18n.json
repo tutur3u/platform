@@ -54,6 +54,9 @@
       "inventory-tabs",
       "inventory-overview"
     ],
+
+    "/[lang]/(dashboard)/[wsId]/chat": ["ai-chat"],
+
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",
       "workspace-settings-layout"
