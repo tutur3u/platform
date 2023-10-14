@@ -1,4 +1,14 @@
-- name: Upload coverage reports to Codecov
-  uses: codecov/codecov-action@v3
-  env:
-    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+name: Test code coverage
+
+on:
+  push:
+    branches: ['main', 'staging', 'production']
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    name: Upload coverage reports to Codecov
+    uses: codecov/codecov-action@v3
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
