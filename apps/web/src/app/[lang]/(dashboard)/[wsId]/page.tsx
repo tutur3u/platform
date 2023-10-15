@@ -69,15 +69,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
     })
     .eq('ws_id', wsId);
 
-  const walletsLabel = t('finance-tabs:wallets');
-  const transactionsLabel = t('finance-tabs:transactions');
-  const categoriesLabel = t('finance-tabs:transaction-categories');
-  const invoicesLabel = t('finance-tabs:invoices');
-
-  const totalBalance = t('finance-overview:total-balance');
-  const totalIncome = t('finance-overview:total-income');
-  const totalExpense = t('finance-overview:total-expense');
-
   // const { count: checkups } = await supabase
   //   .from('healthcare_checkups')
   //   .select('*', {
@@ -212,7 +203,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       </div>
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
-          title={totalBalance}
+          title={t('finance-overview:total-balance')}
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -221,7 +212,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         />
 
         <StatisticCard
-          title={totalIncome}
+          title={t('finance-overview:total-income')}
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -230,7 +221,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         />
 
         <StatisticCard
-          title={totalExpense}
+          title={t('finance-overview:total-expense')}
           value={Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -239,25 +230,25 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         />
 
         <StatisticCard
-          title={walletsLabel}
+          title={t('workspace-finance-tabs:wallets')}
           value={walletsCount}
           href={`/${wsId}/finance/wallets`}
         />
 
         <StatisticCard
-          title={categoriesLabel}
+          title={t('workspace-finance-tabs:categories')}
           value={categoriesCount}
           href={`/${wsId}/finance/transactions/categories`}
         />
 
         <StatisticCard
-          title={transactionsLabel}
+          title={t('workspace-finance-tabs:transactions')}
           value={transactionsCount}
           href={`/${wsId}/finance/transactions`}
         />
 
         <StatisticCard
-          title={invoicesLabel}
+          title={t('workspace-finance-tabs:invoices')}
           value={invoicesCount}
           href={`/${wsId}/finance/invoices`}
         />
@@ -303,7 +294,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
       </div>
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
-          title={t('inventory-tabs:products')}
+          title={t('workspace-inventory-tabs:products')}
           value={workspaceProducts}
           href={`/${wsId}/inventory/products`}
         />
@@ -315,37 +306,37 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         />
 
         <StatisticCard
-          title={t('inventory-tabs:product-categories')}
+          title={t('workspace-inventory-tabs:categories')}
           value={categories}
           href={`/${wsId}/inventory/categories`}
         />
 
         <StatisticCard
-          title={t('inventory-tabs:batches')}
+          title={t('workspace-inventory-tabs:batches')}
           value={batches}
           href={`/${wsId}/inventory/batches`}
         />
 
         <StatisticCard
-          title={t('inventory-tabs:warehouses')}
+          title={t('workspace-inventory-tabs:warehouses')}
           value={warehouses}
           href={`/${wsId}/inventory/warehouses`}
         />
 
         <StatisticCard
-          title={t('inventory-tabs:units')}
+          title={t('workspace-inventory-tabs:units')}
           value={units}
           href={`/${wsId}/inventory/units`}
         />
 
         <StatisticCard
-          title={t('inventory-tabs:suppliers')}
+          title={t('workspace-inventory-tabs:suppliers')}
           value={suppliers}
           href={`/${wsId}/inventory/suppliers`}
         />
 
         <StatisticCard
-          title={t('inventory-tabs:promotions')}
+          title={t('workspace-inventory-tabs:promotions')}
           value={promotions}
           href={`/${wsId}/inventory/promotions`}
         />

@@ -51,8 +51,9 @@
       "sidebar-tabs",
       "ws-home",
       "finance-overview",
+      "workspace-inventory-tabs",
+      "workspace-finance-tabs",
       "workspace-users-tabs",
-      "inventory-tabs",
       "inventory-overview"
     ],
 
@@ -94,6 +95,7 @@
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets": [
       "sidebar-tabs",
+      "secret-data-table",
       "workspace-settings-layout",
       "ws-secrets"
     ],

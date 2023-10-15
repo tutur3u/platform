@@ -53,7 +53,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"

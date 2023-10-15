@@ -7,8 +7,9 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import { SecretRowActions } from '../../components/row-actions/secrets';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
+import { Translate } from 'next-translate';
 
-export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
+export const secretColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -33,31 +34,43 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
-    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 max-w-[8rem] break-all">
+        {row.getValue('id')}
+      </div>
+    ),
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 max-w-[8rem] break-all">
+        {row.getValue('name') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title={t('value')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 max-w-[8rem] break-all">
+        {row.getValue('value') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="line-clamp-2 max-w-[8rem] break-all">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
@@ -66,6 +79,7 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
   },
   {
     id: 'actions',
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
     cell: ({ row }) => <SecretRowActions row={row} />,
   },
 ];
