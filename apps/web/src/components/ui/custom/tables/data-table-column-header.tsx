@@ -20,7 +20,7 @@ import useTranslation from 'next-translate/useTranslation';
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
-  title: string;
+  title?: string;
 }
 
 export function DataTableColumnHeader<TData, TValue>({

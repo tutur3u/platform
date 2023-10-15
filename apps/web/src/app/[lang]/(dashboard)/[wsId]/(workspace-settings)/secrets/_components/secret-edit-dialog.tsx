@@ -65,7 +65,9 @@ export default function SecretEditDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={(e) => (data.name ? e.preventDefault() : null)}
+      >
         <DialogHeader>
           <DialogTitle>{t('workspace_secret')}</DialogTitle>
           <DialogDescription>
