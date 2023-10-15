@@ -6,8 +6,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
+import { Translate } from 'next-translate';
 
-export const promotionColumns: ColumnDef<ProductPromotion>[] = [
+export const promotionColumns = (
+  t: Translate
+): ColumnDef<ProductPromotion>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,42 +35,42 @@ export const promotionColumns: ColumnDef<ProductPromotion>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'code',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Code" />
+      <DataTableColumnHeader column={column} title={t('code')} />
     ),
     cell: ({ row }) => <div>{row.getValue('code') || '-'}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'description',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Description" />
+      <DataTableColumnHeader column={column} title={t('description')} />
     ),
     cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
   },
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Value" />
+      <DataTableColumnHeader column={column} title={t('value')} />
     ),
     cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

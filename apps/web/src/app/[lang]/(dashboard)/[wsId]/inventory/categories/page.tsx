@@ -25,7 +25,8 @@ export default async function WorkspaceProductCategoriesPage({
   return (
     <DataTable
       data={data}
-      columns={basicColumns}
+      columnGenerator={basicColumns}
+      namespace="basic-data-table"
       count={count}
       defaultVisibility={{
         id: false,
