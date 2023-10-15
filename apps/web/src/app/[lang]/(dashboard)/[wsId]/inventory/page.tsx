@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage({ params: { wsId } }: Props) {
   const supabase = createServerComponentClient({ cookies });
-  const { t } = useTranslation('inventory-tabs');
+  const { t } = useTranslation('workspace-inventory-tabs');
 
   const { data: workspaceProducts } = await supabase.rpc(
     'get_workspace_products_count',
@@ -106,7 +106,7 @@ export default async function InventoryPage({ params: { wsId } }: Props) {
       <Separator className="col-span-full" /> */}
 
       <StatisticCard
-        title={t('inventory-tabs:products')}
+        title={t('products')}
         value={workspaceProducts}
         href={`/${wsId}/inventory/products`}
       />
@@ -118,37 +118,37 @@ export default async function InventoryPage({ params: { wsId } }: Props) {
       />
 
       <StatisticCard
-        title={t('inventory-tabs:product-categories')}
+        title={t('categories')}
         value={categories}
         href={`/${wsId}/inventory/categories`}
       />
 
       <StatisticCard
-        title={t('inventory-tabs:batches')}
+        title={t('batches')}
         value={batches}
         href={`/${wsId}/inventory/batches`}
       />
 
       <StatisticCard
-        title={t('inventory-tabs:warehouses')}
+        title={t('warehouses')}
         value={warehouses}
         href={`/${wsId}/inventory/warehouses`}
       />
 
       <StatisticCard
-        title={t('inventory-tabs:units')}
+        title={t('units')}
         value={units}
         href={`/${wsId}/inventory/units`}
       />
 
       <StatisticCard
-        title={t('inventory-tabs:suppliers')}
+        title={t('suppliers')}
         value={suppliers}
         href={`/${wsId}/inventory/suppliers`}
       />
 
       <StatisticCard
-        title={t('inventory-tabs:promotions')}
+        title={t('promotions')}
         value={promotions}
         href={`/${wsId}/inventory/promotions`}
       />

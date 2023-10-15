@@ -36,7 +36,8 @@ export default async function WorkspacePromotionsPage({
   return (
     <DataTable
       data={promotions}
-      columns={promotionColumns}
+      columnGenerator={promotionColumns}
+      namespace="promotion-data-table"
       count={count}
       defaultVisibility={{
         id: false,

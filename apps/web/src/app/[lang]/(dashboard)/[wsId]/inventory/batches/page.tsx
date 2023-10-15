@@ -25,7 +25,8 @@ export default async function WorkspaceBatchesPage({
   return (
     <DataTable
       data={data}
-      columns={batchColumns}
+      columnGenerator={batchColumns}
+      namespace="batch-data-table"
       count={count}
       defaultVisibility={{
         id: false,

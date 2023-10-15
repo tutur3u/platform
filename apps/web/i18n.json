@@ -51,8 +51,7 @@
       "sidebar-tabs",
       "ws-home",
       "finance-overview",
-      "workspace-user-tabs",
-      "inventory-tabs",
+      "workspace-users-tabs",
       "inventory-overview"
     ],
 
@@ -289,7 +288,7 @@
 
     "/[lang]/(dashboard)/[wsId]/inventory": [
       "sidebar-tabs",
-      "inventory-tabs",
+      "workspace-inventory-tabs",
       "inventory-overview"
     ],
 
@@ -298,10 +297,10 @@
       "search",
       "view-mode",
       "pagination",
+      "product-data-table",
       "category-multi-selector",
       "warehouse-multi-selector",
-      "inventory-products-configs",
-      "inventory-tabs"
+      "inventory-products-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/products/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/products/[productId]": [
@@ -314,8 +313,8 @@
       "search",
       "view-mode",
       "pagination",
-      "inventory-categories-configs",
-      "inventory-tabs"
+      "basic-data-table",
+      "inventory-categories-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/categories/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/categories/[categoryId]": [
@@ -327,9 +326,9 @@
       "search",
       "view-mode",
       "pagination",
+      "batch-data-table",
       "warehouse-multi-selector",
-      "inventory-batches-configs",
-      "inventory-tabs"
+      "inventory-batches-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/batches/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/batches/[batchId]": ["sidebar-tabs"],
@@ -339,8 +338,8 @@
       "search",
       "view-mode",
       "pagination",
-      "inventory-warehouses-configs",
-      "inventory-tabs"
+      "basic-data-table",
+      "inventory-warehouses-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/warehouses/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/warehouses/[warehouseId]": [
@@ -352,8 +351,8 @@
       "search",
       "view-mode",
       "pagination",
-      "inventory-units-configs",
-      "inventory-tabs"
+      "basic-data-table",
+      "inventory-units-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/units/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/units/[unitId]": ["sidebar-tabs"],
@@ -361,14 +360,19 @@
     "/[lang]/(dashboard)/[wsId]/inventory/suppliers": [
       "sidebar-tabs",
       "search",
-      "view-mode",
       "pagination",
-      "inventory-suppliers-configs",
-      "inventory-tabs"
+      "basic-data-table",
+      "inventory-suppliers-configs"
     ],
     "/[lang]/(dashboard)/[wsId]/inventory/suppliers/new": ["sidebar-tabs"],
     "/[lang]/(dashboard)/[wsId]/inventory/suppliers/[supplierId]": [
       "sidebar-tabs"
+    ],
+
+    "/[lang]/(dashboard)/[wsId]/inventory/promotions": [
+      "search",
+      "pagination",
+      "promotion-data-table"
     ],
 
     "/[lang]/(dashboard)/[wsId]/classes": ["sidebar-tabs"],

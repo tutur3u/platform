@@ -53,7 +53,6 @@ export default async function Layout({
     {
       name: t('inventory'),
       href: `/${wsId}/inventory`,
-      requireRootWorkspace: true,
     },
     {
       name: t('healthcare'),

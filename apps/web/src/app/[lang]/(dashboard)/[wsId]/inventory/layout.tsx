@@ -1,4 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
+import useTranslation from 'next-translate/useTranslation';
 
 interface LayoutProps {
   params: {
@@ -11,38 +12,40 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
+  const { t } = useTranslation('workspace-inventory-tabs');
+
   const navLinks: NavLink[] = [
     {
-      name: 'Overview',
+      name: t('overview'),
       href: `/${wsId}/inventory`,
       matchExact: true,
     },
     {
-      name: 'Products',
+      name: t('products'),
       href: `/${wsId}/inventory/products`,
     },
     {
-      name: 'Categories',
+      name: t('categories'),
       href: `/${wsId}/inventory/categories`,
     },
     {
-      name: 'Units',
+      name: t('units'),
       href: `/${wsId}/inventory/units`,
     },
     {
-      name: 'Suppliers',
+      name: t('suppliers'),
       href: `/${wsId}/inventory/suppliers`,
     },
     {
-      name: 'Warehouses',
+      name: t('warehouses'),
       href: `/${wsId}/inventory/warehouses`,
     },
     {
-      name: 'Batches',
+      name: t('batches'),
       href: `/${wsId}/inventory/batches`,
     },
     {
-      name: 'Promotions',
+      name: t('promotions'),
       href: `/${wsId}/inventory/promotions`,
     },
   ];

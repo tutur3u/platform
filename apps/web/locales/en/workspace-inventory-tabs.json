@@ -1,10 +1,10 @@
 {
   "overview": "Overview",
   "products": "Products",
-  "product-categories": "Categories",
-  "batches": "Batches",
-  "warehouses": "Warehouses",
+  "categories": "Categories",
   "units": "Units",
   "suppliers": "Suppliers",
+  "warehouses": "Warehouses",
+  "batches": "Batches",
   "promotions": "Promotions"
 }

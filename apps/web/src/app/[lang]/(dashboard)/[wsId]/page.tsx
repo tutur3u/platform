@@ -22,61 +22,61 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   const homeLabel = t('home');
 
-  // const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
-  //   ws_id: wsId,
-  //   start_date: null,
-  //   end_date: null,
-  // });
+  const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
+    ws_id: wsId,
+    start_date: null,
+    end_date: null,
+  });
 
-  // const { data: expense } = await supabase.rpc(
-  //   'get_workspace_wallets_expense',
-  //   {
-  //     ws_id: wsId,
-  //     start_date: null,
-  //     end_date: null,
-  //   }
-  // );
+  const { data: expense } = await supabase.rpc(
+    'get_workspace_wallets_expense',
+    {
+      ws_id: wsId,
+      start_date: null,
+      end_date: null,
+    }
+  );
 
-  // const { count: walletsCount } = await supabase
-  //   .from('workspace_wallets')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: walletsCount } = await supabase
+    .from('workspace_wallets')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: categoriesCount } = await supabase
-  //   .from('transaction_categories')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: categoriesCount } = await supabase
+    .from('transaction_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: transactionsCount } = await supabase
-  //   .from('wallet_transactions')
-  //   .select('*, workspace_wallets!inner(ws_id)', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('workspace_wallets.ws_id', wsId);
+  const { count: transactionsCount } = await supabase
+    .from('wallet_transactions')
+    .select('*, workspace_wallets!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('workspace_wallets.ws_id', wsId);
 
-  // const { count: invoicesCount } = await supabase
-  //   .from('finance_invoices')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: invoicesCount } = await supabase
+    .from('finance_invoices')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const walletsLabel = t('finance-tabs:wallets');
-  // const transactionsLabel = t('finance-tabs:transactions');
-  // const categoriesLabel = t('finance-tabs:transaction-categories');
-  // const invoicesLabel = t('finance-tabs:invoices');
+  const walletsLabel = t('finance-tabs:wallets');
+  const transactionsLabel = t('finance-tabs:transactions');
+  const categoriesLabel = t('finance-tabs:transaction-categories');
+  const invoicesLabel = t('finance-tabs:invoices');
 
-  // const totalBalance = t('finance-overview:total-balance');
-  // const totalIncome = t('finance-overview:total-income');
-  // const totalExpense = t('finance-overview:total-expense');
+  const totalBalance = t('finance-overview:total-balance');
+  const totalIncome = t('finance-overview:total-income');
+  const totalExpense = t('finance-overview:total-expense');
 
   // const { count: checkups } = await supabase
   //   .from('healthcare_checkups')
@@ -110,67 +110,67 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   //   })
   //   .eq('ws_id', wsId);
 
-  // const { data: workspaceProducts } = await supabase.rpc(
-  //   'get_workspace_products_count',
-  //   {
-  //     ws_id: wsId,
-  //   }
-  // );
+  const { data: workspaceProducts } = await supabase.rpc(
+    'get_workspace_products_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
-  // const { data: inventoryProducts } = await supabase.rpc(
-  //   'get_inventory_products_count',
-  //   {
-  //     ws_id: wsId,
-  //   }
-  // );
+  const { data: inventoryProducts } = await supabase.rpc(
+    'get_inventory_products_count',
+    {
+      ws_id: wsId,
+    }
+  );
 
-  // const { count: categories } = await supabase
-  //   .from('product_categories')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: categories } = await supabase
+    .from('product_categories')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: batches } = await supabase
-  //   .from('inventory_batches')
-  //   .select('*, inventory_warehouses!inner(ws_id)', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('inventory_warehouses.ws_id', wsId);
+  const { count: batches } = await supabase
+    .from('inventory_batches')
+    .select('*, inventory_warehouses!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('inventory_warehouses.ws_id', wsId);
 
-  // const { count: warehouses } = await supabase
-  //   .from('inventory_warehouses')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: warehouses } = await supabase
+    .from('inventory_warehouses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: units } = await supabase
-  //   .from('inventory_units')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: units } = await supabase
+    .from('inventory_units')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: suppliers } = await supabase
-  //   .from('inventory_suppliers')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: suppliers } = await supabase
+    .from('inventory_suppliers')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  // const { count: promotions } = await supabase
-  //   .from('workspace_promotions')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
+  const { count: promotions } = await supabase
+    .from('workspace_promotions')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   const { count: users } = await supabase
     .from('workspace_users')
@@ -191,7 +191,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const reports = await getReportsCount(wsId);
 
   const usersLabel = t('sidebar-tabs:users');
-  // const sum = (income || 0) + (expense || 0);
+  const sum = (income || 0) + (expense || 0);
 
   return (
     <>
@@ -206,7 +206,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </p>
       </div>
 
-      {/* <Separator className="my-4" />
+      <Separator className="my-4" />
       <div className="mb-2 text-2xl font-semibold">
         {t('sidebar-tabs:finance')}
       </div>
@@ -261,7 +261,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           value={invoicesCount}
           href={`/${wsId}/finance/invoices`}
         />
-      </div> */}
+      </div>
 
       {/* {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
         <>
@@ -297,7 +297,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </>
       )} */}
 
-      {/* <Separator className="mb-8 mt-4" />
+      <Separator className="mb-8 mt-4" />
       <div className="mb-2 text-2xl font-semibold">
         {t('sidebar-tabs:inventory')}
       </div>
@@ -349,7 +349,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           value={promotions}
           href={`/${wsId}/inventory/promotions`}
         />
-      </div> */}
+      </div>
 
       <Separator className="mb-8 mt-4" />
       <div className="mb-2 text-2xl font-semibold">
