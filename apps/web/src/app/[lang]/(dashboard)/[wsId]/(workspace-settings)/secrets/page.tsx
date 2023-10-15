@@ -55,7 +55,8 @@ export default async function WorkspaceSecretsPage({
       </div>
       <Separator className="my-4" />
       <DataTable
-        columns={secretColumns}
+        columnGenerator={secretColumns}
+        namespace="secret-data-table"
         data={secrets}
         count={count}
         defaultVisibility={{

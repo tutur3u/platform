@@ -93,7 +93,7 @@ export default async function MemberList({
         />
       </div>
 
-      <div className="mt-2 flex flex-col items-center justify-between gap-2 border-t border-zinc-300 pt-2 dark:border-zinc-800 lg:flex-row lg:gap-4">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-300 pt-2 text-sm dark:border-zinc-800 md:text-base lg:gap-4">
         {member?.created_at ? (
           <div className="line-clamp-1 text-zinc-500">
             {t(member?.pending ? 'invited' : 'member_since')}{' '}
@@ -107,7 +107,7 @@ export default async function MemberList({
         <div className="flex gap-2">
           {user?.id === member.id && (
             <div
-              className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
+              className={`rounded border px-2 py-0.5 text-center font-semibold ${getRoleColor(
                 'you'
               )}`}
             >
@@ -116,7 +116,7 @@ export default async function MemberList({
           )}
 
           <div
-            className={`w-full rounded border px-2 py-0.5 text-center font-semibold lg:w-fit ${getRoleColor(
+            className={`flex-initial rounded border px-2 py-0.5 text-center font-semibold ${getRoleColor(
               'unknown'
             )} ${member?.pending ? 'border-dashed opacity-60' : ''}`}
           >

@@ -31,7 +31,7 @@ export function DataTableViewOptions<TData>({
     .every((column) => column.getIsVisible());
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
