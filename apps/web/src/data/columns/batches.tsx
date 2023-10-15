@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
+import { Translate } from 'next-translate';
 
-export const batchColumns: ColumnDef<ProductBatch>[] = [
+export const batchColumns = (t: Translate): ColumnDef<ProductBatch>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,14 +33,14 @@ export const batchColumns: ColumnDef<ProductBatch>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
+      <DataTableColumnHeader column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Price" />
+      <DataTableColumnHeader column={column} title={t('price')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -53,7 +54,7 @@ export const batchColumns: ColumnDef<ProductBatch>[] = [
   {
     accessorKey: 'total_diff',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Price Difference" />
+      <DataTableColumnHeader column={column} title={t('total_diff')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -67,21 +68,21 @@ export const batchColumns: ColumnDef<ProductBatch>[] = [
   {
     accessorKey: 'warehouse',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Warehouse" />
+      <DataTableColumnHeader column={column} title={t('warehouse')} />
     ),
     cell: ({ row }) => <div>{row.getValue('warehouse')}</div>,
   },
   {
     accessorKey: 'supplier',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Supplier" />
+      <DataTableColumnHeader column={column} title={t('supplier')} />
     ),
     cell: ({ row }) => <div>{row.getValue('supplier')}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+      <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

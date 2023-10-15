@@ -1,0 +1,9 @@
+{
+  "id": "ID",
+  "name": "Name",
+  "category": "Category",
+  "description": "Description",
+  "manufacturer": "Manufacturer",
+  "usage": "Usage",
+  "created_at": "Created at"
+}

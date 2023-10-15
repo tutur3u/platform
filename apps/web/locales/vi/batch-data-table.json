@@ -1,0 +1,8 @@
+{
+  "id": "Mã số",
+  "price": "Giá",
+  "total_diff": "Tổng chênh lệch",
+  "warehouse": "Kho",
+  "supplier": "Nhà cung cấp",
+  "created_at": "Tạo lúc"
+}

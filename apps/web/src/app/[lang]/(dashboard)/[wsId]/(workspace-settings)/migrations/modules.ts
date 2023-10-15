@@ -226,6 +226,8 @@ export const modules: ModulePackage[] = [
             : i?.type === 'EVENT'
             ? '9bc7ee58-537a-4ff4-9a8f-ee10a875568c'
             : undefined,
+        manufacturer: i?.manufacturer,
+        created_at: i?.created_at,
       })),
   },
   {

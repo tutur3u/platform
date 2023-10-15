@@ -1,0 +1,8 @@
+{
+  "id": "ID",
+  "price": "Price",
+  "total_diff": "Total diff",
+  "warehouse": "Warehouse",
+  "supplier": "Supplier",
+  "created_at": "Created at"
+}
