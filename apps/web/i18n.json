@@ -51,8 +51,9 @@
       "sidebar-tabs",
       "ws-home",
       "finance-overview",
+      "workspace-inventory-tabs",
+      "workspace-finance-tabs",
       "workspace-users-tabs",
-      "inventory-tabs",
       "inventory-overview"
     ],
 
