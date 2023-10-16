@@ -31,6 +31,7 @@ export default async function WorkspaceWalletsPage({
       defaultVisibility={{
         id: false,
         description: false,
+        report_opt_in: false,
         created_at: false,
       }}
     />
