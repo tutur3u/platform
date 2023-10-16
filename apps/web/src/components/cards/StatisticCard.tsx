@@ -6,10 +6,8 @@ interface Props {
   value?: string | number | null;
   href?: string;
   loading?: boolean;
-  color?: 'green' | 'red' | 'blue';
-
-  onClick?: () => void;
   className?: string;
+  onClick?: () => void;
 }
 
 const StatisticCard = ({
@@ -17,85 +15,33 @@ const StatisticCard = ({
   value,
   href,
   loading,
-  color,
-  onClick,
   className,
+  onClick,
 }: Props) => {
   const { t } = useTranslation();
   const loadingLabel = t('common:loading');
 
-  const generateOuterColor = (enableHoverEffect: boolean) => {
-    switch (color) {
-      case 'green':
-        return `border-green-500/10 bg-green-500/10 dark:border-green-300/10 dark:bg-green-300/5 ${
-          enableHoverEffect ? 'hover:bg-green-300/10' : ''
-        }`;
-
-      case 'red':
-        return `border-red-500/10 bg-red-500/10 dark:border-red-300/10 dark:bg-red-300/5 ${
-          enableHoverEffect ? 'hover:bg-red-300/10' : ''
-        }`;
-
-      case 'blue':
-        return `border-blue-500/10 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/5 ${
-          enableHoverEffect ? 'hover:bg-blue-300/10' : ''
-        }`;
-
-      default:
-        return `border-foreground/20 ${
-          enableHoverEffect ? 'hover:bg-foreground/5' : ''
-        }`;
-    }
-  };
-
-  const generateInnerColor = () => {
-    switch (color) {
-      case 'green':
-        return 'border-green-500/20 bg-green-500/10 text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300';
-
-      case 'red':
-        return 'border-red-500/20 bg-red-500/10 text-red-500 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300';
-
-      case 'blue':
-        return 'border-blue-500/20 bg-blue-500/10 text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300';
-
-      default:
-        return 'border-foreground/5 bg-foreground/5 text-foreground';
-    }
-  };
-
-  const generateTitleColor = () => {
-    switch (color) {
-      case 'green':
-        return 'text-green-700 dark:text-green-300';
-
-      case 'red':
-        return 'text-red-700 dark:text-red-300';
-
-      case 'blue':
-        return 'text-blue-700 dark:text-blue-300';
-
-      default:
-        return 'text-foreground';
-    }
-  };
+  const generateOuterColor = (enableHoverEffect: boolean) =>
+    `border-foreground/20 ${
+      enableHoverEffect ? 'hover:bg-foreground/5' : 'border-foreground/[0.1]'
+    }`;
 
   if (href)
     return (
       <Link
         href={href}
         onClick={onClick}
-        className={`rounded-lg border transition duration-300 ${
-          onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
+        className={`group rounded-lg border transition-all duration-300 ${
+          onClick || href ? 'hover:rounded-xl' : 'cursor-default'
         } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
+        <div className="p-1 text-center text-lg font-semibold">{title}</div>
         <div
-          className={`p-1 text-center text-lg font-semibold ${generateTitleColor()}`}
-        >
-          {title}
-        </div>
-        <div
-          className={`m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${generateInnerColor()}`}
+          className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+            !!onClick || !!href
+              ? 'transition-all duration-300 group-hover:rounded-lg'
+              : ''
+          }`}
         >
           {loading ? loadingLabel : value != null ? value : 'N/A'}
         </div>
@@ -105,17 +51,17 @@ const StatisticCard = ({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg border transition duration-300 ${
-        onClick || href ? 'hover:-translate-y-1' : 'cursor-default'
+      className={`group rounded-lg border transition duration-300 ${
+        onClick || href ? 'hover:rounded-xl' : 'cursor-default'
       } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >
+      <div className="p-1 text-center text-lg font-semibold">{title}</div>
       <div
-        className={`p-1 text-center text-lg font-semibold ${generateTitleColor()}`}
-      >
-        {title}
-      </div>
-      <div
-        className={`m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${generateInnerColor()}`}
+        className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+          !!onClick || !!href
+            ? 'transition-all duration-300 group-hover:rounded-lg'
+            : ''
+        }`}
       >
         {loading ? loadingLabel : value != null ? value : 'N/A'}
       </div>
