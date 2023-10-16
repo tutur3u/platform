@@ -14,6 +14,7 @@ import NotificationActionList, {
 } from './notification-action-list';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default async function NotificationPopover() {
   const { t, lang: locale } = useTranslation('notifications');
@@ -23,15 +24,18 @@ export default async function NotificationPopover() {
   dayjs.extend(relativeTime);
 
   const noNotifications = t('no-notifications');
-  const desc = t('no-notifications-desc');
 
   const invites = await getWorkspaceInvites();
   const notifications = invites.map((invite) => ({
-    title: `${t('workspace-invite')} • ${dayjs(invite.created_at).fromNow()}.`,
+    title: `${t('workspace-invite')}`,
     description: (
       <div>
+        <span className="font-semibold text-sky-600 dark:text-sky-200">
+          {dayjs(invite.created_at).fromNow()}
+        </span>
+        {' • '}
         {t('invited-to')}{' '}
-        <span className="text-primary/70 font-semibold underline">
+        <span className="text-primary/80 font-semibold underline">
           {invite.name}
         </span>
         .
@@ -64,41 +68,50 @@ export default async function NotificationPopover() {
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full md:w-96">
-        <div className="font-semibold">
+      <PopoverContent className="w-64 p-0" align="end">
+        <div className="p-2 font-semibold">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
-        <Separator className="mb-4 mt-1" />
-        <div className="grid gap-4">
+        <Separator />
+        <ScrollArea
+          className={`gap-2 p-2 ${
+            notifications.length === 0
+              ? 'h-20'
+              : notifications.length > 4
+              ? 'h-96'
+              : ''
+          }`}
+        >
           {notifications.length > 0 ? (
             notifications.map((notification, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-[25px_1fr] items-start pb-2 last:mb-0 last:pb-0"
-              >
-                <span className="flex h-2 w-2 translate-y-1 rounded-full bg-sky-500" />
-                <div>
-                  <p className="text-sm font-medium leading-none">
-                    {notification.title}
-                  </p>
-                  <p className="text-muted-foreground mb-2 mt-1 text-sm">
-                    {notification.description}
-                  </p>
+              <>
+                <div key={index} className="pb-2 last:pb-0">
+                  <div>
+                    <p className="text-sm font-medium leading-none">
+                      {notification.title}
+                    </p>
+                    <p className="text-muted-foreground mb-2 mt-1 text-sm">
+                      {notification.description}
+                    </p>
 
-                  <NotificationActionList actions={notification.actions} />
+                    <NotificationActionList actions={notification.actions} />
+                  </div>
                 </div>
-              </div>
+
+                {index !== notifications.length - 1 && (
+                  <Separator className="mb-2 mt-1" />
+                )}
+              </>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-muted-foreground text-sm font-medium">
+            <div className="flex min-h-[4rem] flex-col items-center justify-center">
+              <div className="text-muted-foreground text-xs">
                 {noNotifications}
               </div>
-              <div className="text-muted-foreground text-xs">{desc}</div>
             </div>
           )}
-        </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );

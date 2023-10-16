@@ -1,9 +1,9 @@
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserNav } from './(dashboard)/_components/user-nav';
-import NotificationPopover from './(dashboard)/_components/notification-popover';
-import { ThemeToggle } from './(dashboard)/_components/theme-toggle';
+import { UserNav } from './user-nav';
+import NotificationPopover from './notification-popover';
+import { ThemeToggle } from './theme-toggle';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
