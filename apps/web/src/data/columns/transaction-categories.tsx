@@ -48,6 +48,15 @@ export const transactionCategoryColumns = (
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
+    accessorKey: 'amount',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('amount')} />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">{row.getValue('amount')}</div>
+    ),
+  },
+  {
     accessorKey: 'is_expense',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('is_expense')} />

@@ -85,24 +85,20 @@ export default async function NotificationPopover() {
         >
           {notifications.length > 0 ? (
             notifications.map((notification, index) => (
-              <>
-                <div key={index} className="pb-2 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium leading-none">
-                      {notification.title}
-                    </p>
-                    <p className="text-muted-foreground mb-2 mt-1 text-sm">
-                      {notification.description}
-                    </p>
+              <div key={index}>
+                <p className="text-sm font-medium leading-none">
+                  {notification.title}
+                </p>
+                <p className="text-muted-foreground mb-2 mt-1 text-sm">
+                  {notification.description}
+                </p>
 
-                    <NotificationActionList actions={notification.actions} />
-                  </div>
-                </div>
+                <NotificationActionList actions={notification.actions} />
 
-                {index !== notifications.length - 1 && (
-                  <Separator className="mb-2 mt-1" />
-                )}
-              </>
+                {index !== notifications.length - 1 ? (
+                  <Separator className="my-2 w-full" />
+                ) : null}
+              </div>
             ))
           ) : (
             <div className="flex min-h-[4rem] flex-col items-center justify-center">

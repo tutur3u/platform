@@ -47,10 +47,7 @@ async function getData(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('transaction_categories')
-    .select('*', {
-      count: 'exact',
-    })
+    .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
     .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -70,6 +67,8 @@ async function getData(
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
+
+  console.log(data);
 
   return { data, count } as { data: TransactionCategory[]; count: number };
 }

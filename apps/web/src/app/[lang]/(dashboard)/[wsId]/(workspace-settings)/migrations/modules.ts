@@ -19,6 +19,7 @@ export type MigrationModule =
   | 'package-prices'
   | 'payment-methods'
   | 'warehouses'
+  | 'transaction-categories'
   | 'transactions'
   | 'coupons'
   | 'bills'
@@ -278,6 +279,19 @@ export const modules: ModulePackage[] = [
       })),
   },
   {
+    name: 'Transaction Categories',
+    module: 'transaction-categories',
+    externalAlias: 'categories',
+    externalPath: '/dashboard/data/bills/categories',
+    internalPath: '/api/workspaces/[wsId]/transactions/categories/migrate',
+    mapping: (items) =>
+      items.map((i) => ({
+        id: i?.id,
+        name: i?.name,
+        is_expense: i?.is_expense,
+      })),
+  },
+  {
     name: 'Wallet transactions',
     module: 'transactions',
     externalAlias: 'bills',
@@ -286,25 +300,16 @@ export const modules: ModulePackage[] = [
     internalPath: '/api/workspaces/[wsId]/wallets/transactions/migrate',
     mapping: (items) =>
       items.map((i) => {
-        const walletId =
-          i?.method === 'CASH'
-            ? '354f92e4-8e7c-404a-b461-cfe6a8b67ba8'
-            : i?.method === 'BANKING'
-            ? '8ca90c9e-de28-4284-b388-294b704d78bc'
-            : '';
-
         // There is a "valid_until" field on item, which is type of date
         // convert it to timestamptz (+7) and use it as "taken_at" field
         const takenAt = i?.valid_until ? new Date(i?.valid_until) : null;
 
         return {
-          id: generateUUID(i?.id, walletId),
-          wallet_id: walletId,
+          id: generateUUID(i?.id, i?.wallet_id),
+          wallet_id: i?.wallet_id,
           amount: i?.total + i?.price_diff,
           description: i?.content,
-          // TODO: add new field to take product categories and use it here
-          // think of some mechanism to pick the most suitable category from invoice_products
-          // category_id: i?.category_id,
+          category_id: i?.category_id,
           taken_at: takenAt ? takenAt.toISOString() : i?.created_at,
           created_at: i?.created_at,
           _id: i?.id,

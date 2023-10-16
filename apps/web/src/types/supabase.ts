@@ -2015,12 +2015,13 @@ export interface Database {
           balance: number | null;
           birthday: string | null;
           created_at: string | null;
+          display_name: string | null;
           email: string | null;
           ethnicity: string | null;
+          full_name: string | null;
           gender: string | null;
           guardian: string | null;
           id: string;
-          name: string | null;
           national_id: string | null;
           note: string | null;
           phone: string | null;
@@ -2032,12 +2033,13 @@ export interface Database {
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
+          display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
+          full_name?: string | null;
           gender?: string | null;
           guardian?: string | null;
           id?: string;
-          name?: string | null;
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
@@ -2049,12 +2051,13 @@ export interface Database {
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
+          display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
+          full_name?: string | null;
           gender?: string | null;
           guardian?: string | null;
           id?: string;
-          name?: string | null;
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
@@ -2383,6 +2386,17 @@ export interface Database {
           _event_id: string;
         };
         Returns: number;
+      };
+      get_transaction_categories_with_amount: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          name: string;
+          is_expense: boolean;
+          ws_id: string;
+          created_at: string;
+          amount: number;
+        }[];
       };
       get_user_role: {
         Args: {
