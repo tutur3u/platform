@@ -97,7 +97,7 @@
     "lucide-react": "^0.287.0",
     "moment": "^2.29.4",
     "negotiator": "^0.6.3",
-    "next": "13.5.5-canary.17",
+    "next": "13.5.5",
     "next-themes": "^0.2.1",
     "next-translate": "2.6.0",
     "openai": "^4.12.1",
