@@ -13,9 +13,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { useEffect } from 'react';
 import useTranslation from 'next-translate/useTranslation';
+import { SendHorizonal } from 'lucide-react';
 
 const FormSchema = z.object({
   prompt: z.string().min(1).max(2048),
@@ -49,7 +49,7 @@ export default function ChatForm({ input, setInput, handleSubmit }: Props) {
     <Form {...form}>
       <form
         onSubmit={handleSubmit}
-        className="flex w-full items-end gap-2 md:max-w-xl"
+        className="flex w-full items-end gap-2 md:w-96 md:max-w-xl"
       >
         <FormField
           control={form.control}
@@ -59,6 +59,7 @@ export default function ChatForm({ input, setInput, handleSubmit }: Props) {
               <FormControl>
                 <Input
                   {...field}
+                  className="focus-visible:ring-transparent"
                   placeholder={t('prompt_placeholder')}
                   autoComplete="off"
                 />
@@ -69,12 +70,13 @@ export default function ChatForm({ input, setInput, handleSubmit }: Props) {
         />
 
         <Button
+          size="icon"
           type="submit"
           disabled={
             !form.formState.isValid || form.formState.isSubmitting || !input
           }
         >
-          <PaperAirplaneIcon className="h-5 w-5" />
+          <SendHorizonal className="h-5 w-5" />
         </Button>
       </form>
     </Form>

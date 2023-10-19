@@ -91,7 +91,6 @@ export default async function Layout({
       </div>
 
       <Separator className="opacity-50" />
-
       <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </>
   );

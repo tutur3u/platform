@@ -4,10 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useChat } from 'ai/react';
 import ChatForm from './form';
 import { User } from '@/types/primitives/User';
-import { Button } from '@/components/ui/button';
-import { User as UserIcon } from 'lucide-react';
+import { ArrowLeftToLine, FolderOpen, User as UserIcon } from 'lucide-react';
 import { getInitials } from '@/utils/name-helper';
 import useTranslation from 'next-translate/useTranslation';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useState } from 'react';
 
 interface ChatProps {
   user: User;
@@ -15,16 +17,56 @@ interface ChatProps {
 
 const Chat = ({ user }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
-  const { messages, setMessages, input, setInput, handleSubmit } = useChat();
+  const { messages, input, setInput, handleSubmit } = useChat();
 
-  const resetChat = () => {
-    setMessages([]);
-    setInput('');
-  };
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex flex-col overflow-y-auto">
-      <div className="flex h-full flex-col gap-2 overflow-y-auto p-4 pb-24 md:px-8 lg:px-16 xl:px-32">
+    <div className="relative flex">
+      <div
+        className={`absolute grid h-full w-full max-w-sm rounded-lg border transition-all md:static ${
+          collapsed ? 'border-transparent' : 'border-foreground/5 p-2'
+        }`}
+      >
+        <div className="flex w-full gap-2">
+          <Button
+            size="icon"
+            className={`flex-none ${
+              collapsed ? 'opacity-50 transition hover:opacity-100' : ''
+            }`}
+            onClick={() => setCollapsed((c) => !c)}
+          >
+            {collapsed ? (
+              <FolderOpen className="h-5 w-5" />
+            ) : (
+              <ArrowLeftToLine className="h-5 w-5" />
+            )}
+          </Button>
+
+          <Button
+            variant="secondary"
+            className={`w-full transition duration-300 ${
+              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+            }`}
+            disabled={!collapsed}
+          >
+            <div className="line-clamp-1">{t('new_chat')}</div>
+          </Button>
+        </div>
+
+        <div
+          className={`transition duration-300 ${
+            collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+          }`}
+        >
+          <Separator className="my-2" />
+          <Button className="w-full" disabled>
+            {t('default_chat')}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex h-full w-full flex-col gap-2 overflow-y-auto p-4 pb-24 md:px-8 lg:px-16 xl:px-32">
         {messages.length > 0 ? (
           messages.map((m) => (
             <div
@@ -59,35 +101,22 @@ const Chat = ({ user }: ChatProps) => {
             </div>
           ))
         ) : (
-          <div className="text-foreground/50 mt-32 text-center text-xl font-semibold md:text-2xl">
+          <div className="text-foreground/50 absolute inset-0 mt-32 text-center text-xl font-semibold md:text-2xl">
             {t('prompt')}
           </div>
         )}
       </div>
 
-      <div className="border-foreground/10 bg-background/50 fixed inset-x-0 bottom-0 z-50 border-t backdrop-blur">
-        <div className="flex items-center justify-between p-2 md:px-4">
-          <Button
-            variant="ghost"
-            className="pointer-events-none hidden opacity-0 md:block"
-          >
-            {t('reset_chat')}
-          </Button>
-
+      <div
+        id="chat-bar"
+        className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-center backdrop-blur"
+      >
+        <div className="border-foreground/20 bg-background/50 rounded-t-lg border border-b-0 p-2">
           <ChatForm
             input={input}
             setInput={setInput}
             handleSubmit={handleSubmit}
           />
-
-          <Button
-            onClick={resetChat}
-            variant="ghost"
-            className="hidden md:block"
-            disabled={!messages.length && !input}
-          >
-            {t('reset_chat')}
-          </Button>
         </div>
       </div>
     </div>

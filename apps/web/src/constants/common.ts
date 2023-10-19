@@ -20,5 +20,6 @@ export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
 
 // The following option only works in development mode.
-export const HIDE_TAILWIND_INDICATOR =
-  process.env.HIDE_TAILWIND_INDICATOR !== 'false';
+// Defaults to true when not specified.
+export const SHOW_TAILWIND_INDICATOR =
+  process.env.SHOW_TAILWIND_INDICATOR === 'true';

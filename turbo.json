@@ -2,7 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
-    "HIDE_TAILWIND_INDICATOR",
+    "SHOW_TAILWIND_INDICATOR",
     "NEXT_PUBLIC_GA_MEASUREMENT_ID",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
