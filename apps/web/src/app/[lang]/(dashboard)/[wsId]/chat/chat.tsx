@@ -24,7 +24,8 @@ const Chat = ({ user }: ChatProps) => {
   return (
     <div className="relative flex">
       <div
-        className={`absolute grid h-full w-full max-w-sm rounded-lg border transition-all md:static ${
+        id="chat-sidebar"
+        className={`absolute grid h-fit w-full max-w-xs rounded-lg border transition-all duration-500 ${
           collapsed ? 'border-transparent' : 'border-foreground/5 p-2'
         }`}
       >
@@ -66,7 +67,11 @@ const Chat = ({ user }: ChatProps) => {
         </div>
       </div>
 
-      <div className="flex h-full w-full flex-col gap-2 overflow-y-auto p-4 pb-24 md:px-8 lg:px-16 xl:px-32">
+      <div
+        className={`flex h-full w-full flex-col gap-2 overflow-y-auto pb-16 transition-all duration-500 ${
+          collapsed ? 'ml-0' : `ml-[21rem]`
+        }`}
+      >
         {messages.length > 0 ? (
           messages.map((m) => (
             <div
@@ -76,7 +81,7 @@ const Chat = ({ user }: ChatProps) => {
               }`}
             >
               {m.role === 'user' ? (
-                <Avatar>
+                <Avatar className="hidden md:block">
                   <AvatarImage
                     src={user?.avatar_url || '/dark.png'}
                     alt="Tuturuuu Logo"
@@ -90,12 +95,13 @@ const Chat = ({ user }: ChatProps) => {
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <Avatar>
+                <Avatar className="hidden md:block">
                   <AvatarImage src="/rewise-green.png" alt="Tuturuuu Logo" />
                   <AvatarFallback className="font-semibold">AI</AvatarFallback>
                 </Avatar>
               )}
-              <div className="border-foreground/5 bg-foreground/5 rounded-xl border px-3 py-2">
+
+              <div className="border-foreground/5 bg-foreground/5 max-w-[80%] rounded-xl border px-3 py-2">
                 {m.content.trim()}
               </div>
             </div>
