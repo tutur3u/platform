@@ -1,5 +1,6 @@
 import { getCurrentSupabaseUser } from '@/lib/user-helper';
 import { VercelToolbar } from '@vercel/toolbar/next';
+import { Suspense } from 'react';
 
 export async function StaffToolbar() {
   const user = await getCurrentSupabaseUser();
@@ -7,5 +8,9 @@ export async function StaffToolbar() {
 
   const showToolbar = isEmployee;
 
-  return showToolbar ? <VercelToolbar /> : null;
+  return (
+    <Suspense fallback={<div />}>
+      {showToolbar ? <VercelToolbar /> : null}
+    </Suspense>
+  );
 }

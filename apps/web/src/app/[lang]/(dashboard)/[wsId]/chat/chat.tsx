@@ -65,28 +65,30 @@ const Chat = ({ user }: ChatProps) => {
         )}
       </div>
 
-      <div className="border-foreground/10 bg-background fixed inset-x-0 bottom-0 flex w-full items-center justify-between border-t px-2 py-2 md:px-4">
-        <Button
-          variant="ghost"
-          className="pointer-events-none hidden opacity-0 md:block"
-        >
-          {t('reset_chat')}
-        </Button>
+      <div className="border-foreground/10 bg-background/50 fixed inset-x-0 bottom-0 z-50 border-t backdrop-blur">
+        <div className="flex items-center justify-between p-2 md:px-4">
+          <Button
+            variant="ghost"
+            className="pointer-events-none hidden opacity-0 md:block"
+          >
+            {t('reset_chat')}
+          </Button>
 
-        <ChatForm
-          input={input}
-          setInput={setInput}
-          handleSubmit={handleSubmit}
-        />
+          <ChatForm
+            input={input}
+            setInput={setInput}
+            handleSubmit={handleSubmit}
+          />
 
-        <Button
-          onClick={resetChat}
-          variant="ghost"
-          className="hidden md:block"
-          disabled={!messages.length && !input}
-        >
-          {t('reset_chat')}
-        </Button>
+          <Button
+            onClick={resetChat}
+            variant="ghost"
+            className="hidden md:block"
+            disabled={!messages.length && !input}
+          >
+            {t('reset_chat')}
+          </Button>
+        </div>
       </div>
     </div>
   );
