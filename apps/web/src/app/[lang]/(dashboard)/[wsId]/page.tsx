@@ -5,7 +5,6 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { getReportsCount } from './users/reports/page';
-import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -22,8 +21,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const ws = await getWorkspace(wsId);
 
   const secrets = await getSecrets(wsId, [
-    'ENABLE_DASHBOARD',
-    'ENABLE_CHAT',
     'ENABLE_USERS',
     'ENABLE_INVENTORY',
     'ENABLE_FINANCE',
@@ -31,12 +28,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   const verifySecret = (secret: string, value: string) =>
     getSecret(secret, secrets)?.value === value;
-
-  const enableDashboard = verifySecret('ENABLE_DASHBOARD', 'true');
-  const enableChat = verifySecret('ENABLE_CHAT', 'true');
-
-  if (!enableDashboard)
-    redirect(enableChat ? `/${wsId}/chat` : `/${wsId}/settings`);
 
   const enableUsers = verifySecret('ENABLE_USERS', 'true');
   const enableInventory = verifySecret('ENABLE_INVENTORY', 'true');

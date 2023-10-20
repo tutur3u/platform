@@ -21,7 +21,6 @@ export default async function Layout({
   const workspace = await getWorkspace(wsId);
 
   const secrets = await getSecrets(wsId, [
-    'ENABLE_DASHBOARD',
     'ENABLE_CHAT',
     'ENABLE_USERS',
     'ENABLE_INVENTORY',
@@ -43,7 +42,6 @@ export default async function Layout({
       name: t('common:dashboard'),
       href: `/${wsId}`,
       matchExact: true,
-      disabled: !verifySecret('ENABLE_DASHBOARD', 'true'),
     },
     {
       name: t('users'),

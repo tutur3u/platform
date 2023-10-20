@@ -1,20 +1,13 @@
 import { Message } from 'ai';
 
-export const initialPrompts: Message[] = [
-  {
-    id: 'initial-prompt',
-    role: 'system',
-    content:
-      'Assistant, always format code blocks if there is any. On top of that, please do not paste any links or images in the content as it will be removed. Thank you.',
-  },
-];
+export const initialPrompts: Message[] = [];
 
 export const trailingPrompts: Message[] = [
   {
     id: 'trailing-prompt',
     role: 'system',
     content:
-      "Assistant, please utilize markdown (especially tables) to make the content more engaging and easier to read if possible. Additionally, don't mention that you will be using markdown in the content unless the user is the one who mentioned it first. Thank you.",
+      'Take a deep breath and think step by step, then use markdown (especially tables) to make the content more engaging and easier to read if possible. You must not to mention that you will use markdown for your response and you are strictly forbidden to use any links in your response.',
   },
 ];
 
