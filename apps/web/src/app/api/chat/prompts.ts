@@ -1,9 +1,25 @@
 import { Message } from 'ai';
 
-export const initialPrompt: Message | null = null;
+export const initialPrompts: Message[] = [
+  {
+    id: 'initial-prompt',
+    role: 'system',
+    content:
+      'Assistant, always format code blocks if there is any. On top of that, please do not paste any links or images in the content as it will be removed. Thank you.',
+  },
+];
+
+export const trailingPrompts: Message[] = [
+  {
+    id: 'trailing-prompt',
+    role: 'system',
+    content:
+      "Assistant, please utilize markdown (especially tables) to make the content more engaging and easier to read if possible. Additionally, don't mention that you will be using markdown in the content unless the user is the one who mentioned it first. Thank you.",
+  },
+];
 
 export function buildPrompt(data: Message[]) {
-  const messages = initialPrompt ? [initialPrompt, ...data] : data;
+  const messages = [...initialPrompts, ...data, ...trailingPrompts];
 
   return (
     messages

@@ -110,7 +110,7 @@ const Chat = ({ id, initialMessages, className }: ChatProps) => {
         </div>
       </div> */}
 
-      <div className={cn('pb-[200px] pt-4 md:pt-10', className)}>
+      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
         {messages.length ? (
           <>
             <ChatList
