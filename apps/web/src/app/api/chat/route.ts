@@ -30,7 +30,9 @@ export async function POST(req: Request) {
     });
   }
 
-  const stream = AnthropicStream(response, {
+  const stream = AnthropicStream(
+    response
+    // ,{
     // onStart: async () => {
     // This callback is called when the stream starts
     // You can use this to save the prompt to your database
@@ -48,6 +50,7 @@ export async function POST(req: Request) {
     // await saveCompletionToDatabase(completion);
     // console.log(completion);
     // },
-  });
+    // }
+  );
   return new StreamingTextResponse(stream);
 }
