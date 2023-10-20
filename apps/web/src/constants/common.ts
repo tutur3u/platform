@@ -13,6 +13,7 @@ export const API_URL = process.env.API_URL || 'http://localhost:7803/api';
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
 export const AI_CHAT_DISABLED_PRESETS: WorkspacePreset[] = [
+  'GENERAL',
   'EDUCATION',
   'PHARMACY',
 ];

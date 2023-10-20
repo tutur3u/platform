@@ -63,7 +63,7 @@ export default function WorkspaceSelect() {
         <SelectTrigger className="w-full md:w-48">
           <SelectValue placeholder="Select a workspace" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <SelectGroup>
             {workspaces.map((workspace) => (
               <SelectItem key={workspace.id} value={workspace.id}>

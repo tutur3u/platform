@@ -27,7 +27,6 @@ export default async function Layout({
       href: `/${wsId}/chat`,
       requireRootWorkspace: true,
       disabledPresets: AI_CHAT_DISABLED_PRESETS,
-      disabled: process.env.ANTHROPIC_API_KEY === undefined,
     },
     {
       name: t('common:dashboard'),

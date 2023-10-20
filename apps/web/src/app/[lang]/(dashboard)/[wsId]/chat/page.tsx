@@ -15,11 +15,7 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
-  if (
-    process.env.ANTHROPIC_API_KEY === undefined ||
-    AI_CHAT_DISABLED_PRESETS.includes(workspace.preset)
-  )
-    redirect(`/${wsId}`);
+  if (AI_CHAT_DISABLED_PRESETS.includes(workspace.preset)) redirect(`/${wsId}`);
 
   return <Chat id="123" />;
 }
