@@ -1,6 +1,5 @@
 import '../../styles/globals.css';
 
-import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,6 +11,7 @@ import Navbar from './navbar';
 import NavbarPadding from './navbar-padding';
 import { StaffToolbar } from './staff-toolbar';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
+import { Providers } from '@/components/providers';
 
 interface Props {
   children: ReactNode;
@@ -107,15 +107,10 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <GoogleAnalytics />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          disableTransitionOnChange
-          enableSystem
-        >
+        <Providers attribute="class" defaultTheme="dark" enableSystem>
           <Navbar />
           <NavbarPadding>{children}</NavbarPadding>
-        </ThemeProvider>
+        </Providers>
         <TailwindIndicator />
         <StaffToolbar />
         <Toaster />

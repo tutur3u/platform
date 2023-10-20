@@ -5,6 +5,7 @@ export const APP_VERSION = version;
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
+export const VERCEL_PREVIEW_MODE = process.env.VERCEL_ENV === 'preview';
 
 export const BASE_URL = process.env.BASE_URL || 'http://localhost:7803';
 export const API_URL = process.env.API_URL || 'http://localhost:7803/api';

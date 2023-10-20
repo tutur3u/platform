@@ -9,6 +9,7 @@
     "SUPABASE_SERVICE_KEY",
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
+    "VERCEL_ENV",
     "BASE_URL",
     "API_URL",
     "NODE_ENV"

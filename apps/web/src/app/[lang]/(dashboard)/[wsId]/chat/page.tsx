@@ -2,7 +2,6 @@ import { notFound, redirect } from 'next/navigation';
 import Chat from './chat';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +12,6 @@ interface Props {
 }
 
 export default async function AIPage({ params: { wsId } }: Props) {
-  const user = await getCurrentUser();
-
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
@@ -24,5 +21,5 @@ export default async function AIPage({ params: { wsId } }: Props) {
   )
     redirect(`/${wsId}`);
 
-  return <Chat user={user} />;
+  return <Chat id="123" />;
 }

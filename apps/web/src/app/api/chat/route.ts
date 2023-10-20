@@ -1,39 +1,25 @@
 import { AnthropicStream, StreamingTextResponse } from 'ai';
+import { buildPrompt } from './prompts';
 
-// IMPORTANT! Set the runtime to edge
 export const runtime = 'edge';
 
-interface Message {
-  content: string;
-  role: 'system' | 'user' | 'assistant';
-}
-
-const initialPrompt: Message | null = null;
-
-function buildPrompt(messages: Message[]) {
-  return (
-    (initialPrompt ? [initialPrompt, ...messages] : messages)
-      .map(({ content, role }) => {
-        if (role === 'system') return content;
-        if (role === 'user') return `Human: ${content}`;
-        else return `Assistant: ${content}`;
-      })
-      .join('\n\n') + 'Assistant:'
-  );
-}
-
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, previewToken } = await req.json();
+
+  const prompt = buildPrompt(messages);
+  const model = 'claude-instant-1';
+
+  console.log('prompt', prompt);
 
   const response = await fetch('https://api.anthropic.com/v1/complete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'x-api-key': previewToken || process.env.ANTHROPIC_API_KEY,
     } as HeadersInit,
     body: JSON.stringify({
-      prompt: buildPrompt(messages),
-      model: 'claude-2',
+      prompt,
+      model,
       max_tokens_to_sample: 32 * 1024,
       temperature: 0.9,
       stream: true,
@@ -46,6 +32,24 @@ export async function POST(req: Request) {
     });
   }
 
-  const stream = AnthropicStream(response);
+  const stream = AnthropicStream(response, {
+    onStart: async () => {
+      // This callback is called when the stream starts
+      // You can use this to save the prompt to your database
+      // await savePromptToDatabase(prompt);
+      // console.log('start');
+    },
+    onToken: async (token: string) => {
+      // This callback is called for each token in the stream
+      // You can use this to debug the stream or save the tokens to your database
+      console.log('token', token);
+    },
+    onCompletion: async (completion: string) => {
+      // This callback is called when the completion is ready
+      // You can use this to save the final completion to your database
+      // await saveCompletionToDatabase(completion);
+      console.log(completion);
+    },
+  });
   return new StreamingTextResponse(stream);
 }
