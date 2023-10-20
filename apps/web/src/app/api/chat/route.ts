@@ -1,15 +1,14 @@
 import { AnthropicStream, StreamingTextResponse } from 'ai';
 import { buildPrompt } from './prompts';
 
-// export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export async function POST(req: Request) {
   const { messages, previewToken } = await req.json();
 
   const prompt = buildPrompt(messages);
   const model = 'claude-2';
-
-  console.log('prompt', prompt);
 
   const response = await fetch('https://api.anthropic.com/v1/complete', {
     method: 'POST',
