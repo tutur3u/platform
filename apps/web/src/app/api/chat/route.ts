@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     const anthropic = new Anthropic({
       apiKey,
-      fetch,
+      fetch: fetch,
     });
 
     const prompt = buildPrompt(messages);
