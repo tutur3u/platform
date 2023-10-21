@@ -35,8 +35,9 @@ const Chat = ({ id, initialMessages, className }: ChatProps) => {
     defaultValue: '',
   });
 
-  const [previewTokenDialog, setPreviewTokenDialog] =
-    useState(VERCEL_PREVIEW_MODE);
+  const [previewTokenDialog, setPreviewTokenDialog] = useState(
+    VERCEL_PREVIEW_MODE && !previewToken
+  );
 
   const [previewTokenInput, setPreviewTokenInput] = useState(
     previewToken ?? ''
