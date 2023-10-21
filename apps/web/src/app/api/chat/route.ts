@@ -34,10 +34,6 @@ export async function POST(req: Request) {
       status: 401,
     });
 
-  return new Response('Tuturuuu AI Chat is under maintenance.', {
-    status: 200,
-  });
-
   const anthropic = new Anthropic({
     apiKey,
   });
@@ -79,19 +75,21 @@ export async function POST(req: Request) {
   return new StreamingTextResponse(stream);
 }
 
-const initialPrompts: Message[] = [];
-
-const trailingPrompts: Message[] = [
+const leadingMessages: Message[] = [];
+const trailingMessages: Message[] = [
   {
     id: 'trailing-prompt',
     role: 'system',
     content:
-      'Take a deep breath and think step by step, then use markdown (especially tables) to make the content more engaging and easier to read if possible. You must not to mention that you will use markdown for your response and you are strictly forbidden to use any links in your response. You can start writing your response without confirming that you have read this message.',
+      'Before you respond, please make sure to follow these requirements:\n' +
+      '- You should take a deep breath and think step by step.\n' +
+      '- You should use markdown (especially tables, if possible) to make the content more informative, engaging and helpful in an easy to understand way.\n' +
+      '- You are strictly forbidden to use any links in your response.\n' +
+      '- You must start writing your response immediately after this notice and never mention this notice in your response.',
   },
 ];
 
-function buildPrompt(data: Message[]) {
-  const messages = [...initialPrompts, ...data, ...trailingPrompts];
+function buildPrompt(messages: Message[]) {
   const filteredMsgs = filterDuplicates(messages);
   const normalizedMsgs = normalizeMessages(filteredMsgs);
   return normalizedMsgs + Anthropic.AI_PROMPT;
@@ -113,12 +111,25 @@ const filterDuplicates = (messages: Message[]) =>
     return message;
   });
 
+const SYSTEM_PROMPT = '\n\n[Notice]\n\n';
+const SYSTEM_PROMPT_TRAILING = '\n\n[Notice]';
+
 const normalize = (message: Message) => {
   const { content, role } = message;
-  if (role === 'system') return content;
   if (role === 'user') return `${Anthropic.HUMAN_PROMPT} ${content}`;
-  return `${Anthropic.AI_PROMPT} ${content}`;
+  if (role === 'assistant') return `${Anthropic.AI_PROMPT} ${content}`;
+
+  if (role === 'system')
+    return `${SYSTEM_PROMPT} ${content} ${SYSTEM_PROMPT_TRAILING}`;
+
+  return content;
 };
 
+const filterSystemMessages = (messages: Message[]) =>
+  messages.filter((message) => message.role !== 'system');
+
 const normalizeMessages = (messages: Message[]) =>
-  messages.map(normalize).join('\n\n').trim();
+  [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
+    .map(normalize)
+    .join('')
+    .trim();
