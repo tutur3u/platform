@@ -1,7 +1,10 @@
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import Anthropic from '@anthropic-ai/sdk';
+import { cookies } from 'next/headers';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const { messages, previewToken } = await req.json();
@@ -9,6 +12,31 @@ export async function POST(req: Request) {
 
   const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return new Response('Missing API key', { status: 400 });
+
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  const { count, error } = await supabase
+    .from('workspace_secrets')
+    .select('*', { count: 'exact', head: true })
+    .eq('name', 'ENABLE_CHAT')
+    .eq('value', 'true');
+
+  if (error) return new Response(error.message, { status: 500 });
+  if (count === 0)
+    return new Response('You are not allowed to use this feature.', {
+      status: 401,
+    });
+
+  return new Response('Tuturuuu AI Chat is under maintenance.', {
+    status: 200,
+  });
 
   const anthropic = new Anthropic({
     apiKey,
@@ -51,13 +79,6 @@ export async function POST(req: Request) {
   return new StreamingTextResponse(stream);
 }
 
-function buildPrompt(data: Message[]) {
-  const messages = [...initialPrompts, ...data, ...trailingPrompts];
-  const filteredMsgs = filterDuplicates(messages);
-  const normalizedMsgs = normalizeMessages(filteredMsgs);
-  return normalizedMsgs + Anthropic.AI_PROMPT;
-}
-
 const initialPrompts: Message[] = [];
 
 const trailingPrompts: Message[] = [
@@ -65,9 +86,16 @@ const trailingPrompts: Message[] = [
     id: 'trailing-prompt',
     role: 'system',
     content:
-      'Take a deep breath and think step by step, then use markdown (especially tables) to make the content more engaging and easier to read if possible. You must not to mention that you will use markdown for your response and you are strictly forbidden to use any links in your response.',
+      'Take a deep breath and think step by step, then use markdown (especially tables) to make the content more engaging and easier to read if possible. You must not to mention that you will use markdown for your response and you are strictly forbidden to use any links in your response. You can start writing your response without confirming that you have read this message.',
   },
 ];
+
+function buildPrompt(data: Message[]) {
+  const messages = [...initialPrompts, ...data, ...trailingPrompts];
+  const filteredMsgs = filterDuplicates(messages);
+  const normalizedMsgs = normalizeMessages(filteredMsgs);
+  return normalizedMsgs + Anthropic.AI_PROMPT;
+}
 
 const filterDuplicates = (messages: Message[]) =>
   messages.map((message) => {
