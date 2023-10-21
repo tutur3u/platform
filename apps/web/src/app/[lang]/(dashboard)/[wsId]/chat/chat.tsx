@@ -45,9 +45,9 @@ const Chat = ({ id, initialMessages, className }: ChatProps) => {
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       initialMessages,
-      id,
+      // id,
       body: {
-        id,
+        // id,
         previewToken,
       },
       onResponse(response) {

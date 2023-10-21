@@ -7,6 +7,16 @@ export const runtime = 'edge';
 export async function POST(req: Request) {
   const { messages, previewToken } = await req.json();
 
+  if (!messages) {
+    return new Response('Missing messages', { status: 400 });
+  }
+
+  const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    return new Response('Missing API key', { status: 400 });
+  }
+
   const prompt = buildPrompt(messages);
   const model = 'claude-2';
 
@@ -14,7 +24,7 @@ export async function POST(req: Request) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': previewToken || process.env.ANTHROPIC_API_KEY,
+      'x-api-key': apiKey,
     } as HeadersInit,
     body: JSON.stringify({
       prompt,
