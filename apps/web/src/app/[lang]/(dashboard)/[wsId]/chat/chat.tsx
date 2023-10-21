@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
 import { VERCEL_PREVIEW_MODE } from '@/constants/common';
@@ -42,6 +42,13 @@ const Chat = ({ id, initialMessages, className }: ChatProps) => {
   const [previewTokenInput, setPreviewTokenInput] = useState(
     previewToken ?? ''
   );
+
+  useEffect(() => {
+    if (previewToken) {
+      setPreviewTokenInput(previewToken);
+      setPreviewTokenDialog(false);
+    }
+  }, [previewToken]);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
