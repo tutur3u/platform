@@ -1,4 +1,12 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { Message } from 'ai';
+
+export function buildPrompt(data: Message[]) {
+  const messages = [...initialPrompts, ...data, ...trailingPrompts];
+  const filteredMsgs = filterDuplicates(messages);
+  const normalizedMsgs = normalizeMessages(filteredMsgs);
+  return normalizedMsgs + Anthropic.AI_PROMPT;
+}
 
 export const initialPrompts: Message[] = [];
 
@@ -11,30 +19,28 @@ export const trailingPrompts: Message[] = [
   },
 ];
 
-export function buildPrompt(data: Message[]) {
-  const messages = [...initialPrompts, ...data, ...trailingPrompts];
+const filterDuplicates = (messages: Message[]) =>
+  messages.map((message) => {
+    // If there is 2 repeated substring in the
+    // message, we will merge them into one
+    const content = message.content;
+    const contentLength = content.length;
+    const contentHalfLength = Math.floor(contentLength / 2);
 
-  return (
-    messages
-      .map((message) => {
-        // If there is 2 repeated substring in the
-        // message, we will merge them into one
-        const content = message.content;
-        const contentLength = content.length;
-        const contentHalfLength = Math.floor(contentLength / 2);
+    const firstHalf = content.substring(0, contentHalfLength);
 
-        const firstHalf = content.substring(0, contentHalfLength);
+    const secondHalf = content.substring(contentHalfLength, contentLength);
 
-        const secondHalf = content.substring(contentHalfLength, contentLength);
+    if (firstHalf === secondHalf) message.content = firstHalf;
+    return message;
+  });
 
-        if (firstHalf === secondHalf) message.content = firstHalf;
-        return message;
-      })
-      .map(({ content, role }) => {
-        if (role === 'system') return content;
-        if (role === 'user') return `Human: ${content}`;
-        return `Assistant: ${content}`;
-      })
-      .join('\n\n') + '\n\nAssistant:'
-  );
-}
+const normalize = (message: Message) => {
+  const { content, role } = message;
+  if (role === 'system') return content;
+  if (role === 'user') return `${Anthropic.HUMAN_PROMPT} ${content}`;
+  return `${Anthropic.AI_PROMPT} ${content}`;
+};
+
+const normalizeMessages = (messages: Message[]) =>
+  messages.map(normalize).join('\n\n').trim();
