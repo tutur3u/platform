@@ -6,8 +6,10 @@ export async function StaffToolbar() {
   const user = await getCurrentSupabaseUser();
   const isEmployee = user?.email?.endsWith('@tuturuuu.com') ?? false;
 
-  const showToolbar = isEmployee;
+  const enabled = false;
+  if (!enabled) return null;
 
+  const showToolbar = isEmployee;
   return (
     <Suspense fallback={<div />}>
       {showToolbar ? <VercelToolbar /> : null}

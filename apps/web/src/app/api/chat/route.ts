@@ -39,7 +39,6 @@ export async function POST(req: Request) {
 
     const anthropic = new Anthropic({
       apiKey,
-      fetch: fetch,
     });
 
     const prompt = buildPrompt(messages);
@@ -53,29 +52,7 @@ export async function POST(req: Request) {
       stream: true,
     });
 
-    const stream = AnthropicStream(
-      streamRes
-      // {
-      // onStart: async () => {
-      // This callback is called when the stream starts
-      // You can use this to save the prompt to your database
-      // await savePromptToDatabase(prompt);
-      // console.log('start');
-      // },
-      // onToken: async (token: string) => {
-      // This callback is called for each token in the stream
-      // You can use this to debug the stream or save the tokens to your database
-      // console.log('token', token);
-      // },
-      // onCompletion: async (completion: string) => {
-      // This callback is called when the completion is ready
-      // You can use this to save the final completion to your database
-      // await saveCompletionToDatabase(completion);
-      // console.log(completion);
-      // },
-      // }
-    );
-
+    const stream = AnthropicStream(streamRes);
     return new StreamingTextResponse(stream);
   } catch (error: any) {
     console.log(error);
@@ -111,19 +88,18 @@ function buildPrompt(messages: Message[]) {
 }
 
 const filterDuplicates = (messages: Message[]) =>
+  // If there is 2 repeated substring in the
+  // message, we will merge them into one
   messages.map((message) => {
-    // If there is 2 repeated substring in the
-    // message, we will merge them into one
     const content = message.content;
     const contentLength = content.length;
+
     const contentHalfLength = Math.floor(contentLength / 2);
-
     const firstHalf = content.substring(0, contentHalfLength);
-
     const secondHalf = content.substring(contentHalfLength, contentLength);
 
-    if (firstHalf === secondHalf) message.content = firstHalf;
-    return message;
+    if (firstHalf !== secondHalf) return message;
+    return { ...message, content: firstHalf };
   });
 
 const SYSTEM_PROMPT = '\n\n[Notice]\n\n';
