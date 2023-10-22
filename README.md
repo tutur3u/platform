@@ -96,7 +96,7 @@ If you want to have the same procedure without the backup, you can run `pnpm dev
 3. Start a new supabase instance (with clean data from seed.sql)
 4. Start all Next.js apps in development mode
 
-> In case you don't want to run a local supabase instance, you can run `pnpm run dev` instead.
+> In case you don't want to run a local supabase instance, you can run `pnpm dev` instead.
 
 #### Local development
 
