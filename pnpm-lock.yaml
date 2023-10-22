@@ -249,8 +249,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(next@13.5.6)(react-dom@18.2.0)(react@18.2.0)
       next-translate:
-        specifier: 2.6.0
-        version: 2.6.0(next@13.5.6)(react@18.2.0)
+        specifier: 2.6.1
+        version: 2.6.1(next@13.5.6)(react@18.2.0)
       openai:
         specifier: ^4.12.4
         version: 4.12.4(encoding@0.1.13)
@@ -368,7 +368,7 @@ importers:
         version: 15.0.2
       next-translate-plugin:
         specifier: 2.6.0
-        version: 2.6.0(next-translate@2.6.0)
+        version: 2.6.0(next-translate@2.6.1)
       postcss:
         specifier: ^8.4.31
         version: 8.4.31
@@ -6693,19 +6693,19 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: false
 
-  /next-translate-plugin@2.6.0(next-translate@2.6.0):
+  /next-translate-plugin@2.6.0(next-translate@2.6.1):
     resolution: {integrity: sha512-XeFoVhtiT738ow4bqaBlvPLG5DK0IVygSvQBKTo3SPW01nbiEjfnrln1Cz94hbN3jJi3qDjFNOGjzVUftHDyfg==}
     engines: {node: '>=14.15.0'}
     requiresBuild: true
     peerDependencies:
       next-translate: '>= 2.4.1'
     dependencies:
-      next-translate: 2.6.0(next@13.5.6)(react@18.2.0)
+      next-translate: 2.6.1(next@13.5.6)(react@18.2.0)
       typescript: 4.5.2
     dev: true
 
-  /next-translate@2.6.0(next@13.5.6)(react@18.2.0):
-    resolution: {integrity: sha512-hLbwFxTsGv4dWlPXwvUthQ/QQEK18dH5Lz6Vf2Po3UnndEdqfkeB9C+EK3yagWj3Pn+hYnpZ2GBvedZjWwWELA==}
+  /next-translate@2.6.1(next@13.5.6)(react@18.2.0):
+    resolution: {integrity: sha512-R8BQChc8eW1YiLb++6X7yyBsm65RWQoyw9ZSeKZhm7rOwsd0V1hONz6FnNWy91ybMu1Z2gRNMNWjb/Xg7smdOA==}
     engines: {node: '>=16.10.0'}
     peerDependencies:
       next: '>= 13.2.5'
