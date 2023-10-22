@@ -367,8 +367,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2
       next-translate-plugin:
-        specifier: 2.6.0
-        version: 2.6.0(next-translate@2.6.0)
+        specifier: 2.6.1
+        version: 2.6.1(next-translate@2.6.0)
       postcss:
         specifier: ^8.4.31
         version: 8.4.31
@@ -6693,8 +6693,8 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: false
 
-  /next-translate-plugin@2.6.0(next-translate@2.6.0):
-    resolution: {integrity: sha512-XeFoVhtiT738ow4bqaBlvPLG5DK0IVygSvQBKTo3SPW01nbiEjfnrln1Cz94hbN3jJi3qDjFNOGjzVUftHDyfg==}
+  /next-translate-plugin@2.6.1(next-translate@2.6.0):
+    resolution: {integrity: sha512-mqGBm+LI7/zqPfMeCjXXcejagSQ8vaMPIAqq3GNlsIgTbO3Z0YlBDai2cM96HM0b6gbTnxcikCIC+wtfJI1/LQ==}
     engines: {node: '>=14.15.0'}
     requiresBuild: true
     peerDependencies:

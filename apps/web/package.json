@@ -140,7 +140,7 @@
     "eslint": "^8.52.0",
     "eslint-config-custom": "workspace:*",
     "lint-staged": "^15.0.2",
-    "next-translate-plugin": "2.6.0",
+    "next-translate-plugin": "2.6.1",
     "postcss": "^8.4.31",
     "supabase": "^1.108.0",
     "tailwind-config": "workspace:*",
