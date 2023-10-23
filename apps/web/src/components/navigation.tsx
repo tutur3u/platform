@@ -92,6 +92,7 @@ export function Navigation({
         const isDevOnly = link.disableOnProduction;
         const isRootOnly = link.requireRootWorkspace;
 
+        const enableUnderline = false;
         const notPublic = DEV_MODE && (isDevOnly || isRootOnly);
 
         return (
@@ -101,7 +102,9 @@ export function Navigation({
                 ? 'text-foreground border-foreground/10 bg-foreground/5'
                 : 'text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
             } ${
-              notPublic ? 'underline decoration-dashed underline-offset-4' : ''
+              enableUnderline && notPublic
+                ? 'underline decoration-dashed underline-offset-4'
+                : ''
             } flex-none rounded-full border px-3 py-1 transition duration-300`}
             href={link.href}
             key={link.name}
