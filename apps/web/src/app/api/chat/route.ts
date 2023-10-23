@@ -37,22 +37,26 @@ export async function POST(req: Request) {
         status: 401,
       });
 
-    const anthropic = new Anthropic({
-      apiKey,
-    });
-
     const prompt = buildPrompt(messages);
     const model = 'claude-2';
 
-    const streamRes = await anthropic.completions.create({
-      prompt,
-      max_tokens_to_sample: 100000,
-      model,
-      temperature: 0.9,
-      stream: true,
+    const res = await fetch('https://api.anthropic.com/v1/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        prompt,
+        max_tokens_to_sample: 100000,
+        model,
+        temperature: 0.9,
+        stream: true,
+      }),
     });
 
-    const stream = AnthropicStream(streamRes);
+    const stream = AnthropicStream(res);
     return new StreamingTextResponse(stream);
   } catch (error: any) {
     console.log(error);
