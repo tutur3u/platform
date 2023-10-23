@@ -27,8 +27,8 @@ importers:
   apps/web:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.6.8
-        version: 0.6.8(encoding@0.1.13)
+        specifier: ^0.7.0
+        version: 0.7.0(encoding@0.1.13)
       '@emotion/react':
         specifier: ^11.11.1
         version: 11.11.1(@types/react@18.2.31)(react@18.2.0)
@@ -446,8 +446,8 @@ packages:
       '@jridgewell/trace-mapping': 0.3.20
     dev: false
 
-  /@anthropic-ai/sdk@0.6.8(encoding@0.1.13):
-    resolution: {integrity: sha512-z4gDFrBf+W2wOVvwA3CA+5bfKOxQhPeXQo7+ITWj3r3XPulIMEasVT0KrD41G+anr5Yc3d2PKvXKB6b1LSon5w==}
+  /@anthropic-ai/sdk@0.7.0(encoding@0.1.13):
+    resolution: {integrity: sha512-qEXJ+R9LcNhSYM8Av/9dUALtNnvo2ub3IaF4WXipHLOoawFF6zJprCjzYDrnE8M4WNmEGvD11BSt0REUlv8MMQ==}
     dependencies:
       '@types/node': 18.18.6
       '@types/node-fetch': 2.6.7
@@ -3908,7 +3908,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.22.1
-      caniuse-lite: 1.0.30001551
+      caniuse-lite: 1.0.30001553
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -3989,7 +3989,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001551
+      caniuse-lite: 1.0.30001553
       electron-to-chromium: 1.4.563
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
@@ -4030,8 +4030,8 @@ packages:
     engines: {node: '>= 6'}
     dev: true
 
-  /caniuse-lite@1.0.30001551:
-    resolution: {integrity: sha512-vtBAez47BoGMMzlbYhfXrMV1kvRF2WP/lqiMuDu1Sb4EE4LKEgjopFDSRtZfdVnslNRpOqV/woE+Xgrwj6VQlg==}
+  /caniuse-lite@1.0.30001553:
+    resolution: {integrity: sha512-N0ttd6TrFfuqKNi+pMgWJTb9qrdJu4JSpgPFLe/lrD19ugC6fZgF0pUewRowDwzdDnb9V41mFcdlYgl/PyKf4A==}
 
   /case-anything@2.1.13:
     resolution: {integrity: sha512-zlOQ80VrQ2Ue+ymH5OuM/DlDq64mEm+B9UTdHULv5osUMD6HalNTblf2b1u/m6QecjsnOkBpqVZ+XPwIVsy7Ng==}
@@ -6732,7 +6732,7 @@ packages:
       '@next/env': 13.5.6
       '@swc/helpers': 0.5.2
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001551
+      caniuse-lite: 1.0.30001553
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)

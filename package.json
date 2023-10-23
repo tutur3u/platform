@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "buildx": "pnpm i && turbo run build",
+    "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
     "devrs": "cd apps/web && pnpm devrs",

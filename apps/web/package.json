@@ -8,6 +8,7 @@
     "devrs": "pnpm supabase stop --no-backup && pnpm i && pnpm supabase start && next dev -p 7803",
     "build": "next build",
     "start": "next start",
+    "preview": "next build && next start -p 7803",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "echo \"Error: no test specified\" && exit 0",
@@ -25,7 +26,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.6.8",
+    "@anthropic-ai/sdk": "^0.7.0",
     "@emotion/react": "^11.11.1",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.2.0",
