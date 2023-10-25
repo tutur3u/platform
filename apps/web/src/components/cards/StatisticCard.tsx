@@ -23,7 +23,9 @@ const StatisticCard = ({
 
   const generateOuterColor = (enableHoverEffect: boolean) =>
     `border-foreground/20 ${
-      enableHoverEffect ? 'hover:bg-foreground/5' : 'border-foreground/[0.1]'
+      enableHoverEffect
+        ? 'hover:bg-foreground/[0.025] dark:hover:bg-foreground/5'
+        : 'border-foreground/[0.1]'
     }`;
 
   if (href)

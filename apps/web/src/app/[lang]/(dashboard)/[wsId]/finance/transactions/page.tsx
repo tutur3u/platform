@@ -31,7 +31,7 @@ export default async function WorkspaceWalletsPage({
       defaultVisibility={{
         id: false,
         report_opt_in: false,
-        created_at: false,
+        taken_at: false,
       }}
     />
   );
@@ -55,7 +55,8 @@ async function getData(
         count: 'exact',
       }
     )
-    .eq('workspace_wallets.ws_id', wsId);
+    .eq('workspace_wallets.ws_id', wsId)
+    .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
