@@ -291,6 +291,16 @@ values (
         '00000000-0000-0000-0000-000000000000',
         'ENABLE_CHAT',
         'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_INVENTORY',
+        'true'
+    ),
+(
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_FINANCE',
+        'true'
     );
 -- Populate workspace_members
 insert into public.workspace_members (user_id, ws_id, role)
