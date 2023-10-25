@@ -45,7 +45,6 @@ export async function POST(req: Request) {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
         prompt,
@@ -93,17 +92,15 @@ const filterDuplicates = (messages: Message[]) =>
     return { ...message, content: firstHalf };
   });
 
-const SYSTEM_PROMPT = '\n\n[Notice]\n\n';
-const SYSTEM_PROMPT_TRAILING = '\n\n[Notice]';
+const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
+const AI_PROMPT = Anthropic.AI_PROMPT;
+const SYSTEM_PROMPT = '\n\nSystem:';
 
 const normalize = (message: Message) => {
   const { content, role } = message;
-  if (role === 'user') return `${Anthropic.HUMAN_PROMPT} ${content}`;
-  if (role === 'assistant') return `${Anthropic.AI_PROMPT} ${content}`;
-
-  if (role === 'system')
-    return `${SYSTEM_PROMPT} ${content} ${SYSTEM_PROMPT_TRAILING}`;
-
+  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
+  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
+  if (role === 'system') return `${SYSTEM_PROMPT} ${content}`;
   return content;
 };
 
