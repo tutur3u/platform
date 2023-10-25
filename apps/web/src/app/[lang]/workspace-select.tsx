@@ -9,11 +9,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-export default function WorkspaceSelect() {
+interface Props {
+  workspaces: Workspace[] | null;
+}
+
+export default function WorkspaceSelect({ workspaces }: Props) {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
@@ -24,39 +26,9 @@ export default function WorkspaceSelect() {
   };
 
   const wsId = params.wsId as string;
-  const [workspaces, setWorkspaces] = useState<Workspace[] | null>(null);
+  if (!wsId || !workspaces?.length) return null;
 
-  useEffect(() => {
-    const getWorkspaces = async () => {
-      const supabase = createClientComponentClient();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return null;
-
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select(
-          'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
-        )
-        .eq('workspace_members.user_id', user.id);
-
-      if (error) {
-        console.error(error);
-        return null;
-      }
-
-      return data as Workspace[];
-    };
-
-    if (wsId) getWorkspaces().then(setWorkspaces);
-  }, [wsId]);
-
-  if (!wsId || !workspaces) return null;
-
-  return workspaces ? (
+  return (
     <>
       <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
       <Select value={wsId} onValueChange={onValueChange}>
@@ -74,5 +46,5 @@ export default function WorkspaceSelect() {
         </SelectContent>
       </Select>
     </>
-  ) : null;
+  );
 }
