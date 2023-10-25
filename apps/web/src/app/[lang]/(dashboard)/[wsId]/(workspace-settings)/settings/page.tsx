@@ -32,9 +32,12 @@ export default async function WorkspaceSettingsPage({
       .find((s) => s.name === 'PREVENT_WORKSPACE_DELETION')
       ?.value?.toLowerCase() === 'true';
 
+  const enableAvatar = Boolean(
+    secrets.find((s) => s.name === 'ENABLE_AVATAR')?.value
+  );
+
   const enableLogo = Boolean(
-    secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_FETCH_API')?.value &&
-      secrets.find((s) => s.name === 'EXTERNAL_USER_REPORTS_API_KEY')?.value
+    secrets.find((s) => s.name === 'ENABLE_LOGO')?.value
   );
 
   const isRootWorkspace = ws?.id === ROOT_WORKSPACE_ID;
@@ -59,10 +62,12 @@ export default async function WorkspaceSettingsPage({
           allowEdit={!isRootWorkspace && ws?.role !== 'MEMBER'}
         />
 
-        <WorkspaceAvatarSettings
-          workspace={ws}
-          allowEdit={ws?.role === 'OWNER'}
-        />
+        {enableAvatar && (
+          <WorkspaceAvatarSettings
+            workspace={ws}
+            allowEdit={ws?.role === 'OWNER'}
+          />
+        )}
 
         {enableLogo && (
           <WorkspaceLogoSettings
@@ -103,11 +108,7 @@ async function getSecrets(wsId: string) {
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .in('name', [
-      'PREVENT_WORKSPACE_DELETION',
-      'EXTERNAL_USER_REPORTS_FETCH_API',
-      'EXTERNAL_USER_REPORTS_API_KEY',
-    ]);
+    .in('name', ['PREVENT_WORKSPACE_DELETION', 'ENABLE_AVATAR', 'ENABLE_LOGO']);
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;

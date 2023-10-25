@@ -7,6 +7,12 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { Invoice } from '@/types/primitives/Invoice';
 import { Translate } from 'next-translate';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export const invoiceColumns = (t: Translate): ColumnDef<Invoice>[] => [
   {
@@ -67,7 +73,7 @@ export const invoiceColumns = (t: Translate): ColumnDef<Invoice>[] => [
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',
-        }).format(row.getValue('price'))}
+        }).format(row.getValue<number>('price') || 0)}
       </div>
     ),
   },
@@ -78,10 +84,61 @@ export const invoiceColumns = (t: Translate): ColumnDef<Invoice>[] => [
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
-        {Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND',
-        }).format(row.getValue('total_diff'))}
+        {row.getValue('total_diff') === 0
+          ? '-'
+          : Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'always',
+            }).format(row.getValue('total_diff'))}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'final_price',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('final_price')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger className="font-semibold">
+              {Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(
+                (row.getValue<number>('price') || 0) +
+                  (row.getValue<number>('total_diff') || 0)
+              )}
+            </TooltipTrigger>
+            <TooltipContent className="text-center font-semibold">
+              <div>
+                <span className="text-blue-600 dark:text-blue-300">
+                  {Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                    signDisplay: 'never',
+                  }).format(row.getValue<number>('price') || 0)}
+                </span>{' '}
+                {(row.getValue<number>('total_diff') || 0) < 0 ? '-' : '+'}{' '}
+                <span
+                  className={
+                    (row.getValue<number>('total_diff') || 0) < 0
+                      ? 'text-red-600 dark:text-red-300'
+                      : 'text-green-600 dark:text-green-300'
+                  }
+                >
+                  {Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                    signDisplay: 'never',
+                  }).format(row.getValue<number>('total_diff') || 0)}
+                </span>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     ),
   },

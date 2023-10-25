@@ -48,16 +48,24 @@ export const modules: ModulePackage[] = [
       items.map((i) => ({
         id: i?.id,
         email: i?.email,
-        full_name: i?.display_name,
         display_name: i?.nickname,
+        full_name: i?.display_name,
         phone: i?.phone_number,
         avatar_url: i?.avatar_url,
         gender: i?.gender,
         birthday: i?.birthday,
+        note: `${
+          i?.alt_phone_number ? `Alt Phone: ${i.alt_phone_number}\n` : ''
+        }${i?.relationship ? `Relationship: ${i.relationship}\n` : ''}${
+          i?.notes ? `Notes: ${i.notes}\n` : ''
+        }`,
+        archived:
+          i?.status === 'PERM_OFF' || i?.status === 'TEMP_OFF' || i?.off_until
+            ? true
+            : false,
+        archived_until: i?.off_until,
+        created_by: i?.creator_id,
         created_at: i?.created_at,
-        note: `${i?.nickname ? `Nickname: ${i.nickname}\n` : ''}${
-          i?.relationship ? `Relationship: ${i.relationship}\n` : ''
-        }${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
       })),
   },
   {

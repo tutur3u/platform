@@ -78,7 +78,9 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
           <TooltipProvider>
             <Tooltip delayDuration={0}>
               <TooltipTrigger className="font-semibold underline">
-                {row.getValue('full_name') || '-'}
+                {row.getValue('full_name') ||
+                  row.getValue('display_name') ||
+                  '-'}
               </TooltipTrigger>
               <TooltipContent className="text-center">
                 {t('linked_to')}{' '}
@@ -103,7 +105,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
             </Tooltip>
           </TooltipProvider>
         ) : (
-          row.getValue('full_name') || '-'
+          row.getValue('full_name') || row.getValue('display_name') || '-'
         )}
       </div>
     ),
