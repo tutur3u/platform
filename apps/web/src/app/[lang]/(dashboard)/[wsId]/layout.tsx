@@ -1,7 +1,6 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspace } from '@/lib/workspace-helper';
-import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
+import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
@@ -21,13 +20,23 @@ export default async function Layout({
 
   const workspace = await getWorkspace(wsId);
 
+  const secrets = await getSecrets(wsId, [
+    'ENABLE_CHAT',
+    'ENABLE_USERS',
+    'ENABLE_INVENTORY',
+    'ENABLE_HEALTHCARE',
+    'ENABLE_FINANCE',
+  ]);
+
+  const verifySecret = (secret: string, value: string) =>
+    getSecret(secret, secrets)?.value === value;
+
   const navLinks: NavLink[] = [
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
       requireRootWorkspace: true,
-      disabledPresets: AI_CHAT_DISABLED_PRESETS,
-      disabled: process.env.ANTHROPIC_API_KEY === undefined,
+      disabled: !verifySecret('ENABLE_CHAT', 'true'),
     },
     {
       name: t('common:dashboard'),
@@ -37,6 +46,7 @@ export default async function Layout({
     {
       name: t('users'),
       href: `/${wsId}/users`,
+      disabled: !verifySecret('ENABLE_USERS', 'true'),
     },
     {
       name: t('documents'),
@@ -53,16 +63,18 @@ export default async function Layout({
     {
       name: t('inventory'),
       href: `/${wsId}/inventory`,
+      disabled: !verifySecret('ENABLE_INVENTORY', 'true'),
     },
     {
       name: t('healthcare'),
       href: `/${wsId}/healthcare`,
       allowedPresets: ['ALL', 'PHARMACY'],
-      disabled: true,
+      disabled: !verifySecret('ENABLE_HEALTHCARE', 'true'),
     },
     {
       name: t('finance'),
       href: `/${wsId}/finance`,
+      disabled: !verifySecret('ENABLE_FINANCE', 'true'),
     },
     {
       name: t('common:settings'),
@@ -91,7 +103,6 @@ export default async function Layout({
       </div>
 
       <Separator className="opacity-50" />
-
       <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
     </>
   );

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "buildx": "pnpm i && turbo run build",
+    "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
     "devrs": "cd apps/web && pnpm devrs",
@@ -12,26 +13,27 @@
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "stop": "cd apps/web && pnpm stop",
+    "sb:status": "cd apps/web && pnpm sb:status",
     "sb:start": "cd apps/web && pnpm sb:start",
     "sb:stop": "cd apps/web && pnpm sb:stop",
     "sb:sync": "cd apps/web && pnpm sb:sync",
     "sb:reset": "cd apps/web && pnpm sb:reset",
     "sb:diff": "cd apps/web && pnpm sb:diff",
     "sb:new": "cd apps/web && pnpm sb:new",
-    "sb:status": "cd apps/web && pnpm sb:status",
+    "sb:up": "cd apps/web && pnpm sb:up",
     "sb:typegen": "cd apps/web && pnpm sb:typegen",
     "ui:add": "pnpm --filter ui ui:add",
     "ui:diff": "pnpm --filter ui ui:diff"
   },
   "devDependencies": {
-    "eslint": "^8.51.0",
+    "eslint": "^8.52.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.6",
-    "turbo": "^1.10.15"
+    "turbo": "^1.10.16"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@8.9.0"
+  "packageManager": "pnpm@8.9.2"
 }

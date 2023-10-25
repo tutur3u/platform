@@ -1,6 +1,6 @@
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
@@ -20,54 +20,76 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const { t } = useTranslation('ws-home');
   const ws = await getWorkspace(wsId);
 
+  const secrets = await getSecrets(wsId, [
+    'ENABLE_USERS',
+    'ENABLE_INVENTORY',
+    'ENABLE_FINANCE',
+  ]);
+
+  const verifySecret = (secret: string, value: string) =>
+    getSecret(secret, secrets)?.value === value;
+
+  const enableUsers = verifySecret('ENABLE_USERS', 'true');
+  const enableInventory = verifySecret('ENABLE_INVENTORY', 'true');
+  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+
   const homeLabel = t('home');
 
-  const { data: income } = await supabase.rpc('get_workspace_wallets_income', {
-    ws_id: wsId,
-    start_date: null,
-    end_date: null,
-  });
+  const { data: income } = enableFinance
+    ? await supabase.rpc('get_workspace_wallets_income', {
+        ws_id: wsId,
+        start_date: null,
+        end_date: null,
+      })
+    : { data: 0 };
 
-  const { data: expense } = await supabase.rpc(
-    'get_workspace_wallets_expense',
-    {
-      ws_id: wsId,
-      start_date: null,
-      end_date: null,
-    }
-  );
+  const { data: expense } = enableFinance
+    ? await supabase.rpc('get_workspace_wallets_expense', {
+        ws_id: wsId,
+        start_date: null,
+        end_date: null,
+      })
+    : { data: 0 };
 
-  const { count: walletsCount } = await supabase
-    .from('workspace_wallets')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: walletsCount } = enableFinance
+    ? await supabase
+        .from('workspace_wallets')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: categoriesCount } = await supabase
-    .from('transaction_categories')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: categoriesCount } = enableFinance
+    ? await supabase
+        .from('transaction_categories')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: transactionsCount } = await supabase
-    .from('wallet_transactions')
-    .select('*, workspace_wallets!inner(ws_id)', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('workspace_wallets.ws_id', wsId);
+  const { count: transactionsCount } = enableFinance
+    ? await supabase
+        .from('wallet_transactions')
+        .select('*, workspace_wallets!inner(ws_id)', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('workspace_wallets.ws_id', wsId)
+    : { count: 0 };
 
-  const { count: invoicesCount } = await supabase
-    .from('finance_invoices')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: invoicesCount } = enableFinance
+    ? await supabase
+        .from('finance_invoices')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
   // const { count: checkups } = await supabase
   //   .from('healthcare_checkups')
@@ -101,85 +123,99 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   //   })
   //   .eq('ws_id', wsId);
 
-  const { data: workspaceProducts } = await supabase.rpc(
-    'get_workspace_products_count',
-    {
-      ws_id: wsId,
-    }
-  );
+  const { data: workspaceProducts } = enableInventory
+    ? await supabase.rpc('get_workspace_products_count', {
+        ws_id: wsId,
+      })
+    : { data: 0 };
 
-  const { data: inventoryProducts } = await supabase.rpc(
-    'get_inventory_products_count',
-    {
-      ws_id: wsId,
-    }
-  );
+  const { data: inventoryProducts } = enableInventory
+    ? await supabase.rpc('get_inventory_products_count', {
+        ws_id: wsId,
+      })
+    : { data: 0 };
 
-  const { count: categories } = await supabase
-    .from('product_categories')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: categories } = enableInventory
+    ? await supabase
+        .from('product_categories')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: batches } = await supabase
-    .from('inventory_batches')
-    .select('*, inventory_warehouses!inner(ws_id)', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('inventory_warehouses.ws_id', wsId);
+  const { count: batches } = enableInventory
+    ? await supabase
+        .from('inventory_batches')
+        .select('*, inventory_warehouses!inner(ws_id)', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('inventory_warehouses.ws_id', wsId)
+    : { count: 0 };
 
-  const { count: warehouses } = await supabase
-    .from('inventory_warehouses')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: warehouses } = enableInventory
+    ? await supabase
+        .from('inventory_warehouses')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: units } = await supabase
-    .from('inventory_units')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: units } = enableInventory
+    ? await supabase
+        .from('inventory_units')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: suppliers } = await supabase
-    .from('inventory_suppliers')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: suppliers } = enableInventory
+    ? await supabase
+        .from('inventory_suppliers')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: promotions } = await supabase
-    .from('workspace_promotions')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: promotions } = enableInventory
+    ? await supabase
+        .from('workspace_promotions')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: users } = await supabase
-    .from('workspace_users')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: users } = enableUsers
+    ? await supabase
+        .from('workspace_users')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const { count: userGroups } = await supabase
-    .from('workspace_user_groups')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
+  const { count: userGroups } = enableUsers
+    ? await supabase
+        .from('workspace_user_groups')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
 
-  const reports = await getReportsCount(wsId);
+  const reports = enableUsers ? await getReportsCount(wsId) : 0;
 
   const usersLabel = t('sidebar-tabs:users');
   const sum = (income || 0) + (expense || 0);
@@ -197,62 +233,66 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </p>
       </div>
 
-      <Separator className="my-4" />
-      <div className="mb-2 text-2xl font-semibold">
-        {t('sidebar-tabs:finance')}
-      </div>
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatisticCard
-          title={t('finance-overview:total-balance')}
-          value={Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(sum || 0)}
-          className="md:col-span-2"
-        />
+      {enableFinance && (
+        <>
+          <Separator className="my-4" />
+          <div className="mb-2 text-2xl font-semibold">
+            {t('sidebar-tabs:finance')}
+          </div>
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatisticCard
+              title={t('finance-overview:total-balance')}
+              value={Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(sum || 0)}
+              className="md:col-span-2"
+            />
 
-        <StatisticCard
-          title={t('finance-overview:total-income')}
-          value={Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-            signDisplay: 'exceptZero',
-          }).format(income || 0)}
-        />
+            <StatisticCard
+              title={t('finance-overview:total-income')}
+              value={Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                signDisplay: 'exceptZero',
+              }).format(income || 0)}
+            />
 
-        <StatisticCard
-          title={t('finance-overview:total-expense')}
-          value={Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-            signDisplay: 'exceptZero',
-          }).format(expense || 0)}
-        />
+            <StatisticCard
+              title={t('finance-overview:total-expense')}
+              value={Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                signDisplay: 'exceptZero',
+              }).format(expense || 0)}
+            />
 
-        <StatisticCard
-          title={t('workspace-finance-tabs:wallets')}
-          value={walletsCount}
-          href={`/${wsId}/finance/wallets`}
-        />
+            <StatisticCard
+              title={t('workspace-finance-tabs:wallets')}
+              value={walletsCount}
+              href={`/${wsId}/finance/wallets`}
+            />
 
-        <StatisticCard
-          title={t('workspace-finance-tabs:categories')}
-          value={categoriesCount}
-          href={`/${wsId}/finance/transactions/categories`}
-        />
+            <StatisticCard
+              title={t('workspace-finance-tabs:categories')}
+              value={categoriesCount}
+              href={`/${wsId}/finance/transactions/categories`}
+            />
 
-        <StatisticCard
-          title={t('workspace-finance-tabs:transactions')}
-          value={transactionsCount}
-          href={`/${wsId}/finance/transactions`}
-        />
+            <StatisticCard
+              title={t('workspace-finance-tabs:transactions')}
+              value={transactionsCount}
+              href={`/${wsId}/finance/transactions`}
+            />
 
-        <StatisticCard
-          title={t('workspace-finance-tabs:invoices')}
-          value={invoicesCount}
-          href={`/${wsId}/finance/invoices`}
-        />
-      </div>
+            <StatisticCard
+              title={t('workspace-finance-tabs:invoices')}
+              value={invoicesCount}
+              href={`/${wsId}/finance/invoices`}
+            />
+          </div>
+        </>
+      )}
 
       {/* {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
         <>
@@ -288,83 +328,91 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </>
       )} */}
 
-      <Separator className="mb-8 mt-4" />
-      <div className="mb-2 text-2xl font-semibold">
-        {t('sidebar-tabs:inventory')}
-      </div>
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatisticCard
-          title={t('workspace-inventory-tabs:products')}
-          value={workspaceProducts}
-          href={`/${wsId}/inventory/products`}
-        />
+      {enableInventory && (
+        <>
+          <Separator className="mb-8 mt-4" />
+          <div className="mb-2 text-2xl font-semibold">
+            {t('sidebar-tabs:inventory')}
+          </div>
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatisticCard
+              title={t('workspace-inventory-tabs:products')}
+              value={workspaceProducts}
+              href={`/${wsId}/inventory/products`}
+            />
 
-        <StatisticCard
-          title={t('inventory-overview:products-with-prices')}
-          value={inventoryProducts}
-          href={`/${wsId}/inventory/products`}
-        />
+            <StatisticCard
+              title={t('inventory-overview:products-with-prices')}
+              value={inventoryProducts}
+              href={`/${wsId}/inventory/products`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:categories')}
-          value={categories}
-          href={`/${wsId}/inventory/categories`}
-        />
+            <StatisticCard
+              title={t('workspace-inventory-tabs:categories')}
+              value={categories}
+              href={`/${wsId}/inventory/categories`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:batches')}
-          value={batches}
-          href={`/${wsId}/inventory/batches`}
-        />
+            <StatisticCard
+              title={t('workspace-inventory-tabs:batches')}
+              value={batches}
+              href={`/${wsId}/inventory/batches`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:warehouses')}
-          value={warehouses}
-          href={`/${wsId}/inventory/warehouses`}
-        />
+            <StatisticCard
+              title={t('workspace-inventory-tabs:warehouses')}
+              value={warehouses}
+              href={`/${wsId}/inventory/warehouses`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:units')}
-          value={units}
-          href={`/${wsId}/inventory/units`}
-        />
+            <StatisticCard
+              title={t('workspace-inventory-tabs:units')}
+              value={units}
+              href={`/${wsId}/inventory/units`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:suppliers')}
-          value={suppliers}
-          href={`/${wsId}/inventory/suppliers`}
-        />
+            <StatisticCard
+              title={t('workspace-inventory-tabs:suppliers')}
+              value={suppliers}
+              href={`/${wsId}/inventory/suppliers`}
+            />
 
-        <StatisticCard
-          title={t('workspace-inventory-tabs:promotions')}
-          value={promotions}
-          href={`/${wsId}/inventory/promotions`}
-        />
-      </div>
+            <StatisticCard
+              title={t('workspace-inventory-tabs:promotions')}
+              value={promotions}
+              href={`/${wsId}/inventory/promotions`}
+            />
+          </div>
+        </>
+      )}
 
-      <Separator className="mb-8 mt-4" />
-      <div className="mb-2 text-2xl font-semibold">
-        {t('sidebar-tabs:users')}
-      </div>
-      <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatisticCard
-          title={usersLabel}
-          value={users}
-          href={`/${wsId}/users/list`}
-        />
+      {enableUsers && (
+        <>
+          <Separator className="mb-8 mt-4" />
+          <div className="mb-2 text-2xl font-semibold">
+            {t('sidebar-tabs:users')}
+          </div>
+          <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StatisticCard
+              title={usersLabel}
+              value={users}
+              href={`/${wsId}/users/list`}
+            />
 
-        <StatisticCard
-          title={t('workspace-users-tabs:groups')}
-          value={userGroups}
-          href={`/${wsId}/users/groups`}
-        />
+            <StatisticCard
+              title={t('workspace-users-tabs:groups')}
+              value={userGroups}
+              href={`/${wsId}/users/groups`}
+            />
 
-        <StatisticCard
-          title={t('workspace-users-tabs:reports')}
-          value={reports}
-          href={`/${wsId}/users/reports`}
-        />
-      </div>
+            <StatisticCard
+              title={t('workspace-users-tabs:reports')}
+              value={reports}
+              href={`/${wsId}/users/reports`}
+            />
+          </div>
+        </>
+      )}
     </>
   );
 }

@@ -1,8 +1,7 @@
 import '../../styles/globals.css';
 
-import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
@@ -10,7 +9,9 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import GoogleAnalytics from '@/components/google-analytics';
 import Navbar from './navbar';
 import NavbarPadding from './navbar-padding';
-import Footer from '@/components/layouts/Footer';
+import { StaffToolbar } from './staff-toolbar';
+import { TailwindIndicator } from '@/components/tailwind-indicator';
+import { Providers } from '@/components/providers';
 
 interface Props {
   children: ReactNode;
@@ -87,7 +88,7 @@ export async function generateMetadata({
       shortcut: '/favicon-16x16.png',
       apple: '/apple-touch-icon.png',
     },
-    manifest: `${siteConfig.url}/site.webmanifest`,
+    manifest: `/site.webmanifest`,
   };
 }
 
@@ -106,24 +107,13 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <GoogleAnalytics />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          disableTransitionOnChange
-          enableSystem
-        >
+        <Providers attribute="class" defaultTheme="dark" enableSystem>
           <Navbar />
           <NavbarPadding>{children}</NavbarPadding>
-          <Footer />
-        </ThemeProvider>
-
-        {/* <Suspense>
-          <StaffToolbar />
-        </Suspense> */}
-
-        <Suspense>
-          <Toaster />
-        </Suspense>
+        </Providers>
+        <TailwindIndicator />
+        <StaffToolbar />
+        <Toaster />
       </body>
     </html>
   );

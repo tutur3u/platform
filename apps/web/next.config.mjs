@@ -3,13 +3,6 @@ import nextTranslate from 'next-translate-plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = nextTranslate({
-  experimental: {
-    serverActions: true,
-    // logging: {
-    //   level: 'verbose',
-    //   fullUrl: true,
-    // },
-  },
   images: {
     remotePatterns: [
       {

@@ -4,6 +4,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Workspace } from '@/types/primitives/Workspace';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { Database } from '@/types/supabase';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 
 export async function getWorkspace(id?: string) {
   if (!id) return null;
@@ -126,4 +127,29 @@ export async function enforceRootWorkspaceAdmin(
     if (options.redirectTo) redirect(options.redirectTo);
     else notFound();
   }
+}
+
+export async function getSecrets(wsId: string, requiredSecrets?: string[]) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase
+    .from('workspace_secrets')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (requiredSecrets) {
+    queryBuilder.in('name', requiredSecrets);
+  }
+
+  const { data, error } = await queryBuilder;
+  if (error) throw error;
+  return data as WorkspaceSecret[];
+}
+
+export function getSecret(
+  secretName: string,
+  secrets: WorkspaceSecret[]
+): WorkspaceSecret | undefined {
+  return secrets.find(({ name }) => name === secretName);
 }

@@ -23,12 +23,12 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { Suspense } from 'react';
-import { LogoutDropdownItem } from './logout-dropdown-item';
+import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import Link from 'next/link';
-import { ThemeDropdownItems } from './theme-dropdown-items';
-import { LanguageWrapper } from './language-wrapper';
+import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
+import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import useTranslation from 'next-translate/useTranslation';
-import { SystemLanguageWrapper } from './system-language-wrapper';
+import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
 import { getWorkspaces } from '@/lib/workspace-helper';
 
 interface Props {

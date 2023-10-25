@@ -1,5 +1,7 @@
 {
   "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
   "prompt_placeholder": "Nhập yêu cầu của bạn...",
-  "reset_chat": "Đặt lại"
+  "new_chat": "Trò chuyện mới",
+  "reset_chat": "Đặt lại",
+  "default_chat": "Mặc định"
 }

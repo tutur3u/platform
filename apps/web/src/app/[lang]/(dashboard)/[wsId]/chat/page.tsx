@@ -1,8 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import Chat from './chat';
-import { getWorkspace } from '@/lib/workspace-helper';
-import { AI_CHAT_DISABLED_PRESETS } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
+import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,16 +11,16 @@ interface Props {
 }
 
 export default async function AIPage({ params: { wsId } }: Props) {
-  const user = await getCurrentUser();
-
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
-  if (
-    process.env.ANTHROPIC_API_KEY === undefined ||
-    AI_CHAT_DISABLED_PRESETS.includes(workspace.preset)
-  )
-    redirect(`/${wsId}`);
+  const secrets = await getSecrets(wsId, ['ENABLE_CHAT']);
 
-  return <Chat user={user} />;
+  const verifySecret = (secret: string, value: string) =>
+    secrets.find((s) => s.name === secret)?.value === value;
+
+  const enableChat = verifySecret('ENABLE_CHAT', 'true');
+  if (!enableChat) redirect(`/${wsId}`);
+
+  return <Chat id="123" />;
 }
