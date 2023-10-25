@@ -68,7 +68,5 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  console.log(data);
-
   return { data, count } as { data: TransactionCategory[]; count: number };
 }
