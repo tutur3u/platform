@@ -99,8 +99,8 @@ export function Navigation({
           <Link
             className={`${
               isActive
-                ? 'text-foreground border-foreground/10 bg-foreground/5'
-                : 'text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
+                ? 'text-foreground border-foreground/10 bg-foreground/[0.025] dark:bg-foreground/5'
+                : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
             } ${
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'

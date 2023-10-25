@@ -24,7 +24,7 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
       <div className="bg-background rounded-lg border p-8">
         <h1 className="mb-2 text-lg font-semibold">
           Welcome to{' '}
-          <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text font-bold text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
+          <span className="bg-gradient-to-r from-pink-600 via-yellow-500 to-sky-600 bg-clip-text font-bold text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
             Tuturuuu AI
           </span>{' '}
           Chat.
