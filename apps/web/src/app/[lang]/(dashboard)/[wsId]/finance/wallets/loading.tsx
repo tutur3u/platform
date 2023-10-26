@@ -1,7 +1,7 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { walletColumns } from '@/data/columns/wallets';
 
-export default async function Loading() {
+export default function Loading() {
   return (
     <DataTable
       columnGenerator={walletColumns}

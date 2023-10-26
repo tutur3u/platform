@@ -1,14 +1,12 @@
 import { Separator } from '@/components/ui/separator';
 import StatisticCard from '@/components/cards/StatisticCard';
 
-export default async function Loading() {
+export default function Loading() {
   return (
     <>
       <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold text-transparent">Home</h1>
-        <p className="text-transparent text-zinc-700 dark:text-zinc-400">
-          Description
-        </p>
+        <p className="text-transparent">Description</p>
       </div>
 
       <Separator className="my-4" />

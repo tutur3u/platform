@@ -3,19 +3,18 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function WorkspaceFinancePage({
   params: { wsId },
 }: Props) {
   const supabase = createServerComponentClient({ cookies });
-
   const { t } = useTranslation('finance-overview');
 
   // const [dateRange, setDateRange] = useState<DateRange>([null, null]);

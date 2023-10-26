@@ -1,7 +1,7 @@
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';
 
-export default async function Loading() {
+export default function Loading() {
   const { t } = useTranslation('ws-settings');
   const settingsLabel = t('common:settings');
 

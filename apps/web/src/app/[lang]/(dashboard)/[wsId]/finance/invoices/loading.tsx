@@ -1,7 +1,7 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 
-export default async function Loading() {
+export default function Loading() {
   return (
     <DataTable
       columnGenerator={invoiceColumns}

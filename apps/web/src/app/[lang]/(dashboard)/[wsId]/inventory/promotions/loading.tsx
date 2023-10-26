@@ -1,7 +1,7 @@
 import { promotionColumns } from '@/data/columns/promotions';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
-export default async function Loading() {
+export default function Loading() {
   return (
     <DataTable
       columnGenerator={promotionColumns}
