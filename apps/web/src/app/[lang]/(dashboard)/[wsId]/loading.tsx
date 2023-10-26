@@ -10,7 +10,7 @@ export default async function Loading() {
 
   return (
     <>
-      <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+      <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold">{homeLabel}</h1>
         <p className="text-zinc-700 dark:text-zinc-400">
           {t('description_p1')} {t('description_p2')}
@@ -18,7 +18,7 @@ export default async function Loading() {
       </div>
 
       <Separator className="my-4" />
-      <div className="mb-2 text-2xl font-semibold">
+      <div className="mb-2 text-2xl font-semibold text-transparent">
         {t('sidebar-tabs:finance')}
       </div>
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -45,7 +45,7 @@ export default async function Loading() {
       </div>
 
       <Separator className="mb-8 mt-4" />
-      <div className="mb-2 text-2xl font-semibold">
+      <div className="mb-2 text-2xl font-semibold text-transparent">
         {t('sidebar-tabs:inventory')}
       </div>
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -82,7 +82,7 @@ export default async function Loading() {
       </div>
 
       <Separator className="mb-8 mt-4" />
-      <div className="mb-2 text-2xl font-semibold">
+      <div className="mb-2 text-2xl font-semibold text-transparent">
         {t('sidebar-tabs:users')}
       </div>
       <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">

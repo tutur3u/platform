@@ -37,13 +37,19 @@ const StatisticCard = ({
           onClick || href ? 'hover:rounded-xl' : 'cursor-default'
         } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
-        <div className="p-1 text-center text-lg font-semibold">{title}</div>
         <div
-          className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+          className={`p-1 text-center text-lg font-semibold ${
+            loading ? 'text-transparent' : ''
+          }`}
+        >
+          {title}
+        </div>
+        <div
+          className={`border-foreground/5 bg-foreground/5 m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
             !!onClick || !!href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
-          }`}
+          } ${loading ? 'animate-pulse text-transparent' : 'text-foreground'}`}
         >
           {loading ? loadingLabel : value != null ? value : 'N/A'}
         </div>
@@ -57,13 +63,19 @@ const StatisticCard = ({
         onClick || href ? 'hover:rounded-xl' : 'cursor-default'
       } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >
-      <div className="p-1 text-center text-lg font-semibold">{title}</div>
+      <div
+        className={`p-1 text-center text-lg font-semibold ${
+          loading ? 'text-transparent' : ''
+        }`}
+      >
+        {title}
+      </div>
       <div
         className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
           !!onClick || !!href
             ? 'transition-all duration-300 group-hover:rounded-lg'
             : ''
-        }`}
+        } ${loading ? 'animate-pulse text-transparent' : 'text-foreground'}`}
       >
         {loading ? loadingLabel : value != null ? value : 'N/A'}
       </div>
