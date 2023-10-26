@@ -78,7 +78,7 @@ async function getReports(
       (secret) => secret.name === 'EXTERNAL_USER_REPORTS_API_KEY'
     )?.value;
 
-    if (!fetchApi || !apiKey) throw new Error('Missing secrets');
+    if (!fetchApi || !apiKey) return { data: [], count: 0 };
 
     const from = (parseInt(page) - 1) * parseInt(pageSize);
     const fetchUrl = `${fetchApi}?${
