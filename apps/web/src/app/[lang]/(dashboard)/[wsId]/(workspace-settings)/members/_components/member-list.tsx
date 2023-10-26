@@ -11,20 +11,20 @@ import { User as UserIcon } from 'lucide-react';
 import { getCurrentUser } from '@/lib/user-helper';
 
 interface Props {
-  workspace: Workspace | null;
+  workspace?: Workspace | null;
   members: User[];
-  invited: boolean;
+  invited?: boolean;
+  loading?: boolean;
 }
 
 export default async function MemberList({
   workspace,
   members,
   invited,
+  loading,
 }: Props) {
   const { t, lang } = useTranslation('ws-members');
   const user = await getCurrentUser();
-
-  if (!workspace) return null;
 
   if (!members || members.length === 0) {
     return (
@@ -33,10 +33,10 @@ export default async function MemberList({
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
         <InviteMemberButton
-          wsId={workspace.id}
+          wsId={workspace?.id}
           currentUser={{
             ...user,
-            role: workspace.role,
+            role: workspace?.role,
           }}
           label={t('invite_member')}
           variant="outline"
@@ -48,7 +48,7 @@ export default async function MemberList({
   return members.map((member) => (
     <div
       key={member.id}
-      className={`border-primary/10 relative rounded-lg border p-4 ${
+      className={`border-foreground/10 relative rounded-lg border p-4 ${
         member?.pending
           ? 'bg-primary-foreground/20 border-dashed'
           : 'bg-primary-foreground'
@@ -58,7 +58,7 @@ export default async function MemberList({
         <Avatar>
           <AvatarImage src={member?.avatar_url ?? undefined} />
           <AvatarFallback className="font-semibold">
-            {member?.display_name ? (
+            {!loading && member?.display_name ? (
               getInitials(member.display_name)
             ) : (
               <UserIcon className="h-5 w-5" />
@@ -66,7 +66,7 @@ export default async function MemberList({
           </AvatarFallback>
         </Avatar>
 
-        <div>
+        <div className={loading ? 'text-transparent' : ''}>
           <p className="font-semibold lg:text-lg">
             {member?.display_name ? (
               member.display_name
@@ -77,27 +77,39 @@ export default async function MemberList({
               <span className="text-orange-300">({member.role_title})</span>
             ) : null}
           </p>
-          <p className="text-muted-foreground text-sm font-semibold">
+          <p
+            className={`text-sm font-semibold ${
+              loading ? 'text-transparent' : 'text-muted-foreground'
+            }`}
+          >
             {member?.handle
               ? `@${member.handle}`
-              : member?.email ?? `@${member?.id?.replace(/-/g, '')}`}
+              : member?.email ?? member?.id?.replace(/-/g, '')}
           </p>
         </div>
       </div>
 
-      <div className="absolute right-4 top-4 flex gap-2">
-        <MemberSettingsButton
-          workspace={workspace}
-          user={member}
-          currentUser={{ ...user, role: workspace.role }}
-        />
-      </div>
+      {workspace && (
+        <div className="absolute right-4 top-4 flex gap-2">
+          <MemberSettingsButton
+            workspace={workspace}
+            user={member}
+            currentUser={{ ...user, role: workspace.role }}
+          />
+        </div>
+      )}
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-300 pt-2 text-sm dark:border-zinc-800 md:text-base lg:gap-4">
-        {member?.created_at ? (
-          <div className="line-clamp-1 text-zinc-500">
-            {t(member?.pending ? 'invited' : 'member_since')}{' '}
-            <span className="font-semibold text-zinc-600 dark:text-zinc-400">
+      <div className="border-foreground/10 mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm md:text-base lg:gap-4">
+        {loading || member?.created_at ? (
+          <div
+            className={`text-foreground/50 line-clamp-1 ${
+              loading ? 'text-transparent' : ''
+            }`}
+          >
+            <span className="opacity-90">
+              {t(member?.pending ? 'invited' : 'member_since')}
+            </span>{' '}
+            <span className="font-semibold">
               {moment(member.created_at).locale(lang).fromNow()}
             </span>
             .

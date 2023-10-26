@@ -5,7 +5,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import NameInput from './name-input';
 
 interface Props {
-  workspace: Workspace | null;
+  workspace?: Workspace | null;
   allowEdit?: boolean;
 }
 
@@ -24,7 +24,7 @@ export default function BasicInfo({ workspace, allowEdit }: Props) {
       <NameInput
         wsId={workspace.id}
         defaultValue={workspace.name}
-        disabled={!allowEdit}
+        disabled={!workspace || !allowEdit}
       />
     </div>
   );

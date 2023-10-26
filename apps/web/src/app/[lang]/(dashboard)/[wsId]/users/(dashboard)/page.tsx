@@ -2,7 +2,7 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
-import { getReportsCount } from './reports/page';
+import { getReportsCount } from '../reports/page';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,13 +29,11 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
           value={users}
           href={`/${wsId}/users/list`}
         />
-
         <StatisticCard
           title={t('workspace-users-tabs:groups')}
           value={groups}
           href={`/${wsId}/users/groups`}
         />
-
         <StatisticCard
           title={t('workspace-users-tabs:reports')}
           value={reports}

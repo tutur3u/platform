@@ -2,7 +2,7 @@ import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 interface Props {
-  title: string;
+  title?: string;
   value?: string | number | null;
   href?: string;
   loading?: boolean;
@@ -42,7 +42,7 @@ const StatisticCard = ({
             loading ? 'text-transparent' : ''
           }`}
         >
-          {title}
+          {loading ? loadingLabel : title}
         </div>
         <div
           className={`border-foreground/5 bg-foreground/5 m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
@@ -68,7 +68,7 @@ const StatisticCard = ({
           loading ? 'text-transparent' : ''
         }`}
       >
-        {title}
+        {loading ? loadingLabel : title}
       </div>
       <div
         className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${

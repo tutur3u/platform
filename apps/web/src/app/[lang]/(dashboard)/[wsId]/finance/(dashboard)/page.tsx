@@ -106,7 +106,6 @@ export default async function WorkspaceFinancePage({
           }).format(sum || 0)}
           className="md:col-span-2"
         />
-
         <StatisticCard
           title={totalIncome}
           value={Intl.NumberFormat('vi-VN', {
@@ -115,7 +114,6 @@ export default async function WorkspaceFinancePage({
             signDisplay: 'exceptZero',
           }).format(income || 0)}
         />
-
         <StatisticCard
           title={totalExpense}
           value={Intl.NumberFormat('vi-VN', {
@@ -124,25 +122,21 @@ export default async function WorkspaceFinancePage({
             signDisplay: 'exceptZero',
           }).format(expense || 0)}
         />
-
         <StatisticCard
           title={walletsLabel}
           value={walletsCount}
           href={`/${wsId}/finance/wallets`}
         />
-
         <StatisticCard
           title={categoriesLabel}
           value={categoriesCount}
           href={`/${wsId}/finance/transactions/categories`}
         />
-
         <StatisticCard
           title={transactionsLabel}
           value={transactionsCount}
           href={`/${wsId}/finance/transactions`}
         />
-
         <StatisticCard
           title={invoicesLabel}
           value={invoicesCount}

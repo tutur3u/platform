@@ -188,7 +188,7 @@ export function MemberSettingsButton({
             <p className="text-muted-foreground line-clamp-1 text-sm">
               {user?.handle
                 ? `@${user.handle}`
-                : user?.email ?? `@${user?.id?.replace(/-/g, '')}`}
+                : user?.email ?? user?.id?.replace(/-/g, '')}
             </p>
           </div>
         </div>

@@ -85,7 +85,7 @@ function LeftSidebar({ className }: SidebarProps) {
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`group fixed z-[100] flex h-screen flex-col border-r border-zinc-300 bg-white pb-2 pt-4 dark:border-zinc-800/80 dark:bg-zinc-900 ${
+      className={`border-foreground/10 group fixed z-[100] flex h-screen flex-col border-r bg-white pb-2 pt-4 dark:border-zinc-800/80 dark:bg-zinc-900 ${
         sidebar === 'open'
           ? 'w-full opacity-100 md:w-64'
           : 'pointer-events-none w-0 opacity-0 md:pointer-events-auto md:w-16 md:opacity-100'

@@ -3,7 +3,7 @@ import TabNavigation from './tab-navigation';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  value: string;
+  value?: string;
 }
 
 export default function MemberTabs({ value }: Props) {

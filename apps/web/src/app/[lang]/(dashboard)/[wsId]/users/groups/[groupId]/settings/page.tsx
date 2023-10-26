@@ -54,7 +54,7 @@ export default function UserGroupSettingsPage({
             sidebar === 'open'
               ? 'mx-4 md:ml-72 md:mr-8 lg:ml-80 lg:mr-16 xl:ml-96 xl:mr-32'
               : 'mx-4 md:ml-24 md:mr-8 lg:ml-32 lg:mr-16 xl:mx-48'
-          } bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 backdrop-blur transition-all duration-500 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
+          } border-foreground/10 bottom-0 z-[100] mx-4 mb-[4.5rem] flex flex-col items-center justify-between gap-y-4 rounded-lg border bg-zinc-500/5 p-4 backdrop-blur transition-all duration-500 dark:border-zinc-300/10 dark:bg-zinc-900/80 md:mx-8 md:mb-4 md:flex-row lg:mx-16 xl:mx-32 ${
             isDirty() ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
         >

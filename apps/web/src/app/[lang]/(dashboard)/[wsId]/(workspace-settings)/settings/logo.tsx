@@ -5,7 +5,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import LogoInput from './logo-input';
 
 interface Props {
-  workspace: Workspace | null;
+  workspace?: Workspace | null;
   allowEdit?: boolean;
 }
 
@@ -24,7 +24,7 @@ export default function WorkspaceLogoSettings({ workspace, allowEdit }: Props) {
       <LogoInput
         workspace={workspace}
         defaultValue={workspace.name}
-        disabled={!allowEdit}
+        disabled={!workspace || !allowEdit}
       />
     </div>
   );

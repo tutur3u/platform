@@ -5,7 +5,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import AvatarInput from './avatar-input';
 
 interface Props {
-  workspace: Workspace | null;
+  workspace?: Workspace | null;
   allowEdit?: boolean;
 }
 
@@ -27,7 +27,7 @@ export default function WorkspaceAvatarSettings({
       <AvatarInput
         workspace={workspace}
         defaultValue={workspace.name}
-        disabled={!allowEdit}
+        disabled={!workspace || !allowEdit}
       />
     </div>
   );

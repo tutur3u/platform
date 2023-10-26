@@ -24,7 +24,7 @@ const WorkspaceUserCard = ({
   return (
     <Link
       href={`/${wsId}/users/${user.id}`}
-      className="group flex flex-col items-center justify-center rounded-lg border border-zinc-300 bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
+      className="border-foreground/10 group flex flex-col items-center justify-center rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -46,7 +46,7 @@ const WorkspaceUserCard = ({
 
       {showAddress && (
         <>
-          <Separator className="w-full border-zinc-300 dark:border-zinc-700" />
+          <Separator className="border-foreground/10 w-full dark:border-zinc-700" />
           <div className="m-2 h-full w-full px-2">
             <div className="flex h-full items-center justify-center rounded border border-purple-500/20 bg-purple-500/10 p-2 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
               {user?.address || t('no-address')}
