@@ -37,5 +37,6 @@
   "update-error": "An error occurred while updating the member",
   "member": "Member",
   "admin": "Administrator",
-  "owner": "Owner"
+  "owner": "Owner",
+  "you": "You"
 }

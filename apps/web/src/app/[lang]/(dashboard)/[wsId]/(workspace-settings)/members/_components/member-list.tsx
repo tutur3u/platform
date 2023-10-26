@@ -9,6 +9,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import InviteMemberButton from './invite-member-button';
 import { User as UserIcon } from 'lucide-react';
 import { getCurrentUser } from '@/lib/user-helper';
+import { cn } from '@/lib/utils';
 
 interface Props {
   workspace?: Workspace | null;
@@ -123,14 +124,19 @@ export default async function MemberList({
                 'you'
               )}`}
             >
-              You
+              {t('you')}
             </div>
           )}
 
           <div
-            className={`flex-initial rounded border px-2 py-0.5 text-center font-semibold ${getRoleColor(
-              'unknown'
-            )} ${member?.pending ? 'border-dashed opacity-60' : ''}`}
+            className={cn(
+              `flex-initial rounded border px-2 py-0.5 text-center font-semibold ${
+                member?.pending ? 'border-dashed opacity-60' : ''
+              }`,
+              loading
+                ? 'text-transparent'
+                : 'border-foreground/10 bg-foreground/5 text-foreground/80'
+            )}
           >
             {t(member?.role?.toLocaleLowerCase() || 'unknown')}
           </div>
