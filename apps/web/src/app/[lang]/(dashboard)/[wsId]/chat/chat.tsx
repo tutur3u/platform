@@ -24,10 +24,11 @@ import { ChatPanel } from '@/components/chat-panel';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   id?: string;
+  wsId: string;
   initialMessages?: Message[];
 }
 
-const Chat = ({ id, initialMessages, className }: ChatProps) => {
+const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
   // const { t } = useTranslation('ai-chat');
 
   const [previewToken, setPreviewToken] = useLocalStorage({
@@ -56,6 +57,7 @@ const Chat = ({ id, initialMessages, className }: ChatProps) => {
       // id,
       body: {
         // id,
+        wsId,
         previewToken,
       },
       onResponse(response) {

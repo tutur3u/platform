@@ -18,10 +18,7 @@ export interface ChatMessageProps {
 
 export function ChatMessage({ message, ...props }: ChatMessageProps) {
   return (
-    <div
-      className={cn('group relative mb-4 flex items-start md:-ml-12')}
-      {...props}
-    >
+    <div className={cn('group relative mb-4 flex items-start')} {...props}>
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow',
@@ -39,7 +36,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
           </Avatar>
         )}
       </div>
-      <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
+      <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
           className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
           remarkPlugins={[remarkGfm, remarkMath]}

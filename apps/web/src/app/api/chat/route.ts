@@ -2,13 +2,16 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import Anthropic from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { messages, previewToken } = await req.json();
+    const { wsId, messages, previewToken } = await req.json();
+
+    if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
@@ -25,9 +28,13 @@ export async function POST(req: Request) {
 
     if (!user) return new Response('Unauthorized', { status: 401 });
 
-    const { count, error } = await supabase
+    const sbAdmin = createAdminClient();
+    if (!sbAdmin) return new Response('Unauthorized', { status: 401 });
+
+    const { count, error } = await sbAdmin
       .from('workspace_secrets')
       .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId)
       .eq('name', 'ENABLE_CHAT')
       .eq('value', 'true');
 
