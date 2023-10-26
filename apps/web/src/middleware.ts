@@ -7,7 +7,14 @@ import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 
 export async function middleware(req: NextRequest) {
-  const res = await handleSupabaseAuth({ req });
+  const { res, session } = await handleSupabaseAuth({ req });
+
+  // If current path ends with /login and user is logged in, redirect to home page
+  if (req.nextUrl.pathname.endsWith('/login') && session)
+    return NextResponse.redirect(
+      req.nextUrl.href.replace('/login', '/onboarding')
+    );
+
   return await handleLocale({ req, res });
 }
 
@@ -35,9 +42,11 @@ const handleSupabaseAuth = async ({ req }: { req: NextRequest }) => {
 
   // Refresh session if expired - required for Server Components
   // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-  await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  return res;
+  return { res, session };
 };
 
 const getSupportedLocale = (locale: string) => {

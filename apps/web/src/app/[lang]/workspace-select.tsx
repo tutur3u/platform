@@ -31,7 +31,7 @@ export default function WorkspaceSelect({ workspaces }: Props) {
   return (
     <>
       <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
-      <Select value={wsId} onValueChange={onValueChange}>
+      <Select value={wsId} onValueChange={onValueChange} disabled={!workspaces}>
         <SelectTrigger className="w-full md:w-48">
           <SelectValue placeholder="Select a workspace" />
         </SelectTrigger>

@@ -37,8 +37,12 @@ export default async function Navbar() {
               <LogoTitle />
             </Link>
 
-            <Suspense>
-              <WorkspaceSelect workspaces={workspaces} />
+            <Suspense
+              fallback={
+                <div className="bg-foreground/5 h-8 w-32 animate-pulse rounded-lg" />
+              }
+            >
+              {user ? <WorkspaceSelect workspaces={workspaces} /> : null}
             </Suspense>
           </div>
 
