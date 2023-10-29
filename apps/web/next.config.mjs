@@ -3,11 +3,6 @@ import nextTranslate from 'next-translate-plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = nextTranslate({
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
   images: {
     remotePatterns: [
       {
