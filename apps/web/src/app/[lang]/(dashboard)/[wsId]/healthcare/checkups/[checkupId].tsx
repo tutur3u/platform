@@ -8,7 +8,7 @@ import WorkspaceUserSelector from '../../../../../../components/selectors/Worksp
 import DiagnosisSelector from '../../../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import { useRouter } from 'next/router';
-import { Checkup } from '../../../../../../types/primitives/Checkup';
+import { Checkup } from '../../../../../../types/primitives/checkup';
 import useSWR from 'swr';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
 import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';

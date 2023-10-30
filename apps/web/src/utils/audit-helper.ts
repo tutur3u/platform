@@ -1,5 +1,5 @@
 import { Translate } from 'next-translate';
-import { AuditLog, Operation } from '../types/primitives/AuditLog';
+import { AuditLog, Operation } from '../types/primitives/audit-log';
 
 const getLeadingLabel = (t: Translate, op: Operation, table: string) => {
   switch (op) {

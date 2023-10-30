@@ -1,5 +1,5 @@
 import { JsonInput, Loader } from '@mantine/core';
-import { AuditLog } from '../../types/primitives/AuditLog';
+import { AuditLog } from '../../types/primitives/audit-log';
 import { User } from '../../types/primitives/User';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';

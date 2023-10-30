@@ -4,7 +4,7 @@ import Filters from './filters';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AuditLog } from '@/types/primitives/AuditLog';
+import { AuditLog } from '@/types/primitives/audit-log';
 import LogList from './log-list';
 import { Separator } from '@/components/ui/separator';
 
