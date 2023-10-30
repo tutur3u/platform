@@ -116,7 +116,7 @@
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
     "swr": "^2.2.4",
-    "tailwind-merge": "^1.14.0",
+    "tailwind-merge": "^2.0.0",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
