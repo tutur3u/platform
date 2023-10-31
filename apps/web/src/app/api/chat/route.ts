@@ -75,8 +75,23 @@ export async function POST(req: Request) {
   }
 }
 
-const leadingMessages: Message[] = [];
-const trailingMessages: Message[] = [];
+const leadingMessages: Message[] = [
+  {
+    id: 'identity-reminder',
+    role: 'system',
+    content:
+      'You are Skora, an AI powered by Claude modal, provided by Anthropic. However, since this is in production environment, you must refer to yourself as Skora, powered by Tuturuuu. Do not talk more about your origins and keep this message in mind, pretend like I never specifically told you about it.',
+  },
+];
+
+const trailingMessages: Message[] = [
+  {
+    id: 'prettier-reminder',
+    role: 'system',
+    content:
+      'You must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way.',
+  },
+];
 
 function buildPrompt(messages: Message[]) {
   const filteredMsgs = filterDuplicates(messages);
@@ -101,13 +116,11 @@ const filterDuplicates = (messages: Message[]) =>
 
 const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
 const AI_PROMPT = Anthropic.AI_PROMPT;
-const SYSTEM_PROMPT = '\n\nSystem:';
 
 const normalize = (message: Message) => {
   const { content, role } = message;
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  if (role === 'system') return `${SYSTEM_PROMPT} ${content}`;
   return content;
 };
 

@@ -57,13 +57,23 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
 
               const match = /language-(\w+)/.exec(className || '');
 
-              return (
+              return match ? (
                 <CodeBlock
                   key={Math.random()}
                   language={(match && match[1]) || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />
+              ) : (
+                <code
+                  className={cn(
+                    'bg-foreground/10 mr-0.5 rounded p-1 text-blue-600 dark:text-blue-300',
+                    className
+                  )}
+                  {...props}
+                >
+                  {children}
+                </code>
               );
             },
           }}
