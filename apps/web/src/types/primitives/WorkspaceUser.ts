@@ -1,6 +1,7 @@
 export interface WorkspaceUser {
   id: string;
   name?: string;
+  full_name?: string;
   display_name?: string;
   handle?: string;
   email?: string;
@@ -18,5 +19,6 @@ export interface WorkspaceUser {
     id: string;
     display_name: string;
   }[];
+  href?: string;
   created_at?: string;
 }

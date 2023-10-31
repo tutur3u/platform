@@ -207,16 +207,7 @@
       "user-report-data-table"
     ],
 
-    "/[lang]/(dashboard)/[wsId]/users/new": ["sidebar-tabs"],
-    "/[lang]/(dashboard)/[wsId]/users/[userId]": [
-      "sidebar-tabs",
-      "ws-user-details-tabs"
-    ],
-    "/[lang]/(dashboard)/[wsId]/users/[userId]/settings": [
-      "sidebar-tabs",
-      "ws-user-details-tabs"
-    ],
-
+    "/[lang]/(dashboard)/[wsId]/users/[userId]": ["user-data-table"],
     "/[lang]/(dashboard)/[wsId]/attendance": ["sidebar-tabs"],
 
     "/[lang]/(dashboard)/[wsId]/healthcare": [
