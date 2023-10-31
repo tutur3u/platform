@@ -74,7 +74,6 @@ export default function SidebarLink({
       onClick={(e) => {
         if (disabled) e.preventDefault();
         if (onClick) onClick();
-        closeSidebarOnMobile({ window, setSidebar, disableAutoClose });
       }}
     >
       <Tooltip
