@@ -1,6 +1,6 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Checkup } from '../../types/primitives/checkup';
+import { Checkup } from '../../types/primitives/Checkup';
 import moment from 'moment';
 import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
 import useSWR from 'swr';
