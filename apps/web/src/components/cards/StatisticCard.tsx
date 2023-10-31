@@ -5,21 +5,12 @@ interface Props {
   title?: string;
   value?: string | number | null;
   href?: string;
-  loading?: boolean;
   className?: string;
   onClick?: () => void;
 }
 
-const StatisticCard = ({
-  title,
-  value,
-  href,
-  loading,
-  className,
-  onClick,
-}: Props) => {
+const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
   const { t } = useTranslation();
-  const loadingLabel = t('common:loading');
 
   const generateOuterColor = (enableHoverEffect: boolean) =>
     `border-foreground/20 ${
@@ -37,21 +28,15 @@ const StatisticCard = ({
           onClick || href ? 'hover:rounded-xl' : 'cursor-default'
         } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
+        <div className="p-1 text-center text-lg font-semibold">{title}</div>
         <div
-          className={`p-1 text-center text-lg font-semibold ${
-            loading ? 'text-transparent' : ''
-          }`}
-        >
-          {loading ? loadingLabel : title}
-        </div>
-        <div
-          className={`border-foreground/5 bg-foreground/5 m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+          className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
             !!onClick || !!href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
-          } ${loading ? 'animate-pulse text-transparent' : 'text-foreground'}`}
+          }`}
         >
-          {loading ? loadingLabel : value != null ? value : 'N/A'}
+          {value != null ? value : 'N/A'}
         </div>
       </Link>
     );
@@ -63,21 +48,15 @@ const StatisticCard = ({
         onClick || href ? 'hover:rounded-xl' : 'cursor-default'
       } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >
-      <div
-        className={`p-1 text-center text-lg font-semibold ${
-          loading ? 'text-transparent' : ''
-        }`}
-      >
-        {loading ? loadingLabel : title}
-      </div>
+      <div className="p-1 text-center text-lg font-semibold">{title}</div>
       <div
         className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
           !!onClick || !!href
             ? 'transition-all duration-300 group-hover:rounded-lg'
             : ''
-        } ${loading ? 'animate-pulse text-transparent' : 'text-foreground'}`}
+        }`}
       >
-        {loading ? loadingLabel : value != null ? value : 'N/A'}
+        {value != null ? value : 'N/A'}
       </div>
     </button>
   );
