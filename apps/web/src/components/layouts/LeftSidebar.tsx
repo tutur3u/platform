@@ -26,7 +26,6 @@ import CreateNewButton from './sidebar/CreateNewButton';
 import SidebarLinkList from './sidebar/SidebarLinkList';
 import SidebarTeamList from './sidebar/SidebarTeamList';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
-import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 import { User } from '../../types/primitives/User';
 import useSWR, { mutate } from 'swr';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
@@ -95,7 +94,6 @@ function LeftSidebar({ className }: SidebarProps) {
         <Logo
           alwaysShowLabel={sidebar === 'open'}
           showLabel={sidebar !== 'closed'}
-          onClick={() => closeSidebarOnMobile({ window, setSidebar })}
         />
 
         {sidebar === 'open' && (
@@ -163,7 +161,6 @@ function LeftSidebar({ className }: SidebarProps) {
                         ? 'text-zinc-900 hover:text-zinc-700 dark:text-yellow-200 dark:hover:text-yellow-100'
                         : 'text-zinc-900 hover:text-zinc-700 dark:text-blue-200 dark:hover:text-blue-100'
                     } line-clamp-1 transition`}
-                    onClick={() => closeSidebarOnMobile({ window, setSidebar })}
                   >
                     {sidebar === 'closed' ? (
                       <BuildingOffice2Icon className="w-5" />
@@ -274,7 +271,6 @@ function LeftSidebar({ className }: SidebarProps) {
                         ? 'hover:bg-yellow-500/20 dark:hover:bg-yellow-300/20'
                         : 'hover:bg-purple-500/20 dark:hover:bg-purple-300/20'
                     } flex items-center gap-1 rounded-full px-4 py-0.5 font-semibold transition`}
-                    onClick={() => closeSidebarOnMobile({ window, setSidebar })}
                   >
                     <div>{invite}</div>
                     <UserPlusIcon className="w-4" />
@@ -452,7 +448,6 @@ function LeftSidebar({ className }: SidebarProps) {
                 <SidebarButton
                   onClick={() => {
                     setUserPopover(false);
-                    closeSidebarOnMobile({ window, setSidebar });
                     logout({ supabase, router });
                   }}
                   activeIcon={<ArrowRightOnRectangleIcon className="w-5" />}

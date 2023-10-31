@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { match } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
+import type { Session } from '@supabase/auth-helpers-nextjs';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
 import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
+import type { Database } from '@/types/supabase';
 
-export async function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { res, session } = await handleSupabaseAuth({ req });
 
   // If current path ends with /login and user is logged in, redirect to home page
@@ -15,7 +17,7 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.href.replace('/login', '/onboarding')
     );
 
-  return await handleLocale({ req, res });
+  return handleLocale({ req, res });
 }
 
 export const config = {
@@ -33,7 +35,14 @@ export const config = {
   ],
 };
 
-const handleSupabaseAuth = async ({ req }: { req: NextRequest }) => {
+const handleSupabaseAuth = async ({
+  req,
+}: {
+  req: NextRequest;
+}): Promise<{
+  res: NextResponse;
+  session: Session | null;
+}> => {
   // Create a NextResponse object to handle the response
   const res = NextResponse.next();
 
@@ -49,13 +58,23 @@ const handleSupabaseAuth = async ({ req }: { req: NextRequest }) => {
   return { res, session };
 };
 
-const getSupportedLocale = (locale: string) => {
-  return i18n.locales.includes(locale) ? locale : null;
+const getSupportedLocale = (locale: string): string | null => {
+  const configs = i18n as {
+    locales: string[];
+  };
+
+  return configs.locales.includes(locale) ? locale : null;
 };
 
-const getExistingLocale = (req: NextRequest) => {
+const getExistingLocale = (
+  req: NextRequest
+): {
+  locale: string | null;
+  cookie: string | null;
+  pathname: string | null;
+} => {
   // Get raw locale from pathname and cookie
-  const rawLocaleFromPathname = req.nextUrl.pathname.split('/')?.[1] || '';
+  const rawLocaleFromPathname = req.nextUrl.pathname.split('/')[1] || '';
   const rawRocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
 
   // Get supported locale from pathname and cookie
@@ -63,30 +82,46 @@ const getExistingLocale = (req: NextRequest) => {
   const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
 
   return {
-    data: localeFromPathname || localeFromCookie,
+    locale: localeFromPathname || localeFromCookie,
     cookie: localeFromCookie,
     pathname: localeFromPathname,
   };
 };
 
-const getDefaultLocale = (req: NextRequest) => {
+const getDefaultLocale = (
+  req: NextRequest
+): {
+  locale: string;
+} => {
   // Get browser languages
-  let headers = {
+  const headers = {
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
+  const configs = i18n as {
+    locales: string[];
+    defaultLocale: string;
+  };
+
   const languages = new Negotiator({ headers }).languages();
-  return { data: match(languages, i18n.locales, i18n.defaultLocale) };
+  return { locale: match(languages, configs.locales, configs.defaultLocale) };
 };
 
-const getLocale = async (req: NextRequest) => {
+const getLocale = (
+  req: NextRequest
+): {
+  locale: string;
+  cookie: string | null;
+  pathname: string | null;
+  default: boolean;
+} => {
   // Get locale from pathname and cookie
-  const { data: existingLocale, cookie, pathname } = getExistingLocale(req);
+  const { locale: existingLocale, cookie, pathname } = getExistingLocale(req);
 
   // If locale is found, return it
   if (existingLocale) {
     return {
-      data: existingLocale,
+      locale: existingLocale,
       cookie,
       pathname,
       default: false,
@@ -94,25 +129,25 @@ const getLocale = async (req: NextRequest) => {
   }
 
   // If locale is not found, return default locale
-  const { data: defaultLocale } = getDefaultLocale(req);
+  const { locale: defaultLocale } = getDefaultLocale(req);
 
   return {
-    data: defaultLocale,
+    locale: defaultLocale,
     cookie,
     pathname,
     default: true,
   };
 };
 
-const handleLocale = async ({
+const handleLocale = ({
   req,
   res,
 }: {
   req: NextRequest;
   res: NextResponse;
-}) => {
+}): NextResponse => {
   // Get locale from cookie or browser languages
-  const { data: locale, pathname } = await getLocale(req);
+  const { locale, pathname } = getLocale(req);
 
   // Update locale in search params to load correct translations
   req.nextUrl.searchParams.set('lang', locale);

@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { Translate } from 'next-translate';
+import type { Translate } from 'next-translate';
 
 export type DateRangeOption = 'present' | 'past' | 'future';
 export type DateRangeUnit =
@@ -98,6 +98,10 @@ export const getDateRange = (
 
     case 'all':
       return [null, null];
+
+    case 'custom': {
+      throw new Error('Not implemented yet: "custom" case');
+    }
   }
 
   return [start.toDate(), end.toDate()];

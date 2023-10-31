@@ -1,4 +1,4 @@
-import { SupportedColor } from './SupportedColors';
+import type { SupportedColor } from './SupportedColors';
 
 export interface CalendarEvent {
   id: string;

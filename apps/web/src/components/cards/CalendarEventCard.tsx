@@ -1,7 +1,7 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { CalendarEvent } from '../../types/primitives/CalendarEvent';
+import { CalendarEvent } from '../../types/primitives/calendar-event';
 import moment from 'moment';
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import useTranslation from 'next-translate/useTranslation';
