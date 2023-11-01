@@ -7,56 +7,47 @@ export const dynamic = 'force-dynamic';
 interface Params {
   params: {
     wsId: string;
+    userId: string;
   };
 }
 
-export async function GET(_: Request, { params: { wsId: id } }: Params) {
+export async function GET(
+  _: Request,
+  { params: { wsId, userId: id } }: Params
+) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { data, error } = await supabase
     .from('workspace_users')
     .select('*')
-    .eq('ws_id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId)
+    .single();
 
   if (error)
     return NextResponse.json(
-      { message: 'Error fetching workspace users' },
+      { message: 'Error fetching workspace user' },
       { status: 500 }
     );
 
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
-
-  const data = await req.json();
-
-  const { error } = await supabase.from('workspace_users').insert({
-    ...data,
-    ws_id: id,
-  });
-
-  if (error)
-    return NextResponse.json(
-      { message: 'Error creating workspace users' },
-      { status: 500 }
-    );
-
-  return NextResponse.json({ message: 'success' });
-}
-
-export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
+export async function DELETE(
+  _: Request,
+  { params: { wsId, userId: id } }: Params
+) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { error } = await supabase
     .from('workspace_users')
     .delete()
-    .eq('ws_id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId);
 
   if (error)
     return NextResponse.json(
-      { message: 'Error deleting workspace users' },
+      { message: 'Error deleting workspace user' },
       { status: 500 }
     );
 

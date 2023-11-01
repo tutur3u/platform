@@ -13,14 +13,33 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { User } from '@/types/primitives/User';
+import { useRouter } from 'next/navigation';
+import { toast } from '../ui/use-toast';
 
 interface UserRowActionsProps {
   row: Row<User>;
   href?: string;
 }
 
-export function UserRowActions({ href }: UserRowActionsProps) {
-  // const task = taskSchema.parse(row.original);
+export function UserRowActions({ row, href }: UserRowActionsProps) {
+  const router = useRouter();
+  const user = row.original;
+
+  const deleteUser = async () => {
+    const res = await fetch(`/api/workspaces/${user.ws_id}/users/${user.id}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
+      toast({
+        title: 'Failed to delete workspace user',
+        description: data.message,
+      });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -56,7 +75,12 @@ export function UserRowActions({ href }: UserRowActionsProps) {
           </DropdownMenuSubContent>
         </DropdownMenuSub> */}
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>Delete</DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={deleteUser}
+          disabled={!user.id || !user.ws_id}
+        >
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

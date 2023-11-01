@@ -39,7 +39,6 @@ export default async function Layout({
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
-      requireRootWorkspace: true,
       disabled: !verifySecret('ENABLE_CHAT', 'true'),
     },
     {

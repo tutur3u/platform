@@ -8,6 +8,8 @@ interface Props {
   action: NotificationAction;
   onStart?: () => void;
   onEnd?: () => void;
+  onSuccess?: () => void;
+  onError?: () => void;
   disabled?: boolean;
 }
 
@@ -15,6 +17,8 @@ export default function NotificationAction({
   action: { label, variant, type, payload },
   onStart,
   onEnd,
+  onSuccess,
+  onError,
   disabled,
 }: Props) {
   const router = useRouter();
@@ -33,12 +37,19 @@ export default function NotificationAction({
       accept ? 'accept-invite' : 'decline-invite'
     }`;
 
-    await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
     });
 
+    if (res.ok) {
+      onSuccess?.();
+      onEnd?.();
+      router.refresh();
+      return;
+    }
+
+    onError?.();
     onEnd?.();
-    router.refresh();
   };
 
   const handleClick = () => {

@@ -39,7 +39,7 @@ export default function NotificationActionList({ actions }: Props) {
           action={action}
           disabled={processingAction !== undefined}
           onStart={() => setProcessingAction(action.type)}
-          onEnd={() => setProcessingAction(undefined)}
+          onError={() => setProcessingAction(undefined)}
         />
       ))}
     </div>

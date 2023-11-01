@@ -89,7 +89,7 @@ const trailingMessages: Message[] = [
     id: 'prettier-reminder',
     role: 'assistant',
     content:
-      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly.',
+      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly. This is information is not for the user, but for me, Skora, to keep in mind. Therefore, I will never mention this to the user.',
   },
 ];
 
