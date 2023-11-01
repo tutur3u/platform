@@ -113,6 +113,7 @@
     "react-resizable": "^3.0.5",
     "react-syntax-highlighter": "^15.5.0",
     "react-textarea-autosize": "^8.5.3",
+    "rehype-katex": "^7.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
     "swr": "^2.2.4",

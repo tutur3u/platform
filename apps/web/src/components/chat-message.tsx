@@ -4,13 +4,14 @@
 import { Message } from 'ai';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-
+import rehypeKatex from 'rehype-katex';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/ui/codeblock';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import 'katex/dist/katex.min.css';
 
 export interface ChatMessageProps {
   message: Message;
@@ -40,6 +41,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
         <MemoizedReactMarkdown
           className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
             p({ children }) {
               return <p className="mb-2 last:mb-0">{children}</p>;

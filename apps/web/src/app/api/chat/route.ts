@@ -87,9 +87,9 @@ const leadingMessages: Message[] = [
 const trailingMessages: Message[] = [
   {
     id: 'prettier-reminder',
-    role: 'system',
+    role: 'assistant',
     content:
-      'You must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way.',
+      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly.',
   },
 ];
 
