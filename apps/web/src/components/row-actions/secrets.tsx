@@ -41,7 +41,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete API Configuration',
+        title: 'Failed to delete workspace secret',
         description: data.message,
       });
     }
