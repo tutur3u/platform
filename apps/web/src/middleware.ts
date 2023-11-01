@@ -10,14 +10,10 @@ import type { Database } from '@/types/supabase';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { res, session } = await handleSupabaseAuth({ req });
+  const { res: nextRes, redirect } = handleRedirect({ req, res, session });
 
-  // If current path ends with /login and user is logged in, redirect to home page
-  if (req.nextUrl.pathname.endsWith('/login') && session)
-    return NextResponse.redirect(
-      req.nextUrl.href.replace('/login', '/onboarding')
-    );
-
-  return handleLocale({ req, res });
+  if (redirect) return nextRes;
+  return handleLocale({ req, res: nextRes });
 }
 
 export const config = {
@@ -56,6 +52,39 @@ const handleSupabaseAuth = async ({
   } = await supabase.auth.getSession();
 
   return { res, session };
+};
+
+const handleRedirect = ({
+  req,
+  res,
+  session,
+}: {
+  req: NextRequest;
+  res: NextResponse;
+  session: Session | null;
+}): {
+  res: NextResponse;
+  redirect: boolean;
+} => {
+  // If current path ends with /login and user is logged in, redirect to onboarding page
+  if (req.nextUrl.pathname.endsWith('/login') && session) {
+    const nextRes = NextResponse.redirect(
+      req.nextUrl.href.replace('/login', '/onboarding')
+    );
+
+    return { res: nextRes, redirect: true };
+  }
+
+  // If current path ends with /onboarding and user is not logged in, redirect to login page
+  if (req.nextUrl.pathname.endsWith('/onboarding') && !session) {
+    const nextRes = NextResponse.redirect(
+      req.nextUrl.href.replace('/onboarding', '/login')
+    );
+
+    return { res: nextRes, redirect: true };
+  }
+
+  return { res, redirect: false };
 };
 
 const getSupportedLocale = (locale: string): string | null => {
