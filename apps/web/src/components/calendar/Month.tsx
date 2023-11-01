@@ -69,7 +69,7 @@ export default function Month({ hasGrid, month, year }: MonthProps) {
   const getMonthDays = () => {
     const firstMonday = getFirstMonday();
     const lastDayOfLastWeek = getLastDayOfLastWeek();
-    const days = [];
+    const days: Date[] = [];
     for (
       let i = firstMonday;
       i <= lastDayOfLastWeek;

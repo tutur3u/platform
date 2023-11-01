@@ -1,6 +1,6 @@
 import moment from 'moment';
 import { getLabel } from '../../utils/audit-helper';
-import { AuditLog } from '../../types/primitives/AuditLog';
+import { AuditLog } from '../../types/primitives/audit-log';
 import { User } from '../../types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
 import useSWR from 'swr';

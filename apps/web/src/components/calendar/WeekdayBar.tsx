@@ -24,11 +24,11 @@ const WeekdayBar = () => {
 
   return (
     <div className="flex">
-      <div className="flex w-14 items-center justify-center rounded-tl-lg border border-r-0 border-zinc-300 font-semibold dark:border-zinc-800 md:w-20">
+      <div className="border-foreground/10 flex w-14 items-center justify-center rounded-tl-lg border border-r-0 font-semibold dark:border-zinc-800 md:w-20">
         ICT
       </div>
       <div
-        className={`grid flex-1 rounded-tr-lg border-r border-t border-zinc-300 dark:border-zinc-800 ${getGridCols()}`}
+        className={`border-foreground/10 grid flex-1 rounded-tr-lg border-r border-t dark:border-zinc-800 ${getGridCols()}`}
       >
         {days.map((weekday, index) => (
           <div

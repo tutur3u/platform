@@ -21,7 +21,8 @@ export default async function WorkspaceUsersPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: users, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
+  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/${u.id}` }));
 
   return (
     <DataTable

@@ -2011,10 +2011,13 @@ export interface Database {
       workspace_users: {
         Row: {
           address: string | null;
+          archived: boolean;
+          archived_until: string | null;
           avatar_url: string | null;
           balance: number | null;
           birthday: string | null;
           created_at: string | null;
+          created_by: string | null;
           display_name: string | null;
           email: string | null;
           ethnicity: string | null;
@@ -2029,10 +2032,13 @@ export interface Database {
         };
         Insert: {
           address?: string | null;
+          archived?: boolean;
+          archived_until?: string | null;
           avatar_url?: string | null;
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
+          created_by?: string | null;
           display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
@@ -2047,10 +2053,13 @@ export interface Database {
         };
         Update: {
           address?: string | null;
+          archived?: boolean;
+          archived_until?: string | null;
           avatar_url?: string | null;
           balance?: number | null;
           birthday?: string | null;
           created_at?: string | null;
+          created_by?: string | null;
           display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
@@ -2064,6 +2073,12 @@ export interface Database {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_users_created_by_fkey';
+            columns: ['created_by'];
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_users_ws_id_fkey';
             columns: ['ws_id'];

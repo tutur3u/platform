@@ -22,7 +22,7 @@ import useTranslation from 'next-translate/useTranslation';
 
 const FormSchema = z.object({
   email: z.string().email(),
-  otp: z.string().optional(),
+  otp: z.string(),
 });
 
 export default function LoginForm() {
@@ -31,6 +31,10 @@ export default function LoginForm() {
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
+    defaultValues: {
+      email: '',
+      otp: '',
+    },
   });
 
   const [otpSent, setOtpSent] = useState(false);
@@ -65,12 +69,6 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      // Reset form state
-      form.reset({
-        email: data.email,
-        otp: '',
-      });
-
       // Notify user
       toast({
         title: t('success'),
@@ -99,10 +97,7 @@ export default function LoginForm() {
 
     if (res.ok) {
       router.refresh();
-      toast({
-        title: t('success'),
-        description: t('otp_verified'),
-      });
+      router.push('/onboarding');
     } else {
       setLoading(false);
       toast({
@@ -141,8 +136,8 @@ export default function LoginForm() {
               <FormControl>
                 <Input
                   placeholder={t('email_placeholder')}
-                  disabled={otpSent || loading}
                   {...field}
+                  disabled={otpSent || loading}
                 />
               </FormControl>
 
@@ -154,37 +149,33 @@ export default function LoginForm() {
           )}
         />
 
-        {otpSent && (
-          <FormField
-            control={form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('otp_code')}</FormLabel>
-                <FormControl>
-                  <div className="flex flex-col gap-2 md:flex-row">
-                    <Input placeholder="••••••" {...field} disabled={loading} />
-                    <Button
-                      onClick={() =>
-                        sendOtp({ email: form.getValues('email') })
-                      }
-                      disabled={loading || resendCooldown > 0}
-                      className="md:w-40"
-                      variant="secondary"
-                      type="button"
-                    >
-                      {resendCooldown > 0
-                        ? `${t('resend')} (${resendCooldown})`
-                        : t('resend')}
-                    </Button>
-                  </div>
-                </FormControl>
-                <FormDescription>{t('otp_description')}</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="otp"
+          render={({ field }) => (
+            <FormItem className={otpSent ? '' : 'hidden'}>
+              <FormLabel>{t('otp_code')}</FormLabel>
+              <FormControl>
+                <div className="flex flex-col gap-2 md:flex-row">
+                  <Input placeholder="••••••" {...field} disabled={loading} />
+                  <Button
+                    onClick={() => sendOtp({ email: form.getValues('email') })}
+                    disabled={loading || resendCooldown > 0}
+                    className="md:w-40"
+                    variant="secondary"
+                    type="button"
+                  >
+                    {resendCooldown > 0
+                      ? `${t('resend')} (${resendCooldown})`
+                      : t('resend')}
+                  </Button>
+                </div>
+              </FormControl>
+              <FormDescription>{t('otp_description')}</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button
           type="submit"

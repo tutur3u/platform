@@ -1,9 +1,7 @@
 const defaultColor = 'blue';
 
-export const getTextColor = (color = defaultColor) => {
-  const colors: {
-    [key: string]: string;
-  } = {
+export const getTextColor = (color = defaultColor): string => {
+  const colors: Record<string, string> = {
     red: 'text-red-200',
     blue: 'text-blue-200',
     green: 'text-green-200',
@@ -19,10 +17,8 @@ export const getTextColor = (color = defaultColor) => {
   return colors[color];
 };
 
-export const getBackgroundColor = (color = defaultColor) => {
-  const colors: {
-    [key: string]: string;
-  } = {
+export const getBackgroundColor = (color = defaultColor): string => {
+  const colors: Record<string, string> = {
     red: 'bg-red-300/20',
     blue: 'bg-blue-300/20',
     green: 'bg-green-300/20',
@@ -38,10 +34,8 @@ export const getBackgroundColor = (color = defaultColor) => {
   return colors[color];
 };
 
-export const getShadowColor = (color = defaultColor) => {
-  const colors: {
-    [key: string]: string;
-  } = {
+export const getShadowColor = (color = defaultColor): string => {
+  const colors: Record<string, string> = {
     red: 'shadow-red-300/20',
     blue: 'shadow-blue-300/20',
     green: 'shadow-green-300/20',
@@ -57,10 +51,8 @@ export const getShadowColor = (color = defaultColor) => {
   return colors[color];
 };
 
-export const getBorderColor = (color = defaultColor) => {
-  const colors: {
-    [key: string]: string;
-  } = {
+export const getBorderColor = (color = defaultColor): string => {
+  const colors: Record<string, string> = {
     red: 'border-red-300',
     blue: 'border-blue-300',
     green: 'border-green-300',
@@ -76,7 +68,7 @@ export const getBorderColor = (color = defaultColor) => {
   return colors[color];
 };
 
-export const getCardColor = (color = defaultColor) => {
+export const getCardColor = (color = defaultColor): string => {
   const backgroundColor = getBackgroundColor(color);
   const borderColor = getBorderColor(color);
   const shadowColor = getShadowColor(color);
@@ -85,7 +77,7 @@ export const getCardColor = (color = defaultColor) => {
   return `${backgroundColor} ${borderColor} ${shadowColor} ${textColor}`;
 };
 
-export const getRoleColor = (role: string) => {
+export const getRoleColor = (role: string): string => {
   switch (role) {
     case 'you':
       return 'border-green-500/20 bg-green-500/10 dark:border-green-300/10 dark:bg-green-300/10 text-green-600 dark:text-green-300';

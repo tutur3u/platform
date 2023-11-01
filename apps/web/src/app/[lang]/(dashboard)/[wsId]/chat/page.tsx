@@ -14,7 +14,7 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
-  const secrets = await getSecrets(wsId, ['ENABLE_CHAT']);
+  const secrets = await getSecrets(wsId, ['ENABLE_CHAT'], true);
 
   const verifySecret = (secret: string, value: string) =>
     secrets.find((s) => s.name === secret)?.value === value;
@@ -22,5 +22,5 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const enableChat = verifySecret('ENABLE_CHAT', 'true');
   if (!enableChat) redirect(`/${wsId}`);
 
-  return <Chat id="123" />;
+  return <Chat id="123" wsId={wsId} />;
 }

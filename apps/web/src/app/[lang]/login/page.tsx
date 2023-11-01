@@ -2,18 +2,10 @@ import Link from 'next/link';
 import LoginForm from './form';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { redirect } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
-import { getWorkspaces } from '@/lib/workspace-helper';
-
-export const dynamic = 'force-dynamic';
 
 export default async function Login() {
   const { t } = useTranslation('auth');
-  const workspaces = await getWorkspaces(true);
-
-  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
-  if (workspaces?.length === 0) redirect('/onboarding');
 
   return (
     <div className="relative flex w-full flex-col items-center justify-center p-8">

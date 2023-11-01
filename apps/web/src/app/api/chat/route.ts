@@ -2,13 +2,16 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import Anthropic from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { messages, previewToken } = await req.json();
+    const { wsId, messages, previewToken } = await req.json();
+
+    if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
@@ -25,9 +28,13 @@ export async function POST(req: Request) {
 
     if (!user) return new Response('Unauthorized', { status: 401 });
 
-    const { count, error } = await supabase
+    const sbAdmin = createAdminClient();
+    if (!sbAdmin) return new Response('Unauthorized', { status: 401 });
+
+    const { count, error } = await sbAdmin
       .from('workspace_secrets')
       .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId)
       .eq('name', 'ENABLE_CHAT')
       .eq('value', 'true');
 
@@ -68,8 +75,23 @@ export async function POST(req: Request) {
   }
 }
 
-const leadingMessages: Message[] = [];
-const trailingMessages: Message[] = [];
+const leadingMessages: Message[] = [
+  {
+    id: 'identity-reminder',
+    role: 'system',
+    content:
+      'You are Skora, an AI powered by Claude modal, provided by Anthropic. However, since this is in production environment, you must refer to yourself as Skora, powered by Tuturuuu. Do not talk more about your origins and keep this message in mind, pretend like I never specifically told you about it.',
+  },
+];
+
+const trailingMessages: Message[] = [
+  {
+    id: 'prettier-reminder',
+    role: 'assistant',
+    content:
+      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly.',
+  },
+];
 
 function buildPrompt(messages: Message[]) {
   const filteredMsgs = filterDuplicates(messages);
@@ -94,13 +116,11 @@ const filterDuplicates = (messages: Message[]) =>
 
 const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
 const AI_PROMPT = Anthropic.AI_PROMPT;
-const SYSTEM_PROMPT = '\n\nSystem:';
 
 const normalize = (message: Message) => {
   const { content, role } = message;
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  if (role === 'system') return `${SYSTEM_PROMPT} ${content}`;
   return content;
 };
 

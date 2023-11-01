@@ -14,14 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
-import {
-  ActivitySquare,
-  Globe,
-  Palette,
-  Settings,
-  User,
-  UserPlus,
-} from 'lucide-react';
+import { Globe, Palette, Settings, User } from 'lucide-react';
 import { Suspense } from 'react';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import Link from 'next/link';
@@ -29,17 +22,15 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import useTranslation from 'next-translate/useTranslation';
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
+import DashboardMenuItem from './dashboard-menu-item';
 import { getWorkspaces } from '@/lib/workspace-helper';
+import InviteMembersMenuItem from './invite-members-menu-item';
 
-interface Props {
-  wsId?: string;
-}
-
-export async function UserNav({ wsId }: Props) {
+export async function UserNav() {
   const { t } = useTranslation('common');
 
   const user = await getCurrentUser();
-  const workspaces = await getWorkspaces(true);
+  const workspaces = await getWorkspaces();
 
   return (
     <DropdownMenu modal={false}>
@@ -71,19 +62,7 @@ export async function UserNav({ wsId }: Props) {
             </p>
           </div>
         </DropdownMenuLabel>
-        {wsId === undefined && workspaces?.[0]?.id !== undefined && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <Link href={`/${workspaces[0].id}`}>
-                <DropdownMenuItem className="cursor-pointer">
-                  <ActivitySquare className="mr-2 h-4 w-4" />
-                  <span>{t('dashboard')}</span>
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuGroup>
-          </>
-        )}
+        <DashboardMenuItem defaultWorkspaceId={workspaces?.[0]?.id} />
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>
@@ -118,25 +97,8 @@ export async function UserNav({ wsId }: Props) {
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
+        <InviteMembersMenuItem />
         <DropdownMenuSeparator />
-        {wsId !== undefined && (
-          <>
-            <DropdownMenuGroup>
-              <Link href={`/${wsId}/members`}>
-                <DropdownMenuItem className="cursor-pointer">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  <span>{t('invite_users')}</span>
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        {/* <DropdownMenuItem disabled>
-          <LifeBuoy className="mr-2 h-4 w-4" />
-          <span>Support</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator /> */}
         <LogoutDropdownItem />
       </DropdownMenuContent>
     </DropdownMenu>

@@ -5,6 +5,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { Database } from '@/types/supabase';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export async function getWorkspace(id?: string) {
   if (!id) return null;
@@ -129,8 +130,16 @@ export async function enforceRootWorkspaceAdmin(
   }
 }
 
-export async function getSecrets(wsId: string, requiredSecrets?: string[]) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+export async function getSecrets(
+  wsId: string,
+  requiredSecrets?: string[],
+  forceAdmin?: boolean
+) {
+  const supabase = forceAdmin
+    ? createAdminClient()
+    : createServerComponentClient<Database>({ cookies });
+
+  if (!supabase) throw new Error('Supabase client not initialized');
 
   const queryBuilder = supabase
     .from('workspace_secrets')

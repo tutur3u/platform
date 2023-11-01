@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { getFeatures } from './features';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import { getWorkspaces } from '@/lib/workspace-helper';
 
 export default async function MarketingPage() {
   const { t } = useTranslation('home');
 
   const features = getFeatures(t);
+  const workspaces = await getWorkspaces(true);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -33,7 +35,7 @@ export default async function MarketingPage() {
           <div className="group relative inline-flex">
             <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
             <Link
-              href="/login"
+              href={workspaces?.[0]?.id ? `/${workspaces?.[0]?.id}` : '/login'}
               className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all dark:from-rose-400/60 dark:to-orange-300/60 md:text-lg"
             >
               {t('get-started')}

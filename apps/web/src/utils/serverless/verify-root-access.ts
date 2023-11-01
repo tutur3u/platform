@@ -1,11 +1,11 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { ROOT_WORKSPACE_ID } from '../../constants/common';
 
 export const verifyRootAccess = async (
   req: NextApiRequest,
   res: NextApiResponse
-) => {
+): Promise<boolean> => {
   const supabase = createPagesServerClient({
     req,
     res,
@@ -17,6 +17,10 @@ export const verifyRootAccess = async (
     .eq('id', ROOT_WORKSPACE_ID)
     .single();
 
-  if (error) return res.status(401).json({ error: 'Unauthorized' });
+  if (error) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return false;
+  }
+
   return true;
 };

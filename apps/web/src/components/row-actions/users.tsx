@@ -11,13 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
+import { User } from '@/types/primitives/User';
 
-interface UserRowActionsProps<TData> {
-  row: Row<TData>;
+interface UserRowActionsProps {
+  row: Row<User>;
+  href?: string;
 }
 
-export function UserRowActions<TData>({} // row,
-: UserRowActionsProps<TData>) {
+export function UserRowActions({ href }: UserRowActionsProps) {
   // const task = taskSchema.parse(row.original);
 
   return (
@@ -32,7 +34,11 @@ export function UserRowActions<TData>({} // row,
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem disabled>View</DropdownMenuItem>
+        {href && (
+          <Link href={href}>
+            <DropdownMenuItem>View</DropdownMenuItem>
+          </Link>
+        )}
         <DropdownMenuItem disabled>Edit</DropdownMenuItem>
         {/* <DropdownMenuItem>Make a copy</DropdownMenuItem> */}
         {/* <DropdownMenuItem>Favorite</DropdownMenuItem> */}

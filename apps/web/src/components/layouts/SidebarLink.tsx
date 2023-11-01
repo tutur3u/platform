@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAppearance } from '../../hooks/useAppearance';
 import { DEV_MODE } from '../../constants/common';
-import { closeSidebarOnMobile } from '../../utils/responsive-helper';
 
 interface SidebarLinkProps {
   href?: string;
@@ -70,19 +69,18 @@ export default function SidebarLink({
 
   return (
     <Link
+      className={`font-semibold ${classNames?.root}`}
       href={disabled ? '#' : href || '#'}
       onClick={(e) => {
         if (disabled) e.preventDefault();
         if (onClick) onClick();
-        closeSidebarOnMobile({ window, setSidebar, disableAutoClose });
       }}
-      className={`font-semibold ${classNames?.root}`}
     >
       <Tooltip
-        label={label}
-        position="right"
-        offset={16}
         disabled={!showTooltip}
+        label={label}
+        offset={16}
+        position="right"
       >
         <div
           className={`flex items-center gap-2 rounded ${
@@ -95,7 +93,7 @@ export default function SidebarLink({
                 ? `bg-zinc-500/10 text-zinc-900 dark:bg-zinc-500/10 dark:text-zinc-100 ${
                     disableBorder
                       ? ''
-                      : 'border border-zinc-300 dark:border-zinc-300/10'
+                      : 'border-foreground/10 border dark:border-zinc-300/10'
                   }`
                 : `text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
                     disableBorder ? '' : 'border border-transparent'
@@ -105,19 +103,19 @@ export default function SidebarLink({
             left && isExpanded ? 'justify-start' : 'justify-center'
           } ${classNames?.innerRoot}`}
         >
-          {showIcon && (
+          {showIcon ? (
             <div className="flex-none">
               {isActive
                 ? activeIcon ?? inactiveIcon
                 : inactiveIcon ?? activeIcon}
             </div>
-          )}
-          {showLabel && !showTooltip && (
+          ) : null}
+          {showLabel && !showTooltip ? (
             <>
               <div className="line-clamp-1 w-full text-sm">{label}</div>
               {trailingIcon}
             </>
-          )}
+          ) : null}
         </div>
       </Tooltip>
     </Link>

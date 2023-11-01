@@ -4,7 +4,7 @@ import Filters from './filters';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AuditLog } from '@/types/primitives/AuditLog';
+import { AuditLog } from '@/types/primitives/audit-log';
 import LogList from './log-list';
 import { Separator } from '@/components/ui/separator';
 
@@ -35,7 +35,7 @@ export default async function WorkspaceActivitiesPage({
     <>
       {ws?.id && (
         <>
-          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+          <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
             <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
             <p className="text-zinc-700 dark:text-zinc-400">
               {t('ws-activities:description')}
