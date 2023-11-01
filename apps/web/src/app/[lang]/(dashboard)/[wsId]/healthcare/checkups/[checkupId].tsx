@@ -235,7 +235,6 @@ export default function CheckupDetailsPage() {
     });
   };
 
-
   if (!ws) return null;
 
   return (

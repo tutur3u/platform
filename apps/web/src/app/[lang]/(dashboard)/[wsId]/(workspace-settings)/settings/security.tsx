@@ -6,18 +6,18 @@ import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
 interface Props {
-  workspace: Workspace;
+  workspace?: Workspace | null;
 }
 
 export default function Security({ workspace }: Props) {
-  const isSystemWs = workspace.id === '00000000-0000-0000-0000-000000000000';
+  const isSystemWs = workspace?.id === '00000000-0000-0000-0000-000000000000';
 
   const { t } = useTranslation('ws-settings');
 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (isSystemWs) return;
+    if (isSystemWs || !workspace) return;
 
     setIsDeleting(true);
     await deleteWorkspace(workspace.id);
@@ -25,7 +25,7 @@ export default function Security({ workspace }: Props) {
   };
 
   return (
-    <div className="flex flex-col rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+    <div className="border-foreground/10 bg-foreground/5 flex flex-col rounded-lg border p-4">
       <div className="mb-1 text-2xl font-bold">{t('security')}</div>
       <div className="mb-4 font-semibold text-zinc-500">
         {t('security_description')}
@@ -33,8 +33,8 @@ export default function Security({ workspace }: Props) {
 
       <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
         <Button
-          onClick={isSystemWs ? undefined : handleDelete}
-          disabled={isSystemWs}
+          onClick={handleDelete}
+          disabled={!workspace || isSystemWs}
           className={`${
             isSystemWs
               ? 'cursor-not-allowed opacity-50'

@@ -34,8 +34,8 @@ import { UserSearchCombobox } from './user-search-combobox';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  wsId: string;
-  currentUser: User;
+  wsId?: string;
+  currentUser?: User;
   label?: string;
   variant?: 'outline';
 }
@@ -61,7 +61,7 @@ export default function InviteMemberButton({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      wsId,
+      wsId: wsId || '',
       userId: '',
       role: '',
       accessLevel: 'MEMBER',
@@ -133,7 +133,7 @@ export default function InviteMemberButton({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={variant}>
+        <Button variant={variant} disabled={!wsId || !currentUser}>
           <UserPlus className="mr-2 h-5 w-5" />
           {label}
         </Button>
@@ -218,7 +218,7 @@ export default function InviteMemberButton({
                       </FormItem>
                     )}
                     disabled={
-                      currentUser.role === 'ADMIN' && user.role === 'OWNER'
+                      currentUser?.role === 'ADMIN' && user.role === 'OWNER'
                     }
                   />
 
@@ -238,7 +238,7 @@ export default function InviteMemberButton({
                             onValueChange={field.onChange}
                             options={
                               user.role === 'OWNER' ||
-                              currentUser.role === 'OWNER'
+                              currentUser?.role === 'OWNER'
                                 ? [
                                     { value: 'MEMBER', label: 'Member' },
                                     { value: 'ADMIN', label: 'Admin' },
@@ -254,8 +254,8 @@ export default function InviteMemberButton({
                             }
                             classNames={{ root: 'w-full' }}
                             disabled={
-                              currentUser.role === 'MEMBER' ||
-                              (currentUser.role === 'ADMIN' &&
+                              currentUser?.role === 'MEMBER' ||
+                              (currentUser?.role === 'ADMIN' &&
                                 user.role === 'OWNER')
                             }
                           />

@@ -4,13 +4,14 @@
 import { Message } from 'ai';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-
+import rehypeKatex from 'rehype-katex';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/ui/codeblock';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import 'katex/dist/katex.min.css';
 
 export interface ChatMessageProps {
   message: Message;
@@ -18,10 +19,7 @@ export interface ChatMessageProps {
 
 export function ChatMessage({ message, ...props }: ChatMessageProps) {
   return (
-    <div
-      className={cn('group relative mb-4 flex items-start md:-ml-12')}
-      {...props}
-    >
+    <div className={cn('group relative mb-4 flex items-start')} {...props}>
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow',
@@ -39,10 +37,11 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
           </Avatar>
         )}
       </div>
-      <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
+      <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
           className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
             p({ children }) {
               return <p className="mb-2 last:mb-0">{children}</p>;
@@ -60,13 +59,23 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
 
               const match = /language-(\w+)/.exec(className || '');
 
-              return (
+              return match ? (
                 <CodeBlock
                   key={Math.random()}
                   language={(match && match[1]) || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />
+              ) : (
+                <code
+                  className={cn(
+                    'bg-foreground/10 mr-0.5 rounded p-1 text-blue-600 dark:text-blue-300',
+                    className
+                  )}
+                  {...props}
+                >
+                  {children}
+                </code>
               );
             },
           }}

@@ -10,7 +10,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import AuditLogCard from '../../../../../components/cards/AuditLogCard';
 import useSWR from 'swr';
 import OperationMultiSelector from '../../../../../components/selectors/OperationMultiSelector';
-import { AuditLog } from '../../../../../types/primitives/AuditLog';
+import { AuditLog } from '../../../../../types/primitives/audit-log';
 import useTranslation from 'next-translate/useTranslation';
 import { useUser } from '../../../../../hooks/useUser';
 import WorkspaceMultiSelector from '../../../../../components/selectors/WorkspaceMultiSelector';
@@ -52,7 +52,7 @@ export default function UserActivitiesPage() {
     <>
       {user?.id && (
         <>
-          <div className="rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-800/80 dark:bg-zinc-900">
+          <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
             <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
             <p className="text-zinc-700 dark:text-zinc-400">
               {t('ws-activities:description')}

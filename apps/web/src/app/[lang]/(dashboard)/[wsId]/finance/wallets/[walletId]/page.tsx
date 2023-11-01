@@ -188,7 +188,7 @@ export default function WalletDetailsPage({
           Object.entries(transactionsByDate).map(([date, data]) => (
             <div
               key={date}
-              className="group rounded-lg border border-zinc-300 bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
+              className="border-foreground/10 group rounded-lg border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
             >
               <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 dark:text-zinc-300 md:flex-row">
                 <div className="flex gap-2">

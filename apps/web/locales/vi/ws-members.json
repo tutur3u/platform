@@ -37,5 +37,6 @@
   "update-error": "Đã xảy ra lỗi khi cập nhật thành viên",
   "member": "Thành viên",
   "admin": "Quản trị viên",
-  "owner": "Chủ sở hữu"
+  "owner": "Chủ sở hữu",
+  "you": "Bạn"
 }

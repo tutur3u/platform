@@ -9,6 +9,8 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import WorkspaceSelect from './workspace-select';
 import LogoTitle from './logo-title';
+import { Suspense } from 'react';
+import { getWorkspaces } from '@/lib/workspace-helper';
 
 export default async function Navbar() {
   const supabase = createServerComponentClient({ cookies });
@@ -16,6 +18,8 @@ export default async function Navbar() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const workspaces = await getWorkspaces(true);
 
   return (
     <div id="navbar" className="fixed inset-x-0 top-0 z-10">
@@ -33,21 +37,29 @@ export default async function Navbar() {
               <LogoTitle />
             </Link>
 
-            <WorkspaceSelect />
+            <Suspense
+              fallback={
+                <div className="bg-foreground/5 h-8 w-32 animate-pulse rounded-lg" />
+              }
+            >
+              {user ? <WorkspaceSelect workspaces={workspaces} /> : null}
+            </Suspense>
           </div>
 
           <div className="flex items-center gap-2">
-            {user ? (
-              <>
-                <NotificationPopover />
-                <UserNav />
-              </>
-            ) : (
-              <>
-                <GetStartedButton />
-                <ThemeToggle />
-              </>
-            )}
+            <Suspense>
+              {user ? (
+                <>
+                  <NotificationPopover />
+                  <UserNav />
+                </>
+              ) : (
+                <>
+                  <GetStartedButton />
+                  <ThemeToggle />
+                </>
+              )}
+            </Suspense>
           </div>
         </div>
       </div>

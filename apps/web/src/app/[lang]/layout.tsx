@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/constants/configs';
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import GoogleAnalytics from '@/components/google-analytics';
 import Navbar from './navbar';
@@ -54,10 +54,6 @@ export async function generateMetadata({
       },
     ],
     creator: 'vohoangphuc',
-    themeColor: [
-      { media: '(prefers-color-scheme: light)', color: 'white' },
-      { media: '(prefers-color-scheme: dark)', color: 'black' },
-    ],
     openGraph: {
       type: 'website',
       locale: 'en_US',
@@ -81,8 +77,6 @@ export async function generateMetadata({
       images: [siteConfig.ogImage],
       creator: '@tutur3u',
     },
-    viewport:
-      'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, shrink-to-fit=no',
     icons: {
       icon: '/favicon.ico',
       shortcut: '/favicon-16x16.png',
@@ -91,6 +85,17 @@ export async function generateMetadata({
     manifest: `/site.webmanifest`,
   };
 }
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+  ],
+  colorScheme: 'dark light',
+};
 
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];

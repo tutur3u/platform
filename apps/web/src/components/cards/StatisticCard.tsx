@@ -2,24 +2,15 @@ import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 interface Props {
-  title: string;
+  title?: string;
   value?: string | number | null;
   href?: string;
-  loading?: boolean;
   className?: string;
   onClick?: () => void;
 }
 
-const StatisticCard = ({
-  title,
-  value,
-  href,
-  loading,
-  className,
-  onClick,
-}: Props) => {
+const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
   const { t } = useTranslation();
-  const loadingLabel = t('common:loading');
 
   const generateOuterColor = (enableHoverEffect: boolean) =>
     `border-foreground/20 ${
@@ -45,7 +36,7 @@ const StatisticCard = ({
               : ''
           }`}
         >
-          {loading ? loadingLabel : value != null ? value : 'N/A'}
+          {value != null ? value : 'N/A'}
         </div>
       </Link>
     );
@@ -65,7 +56,7 @@ const StatisticCard = ({
             : ''
         }`}
       >
-        {loading ? loadingLabel : value != null ? value : 'N/A'}
+        {value != null ? value : 'N/A'}
       </div>
     </button>
   );

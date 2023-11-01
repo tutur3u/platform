@@ -14,6 +14,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import Image from 'next/image';
+import Link from 'next/link';
+import { UserRowActions } from '@/components/row-actions/users';
 
 export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   {
@@ -72,7 +74,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('full_name')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-[8rem]">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
           <TooltipProvider>
@@ -107,7 +109,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
         ) : (
           row.getValue('full_name') || row.getValue('display_name') || '-'
         )}
-      </div>
+      </Link>
     ),
   },
   {
@@ -116,7 +118,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       <DataTableColumnHeader column={column} title={t('display_name')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-[8rem]">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
           <TooltipProvider>
@@ -149,7 +151,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
         ) : (
           row.getValue('display_name') || '-'
         )}
-      </div>
+      </Link>
     ),
   },
   {
@@ -319,8 +321,8 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   //     return value.includes(row.getValue(id));
   //   },
   // },
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => <UserRowActions row={row} />,
-  // },
+  {
+    id: 'actions',
+    cell: ({ row }) => <UserRowActions row={row} href={row.original.href} />,
+  },
 ];

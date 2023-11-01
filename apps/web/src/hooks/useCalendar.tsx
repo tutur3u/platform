@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useWorkspaces } from './useWorkspaces';
 import useSWR, { mutate as swrMutate } from 'swr';
-import { CalendarEvent } from '../types/primitives/CalendarEvent';
+import { CalendarEvent } from '../types/primitives/calendar-event';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import { useLocalStorage } from '@mantine/hooks';
@@ -388,7 +388,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const enable4DayView = useCallback(() => {
     if (availableViews.find((v) => v.value === '4-days')?.disabled) return;
 
-    const dates = [];
+    const dates: Date[] = [];
 
     for (let i = 0; i < 4; i++) {
       const newDate = new Date(date);
@@ -413,7 +413,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
     const getWeekdays = () => {
       const monday = getMonday();
-      const dates = [];
+      const dates: Date[] = [];
 
       for (let i = 0; i < 7; i++) {
         const newDate = new Date(monday);

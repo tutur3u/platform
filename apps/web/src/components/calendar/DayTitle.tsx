@@ -13,7 +13,7 @@ export default function DayTitle({ date, weekday }: DayTitleProps) {
 
   return (
     <div
-      className={`border-b border-l border-zinc-300 text-center font-semibold dark:border-zinc-800 ${
+      className={`border-foreground/10 border-b border-l text-center font-semibold dark:border-zinc-800 ${
         view !== 'day' ? 'p-1' : 'md:p-1'
       }`}
     >

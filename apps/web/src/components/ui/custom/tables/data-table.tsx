@@ -34,7 +34,7 @@ interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
   columnGenerator?: (t: Translate) => ColumnDef<TData, TValue>[];
   namespace?: string;
-  data: TData[];
+  data?: TData[];
   count?: number;
   defaultVisibility?: VisibilityState;
 }
@@ -60,7 +60,7 @@ export function DataTable<TData, TValue>({
   const pageSize = Number(query.get('pageSize')) || 10;
 
   const table = useReactTable({
-    data,
+    data: data || [],
     columns: columnGenerator ? columnGenerator(t) : columns || [],
     state: {
       sorting,
@@ -135,7 +135,9 @@ export function DataTable<TData, TValue>({
                   colSpan={columnGenerator?.(t)?.length || columns?.length || 1}
                   className="h-24 text-center"
                 >
-                  {t('common:no-results')}.
+                  {data
+                    ? `${t('common:no-results')}.`
+                    : `${t('common:loading')}...`}
                 </TableCell>
               </TableRow>
             )}
