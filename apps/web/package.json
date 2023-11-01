@@ -83,7 +83,7 @@
     "@tiptap/pm": "^2.1.12",
     "@tiptap/react": "^2.1.12",
     "@tiptap/starter-kit": "^2.1.12",
-    "@upstash/qstash": "^2.1.8",
+    "@upstash/qstash": "^2.1.9",
     "@vercel/analytics": "^1.1.1",
     "@vercel/toolbar": "^0.1.5",
     "ai": "^2.2.20",
