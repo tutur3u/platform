@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import Link from 'next/link';
+import { UserRowActions } from '@/components/row-actions/users';
 
 export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   {
@@ -320,8 +321,8 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   //     return value.includes(row.getValue(id));
   //   },
   // },
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => <UserRowActions row={row} />,
-  // },
+  {
+    id: 'actions',
+    cell: ({ row }) => <UserRowActions row={row} href={row.original.href} />,
+  },
 ];
