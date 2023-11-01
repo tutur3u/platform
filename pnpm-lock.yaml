@@ -201,8 +201,8 @@ importers:
         specifier: ^2.1.12
         version: 2.1.12(@tiptap/pm@2.1.12)
       '@upstash/qstash':
-        specifier: ^2.1.8
-        version: 2.1.8
+        specifier: ^2.1.9
+        version: 2.1.9
       '@vercel/analytics':
         specifier: ^1.1.1
         version: 1.1.1
@@ -3547,8 +3547,8 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  /@upstash/qstash@2.1.8:
-    resolution: {integrity: sha512-p8PQ6fE1ljhnrHmP5iQiqZAVf3ljFoC4/i8f2usLQ75Emq1cCiDHvW8u/J/U/N0zCLewxxA1g1W5bGJ7+5iKyQ==}
+  /@upstash/qstash@2.1.9:
+    resolution: {integrity: sha512-Wh00p4yWpOk+UhrrYxmLJpYA08E4QISEWnd3iPLI8yZdcl0yK8lvAOgocAVFNm54k05K/eOLKvPWvupPmEIBzw==}
     dependencies:
       crypto-js: 4.2.0
       jose: 4.15.4
