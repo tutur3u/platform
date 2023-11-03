@@ -37,14 +37,14 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
   });
 
   const [previewTokenDialog, setPreviewTokenDialog] = useState(false);
-
-  const [previewTokenInput, setPreviewTokenInput] = useState(
-    previewToken ?? ''
-  );
+  const [previewTokenInput, setPreviewTokenInput] = useState(previewToken);
 
   useEffect(() => {
-    // after 2 seconds, if there is no token, show dialog
-  }, [previewToken]);
+    // Don't show the dialog if the key is configured
+    // on the server or the a preview token is set
+    if (hasKey || previewToken) return;
+    setPreviewTokenDialog(true);
+  }, [previewToken, hasKey]);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({

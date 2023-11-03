@@ -23,7 +23,6 @@ export default async function AIPage({ params: { wsId } }: Props) {
   if (!enableChat) redirect(`/${wsId}`);
 
   const hasKey = hasAnthropicKey();
-
   return <Chat id="123" wsId={wsId} hasKey={hasKey} />;
 }
 
