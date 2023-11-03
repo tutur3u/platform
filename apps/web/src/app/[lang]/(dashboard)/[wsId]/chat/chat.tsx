@@ -20,6 +20,10 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
+import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   id?: string;
@@ -29,7 +33,8 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
-  // const { t } = useTranslation('ai-chat');
+  const { t } = useTranslation('ai-chat');
+  const router = useRouter();
 
   const [previewToken, setPreviewToken] = useLocalStorage({
     key: 'ai-token',
@@ -48,10 +53,11 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
+      id,
       initialMessages,
-      // id,
+      api: '/api/chat/ai',
       body: {
-        // id,
+        id,
         wsId,
         previewToken,
       },
@@ -65,7 +71,7 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
       },
     });
 
-  // const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(true);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -74,20 +80,42 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
     if (inputRef.current) inputRef.current.focus();
   };
 
+  const createChat = async (input: string) => {
+    const res = await fetch(`/api/chat`, {
+      method: 'POST',
+      body: JSON.stringify({
+        message: input,
+      }),
+    });
+
+    if (!res.ok) {
+      toast({
+        title: 'Something went wrong',
+        description: res.statusText,
+      });
+      return;
+    }
+
+    const { id } = await res.json();
+    if (id) router.push(`/${wsId}/chat/${id}`);
+  };
+
   return (
     <>
-      {/* <div className="relative flex">
+      <div className="relative flex">
         <div
           id="chat-sidebar"
-          className={`absolute w-full max-w-xs rounded-lg border transition-all duration-500 ${
-            collapsed ? 'border-transparent' : 'border-foreground/5 p-2'
+          className={`bg-background static z-10 w-full rounded-lg border transition-all duration-500 md:absolute md:max-w-xs ${
+            collapsed
+              ? 'border-transparent bg-transparent'
+              : 'border-foreground/5 p-2'
           }`}
         >
           <div className="flex w-full gap-2">
             <Button
               size="icon"
               className={`flex-none ${
-                collapsed ? 'opacity-50 transition hover:opacity-100' : ''
+                collapsed ? 'transition hover:opacity-100' : ''
               }`}
               onClick={() => setCollapsed((c) => !c)}
             >
@@ -101,9 +129,11 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
             <Button
               variant="secondary"
               className={`w-full transition duration-300 ${
-                collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+                collapsed
+                  ? 'pointer-events-none hidden opacity-0 disabled:opacity-0 md:block'
+                  : 'opacity-100'
               }`}
-              disabled={!collapsed}
+              disabled={collapsed}
             >
               <div className="line-clamp-1">{t('new_chat')}</div>
             </Button>
@@ -111,19 +141,21 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
 
           <div
             className={`transition duration-300 ${
-              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+              collapsed
+                ? 'pointer-events-none hidden opacity-0 md:block'
+                : 'opacity-100'
             }`}
           >
             <Separator className="my-2" />
-            <Button className="w-full" disabled>
+            <Button className="w-full" disabled={collapsed}>
               {t('default_chat')}
             </Button>
           </div>
         </div>
-      </div> */}
+      </div>
 
       <div className={cn('pb-32 pt-4 md:pt-10', className)}>
-        {messages.length ? (
+        {id && messages.length ? (
           <>
             <ChatList
               messages={messages.map((message) => {
@@ -161,6 +193,7 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
         input={input}
         inputRef={inputRef}
         setInput={setInput}
+        createChat={createChat}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
