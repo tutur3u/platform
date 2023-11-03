@@ -25,9 +25,18 @@ export const config = {
      * - _next/image (image optimization files)
      * - media (media files)
      * - favicon.ico (favicon file)
+     * - favicon-16x16.png (favicon file)
+     * - favicon-32x32.png (favicon file)
+     * - apple-touch-icon.png (favicon file)
+     * - android-chrome-192x192.png (favicon file)
+     * - android-chrome-512x512.png (favicon file)
+     * - robots.txt (SEO)
+     * - sitemap.xml (SEO)
+     * - site.webmanifest (SEO)
      * - monitoring (analytics)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|monitoring|media).*)',
+
+    '/((?!api|_next/static|_next/image|media|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|robots.txt|sitemap.xml|site.webmanifest|monitoring).*)',
   ],
 };
 
