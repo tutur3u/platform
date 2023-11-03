@@ -159,8 +159,8 @@ importers:
         specifier: ^7.77.0
         version: 7.77.0(encoding@0.1.13)(next@14.0.1)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
-        specifier: ^0.8.4
-        version: 0.8.4(@supabase/supabase-js@2.38.4)
+        specifier: ^0.8.5
+        version: 0.8.5(@supabase/supabase-js@2.38.4)
       '@supabase/auth-helpers-react':
         specifier: ^0.4.2
         version: 0.4.2(@supabase/supabase-js@2.38.4)
@@ -2727,8 +2727,8 @@ packages:
       - supports-color
     dev: false
 
-  /@supabase/auth-helpers-nextjs@0.8.4(@supabase/supabase-js@2.38.4):
-    resolution: {integrity: sha512-2hCsxVwxV392d1B9qM6orY17rl8kUk40C8p0amMBt2jd4m0AuZo2yaLBqfmS2TdJOAAfo+8mI0b+4bNM16CuzA==}
+  /@supabase/auth-helpers-nextjs@0.8.5(@supabase/supabase-js@2.38.4):
+    resolution: {integrity: sha512-+TGa+gmOdFAyiKTO2WhTiLxyuM8TzSeoIFygvyGCmgQseEFnSOxoJkBC1Mth7Q+7GxDMMZBFsd/nMQ/OROXf5w==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
