@@ -12,6 +12,7 @@
     "OPENAI_API_KEY",
     "BASE_URL",
     "API_URL",
+    "ANALYZE",
     "NODE_ENV"
   ],
   "pipeline": {
