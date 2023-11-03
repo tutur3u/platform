@@ -14,11 +14,11 @@ const exampleMessages = [
   },
   {
     heading: 'Explain to a 5th grader',
-    message: `Explain the following concept like I'm a fifth grader: \n\n`,
+    message: `Explain the following concepts like I'm a fifth grader: \n\n`,
   },
   {
     heading: 'Write a poem',
-    message: `Write a poem about the following topic: \n\n`,
+    message: `Write a poem about the following topics: \n\n`,
   },
   {
     heading: 'Summarize an article',
