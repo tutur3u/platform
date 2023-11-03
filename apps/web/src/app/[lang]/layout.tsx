@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { siteConfig } from '@/constants/configs';
 import { Metadata, Viewport } from 'next';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import GoogleAnalytics from '@/components/google-analytics';
 import Navbar from './navbar';
 import NavbarPadding from './navbar-padding';
 import { StaffToolbar } from './staff-toolbar';
@@ -111,7 +110,6 @@ export default async function RootLayout({ children, params }: Props) {
         )}
       >
         <VercelAnalytics />
-        <GoogleAnalytics />
         <Providers attribute="class" defaultTheme="dark" enableSystem>
           <Navbar />
           <NavbarPadding>{children}</NavbarPadding>
