@@ -391,8 +391,8 @@ importers:
         specifier: ^8.4.31
         version: 8.4.31
       supabase:
-        specifier: ^1.110.2
-        version: 1.110.2
+        specifier: ^1.110.3
+        version: 1.110.3
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -8586,8 +8586,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.110.2:
-    resolution: {integrity: sha512-kgZDjSqmbI2CUmw2pwk30ifivcAUFAtvBrzFyE4QNVGvuEntdU0kpS8eUTgbiCsz80A54Sizrtu9lnl7f1MzBQ==}
+  /supabase@1.110.3:
+    resolution: {integrity: sha512-ASPAsr3sUBx6dwNNoJoQ/sDJ0XoZUBELjV3Dcs9H24mEd3zhbJKKc+ZAY6xVZXxueQc8wM2hHySGNc0+Ow5ltg==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
