@@ -33,7 +33,6 @@ export default async function Navbar() {
                 width={32}
                 height={32}
                 alt="logo"
-                priority
               />
               <LogoTitle />
             </Link>
