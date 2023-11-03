@@ -22,5 +22,13 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const enableChat = verifySecret('ENABLE_CHAT', 'true');
   if (!enableChat) redirect(`/${wsId}`);
 
-  return <Chat id="123" wsId={wsId} />;
+  const hasKey = hasAnthropicKey();
+
+  return <Chat id="123" wsId={wsId} hasKey={hasKey} />;
 }
+
+const hasAnthropicKey = () => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  const hasKey = !!key && key.length > 0;
+  return hasKey;
+};

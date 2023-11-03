@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     if (!user) return new Response('Unauthorized', { status: 401 });
 
     const sbAdmin = createAdminClient();
-    if (!sbAdmin) return new Response('Unauthorized', { status: 401 });
+    if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
     const { count, error } = await sbAdmin
       .from('workspace_secrets')

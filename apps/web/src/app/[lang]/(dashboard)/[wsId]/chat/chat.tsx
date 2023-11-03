@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
-import { VERCEL_PREVIEW_MODE } from '@/constants/common';
 import { toast } from '@/components/ui/use-toast';
 import {
   Dialog,
@@ -26,9 +25,10 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   id?: string;
   wsId: string;
   initialMessages?: Message[];
+  hasKey?: boolean;
 }
 
-const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
+const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
   // const { t } = useTranslation('ai-chat');
 
   const [previewToken, setPreviewToken] = useLocalStorage({
@@ -36,19 +36,14 @@ const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
     defaultValue: '',
   });
 
-  const [previewTokenDialog, setPreviewTokenDialog] = useState(
-    VERCEL_PREVIEW_MODE && !previewToken
-  );
+  const [previewTokenDialog, setPreviewTokenDialog] = useState(false);
 
   const [previewTokenInput, setPreviewTokenInput] = useState(
     previewToken ?? ''
   );
 
   useEffect(() => {
-    if (previewToken) {
-      setPreviewTokenInput(previewToken);
-      setPreviewTokenDialog(false);
-    }
+    // after 2 seconds, if there is no token, show dialog
   }, [previewToken]);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
