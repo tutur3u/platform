@@ -29,10 +29,11 @@ export default async function Navbar() {
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
-                width={320}
-                height={320}
-                alt="logo"
                 className="h-6 w-6 md:h-8 md:w-8"
+                width={32}
+                height={32}
+                alt="logo"
+                priority
               />
               <LogoTitle />
             </Link>
