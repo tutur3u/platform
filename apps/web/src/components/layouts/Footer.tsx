@@ -2,17 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 
 export default async function Footer() {
   const { t } = useTranslation('common');
-
-  const supabase = createServerComponentClient({ cookies });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const maximize = t('maximize');
   const productivity = t('productivity');
@@ -24,37 +16,31 @@ export default async function Footer() {
 
   return (
     <div className="w-full text-center">
-      {!user ? (
-        <>
-          <Separator className="bg-foreground/5 mb-8" />
-          <div className="flex flex-col items-center p-8">
-            <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
-              <span className="text-green-500 dark:text-green-300">
-                {maximize}
-              </span>{' '}
-              <span className="text-blue-500 dark:text-blue-300">
-                {productivity}
-              </span>
-              ,{' '}
-              <span className="text-orange-500 dark:text-orange-300">
-                {minimize}
-              </span>{' '}
-              <span className="text-red-500 dark:text-red-300">{stress}</span>.
-            </div>
+      <Separator className="bg-foreground/5 mb-8" />
+      <div className="flex flex-col items-center p-8">
+        <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
+          <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
+          <span className="text-blue-500 dark:text-blue-300">
+            {productivity}
+          </span>
+          ,{' '}
+          <span className="text-orange-500 dark:text-orange-300">
+            {minimize}
+          </span>{' '}
+          <span className="text-red-500 dark:text-red-300">{stress}</span>.
+        </div>
 
-            <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
-              {getStartedDesc}
-            </div>
+        <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
+          {getStartedDesc}
+        </div>
 
-            <Link
-              href="/login"
-              className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
-            >
-              {getStarted}
-            </Link>
-          </div>
-        </>
-      ) : null}
+        <Link
+          href="/login"
+          className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
+        >
+          {getStarted}
+        </Link>
+      </div>
 
       <Separator className="bg-foreground/5 my-8" />
 

@@ -39,7 +39,7 @@ export default async function Navbar() {
 
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-8 w-32 animate-pulse rounded-lg" />
+                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
               {user ? <WorkspaceSelect workspaces={workspaces} /> : null}
@@ -47,7 +47,11 @@ export default async function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Suspense>
+            <Suspense
+              fallback={
+                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+              }
+            >
               {user ? (
                 <>
                   <NotificationPopover />
