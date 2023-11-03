@@ -63,7 +63,6 @@ export default async function Footer() {
           <Link
             href="/"
             className="flex gap-2 transition dark:hover:text-blue-200"
-            aria-label="Tuturuuu"
           >
             <Image
               src="/media/logos/transparent.png"

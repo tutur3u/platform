@@ -21,6 +21,7 @@ export default async function MarketingPage() {
               width={160}
               height={160}
               alt="logo"
+              priority
             />
           </h1>
 
