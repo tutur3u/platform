@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
 import { toast } from '@/components/ui/use-toast';
@@ -66,6 +66,13 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
     });
 
   // const [collapsed, setCollapsed] = useState(true);
+
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const updateInput = (input: string) => {
+    setInput(input);
+    if (inputRef.current) inputRef.current.focus();
+  };
 
   return (
     <>
@@ -140,7 +147,7 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen setInput={setInput} />
+          <EmptyScreen setInput={updateInput} />
         )}
       </div>
 
@@ -152,6 +159,7 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
         reload={reload}
         messages={messages}
         input={input}
+        inputRef={inputRef}
         setInput={setInput}
       />
 

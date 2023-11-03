@@ -17,6 +17,7 @@ export interface ChatPanelProps
     | 'setInput'
   > {
   id?: string;
+  inputRef: React.RefObject<HTMLTextAreaElement>;
 }
 
 export function ChatPanel({
@@ -26,6 +27,7 @@ export function ChatPanel({
   append,
   reload,
   input,
+  inputRef,
   setInput,
   messages,
 }: ChatPanelProps) {
@@ -66,6 +68,7 @@ export function ChatPanel({
               });
             }}
             input={input}
+            inputRef={inputRef}
             setInput={setInput}
             isLoading={isLoading}
           />
