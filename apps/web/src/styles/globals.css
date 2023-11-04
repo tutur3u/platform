@@ -72,12 +72,12 @@
   .light-pink {
     color-scheme: light;
 
-    --background: 343 100% 99%;
+    --background: 343 100% 97%;
     --foreground: 344 21% 41%;
     --card: 344 100% 97%;
     --card-foreground: 344 10% 3.9%;
     --popover: 344 100% 97%;
-    --popover-foreground: 344 10% 3.9%;
+    --popover-foreground: 344 30% 30%;
     --primary: 256 34% 48%;
     --primary-foreground: 263 100% 93%;
     --secondary: 256 34% 48%;
@@ -85,7 +85,7 @@
     --muted: 344 100% 95%;
     --muted-foreground: 344 3.8% 46.1%;
     --accent: 344 100% 95%;
-    --accent-foreground: 344 5.9% 10%;
+    --accent-foreground: 344 21% 41%;
     --destructive: 3 71% 41%;
     --destructive-foreground: 4 71% 92%;
     --border: 344 30% 80%;

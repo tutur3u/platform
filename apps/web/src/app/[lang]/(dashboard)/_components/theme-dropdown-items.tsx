@@ -62,8 +62,7 @@ export function ThemeDropdownItems() {
       <DropdownMenuItem
         className="cursor-pointer"
         onClick={() => setTheme('dark-pink')}
-        // disabled={theme === 'dark-pink'}
-        disabled
+        disabled={theme === 'dark-pink'}
       >
         {theme === 'dark-pink' ? (
           <Check className="mr-2 h-4 w-4" />
