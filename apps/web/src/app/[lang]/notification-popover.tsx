@@ -30,7 +30,7 @@ export default async function NotificationPopover() {
     title: `${t('workspace-invite')}`,
     description: (
       <div>
-        <span className="font-semibold text-sky-600 dark:text-sky-200">
+        <span className="text-foreground/80 font-semibold">
           {dayjs(invite.created_at).fromNow()}
         </span>
         {' • '}
@@ -63,7 +63,7 @@ export default async function NotificationPopover() {
           <div className="relative">
             <Bell className="h-5 w-5" />
             {notifications.length > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-sky-500" />
+              <span className="bg-foreground absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full" />
             )}
           </div>
         </Button>
@@ -89,7 +89,7 @@ export default async function NotificationPopover() {
                 <p className="text-sm font-medium leading-none">
                   {notification.title}
                 </p>
-                <p className="text-muted-foreground mb-2 mt-1 text-sm">
+                <p className="text-foreground/80 mb-2 mt-1 text-sm">
                   {notification.description}
                 </p>
 
@@ -102,7 +102,7 @@ export default async function NotificationPopover() {
             ))
           ) : (
             <div className="flex min-h-[4rem] flex-col items-center justify-center">
-              <div className="text-muted-foreground text-xs">
+              <div className="text-foreground/80 text-xs">
                 {noNotifications}
               </div>
             </div>

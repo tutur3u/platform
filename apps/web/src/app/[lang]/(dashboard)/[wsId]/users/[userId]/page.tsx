@@ -23,7 +23,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Thông tin cơ bản</div>
           <Separator />
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             {data.display_name && (
               <div>
                 <span className="opacity-60">Tên hiển thị:</span>{' '}
@@ -51,7 +51,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
             )}
           </div>
 
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             {data.email && (
               <div>
                 <span className="opacity-60">Email:</span> {data.email}
@@ -64,7 +64,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
             )}
           </div>
 
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             <span className="opacity-60">Tạo lúc:</span>{' '}
             {data.created_at
               ? moment(data.created_at).format('DD/MM/YYYY, HH:mm:ss')
@@ -75,7 +75,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         {/* <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Nhóm đã tham gia</div>
           <Separator />
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             <div>
               <span className="opacity-60">Nhóm đã tham gia</span>
             </div>
@@ -85,7 +85,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         {/* <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Mã giảm giá liên kết</div>
           <Separator />
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             <div>
               <span className="opacity-60">Mã giảm giá liên kết</span>
             </div>
@@ -95,7 +95,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         {/* <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Hoá đơn</div>
           <Separator />
-          <div className="border-foreground/10 bg-foreground/5 rounded border p-2">
+          <div className="border-border bg-foreground/5 rounded border p-2">
             <div>
               <span className="opacity-60">Hoá đơn</span>
             </div>

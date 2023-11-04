@@ -50,7 +50,7 @@ export default function SidebarButton({
           disabled
             ? 'cursor-not-allowed text-zinc-600'
             : isActive
-            ? 'border-foreground/10 cursor-pointer bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
+            ? 'border-border cursor-pointer bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
             : 'cursor-pointer border-transparent text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100'
         } ${classNames?.root}`}
       >

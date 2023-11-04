@@ -24,7 +24,7 @@ const ProductCard = ({
   return (
     <Link
       href={`/${ws.id}/inventory/products/${product.id}`}
-      className="border-foreground/10 group flex flex-col items-center justify-center rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
+      className="border-border group flex flex-col items-center justify-center rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -45,7 +45,7 @@ const ProductCard = ({
 
         {(showAmount || showCategory) && (
           <>
-            <Divider className="border-foreground/10 w-full dark:border-zinc-700" />
+            <Divider className="border-border w-full dark:border-zinc-700" />
             <div className="flex flex-col items-center justify-center gap-2 p-2">
               {showAmount && (
                 <div className="line-clamp-1 w-full rounded border border-blue-500/20 bg-blue-500/10 px-4 py-0.5 font-semibold text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
@@ -69,7 +69,7 @@ const ProductCard = ({
         <>
           <Divider
             variant="dashed"
-            className="border-foreground/10 w-full dark:border-zinc-700"
+            className="border-border w-full dark:border-zinc-700"
           />
           <div className="w-full">
             <div

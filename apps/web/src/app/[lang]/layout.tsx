@@ -113,7 +113,7 @@ export default async function RootLayout({ children, params }: Props) {
         <Providers
           attribute="class"
           defaultTheme="dark"
-          themes={['light', 'light-pink', 'dark', 'dark-pink']}
+          themes={['light', 'light-pink', 'light-pink-v2', 'dark', 'dark-pink']}
           enableColorScheme={false}
           enableSystem
         >

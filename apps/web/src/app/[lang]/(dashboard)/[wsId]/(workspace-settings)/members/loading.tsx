@@ -5,7 +5,7 @@ import MemberList from './_components/member-list';
 export default function Loading() {
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 h-[5.5rem] rounded-lg border" />
+      <div className="border-border bg-foreground/5 h-[5.5rem] rounded-lg border" />
       <Separator className="my-4" />
 
       <div className="flex min-h-full w-full flex-col">

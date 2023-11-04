@@ -41,8 +41,20 @@ export function ThemeDropdownItems() {
         ) : (
           <Sun className="mr-2 h-4 w-4" />
         )}
+        {t('light_pink')} (v1)
+      </DropdownMenuItem>
 
-        {t('light_pink')}
+      <DropdownMenuItem
+        className="cursor-pointer"
+        onClick={() => setTheme('light-pink-v2')}
+        disabled={theme === 'light-pink-v2'}
+      >
+        {theme === 'light-pink-v2' ? (
+          <Check className="mr-2 h-4 w-4" />
+        ) : (
+          <Sun className="mr-2 h-4 w-4" />
+        )}
+        {t('light_pink')} (v2)
       </DropdownMenuItem>
 
       <DropdownMenuItem
@@ -59,7 +71,7 @@ export function ThemeDropdownItems() {
         {t('dark')}
       </DropdownMenuItem>
 
-      <DropdownMenuItem
+      {/* <DropdownMenuItem
         className="cursor-pointer"
         onClick={() => setTheme('dark-pink')}
         disabled={theme === 'dark-pink'}
@@ -71,7 +83,7 @@ export function ThemeDropdownItems() {
         )}
 
         {t('dark_pink')}
-      </DropdownMenuItem>
+      </DropdownMenuItem> */}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         className="cursor-pointer"

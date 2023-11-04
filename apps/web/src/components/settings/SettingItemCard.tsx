@@ -34,7 +34,7 @@ const SettingItemCard = ({
 
   return (
     <div
-      className={`border-foreground/10 flex flex-col rounded border bg-zinc-50 p-4 text-zinc-700 dark:border-zinc-800/80 dark:bg-zinc-900 dark:text-zinc-300 ${
+      className={`border-border flex flex-col rounded border bg-zinc-50 p-4 text-zinc-700 dark:border-zinc-800/80 dark:bg-zinc-900 dark:text-zinc-300 ${
         disabled ? 'cursor-not-allowed opacity-50' : ''
       } ${className}`}
     >
