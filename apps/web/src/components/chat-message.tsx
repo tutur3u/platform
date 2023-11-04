@@ -39,10 +39,35 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       </div>
       <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
-          className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
+          className="text-foreground prose prose-li:marker:text-foreground/80 dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
+            h1({ children }) {
+              return <h1 className="text-foreground">{children}</h1>;
+            },
+            h2({ children }) {
+              return <h2 className="text-foreground">{children}</h2>;
+            },
+            h3({ children }) {
+              return <h3 className="text-foreground">{children}</h3>;
+            },
+            h4({ children }) {
+              return <h4 className="text-foreground">{children}</h4>;
+            },
+            h5({ children }) {
+              return <h5 className="text-foreground">{children}</h5>;
+            },
+            h6({ children }) {
+              return <h6 className="text-foreground">{children}</h6>;
+            },
+            strong({ children }) {
+              return (
+                <strong className="text-foreground font-semibold">
+                  {children}
+                </strong>
+              );
+            },
             p({ children }) {
               return <p className="mb-2 last:mb-0">{children}</p>;
             },
@@ -77,6 +102,9 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
                   {children}
                 </code>
               );
+            },
+            th({ children }) {
+              return <th className="text-foreground">{children}</th>;
             },
           }}
         >
