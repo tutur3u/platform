@@ -21,6 +21,7 @@ export default async function MarketingPage() {
               width={160}
               height={160}
               alt="logo"
+              priority
             />
           </h1>
 
@@ -50,55 +51,21 @@ export default async function MarketingPage() {
             {t('features-lead')}
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {features
-              .sort((a, b) => (a.comingSoon ? 1 : 0) - (b.comingSoon ? 1 : 0))
-              .map(({ title, subtitle, url, icon, comingSoon }) =>
-                url ? (
-                  <Link
-                    href={url}
-                    key={title}
-                    className={`border-foreground/20 group relative flex flex-col rounded-lg border p-6 ${
-                      comingSoon
-                        ? 'cursor-default opacity-50'
-                        : 'hover:border-foreground'
-                    }`}
-                  >
-                    <h3 className="min-h-[40px] font-bold">{title}</h3>
-                    <div className="flex grow flex-col justify-between gap-4">
-                      <p className="text-sm opacity-80">{subtitle}</p>
-                      <div className="opacity-60 group-hover:opacity-100">
-                        {icon}
-                      </div>
-                    </div>
-                  </Link>
-                ) : (
-                  <div
-                    key={title}
-                    className={`border-foreground/20 group relative flex flex-col rounded-lg border p-6 ${
-                      comingSoon
-                        ? 'cursor-default opacity-30'
-                        : 'hover:border-foreground'
-                    }`}
-                  >
-                    <h3 className="min-h-[40px] font-bold">{title}</h3>
-                    <div className="flex grow flex-col justify-between gap-4">
-                      <p className="text-sm opacity-80">{subtitle}</p>
-                      <div
-                        className={`opacity-60 ${
-                          comingSoon || 'group-hover:opacity-100'
-                        }`}
-                      >
-                        {icon}
-                      </div>
-                    </div>
-                    {comingSoon && (
-                      <div className="bg-foreground/20 text-foreground absolute bottom-4 right-4 rounded px-2 py-0.5 text-sm font-semibold">
-                        Coming soon
-                      </div>
-                    )}
+            {features.map(({ title, subtitle, url, icon }) => (
+              <Link
+                href={url || '#'}
+                key={title}
+                className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-6"
+              >
+                <h3 className="min-h-[40px] font-bold">{title}</h3>
+                <div className="flex grow flex-col justify-between gap-4">
+                  <p className="text-sm opacity-80">{subtitle}</p>
+                  <div className="opacity-60 group-hover:opacity-100">
+                    {icon}
                   </div>
-                )
-              )}
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

@@ -9,9 +9,9 @@
     "/[lang]/login": ["auth", "login"],
     "/[lang]/signup": ["auth", "signup", "auth-email-sent"],
     "/[lang]/reset-password": ["auth", "reset-password"],
-    "/[lang]/(marketing)/onboarding": ["onboarding", "invite"],
     "/[lang]/(marketing)/branding": ["branding"],
 
+    "/[lang]/(dashboard)/onboarding": ["onboarding", "invite"],
     "/[lang]/(dashboard)/settings/account": [
       "sidebar-tabs",
       "settings-tabs",
@@ -56,8 +56,18 @@
       "workspace-users-tabs",
       "inventory-overview"
     ],
+    "/[lang]/(dashboard)/[wsId]/(dashboard)": [
+      "sidebar-tabs",
+      "ws-home",
+      "finance-overview",
+      "workspace-inventory-tabs",
+      "workspace-finance-tabs",
+      "workspace-users-tabs",
+      "inventory-overview"
+    ],
 
     "/[lang]/(dashboard)/[wsId]/chat": ["ai-chat"],
+    "/[lang]/(dashboard)/[wsId]/chat/[chatId]": ["ai-chat"],
 
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",

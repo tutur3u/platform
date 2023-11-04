@@ -1,11 +1,7 @@
-import useTranslation from 'next-translate/useTranslation';
-
 export default function Loading() {
-  const { t } = useTranslation('common');
-
   return (
-    <div className="flex items-center justify-center p-8 font-semibold">
-      {t('loading')}...
+    <div className="mx-auto w-full max-w-2xl pt-8 lg:max-w-4xl">
+      <div className="bg-foreground/5 h-96 animate-pulse rounded-lg border" />
     </div>
   );
 }

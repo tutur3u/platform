@@ -13,6 +13,7 @@ import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
+  inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
 }
@@ -20,17 +21,17 @@ export interface PromptProps
 export function PromptForm({
   onSubmit,
   input,
+  inputRef,
   setInput,
   isLoading,
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit();
-  const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   React.useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, []);
+  }, [inputRef]);
 
   return (
     <form

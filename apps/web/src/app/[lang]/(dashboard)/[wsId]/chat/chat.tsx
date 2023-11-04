@@ -2,10 +2,9 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
-import { VERCEL_PREVIEW_MODE } from '@/constants/common';
 import { toast } from '@/components/ui/use-toast';
 import {
   Dialog,
@@ -21,42 +20,53 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
+import { useRouter } from 'next/navigation';
+import { AIChat } from '@/types/primitives/ai-chat';
+import useTranslation from 'next-translate/useTranslation';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  id?: string;
+  chat?: AIChat;
   wsId: string;
   initialMessages?: Message[];
+  chats: AIChat[];
+  hasKey?: boolean;
 }
 
-const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
-  // const { t } = useTranslation('ai-chat');
+const Chat = ({
+  chat,
+  wsId,
+  initialMessages,
+  chats,
+  className,
+  hasKey,
+}: ChatProps) => {
+  const { t } = useTranslation('ai-chat');
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
 
   const [previewToken, setPreviewToken] = useLocalStorage({
     key: 'ai-token',
     defaultValue: '',
   });
 
-  const [previewTokenDialog, setPreviewTokenDialog] = useState(
-    VERCEL_PREVIEW_MODE && !previewToken
-  );
-
-  const [previewTokenInput, setPreviewTokenInput] = useState(
-    previewToken ?? ''
-  );
+  const [previewTokenDialog, setPreviewTokenDialog] = useState(false);
+  const [previewTokenInput, setPreviewTokenInput] = useState(previewToken);
 
   useEffect(() => {
-    if (previewToken) {
-      setPreviewTokenInput(previewToken);
-      setPreviewTokenDialog(false);
-    }
-  }, [previewToken]);
+    // Don't show the dialog if the key is configured
+    // on the server or the a preview token is set
+    if (hasKey || previewToken) return;
+    setPreviewTokenDialog(true);
+  }, [previewToken, hasKey]);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
+      id: chat?.id,
       initialMessages,
-      // id,
+      api: '/api/chat/ai',
       body: {
-        // id,
+        id: chat?.id,
         wsId,
         previewToken,
       },
@@ -70,60 +80,72 @@ const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
       },
     });
 
-  // const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => {
+    if (!chat || !hasKey || isLoading) return;
+    if (messages[messages.length - 1]?.role !== 'user') return;
+
+    // Reload the chat if the user sends a message
+    // but the AI did not respond yet after 1 second
+    const timeout = setTimeout(() => {
+      reload();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [chat, hasKey, isLoading, messages, reload, stop]);
+
+  const [collapsed, setCollapsed] = useState(true);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const updateInput = (input: string) => {
+    setInput(input);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const createChat = async (input: string) => {
+    setLoading(true);
+
+    const res = await fetch(`/api/chat`, {
+      method: 'POST',
+      body: JSON.stringify({
+        message: input,
+        previewToken,
+      }),
+    });
+
+    if (!res.ok) {
+      toast({
+        title: 'Something went wrong',
+        description: res.statusText,
+      });
+      setLoading(false);
+      return;
+    }
+
+    const { id } = await res.json();
+    if (id) {
+      router.refresh();
+      router.push(`/${wsId}/chat/${id}`);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="mx-auto w-full max-w-2xl pt-8 lg:max-w-4xl">
+        <div className="bg-foreground/5 flex h-96 animate-pulse items-center justify-center rounded-lg border p-8 text-center text-lg font-semibold md:text-xl">
+          {t('creating_chat')}
+        </div>
+      </div>
+    );
 
   return (
     <>
-      {/* <div className="relative flex">
-        <div
-          id="chat-sidebar"
-          className={`absolute w-full max-w-xs rounded-lg border transition-all duration-500 ${
-            collapsed ? 'border-transparent' : 'border-foreground/5 p-2'
-          }`}
-        >
-          <div className="flex w-full gap-2">
-            <Button
-              size="icon"
-              className={`flex-none ${
-                collapsed ? 'opacity-50 transition hover:opacity-100' : ''
-              }`}
-              onClick={() => setCollapsed((c) => !c)}
-            >
-              {collapsed ? (
-                <FolderOpen className="h-5 w-5" />
-              ) : (
-                <ArrowLeftToLine className="h-5 w-5" />
-              )}
-            </Button>
-
-            <Button
-              variant="secondary"
-              className={`w-full transition duration-300 ${
-                collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-              }`}
-              disabled={!collapsed}
-            >
-              <div className="line-clamp-1">{t('new_chat')}</div>
-            </Button>
-          </div>
-
-          <div
-            className={`transition duration-300 ${
-              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-            }`}
-          >
-            <Separator className="my-2" />
-            <Button className="w-full" disabled>
-              {t('default_chat')}
-            </Button>
-          </div>
-        </div>
-      </div> */}
-
-      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
-        {messages.length ? (
+      <div id="chat-area" className={cn('pb-32 pt-4 md:pt-10', className)}>
+        {chat && messages.length ? (
           <>
             <ChatList
+              title={chat?.title}
               messages={messages.map((message) => {
                 // If there is 2 repeated substring in the
                 // message, we will merge them into one
@@ -145,19 +167,25 @@ const Chat = ({ id, wsId, initialMessages, className }: ChatProps) => {
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen setInput={setInput} />
+          <EmptyScreen setInput={updateInput} />
         )}
       </div>
 
       <ChatPanel
-        id={id}
+        id={chat?.id}
+        chats={chats}
         isLoading={isLoading}
         stop={stop}
         append={append}
         reload={reload}
         messages={messages}
         input={input}
+        inputRef={inputRef}
         setInput={setInput}
+        createChat={createChat}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        defaultRoute={`/${wsId}/chat`}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>

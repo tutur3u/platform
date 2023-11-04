@@ -1,7 +1,12 @@
 {
   "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
   "prompt_placeholder": "Nhập yêu cầu của bạn...",
+  "chats": "Các cuộc trò chuyện",
+  "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
   "new_chat": "Trò chuyện mới",
   "reset_chat": "Đặt lại",
-  "default_chat": "Mặc định"
+  "creating_chat": "Đang tạo cuộc trò chuyện...",
+  "default_chat": "Mặc định",
+  "regenerate_response": "Tạo lại câu trả lời",
+  "stop_generating": "Dừng trả lời"
 }
