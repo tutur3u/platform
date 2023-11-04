@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { use, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
 import { toast } from '@/components/ui/use-toast';
@@ -20,7 +20,6 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
-import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { AIChat } from '@/types/primitives/ai-chat';
 
@@ -40,7 +39,6 @@ const Chat = ({
   className,
   hasKey,
 }: ChatProps) => {
-  const { t } = useTranslation('ai-chat');
   const router = useRouter();
 
   const [previewToken, setPreviewToken] = useLocalStorage({
@@ -126,7 +124,7 @@ const Chat = ({
 
   return (
     <>
-      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
+      <div id="chat-area" className={cn('pb-32 pt-4 md:pt-10', className)}>
         {chat && messages.length ? (
           <>
             <ChatList

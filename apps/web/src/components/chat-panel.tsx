@@ -73,18 +73,17 @@ export function ChatPanel({
               <div className="grid gap-1">
                 {chats.length > 0 ? (
                   chats.map((chat) => (
-                    <Button
-                      key={chat.id}
-                      variant="secondary"
-                      className="w-full"
-                      disabled={collapsed || chat.id === id}
-                    >
-                      <Link href={`${defaultRoute}/${chat.id}`}>
+                    <Link key={chat.id} href={`${defaultRoute}/${chat.id}`}>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={collapsed || chat.id === id}
+                      >
                         <div className="line-clamp-1">
                           {chat?.title || chat.id}
                         </div>
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
                   ))
                 ) : (
                   <div className="text-foreground/60 mt-8 p-8">
