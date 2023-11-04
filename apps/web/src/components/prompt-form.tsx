@@ -46,25 +46,6 @@ export function PromptForm({
       ref={formRef}
     >
       <div className="bg-background flex max-h-60 w-full overflow-hidden p-2 pl-4 sm:rounded-md sm:border">
-        {/* <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                router.refresh();
-                router.push('/');
-              }}
-              className={cn(
-                buttonVariants({ size: 'sm', variant: 'outline' }),
-                'bg-background absolute left-0 top-4 h-8 w-8 rounded-full p-0 sm:left-4'
-              )}
-            >
-              <IconPlus />
-              <span className="sr-only">New Chat</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>New Chat</TooltipContent>
-        </Tooltip> */}
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -74,7 +55,7 @@ export function PromptForm({
           onChange={(e) => setInput(e.target.value)}
           placeholder="Send a message."
           spellCheck={false}
-          className="w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+          className="placeholder-foreground/50 w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
         />
         <Tooltip>
           <TooltipTrigger asChild>
