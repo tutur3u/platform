@@ -13,7 +13,6 @@ interface Feature {
   subtitle: string;
   url?: string;
   icon: React.ReactNode;
-  comingSoon?: boolean;
 }
 
 export const getFeatures = (t: Translate): Feature[] => {

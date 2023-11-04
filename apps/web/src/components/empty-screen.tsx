@@ -6,21 +6,33 @@ import { IconArrowRight } from '@/components/ui/icons';
 const exampleMessages = [
   {
     heading: 'Explain technical concepts',
-    message: `What is a neural network?`,
+    message: `What is quantum computing?`,
+  },
+  {
+    heading: 'Generate math problems',
+    message: `Generate a list of hard but interesting math problems for undergraduates.`,
+  },
+  {
+    heading: 'Explain to a 5th grader',
+    message: `Explain the following concepts like I'm a fifth grader: \n\n`,
+  },
+  {
+    heading: 'Write a poem',
+    message: `Write a poem about the following topics: \n\n`,
   },
   {
     heading: 'Summarize an article',
-    message: 'Summarize the following article for a 2nd grader: \n',
+    message: 'Summarize the following article for a 2nd grader: \n\n',
   },
   {
     heading: 'Draft an email',
-    message: `Draft an email to my boss about the following: \n`,
+    message: `Draft an email to my boss about the following: \n\n`,
   },
 ];
 
 export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl lg:max-w-4xl">
       <div className="bg-background rounded-lg border p-8">
         <h1 className="mb-2 text-lg font-semibold">
           Welcome to{' '}

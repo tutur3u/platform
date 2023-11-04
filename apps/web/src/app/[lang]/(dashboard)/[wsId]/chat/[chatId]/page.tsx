@@ -2,17 +2,23 @@ import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import Chat from './chat';
+import { Message } from 'ai';
+import Chat from '../chat';
+import { getChats } from '../page';
+import { AIChat } from '@/types/primitives/ai-chat';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: {
     wsId: string;
+    chatId?: string;
   };
 }
 
-export default async function AIPage({ params: { wsId } }: Props) {
+export default async function AIPage({ params: { wsId, chatId } }: Props) {
+  if (!chatId) notFound();
+
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
@@ -24,10 +30,22 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const enableChat = verifySecret('ENABLE_CHAT', 'true');
   if (!enableChat) redirect(`/${wsId}`);
 
+  const messages = await getMessages(chatId);
+
+  const chat = await getChat(chatId);
   const chats = await getChats();
+
   const hasKey = hasAnthropicKey();
 
-  return <Chat wsId={wsId} hasKey={hasKey} chats={chats} />;
+  return (
+    <Chat
+      wsId={wsId}
+      hasKey={hasKey}
+      initialMessages={messages}
+      chat={chat}
+      chats={chats}
+    />
+  );
 }
 
 const hasAnthropicKey = () => {
@@ -36,18 +54,41 @@ const hasAnthropicKey = () => {
   return hasKey;
 };
 
-export const getChats = async () => {
+const getMessages = async (chatId: string) => {
   const supabase = createServerComponentClient({ cookies });
 
   const { data, error } = await supabase
-    .from('ai_chats')
+    .from('ai_chat_messages')
     .select('*')
-    .order('created_at', { ascending: false });
+    .eq('chat_id', chatId)
+    .order('created_at');
 
   if (error) {
     console.error(error);
     return [];
   }
 
-  return data;
+  const messages = data.map(({ role, ...rest }) => ({
+    ...rest,
+    role: role.toLowerCase(),
+  })) as Message[];
+
+  return messages;
+};
+
+const getChat = async (chatId: string) => {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { data, error } = await supabase
+    .from('ai_chats')
+    .select('*')
+    .eq('id', chatId)
+    .single();
+
+  if (error) {
+    console.error(error);
+    notFound();
+  }
+
+  return data as AIChat;
 };

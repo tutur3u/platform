@@ -12,7 +12,7 @@ export function ButtonScrollToBottom({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'bg-background absolute right-4 top-1 z-10 transition-opacity duration-300 sm:right-8 md:top-2',
+        'bg-background absolute bottom-20 right-4 z-10 transition-opacity duration-300 md:bottom-28 md:right-8',
         isAtBottom ? 'opacity-0' : 'opacity-100',
         className
       )}

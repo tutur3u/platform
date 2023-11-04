@@ -56,8 +56,18 @@
       "workspace-users-tabs",
       "inventory-overview"
     ],
+    "/[lang]/(dashboard)/[wsId]/(dashboard)": [
+      "sidebar-tabs",
+      "ws-home",
+      "finance-overview",
+      "workspace-inventory-tabs",
+      "workspace-finance-tabs",
+      "workspace-users-tabs",
+      "inventory-overview"
+    ],
 
     "/[lang]/(dashboard)/[wsId]/chat": ["ai-chat"],
+    "/[lang]/(dashboard)/[wsId]/chat/[chatId]": ["ai-chat"],
 
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",

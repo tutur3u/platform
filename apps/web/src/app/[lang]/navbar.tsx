@@ -22,24 +22,24 @@ export default async function Navbar() {
   const workspaces = await getWorkspaces(true);
 
   return (
-    <div id="navbar" className="fixed inset-x-0 top-0 z-10">
+    <div id="navbar" className="fixed inset-x-0 top-0 z-50">
       <div className="bg-background/30 px-4 py-2 font-semibold backdrop-blur-lg md:px-8 lg:px-16 xl:px-32">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
-                width={320}
-                height={320}
-                alt="logo"
                 className="h-6 w-6 md:h-8 md:w-8"
+                width={32}
+                height={32}
+                alt="logo"
               />
               <LogoTitle />
             </Link>
 
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-8 w-32 animate-pulse rounded-lg" />
+                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
               {user ? <WorkspaceSelect workspaces={workspaces} /> : null}
@@ -47,7 +47,11 @@ export default async function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Suspense>
+            <Suspense
+              fallback={
+                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+              }
+            >
               {user ? (
                 <>
                   <NotificationPopover />
