@@ -10,6 +10,7 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/user-helper';
 import { User } from '@/types/primitives/User';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +81,19 @@ const getMembers = async (
   wsId: string,
   { status, roles }: { status: string; roles: string }
 ) => {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
+
+  const sbAdmin = createAdminClient();
+  if (!sbAdmin) throw new Error('Internal server error');
+
+  const { count, error: secretError } = await sbAdmin
+    .from('workspace_secrets')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId)
+    .eq('name', 'HIDE_MEMBER_EMAIL')
+    .eq('value', 'true');
+
+  if (secretError) throw secretError;
 
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
@@ -102,10 +115,12 @@ const getMembers = async (
     queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
+  if (error) throw error;
 
-  if (error) {
-    throw error;
-  }
-
-  return data as User[];
+  return data.map(({ email, ...rest }) => {
+    return {
+      ...rest,
+      email: !count ? email : undefined,
+    };
+  }) as User[];
 };

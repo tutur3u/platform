@@ -80,12 +80,13 @@ export default async function MemberList({
           </p>
           <p
             className={`text-sm font-semibold ${
-              loading ? 'text-transparent' : 'text-foreground/80'
+              loading ? 'text-transparent' : 'text-foreground/60'
             }`}
           >
-            {member?.handle
-              ? `@${member.handle}`
-              : member?.email ?? member?.id?.replace(/-/g, '')}
+            {member?.email ||
+              (member?.handle
+                ? `@${member.handle}`
+                : member?.id?.replace(/-/g, ''))}
           </p>
         </div>
       </div>
