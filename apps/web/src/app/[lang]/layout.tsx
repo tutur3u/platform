@@ -114,6 +114,7 @@ export default async function RootLayout({ children, params }: Props) {
           attribute="class"
           defaultTheme="dark"
           themes={['light', 'light-pink', 'dark', 'dark-pink']}
+          enableColorScheme={false}
           enableSystem
         >
           <Navbar />
