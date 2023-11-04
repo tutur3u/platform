@@ -39,7 +39,10 @@ const hasAnthropicKey = () => {
 export const getChats = async () => {
   const supabase = createServerComponentClient({ cookies });
 
-  const { data, error } = await supabase.from('ai_chats').select('*');
+  const { data, error } = await supabase
+    .from('ai_chats')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error(error);

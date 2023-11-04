@@ -22,6 +22,7 @@ import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
 import { useRouter } from 'next/navigation';
 import { AIChat } from '@/types/primitives/ai-chat';
+import useTranslation from 'next-translate/useTranslation';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   chat?: AIChat;
@@ -39,7 +40,10 @@ const Chat = ({
   className,
   hasKey,
 }: ChatProps) => {
+  const { t } = useTranslation('ai-chat');
   const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
 
   const [previewToken, setPreviewToken] = useLocalStorage({
     key: 'ai-token',
@@ -100,10 +104,13 @@ const Chat = ({
   };
 
   const createChat = async (input: string) => {
+    setLoading(true);
+
     const res = await fetch(`/api/chat`, {
       method: 'POST',
       body: JSON.stringify({
         message: input,
+        previewToken,
       }),
     });
 
@@ -112,6 +119,7 @@ const Chat = ({
         title: 'Something went wrong',
         description: res.statusText,
       });
+      setLoading(false);
       return;
     }
 
@@ -122,12 +130,22 @@ const Chat = ({
     }
   };
 
+  if (loading)
+    return (
+      <div className="mx-auto w-full max-w-2xl pt-8 lg:max-w-4xl">
+        <div className="bg-foreground/5 flex h-96 animate-pulse items-center justify-center rounded-lg border p-8 text-center text-lg font-semibold md:text-xl">
+          {t('creating_chat')}
+        </div>
+      </div>
+    );
+
   return (
     <>
       <div id="chat-area" className={cn('pb-32 pt-4 md:pt-10', className)}>
         {chat && messages.length ? (
           <>
             <ChatList
+              title={chat?.title}
               messages={messages.map((message) => {
                 // If there is 2 repeated substring in the
                 // message, we will merge them into one

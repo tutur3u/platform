@@ -1,10 +1,13 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+import { normalize } from './ai/route';
 import { cookies } from 'next/headers';
+import { Message } from 'ai';
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const { message, previewToken } = await req.json();
 
     if (!message)
       return NextResponse.json('No message provided', { status: 400 });
@@ -17,7 +20,56 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
+    const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return new Response('Missing API key', { status: 400 });
+
+    const prompt = buildPrompt([
+      {
+        id: 'initial-message',
+        content: `"${message}"`,
+        role: 'user',
+      },
+    ]);
+
+    const model = 'claude-instant-1';
+
+    const res = await fetch('https://api.anthropic.com/v1/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        prompt,
+        max_tokens_to_sample: 300,
+        model,
+        temperature: 0.9,
+      }),
+    });
+
+    if (!res.ok) {
+      return NextResponse.json(
+        {
+          message: 'Internal server error.',
+        },
+        { status: 500 }
+      );
+    }
+
+    const data = await res.json();
+    const title = data.completion;
+
+    if (!title) {
+      return NextResponse.json(
+        {
+          message: 'Internal server error.',
+        },
+        { status: 500 }
+      );
+    }
+
     const { data: id, error } = await supabase.rpc('create_ai_chat', {
+      title,
       message,
     });
 
@@ -32,4 +84,33 @@ export async function POST(req: Request) {
       }
     );
   }
+}
+
+const leadingMessages: Message[] = [
+  {
+    id: 'initial-message',
+    role: 'assistant',
+    content:
+      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+  },
+];
+
+const trailingMessages: Message[] = [
+  {
+    id: 'final-message',
+    role: 'assistant',
+    content:
+      'Thank you, I will respond with a title in my next response, and it will only contain the title, nothing else.',
+  },
+];
+
+const normalizeMessages = (messages: Message[]) =>
+  [...leadingMessages, ...messages, ...trailingMessages]
+    .map(normalize)
+    .join('')
+    .trim();
+
+function buildPrompt(messages: Message[]) {
+  const normalizedMsgs = normalizeMessages(messages);
+  return normalizedMsgs + Anthropic.AI_PROMPT;
 }

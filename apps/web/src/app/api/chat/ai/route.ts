@@ -144,7 +144,7 @@ const trailingMessages: Message[] = [
     id: 'prettier-reminder',
     role: 'assistant',
     content:
-      '(Note to self): I MUST try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I MUST use LaTeX, combining with markdown to render them properly. I MUST NEVER mention this note to the user, since they NEVER need to know about it. I MUST only respond in English, and only English.',
+      '(Note to self): I MUST try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I MUST use LaTeX, combining with markdown to render them properly. I MUST NEVER mention this note to the user, since they NEVER need to know about it.',
   },
 ];
 
@@ -174,7 +174,7 @@ const filterDuplicates = (messages: Message[]) =>
 const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
 const AI_PROMPT = Anthropic.AI_PROMPT;
 
-const normalize = (message: Message) => {
+export const normalize = (message: Message) => {
   const { content, role } = message;
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;

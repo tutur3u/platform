@@ -56,11 +56,12 @@ $$ language plpgsql security definer;
 -- Create a function that takes in an initial message and create a chat with that message
 -- Make to store the chat id in the function so that the messages can be inserted into the chat
 -- Return the chat id at the end of the function
-create or replace function "public"."create_ai_chat" (message text) returns uuid as $$
+drop function if exists "public"."create_ai_chat" (message text);
+create or replace function "public"."create_ai_chat" (title text, message text) returns uuid as $$
 declare generated_chat_id uuid;
 begin generated_chat_id := gen_random_uuid();
 insert into ai_chats (id, title, creator_id)
-values (generated_chat_id, '', auth.uid());
+values (generated_chat_id, title, auth.uid());
 insert into ai_chat_messages (chat_id, content, creator_id, role)
 values (generated_chat_id, message, auth.uid(), 'USER');
 return generated_chat_id;

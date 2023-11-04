@@ -60,7 +60,8 @@ const getMessages = async (chatId: string) => {
   const { data, error } = await supabase
     .from('ai_chat_messages')
     .select('*')
-    .eq('chat_id', chatId);
+    .eq('chat_id', chatId)
+    .order('created_at');
 
   if (error) {
     console.error(error);
