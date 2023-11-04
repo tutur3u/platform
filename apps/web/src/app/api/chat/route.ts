@@ -103,7 +103,7 @@ const trailingMessages: Message[] = [
   },
 ];
 
-export const normalize = (message: Message) => {
+const normalize = (message: Message) => {
   const { content, role } = message;
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
