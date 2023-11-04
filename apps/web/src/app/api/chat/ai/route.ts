@@ -1,6 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
 
@@ -170,9 +170,6 @@ const filterDuplicates = (messages: Message[]) =>
   messages.map((message) => {
     return { ...message, content: filterDuplicate(message.content) };
   });
-
-const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
-const AI_PROMPT = Anthropic.AI_PROMPT;
 
 export const normalize = (message: Message) => {
   const { content, role } = message;

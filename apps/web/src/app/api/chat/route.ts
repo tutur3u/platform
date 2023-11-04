@@ -1,7 +1,6 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { normalize } from './ai/route';
+import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
 
@@ -103,6 +102,13 @@ const trailingMessages: Message[] = [
       'Thank you, I will respond with a title in my next response, and it will only contain the title, nothing else.',
   },
 ];
+
+export const normalize = (message: Message) => {
+  const { content, role } = message;
+  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
+  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
+  return content;
+};
 
 const normalizeMessages = (messages: Message[]) =>
   [...leadingMessages, ...messages, ...trailingMessages]
