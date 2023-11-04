@@ -67,6 +67,7 @@
     ],
 
     "/[lang]/(dashboard)/[wsId]/chat": ["ai-chat"],
+    "/[lang]/(dashboard)/[wsId]/chat/[chatId]": ["ai-chat"],
 
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",

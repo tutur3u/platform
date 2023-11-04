@@ -1,6 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
-import Chat from '../chat';
+import { cookies } from 'next/headers';
 import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Message } from 'ai';
+import Chat from '../chat';
+import { getChats } from '../page';
+import { AIChat } from '@/types/primitives/ai-chat';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +17,8 @@ interface Props {
 }
 
 export default async function AIPage({ params: { wsId, chatId } }: Props) {
+  if (!chatId) notFound();
+
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
@@ -23,15 +30,64 @@ export default async function AIPage({ params: { wsId, chatId } }: Props) {
   const enableChat = verifySecret('ENABLE_CHAT', 'true');
   if (!enableChat) redirect(`/${wsId}`);
 
-  console.log('chatId', chatId);
-  console.log('typeof chatId', typeof chatId);
+  const messages = await getMessages(chatId);
+
+  const chat = await getChat(chatId);
+  const chats = await getChats();
 
   const hasKey = hasAnthropicKey();
-  return <Chat id={chatId} wsId={wsId} hasKey={hasKey} />;
+
+  return (
+    <Chat
+      wsId={wsId}
+      hasKey={hasKey}
+      initialMessages={messages}
+      chat={chat}
+      chats={chats}
+    />
+  );
 }
 
 const hasAnthropicKey = () => {
   const key = process.env.ANTHROPIC_API_KEY;
   const hasKey = !!key && key.length > 0;
   return hasKey;
+};
+
+const getMessages = async (chatId: string) => {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { data, error } = await supabase
+    .from('ai_chat_messages')
+    .select('*')
+    .eq('chat_id', chatId);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  const messages = data.map(({ role, ...rest }) => ({
+    ...rest,
+    role: role.toLowerCase(),
+  })) as Message[];
+
+  return messages;
+};
+
+const getChat = async (chatId: string) => {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { data, error } = await supabase
+    .from('ai_chats')
+    .select('*')
+    .eq('id', chatId)
+    .single();
+
+  if (error) {
+    console.error(error);
+    notFound();
+  }
+
+  return data as AIChat;
 };

@@ -32,7 +32,7 @@ const exampleMessages = [
 
 export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl lg:max-w-4xl">
       <div className="bg-background rounded-lg border p-8">
         <h1 className="mb-2 text-lg font-semibold">
           Welcome to{' '}

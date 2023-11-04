@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
 import { toast } from '@/components/ui/use-toast';
@@ -20,19 +20,26 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
-import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { AIChat } from '@/types/primitives/ai-chat';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  id?: string;
+  chat?: AIChat;
   wsId: string;
   initialMessages?: Message[];
+  chats: AIChat[];
   hasKey?: boolean;
 }
 
-const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
+const Chat = ({
+  chat,
+  wsId,
+  initialMessages,
+  chats,
+  className,
+  hasKey,
+}: ChatProps) => {
   const { t } = useTranslation('ai-chat');
   const router = useRouter();
 
@@ -53,11 +60,11 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
-      id,
+      id: chat?.id,
       initialMessages,
       api: '/api/chat/ai',
       body: {
-        id,
+        id: chat?.id,
         wsId,
         previewToken,
       },
@@ -71,8 +78,22 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
       },
     });
 
-  const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => {
+    if (!chat || !hasKey || isLoading) return;
+    if (messages[messages.length - 1]?.role !== 'user') return;
 
+    // Reload the chat if the user sends a message
+    // but the AI did not respond yet after 1 second
+    const timeout = setTimeout(() => {
+      reload();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [chat, hasKey, isLoading, messages, reload, stop]);
+
+  const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const updateInput = (input: string) => {
@@ -97,65 +118,16 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
     }
 
     const { id } = await res.json();
-    if (id) router.push(`/${wsId}/chat/${id}`);
+    if (id) {
+      router.refresh();
+      router.push(`/${wsId}/chat/${id}`);
+    }
   };
 
   return (
     <>
-      <div className="relative flex">
-        <div
-          id="chat-sidebar"
-          className={`bg-background static z-10 w-full rounded-lg border transition-all duration-500 md:absolute md:max-w-xs ${
-            collapsed
-              ? 'border-transparent bg-transparent'
-              : 'border-foreground/5 p-2'
-          }`}
-        >
-          <div className="flex w-full gap-2">
-            <Button
-              size="icon"
-              className={`flex-none ${
-                collapsed ? 'transition hover:opacity-100' : ''
-              }`}
-              onClick={() => setCollapsed((c) => !c)}
-            >
-              {collapsed ? (
-                <FolderOpen className="h-5 w-5" />
-              ) : (
-                <ArrowLeftToLine className="h-5 w-5" />
-              )}
-            </Button>
-
-            <Button
-              variant="secondary"
-              className={`w-full transition duration-300 ${
-                collapsed
-                  ? 'pointer-events-none hidden opacity-0 disabled:opacity-0 md:block'
-                  : 'opacity-100'
-              }`}
-              disabled={collapsed}
-            >
-              <div className="line-clamp-1">{t('new_chat')}</div>
-            </Button>
-          </div>
-
-          <div
-            className={`transition duration-300 ${
-              collapsed
-                ? 'pointer-events-none hidden opacity-0 md:block'
-                : 'opacity-100'
-            }`}
-          >
-            <Separator className="my-2" />
-            <Button className="w-full" disabled={collapsed}>
-              {t('default_chat')}
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className={cn('pb-32 pt-4 md:pt-10', className)}>
-        {id && messages.length ? (
+        {chat && messages.length ? (
           <>
             <ChatList
               messages={messages.map((message) => {
@@ -184,7 +156,8 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
       </div>
 
       <ChatPanel
-        id={id}
+        id={chat?.id}
+        chats={chats}
         isLoading={isLoading}
         stop={stop}
         append={append}
@@ -194,6 +167,9 @@ const Chat = ({ id, wsId, initialMessages, className, hasKey }: ChatProps) => {
         inputRef={inputRef}
         setInput={setInput}
         createChat={createChat}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        defaultRoute={`/${wsId}/chat`}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>

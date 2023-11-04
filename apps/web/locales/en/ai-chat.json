@@ -1,7 +1,11 @@
 {
   "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
   "prompt_placeholder": "Type your prompt here...",
+  "chats": "Chats",
+  "no_chats": "Start a new chat by sending a prompt.",
   "new_chat": "New chat",
   "reset_chat": "Reset chat",
-  "default_chat": "Default chat"
+  "default_chat": "Default chat",
+  "regenerate_response": "Regenerate response",
+  "stop_generating": "Stop generating"
 }

@@ -8,9 +8,23 @@ export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  try {
-    const { wsId, messages, previewToken } = await req.json();
+  const sbAdmin = createAdminClient();
+  if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
+  const {
+    id: chatId,
+    wsId,
+    messages,
+    previewToken,
+  } = (await req.json()) as {
+    id?: string;
+    wsId?: string;
+    messages?: Message[];
+    previewToken?: string;
+  };
+
+  try {
+    if (!chatId) return new Response('Missing chat ID', { status: 400 });
     if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
@@ -27,9 +41,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) return new Response('Unauthorized', { status: 401 });
-
-    const sbAdmin = createAdminClient();
-    if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
     const { count, error } = await sbAdmin
       .from('workspace_secrets')
@@ -62,7 +73,51 @@ export async function POST(req: Request) {
       }),
     });
 
-    const stream = AnthropicStream(res);
+    const stream = AnthropicStream(res, {
+      onStart: async () => {
+        // If there is only 1 message, we will not save it to the database
+        // Since it is the prompt message that created the conversation
+        if (messages.length === 1) return;
+
+        const userMessages = messages.filter(
+          (msg: Message) => msg.role === 'user'
+        );
+
+        const message = userMessages[userMessages.length - 1]?.content;
+        if (!message) {
+          console.log('No message found');
+          throw new Error('No message found');
+        }
+
+        const { error } = await sbAdmin.rpc('insert_ai_chat_message', {
+          message,
+          chat_id: chatId,
+        });
+
+        if (error) {
+          console.log(error);
+          throw new Error(error.message);
+        }
+
+        console.log('User message saved to database');
+      },
+      onCompletion: async (completion) => {
+        const content = filterDuplicate(completion);
+
+        const { error } = await sbAdmin.from('ai_chat_messages').insert({
+          chat_id: chatId,
+          content,
+          role: 'ASSISTANT',
+        });
+
+        if (error) {
+          console.log(error);
+          throw new Error(error.message);
+        }
+
+        console.log('AI Response saved to database');
+      },
+    });
     return new StreamingTextResponse(stream);
   } catch (error: any) {
     console.log(error);
@@ -89,7 +144,7 @@ const trailingMessages: Message[] = [
     id: 'prettier-reminder',
     role: 'assistant',
     content:
-      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly. This is information is not for the user, but for me, Skora, to keep in mind. Therefore, I will never mention this to the user.',
+      '(Note to self): I must try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I must use LaTeX, combining with markdown to render them properly. This is information is not for the user, but for me, Skora, to keep in mind. Therefore, I will never mention this to the user. I must only respond in English, and only English.',
   },
 ];
 
@@ -99,19 +154,21 @@ function buildPrompt(messages: Message[]) {
   return normalizedMsgs + Anthropic.AI_PROMPT;
 }
 
+const filterDuplicate = (str: string) => {
+  const strLength = str.length;
+  const halfLength = Math.floor(strLength / 2);
+  const firstHalf = str.substring(0, halfLength);
+  const secondHalf = str.substring(halfLength, strLength);
+
+  if (firstHalf !== secondHalf) return str;
+  return firstHalf;
+};
+
 const filterDuplicates = (messages: Message[]) =>
   // If there is 2 repeated substring in the
   // message, we will merge them into one
   messages.map((message) => {
-    const content = message.content;
-    const contentLength = content.length;
-
-    const contentHalfLength = Math.floor(contentLength / 2);
-    const firstHalf = content.substring(0, contentHalfLength);
-    const secondHalf = content.substring(contentHalfLength, contentLength);
-
-    if (firstHalf !== secondHalf) return message;
-    return { ...message, content: firstHalf };
+    return { ...message, content: filterDuplicate(message.content) };
   });
 
 const HUMAN_PROMPT = Anthropic.HUMAN_PROMPT;
