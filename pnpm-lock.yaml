@@ -159,8 +159,8 @@ importers:
         specifier: ^7.77.0
         version: 7.77.0(encoding@0.1.13)(next@14.0.1)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
-        specifier: ^0.8.5
-        version: 0.8.5(@supabase/supabase-js@2.38.4)
+        specifier: ^0.8.6
+        version: 0.8.6(@supabase/supabase-js@2.38.4)
       '@supabase/auth-helpers-react':
         specifier: ^0.4.2
         version: 0.4.2(@supabase/supabase-js@2.38.4)
@@ -252,8 +252,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(next@14.0.1)(react-dom@18.2.0)(react@18.2.0)
       next-translate:
-        specifier: 2.6.0
-        version: 2.6.0(next@14.0.1)(react@18.2.0)
+        specifier: ^2.6.2
+        version: 2.6.2(next@14.0.1)(react@18.2.0)
       openai:
         specifier: ^4.15.0
         version: 4.15.0(encoding@0.1.13)
@@ -385,8 +385,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2
       next-translate-plugin:
-        specifier: 2.6.0
-        version: 2.6.0(next-translate@2.6.0)
+        specifier: ^2.6.2
+        version: 2.6.2(next-translate@2.6.2)
       postcss:
         specifier: ^8.4.31
         version: 8.4.31
@@ -2727,12 +2727,12 @@ packages:
       - supports-color
     dev: false
 
-  /@supabase/auth-helpers-nextjs@0.8.5(@supabase/supabase-js@2.38.4):
-    resolution: {integrity: sha512-+TGa+gmOdFAyiKTO2WhTiLxyuM8TzSeoIFygvyGCmgQseEFnSOxoJkBC1Mth7Q+7GxDMMZBFsd/nMQ/OROXf5w==}
+  /@supabase/auth-helpers-nextjs@0.8.6(@supabase/supabase-js@2.38.4):
+    resolution: {integrity: sha512-tmXEtENOSQEWn7TpAydEHV9Qs7AhvIKgegscSkewN/iLFGTAQo6plrAa6Bq/992kKa16Y3YQrMez6b9n5a7AXQ==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
-      '@supabase/auth-helpers-shared': 0.6.1(@supabase/supabase-js@2.38.4)
+      '@supabase/auth-helpers-shared': 0.6.2(@supabase/supabase-js@2.38.4)
       '@supabase/supabase-js': 2.38.4
       set-cookie-parser: 2.6.0
     dev: false
@@ -2745,8 +2745,8 @@ packages:
       '@supabase/supabase-js': 2.38.4
     dev: false
 
-  /@supabase/auth-helpers-shared@0.6.1(@supabase/supabase-js@2.38.4):
-    resolution: {integrity: sha512-aXNQ8KHKuR62b/GhEsKl/Id21KNm7t3tUP1sGbQj/kRSjTJisD/NnCmw7l9/oLsm8/9qf5491QaL8zD9BtcZ6A==}
+  /@supabase/auth-helpers-shared@0.6.2(@supabase/supabase-js@2.38.4):
+    resolution: {integrity: sha512-/91jzqqQ0NkKNtFqOmlPsyVi8o97vryF1/BF+O2ZV/VSokx2QegTFNvTPfy/pKL3xWNcbdi4yjylnKfLvh1NdA==}
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
     dependencies:
@@ -3935,7 +3935,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.22.1
-      caniuse-lite: 1.0.30001559
+      caniuse-lite: 1.0.30001561
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -4032,7 +4032,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001559
+      caniuse-lite: 1.0.30001561
       electron-to-chromium: 1.4.576
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
@@ -4080,8 +4080,8 @@ packages:
     engines: {node: '>= 6'}
     dev: true
 
-  /caniuse-lite@1.0.30001559:
-    resolution: {integrity: sha512-cPiMKZgqgkg5LY3/ntGeLFUpi6tzddBNS58A4tnTgQw1zON7u2sZMU7SzOeVH4tj20++9ggL+V6FDOFMTaFFYA==}
+  /caniuse-lite@1.0.30001561:
+    resolution: {integrity: sha512-NTt0DNoKe958Q0BE0j0c1V9jbUzhBxHIEJy7asmGrpE0yG63KTV7PLHPnK2E1O9RsQrQ081I3NLuXGS6zht3cw==}
 
   /case-anything@2.1.13:
     resolution: {integrity: sha512-zlOQ80VrQ2Ue+ymH5OuM/DlDq64mEm+B9UTdHULv5osUMD6HalNTblf2b1u/m6QecjsnOkBpqVZ+XPwIVsy7Ng==}
@@ -6918,19 +6918,19 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: false
 
-  /next-translate-plugin@2.6.0(next-translate@2.6.0):
-    resolution: {integrity: sha512-XeFoVhtiT738ow4bqaBlvPLG5DK0IVygSvQBKTo3SPW01nbiEjfnrln1Cz94hbN3jJi3qDjFNOGjzVUftHDyfg==}
+  /next-translate-plugin@2.6.2(next-translate@2.6.2):
+    resolution: {integrity: sha512-qfvYG//QfP7b+A/xXGP9K+bdswkAFCabguemuEqjxu+j8pRNoF+jWKmepRXRaAcn1PqFLBj6PBvYkqD1r5k5Zw==}
     engines: {node: '>=14.15.0'}
     requiresBuild: true
     peerDependencies:
       next-translate: '>= 2.4.1'
     dependencies:
-      next-translate: 2.6.0(next@14.0.1)(react@18.2.0)
+      next-translate: 2.6.2(next@14.0.1)(react@18.2.0)
       typescript: 4.5.2
     dev: true
 
-  /next-translate@2.6.0(next@14.0.1)(react@18.2.0):
-    resolution: {integrity: sha512-hLbwFxTsGv4dWlPXwvUthQ/QQEK18dH5Lz6Vf2Po3UnndEdqfkeB9C+EK3yagWj3Pn+hYnpZ2GBvedZjWwWELA==}
+  /next-translate@2.6.2(next@14.0.1)(react@18.2.0):
+    resolution: {integrity: sha512-Dcfo2Vyw+Ds06+8BJM0RcV/lfN7R59kTY/NP+XJgSpcrFKZV6QJuKfS+K4+OHkKBdQnF3ZOT3wk1np9eZx/PEA==}
     engines: {node: '>=16.10.0'}
     peerDependencies:
       next: '>= 13.2.5'
@@ -6957,7 +6957,7 @@ packages:
       '@next/env': 14.0.1
       '@swc/helpers': 0.5.2
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001559
+      caniuse-lite: 1.0.30001561
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
