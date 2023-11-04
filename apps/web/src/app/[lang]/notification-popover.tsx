@@ -69,13 +69,13 @@ export default async function NotificationPopover() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="end">
-        <div className="p-2 font-semibold">
+        <div className="px-4 py-2 font-semibold">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
         <Separator />
         <ScrollArea
-          className={`gap-2 p-2 ${
+          className={`gap-2 px-4 py-2 ${
             notifications.length === 0
               ? 'h-20'
               : notifications.length > 4

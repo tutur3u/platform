@@ -6,7 +6,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Check, Moon, Sparkle, Sun } from 'lucide-react';
+import {
+  Check,
+  Crown,
+  Ghost,
+  Heart,
+  Moon,
+  Sparkles,
+  Sun,
+  Trees,
+} from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
 export function ThemeDropdownItems() {
@@ -39,23 +48,51 @@ export function ThemeDropdownItems() {
         {theme === 'light-pink' ? (
           <Check className="mr-2 h-4 w-4" />
         ) : (
-          <Sun className="mr-2 h-4 w-4" />
+          <Heart className="mr-2 h-4 w-4" />
         )}
-        {t('light_pink')} (v1)
+        {t('light_pink')}
       </DropdownMenuItem>
 
       <DropdownMenuItem
         className="cursor-pointer"
-        onClick={() => setTheme('light-pink-v2')}
-        disabled={theme === 'light-pink-v2'}
+        onClick={() => setTheme('light-purple')}
+        disabled={theme === 'light-purple'}
       >
-        {theme === 'light-pink-v2' ? (
+        {theme === 'light-purple' ? (
           <Check className="mr-2 h-4 w-4" />
         ) : (
-          <Sun className="mr-2 h-4 w-4" />
+          <Ghost className="mr-2 h-4 w-4" />
         )}
-        {t('light_pink')} (v2)
+        {t('light_purple')}
       </DropdownMenuItem>
+
+      <DropdownMenuItem
+        className="cursor-pointer"
+        onClick={() => setTheme('light-yellow')}
+        disabled={theme === 'light-yellow'}
+      >
+        {theme === 'light-yellow' ? (
+          <Check className="mr-2 h-4 w-4" />
+        ) : (
+          <Crown className="mr-2 h-4 w-4" />
+        )}
+        {t('light_yellow')}
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        className="cursor-pointer"
+        onClick={() => setTheme('light-green')}
+        disabled={theme === 'light-green'}
+      >
+        {theme === 'light-green' ? (
+          <Check className="mr-2 h-4 w-4" />
+        ) : (
+          <Trees className="mr-2 h-4 w-4" />
+        )}
+        {t('light_green')}
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
 
       <DropdownMenuItem
         className="cursor-pointer"
@@ -71,20 +108,8 @@ export function ThemeDropdownItems() {
         {t('dark')}
       </DropdownMenuItem>
 
-      {/* <DropdownMenuItem
-        className="cursor-pointer"
-        onClick={() => setTheme('dark-pink')}
-        disabled={theme === 'dark-pink'}
-      >
-        {theme === 'dark-pink' ? (
-          <Check className="mr-2 h-4 w-4" />
-        ) : (
-          <Moon className="mr-2 h-4 w-4" />
-        )}
-
-        {t('dark_pink')}
-      </DropdownMenuItem> */}
       <DropdownMenuSeparator />
+
       <DropdownMenuItem
         className="cursor-pointer"
         onClick={() => setTheme('system')}
@@ -93,7 +118,7 @@ export function ThemeDropdownItems() {
         {isSystem ? (
           <Check className="mr-2 h-4 w-4" />
         ) : (
-          <Sparkle className="mr-2 h-4 w-4" />
+          <Sparkles className="mr-2 h-4 w-4" />
         )}
 
         {t('system')}

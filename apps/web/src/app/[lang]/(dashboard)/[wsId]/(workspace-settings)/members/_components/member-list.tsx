@@ -120,9 +120,11 @@ export default async function MemberList({
         <div className="flex gap-2">
           {user?.id === member.id && (
             <div
-              className={`rounded border px-2 py-0.5 text-center font-semibold ${getRoleColor(
-                'you'
-              )}`}
+              className={`rounded border px-2 py-0.5 text-center font-semibold ${
+                loading
+                  ? 'text-transparent'
+                  : 'border-border bg-primary text-primary-foreground'
+              }`}
             >
               {t('you')}
             </div>
