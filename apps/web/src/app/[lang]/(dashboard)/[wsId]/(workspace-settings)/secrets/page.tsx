@@ -32,7 +32,7 @@ export default async function WorkspaceSecretsPage({
 
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('secrets')}</h1>
           <p className="text-zinc-700 dark:text-zinc-400">{t('description')}</p>

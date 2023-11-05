@@ -66,7 +66,7 @@ export default function WorkspaceBoardsPage() {
 
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
+      <div className="border-border bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold">
           Boards{' '}
           <span className="rounded-lg bg-purple-300/20 px-2 text-lg text-purple-300">

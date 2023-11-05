@@ -29,8 +29,8 @@ export default async function MemberList({
 
   if (!members || members.length === 0) {
     return (
-      <div className="border-primary/10 bg-primary-foreground/20 col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-        <p className="text-center text-zinc-500 dark:text-zinc-400">
+      <div className="border-border bg-primary-foreground/20 col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
+        <p className="text-foreground/80 text-center">
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
         <InviteMemberButton
@@ -49,10 +49,10 @@ export default async function MemberList({
   return members.map((member) => (
     <div
       key={member.id}
-      className={`border-foreground/10 relative rounded-lg border p-4 ${
+      className={`border-border relative rounded-lg border p-4 ${
         member?.pending
-          ? 'bg-primary-foreground/20 border-dashed'
-          : 'bg-primary-foreground'
+          ? 'border-dashed bg-transparent'
+          : 'bg-primary-foreground/20'
       }`}
     >
       <div className="flex items-center gap-2">
@@ -80,12 +80,13 @@ export default async function MemberList({
           </p>
           <p
             className={`text-sm font-semibold ${
-              loading ? 'text-transparent' : 'text-muted-foreground'
+              loading ? 'text-transparent' : 'text-foreground/60'
             }`}
           >
-            {member?.handle
-              ? `@${member.handle}`
-              : member?.email ?? member?.id?.replace(/-/g, '')}
+            {member?.email ||
+              (member?.handle
+                ? `@${member.handle}`
+                : member?.id?.replace(/-/g, ''))}
           </p>
         </div>
       </div>
@@ -100,11 +101,11 @@ export default async function MemberList({
         </div>
       )}
 
-      <div className="border-foreground/10 mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm md:text-base lg:gap-4">
+      <div className="border-border mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm md:text-base lg:gap-4">
         {loading || member?.created_at ? (
           <div
-            className={`text-foreground/50 line-clamp-1 ${
-              loading ? 'text-transparent' : ''
+            className={`line-clamp-1 ${
+              loading ? 'text-transparent' : 'text-foreground/80'
             }`}
           >
             <span className="opacity-90">
@@ -120,9 +121,11 @@ export default async function MemberList({
         <div className="flex gap-2">
           {user?.id === member.id && (
             <div
-              className={`rounded border px-2 py-0.5 text-center font-semibold ${getRoleColor(
-                'you'
-              )}`}
+              className={`rounded border px-2 py-0.5 text-center font-semibold ${
+                loading
+                  ? 'text-transparent'
+                  : 'border-border bg-primary text-primary-foreground'
+              }`}
             >
               {t('you')}
             </div>
@@ -135,7 +138,7 @@ export default async function MemberList({
               }`,
               loading
                 ? 'text-transparent'
-                : 'border-foreground/10 bg-foreground/5 text-foreground/80'
+                : 'border-border bg-foreground/5 text-foreground'
             )}
           >
             {t(member?.role?.toLocaleLowerCase() || 'unknown')}

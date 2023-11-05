@@ -185,10 +185,11 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="text-muted-foreground line-clamp-1 text-sm">
-              {user?.handle
-                ? `@${user.handle}`
-                : user?.email ?? user?.id?.replace(/-/g, '')}
+            <p className="text-foreground/60 line-clamp-1 text-sm">
+              {user?.email ||
+                (user?.handle
+                  ? `@${user.handle}`
+                  : user?.id?.replace(/-/g, ''))}
             </p>
           </div>
         </div>

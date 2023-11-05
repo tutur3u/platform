@@ -78,7 +78,7 @@ const GeneralItemCard = ({
   return (
     <Link
       href={href || '#'}
-      className="border-foreground/10 group flex flex-col items-center justify-start rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
+      className="border-border group flex flex-col items-center justify-start rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full items-center justify-center p-2 text-center">
         <div className="line-clamp-1 font-semibold tracking-wide">
@@ -89,7 +89,7 @@ const GeneralItemCard = ({
 
       {showAmount && (
         <>
-          <Divider className="border-foreground/10 w-full dark:border-zinc-700" />
+          <Divider className="border-border w-full dark:border-zinc-700" />
           <div className="grid h-full w-full gap-2 p-2">
             {amountData?.count === undefined &&
               !batchData?.count &&
@@ -135,7 +135,7 @@ const GeneralItemCard = ({
         <>
           <Divider
             variant="dashed"
-            className="border-foreground/10 w-full dark:border-zinc-700"
+            className="border-border w-full dark:border-zinc-700"
           />
           <div className="h-full w-full p-2">
             <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-orange-500/20 bg-orange-500/10 p-2 font-semibold text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
@@ -149,7 +149,7 @@ const GeneralItemCard = ({
         <>
           <Divider
             variant="dashed"
-            className="border-foreground/10 w-full dark:border-zinc-700"
+            className="border-border w-full dark:border-zinc-700"
           />
           <div className="h-full w-full p-2">
             <div className="line-clamp-3 flex h-full items-center justify-center gap-1 rounded border border-green-500/20 bg-green-500/10 p-2 font-semibold text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">

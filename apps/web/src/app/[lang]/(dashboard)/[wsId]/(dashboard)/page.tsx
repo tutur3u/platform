@@ -222,11 +222,11 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
+      <div className="border-border bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold">{homeLabel}</h1>
-        <p className="text-zinc-700 dark:text-zinc-400">
+        <p className="text-foreground/80">
           {t('description_p1')}{' '}
-          <span className="font-semibold text-zinc-900 dark:text-zinc-200">
+          <span className="text-foreground font-semibold">
             {ws?.name || 'Unnamed Workspace'}
           </span>{' '}
           {t('description_p2')}

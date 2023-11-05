@@ -10,6 +10,7 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/user-helper';
 import { User } from '@/types/primitives/User';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,10 +39,10 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{membersLabel}</h1>
-          <p className="text-zinc-700 dark:text-zinc-400">{t('description')}</p>
+          <p className="text-foreground/80">{t('description')}</p>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
@@ -80,7 +81,19 @@ const getMembers = async (
   wsId: string,
   { status, roles }: { status: string; roles: string }
 ) => {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
+
+  const sbAdmin = createAdminClient();
+  if (!sbAdmin) throw new Error('Internal server error');
+
+  const { count, error: secretError } = await sbAdmin
+    .from('workspace_secrets')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId)
+    .eq('name', 'HIDE_MEMBER_EMAIL')
+    .eq('value', 'true');
+
+  if (secretError) throw secretError;
 
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
@@ -102,10 +115,12 @@ const getMembers = async (
     queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
+  if (error) throw error;
 
-  if (error) {
-    throw error;
-  }
-
-  return data as User[];
+  return data.map(({ email, ...rest }) => {
+    return {
+      ...rest,
+      email: !count ? email : undefined,
+    };
+  }) as User[];
 };

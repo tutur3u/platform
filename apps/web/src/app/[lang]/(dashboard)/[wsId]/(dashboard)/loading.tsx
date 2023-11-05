@@ -4,7 +4,7 @@ import LoadingStatisticCard from '@/components/loading-statistic-card';
 export default function Loading() {
   return (
     <>
-      <div className="border-foreground/10 bg-foreground/5 animate-pulse rounded-lg border p-4">
+      <div className="border-border bg-foreground/5 animate-pulse rounded-lg border p-4">
         <h1 className="text-2xl font-bold text-transparent">Home</h1>
         <p className="text-transparent">Description</p>
       </div>

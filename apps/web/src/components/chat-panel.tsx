@@ -57,8 +57,8 @@ export function ChatPanel({
         id="chat-sidebar"
         className={`bg-background absolute inset-x-2 bottom-[4.5rem] z-20 rounded-lg border p-2 transition-all duration-500 md:inset-x-6 md:bottom-[6.25rem] md:max-w-xs ${
           collapsed
-            ? 'border-transparent bg-transparent'
-            : 'border-foreground/5'
+            ? 'pointer-events-none border-transparent bg-transparent'
+            : 'border-border shadow-lg'
         }`}
       >
         <div
@@ -113,9 +113,7 @@ export function ChatPanel({
           <Button
             size="icon"
             variant="outline"
-            className={`flex-none ${
-              collapsed ? 'transition hover:opacity-100' : ''
-            }`}
+            className="pointer-events-auto flex-none"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? (

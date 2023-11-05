@@ -14,7 +14,7 @@ export default function SettingItemTab({
       <div className="grid">
         <div className="text-2xl font-bold">{title}</div>
         {description && (
-          <div className="whitespace-pre-line font-semibold text-zinc-500">
+          <div className="text-foreground/80 whitespace-pre-line font-semibold">
             {description}
           </div>
         )}

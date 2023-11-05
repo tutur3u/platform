@@ -13,10 +13,10 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
   const { t } = useTranslation();
 
   const generateOuterColor = (enableHoverEffect: boolean) =>
-    `border-foreground/20 ${
+    `${
       enableHoverEffect
-        ? 'hover:bg-foreground/[0.025] dark:hover:bg-foreground/5'
-        : 'border-foreground/[0.1]'
+        ? 'border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5'
+        : 'border-border/50'
     }`;
 
   if (href)
@@ -30,7 +30,7 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
       >
         <div className="p-1 text-center text-lg font-semibold">{title}</div>
         <div
-          className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+          className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
             !!onClick || !!href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
@@ -50,7 +50,7 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
     >
       <div className="p-1 text-center text-lg font-semibold">{title}</div>
       <div
-        className={`border-foreground/5 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+        className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
           !!onClick || !!href
             ? 'transition-all duration-300 group-hover:rounded-lg'
             : ''

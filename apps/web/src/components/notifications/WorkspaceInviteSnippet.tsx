@@ -82,16 +82,16 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   return (
     <div
       className={`rounded-lg border p-4 ${
-        transparent
-          ? 'border-zinc-300/10 bg-zinc-300/5'
-          : 'border-zinc-300/10 bg-zinc-900'
+        transparent ? 'bg-primary-foreground/40' : 'bg-primary-foreground/40'
       }`}
     >
       <div className="cursor-default font-semibold transition duration-150">
-        <span className="text-zinc-300/60">{invitedTo} </span>
-        <span className="text-zinc-200">{ws?.name || `Unnamed Workspace`}</span>
+        <span className="text-foreground/60">{invitedTo} </span>
+        <span className="text-foreground">
+          {ws?.name || `Unnamed Workspace`}
+        </span>
         {ws?.created_at ? (
-          <span className="font-normal text-zinc-300/60">
+          <span className="text-foreground/60 font-normal">
             {' '}
             • {creationDate}
           </span>
@@ -100,14 +100,14 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
 
       <div className="mt-2 grid gap-2 md:grid-cols-2">
         <div
-          className="flex cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-1 font-semibold text-zinc-300 transition duration-300 hover:border-red-300/10 hover:bg-red-300/10 hover:text-red-300"
+          className="text-foreground hover:bg-foreground/5 flex cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
           onClick={() => declineInvite(ws)}
         >
           {declineInviteLabel}
         </div>
 
         <div
-          className="flex flex-1 cursor-pointer items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-1 font-semibold text-zinc-300 transition duration-300 hover:border-green-300/10 hover:bg-green-300/10 hover:text-green-300"
+          className="text-foreground hover:bg-foreground/5 flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
           onClick={() => acceptInvite(ws)}
         >
           {acceptInviteLabel}

@@ -13,7 +13,7 @@ export default function GetStartedButton() {
   return (
     <Link
       href="/login"
-      className={`border-foreground/10 hover:bg-foreground/[0.025] dark:hover:bg-foreground/5 rounded-full border px-4 py-1 transition duration-300 ${
+      className={`border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5 rounded-full border px-4 py-1 transition duration-300 ${
         hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
