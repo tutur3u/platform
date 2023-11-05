@@ -110,7 +110,31 @@ export default async function RootLayout({ children, params }: Props) {
         )}
       >
         <VercelAnalytics />
-        <Providers attribute="class" defaultTheme="dark" enableSystem>
+        <Providers
+          attribute="class"
+          defaultTheme="dark"
+          themes={[
+            'system',
+
+            'light',
+            'light-pink',
+            'light-purple',
+            'light-yellow',
+            'light-orange',
+            'light-green',
+            'light-blue',
+
+            'dark',
+            'dark-pink',
+            'dark-purple',
+            'dark-yellow',
+            'dark-orange',
+            'dark-green',
+            'dark-blue',
+          ]}
+          enableColorScheme={false}
+          enableSystem
+        >
           <Navbar />
           <NavbarPadding>{children}</NavbarPadding>
         </Providers>

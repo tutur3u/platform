@@ -125,7 +125,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
   };
 
   return (
-    <div className="border-foreground/10 rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
+    <div className="border-border rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900">
       <div className="text-2xl font-semibold">{warehouse.name}</div>
       <Divider className="my-2" variant="dashed" />
 

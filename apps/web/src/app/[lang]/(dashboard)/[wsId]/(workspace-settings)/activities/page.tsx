@@ -35,7 +35,7 @@ export default async function WorkspaceActivitiesPage({
     <>
       {ws?.id && (
         <>
-          <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
+          <div className="border-border bg-foreground/5 rounded-lg border p-4">
             <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
             <p className="text-zinc-700 dark:text-zinc-400">
               {t('ws-activities:description')}

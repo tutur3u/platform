@@ -36,7 +36,7 @@ export default async function Footer() {
 
         <Link
           href="/login"
-          className="mt-4 block w-full max-w-xs rounded border border-blue-500/10 bg-blue-500/10 px-8 py-2 font-semibold text-blue-600 transition duration-300 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/30"
+          className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 block w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
         >
           {getStarted}
         </Link>
@@ -132,7 +132,7 @@ export default async function Footer() {
             <div>
               <Link
                 href="/branding"
-                className="mt-2 block text-zinc-700 hover:text-zinc-500 dark:text-zinc-300 dark:hover:text-zinc-400"
+                className="text-foreground/80 hover:text-foreground mt-2 block"
               >
                 {t('common:branding')}
               </Link>
@@ -146,7 +146,7 @@ export default async function Footer() {
             <div>
               <Link
                 href="https://github.com/tutur3u/tutur3u"
-                className="mt-2 block text-zinc-700 hover:text-zinc-500 dark:text-zinc-300 dark:hover:text-zinc-400"
+                className="text-foreground/80 hover:text-foreground mt-2 block"
               >
                 {t('common:open-source')}
               </Link>
@@ -156,7 +156,7 @@ export default async function Footer() {
       </div>
 
       <Separator className="bg-foreground/5 mt-8" />
-      <div className="p-4 text-center opacity-75 md:px-32 xl:px-64">
+      <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
         {t('copyright')}
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Check, Sparkle } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 
@@ -30,7 +30,7 @@ export function SystemLanguageDropdownItem({ selected }: Props) {
       {selected ? (
         <Check className="mr-2 h-4 w-4" />
       ) : (
-        <Sparkle className="mr-2 h-4 w-4" />
+        <Sparkles className="mr-2 h-4 w-4" />
       )}
       {t('system')}
     </DropdownMenuItem>
