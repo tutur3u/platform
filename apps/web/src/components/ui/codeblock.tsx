@@ -3,9 +3,13 @@
 
 'use client';
 
+import { useTheme } from 'next-themes';
 import { FC, memo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import {
+  coldarkDark,
+  coldarkCold,
+} from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 import { IconCheck, IconCopy, IconDownload } from '@/components/ui/icons';
@@ -57,6 +61,9 @@ export const generateRandomString = (length: number, lowercase = false) => {
 };
 
 const CodeBlock: FC<Props> = memo(({ language, value }) => {
+  const { theme } = useTheme();
+  const isDark = theme?.startsWith('dark') ?? true;
+
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 });
 
   const downloadAsFile = () => {
@@ -119,7 +126,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
       </div>
       <SyntaxHighlighter
         language={language}
-        style={coldarkDark}
+        style={isDark ? coldarkDark : coldarkCold}
         PreTag="div"
         showLineNumbers
         customStyle={{
@@ -128,6 +135,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
           width: '100%',
           padding: '1.5rem 1rem',
           borderRadius: '0.25rem',
+          backgroundColor: 'transparent',
         }}
         codeTagProps={{
           style: {

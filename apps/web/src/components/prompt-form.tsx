@@ -9,14 +9,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { useEffect, useState } from 'react';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
-  edge?: boolean;
 }
 
 export function PromptForm({
@@ -25,7 +23,6 @@ export function PromptForm({
   inputRef,
   setInput,
   isLoading,
-  edge,
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit();
 
@@ -39,7 +36,7 @@ export function PromptForm({
       }}
       ref={formRef}
     >
-      <div className="bg-background flex max-h-60 w-full overflow-hidden p-2 pl-4 sm:rounded-md sm:border">
+      <div className="bg-background/70 flex max-h-60 w-full overflow-hidden rounded-lg p-2 pl-4 sm:border">
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -56,9 +53,8 @@ export function PromptForm({
             <Button
               type="submit"
               disabled={isLoading || input === ''}
-              size={edge ? 'icon' : undefined}
+              size="icon"
             >
-              {edge || <div className="mr-1 text-sm">Standard</div>}
               <IconArrowElbow />
               <span className="sr-only">Send message</span>
             </Button>

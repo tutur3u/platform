@@ -69,7 +69,6 @@ export async function POST(req: Request) {
         max_tokens_to_sample: 100000,
         model,
         temperature: 0.9,
-        stream: true,
       }),
     });
 

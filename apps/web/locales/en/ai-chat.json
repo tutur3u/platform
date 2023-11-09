@@ -11,5 +11,7 @@
   "stop_generating": "Stop generating",
   "something_went_wrong": "Something went wrong.",
   "try_again_later": "Please try again later.",
-  "edge_api_opt_out": "Opting out of Edge API for this chat..."
+  "edge_api_opt_out": "Opting out of Edge API for this chat...",
+  "use_edge": "Edge Mode",
+  "use_standard": "Standard Mode"
 }

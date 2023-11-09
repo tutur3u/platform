@@ -206,6 +206,7 @@ const Chat = ({
         setCollapsed={setCollapsed}
         defaultRoute={`/${wsId}/chat`}
         edge={useEdge}
+        setUseEdge={setUseEdge}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>

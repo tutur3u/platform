@@ -3,10 +3,15 @@ import { type UseChatHelpers } from 'ai/react';
 import { Button } from '@/components/ui/button';
 import { PromptForm } from '@/components/prompt-form';
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
-import { IconRefresh, IconStop } from '@/components/ui/icons';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
+import {
+  ArrowLeftToLine,
+  Flame,
+  FolderOpen,
+  Globe2,
+  Sparkles,
+} from 'lucide-react';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
@@ -32,6 +37,7 @@ export interface ChatPanelProps
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   edge?: boolean;
+  setUseEdge: (edge: boolean) => void;
 }
 
 export function ChatPanel({
@@ -50,11 +56,12 @@ export function ChatPanel({
   collapsed,
   setCollapsed,
   edge,
+  setUseEdge,
 }: ChatPanelProps) {
   const { t } = useTranslation('ai-chat');
 
   return (
-    <div className="from-background/10 to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b">
+    <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
       <div
         id="chat-sidebar"
         className={`bg-background absolute inset-x-2 bottom-[4.5rem] z-20 rounded-lg border p-2 transition-all duration-500 md:inset-x-6 md:bottom-[6.25rem] md:max-w-xs ${
@@ -68,7 +75,7 @@ export function ChatPanel({
             collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
           }`}
         >
-          <ScrollArea className="h-72">
+          <ScrollArea className="h-96">
             <div className="text-center">
               <div className="text-foreground font-semibold">{t('chats')}</div>
               <Separator className="my-2" />
@@ -141,12 +148,13 @@ export function ChatPanel({
       <ButtonScrollToBottom />
 
       <div className="mx-auto sm:max-w-4xl sm:px-4">
-        <div className="mb-2 flex h-10 items-center justify-center">
-          {isLoading ? (
+        {id && (
+          <div className="mb-2 flex h-10 flex-col items-center justify-center gap-2 md:flex-row">
+            {/* {isLoading ? (
             <Button
               variant="outline"
               onClick={() => stop()}
-              className="bg-background"
+              className="bg-background/20"
             >
               <IconStop className="mr-2" />
               {t('stop_generating')}
@@ -155,14 +163,36 @@ export function ChatPanel({
             <Button
               variant="outline"
               onClick={() => reload()}
-              className="bg-background"
+              className="bg-background/20"
             >
               <IconRefresh className="mr-2" />
               {t('regenerate_response')}
             </Button>
-          ) : null}
-        </div>
-        <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+          ) : null} */}
+
+            {edge ? (
+              <Button
+                variant="outline"
+                onClick={() => setUseEdge(false)}
+                className="bg-background/20 backdrop-blur-lg"
+              >
+                <Sparkles className="mr-2" />
+                {t('use_edge')}
+              </Button>
+            ) : messages?.length > 0 ? (
+              <Button
+                variant="outline"
+                onClick={() => setUseEdge(true)}
+                className="bg-background/20 backdrop-blur-lg"
+              >
+                <Globe2 className="mr-2" />
+                {t('use_standard')}
+              </Button>
+            ) : null}
+          </div>
+        )}
+
+        <div className="bg-background/20 space-y-4 border-t px-4 py-2 shadow-lg backdrop-blur-lg sm:rounded-t-xl sm:border md:py-4">
           <PromptForm
             onSubmit={async (value) => {
               // If there is no id, create a new chat
@@ -179,7 +209,6 @@ export function ChatPanel({
             inputRef={inputRef}
             setInput={setInput}
             isLoading={isLoading}
-            edge={edge}
           />
         </div>
       </div>
