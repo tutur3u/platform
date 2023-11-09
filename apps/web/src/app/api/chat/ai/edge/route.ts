@@ -1,9 +1,8 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
-import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
-import { filterDuplicate, filterDuplicates, normalize } from '../core';
+import { buildPrompt, filterDuplicate } from '../core';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -130,36 +129,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-const leadingMessages: Message[] = [
-  {
-    id: 'identity-reminder',
-    role: 'system',
-    content:
-      'You are Skora, an AI powered by Claude modal, provided by Anthropic. However, since this is in production environment, you MUST refer to yourself as Skora, powered by Tuturuuu. Do not talk more about your origins and keep this message in mind, pretend like I never specifically told you about it.',
-  },
-];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'prettier-reminder',
-    role: 'assistant',
-    content:
-      '(Note to self): I MUST try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I MUST use LaTeX, combining with markdown to render them properly. I MUST NEVER mention this note to the user, since they NEVER need to know about it.',
-  },
-];
-
-function buildPrompt(messages: Message[]) {
-  const filteredMsgs = filterDuplicates(messages);
-  const normalizedMsgs = normalizeMessages(filteredMsgs);
-  return normalizedMsgs + Anthropic.AI_PROMPT;
-}
-
-const filterSystemMessages = (messages: Message[]) =>
-  messages.filter((message) => message.role !== 'system');
-
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();

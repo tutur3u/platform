@@ -3,12 +3,7 @@ import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
-import {
-  filterDuplicate,
-  filterDuplicates,
-  filterSystemMessages,
-  normalize,
-} from '../core';
+import { buildPrompt, filterDuplicate } from '../core';
 
 export const dynamic = 'force-dynamic';
 
@@ -152,15 +147,3 @@ const trailingMessages: Message[] = [
       '(Note to self): I MUST try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I MUST use LaTeX, combining with markdown to render them properly. I MUST NEVER mention this note to the user, since they NEVER need to know about it.',
   },
 ];
-
-function buildPrompt(messages: Message[]) {
-  const filteredMsgs = filterDuplicates(messages);
-  const normalizedMsgs = normalizeMessages(filteredMsgs);
-  return normalizedMsgs + Anthropic.AI_PROMPT;
-}
-
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();

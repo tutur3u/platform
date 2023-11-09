@@ -39,7 +39,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       </div>
       <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-li:marker:text-foreground/80 prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
+          className="text-foreground prose prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 max-w-4xl break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -75,7 +75,14 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
               if (children && Array.isArray(children) && children.length) {
                 if (children[0] == '▍') {
                   return (
-                    <span className="mt-1 animate-pulse cursor-default">▍</span>
+                    <span
+                      className={cn(
+                        'mt-1 animate-pulse cursor-default',
+                        className
+                      )}
+                    >
+                      ▍
+                    </span>
                   );
                 }
 
@@ -93,10 +100,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
                 />
               ) : (
                 <code
-                  className={cn(
-                    'bg-foreground text-background mr-0.5 rounded-lg px-2 py-1 font-semibold',
-                    className
-                  )}
+                  className={cn('text-foreground font-semibold', className)}
                   {...props}
                 >
                   {children}
@@ -107,7 +111,11 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
               return <th className="text-foreground">{children}</th>;
             },
             pre({ children }) {
-              return <pre className="bg-background">{children}</pre>;
+              return (
+                <pre className="bg-foreground/5 rounded-lg border">
+                  {children}
+                </pre>
+              );
             },
           }}
         >
