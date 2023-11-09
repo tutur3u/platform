@@ -61,8 +61,8 @@ export const generateRandomString = (length: number, lowercase = false) => {
 };
 
 const CodeBlock: FC<Props> = memo(({ language, value }) => {
-  const { theme } = useTheme();
-  const isDark = theme?.startsWith('dark') ?? true;
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme?.startsWith('dark') ?? true;
 
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 });
 
@@ -102,7 +102,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
   return (
     <div className="codeblock relative w-full rounded font-sans">
       <div className="bg-foreground/10 text-foreground flex w-full items-center justify-between rounded border px-4 py-1 pr-4">
-        <span className="text-xs font-semibold lowercase">{language}</span>
+        <span className="text-xs font-semibold capitalize">{language}</span>
         <div className="flex items-center space-x-1">
           <Button
             variant="ghost"
