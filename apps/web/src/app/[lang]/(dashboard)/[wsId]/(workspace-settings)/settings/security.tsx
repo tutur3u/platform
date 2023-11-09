@@ -1,8 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import { Workspace } from '@/types/primitives/Workspace';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface Props {
@@ -13,15 +15,21 @@ export default function Security({ workspace }: Props) {
   const isSystemWs = workspace?.id === '00000000-0000-0000-0000-000000000000';
 
   const { t } = useTranslation('ws-settings');
+  const router = useRouter();
 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     if (isSystemWs || !workspace) return;
-
     setIsDeleting(true);
-    await deleteWorkspace(workspace.id);
-    setIsDeleting(false);
+
+    await deleteWorkspace(workspace.id, {
+      onSuccess: () => {
+        router.refresh();
+        router.push('/onboarding');
+      },
+      onError: () => setIsDeleting(false),
+    });
   };
 
   return (
@@ -65,11 +73,11 @@ const deleteWorkspace = async (
     if (options?.onSuccess) options.onSuccess();
   } catch (e) {
     if (options?.onError) options.onError();
-    // showNotification({
-    //   title: 'Failed to delete workspace',
-    //   message: 'Make sure there are no teams in this workspace',
-    //   color: 'red',
-    // });
+    toast({
+      title: 'Failed to delete workspace',
+      content: 'Please try again later.',
+      color: 'red',
+    });
   } finally {
     if (options?.onCompleted) options.onCompleted();
   }

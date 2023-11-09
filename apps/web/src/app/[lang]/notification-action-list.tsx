@@ -18,6 +18,7 @@ type buttonVariant =
   | null;
 
 export type NotificationAction = {
+  id: string;
   label: ReactNode;
   variant?: buttonVariant;
   type?: NotificationActionType;
@@ -33,9 +34,9 @@ export default function NotificationActionList({ actions }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      {actions?.map((action, index) => (
+      {actions?.map((action) => (
         <NotificationAction
-          key={index}
+          key={action.id}
           action={action}
           disabled={processingAction !== undefined}
           onStart={() => setProcessingAction(action.type)}

@@ -27,6 +27,7 @@ export default async function NotificationPopover() {
 
   const invites = await getWorkspaceInvites();
   const notifications = invites.map((invite) => ({
+    id: `workspace-invite-${invite.id}`,
     title: `${t('workspace-invite')}`,
     description: (
       <div>
@@ -43,12 +44,14 @@ export default async function NotificationPopover() {
     ),
     actions: [
       {
+        id: `decline-workspace-${invite.id}`,
         label: t('decline'),
         variant: 'outline',
         type: 'WORKSPACE_INVITE_DECLINE',
         payload: { wsId: invite.id },
       },
       {
+        id: `accept-workspace-${invite.id}`,
         label: t('accept'),
         type: 'WORKSPACE_INVITE_ACCEPT',
         payload: { wsId: invite.id },
@@ -85,7 +88,7 @@ export default async function NotificationPopover() {
         >
           {notifications.length > 0 ? (
             notifications.map((notification, index) => (
-              <div key={index}>
+              <div key={notification.id}>
                 <p className="text-sm font-medium leading-none">
                   {notification.title}
                 </p>
