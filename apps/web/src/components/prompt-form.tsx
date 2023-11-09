@@ -1,5 +1,4 @@
 import { UseChatHelpers } from 'ai/react';
-import * as React from 'react';
 import Textarea from 'react-textarea-autosize';
 
 import { Button } from '@/components/ui/button';
@@ -10,12 +9,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { useEffect, useState } from 'react';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
+  edge?: boolean;
 }
 
 export function PromptForm({
@@ -24,22 +25,15 @@ export function PromptForm({
   inputRef,
   setInput,
   isLoading,
+  edge,
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit();
-
-  React.useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [inputRef]);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!input?.trim()) {
-          return;
-        }
+        if (!input?.trim()) return;
         setInput('');
         await onSubmit(input);
       }}
@@ -61,9 +55,10 @@ export function PromptForm({
           <TooltipTrigger asChild>
             <Button
               type="submit"
-              size="icon"
               disabled={isLoading || input === ''}
+              size={edge ? 'icon' : undefined}
             >
+              {edge || <div className="mr-1 text-sm">Standard</div>}
               <IconArrowElbow />
               <span className="sr-only">Send message</span>
             </Button>

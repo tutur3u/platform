@@ -3,8 +3,13 @@ import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
+import {
+  filterDuplicate,
+  filterDuplicates,
+  filterSystemMessages,
+  normalize,
+} from '../core';
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -153,33 +158,6 @@ function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(filteredMsgs);
   return normalizedMsgs + Anthropic.AI_PROMPT;
 }
-
-const filterDuplicate = (str: string) => {
-  const strLength = str.length;
-  const halfLength = Math.floor(strLength / 2);
-  const firstHalf = str.substring(0, halfLength);
-  const secondHalf = str.substring(halfLength, strLength);
-
-  if (firstHalf !== secondHalf) return str;
-  return firstHalf;
-};
-
-const filterDuplicates = (messages: Message[]) =>
-  // If there is 2 repeated substring in the
-  // message, we will merge them into one
-  messages.map((message) => {
-    return { ...message, content: filterDuplicate(message.content) };
-  });
-
-const normalize = (message: Message) => {
-  const { content, role } = message;
-  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
-  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  return content;
-};
-
-const filterSystemMessages = (messages: Message[]) =>
-  messages.filter((message) => message.role !== 'system');
 
 const normalizeMessages = (messages: Message[]) =>
   [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]

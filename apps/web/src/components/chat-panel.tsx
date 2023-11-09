@@ -31,6 +31,7 @@ export interface ChatPanelProps
   initialMessages?: Message[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  edge?: boolean;
 }
 
 export function ChatPanel({
@@ -48,6 +49,7 @@ export function ChatPanel({
   messages,
   collapsed,
   setCollapsed,
+  edge,
 }: ChatPanelProps) {
   const { t } = useTranslation('ai-chat');
 
@@ -177,6 +179,7 @@ export function ChatPanel({
             inputRef={inputRef}
             setInput={setInput}
             isLoading={isLoading}
+            edge={edge}
           />
         </div>
       </div>

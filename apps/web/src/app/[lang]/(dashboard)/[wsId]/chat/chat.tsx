@@ -60,21 +60,40 @@ const Chat = ({
     setPreviewTokenDialog(true);
   }, [previewToken, hasKey]);
 
+  const [useEdge, setUseEdge] = useLocalStorage({
+    key: 'use-edge-ai-api',
+    defaultValue: true,
+  });
+
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: '/api/chat/ai',
+      api: `/api/chat/ai/${useEdge ? 'edge' : 'standard'}`,
       body: {
         id: chat?.id,
         wsId,
         previewToken,
       },
       onResponse(response) {
-        if (response.status === 401) {
+        if (!response.ok)
           toast({
-            title: 'Something went wrong',
-            description: response.statusText,
+            title: t('something_went_wrong'),
+            description: t('try_again_later'),
+          });
+      },
+      onError(_) {
+        if (useEdge) {
+          toast({
+            title: t('something_went_wrong'),
+            description: t('edge_api_opt_out'),
+          });
+
+          setUseEdge(false);
+        } else {
+          toast({
+            title: t('something_went_wrong'),
+            description: t('try_again_later'),
           });
         }
       },
@@ -93,7 +112,7 @@ const Chat = ({
     return () => {
       clearTimeout(timeout);
     };
-  }, [chat, hasKey, isLoading, messages, reload, stop]);
+  }, [chat, hasKey, isLoading, messages, reload]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -116,7 +135,7 @@ const Chat = ({
 
     if (!res.ok) {
       toast({
-        title: 'Something went wrong',
+        title: t('something_went_wrong'),
         description: res.statusText,
       });
       setLoading(false);
@@ -186,6 +205,7 @@ const Chat = ({
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         defaultRoute={`/${wsId}/chat`}
+        edge={useEdge}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>

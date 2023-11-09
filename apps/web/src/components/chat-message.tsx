@@ -94,7 +94,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
               ) : (
                 <code
                   className={cn(
-                    'bg-foreground/10 mr-0.5 rounded p-1 text-blue-600 dark:text-blue-300',
+                    'bg-foreground text-background mr-0.5 rounded-lg px-2 py-1 font-semibold',
                     className
                   )}
                   {...props}
@@ -105,6 +105,9 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
             },
             th({ children }) {
               return <th className="text-foreground">{children}</th>;
+            },
+            pre({ children }) {
+              return <pre className="bg-background">{children}</pre>;
             },
           }}
         >
