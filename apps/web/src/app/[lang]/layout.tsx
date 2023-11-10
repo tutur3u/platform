@@ -1,16 +1,17 @@
 import '../../styles/globals.css';
-
-import { Toaster } from '@/components/ui/toaster';
 import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { siteConfig } from '@/constants/configs';
-import { Metadata, Viewport } from 'next';
+
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import Navbar from './navbar';
-import NavbarPadding from './navbar-padding';
-import { StaffToolbar } from './staff-toolbar';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { Providers } from '@/components/providers';
+import { Toaster } from '@/components/ui/toaster';
+import { siteConfig } from '@/constants/configs';
+import { StaffToolbar } from './staff-toolbar';
+import NavbarPadding from './navbar-padding';
+import { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { cn } from '@/lib/utils';
+import Navbar from './navbar';
 
 interface Props {
   children: ReactNode;
@@ -96,13 +97,15 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
+const inter = Inter({ subsets: ['latin', 'vietnamese'] });
+
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];
 }
 
 export default async function RootLayout({ children, params }: Props) {
   return (
-    <html lang={params.lang}>
+    <html lang={params.lang} className={inter.className}>
       <body
         className={cn(
           'bg-background min-h-screen font-sans antialiased'
