@@ -97,7 +97,7 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
-const inter = Inter({ subsets: ['latin', 'vietnamese'] });
+const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'swap' });
 
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];
@@ -105,11 +105,11 @@ export async function generateStaticParams() {
 
 export default async function RootLayout({ children, params }: Props) {
   return (
-    <html lang={params.lang} className={inter.className}>
+    <html lang={params.lang}>
       <body
         className={cn(
-          'bg-background min-h-screen font-sans antialiased'
-          // fontSans.variable
+          'bg-background min-h-screen font-sans antialiased',
+          inter.className
         )}
       >
         <VercelAnalytics />
