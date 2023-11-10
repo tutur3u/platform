@@ -13,6 +13,8 @@ import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Navbar from './navbar';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   children: ReactNode;
   params: {
