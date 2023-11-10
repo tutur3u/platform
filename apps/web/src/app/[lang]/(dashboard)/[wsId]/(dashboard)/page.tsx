@@ -4,7 +4,7 @@ import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { getReportsCount } from '../users/reports/page';
+import { getReportsCount } from '../users/reports/core';
 
 interface Props {
   params: {
