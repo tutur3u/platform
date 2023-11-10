@@ -88,12 +88,15 @@ export const modules: ModulePackage[] = [
     externalAlias: 'members',
     externalPath: '/migrate/members',
     internalPath: '/api/workspaces/[wsId]/users/groups/members/migrate',
-    mapping: (items) =>
-      items.map((i) => ({
+    mapping: (items) => {
+      console.log(items);
+
+      return items.map((i) => ({
         user_id: i?.user_id,
         group_id: i?.class_id,
         created_at: i?.created_at,
-      })),
+      }));
+    },
   },
   {
     name: 'User Indicators',

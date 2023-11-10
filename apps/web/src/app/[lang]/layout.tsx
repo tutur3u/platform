@@ -97,7 +97,7 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
-const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'swap' });
+const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];
