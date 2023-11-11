@@ -97,7 +97,6 @@ export default function LoginForm() {
 
     if (res.ok) {
       router.refresh();
-      router.push('/onboarding');
     } else {
       setLoading(false);
       toast({
