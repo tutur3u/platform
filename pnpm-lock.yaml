@@ -255,8 +255,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.2)(react@18.2.0)
       openai:
-        specifier: ^4.17.3
-        version: 4.17.3(encoding@0.1.13)
+        specifier: ^4.17.4
+        version: 4.17.4(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -391,8 +391,8 @@ importers:
         specifier: ^8.4.31
         version: 8.4.31
       supabase:
-        specifier: ^1.111.2
-        version: 1.111.2
+        specifier: ^1.111.3
+        version: 1.111.3
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -4033,7 +4033,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001561
-      electron-to-chromium: 1.4.580
+      electron-to-chromium: 1.4.581
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
     dev: true
@@ -4629,8 +4629,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /electron-to-chromium@1.4.580:
-    resolution: {integrity: sha512-T5q3pjQon853xxxHUq3ZP68ZpvJHuSMY2+BZaW3QzjS4HvNuvsMmZ/+lU+nCrftre1jFZ+OSlExynXWBihnXzw==}
+  /electron-to-chromium@1.4.581:
+    resolution: {integrity: sha512-6uhqWBIapTJUxgPTCHH9sqdbxIMPt7oXl0VcAL1kOtlU6aECdcMncCrX5Z7sHQ/invtrC9jUQUef7+HhO8vVFw==}
     dev: true
 
   /emoji-regex@9.2.2:
@@ -7164,8 +7164,8 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
-  /openai@4.17.3(encoding@0.1.13):
-    resolution: {integrity: sha512-Gx9wzl9HWX5pjagkgXVu6U2BTFEPkQFdkppNnAX2n2Rpjtn2zt152wXh7NnZ5eJuVxUGYzRe66JmayAEGjzqAg==}
+  /openai@4.17.4(encoding@0.1.13):
+    resolution: {integrity: sha512-ThRFkl6snLbcAKS58St7N3CaKuI5WdYUvIjPvf4s+8SdymgNtOfzmZcZXVcCefx04oKFnvZJvIcTh3eAFUUhAQ==}
     hasBin: true
     dependencies:
       '@types/node': 18.18.9
@@ -8592,8 +8592,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.111.2:
-    resolution: {integrity: sha512-/liV7sHss3kxBfjkD5Etz/nsDOXCZ7+dKwLViI7Us7N6seYCPKSy2pM5m2H4prkQVxegK0P75yuRYLOxUrWHmw==}
+  /supabase@1.111.3:
+    resolution: {integrity: sha512-snsCpebpLc3/pQc4UsBjsMXY2nPpcCyhj5fJIBLvb8uFxcoPx5XRgJydtPqzovX1erC8ziEyqHp5S0eTHYV1MA==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
