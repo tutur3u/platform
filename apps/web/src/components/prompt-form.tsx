@@ -36,7 +36,7 @@ export function PromptForm({
       }}
       ref={formRef}
     >
-      <div className="bg-background/70 flex max-h-60 w-full overflow-hidden rounded-lg p-2 pl-4 sm:border">
+      <div className="bg-background/70 flex max-h-60 w-full items-end overflow-hidden rounded-lg p-2 pl-4 sm:border">
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -46,7 +46,8 @@ export function PromptForm({
           onChange={(e) => setInput(e.target.value)}
           placeholder="Send a message."
           spellCheck={false}
-          className="placeholder-foreground/50 w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+          maxRows={7}
+          className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
         />
         <Tooltip>
           <TooltipTrigger asChild>
