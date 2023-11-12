@@ -6,7 +6,6 @@ import MemberTabs from './_components/member-tabs';
 import MemberList from './_components/member-list';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/user-helper';
 import { User } from '@/types/primitives/User';

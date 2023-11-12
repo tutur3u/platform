@@ -117,10 +117,9 @@ const Chat = ({
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const updateInput = (input: string) => {
-    setInput(input);
+  useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  };
+  }, [input, inputRef]);
 
   const createChat = async (input: string) => {
     setLoading(true);
@@ -186,7 +185,7 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen setInput={updateInput} />
+          <EmptyScreen setInput={setInput} />
         )}
       </div>
 

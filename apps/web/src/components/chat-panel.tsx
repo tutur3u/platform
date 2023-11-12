@@ -5,13 +5,7 @@ import { PromptForm } from '@/components/prompt-form';
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import {
-  ArrowLeftToLine,
-  Flame,
-  FolderOpen,
-  Globe2,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowLeftToLine, FolderOpen, Globe2, Sparkles } from 'lucide-react';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
@@ -45,9 +39,7 @@ export function ChatPanel({
   chats,
   defaultRoute,
   isLoading,
-  stop,
   append,
-  reload,
   input,
   inputRef,
   setInput,

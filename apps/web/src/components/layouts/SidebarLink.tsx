@@ -43,14 +43,13 @@ export default function SidebarLink({
   left = false,
   classNames,
   exactMatch = false,
-  disableAutoClose = false,
   disabled = false,
   disableBorder = false,
 }: SidebarLinkProps) {
   const router = useRouter();
   const { wsId, teamId } = router.query;
 
-  const { sidebar, setSidebar, hideExperimentalOnSidebar } = useAppearance();
+  const { sidebar, hideExperimentalOnSidebar } = useAppearance();
 
   const isExpanded = sidebar === 'open';
 

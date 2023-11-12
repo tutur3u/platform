@@ -42,8 +42,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const { wsId } = router.query;
 
-  const { sidebar, theme, setSidebar, toggleSidebar, changeTheme } =
-    useAppearance();
+  const { sidebar, theme, toggleSidebar, changeTheme } = useAppearance();
 
   const { user } = useUser();
 
