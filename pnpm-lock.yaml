@@ -39,8 +39,8 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0
       '@faker-js/faker':
-        specifier: ^8.2.0
-        version: 8.2.0
+        specifier: ^8.3.1
+        version: 8.3.1
       '@formatjs/intl-localematcher':
         specifier: ^0.5.2
         version: 0.5.2
@@ -210,8 +210,8 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5(next@14.0.2)
       ai:
-        specifier: ^2.2.22
-        version: 2.2.22(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.3)(vue@3.3.8)
+        specifier: ^2.2.23
+        version: 2.2.23(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.3)(vue@3.3.8)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -255,8 +255,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.2)(react@18.2.0)
       openai:
-        specifier: ^4.17.5
-        version: 4.17.5(encoding@0.1.13)
+        specifier: ^4.18.0
+        version: 4.18.0(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -674,8 +674,8 @@ packages:
     resolution: {integrity: sha512-Kn7K8dx/5U6+cT1yEhpX1w4PCSg0M+XyRILPgvwcEBjerFWCwQj5sbr3/VmxqV0JGHCBCzyd6LxypEuehypY1w==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
-  /@faker-js/faker@8.2.0:
-    resolution: {integrity: sha512-VacmzZqVxdWdf9y64lDOMZNDMM/FQdtM9IsaOPKOm2suYwEatb8VkdHqOzXcDnZbk7YDE2BmsJmy/2Hmkn563g==}
+  /@faker-js/faker@8.3.1:
+    resolution: {integrity: sha512-FdgpFxY6V6rLZE9mmIBb9hM0xpfvQOSNOLnzolzKwsE1DH+gC7lEKV1p1IbR0lAYyvYd5a4u3qWJzowUkw1bIw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0, npm: '>=6.14.13'}
     dev: false
 
@@ -3733,8 +3733,8 @@ packages:
       humanize-ms: 1.2.1
     dev: false
 
-  /ai@2.2.22(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.3)(vue@3.3.8):
-    resolution: {integrity: sha512-H1TXjX3uGYU4bb8/GUTaY7BJ6YiMJDpp8WpmqwdVLmAh0+HufB7r27vCX0R4XXzJhdRaYp0ex6s9QvqkfvVA2A==}
+  /ai@2.2.23(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.3)(vue@3.3.8):
+    resolution: {integrity: sha512-pToIoSX7mXy7t8+D8xN6OjlEvtufbY5fPDzoSzf3zR/Z2ajw1rE6d9hOFyKSZ+ZTNdZ1xklabWf21qj2gP1REA==}
     engines: {node: '>=14.6'}
     peerDependencies:
       react: ^18.2.0
@@ -4033,7 +4033,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001562
-      electron-to-chromium: 1.4.582
+      electron-to-chromium: 1.4.583
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
     dev: true
@@ -4629,8 +4629,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /electron-to-chromium@1.4.582:
-    resolution: {integrity: sha512-89o0MGoocwYbzqUUjc+VNpeOFSOK9nIdC5wY4N+PVUarUK0MtjyTjks75AZS2bW4Kl8MdewdFsWaH0jLy+JNoA==}
+  /electron-to-chromium@1.4.583:
+    resolution: {integrity: sha512-93y1gcONABZ7uqYe/JWDVQP/Pj/sQSunF0HVAPdlg/pfBnOyBMLlQUxWvkqcljJg1+W6cjvPuYD+r1Th9Tn8mA==}
     dev: true
 
   /emoji-regex@9.2.2:
@@ -7164,8 +7164,8 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
-  /openai@4.17.5(encoding@0.1.13):
-    resolution: {integrity: sha512-SDgA933/QOjISCgWRc/JQhY1HweYZ6FOie3bWrCpj09FA5xIlaomldbyzICHNjtkh7SWEmGYFjRHIDtuwr+eTw==}
+  /openai@4.18.0(encoding@0.1.13):
+    resolution: {integrity: sha512-0C+waXoU7mvp/1QZzwnmPCkq4t02VJkjL1EXn0Pd7pFuTA0Y4y1LwzSZSiF/tpxw+Pr7diHVJjbfJ8QbdZnEcA==}
     hasBin: true
     dependencies:
       '@types/node': 18.18.9
