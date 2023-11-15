@@ -2593,8 +2593,8 @@ packages:
       '@sentry/utils': 7.80.1
     dev: false
 
-  /@sentry/cli@1.76.0(encoding@0.1.13):
-    resolution: {integrity: sha512-56bVyUJoi52dop/rFEaSoU4AfVRXpR6M+nZBwN1iGUAwdfBrarNbtmIOjfgPi+tVzVB5ck09PzVXG6zeBqJJcA==}
+  /@sentry/cli@1.77.1(encoding@0.1.13):
+    resolution: {integrity: sha512-OtJ7U9LeuPUAY/xow9wwcjM9w42IJIpDtClTKI/RliE685vd/OJUIpiAvebHNthDYpQynvwb/0iuF4fonh+CKw==}
     engines: {node: '>= 8'}
     hasBin: true
     requiresBuild: true
@@ -2720,7 +2720,7 @@ packages:
     resolution: {integrity: sha512-Ssj1mJVFsfU6vMCOM2d+h+KQR7QHSfeIP16t4l20Uq/neqWXZUQ2yvQfe4S3BjdbJXz/X4Rw8Hfy1Sd0ocunYw==}
     engines: {node: '>= 8'}
     dependencies:
-      '@sentry/cli': 1.76.0(encoding@0.1.13)
+      '@sentry/cli': 1.77.1(encoding@0.1.13)
       webpack-sources: 3.2.3
     transitivePeerDependencies:
       - encoding
@@ -8252,8 +8252,8 @@ packages:
     dependencies:
       lru-cache: 6.0.0
 
-  /seroval@0.12.3:
-    resolution: {integrity: sha512-5WDeMpv7rmEylsypRj1iwRVHE/QLsMLiZ+9savlNNQEVdgGia1iRMb7qyaAagY0wu/7+QTe6d2wldk/lgaLb6g==}
+  /seroval@0.12.4:
+    resolution: {integrity: sha512-JIsZHp98o+okpYN8HEPyI9Blr0gxAUPIGvg3waXrEMFjPz9obiLYMz0uFiUGezKiCK8loosYbn8WsqO8WtAJUA==}
     engines: {node: '>=10'}
     dev: false
 
@@ -8368,7 +8368,7 @@ packages:
     resolution: {integrity: sha512-xvtJvzJzWbsn35oKFhW9kNwaxG1Z/YLMsDp4tLVcYZTMPzvzQ8vEZuyDQ6nt7xDArVgZJ7TUFrJUwrui/oq53A==}
     dependencies:
       csstype: 3.1.2
-      seroval: 0.12.3
+      seroval: 0.12.4
     dev: false
 
   /solid-swr-store@0.10.7(solid-js@1.8.5)(swr-store@0.10.6):
