@@ -30,8 +30,8 @@ importers:
   apps/web:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.9.0
-        version: 0.9.0(encoding@0.1.13)
+        specifier: ^0.9.1
+        version: 0.9.1(encoding@0.1.13)
       '@emotion/react':
         specifier: ^11.11.1
         version: 11.11.1(@types/react@18.2.37)(react@18.2.0)
@@ -255,8 +255,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.2)(react@18.2.0)
       openai:
-        specifier: ^4.18.0
-        version: 4.18.0(encoding@0.1.13)
+        specifier: ^4.19.0
+        version: 4.19.0(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -464,8 +464,8 @@ packages:
       '@jridgewell/trace-mapping': 0.3.20
     dev: false
 
-  /@anthropic-ai/sdk@0.9.0(encoding@0.1.13):
-    resolution: {integrity: sha512-qNoNld9luBWNcmCFTIZrsmusCQIdxIxQXyHJ64IDUsrvPvy2lM0kA9+E6bHeeFut463zdGkVz0Ux0U+WDppLGg==}
+  /@anthropic-ai/sdk@0.9.1(encoding@0.1.13):
+    resolution: {integrity: sha512-wa1meQ2WSfoY8Uor3EdrJq0jTiZJoKoSii2ZVWRY1oN4Tlr5s59pADg9T79FTbPe1/se5c3pBeZgJL63wmuoBA==}
     dependencies:
       '@types/node': 18.18.9
       '@types/node-fetch': 2.6.9
@@ -4033,7 +4033,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001562
-      electron-to-chromium: 1.4.583
+      electron-to-chromium: 1.4.585
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
     dev: true
@@ -4629,8 +4629,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /electron-to-chromium@1.4.583:
-    resolution: {integrity: sha512-93y1gcONABZ7uqYe/JWDVQP/Pj/sQSunF0HVAPdlg/pfBnOyBMLlQUxWvkqcljJg1+W6cjvPuYD+r1Th9Tn8mA==}
+  /electron-to-chromium@1.4.585:
+    resolution: {integrity: sha512-B4yBlX0azdA3rVMxpYwLQfDpdwOgcnLCkpvSOd68iFmeedo+WYjaBJS3/W58LVD8CB2nf+o7C4K9xz1l09RkWg==}
     dev: true
 
   /emoji-regex@9.2.2:
@@ -7164,8 +7164,8 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
-  /openai@4.18.0(encoding@0.1.13):
-    resolution: {integrity: sha512-0C+waXoU7mvp/1QZzwnmPCkq4t02VJkjL1EXn0Pd7pFuTA0Y4y1LwzSZSiF/tpxw+Pr7diHVJjbfJ8QbdZnEcA==}
+  /openai@4.19.0(encoding@0.1.13):
+    resolution: {integrity: sha512-cJbl0noZyAaXVKBTMMq6X5BAvP1pm2rWYDBnZes99NL+Zh5/4NmlAwyuhTZEru5SqGGZIoiYKeMPXy4bm9DI0w==}
     hasBin: true
     dependencies:
       '@types/node': 18.18.9
