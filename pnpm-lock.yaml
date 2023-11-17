@@ -211,7 +211,7 @@ importers:
         version: 0.1.5(next@14.0.3)
       ai:
         specifier: ^2.2.24
-        version: 2.2.24(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.4)(vue@3.3.8)
+        version: 2.2.24(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.5)(vue@3.3.8)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -391,8 +391,8 @@ importers:
         specifier: ^8.4.31
         version: 8.4.31
       supabase:
-        specifier: ^1.112.0
-        version: 1.112.0
+        specifier: ^1.113.1
+        version: 1.113.1
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -3733,7 +3733,7 @@ packages:
       humanize-ms: 1.2.1
     dev: false
 
-  /ai@2.2.24(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.4)(vue@3.3.8):
+  /ai@2.2.24(react@18.2.0)(solid-js@1.8.5)(svelte@4.2.5)(vue@3.3.8):
     resolution: {integrity: sha512-j9f89SC08SxN50wKp4ccIGniUMtCsslvOBbYGBCSIvDbMBQaNTZuKW4Id8tmfEeNMV9mwZZ5wRNj6/1Z/pFwYA==}
     engines: {node: '>=14.6'}
     peerDependencies:
@@ -3756,8 +3756,8 @@ packages:
       react: 18.2.0
       solid-js: 1.8.5
       solid-swr-store: 0.10.7(solid-js@1.8.5)(swr-store@0.10.6)
-      sswr: 2.0.0(svelte@4.2.4)
-      svelte: 4.2.4
+      sswr: 2.0.0(svelte@4.2.5)
+      svelte: 4.2.5
       swr: 2.2.0(react@18.2.0)
       swr-store: 0.10.6
       swrv: 1.0.4(vue@3.3.8)
@@ -4054,7 +4054,7 @@ packages:
     engines: {node: '>=6.14.2'}
     requiresBuild: true
     dependencies:
-      node-gyp-build: 4.6.1
+      node-gyp-build: 4.7.0
     dev: false
 
   /busboy@1.6.0:
@@ -7020,8 +7020,8 @@ packages:
       formdata-polyfill: 4.0.10
     dev: true
 
-  /node-gyp-build@4.6.1:
-    resolution: {integrity: sha512-24vnklJmyRS8ViBNI8KbtK/r/DmXQMRiOMXTNz2nrTnAYUwjmEEbnnpB/+kt+yWRv73bPsSPRFddrcIbAxSiMQ==}
+  /node-gyp-build@4.7.0:
+    resolution: {integrity: sha512-PbZERfeFdrHQOOXiAKOY0VPbykZy90ndPKk0d+CFDegTKmWp1VgOTz2xACVbr1BjCWxrQp68CXtvNsveFhqDJg==}
     hasBin: true
     dev: false
 
@@ -8406,12 +8406,12 @@ packages:
       frac: 1.1.2
     dev: false
 
-  /sswr@2.0.0(svelte@4.2.4):
+  /sswr@2.0.0(svelte@4.2.5):
     resolution: {integrity: sha512-mV0kkeBHcjcb0M5NqKtKVg/uTIYNlIIniyDfSGrSfxpEdM9C365jK0z55pl9K0xAkNTJi2OAOVFQpgMPUk+V0w==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      svelte: 4.2.4
+      svelte: 4.2.5
       swrev: 4.0.0
     dev: false
 
@@ -8591,8 +8591,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.112.0:
-    resolution: {integrity: sha512-B08JyBlRxMZ9l0/HNmxYIGCL5Vh/tdDvzDL0HmWNbbcIFYTIYtMPeEL2SL8Y2dzg/CabmZNBIxgW+aeSNGfWvw==}
+  /supabase@1.113.1:
+    resolution: {integrity: sha512-9VLd8JlZHQgsh00D69EmnBv3df7ESmG04CcLKNfP8NidwUnrWJCmSPC8SyzRu14zTI1DWCUH/N4/DIOIxXbjfQ==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
@@ -8622,8 +8622,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  /svelte@4.2.4:
-    resolution: {integrity: sha512-hpl7nZhSY+pCL/gsXTyixmGR9H0qDrbn9TT8wfLQyX9jRZeDgIvMca7vrE/tgPXZmQpjIcJ6AsoSdAlyRCDuiQ==}
+  /svelte@4.2.5:
+    resolution: {integrity: sha512-P9YPKsGkNdw4OJbtpd1uzimQHPj7Ai2sPcOHmmD6VgkFhFDmcYevQi7vE4cQ1g8/Vs64aL2TwMoCNFAzv7TPaQ==}
     engines: {node: '>=16'}
     dependencies:
       '@ampproject/remapping': 2.2.1
@@ -9216,7 +9216,7 @@ packages:
     engines: {node: '>=6.14.2'}
     requiresBuild: true
     dependencies:
-      node-gyp-build: 4.6.1
+      node-gyp-build: 4.7.0
     dev: false
 
   /util-deprecate@1.0.2:
