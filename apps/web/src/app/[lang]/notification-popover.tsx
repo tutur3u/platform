@@ -82,8 +82,8 @@ export default async function NotificationPopover() {
             notifications.length === 0
               ? 'h-20'
               : notifications.length > 4
-              ? 'h-96'
-              : ''
+                ? 'h-96'
+                : ''
           }`}
         >
           {notifications.length > 0 ? (

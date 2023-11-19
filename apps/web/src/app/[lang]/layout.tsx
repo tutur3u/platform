@@ -32,8 +32,8 @@ export async function generateMetadata({
     lang === 'en'
       ? enDescription
       : lang === 'vi'
-      ? viDescription
-      : enDescription;
+        ? viDescription
+        : enDescription;
 
   return {
     title: {

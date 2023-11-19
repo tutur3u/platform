@@ -200,8 +200,8 @@ const InvoiceProductInput = ({
                   p?.stock && p?.price
                     ? t('amount-placeholder')
                     : p.warehouse_id
-                    ? t('pending-amount-loaded')
-                    : t('pending-product-selection')
+                      ? t('pending-amount-loaded')
+                      : t('pending-product-selection')
                 }
                 value={p.amount}
                 onChange={(val) =>

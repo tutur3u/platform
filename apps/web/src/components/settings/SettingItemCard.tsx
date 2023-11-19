@@ -63,10 +63,10 @@ const SettingItemCard = ({
                 disabled
                   ? 'cursor-not-allowed opacity-50'
                   : onSave
-                  ? 'border-blue-300/20 bg-blue-300/10 text-blue-300 hover:border-blue-300/30 hover:bg-blue-300/20'
-                  : onDelete
-                  ? 'border-red-300/20 bg-red-300/10 text-red-300 hover:border-red-300/30 hover:bg-red-300/20'
-                  : ''
+                    ? 'border-blue-300/20 bg-blue-300/10 text-blue-300 hover:border-blue-300/30 hover:bg-blue-300/20'
+                    : onDelete
+                      ? 'border-red-300/20 bg-red-300/10 text-red-300 hover:border-red-300/30 hover:bg-red-300/20'
+                      : ''
               }`}
             >
               {saving ? '...' : onSave ? t('save') : t('delete')}

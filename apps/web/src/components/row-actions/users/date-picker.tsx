@@ -19,7 +19,7 @@ interface Props {
   className?: string;
 }
 
-export function DatePicker({ defaultValue, onValueChange,className }: Props) {
+export function DatePicker({ defaultValue, onValueChange, className }: Props) {
   const [date, setDate] = useState<Date | undefined>(defaultValue);
 
   return (

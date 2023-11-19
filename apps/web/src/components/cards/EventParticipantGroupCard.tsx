@@ -54,9 +54,7 @@ const EventParticipantGroupCard = ({
 
   const usersApiPath =
     selected && ws?.id
-      ? `/api/workspaces/${ws?.id}/users?page=${1}&itemsPerPage=${10}&groupId=${
-          participant.participant_id
-        }`
+      ? `/api/workspaces/${ws?.id}/users?page=${1}&itemsPerPage=${10}&groupId=${participant.participant_id}`
       : null;
 
   const { data, error } = useSWR<{ data: WorkspaceUser[]; count: number }>(
