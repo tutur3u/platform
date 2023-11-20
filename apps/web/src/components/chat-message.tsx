@@ -73,7 +73,7 @@ export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
               if (
                 Array.isArray(children) &&
                 children?.[0] === '@' &&
-                children?.[1] === '<PROMPT>' &&
+                children?.[1] === '<FOLLOWUP>' &&
                 children?.[2]
               )
                 return (
