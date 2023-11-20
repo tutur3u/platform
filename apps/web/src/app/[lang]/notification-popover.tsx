@@ -71,24 +71,27 @@ export default async function NotificationPopover() {
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="end">
+      <PopoverContent className="w-72 p-0" align="end">
         <div className="px-4 py-2 font-semibold">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
         <Separator />
         <ScrollArea
-          className={`gap-2 px-4 py-2 ${
+          className={`p-2 ${
             notifications.length === 0
               ? 'h-20'
-              : notifications.length > 4
+              : notifications.length > 3
                 ? 'h-96'
                 : ''
           }`}
         >
           {notifications.length > 0 ? (
-            notifications.map((notification, index) => (
-              <div key={notification.id}>
+            notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
+              >
                 <p className="text-sm font-medium leading-none">
                   {notification.title}
                 </p>
@@ -97,10 +100,6 @@ export default async function NotificationPopover() {
                 </p>
 
                 <NotificationActionList actions={notification.actions} />
-
-                {index !== notifications.length - 1 ? (
-                  <Separator className="my-2 w-full" />
-                ) : null}
               </div>
             ))
           ) : (

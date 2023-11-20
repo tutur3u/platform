@@ -181,6 +181,7 @@ const Chat = ({
                 if (firstHalf === secondHalf) message.content = firstHalf;
                 return message;
               })}
+              setInput={setInput}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

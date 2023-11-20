@@ -101,7 +101,7 @@ const trailingMessages: Message[] = [
     id: 'final-message',
     role: 'assistant',
     content:
-      'Thank you, I will respond with a title in my next response, and it will only contain the title, nothing else.',
+      'Thank you, I will respond with a title in my next response, and it will only contain the title without any quotation marks, and nothing else.',
   },
 ];
 

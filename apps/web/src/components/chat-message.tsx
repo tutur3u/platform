@@ -15,9 +15,10 @@ import 'katex/dist/katex.min.css';
 
 export interface ChatMessageProps {
   message: Message;
+  setInput: (input: string) => void;
 }
 
-export function ChatMessage({ message, ...props }: ChatMessageProps) {
+export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
   return (
     <div className={cn('group relative mb-4 flex items-start')} {...props}>
       <div
@@ -69,6 +70,23 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
               );
             },
             p({ children }) {
+              if (
+                Array.isArray(children) &&
+                children?.[0] === '@' &&
+                children?.[1] === '<PROMPT>' &&
+                children?.[2]
+              )
+                return (
+                  <button
+                    className="bg-foreground/5 mb-2 rounded-full border text-left last:mb-0"
+                    onClick={() => setInput(children[2].toString().trim())}
+                  >
+                    <span className="line-clamp-1 px-3 py-1">
+                      {children[2].toString().trim()}
+                    </span>
+                  </button>
+                );
+
               return <p className="mb-2 last:mb-0">{children}</p>;
             },
             blockquote({ children }) {
