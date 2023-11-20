@@ -5,7 +5,13 @@ import { PromptForm } from '@/components/prompt-form';
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import { ArrowLeftToLine, FolderOpen, Globe2, Sparkles } from 'lucide-react';
+import {
+  ArrowLeftToLine,
+  FolderOpen,
+  Globe2,
+  Settings,
+  Sparkles,
+} from 'lucide-react';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
@@ -54,94 +60,108 @@ export function ChatPanel({
 
   return (
     <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
-      <div
-        id="chat-sidebar"
-        className={`bg-background absolute inset-x-2 bottom-[4.5rem] z-20 rounded-lg border p-2 transition-all duration-500 md:inset-x-6 md:bottom-[6.25rem] md:max-w-xs ${
-          collapsed
-            ? 'pointer-events-none border-transparent bg-transparent'
-            : 'border-border shadow-lg'
-        }`}
-      >
-        <div
-          className={`transition duration-300 ${
-            collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-          }`}
-        >
-          <ScrollArea className="h-96">
-            <div className="text-center">
-              <div className="text-foreground font-semibold">{t('chats')}</div>
-              <Separator className="my-2" />
-              <div className="grid gap-1">
-                {chats.length > 0 ? (
-                  chats.map((chat) =>
-                    chat.id === id ? (
-                      <Button
-                        key={chat.id}
-                        variant="secondary"
-                        className="w-full"
-                        disabled
-                      >
-                        <div className="line-clamp-1">
-                          {chat?.title || chat.id}
-                        </div>
-                      </Button>
-                    ) : (
-                      <Link key={chat.id} href={`${defaultRoute}/${chat.id}`}>
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          disabled={collapsed}
-                        >
-                          <div className="line-clamp-1">
-                            {chat?.title || chat.id}
-                          </div>
-                        </Button>
-                      </Link>
-                    )
-                  )
-                ) : (
-                  <div className="text-foreground/60 mt-8 p-8">
-                    {t('no_chats')}
-                  </div>
-                )}
-              </div>
-            </div>
-          </ScrollArea>
-          <Separator className="my-2" />
-        </div>
-
-        <div className="flex w-full gap-2">
-          <Button
-            size="icon"
-            variant="outline"
-            className="pointer-events-auto flex-none"
-            onClick={() => setCollapsed(!collapsed)}
-          >
-            {collapsed ? (
-              <FolderOpen className="h-5 w-5" />
-            ) : (
-              <ArrowLeftToLine className="h-5 w-5" />
-            )}
-          </Button>
-
-          <Link
-            href={defaultRoute}
-            className={`w-full ${
-              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-            } ${id ? '' : 'cursor-default'} transition duration-300`}
-          >
-            <Button className="w-full" disabled={!id || collapsed}>
-              <div className="line-clamp-1">{t('new_chat')}</div>
-            </Button>
-          </Link>
-        </div>
-      </div>
-
       <ButtonScrollToBottom />
 
-      <div className="mx-auto sm:max-w-4xl sm:px-4">
+      <div className="mx-auto sm:px-4 lg:max-w-4xl xl:max-w-6xl">
         {id && (
-          <div className="mb-2 flex h-10 flex-col items-center justify-center gap-2 md:flex-row">
+          <div className="relative mb-2 flex items-center justify-center gap-2">
+            <div
+              id="chat-sidebar"
+              className={`absolute -bottom-2 z-20 rounded-t-lg border-t p-2 transition-all duration-500 md:border md:border-b-0 ${
+                collapsed
+                  ? 'pointer-events-none border-transparent bg-transparent'
+                  : 'border-border bg-background shadow-lg'
+              }`}
+            >
+              <div
+                className={`transition duration-300 ${
+                  collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+                }`}
+              >
+                <ScrollArea className="h-96">
+                  <div className="text-center">
+                    <div className="text-foreground font-semibold">
+                      {t('chats')}
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="grid gap-1">
+                      {chats.length > 0 ? (
+                        chats.map((chat) =>
+                          chat.id === id ? (
+                            <Button
+                              key={chat.id}
+                              variant="secondary"
+                              className="w-full"
+                              disabled
+                            >
+                              <div className="line-clamp-1">
+                                {chat?.title || chat.id}
+                              </div>
+                            </Button>
+                          ) : (
+                            <Link
+                              key={chat.id}
+                              href={`${defaultRoute}/${chat.id}`}
+                            >
+                              <Button
+                                variant="secondary"
+                                className="w-full"
+                                disabled={collapsed}
+                              >
+                                <div className="line-clamp-1">
+                                  {chat?.title || chat.id}
+                                </div>
+                              </Button>
+                            </Link>
+                          )
+                        )
+                      ) : (
+                        <div className="text-foreground/60 mt-8 p-8">
+                          {t('no_chats')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </ScrollArea>
+                <Separator className="my-2" />
+              </div>
+
+              <div className="flex w-full gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                  onClick={() => setCollapsed(!collapsed)}
+                >
+                  {collapsed ? (
+                    <FolderOpen className="h-5 w-5" />
+                  ) : (
+                    <ArrowLeftToLine className="h-5 w-5" />
+                  )}
+                </Button>
+
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                  disabled
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+
+                <Link
+                  href={defaultRoute}
+                  className={`w-full ${
+                    collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+                  } ${id ? '' : 'cursor-default'} transition duration-300`}
+                >
+                  <Button className="w-full" disabled={!id || collapsed}>
+                    <div className="line-clamp-1">{t('new_chat')}</div>
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
             {/* {isLoading ? (
             <Button
               variant="outline"
