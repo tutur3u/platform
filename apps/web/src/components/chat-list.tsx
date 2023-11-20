@@ -15,7 +15,7 @@ export function ChatList({ title, messages, setInput }: ChatList) {
   }
 
   return (
-    <div className="relative mx-auto lg:max-w-4xl">
+    <div className="relative mx-auto lg:max-w-4xl xl:max-w-6xl">
       <div className="bg-foreground/5 rounded-lg border p-4 text-center text-2xl font-semibold">
         {title}
       </div>
