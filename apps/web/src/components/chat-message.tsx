@@ -78,7 +78,7 @@ export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
               )
                 return (
                   <button
-                    className="bg-foreground/5 mb-2 rounded-full border text-left last:mb-0"
+                    className="bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
                     onClick={() => setInput(children[2].toString().trim())}
                   >
                     <span className="line-clamp-1 px-3 py-1">
