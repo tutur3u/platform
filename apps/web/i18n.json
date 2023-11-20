@@ -143,8 +143,13 @@
     ],
 
     "/[lang]/(dashboard)/[wsId]/tasks": ["sidebar-tabs"],
-    "/[lang]/(dashboard)/[wsId]/boards": ["sidebar-tabs"],
-    "/[lang]/(dashboard)/[wsId]/boards/[boardId]": ["sidebar-tabs"],
+    "/[lang]/(dashboard)/[wsId]/projects": [
+      "sidebar-tabs",
+      "ws-projects",
+      "search",
+      "basic-data-table"
+    ],
+    "/[lang]/(dashboard)/[wsId]/projects/[projectId]": ["sidebar-tabs"],
 
     "/[lang]/(dashboard)/[wsId]/documents": ["sidebar-tabs", "documents"],
     "/[lang]/(dashboard)/[wsId]/documents/[docId]": [

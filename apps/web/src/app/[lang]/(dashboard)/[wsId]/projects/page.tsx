@@ -1,14 +1,14 @@
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';
-import { secretColumns } from '@/data/columns/secrets';
-import SecretEditDialog from './_components/secret-edit-dialog';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
+import ProjectEditDialog from './_components/project-edit-dialog';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { projectColumns } from '@/data/columns/projects';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,52 +23,51 @@ interface Props {
   };
 }
 
-export default async function WorkspaceSecretsPage({
+export default async function WorkspaceProjectsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: secrets, count } = await getSecrets(wsId, searchParams);
-  const { t } = useTranslation('ws-secrets');
+  const { data: projects, count } = await getProjects(wsId, searchParams);
+  const { t } = useTranslation('ws-projects');
 
   return (
     <>
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold">{t('secrets')}</h1>
+          <h1 className="text-2xl font-bold">{t('projects')}</h1>
           <p className="text-foreground/80">{t('description')}</p>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <SecretEditDialog
+          <ProjectEditDialog
             data={{
               ws_id: wsId,
             }}
             trigger={
               <Button>
                 <Plus className="mr-2 h-5 w-5" />
-                {t('create_secret')}
+                {t('create_project')}
               </Button>
             }
-            submitLabel={t('create_secret')}
+            submitLabel={t('create_project')}
           />
         </div>
       </div>
       <Separator className="my-4" />
       <DataTable
-        columnGenerator={secretColumns}
-        namespace="secret-data-table"
-        data={secrets}
+        columnGenerator={projectColumns}
+        namespace="basic-data-table"
+        data={projects}
         count={count}
         defaultVisibility={{
           id: false,
-          created_at: false,
         }}
       />
     </>
   );
 }
 
-async function getSecrets(
+async function getProjects(
   wsId: string,
   {
     q,
@@ -79,7 +78,7 @@ async function getSecrets(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('workspace_secrets')
+    .from('workspace_boards')
     .select('*', {
       count: 'exact',
     })
@@ -104,5 +103,5 @@ async function getSecrets(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceSecret[]; count: number };
+  return { data, count } as { data: TaskBoard[]; count: number };
 }

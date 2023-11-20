@@ -1,13 +1,15 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
+
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
-import { Entity } from '@/types/primitives/Entity';
 import { Translate } from 'next-translate';
+import { ProjectRowActions } from '@/components/row-actions/projects';
 
-export const basicColumns = (t: Translate): ColumnDef<Entity>[] => [
+export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -34,14 +36,22 @@ export const basicColumns = (t: Translate): ColumnDef<Entity>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('id')} />
     ),
-    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 max-w-[8rem] break-all">
+        {row.getValue('id')}
+      </div>
+    ),
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 max-w-[8rem] break-all">
+        {row.getValue('name') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'created_at',
@@ -55,5 +65,10 @@ export const basicColumns = (t: Translate): ColumnDef<Entity>[] => [
           : '-'}
       </div>
     ),
+  },
+  {
+    id: 'actions',
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    cell: ({ row }) => <ProjectRowActions row={row} />,
   },
 ];
