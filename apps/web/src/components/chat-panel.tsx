@@ -63,83 +63,83 @@ export function ChatPanel({
       <ButtonScrollToBottom />
 
       <div className="mx-auto sm:px-4 lg:max-w-4xl xl:max-w-6xl">
-        {id && (
-          <div className="relative mb-2 flex items-center justify-center gap-2">
+        <div className="relative mb-2 flex items-center justify-center gap-2">
+          <div
+            id="chat-sidebar"
+            className={`absolute -bottom-2 z-20 rounded-t-lg border-t p-2 transition-all duration-500 md:border md:border-b-0 ${
+              collapsed
+                ? 'pointer-events-none border-transparent bg-transparent'
+                : 'border-border bg-background shadow-lg'
+            }`}
+          >
             <div
-              id="chat-sidebar"
-              className={`absolute -bottom-2 z-20 rounded-t-lg border-t p-2 transition-all duration-500 md:border md:border-b-0 ${
-                collapsed
-                  ? 'pointer-events-none border-transparent bg-transparent'
-                  : 'border-border bg-background shadow-lg'
+              className={`transition duration-300 ${
+                collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
               }`}
             >
-              <div
-                className={`transition duration-300 ${
-                  collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-                }`}
-              >
-                <ScrollArea className="h-96">
-                  <div className="text-center">
-                    <div className="text-foreground font-semibold">
-                      {t('chats')}
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="grid gap-1">
-                      {chats.length > 0 ? (
-                        chats.map((chat) =>
-                          chat.id === id ? (
+              <ScrollArea className="h-96">
+                <div className="text-center">
+                  <div className="text-foreground font-semibold">
+                    {t('chats')}
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="grid gap-1">
+                    {chats.length > 0 ? (
+                      chats.map((chat) =>
+                        chat.id === id ? (
+                          <Button
+                            key={chat.id}
+                            variant="secondary"
+                            className="w-full"
+                            disabled
+                          >
+                            <div className="line-clamp-1">
+                              {chat?.title || chat.id}
+                            </div>
+                          </Button>
+                        ) : (
+                          <Link
+                            key={chat.id}
+                            href={`${defaultRoute}/${chat.id}`}
+                          >
                             <Button
-                              key={chat.id}
                               variant="secondary"
                               className="w-full"
-                              disabled
+                              disabled={collapsed}
                             >
                               <div className="line-clamp-1">
                                 {chat?.title || chat.id}
                               </div>
                             </Button>
-                          ) : (
-                            <Link
-                              key={chat.id}
-                              href={`${defaultRoute}/${chat.id}`}
-                            >
-                              <Button
-                                variant="secondary"
-                                className="w-full"
-                                disabled={collapsed}
-                              >
-                                <div className="line-clamp-1">
-                                  {chat?.title || chat.id}
-                                </div>
-                              </Button>
-                            </Link>
-                          )
+                          </Link>
                         )
-                      ) : (
-                        <div className="text-foreground/60 mt-8 p-8">
-                          {t('no_chats')}
-                        </div>
-                      )}
-                    </div>
+                      )
+                    ) : (
+                      <div className="text-foreground/60 mt-8 p-8">
+                        {t('no_chats')}
+                      </div>
+                    )}
                   </div>
-                </ScrollArea>
-                <Separator className="my-2" />
-              </div>
+                </div>
+              </ScrollArea>
+              <Separator className="my-2" />
+            </div>
 
-              <div className="flex w-full gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                  onClick={() => setCollapsed(!collapsed)}
-                >
-                  {collapsed ? (
-                    <FolderOpen className="h-5 w-5" />
-                  ) : (
-                    <ArrowLeftToLine className="h-5 w-5" />
-                  )}
-                </Button>
+            <div className="flex w-full gap-2">
+              <Button
+                size="icon"
+                variant="outline"
+                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                onClick={() => setCollapsed(!collapsed)}
+              >
+                {collapsed ? (
+                  <FolderOpen className="h-5 w-5" />
+                ) : (
+                  <ArrowLeftToLine className="h-5 w-5" />
+                )}
+              </Button>
 
+              {id && (
                 <Button
                   size="icon"
                   variant="outline"
@@ -148,21 +148,22 @@ export function ChatPanel({
                 >
                   <Settings className="h-5 w-5" />
                 </Button>
+              )}
 
-                <Link
-                  href={defaultRoute}
-                  className={`w-full ${
-                    collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-                  } ${id ? '' : 'cursor-default'} transition duration-300`}
-                >
-                  <Button className="w-full" disabled={!id || collapsed}>
-                    <div className="line-clamp-1">{t('new_chat')}</div>
-                  </Button>
-                </Link>
-              </div>
+              <Link
+                href={defaultRoute}
+                className={`w-full ${
+                  collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+                } ${id ? '' : 'cursor-default'} transition duration-300`}
+              >
+                <Button className="w-full" disabled={!id || collapsed}>
+                  <div className="line-clamp-1">{t('new_chat')}</div>
+                </Button>
+              </Link>
             </div>
+          </div>
 
-            {/* {isLoading ? (
+          {/* {isLoading ? (
             <Button
               variant="outline"
               onClick={() => stop()}
@@ -182,27 +183,30 @@ export function ChatPanel({
             </Button>
           ) : null} */}
 
-            {edge ? (
-              <Button
-                variant="outline"
-                onClick={() => setUseEdge(false)}
-                className="bg-background/20 backdrop-blur-lg"
-              >
-                <Sparkles className="mr-2" />
-                {t('use_edge')}
-              </Button>
-            ) : messages?.length > 0 ? (
-              <Button
-                variant="outline"
-                onClick={() => setUseEdge(true)}
-                className="bg-background/20 backdrop-blur-lg"
-              >
-                <Globe2 className="mr-2" />
-                {t('use_standard')}
-              </Button>
-            ) : null}
-          </div>
-        )}
+          {id && (
+            <>
+              {edge ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setUseEdge(false)}
+                  className="bg-background/20 backdrop-blur-lg"
+                >
+                  <Sparkles className="mr-2" />
+                  {t('use_edge')}
+                </Button>
+              ) : messages?.length > 0 ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setUseEdge(true)}
+                  className="bg-background/20 backdrop-blur-lg"
+                >
+                  <Globe2 className="mr-2" />
+                  {t('use_standard')}
+                </Button>
+              ) : null}
+            </>
+          )}
+        </div>
 
         <div className="bg-background/20 space-y-4 border-t px-4 py-2 shadow-lg backdrop-blur-lg sm:rounded-t-xl sm:border md:py-4">
           <PromptForm
