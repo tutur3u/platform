@@ -56,9 +56,8 @@ const Chat = ({
   useEffect(() => {
     // Don't show the dialog if the key is configured
     // on the server or the a preview token is set
-    if (hasKey || previewToken) return;
-    setPreviewTokenDialog(true);
-  }, [previewToken, hasKey]);
+    setPreviewTokenDialog(!hasKey && !previewToken);
+  }, [hasKey, previewToken]);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -86,7 +85,7 @@ const Chat = ({
     });
 
   useEffect(() => {
-    if (!chat || !hasKey || isLoading) return;
+    if (!chat || (!hasKey && !previewToken) || isLoading) return;
     if (messages[messages.length - 1]?.role !== 'user') return;
 
     // Reload the chat if the user sends a message
@@ -98,7 +97,7 @@ const Chat = ({
     return () => {
       clearTimeout(timeout);
     };
-  }, [chat, hasKey, isLoading, messages, reload]);
+  }, [chat, hasKey, previewToken, isLoading, messages, reload]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
