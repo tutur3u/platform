@@ -2,6 +2,8 @@ import { UseChatHelpers } from 'ai/react';
 
 import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@/components/ui/icons';
+import { AIChat } from '@/types/primitives/ai-chat';
+import Link from 'next/link';
 
 const exampleMessages = [
   {
@@ -30,7 +32,11 @@ const exampleMessages = [
   },
 ];
 
-export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
+export function EmptyScreen({
+  wsId,
+  chats,
+  setInput,
+}: Pick<UseChatHelpers, 'setInput'> & { wsId: string; chats: AIChat[] }) {
   return (
     <div className="mx-auto max-w-2xl lg:max-w-4xl">
       <div className="bg-background rounded-lg border p-8">
@@ -57,6 +63,25 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
             </Button>
           ))}
         </div>
+        {chats.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold">Recent conversations</h2>
+            <div className="mt-4 flex flex-col items-start space-y-2">
+              {chats.map((chat, index) => (
+                <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
+                  <Button
+                    key={index}
+                    variant="link"
+                    className="h-auto p-0 text-base"
+                  >
+                    <IconArrowRight className="text-muted-foreground mr-2" />
+                    {chat.title}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

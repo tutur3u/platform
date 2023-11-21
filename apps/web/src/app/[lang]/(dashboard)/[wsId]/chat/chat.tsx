@@ -186,7 +186,7 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen setInput={setInput} />
+          <EmptyScreen wsId={wsId} chats={chats} setInput={setInput} />
         )}
       </div>
 
