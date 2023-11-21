@@ -4,6 +4,8 @@ import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
 
+export const runtime = 'edge';
+export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -44,7 +46,6 @@ export async function POST(req: Request) {
         prompt,
         max_tokens_to_sample: 300,
         model,
-        temperature: 0.9,
       }),
     });
 

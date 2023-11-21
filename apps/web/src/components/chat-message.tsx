@@ -70,22 +70,30 @@ export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
               );
             },
             p({ children }) {
+              // If the message is a followup, we will render it as a button
               if (
                 Array.isArray(children) &&
                 children?.[0] === '@' &&
-                children?.[1] === '<FOLLOWUP>' &&
-                children?.[2]
-              )
+                children?.[1]?.startsWith('<')
+              ) {
+                // content will be all the text after the @<*> excluding the last child
+                const content = children
+                  ?.slice(2, -1)
+                  ?.map((child) => child?.toString())
+                  ?.join('')
+                  ?.trim();
+
                 return (
                   <button
                     className="bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
-                    onClick={() => setInput(children[2].toString().trim())}
+                    onClick={() => setInput(content || '')}
                   >
                     <span className="line-clamp-1 px-3 py-1">
-                      {children[2].toString().trim()}
+                      {content || '...'}
                     </span>
                   </button>
                 );
+              }
 
               return <p className="mb-2 last:mb-0">{children}</p>;
             },

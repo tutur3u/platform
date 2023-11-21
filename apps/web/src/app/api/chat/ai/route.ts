@@ -2,8 +2,10 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
-import { buildPrompt, filterDuplicate } from '../core';
+import { buildPrompt, filterDuplicate } from './core';
 
+export const runtime = 'edge';
+export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -55,7 +57,7 @@ export async function POST(req: Request) {
       });
 
     const prompt = buildPrompt(messages);
-    const model = 'claude-2';
+    const model = 'claude-2.1';
 
     const res = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
@@ -65,9 +67,9 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         prompt,
-        max_tokens_to_sample: 100000,
+        max_tokens_to_sample: 4000,
         model,
-        temperature: 0.9,
+        stream: true,
       }),
     });
 
@@ -101,6 +103,11 @@ export async function POST(req: Request) {
       },
       onCompletion: async (completion) => {
         const content = filterDuplicate(completion);
+
+        if (!content) {
+          console.log('No content found');
+          throw new Error('No content found');
+        }
 
         const { error } = await sbAdmin.from('ai_chat_messages').insert({
           chat_id: chatId,

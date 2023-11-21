@@ -60,16 +60,11 @@ const Chat = ({
     setPreviewTokenDialog(true);
   }, [previewToken, hasKey]);
 
-  const [useEdge, setUseEdge] = useLocalStorage({
-    key: 'use-edge-ai-api',
-    defaultValue: true,
-  });
-
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/chat/ai/${useEdge ? 'edge' : 'standard'}`,
+      api: `/api/chat/ai`,
       body: {
         id: chat?.id,
         wsId,
@@ -83,19 +78,10 @@ const Chat = ({
           });
       },
       onError(_) {
-        if (useEdge) {
-          toast({
-            title: t('something_went_wrong'),
-            description: t('edge_api_opt_out'),
-          });
-
-          setUseEdge(false);
-        } else {
-          toast({
-            title: t('something_went_wrong'),
-            description: t('try_again_later'),
-          });
-        }
+        toast({
+          title: t('something_went_wrong'),
+          description: t('try_again_later'),
+        });
       },
     });
 
