@@ -74,9 +74,9 @@ const TransactionCategorySelector = ({
         ]
       : []),
     ...(categories?.map((category) => ({
-      label: category.name,
-      value: category.id,
-      disabled: blacklist.includes(category.id),
+      label: category.name || '',
+      value: category.id || '',
+      disabled: blacklist.includes(category?.id || ''),
     })) || []),
   ];
 

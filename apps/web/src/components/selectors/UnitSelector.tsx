@@ -43,9 +43,9 @@ const UnitSelector = ({
 
   const data = [
     ...(units?.map((unit) => ({
-      label: unit.name,
-      value: unit.id,
-      disabled: blacklist?.includes(unit.id),
+      label: unit.name || '',
+      value: unit.id || '',
+      disabled: blacklist?.includes(unit?.id || ''),
     })) || []),
   ];
 
@@ -111,7 +111,7 @@ const UnitSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(units || []), item]);
-          if (setUnitId) setUnitId(item.id);
+          if (setUnitId) setUnitId(item?.id || '');
 
           return {
             label: item.name,
