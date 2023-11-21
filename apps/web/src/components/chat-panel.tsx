@@ -5,13 +5,7 @@ import { PromptForm } from '@/components/prompt-form';
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import {
-  ArrowLeftToLine,
-  FolderOpen,
-  Globe2,
-  Settings,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
@@ -36,8 +30,6 @@ export interface ChatPanelProps
   initialMessages?: Message[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
-  edge?: boolean;
-  setUseEdge: (edge: boolean) => void;
 }
 
 export function ChatPanel({
@@ -50,11 +42,8 @@ export function ChatPanel({
   inputRef,
   setInput,
   createChat,
-  messages,
   collapsed,
   setCollapsed,
-  edge,
-  setUseEdge,
 }: ChatPanelProps) {
   const { t } = useTranslation('ai-chat');
 
@@ -66,10 +55,10 @@ export function ChatPanel({
         <div className="relative mb-2 flex items-center justify-center gap-2">
           <div
             id="chat-sidebar"
-            className={`absolute -bottom-2 z-20 rounded-t-lg border-t p-2 transition-all duration-500 md:border md:border-b-0 ${
+            className={`absolute -bottom-2 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
               collapsed
                 ? 'pointer-events-none border-transparent bg-transparent'
-                : 'border-border bg-background shadow-lg'
+                : 'border-border bg-background bottom-0 shadow-lg'
             }`}
           >
             <div
@@ -125,42 +114,42 @@ export function ChatPanel({
               <Separator className="my-2" />
             </div>
 
-            <div className="flex w-full gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                onClick={() => setCollapsed(!collapsed)}
-              >
-                {collapsed ? (
-                  <FolderOpen className="h-5 w-5" />
-                ) : (
-                  <ArrowLeftToLine className="h-5 w-5" />
-                )}
-              </Button>
-
-              {id && (
+            {id && (
+              <div className="flex w-full gap-2">
                 <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                  onClick={() => setCollapsed(!collapsed)}
+                >
+                  {collapsed ? (
+                    <FolderOpen className="h-5 w-5" />
+                  ) : (
+                    <ArrowLeftToLine className="h-5 w-5" />
+                  )}
+                </Button>
+
+                {/* <Button
                   size="icon"
                   variant="outline"
                   className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
                   disabled
                 >
                   <Settings className="h-5 w-5" />
-                </Button>
-              )}
+                </Button> */}
 
-              <Link
-                href={defaultRoute}
-                className={`w-full ${
-                  collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-                } ${id ? '' : 'cursor-default'} transition duration-300`}
-              >
-                <Button className="w-full" disabled={!id || collapsed}>
-                  <div className="line-clamp-1">{t('new_chat')}</div>
-                </Button>
-              </Link>
-            </div>
+                <Link
+                  href={defaultRoute}
+                  className={`w-full ${
+                    collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+                  } ${id ? '' : 'cursor-default'} transition duration-300`}
+                >
+                  <Button className="w-full" disabled={!id || collapsed}>
+                    <div className="line-clamp-1">{t('new_chat')}</div>
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* {isLoading ? (
@@ -182,30 +171,6 @@ export function ChatPanel({
               {t('regenerate_response')}
             </Button>
           ) : null} */}
-
-          {id && (
-            <>
-              {edge ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setUseEdge(false)}
-                  className="bg-background/20 backdrop-blur-lg"
-                >
-                  <Sparkles className="mr-2" />
-                  {t('use_edge')}
-                </Button>
-              ) : messages?.length > 0 ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setUseEdge(true)}
-                  className="bg-background/20 backdrop-blur-lg"
-                >
-                  <Globe2 className="mr-2" />
-                  {t('use_standard')}
-                </Button>
-              ) : null}
-            </>
-          )}
         </div>
 
         <div className="bg-background/20 space-y-4 border-t px-4 py-2 shadow-lg backdrop-blur-lg sm:rounded-t-xl sm:border md:py-4">

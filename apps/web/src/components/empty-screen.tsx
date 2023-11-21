@@ -55,10 +55,10 @@ export function EmptyScreen({
             <Button
               key={index}
               variant="link"
-              className="h-auto p-0 text-base"
+              className="h-auto p-0 text-left text-base"
               onClick={() => setInput(message.message)}
             >
-              <IconArrowRight className="text-muted-foreground mr-2" />
+              <IconArrowRight className="text-muted-foreground mr-2 flex-none" />
               {message.heading}
             </Button>
           ))}
@@ -72,9 +72,9 @@ export function EmptyScreen({
                   <Button
                     key={index}
                     variant="link"
-                    className="h-auto p-0 text-base"
+                    className="h-auto p-0 text-left text-base"
                   >
-                    <IconArrowRight className="text-muted-foreground mr-2" />
+                    <IconArrowRight className="text-muted-foreground mr-2 flex-none" />
                     {chat.title}
                   </Button>
                 </Link>

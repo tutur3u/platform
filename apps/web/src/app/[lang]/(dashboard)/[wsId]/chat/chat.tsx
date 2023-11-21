@@ -197,16 +197,14 @@ const Chat = ({
         stop={stop}
         append={append}
         reload={reload}
-        messages={messages}
         input={input}
         inputRef={inputRef}
         setInput={setInput}
-        createChat={createChat}
+        messages={messages}
         collapsed={collapsed}
+        createChat={createChat}
         setCollapsed={setCollapsed}
         defaultRoute={`/${wsId}/chat`}
-        edge={useEdge}
-        setUseEdge={setUseEdge}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
