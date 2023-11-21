@@ -1,6 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
 
@@ -15,7 +15,10 @@ export async function POST(req: Request) {
     if (!message)
       return NextResponse.json('No message provided', { status: 400 });
 
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerComponentClient({
+      cookies: () => cookieStore,
+    });
 
     const {
       data: { user },
