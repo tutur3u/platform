@@ -25,7 +25,7 @@ import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  chat?: AIChat;
+  defaultChat?: AIChat;
   wsId: string;
   initialMessages?: Message[];
   previousMessages?: Message[];
@@ -35,7 +35,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 const Chat = ({
-  chat,
+  defaultChat,
   wsId,
   initialMessages,
   previousMessages,
@@ -45,10 +45,9 @@ const Chat = ({
   hasKey,
 }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
+
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [loading, setLoading] = useState(false);
 
   const [previewToken, setPreviewToken] = useLocalStorage({
     key: 'ai-token',
@@ -63,6 +62,8 @@ const Chat = ({
     // on the server or the a preview token is set
     setPreviewTokenDialog(!hasKey && !previewToken);
   }, [hasKey, previewToken]);
+
+  const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -124,8 +125,10 @@ const Chat = ({
     if (inputRef.current) inputRef.current.focus();
   }, [input, inputRef]);
 
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+
   const createChat = async (input: string) => {
-    setLoading(true);
+    setPendingPrompt(input);
 
     const res = await fetch(`/api/chat`, {
       method: 'POST',
@@ -140,50 +143,67 @@ const Chat = ({
         title: t('something_went_wrong'),
         description: res.statusText,
       });
-      setLoading(false);
       return;
     }
 
-    const { id } = await res.json();
+    const { id, title } = await res.json();
     if (id) {
-      router.refresh();
-      router.push(`/${wsId}/chat/${id}`);
+      setCollapsed(true);
+      setChat({ id, title });
     }
   };
 
-  if (loading)
-    return (
-      <div className="mx-auto w-full max-w-2xl pt-8 lg:max-w-4xl">
-        <div className="bg-foreground/5 flex h-96 animate-pulse items-center justify-center rounded-lg border p-8 text-center text-lg font-semibold md:text-xl">
-          {t('creating_chat')}
-        </div>
-      </div>
-    );
+  const clearChat = () => {
+    if (defaultChat?.id) return;
+    setChat(undefined);
+    setCollapsed(true);
+  };
+
+  useEffect(() => {
+    if (!pendingPrompt || !chat?.id) return;
+    append({
+      id: chat?.id,
+      content: pendingPrompt,
+      role: 'user',
+    });
+    setPendingPrompt(null);
+  }, [pendingPrompt, chat?.id, append]);
 
   return (
     <>
       <div className={cn('pb-32 pt-4 md:pt-10', className)}>
-        {chat && messages.length ? (
+        {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
               title={chat?.title}
-              messages={messages.map((message) => {
-                // If there is 2 repeated substring in the
-                // message, we will merge them into one
-                const content = message.content;
-                const contentLength = content.length;
-                const contentHalfLength = Math.floor(contentLength / 2);
+              titleLoading={!chat?.id}
+              messages={
+                pendingPrompt
+                  ? [
+                      {
+                        id: 'pending',
+                        content: pendingPrompt,
+                        role: 'user',
+                      },
+                    ]
+                  : messages.map((message) => {
+                      // If there is 2 repeated substring in the
+                      // message, we will merge them into one
+                      const content = message.content;
+                      const contentLength = content.length;
+                      const contentHalfLength = Math.floor(contentLength / 2);
 
-                const firstHalf = content.substring(0, contentHalfLength);
+                      const firstHalf = content.substring(0, contentHalfLength);
 
-                const secondHalf = content.substring(
-                  contentHalfLength,
-                  contentLength
-                );
+                      const secondHalf = content.substring(
+                        contentHalfLength,
+                        contentLength
+                      );
 
-                if (firstHalf === secondHalf) message.content = firstHalf;
-                return message;
-              })}
+                      if (firstHalf === secondHalf) message.content = firstHalf;
+                      return message;
+                    })
+              }
               setInput={setInput}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
@@ -213,6 +233,7 @@ const Chat = ({
         messages={messages}
         collapsed={collapsed}
         createChat={createChat}
+        clearChat={clearChat}
         setCollapsed={setCollapsed}
         defaultRoute={`/${wsId}/chat`}
       />

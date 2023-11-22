@@ -42,7 +42,7 @@ export default async function AIPage({ params: { wsId, chatId } }: Props) {
       wsId={wsId}
       hasKey={hasKey}
       initialMessages={messages}
-      chat={chat}
+      defaultChat={chat}
       chats={chats}
       count={count}
     />

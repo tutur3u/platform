@@ -28,6 +28,7 @@ export interface ChatPanelProps
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   createChat: (input: string) => Promise<void>;
+  clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
@@ -44,6 +45,7 @@ export function ChatPanel({
   inputRef,
   setInput,
   createChat,
+  clearChat,
   collapsed,
   setCollapsed,
 }: ChatPanelProps) {
@@ -150,6 +152,7 @@ export function ChatPanel({
                   className={`w-full ${
                     collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
                   } ${id ? '' : 'cursor-default'} transition duration-300`}
+                  onClick={clearChat}
                 >
                   <Button className="w-full" disabled={!id || collapsed}>
                     <div className="line-clamp-1">{t('new_chat')}</div>

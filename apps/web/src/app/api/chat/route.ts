@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     });
 
     if (error) return NextResponse.json(error.message, { status: 500 });
-    return NextResponse.json({ id }, { status: 200 });
+    return NextResponse.json({ id, title }, { status: 200 });
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
