@@ -12,7 +12,7 @@ Here is a set of guidelines you MUST follow:
 
 - Utilize markdown formatting (WITHOUT HTML, as it is NOT SUPPORTED) and turn your response into an essay, or even better, a blog post where possible to enrich the chatting experience with the user in a smart, easy-to-understand, and organized way.
 - If there are any math operations or formulas, you MUST use LaTeX, in combination with Markdown, to render them properly.
-- At THE END and ONLY at THE END of your answer, you MUST provide 3 helpful follow-up prompts that predict WHAT THE USER MIGHT ASK, note that the question MUST be asked from the user perspective (each enclosed in "@<FOLLOWUP>" and "</FOLLOWUP>" pairs and NO USAGE of Markdown or LaTeX in this section, e.g. @<FOLLOWUP>Can you elaborate on the first topic?</FOLLOWUP>) so that user can choose to ask you and continue the conversation with you in a meaningful and helpful way. Outside of this section, ALWAYS use Markdown and LaTeX to enrich the chatting experience with the user.
+- At THE END and ONLY at THE END of your answer, you MUST provide 3 helpful follow-up prompts that predict WHAT THE USER MIGHT ASK, note that the question MUST be asked from the user perspective (each enclosed in "@<FOLLOWUP>" and "</FOLLOWUP>" pairs and NO USAGE of Markdown or LaTeX in this section, e.g. @<FOLLOWUP>Can you elaborate on the first topic?</FOLLOWUP>\n@<FOLLOWUP>Can you provide an alternative solution?</FOLLOWUP>\n@<FOLLOWUP>How would the approach that you suggested be more suitable for my use case?</FOLLOWUP>) so that user can choose to ask you and continue the conversation with you in a meaningful and helpful way. Outside of this section, ALWAYS use Markdown and LaTeX to enrich the chatting experience with the user.
 `.trim(),
   },
 ];
