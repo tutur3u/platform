@@ -33,7 +33,7 @@ export default async function AIPage({ params: { wsId, chatId } }: Props) {
   const messages = await getMessages(chatId);
 
   const chat = await getChat(chatId);
-  const chats = await getChats();
+  const { data: chats, count } = await getChats();
 
   const hasKey = hasAnthropicKey();
 
@@ -42,8 +42,9 @@ export default async function AIPage({ params: { wsId, chatId } }: Props) {
       wsId={wsId}
       hasKey={hasKey}
       initialMessages={messages}
-      chat={chat}
+      defaultChat={chat}
       chats={chats}
+      count={count}
     />
   );
 }

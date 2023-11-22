@@ -3,7 +3,6 @@ import { getInitials } from '@/utils/name-helper';
 import { User } from '@/types/primitives/User';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
-import { getRoleColor } from '@/utils/color-helper';
 import { MemberSettingsButton } from './member-settings-button';
 import { Workspace } from '@/types/primitives/Workspace';
 import InviteMemberButton from './invite-member-button';

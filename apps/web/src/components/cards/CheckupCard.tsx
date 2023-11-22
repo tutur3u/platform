@@ -109,14 +109,14 @@ const CheckupCard = ({
                     'HH:mm, DD/MM/YYYY'
                   )}`
                 : checkup?.next_checkup_at && !checkup?.next_checked
-                ? `Hẹn tái khám lúc ${moment(checkup?.next_checkup_at).format(
-                    'HH:mm, DD/MM/YYYY'
-                  )}`
-                : checkup?.checkup_at && !checkup?.checked
-                ? `Đang chờ khám lúc ${moment(checkup?.checkup_at).format(
-                    'HH:mm, DD/MM/YYYY'
-                  )}`
-                : 'Trạng thái không xác định'}
+                  ? `Hẹn tái khám lúc ${moment(checkup?.next_checkup_at).format(
+                      'HH:mm, DD/MM/YYYY'
+                    )}`
+                  : checkup?.checkup_at && !checkup?.checked
+                    ? `Đang chờ khám lúc ${moment(checkup?.checkup_at).format(
+                        'HH:mm, DD/MM/YYYY'
+                      )}`
+                    : 'Trạng thái không xác định'}
             </div>
           )}
         </div>

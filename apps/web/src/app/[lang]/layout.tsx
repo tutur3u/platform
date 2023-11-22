@@ -1,16 +1,19 @@
 import '../../styles/globals.css';
-
-import { Toaster } from '@/components/ui/toaster';
 import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { siteConfig } from '@/constants/configs';
-import { Metadata, Viewport } from 'next';
+
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import Navbar from './navbar';
-import NavbarPadding from './navbar-padding';
-import { StaffToolbar } from './staff-toolbar';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { Providers } from '@/components/providers';
+import { Toaster } from '@/components/ui/toaster';
+import { siteConfig } from '@/constants/configs';
+import { StaffToolbar } from './staff-toolbar';
+import NavbarPadding from './navbar-padding';
+import { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { cn } from '@/lib/utils';
+import Navbar from './navbar';
+
+export const dynamic = 'force-dynamic';
 
 interface Props {
   children: ReactNode;
@@ -29,8 +32,8 @@ export async function generateMetadata({
     lang === 'en'
       ? enDescription
       : lang === 'vi'
-      ? viDescription
-      : enDescription;
+        ? viDescription
+        : enDescription;
 
   return {
     title: {
@@ -96,6 +99,8 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
+const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'vi' }];
 }
@@ -105,8 +110,8 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={params.lang}>
       <body
         className={cn(
-          'bg-background min-h-screen font-sans antialiased'
-          // fontSans.variable
+          'bg-background min-h-screen font-sans antialiased',
+          inter.className
         )}
       >
         <VercelAnalytics />

@@ -4,6 +4,8 @@ import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import { getWorkspaces } from '@/lib/workspace-helper';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MarketingPage() {
   const { t } = useTranslation('home');
 

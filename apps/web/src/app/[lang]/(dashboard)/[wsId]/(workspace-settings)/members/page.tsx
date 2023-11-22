@@ -6,7 +6,6 @@ import MemberTabs from './_components/member-tabs';
 import MemberList from './_components/member-list';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/user-helper';
 import { User } from '@/types/primitives/User';
@@ -86,13 +85,14 @@ const getMembers = async (
   const sbAdmin = createAdminClient();
   if (!sbAdmin) throw new Error('Internal server error');
 
-  const { count, error: secretError } = await sbAdmin
+  const { data: secretData, error: secretError } = await sbAdmin
     .from('workspace_secrets')
-    .select('*', { count: 'exact', head: true })
+    .select('name')
     .eq('ws_id', wsId)
-    .eq('name', 'HIDE_MEMBER_EMAIL')
+    .in('name', ['HIDE_MEMBER_EMAIL', 'HIDE_MEMBER_NAME'])
     .eq('value', 'true');
 
+  console.log(secretData);
   if (secretError) throw secretError;
 
   const queryBuilder = supabase
@@ -120,7 +120,16 @@ const getMembers = async (
   return data.map(({ email, ...rest }) => {
     return {
       ...rest,
-      email: !count ? email : undefined,
+      display_name:
+        secretData.filter((secret) => secret.name === 'HIDE_MEMBER_NAME')
+          .length === 0
+          ? rest.display_name
+          : undefined,
+      email:
+        secretData.filter((secret) => secret.name === 'HIDE_MEMBER_EMAIL')
+          .length === 0
+          ? email
+          : undefined,
     };
   }) as User[];
 };

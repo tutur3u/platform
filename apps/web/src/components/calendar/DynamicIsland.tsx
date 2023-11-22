@@ -18,8 +18,8 @@ const DynamicIsland = () => {
         ? events[0].title || 'Unnamed Event'
         : `${events.length} events`
       : upcomingEvent
-      ? upcomingEvent.title || 'Unnamed Event'
-      : 'No events';
+        ? upcomingEvent.title || 'Unnamed Event'
+        : 'No events';
 
   const getTimeDuration = (start: Date, end: Date) => {
     const timeDuration = end.getTime() - start.getTime();
@@ -174,8 +174,8 @@ const DynamicIsland = () => {
           isUpcoming
             ? 'w-[calc(min(20rem,100%))] justify-center text-center'
             : isRunning
-            ? 'w-[calc(min(30rem,100%))] justify-between'
-            : 'w-full justify-between'
+              ? 'w-[calc(min(30rem,100%))] justify-between'
+              : 'w-full justify-between'
         } duration-300`}
         style={{
           transition: 'width 1s, opacity 300ms',

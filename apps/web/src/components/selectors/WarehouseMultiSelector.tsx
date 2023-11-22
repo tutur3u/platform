@@ -31,8 +31,8 @@ const WarehouseMultiSelector = ({
       group: t('common:general'),
     },
     ...(warehouses?.map((warehouse) => ({
-      label: warehouse.name,
-      value: warehouse.id,
+      label: warehouse.name || '',
+      value: warehouse.id || '',
       group: t('warehouses'),
     })) || []),
   ];

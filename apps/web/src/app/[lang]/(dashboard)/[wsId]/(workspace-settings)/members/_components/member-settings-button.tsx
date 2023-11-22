@@ -280,8 +280,8 @@ export function MemberSettingsButton({
                     {currentUser.id === user.id
                       ? 'Leave Workspace'
                       : user.pending
-                      ? 'Revoke Invitation'
-                      : 'Remove Member'}
+                        ? 'Revoke Invitation'
+                        : 'Remove Member'}
                   </Button>
 
                   {currentUser.role === 'MEMBER' || (

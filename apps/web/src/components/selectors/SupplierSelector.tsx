@@ -32,8 +32,8 @@ const SupplierSelector = ({
 
   const data = [
     ...(suppliers?.map((supplier) => ({
-      label: supplier.name,
-      value: supplier.id,
+      label: supplier.name || '',
+      value: supplier.id || '',
     })) || []),
   ];
 
@@ -116,7 +116,7 @@ const SupplierSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(suppliers || []), item]);
-          setSupplierId(item.id);
+          setSupplierId(item?.id || '');
 
           return {
             label: item.name,

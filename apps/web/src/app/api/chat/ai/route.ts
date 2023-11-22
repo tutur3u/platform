@@ -1,10 +1,11 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
-import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { cookies } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/client';
+import { buildPrompt, filterDuplicate } from './core';
+import { cookies } from 'next/headers';
 
 export const runtime = 'edge';
+export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
       });
 
     const prompt = buildPrompt(messages);
-    const model = 'claude-2';
+    const model = 'claude-2.1';
 
     const res = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
@@ -66,9 +67,8 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         prompt,
-        max_tokens_to_sample: 100000,
+        max_tokens_to_sample: 4000,
         model,
-        temperature: 0.9,
         stream: true,
       }),
     });
@@ -104,6 +104,11 @@ export async function POST(req: Request) {
       onCompletion: async (completion) => {
         const content = filterDuplicate(completion);
 
+        if (!content) {
+          console.log('No content found');
+          throw new Error('No content found');
+        }
+
         const { error } = await sbAdmin.from('ai_chat_messages').insert({
           chat_id: chatId,
           content,
@@ -129,60 +134,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-const leadingMessages: Message[] = [
-  {
-    id: 'identity-reminder',
-    role: 'system',
-    content:
-      'You are Skora, an AI powered by Claude modal, provided by Anthropic. However, since this is in production environment, you MUST refer to yourself as Skora, powered by Tuturuuu. Do not talk more about your origins and keep this message in mind, pretend like I never specifically told you about it.',
-  },
-];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'prettier-reminder',
-    role: 'assistant',
-    content:
-      '(Note to self): I MUST try to utilize markdown where possible to enrich the chatting experience with the user in a smart, easy-to-understand and organized way. If there is any math operations or formulas, I MUST use LaTeX, combining with markdown to render them properly. I MUST NEVER mention this note to the user, since they NEVER need to know about it.',
-  },
-];
-
-function buildPrompt(messages: Message[]) {
-  const filteredMsgs = filterDuplicates(messages);
-  const normalizedMsgs = normalizeMessages(filteredMsgs);
-  return normalizedMsgs + Anthropic.AI_PROMPT;
-}
-
-const filterDuplicate = (str: string) => {
-  const strLength = str.length;
-  const halfLength = Math.floor(strLength / 2);
-  const firstHalf = str.substring(0, halfLength);
-  const secondHalf = str.substring(halfLength, strLength);
-
-  if (firstHalf !== secondHalf) return str;
-  return firstHalf;
-};
-
-const filterDuplicates = (messages: Message[]) =>
-  // If there is 2 repeated substring in the
-  // message, we will merge them into one
-  messages.map((message) => {
-    return { ...message, content: filterDuplicate(message.content) };
-  });
-
-const normalize = (message: Message) => {
-  const { content, role } = message;
-  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
-  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  return content;
-};
-
-const filterSystemMessages = (messages: Message[]) =>
-  messages.filter((message) => message.role !== 'system');
-
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();

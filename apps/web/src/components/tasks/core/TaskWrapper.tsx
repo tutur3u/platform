@@ -201,8 +201,8 @@ const TaskWrapper = ({
                   moment(task.end_date).isBefore(moment().add(1, 'days'))
                     ? 'text-red-300'
                     : moment(task.end_date).isBefore(moment().add(3, 'days'))
-                    ? 'text-orange-300'
-                    : 'text-green-300'
+                      ? 'text-orange-300'
+                      : 'text-green-300'
                 }
               >
                 {moment(task.end_date).format('MMM D, HH:mm')}{' '}

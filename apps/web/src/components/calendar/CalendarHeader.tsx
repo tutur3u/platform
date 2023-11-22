@@ -69,8 +69,8 @@ export default function CalendarHeader() {
             {view === 'day'
               ? t('today')
               : view === 'week'
-              ? t('this-week')
-              : t('current')}
+                ? t('this-week')
+                : t('current')}
           </button>
 
           <button

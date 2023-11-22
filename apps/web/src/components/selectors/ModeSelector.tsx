@@ -31,18 +31,18 @@ const ModeSelector = ({ mode, setMode, showAll = false }: Props) => {
         },
       ]
     : mode === 'list'
-    ? [
-        {
-          label: t('list_view'),
-          value: 'list',
-        },
-      ]
-    : [
-        {
-          label: t('grid_view'),
-          value: 'grid',
-        },
-      ];
+      ? [
+          {
+            label: t('list_view'),
+            value: 'list',
+          },
+        ]
+      : [
+          {
+            label: t('grid_view'),
+            value: 'grid',
+          },
+        ];
 
   return (
     <div className="grid w-full items-center gap-1.5">
