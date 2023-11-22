@@ -48,7 +48,7 @@ export function EmptyScreen({
   const isDark = resolvedTheme?.includes('dark');
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-4 lg:max-w-4xl">
+    <div className="mx-auto grid max-w-2xl gap-4 lg:max-w-4xl xl:max-w-6xl">
       <div className="bg-background rounded-lg border p-4 md:p-8">
         <h1 className="mb-2 text-lg font-semibold">
           Welcome to{' '}
