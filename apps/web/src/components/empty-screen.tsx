@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@/components/ui/icons';
 import { AIChat } from '@/types/primitives/ai-chat';
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 const exampleMessages = [
   {
@@ -35,14 +37,28 @@ const exampleMessages = [
 export function EmptyScreen({
   wsId,
   chats,
+  count,
   setInput,
-}: Pick<UseChatHelpers, 'setInput'> & { wsId: string; chats: AIChat[] }) {
+}: Pick<UseChatHelpers, 'setInput'> & {
+  wsId: string;
+  chats: AIChat[];
+  count: number | null;
+}) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme?.includes('dark');
+
   return (
     <div className="mx-auto max-w-2xl lg:max-w-4xl">
       <div className="bg-background rounded-lg border p-8">
         <h1 className="mb-2 text-lg font-semibold">
           Welcome to{' '}
-          <span className="bg-gradient-to-r from-pink-600 via-yellow-500 to-sky-600 bg-clip-text font-bold text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
+          <span
+            className={`bg-gradient-to-r bg-clip-text font-bold text-transparent ${
+              isDark
+                ? 'from-pink-300 via-amber-300 to-blue-300'
+                : 'from-pink-600 via-yellow-500 to-sky-600'
+            }`}
+          >
             Tuturuuu AI
           </span>{' '}
           Chat.
@@ -65,7 +81,10 @@ export function EmptyScreen({
         </div>
         {chats.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-lg font-semibold">Recent conversations</h2>
+            <h2 className="text-lg font-semibold">
+              Recent conversations
+              {count ? <span className="opacity-50"> ({count})</span> : ''}
+            </h2>
             <div className="mt-4 flex flex-col items-start space-y-2">
               {chats.map((chat, index) => (
                 <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
@@ -74,7 +93,7 @@ export function EmptyScreen({
                     variant="link"
                     className="h-auto p-0 text-left text-base"
                   >
-                    <IconArrowRight className="text-muted-foreground mr-2 flex-none" />
+                    <MessageCircle className="text-muted-foreground mr-2 flex-none" />
                     {chat.title}
                   </Button>
                 </Link>

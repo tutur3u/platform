@@ -24,6 +24,7 @@ export interface ChatPanelProps
   > {
   id?: string;
   chats: AIChat[];
+  count: number | null;
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   createChat: (input: string) => Promise<void>;
@@ -35,6 +36,7 @@ export interface ChatPanelProps
 export function ChatPanel({
   id,
   chats,
+  count,
   defaultRoute,
   isLoading,
   append,
@@ -58,7 +60,7 @@ export function ChatPanel({
             className={`absolute -bottom-2 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
               collapsed
                 ? 'pointer-events-none border-transparent bg-transparent'
-                : 'border-border bg-background bottom-0 shadow-lg'
+                : 'border-border bg-background shadow-lg md:bottom-0'
             }`}
           >
             <div
@@ -70,6 +72,11 @@ export function ChatPanel({
                 <div className="text-center">
                   <div className="text-foreground font-semibold">
                     {t('chats')}
+                    {count ? (
+                      <span className="opacity-50"> ({count})</span>
+                    ) : (
+                      ''
+                    )}
                   </div>
                   <Separator className="my-2" />
                   <div className="grid gap-1">
@@ -173,7 +180,7 @@ export function ChatPanel({
           ) : null} */}
         </div>
 
-        <div className="bg-background/20 space-y-4 border-t px-4 py-2 shadow-lg backdrop-blur-lg sm:rounded-t-xl sm:border md:py-4">
+        <div className="bg-background/20 space-y-4 rounded-t-xl border border-t px-4 py-2 shadow-lg backdrop-blur-lg md:py-4">
           <PromptForm
             onSubmit={async (value) => {
               // If there is no id, create a new chat

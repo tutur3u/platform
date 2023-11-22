@@ -24,10 +24,10 @@ export default async function AIPage({ params: { wsId } }: Props) {
   const enableChat = verifySecret('ENABLE_CHAT', 'true');
   if (!enableChat) redirect(`/${wsId}`);
 
-  const chats = await getChats();
+  const { data: chats, count } = await getChats();
   const hasKey = hasAnthropicKey();
 
-  return <Chat wsId={wsId} hasKey={hasKey} chats={chats} />;
+  return <Chat wsId={wsId} hasKey={hasKey} chats={chats} count={count} />;
 }
 
 const hasAnthropicKey = () => {
@@ -39,15 +39,15 @@ const hasAnthropicKey = () => {
 export const getChats = async () => {
   const supabase = createServerComponentClient({ cookies });
 
-  const { data, error } = await supabase
+  const { data, count, error } = await supabase
     .from('ai_chats')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (error) {
     console.error(error);
-    return [];
+    return { data: [], count: 0 };
   }
 
-  return data;
+  return { data, count };
 };

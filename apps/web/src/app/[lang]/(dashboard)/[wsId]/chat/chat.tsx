@@ -29,6 +29,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   wsId: string;
   initialMessages?: Message[];
   chats: AIChat[];
+  count: number | null;
   hasKey?: boolean;
 }
 
@@ -37,6 +38,7 @@ const Chat = ({
   wsId,
   initialMessages,
   chats,
+  count,
   className,
   hasKey,
 }: ChatProps) => {
@@ -171,13 +173,19 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen wsId={wsId} chats={chats} setInput={setInput} />
+          <EmptyScreen
+            wsId={wsId}
+            chats={chats}
+            count={count}
+            setInput={setInput}
+          />
         )}
       </div>
 
       <ChatPanel
         id={chat?.id}
         chats={chats}
+        count={count}
         isLoading={isLoading}
         stop={stop}
         append={append}
