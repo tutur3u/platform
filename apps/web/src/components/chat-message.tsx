@@ -12,13 +12,20 @@ import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import 'katex/dist/katex.min.css';
+import Link from 'next/link';
 
 export interface ChatMessageProps {
-  message: Message;
+  message: Message & { chat_id?: string };
   setInput: (input: string) => void;
+  embeddedUrl?: string;
 }
 
-export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  setInput,
+  embeddedUrl,
+  ...props
+}: ChatMessageProps) {
   return (
     <div className={cn('group relative mb-4 flex items-start')} {...props}>
       <div
@@ -40,7 +47,9 @@ export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
       </div>
       <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 max-w-4xl break-words xl:max-w-6xl"
+          className={`text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 break-words ${
+            embeddedUrl ? 'w-full max-w-full' : 'max-w-4xl xl:max-w-6xl'
+          }`}
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -82,6 +91,18 @@ export function ChatMessage({ message, setInput, ...props }: ChatMessageProps) {
                   ?.map((child) => child?.toString())
                   ?.join('')
                   ?.trim();
+
+                if (embeddedUrl)
+                  return (
+                    <Link
+                      className="bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
+                    >
+                      <span className="line-clamp-1 px-3 py-1">
+                        {content || '...'}
+                      </span>
+                    </Link>
+                  );
 
                 return (
                   <button

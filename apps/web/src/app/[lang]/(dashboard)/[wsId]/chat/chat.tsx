@@ -20,7 +20,7 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -28,6 +28,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   chat?: AIChat;
   wsId: string;
   initialMessages?: Message[];
+  previousMessages?: Message[];
   chats: AIChat[];
   count: number | null;
   hasKey?: boolean;
@@ -37,6 +38,7 @@ const Chat = ({
   chat,
   wsId,
   initialMessages,
+  previousMessages,
   chats,
   count,
   className,
@@ -44,6 +46,7 @@ const Chat = ({
 }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(false);
 
@@ -101,6 +104,19 @@ const Chat = ({
     };
   }, [chat, hasKey, previewToken, isLoading, messages, reload]);
 
+  useEffect(() => {
+    if (!chat?.id) return;
+
+    // if there is "input" in the query string, we will
+    // use that as the input for the chat, then remove
+    // it from the query string
+    const input = searchParams.get('input');
+    if (input) {
+      setInput(input.toString());
+      router.replace(`/${wsId}/chat/${chat.id}`);
+    }
+  }, [chat?.id, searchParams, router, setInput, wsId]);
+
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -146,7 +162,7 @@ const Chat = ({
 
   return (
     <>
-      <div id="chat-area" className={cn('pb-32 pt-4 md:pt-10', className)}>
+      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
         {chat && messages.length ? (
           <>
             <ChatList
@@ -178,6 +194,7 @@ const Chat = ({
             chats={chats}
             count={count}
             setInput={setInput}
+            previousMessages={previousMessages}
           />
         )}
       </div>

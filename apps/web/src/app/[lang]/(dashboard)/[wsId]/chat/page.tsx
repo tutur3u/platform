@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import Chat from './chat';
+import { Message } from 'ai';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +26,19 @@ export default async function AIPage({ params: { wsId } }: Props) {
   if (!enableChat) redirect(`/${wsId}`);
 
   const { data: chats, count } = await getChats();
+  const messages = await getMessages();
+
   const hasKey = hasAnthropicKey();
 
-  return <Chat wsId={wsId} hasKey={hasKey} chats={chats} count={count} />;
+  return (
+    <Chat
+      wsId={wsId}
+      hasKey={hasKey}
+      chats={chats}
+      count={count}
+      previousMessages={messages}
+    />
+  );
 }
 
 const hasAnthropicKey = () => {
@@ -36,13 +47,36 @@ const hasAnthropicKey = () => {
   return hasKey;
 };
 
+const getMessages = async () => {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { data, error } = await supabase
+    .from('ai_chat_messages')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(2);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  const messages = data.map(({ role, ...rest }) => ({
+    ...rest,
+    role: role.toLowerCase(),
+  })) as Message[];
+
+  return messages;
+};
+
 export const getChats = async () => {
   const supabase = createServerComponentClient({ cookies });
 
   const { data, count, error } = await supabase
     .from('ai_chats')
     .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   if (error) {
     console.error(error);
