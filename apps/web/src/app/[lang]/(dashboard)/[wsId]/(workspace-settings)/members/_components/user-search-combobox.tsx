@@ -72,8 +72,8 @@ export function UserSearchCombobox({
                       user?.id === undefined
                         ? u
                         : u.id === user.id
-                        ? u
-                        : undefined
+                          ? u
+                          : undefined
                     );
                     setOpen(false);
                   }}

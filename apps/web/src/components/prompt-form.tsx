@@ -1,5 +1,4 @@
 import { UseChatHelpers } from 'ai/react';
-import * as React from 'react';
 import Textarea from 'react-textarea-autosize';
 
 import { Button } from '@/components/ui/button';
@@ -27,25 +26,17 @@ export function PromptForm({
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit();
 
-  React.useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [inputRef]);
-
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!input?.trim()) {
-          return;
-        }
+        if (!input?.trim()) return;
         setInput('');
         await onSubmit(input);
       }}
       ref={formRef}
     >
-      <div className="bg-background flex max-h-60 w-full overflow-hidden p-2 pl-4 sm:rounded-md sm:border">
+      <div className="bg-background/70 flex max-h-60 w-full items-end overflow-hidden rounded-lg border p-2 pl-4">
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -55,14 +46,15 @@ export function PromptForm({
           onChange={(e) => setInput(e.target.value)}
           placeholder="Send a message."
           spellCheck={false}
-          className="placeholder-foreground/50 w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+          maxRows={7}
+          className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
         />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               type="submit"
-              size="icon"
               disabled={isLoading || input === ''}
+              size="icon"
             >
               <IconArrowElbow />
               <span className="sr-only">Send message</span>

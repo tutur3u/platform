@@ -1,4 +1,3 @@
-import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 interface Props {
@@ -10,8 +9,6 @@ interface Props {
 }
 
 const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
-  const { t } = useTranslation();
-
   const generateOuterColor = (enableHoverEffect: boolean) =>
     `${
       enableHoverEffect

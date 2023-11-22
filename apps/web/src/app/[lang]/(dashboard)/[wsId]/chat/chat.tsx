@@ -20,30 +20,34 @@ import { ChatList } from '@/components/chat-list';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ChatPanel } from '@/components/chat-panel';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  chat?: AIChat;
+  defaultChat?: AIChat;
   wsId: string;
   initialMessages?: Message[];
+  previousMessages?: Message[];
   chats: AIChat[];
+  count: number | null;
   hasKey?: boolean;
 }
 
 const Chat = ({
-  chat,
+  defaultChat,
   wsId,
   initialMessages,
+  previousMessages,
   chats,
+  count,
   className,
   hasKey,
 }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
-  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [previewToken, setPreviewToken] = useLocalStorage({
     key: 'ai-token',
@@ -56,32 +60,38 @@ const Chat = ({
   useEffect(() => {
     // Don't show the dialog if the key is configured
     // on the server or the a preview token is set
-    if (hasKey || previewToken) return;
-    setPreviewTokenDialog(true);
-  }, [previewToken, hasKey]);
+    setPreviewTokenDialog(!hasKey && !previewToken);
+  }, [hasKey, previewToken]);
+
+  const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: '/api/chat/ai',
+      api: `/api/chat/ai`,
       body: {
         id: chat?.id,
         wsId,
         previewToken,
       },
       onResponse(response) {
-        if (response.status === 401) {
+        if (!response.ok)
           toast({
-            title: 'Something went wrong',
-            description: response.statusText,
+            title: t('something_went_wrong'),
+            description: t('try_again_later'),
           });
-        }
+      },
+      onError(_) {
+        toast({
+          title: t('something_went_wrong'),
+          description: t('try_again_later'),
+        });
       },
     });
 
   useEffect(() => {
-    if (!chat || !hasKey || isLoading) return;
+    if (!chat || (!hasKey && !previewToken) || isLoading) return;
     if (messages[messages.length - 1]?.role !== 'user') return;
 
     // Reload the chat if the user sends a message
@@ -93,18 +103,32 @@ const Chat = ({
     return () => {
       clearTimeout(timeout);
     };
-  }, [chat, hasKey, isLoading, messages, reload, stop]);
+  }, [chat, hasKey, previewToken, isLoading, messages, reload]);
+
+  useEffect(() => {
+    if (!chat?.id) return;
+
+    // if there is "input" in the query string, we will
+    // use that as the input for the chat, then remove
+    // it from the query string
+    const input = searchParams.get('input');
+    if (input) {
+      setInput(input.toString());
+      router.replace(`/${wsId}/chat/${chat.id}`);
+    }
+  }, [chat?.id, searchParams, router, setInput, wsId]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const updateInput = (input: string) => {
-    setInput(input);
+  useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  };
+  }, [input, inputRef]);
+
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const createChat = async (input: string) => {
-    setLoading(true);
+    setPendingPrompt(input);
 
     const res = await fetch(`/api/chat`, {
       method: 'POST',
@@ -116,74 +140,100 @@ const Chat = ({
 
     if (!res.ok) {
       toast({
-        title: 'Something went wrong',
+        title: t('something_went_wrong'),
         description: res.statusText,
       });
-      setLoading(false);
       return;
     }
 
-    const { id } = await res.json();
+    const { id, title } = await res.json();
     if (id) {
-      router.refresh();
-      router.push(`/${wsId}/chat/${id}`);
+      setCollapsed(true);
+      setChat({ id, title });
     }
   };
 
-  if (loading)
-    return (
-      <div className="mx-auto w-full max-w-2xl pt-8 lg:max-w-4xl">
-        <div className="bg-foreground/5 flex h-96 animate-pulse items-center justify-center rounded-lg border p-8 text-center text-lg font-semibold md:text-xl">
-          {t('creating_chat')}
-        </div>
-      </div>
-    );
+  const clearChat = () => {
+    if (defaultChat?.id) return;
+    setChat(undefined);
+    setCollapsed(true);
+  };
+
+  useEffect(() => {
+    if (!pendingPrompt || !chat?.id) return;
+    append({
+      id: chat?.id,
+      content: pendingPrompt,
+      role: 'user',
+    });
+    setPendingPrompt(null);
+  }, [pendingPrompt, chat?.id, append]);
 
   return (
     <>
-      <div id="chat-area" className={cn('pb-32 pt-4 md:pt-10', className)}>
-        {chat && messages.length ? (
+      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
+        {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
               title={chat?.title}
-              messages={messages.map((message) => {
-                // If there is 2 repeated substring in the
-                // message, we will merge them into one
-                const content = message.content;
-                const contentLength = content.length;
-                const contentHalfLength = Math.floor(contentLength / 2);
+              titleLoading={!chat?.id}
+              messages={
+                pendingPrompt
+                  ? [
+                      {
+                        id: 'pending',
+                        content: pendingPrompt,
+                        role: 'user',
+                      },
+                    ]
+                  : messages.map((message) => {
+                      // If there is 2 repeated substring in the
+                      // message, we will merge them into one
+                      const content = message.content;
+                      const contentLength = content.length;
+                      const contentHalfLength = Math.floor(contentLength / 2);
 
-                const firstHalf = content.substring(0, contentHalfLength);
+                      const firstHalf = content.substring(0, contentHalfLength);
 
-                const secondHalf = content.substring(
-                  contentHalfLength,
-                  contentLength
-                );
+                      const secondHalf = content.substring(
+                        contentHalfLength,
+                        contentLength
+                      );
 
-                if (firstHalf === secondHalf) message.content = firstHalf;
-                return message;
-              })}
+                      if (firstHalf === secondHalf) message.content = firstHalf;
+                      return message;
+                    })
+              }
+              setInput={setInput}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen setInput={updateInput} />
+          <EmptyScreen
+            wsId={wsId}
+            chats={chats}
+            count={count}
+            setInput={setInput}
+            previousMessages={previousMessages}
+          />
         )}
       </div>
 
       <ChatPanel
         id={chat?.id}
         chats={chats}
+        count={count}
         isLoading={isLoading}
         stop={stop}
         append={append}
         reload={reload}
-        messages={messages}
         input={input}
         inputRef={inputRef}
         setInput={setInput}
-        createChat={createChat}
+        messages={messages}
         collapsed={collapsed}
+        createChat={createChat}
+        clearChat={clearChat}
         setCollapsed={setCollapsed}
         defaultRoute={`/${wsId}/chat`}
       />

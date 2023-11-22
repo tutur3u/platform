@@ -12,12 +12,20 @@ import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import 'katex/dist/katex.min.css';
+import Link from 'next/link';
 
 export interface ChatMessageProps {
-  message: Message;
+  message: Message & { chat_id?: string };
+  setInput: (input: string) => void;
+  embeddedUrl?: string;
 }
 
-export function ChatMessage({ message, ...props }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  setInput,
+  embeddedUrl,
+  ...props
+}: ChatMessageProps) {
   return (
     <div className={cn('group relative mb-4 flex items-start')} {...props}>
       <div
@@ -39,7 +47,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       </div>
       <div className="flex-1 space-y-2 overflow-hidden pl-4">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-li:marker:text-foreground/80 prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-4xl break-words"
+          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-full max-w-full break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -69,13 +77,64 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
               );
             },
             p({ children }) {
+              // If the message is a followup, we will render it as a button
+              if (
+                Array.isArray(children) &&
+                children?.[0] === '@' &&
+                children?.[1]?.startsWith('<')
+              ) {
+                // content will be all the text after the @<*> excluding the last child
+                const content = children
+                  ?.slice(2, -1)
+                  ?.map((child) => child?.toString())
+                  ?.join('')
+                  ?.trim();
+
+                if (embeddedUrl)
+                  return (
+                    <Link
+                      className="bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
+                    >
+                      <span className="line-clamp-1 px-3 py-1">
+                        {content || '...'}
+                      </span>
+                    </Link>
+                  );
+
+                return (
+                  <button
+                    className="bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                    onClick={() => setInput(content || '')}
+                  >
+                    <span className="line-clamp-1 px-3 py-1">
+                      {content || '...'}
+                    </span>
+                  </button>
+                );
+              }
+
               return <p className="mb-2 last:mb-0">{children}</p>;
+            },
+            blockquote({ children }) {
+              return (
+                <blockquote className="border-foreground/30 text-foreground/80 border-l-4 pl-2">
+                  {children}
+                </blockquote>
+              );
             },
             code({ node, className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
                 if (children[0] == '▍') {
                   return (
-                    <span className="mt-1 animate-pulse cursor-default">▍</span>
+                    <span
+                      className={cn(
+                        'mt-1 animate-pulse cursor-default',
+                        className
+                      )}
+                    >
+                      ▍
+                    </span>
                   );
                 }
 
@@ -93,10 +152,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
                 />
               ) : (
                 <code
-                  className={cn(
-                    'bg-foreground/10 mr-0.5 rounded p-1 text-blue-600 dark:text-blue-300',
-                    className
-                  )}
+                  className={cn('text-foreground font-semibold', className)}
                   {...props}
                 >
                   {children}
@@ -105,6 +161,13 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
             },
             th({ children }) {
               return <th className="text-foreground">{children}</th>;
+            },
+            pre({ children }) {
+              return (
+                <pre className="bg-foreground/5 rounded-lg border">
+                  {children}
+                </pre>
+              );
             },
           }}
         >

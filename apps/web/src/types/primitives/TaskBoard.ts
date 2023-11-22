@@ -1,8 +1,5 @@
-import { TaskList } from './TaskList';
+import { Entity } from './Entity';
 
-export interface TaskBoard {
-  id: string;
-  name: string;
-  lists: TaskList[];
-  created_at?: string;
+export interface TaskBoard extends Entity {
+  ws_id?: string;
 }

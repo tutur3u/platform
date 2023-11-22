@@ -88,12 +88,15 @@ export const modules: ModulePackage[] = [
     externalAlias: 'members',
     externalPath: '/migrate/members',
     internalPath: '/api/workspaces/[wsId]/users/groups/members/migrate',
-    mapping: (items) =>
-      items.map((i) => ({
+    mapping: (items) => {
+      console.log(items);
+
+      return items.map((i) => ({
         user_id: i?.user_id,
         group_id: i?.class_id,
         created_at: i?.created_at,
-      })),
+      }));
+    },
   },
   {
     name: 'User Indicators',
@@ -227,14 +230,14 @@ export const modules: ModulePackage[] = [
           i?.type === 'COURSE'
             ? 'b58cdb48-67fb-49ef-86c6-1ba84c4728d6'
             : i?.type === 'LESSON'
-            ? '6a5b39e6-c3ac-4f21-ac44-faaacf02bbde'
-            : i?.type === 'ACCESSORY'
-            ? '4b1733db-38b7-4603-bf66-6f4e6b582b5b'
-            : i?.type === 'BOOK'
-            ? '3cb87605-c01a-441e-a98a-9324cf48657a'
-            : i?.type === 'EVENT'
-            ? '9bc7ee58-537a-4ff4-9a8f-ee10a875568c'
-            : undefined,
+              ? '6a5b39e6-c3ac-4f21-ac44-faaacf02bbde'
+              : i?.type === 'ACCESSORY'
+                ? '4b1733db-38b7-4603-bf66-6f4e6b582b5b'
+                : i?.type === 'BOOK'
+                  ? '3cb87605-c01a-441e-a98a-9324cf48657a'
+                  : i?.type === 'EVENT'
+                    ? '9bc7ee58-537a-4ff4-9a8f-ee10a875568c'
+                    : undefined,
         manufacturer: i?.manufacturer,
         created_at: i?.created_at,
       })),
@@ -337,8 +340,8 @@ export const modules: ModulePackage[] = [
           i?.method === 'CASH'
             ? '354f92e4-8e7c-404a-b461-cfe6a8b67ba8'
             : i?.method === 'BANKING'
-            ? '8ca90c9e-de28-4284-b388-294b704d78bc'
-            : '';
+              ? '8ca90c9e-de28-4284-b388-294b704d78bc'
+              : '';
 
         return {
           id: i?.id,

@@ -46,8 +46,8 @@ const WarehouseSelector = ({
 
   const data = [
     ...(warehouses?.map((warehouse) => ({
-      label: warehouse.name,
-      value: warehouse.id,
+      label: warehouse.name || '',
+      value: warehouse.id || '',
     })) || []),
   ];
 
@@ -131,7 +131,7 @@ const WarehouseSelector = ({
           if (!item) return null;
 
           mutate(apiPath, [...(warehouses || []), item]);
-          if (setWarehouseId) setWarehouseId(item.id);
+          if (setWarehouseId) setWarehouseId(item?.id || '');
 
           return {
             label: item.name,

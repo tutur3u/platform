@@ -8,5 +8,10 @@
   "creating_chat": "Đang tạo cuộc trò chuyện...",
   "default_chat": "Mặc định",
   "regenerate_response": "Tạo lại câu trả lời",
-  "stop_generating": "Dừng trả lời"
+  "stop_generating": "Dừng trả lời",
+  "something_went_wrong": "Có lỗi xảy ra.",
+  "try_again_later": "Vui lòng thử lại sau.",
+  "edge_api_opt_out": "Đang tắt chế độ Edge API cho cuộc trò chuyện này...",
+  "use_edge": "Chế độ siêu tốc",
+  "use_standard": "Chế độ tiêu chuẩn"
 }

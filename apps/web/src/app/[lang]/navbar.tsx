@@ -23,7 +23,7 @@ export default async function Navbar() {
 
   return (
     <div id="navbar" className="fixed inset-x-0 top-0 z-50">
-      <div className="bg-background/30 px-4 py-2 font-semibold backdrop-blur-lg md:px-8 lg:px-16 xl:px-32">
+      <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-none items-center gap-2">

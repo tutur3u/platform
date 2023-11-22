@@ -1,8 +1,12 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
+
+export const runtime = 'edge';
+export const preferredRegion = 'sin1';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +15,10 @@ export async function POST(req: Request) {
     if (!message)
       return NextResponse.json('No message provided', { status: 400 });
 
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerComponentClient({
+      cookies: () => cookieStore,
+    });
 
     const {
       data: { user },
@@ -42,7 +49,6 @@ export async function POST(req: Request) {
         prompt,
         max_tokens_to_sample: 300,
         model,
-        temperature: 0.9,
       }),
     });
 
@@ -73,7 +79,7 @@ export async function POST(req: Request) {
     });
 
     if (error) return NextResponse.json(error.message, { status: 500 });
-    return NextResponse.json({ id }, { status: 200 });
+    return NextResponse.json({ id, title }, { status: 200 });
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
@@ -99,7 +105,7 @@ const trailingMessages: Message[] = [
     id: 'final-message',
     role: 'assistant',
     content:
-      'Thank you, I will respond with a title in my next response, and it will only contain the title, nothing else.',
+      'Thank you, I will respond with a title in my next response, and it will only contain the title without any quotation marks, and nothing else.',
   },
 ];
 

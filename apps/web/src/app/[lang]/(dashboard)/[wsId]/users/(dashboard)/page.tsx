@@ -2,7 +2,7 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
-import { getReportsCount } from '../reports/page';
+import { getReportsCount } from '../reports/core';
 
 export const dynamic = 'force-dynamic';
 

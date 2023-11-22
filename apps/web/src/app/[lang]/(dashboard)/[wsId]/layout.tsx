@@ -25,6 +25,7 @@ export default async function Layout({
     [
       'ENABLE_CHAT',
       'ENABLE_USERS',
+      'ENABLE_PROJECTS',
       'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
       'ENABLE_FINANCE',
@@ -58,10 +59,10 @@ export default async function Layout({
       disabled: true,
     },
     {
-      name: t('boards'),
-      href: `/${wsId}/boards`,
+      name: t('projects'),
+      href: `/${wsId}/projects`,
       allowedPresets: ['ALL'],
-      disabled: true,
+      disabled: !verifySecret('ENABLE_PROJECTS', 'true'),
     },
     {
       name: t('inventory'),

@@ -3,6 +3,7 @@ export interface WorkspaceUser {
   name?: string;
   full_name?: string;
   display_name?: string;
+  avatar_url?: string | null;
   handle?: string;
   email?: string;
   phone?: string;

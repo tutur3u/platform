@@ -43,14 +43,13 @@ export default function SidebarLink({
   left = false,
   classNames,
   exactMatch = false,
-  disableAutoClose = false,
   disabled = false,
   disableBorder = false,
 }: SidebarLinkProps) {
   const router = useRouter();
   const { wsId, teamId } = router.query;
 
-  const { sidebar, setSidebar, hideExperimentalOnSidebar } = useAppearance();
+  const { sidebar, hideExperimentalOnSidebar } = useAppearance();
 
   const isExpanded = sidebar === 'open';
 
@@ -89,16 +88,16 @@ export default function SidebarLink({
             disabled
               ? 'cursor-not-allowed border-transparent text-zinc-300/50'
               : defaultHighlight
-              ? defaultActive && isActive
-                ? `bg-zinc-500/10 text-zinc-900 dark:bg-zinc-500/10 dark:text-zinc-100 ${
-                    disableBorder
-                      ? ''
-                      : 'border-border border dark:border-zinc-300/10'
-                  }`
-                : `text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
-                    disableBorder ? '' : 'border border-transparent'
-                  }`
-              : ''
+                ? defaultActive && isActive
+                  ? `bg-zinc-500/10 text-zinc-900 dark:bg-zinc-500/10 dark:text-zinc-100 ${
+                      disableBorder
+                        ? ''
+                        : 'border-border border dark:border-zinc-300/10'
+                    }`
+                  : `text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
+                      disableBorder ? '' : 'border border-transparent'
+                    }`
+                : ''
           } ${
             left && isExpanded ? 'justify-start' : 'justify-center'
           } ${classNames?.innerRoot}`}

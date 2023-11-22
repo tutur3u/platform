@@ -42,8 +42,7 @@ function LeftSidebar({ className }: SidebarProps) {
 
   const { wsId } = router.query;
 
-  const { sidebar, theme, setSidebar, toggleSidebar, changeTheme } =
-    useAppearance();
+  const { sidebar, theme, toggleSidebar, changeTheme } = useAppearance();
 
   const { user } = useUser();
 
@@ -268,8 +267,8 @@ function LeftSidebar({ className }: SidebarProps) {
                       router.pathname === `/[wsId]/members`
                         ? 'pointer-events-none cursor-default select-none opacity-0'
                         : isRootWs
-                        ? 'hover:bg-yellow-500/20 dark:hover:bg-yellow-300/20'
-                        : 'hover:bg-purple-500/20 dark:hover:bg-purple-300/20'
+                          ? 'hover:bg-yellow-500/20 dark:hover:bg-yellow-300/20'
+                          : 'hover:bg-purple-500/20 dark:hover:bg-purple-300/20'
                     } flex items-center gap-1 rounded-full px-4 py-0.5 font-semibold transition`}
                   >
                     <div>{invite}</div>
