@@ -93,7 +93,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -104,7 +104,7 @@ export function ChatMessage({
 
                 return (
                   <button
-                    className="bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                    className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
                     onClick={() => setInput(content || '')}
                   >
                     <span className="line-clamp-1 px-3 py-1">
@@ -114,7 +114,9 @@ export function ChatMessage({
                 );
               }
 
-              return <p className="mb-2 last:mb-0">{children}</p>;
+              return (
+                <p className="text-foreground mb-2 last:mb-0">{children}</p>
+              );
             },
             blockquote({ children }) {
               return (
