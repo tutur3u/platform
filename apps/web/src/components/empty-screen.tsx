@@ -102,23 +102,26 @@ export function EmptyScreen({
             </h2>
             <div className="mt-4 flex flex-col items-start space-y-2">
               {chats.slice(0, 5).map((chat, index) => (
-                <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
-                  <Button
-                    key={index}
-                    variant="link"
-                    className="h-auto p-0 text-left text-base"
-                  >
-                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
-                    <div>
-                      <div>{chat.title}</div>
+                <div key={chat.id} className="flex items-start">
+                  <MessageCircle className="text-foreground/80 mr-2 flex-none" />
+                  <div>
+                    <Link href={`/${wsId}/chat/${chat.id}`}>
+                      <Button
+                        key={index}
+                        variant="link"
+                        className="h-auto p-0 text-left text-base"
+                      >
+                        {chat.title}
+                      </Button>
+                    </Link>
+
+                    {chat?.created_at ? (
                       <div className="opacity-50">
-                        {chat?.created_at
-                          ? dayjs(chat?.created_at).fromNow()
-                          : null}
+                        {dayjs(chat?.created_at).fromNow()}
                       </div>
-                    </div>
-                  </Button>
-                </Link>
+                    ) : null}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -175,23 +178,26 @@ export function EmptyScreen({
 
             <div className="flex flex-col items-start space-y-2">
               {chats.map((chat, index) => (
-                <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
-                  <Button
-                    key={index}
-                    variant="link"
-                    className="h-auto p-0 text-left text-base"
-                  >
-                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
-                    <div>
-                      <div>{chat.title}</div>
+                <div key={chat.id} className="flex items-start">
+                  <MessageCircle className="text-foreground/80 mr-2 flex-none" />
+                  <div>
+                    <Link href={`/${wsId}/chat/${chat.id}`}>
+                      <Button
+                        key={index}
+                        variant="link"
+                        className="h-auto p-0 text-left text-base"
+                      >
+                        {chat.title}
+                      </Button>
+                    </Link>
+
+                    {chat?.created_at ? (
                       <div className="opacity-50">
-                        {chat?.created_at
-                          ? dayjs(chat?.created_at).fromNow()
-                          : null}
+                        {dayjs(chat?.created_at).fromNow()}
                       </div>
-                    </div>
-                  </Button>
-                </Link>
+                    ) : null}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
