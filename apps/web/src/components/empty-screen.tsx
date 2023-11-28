@@ -63,7 +63,7 @@ export function EmptyScreen({
           </span>{' '}
           Chat.
         </h1>
-        <p className="text-muted-foreground text-sm leading-normal md:text-base">
+        <p className="text-foreground/90 text-sm leading-normal md:text-base">
           You can start a conversation here or try the following examples:
         </p>
 
@@ -75,7 +75,7 @@ export function EmptyScreen({
               className="h-auto p-0 text-left text-base"
               onClick={() => setInput(message.message)}
             >
-              <IconArrowRight className="text-muted-foreground mr-2 flex-none" />
+              <IconArrowRight className="text-foreground/80 mr-2 flex-none" />
               {message.heading}
             </Button>
           ))}
@@ -84,18 +84,24 @@ export function EmptyScreen({
         {chats.length > 0 && (
           <div className="mt-8">
             <h2 className="text-lg font-semibold">
-              Recent conversations
-              {count ? <span className="opacity-50"> ({count})</span> : ''}
+              Recent conversations{' '}
+              {count ? (
+                <span className="bg-foreground/10 text-foreground rounded-full border px-2 py-0.5 text-sm">
+                  {count}
+                </span>
+              ) : (
+                ''
+              )}
             </h2>
             <div className="mt-4 flex flex-col items-start space-y-2">
-              {chats.map((chat, index) => (
+              {chats.slice(0, 5).map((chat, index) => (
                 <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
                   <Button
                     key={index}
                     variant="link"
                     className="h-auto p-0 text-left text-base"
                   >
-                    <MessageCircle className="text-muted-foreground mr-2 flex-none" />
+                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
                     {chat.title}
                   </Button>
                 </Link>
@@ -131,6 +137,28 @@ export function EmptyScreen({
                 setInput={setInput}
                 embeddedUrl={`/${wsId}/chat`}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {chats.length > 5 && (
+        <div className="bg-background rounded-lg border p-4 md:p-8">
+          <div>
+            <h2 className="text-lg font-semibold">More conversations</h2>
+            <div className="mt-4 flex flex-col items-start space-y-2">
+              {chats.slice(5).map((chat, index) => (
+                <Link href={`/${wsId}/chat/${chat.id}`} key={chat.id}>
+                  <Button
+                    key={index}
+                    variant="link"
+                    className="h-auto p-0 text-left text-base"
+                  >
+                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
+                    {chat.title}
+                  </Button>
+                </Link>
+              ))}
             </div>
           </div>
         </div>

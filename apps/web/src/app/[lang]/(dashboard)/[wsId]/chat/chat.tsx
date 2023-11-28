@@ -211,7 +211,7 @@ const Chat = ({
         ) : (
           <EmptyScreen
             wsId={wsId}
-            chats={chats.slice(0, 5)}
+            chats={chats}
             count={count}
             setInput={setInput}
             previousMessages={previousMessages}
