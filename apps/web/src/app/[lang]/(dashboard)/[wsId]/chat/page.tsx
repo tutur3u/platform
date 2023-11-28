@@ -11,9 +11,17 @@ interface Props {
   params: {
     wsId: string;
   };
+  searchParams: {
+    lang: string;
+  };
 }
 
-export default async function AIPage({ params: { wsId } }: Props) {
+export default async function AIPage({
+  params: { wsId },
+  searchParams,
+}: Props) {
+  const { lang: locale } = searchParams;
+
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
@@ -37,6 +45,7 @@ export default async function AIPage({ params: { wsId } }: Props) {
       chats={chats}
       count={count}
       previousMessages={messages}
+      locale={locale}
     />
   );
 }

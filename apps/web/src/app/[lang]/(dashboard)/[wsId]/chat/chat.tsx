@@ -32,6 +32,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   chats: AIChat[];
   count: number | null;
   hasKey?: boolean;
+  locale?: string;
 }
 
 const Chat = ({
@@ -43,6 +44,7 @@ const Chat = ({
   count,
   className,
   hasKey,
+  locale,
 }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
 
@@ -215,6 +217,7 @@ const Chat = ({
             count={count}
             setInput={setInput}
             previousMessages={previousMessages}
+            locale={locale}
           />
         )}
       </div>

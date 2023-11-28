@@ -1,4 +1,6 @@
 {
+  "welcome_to": "Chào mừng đến với",
+  "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
   "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
   "prompt_placeholder": "Nhập yêu cầu của bạn...",
   "chats": "Các cuộc trò chuyện",
@@ -11,7 +13,9 @@
   "stop_generating": "Dừng trả lời",
   "something_went_wrong": "Có lỗi xảy ra.",
   "try_again_later": "Vui lòng thử lại sau.",
-  "edge_api_opt_out": "Đang tắt chế độ Edge API cho cuộc trò chuyện này...",
-  "use_edge": "Chế độ siêu tốc",
-  "use_standard": "Chế độ tiêu chuẩn"
+  "recent_conversations": "Các cuộc trò chuyện gần đây:",
+  "latest_messages": "Tin nhắn mới nhất",
+  "view_conversation": "Xem cuộc trò chuyện",
+  "all_conversations": "Tất cả cuộc trò chuyện",
+  "created": "Đã tạo"
 }
