@@ -26,7 +26,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.10.1",
+    "@anthropic-ai/sdk": "^0.10.2",
     "@emotion/react": "^11.11.1",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.3.1",
@@ -92,7 +92,7 @@
     "dayjs": "^1.11.10",
     "eventsource-parser": "^1.1.1",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.293.0",
+    "lucide-react": "^0.294.0",
     "moment": "^2.29.4",
     "nanoid": "^5.0.3",
     "negotiator": "^0.6.3",
