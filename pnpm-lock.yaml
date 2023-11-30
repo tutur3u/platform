@@ -168,8 +168,8 @@ importers:
         specifier: ^8.10.7
         version: 8.10.7(react-dom@18.2.0)(react@18.2.0)
       '@tiptap/extension-highlight':
-        specifier: ^2.1.12
-        version: 2.1.12(@tiptap/core@2.1.12)
+        specifier: ^2.1.13
+        version: 2.1.13(@tiptap/core@2.1.12)
       '@tiptap/extension-link':
         specifier: ^2.1.12
         version: 2.1.12(@tiptap/core@2.1.12)(@tiptap/pm@2.1.12)
@@ -3036,8 +3036,8 @@ packages:
       '@tiptap/core': 2.1.12(@tiptap/pm@2.1.12)
     dev: false
 
-  /@tiptap/extension-highlight@2.1.12(@tiptap/core@2.1.12):
-    resolution: {integrity: sha512-buen31cYPyiiHA2i0o2i/UcjRTg/42mNDCizGr1OJwvv3AELG3qOFc4Y58WJWIvWNv+1Dr4ZxHA3GNVn0ANWyg==}
+  /@tiptap/extension-highlight@2.1.13(@tiptap/core@2.1.12):
+    resolution: {integrity: sha512-ZivjJma5WwPYcG0rpnynVDGis32OGdtpTwETEb+2OOjZBCBlyYQ4tcRk5gS3nzBAjLl/Qu84VVbawLhHXB6few==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
