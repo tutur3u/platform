@@ -201,8 +201,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       '@vercel/toolbar':
-        specifier: ^0.1.5
-        version: 0.1.5(next@14.0.3)
+        specifier: ^0.1.6
+        version: 0.1.6(next@14.0.3)
       ai:
         specifier: ^2.2.27
         version: 2.2.27(react@18.2.0)(solid-js@1.8.6)(svelte@4.2.8)(vue@3.3.9)
@@ -3738,8 +3738,8 @@ packages:
       server-only: 0.0.1
     dev: false
 
-  /@vercel/toolbar@0.1.5(next@14.0.3):
-    resolution: {integrity: sha512-LlZDI7zYsPnEOYb08dtDrOIfHWodvInLWVPhd1tH30KVDy9RvtQhnrgF1QLN5uyu9CKjD7ugiJ02R3I8bVQcLg==}
+  /@vercel/toolbar@0.1.6(next@14.0.3):
+    resolution: {integrity: sha512-n4fORKjWaX203ThcSIumY9TfWHxRFkU+McC15ivEuDzMsocY+4UGDhwgmfIBruWiXcrJf9gVnQHcxbr6YxKhnA==}
     peerDependencies:
       next: '>=11.0.0'
     dependencies:
