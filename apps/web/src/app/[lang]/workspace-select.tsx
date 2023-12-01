@@ -115,7 +115,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
               role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
-              className={cn('w-64 justify-between')}
+              className={cn('w-full max-w-[16rem] justify-between')}
             >
               <Avatar className="mr-2 h-5 w-5">
                 <AvatarImage
@@ -124,11 +124,11 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                 />
                 <AvatarFallback>{getInitials(workspace.name)}</AvatarFallback>
               </Avatar>
-              {workspace.name}
+              <span className="line-clamp-1">{workspace.name}</span>
               <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-0">
+          <PopoverContent className="w-full max-w-[16rem] p-0">
             <Command>
               <CommandList>
                 <CommandInput placeholder="Search workspace..." />
@@ -157,7 +157,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                             {getInitials(ws.label)}
                           </AvatarFallback>
                         </Avatar>
-                        {ws.label}
+                        <span className="line-clamp-1">{ws.label}</span>
                         {group.id !== 'personal' && (
                           <CheckIcon
                             className={cn(
