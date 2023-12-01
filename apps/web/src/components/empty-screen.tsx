@@ -93,38 +93,39 @@ export function EmptyScreen({
           ))}
         </div>
 
-        <Separator className="my-4" />
-
         {chats.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold">
-              {t('recent_conversations')}
-            </h2>
-            <div className="mt-4 flex flex-col items-start space-y-2">
-              {chats.slice(0, 5).map((chat, index) => (
-                <div key={chat.id} className="flex items-start">
-                  <MessageCircle className="text-foreground/80 mr-2 flex-none" />
-                  <div>
-                    <Link href={`/${wsId}/chat/${chat.id}`}>
-                      <Button
-                        key={index}
-                        variant="link"
-                        className="h-auto p-0 text-left text-base"
-                      >
-                        {chat.title}
-                      </Button>
-                    </Link>
+          <>
+            <Separator className="my-4" />
+            <div>
+              <h2 className="text-lg font-semibold">
+                {t('recent_conversations')}
+              </h2>
+              <div className="mt-4 flex flex-col items-start space-y-2">
+                {chats.slice(0, 5).map((chat, index) => (
+                  <div key={chat.id} className="flex items-start">
+                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
+                    <div>
+                      <Link href={`/${wsId}/chat/${chat.id}`}>
+                        <Button
+                          key={index}
+                          variant="link"
+                          className="h-auto p-0 text-left text-base"
+                        >
+                          {chat.title}
+                        </Button>
+                      </Link>
 
-                    {chat?.created_at ? (
-                      <div className="opacity-50">
-                        {dayjs(chat?.created_at).fromNow()}
-                      </div>
-                    ) : null}
+                      {chat?.created_at ? (
+                        <div className="opacity-50">
+                          {dayjs(chat?.created_at).fromNow()}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 

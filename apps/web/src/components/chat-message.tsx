@@ -52,22 +52,22 @@ export function ChatMessage({
           rehypePlugins={[rehypeKatex]}
           components={{
             h1({ children }) {
-              return <h1 className="text-foreground">{children}</h1>;
+              return <h1 className="text-foreground mb-2 mt-6">{children}</h1>;
             },
             h2({ children }) {
-              return <h2 className="text-foreground">{children}</h2>;
+              return <h2 className="text-foreground mb-2 mt-6">{children}</h2>;
             },
             h3({ children }) {
-              return <h3 className="text-foreground">{children}</h3>;
+              return <h3 className="text-foreground mb-2 mt-6">{children}</h3>;
             },
             h4({ children }) {
-              return <h4 className="text-foreground">{children}</h4>;
+              return <h4 className="text-foreground mb-2 mt-6">{children}</h4>;
             },
             h5({ children }) {
-              return <h5 className="text-foreground">{children}</h5>;
+              return <h5 className="text-foreground mb-2 mt-6">{children}</h5>;
             },
             h6({ children }) {
-              return <h6 className="text-foreground">{children}</h6>;
+              return <h6 className="text-foreground mb-2 mt-6">{children}</h6>;
             },
             strong({ children }) {
               return (

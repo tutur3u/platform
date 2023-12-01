@@ -31,7 +31,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   )
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
               • {t('set_name_to')}{' '}
@@ -77,7 +77,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'transaction_categories')
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
               • {t('set_name_to')}{' '}
@@ -146,7 +146,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'healthcare_vitals')
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
               • {t('set_name_to')}{' '}
@@ -215,7 +215,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'workspace_products')
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name && (
             <div>
               • {t('set_name_to')}{' '}
@@ -335,7 +335,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   )
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name && (
             <div>
               • {t('set_name_to')}{' '}
@@ -428,7 +428,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'workspace_users')
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
               • {t('set_name_to')}{' '}
@@ -844,7 +844,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (data.table_name === 'workspaces')
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
               • {t('set_name_to')}{' '}
@@ -890,7 +890,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
   if (userId)
     return (
       <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
-        <div className="text-zinc-700 dark:text-zinc-400">
+        <div className="text-foreground/80">
           {user != null && (
             <>
               {data.op === 'INSERT' && (

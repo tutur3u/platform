@@ -112,7 +112,7 @@ const TaskWrapper = ({
           <p className="text-lg font-medium text-zinc-300">
             Are you sure you want to delete this task?
           </p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-foreground/80 text-sm">
             All of your data will be permanently removed. This action cannot be
             undone.
           </p>
@@ -194,7 +194,7 @@ const TaskWrapper = ({
           </div>
 
           {!task.completed && task.end_date && (
-            <div className="flex flex-wrap gap-2 font-semibold text-zinc-500">
+            <div className="text-foreground/80 flex flex-wrap gap-2 font-semibold">
               {/* > 7 days: green, 3-7 days: yellow, 1-3 days: orange, 0-1 days: red */}
               <span
                 className={
@@ -206,7 +206,7 @@ const TaskWrapper = ({
                 }
               >
                 {moment(task.end_date).format('MMM D, HH:mm')}{' '}
-                <span className="text-zinc-500">
+                <span className="text-foreground/80">
                   ({moment(task.end_date).fromNow()})
                 </span>
               </span>
@@ -218,7 +218,7 @@ const TaskWrapper = ({
               <Divider className="my-2" />
             )}
 
-          <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
+          <div className="text-foreground/80 flex flex-wrap items-center gap-2 font-semibold">
             {!task.completed && task.priority && (
               <div
                 className={`${getPriorityColor(
@@ -260,7 +260,7 @@ const TaskWrapper = ({
 
       <Menu withArrow position="right" trigger="click">
         <Menu.Target>
-          <button className="m-1 flex h-fit items-start rounded border border-transparent text-zinc-500 opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
+          <button className="text-foreground/80 m-1 flex h-fit items-start rounded border border-transparent opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
             <EllipsisHorizontalIcon className="w-6" />
           </button>
         </Menu.Target>
