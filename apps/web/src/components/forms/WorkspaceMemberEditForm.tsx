@@ -146,7 +146,7 @@ const WorkspaceMemberEditForm = ({
           <>
             <Divider variant="dashed" className="my-1" />
             <div>
-              <span className="text-zinc-700 dark:text-zinc-400">
+              <span className="text-foreground/80">
                 {user.role === 'OWNER' && disallowOwnerChange
                   ? t('cannot-delete-last-owner')
                   : t('delete-member-description')}

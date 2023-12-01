@@ -85,7 +85,9 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents && documents.length === 0 && (
-          <div className="col-span-full text-zinc-500">{noDocumentsLabel}</div>
+          <div className="text-foreground/80 col-span-full">
+            {noDocumentsLabel}
+          </div>
         )}
 
         {ws &&

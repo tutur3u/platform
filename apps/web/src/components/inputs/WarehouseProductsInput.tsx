@@ -165,7 +165,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
         {productId && pricesChanged && (
           <div className="mt-4 flex flex-col gap-2 md:flex-row">
             <button
-              className="rounded border border-zinc-500/10 bg-zinc-500/10 px-4 py-2 font-semibold text-zinc-500 transition hover:bg-zinc-500/20 dark:border-zinc-300/10 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20"
+              className="text-foreground/80 rounded border border-zinc-500/10 bg-zinc-500/10 px-4 py-2 font-semibold transition hover:bg-zinc-500/20 dark:border-zinc-300/10 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20"
               onClick={resetPrices}
             >
               Hủy

@@ -48,6 +48,10 @@ export const programmingLanguages: languageMap = {
   sql: '.sql',
   html: '.html',
   css: '.css',
+  json: '.json',
+  yaml: '.yaml',
+  markdown: '.md',
+  xml: '.xml',
   // add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
 };
 
@@ -136,6 +140,10 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
           padding: '1.5rem 1rem',
           borderRadius: '0.25rem',
           backgroundColor: 'transparent',
+        }}
+        lineNumberStyle={{
+          // Disable line number selection
+          userSelect: 'none',
         }}
         codeTagProps={{
           style: {

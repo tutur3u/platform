@@ -1,4 +1,6 @@
 {
+  "welcome_to": "Welcome to",
+  "welcome_msg": "You can start a conversation here or try the following examples:",
   "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
   "prompt_placeholder": "Type your prompt here...",
   "chats": "Chats",
@@ -11,7 +13,9 @@
   "stop_generating": "Stop generating",
   "something_went_wrong": "Something went wrong.",
   "try_again_later": "Please try again later.",
-  "edge_api_opt_out": "Opting out of Edge API for this chat...",
-  "use_edge": "Edge Mode",
-  "use_standard": "Standard Mode"
+  "recent_conversations": "Recent conversations:",
+  "latest_messages": "Latest messages",
+  "view_conversation": "View conversation",
+  "all_conversations": "All conversations",
+  "created": "Created"
 }

@@ -130,7 +130,7 @@ export default function WorkspaceBoardEditor({
           <p className="text-lg font-medium text-zinc-300">
             Are you sure you want to delete this board?
           </p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-foreground/80 text-sm">
             All of your data will be permanently removed. This action cannot be
             undone.
           </p>

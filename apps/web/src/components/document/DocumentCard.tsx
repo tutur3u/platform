@@ -34,7 +34,7 @@ const DocumentCard = ({ wsId, document }: Props) => {
           <>
             <Separator className="my-2" />
 
-            <p className="text-zinc-700 dark:text-zinc-400">
+            <p className="text-foreground/80">
               <div
                 className="prose line-clamp-3"
                 dangerouslySetInnerHTML={{

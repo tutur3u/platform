@@ -11,15 +11,17 @@ import WorkspaceSelect from './workspace-select';
 import LogoTitle from './logo-title';
 import { Suspense } from 'react';
 import { getWorkspaces } from '@/lib/workspace-helper';
+import { getCurrentUser } from '@/lib/user-helper';
 
 export default async function Navbar() {
   const supabase = createServerComponentClient({ cookies });
 
   const {
-    data: { user },
+    data: { user: sbUser },
   } = await supabase.auth.getUser();
 
   const workspaces = await getWorkspaces(true);
+  const user = await getCurrentUser();
 
   return (
     <div id="navbar" className="fixed inset-x-0 top-0 z-50">
@@ -42,7 +44,9 @@ export default async function Navbar() {
                 <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
-              {user ? <WorkspaceSelect workspaces={workspaces} /> : null}
+              {sbUser ? (
+                <WorkspaceSelect user={user} workspaces={workspaces} />
+              ) : null}
             </Suspense>
           </div>
 
@@ -52,7 +56,7 @@ export default async function Navbar() {
                 <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
-              {user ? (
+              {sbUser ? (
                 <>
                   <NotificationPopover />
                   <UserNav />
