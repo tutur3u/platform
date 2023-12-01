@@ -37,7 +37,7 @@ const ProductCard = ({
             )}
           </div>
           {showSupplier && (
-            <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
+            <div className="text-foreground/80 line-clamp-1 font-semibold dark:text-zinc-400/70">
               {product.manufacturer}
             </div>
           )}

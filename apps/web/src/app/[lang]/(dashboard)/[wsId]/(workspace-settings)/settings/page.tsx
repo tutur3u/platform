@@ -52,7 +52,7 @@ export default async function WorkspaceSettingsPage({
     <>
       <div className="border-border bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold">{settingsLabel}</h1>
-        <p className="text-zinc-700 dark:text-zinc-400">{t('description')}</p>
+        <p className="text-foreground/80">{t('description')}</p>
       </div>
       <Separator className="my-4" />
 
@@ -84,7 +84,7 @@ export default async function WorkspaceSettingsPage({
 
             <div className="col-span-full flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
               <div className="mb-1 text-2xl font-bold">{t('features')}</div>
-              <div className="mb-4 font-semibold text-zinc-500">
+              <div className="mb-4 font-semibold text-foreground/80">
                 {t('features_description')}
               </div>
 

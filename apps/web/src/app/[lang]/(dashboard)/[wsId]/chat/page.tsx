@@ -11,9 +11,17 @@ interface Props {
   params: {
     wsId: string;
   };
+  searchParams: {
+    lang: string;
+  };
 }
 
-export default async function AIPage({ params: { wsId } }: Props) {
+export default async function AIPage({
+  params: { wsId },
+  searchParams,
+}: Props) {
+  const { lang: locale } = searchParams;
+
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
@@ -37,6 +45,7 @@ export default async function AIPage({ params: { wsId } }: Props) {
       chats={chats}
       count={count}
       previousMessages={messages}
+      locale={locale}
     />
   );
 }
@@ -75,8 +84,7 @@ export const getChats = async () => {
   const { data, count, error } = await supabase
     .from('ai_chats')
     .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .limit(5);
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error(error);

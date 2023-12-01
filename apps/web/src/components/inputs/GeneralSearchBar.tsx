@@ -31,6 +31,7 @@ const GeneralSearchBar = ({ resetPage = true, className }: Props) => {
         placeholder={searchPlaceholder}
         defaultValue={query.get('q') || ''}
         onChange={(e) => updateQuery(e.target.value)}
+        className="placeholder:text-foreground/60"
       />
     </div>
   );

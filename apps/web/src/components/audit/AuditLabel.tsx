@@ -43,7 +43,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
           )
         ) : null}
 
-        <span className="text-zinc-500 dark:text-zinc-400">
+        <span className="text-foreground/80 dark:text-zinc-400">
           {' '}
           {hasActor
             ? fullLabel.toLowerCase()

@@ -43,7 +43,7 @@ const PromotionCard = ({
       <div className="p-2">
         <div className="line-clamp-1 font-semibold tracking-wide">{name}</div>
         {showDescription && (
-          <div className="line-clamp-1 font-semibold text-zinc-500 dark:text-zinc-400/70">
+          <div className="text-foreground/80 line-clamp-1 font-semibold dark:text-zinc-400/70">
             {description}
           </div>
         )}

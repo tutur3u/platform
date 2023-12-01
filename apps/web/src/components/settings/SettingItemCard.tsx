@@ -40,7 +40,7 @@ const SettingItemCard = ({
     >
       {title && <div className="mb-1 text-2xl font-bold">{title}</div>}
       {description && (
-        <div className="mb-4 whitespace-pre-line font-semibold text-zinc-500">
+        <div className="text-foreground/80 mb-4 whitespace-pre-line font-semibold">
           {description}
         </div>
       )}

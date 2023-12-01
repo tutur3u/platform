@@ -155,7 +155,7 @@ export default function WalletDetailsPage({
         </div>
 
         {wallet?.statement_date && wallet?.payment_date ? (
-          <div className="col-span-full text-zinc-500 dark:text-zinc-400">
+          <div className="text-foreground/80 col-span-full dark:text-zinc-400">
             {t('statement-date-message')}{' '}
             <span className="font-semibold text-blue-500 underline decoration-blue-500 underline-offset-2 dark:text-blue-200 dark:decoration-blue-300">
               {wallet?.statement_date}

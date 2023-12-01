@@ -103,9 +103,9 @@ function LeftSidebar({ className }: SidebarProps) {
               size="lg"
             >
               {theme === 'dark' ? (
-                <SunIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
+                <SunIcon className="text-foreground/80 h-6 w-6 dark:text-zinc-300" />
               ) : (
-                <MoonIcon className="h-6 w-6 text-zinc-500 dark:text-zinc-300" />
+                <MoonIcon className="text-foreground/80 h-6 w-6 dark:text-zinc-300" />
               )}
             </ActionIcon>
 
