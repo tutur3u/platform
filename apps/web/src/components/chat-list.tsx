@@ -5,9 +5,10 @@ import { ChatMessage } from '@/components/chat-message';
 export interface ChatList {
   title?: string;
   titleLoading?: boolean;
-  messages: (Message & { chat_id?: string })[];
+  messages: (Message & { chat_id?: string; created_at?: string })[];
   setInput: (input: string) => void;
   embeddedUrl?: string;
+  locale: string;
 }
 
 export function ChatList({
@@ -16,6 +17,7 @@ export function ChatList({
   messages,
   setInput,
   embeddedUrl,
+  locale,
 }: ChatList) {
   if (!messages.length) {
     return null;
@@ -46,6 +48,7 @@ export function ChatList({
             message={message}
             setInput={setInput}
             embeddedUrl={embeddedUrl}
+            locale={locale}
           />
           {index < messages.length - 1 && (
             <Separator className="my-4 md:my-8" />
