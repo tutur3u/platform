@@ -29,8 +29,8 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 export async function UserNav() {
   const { t } = useTranslation('common');
 
-  const user = await getCurrentUser();
-  const workspaces = await getWorkspaces();
+  const user = await getCurrentUser(true);
+  const workspaces = await getWorkspaces(true);
 
   return (
     <DropdownMenu modal={false}>

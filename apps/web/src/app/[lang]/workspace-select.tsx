@@ -42,7 +42,7 @@ import { useRouter, useParams, usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface Props {
-  user: User;
+  user: User | null;
   workspaces: Workspace[] | null;
 }
 
@@ -139,13 +139,14 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                       <CommandItem
                         key={ws.value}
                         onSelect={() => {
+                          if (!ws?.value || ws?.value === wsId) return;
                           onValueChange(ws.value);
                           setOpen(false);
                         }}
                         className={`text-sm ${
                           group.id === 'personal' ? 'opacity-50' : ''
                         }`}
-                        disabled={group.id === 'personal'}
+                        disabled={!ws || group.id === 'personal'}
                       >
                         <Avatar className="mr-2 h-5 w-5">
                           <AvatarImage
