@@ -20,9 +20,9 @@ export default async function Layout({
 
   const workspace = await getWorkspace(wsId);
 
-  const secrets = await getSecrets(
+  const secrets = await getSecrets({
     wsId,
-    [
+    requiredSecrets: [
       'ENABLE_CHAT',
       'ENABLE_USERS',
       'ENABLE_PROJECTS',
@@ -30,8 +30,8 @@ export default async function Layout({
       'ENABLE_HEALTHCARE',
       'ENABLE_FINANCE',
     ],
-    true
-  );
+    forceAdmin: true,
+  });
 
   const verifySecret = (secret: string, value: string) =>
     getSecret(secret, secrets)?.value === value;

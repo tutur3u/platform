@@ -20,11 +20,10 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const { t } = useTranslation('ws-home');
   const ws = await getWorkspace(wsId);
 
-  const secrets = await getSecrets(wsId, [
-    'ENABLE_USERS',
-    'ENABLE_INVENTORY',
-    'ENABLE_FINANCE',
-  ]);
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_USERS', 'ENABLE_INVENTORY', 'ENABLE_FINANCE'],
+  });
 
   const verifySecret = (secret: string, value: string) =>
     getSecret(secret, secrets)?.value === value;
