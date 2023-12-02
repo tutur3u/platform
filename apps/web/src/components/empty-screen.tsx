@@ -117,7 +117,7 @@ export function EmptyScreen({
                       </Link>
 
                       {chat?.created_at ? (
-                        <div className="text-sm opacity-50">
+                        <div className="text-xs opacity-70 md:text-sm">
                           {capitalize(dayjs(chat?.created_at).fromNow())}
                         </div>
                       ) : null}
@@ -197,7 +197,7 @@ export function EmptyScreen({
                     </Link>
 
                     {chat?.created_at ? (
-                      <div className="text-sm opacity-70">
+                      <div className="text-xs opacity-70 md:text-sm">
                         {capitalize(dayjs(chat.created_at).fromNow())}
                       </div>
                     ) : null}

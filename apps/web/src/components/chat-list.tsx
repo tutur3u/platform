@@ -45,7 +45,7 @@ export function ChatList({
       {messages.map((message, index) => (
         <div key={index}>
           <ChatMessage
-            message={message}
+            message={{ ...message, content: message.content.trim() }}
             setInput={setInput}
             embeddedUrl={embeddedUrl}
             locale={locale}
