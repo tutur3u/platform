@@ -83,7 +83,7 @@
     "@tiptap/starter-kit": "^2.1.13",
     "@upstash/qstash": "^2.3.0",
     "@vercel/analytics": "^1.1.1",
-    "@vercel/speed-insights": "^1.0.0",
+    "@vercel/speed-insights": "^1.0.1",
     "@vercel/toolbar": "^0.1.6",
     "ai": "^2.2.28",
     "class-variance-authority": "^0.7.0",
