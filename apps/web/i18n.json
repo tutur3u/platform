@@ -397,9 +397,7 @@
     "/[lang]/(dashboard)/[wsId]/finance/import": [
       "sidebar-tabs",
       "finance-overview",
-      "finance-import",
-      "transaction-card",
-      "finance-import-modal"
+      "transaction-card"
     ],
 
     "/[lang]/(dashboard)/[wsId]/finance/wallets": [

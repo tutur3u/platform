@@ -38,11 +38,6 @@ export default async function Layout({
       href: `/${wsId}/finance/invoices`,
     },
     {
-      name: t('import'),
-      href: `/${wsId}/finance/import`,
-      disabled: true,
-    },
-    {
       name: t('settings'),
       href: `/${wsId}/finance/settings`,
       disabled: true,

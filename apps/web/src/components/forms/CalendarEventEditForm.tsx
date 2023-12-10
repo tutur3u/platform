@@ -227,6 +227,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           locale={lang}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
+          placeholder={'Date & time'}
           classNames={{
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),
@@ -256,6 +257,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           locale={lang}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
+          placeholder={'Date & time'}
           classNames={{
             input: `font-semibold ${getInputColor()}`,
             label: getLabelColor(),

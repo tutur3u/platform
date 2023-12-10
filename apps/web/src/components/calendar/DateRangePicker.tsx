@@ -67,7 +67,6 @@ const DateRangePicker = ({
         <DatePickerInput
           type="range"
           label={timeRange}
-          placeholder={timeRangePlaceholder}
           value={value}
           onChange={onChange}
           classNames={{
