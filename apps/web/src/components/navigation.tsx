@@ -24,7 +24,7 @@ export interface NavLink {
 interface Props {
   currentWsId?: string;
   currentRole?: string;
-  currentUser?: User;
+  currentUser?: User | null;
   currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }

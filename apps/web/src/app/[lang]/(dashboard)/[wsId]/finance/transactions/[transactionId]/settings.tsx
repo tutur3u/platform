@@ -217,6 +217,7 @@ export default function TransactionSettingsPage() {
             className="w-full"
             disabled={!wallet}
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
+            placeholder={'Date & time'}
             locale={lang}
           />
         </SettingItemCard>

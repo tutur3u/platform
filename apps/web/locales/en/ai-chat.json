@@ -13,9 +13,10 @@
   "stop_generating": "Stop generating",
   "something_went_wrong": "Something went wrong.",
   "try_again_later": "Please try again later.",
-  "recent_conversations": "Recent conversations:",
+  "recent_conversations": "Recent conversations",
   "latest_messages": "Latest messages",
   "view_conversation": "View conversation",
   "all_conversations": "All conversations",
-  "created": "Created"
+  "created": "Created",
+  "you": "You"
 }

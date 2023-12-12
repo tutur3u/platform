@@ -48,7 +48,7 @@ export default async function WorkspaceMembersPage({
           <InviteMemberButton
             wsId={wsId}
             currentUser={{
-              ...user,
+              ...user!,
               role: ws?.role,
             }}
             label={inviteLabel}

@@ -130,11 +130,15 @@ export async function enforceRootWorkspaceAdmin(
   }
 }
 
-export async function getSecrets(
-  wsId: string,
-  requiredSecrets?: string[],
-  forceAdmin?: boolean
-) {
+export async function getSecrets({
+  wsId,
+  requiredSecrets,
+  forceAdmin = false,
+}: {
+  wsId?: string;
+  requiredSecrets?: string[];
+  forceAdmin?: boolean;
+}) {
   const supabase = forceAdmin
     ? createAdminClient()
     : createServerComponentClient<Database>({ cookies });
@@ -144,12 +148,10 @@ export async function getSecrets(
   const queryBuilder = supabase
     .from('workspace_secrets')
     .select('*')
-    .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (requiredSecrets) {
-    queryBuilder.in('name', requiredSecrets);
-  }
+  if (wsId) queryBuilder.eq('ws_id', wsId);
+  if (requiredSecrets) queryBuilder.in('name', requiredSecrets);
 
   const { data, error } = await queryBuilder;
   if (error) throw error;

@@ -228,6 +228,7 @@ export default function InvoiceDetailsPage({
               input: 'dark:bg-[#25262b]',
             }}
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
+            placeholder={'Date & time'}
             locale={lang}
             disabled={!transaction?.taken_at}
           />

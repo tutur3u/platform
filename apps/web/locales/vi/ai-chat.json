@@ -13,9 +13,10 @@
   "stop_generating": "Dừng trả lời",
   "something_went_wrong": "Có lỗi xảy ra.",
   "try_again_later": "Vui lòng thử lại sau.",
-  "recent_conversations": "Các cuộc trò chuyện gần đây:",
+  "recent_conversations": "Các cuộc trò chuyện gần đây",
   "latest_messages": "Tin nhắn mới nhất",
   "view_conversation": "Xem cuộc trò chuyện",
   "all_conversations": "Tất cả cuộc trò chuyện",
-  "created": "Đã tạo"
+  "created": "Đã tạo",
+  "you": "Bạn"
 }
