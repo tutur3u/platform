@@ -14,14 +14,17 @@ export async function getCurrentSupabaseUser() {
   return user;
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(noRedirect?: boolean) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) {
+    if (noRedirect) return null;
+    redirect('/login');
+  }
 
   const { data, error } = await supabase
     .from('users')

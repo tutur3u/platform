@@ -18,15 +18,21 @@ export function ChatMessageActions({
 }: ChatMessageActionsProps) {
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 });
 
+  const stripFollowUp = (text: string) => {
+    // Remove all text that follows the @<FOLLOWUP>...</FOLLOWUP> tag
+    return text.replace(/@<FOLLOWUP>[\s\S]*<\/FOLLOWUP>/, '');
+  };
+
   const onCopy = () => {
     if (isCopied) return;
-    copyToClipboard(message.content);
+    const content = stripFollowUp(message.content);
+    copyToClipboard(content.trim());
   };
 
   return (
     <div
       className={cn(
-        'flex items-center justify-end transition-opacity group-hover:opacity-100 md:absolute md:-right-10 md:-top-2 md:opacity-0',
+        'flex items-center justify-end opacity-0 transition-opacity group-hover:opacity-100',
         className
       )}
       {...props}

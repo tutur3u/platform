@@ -25,7 +25,11 @@ export default async function AIPage({
   const workspace = await getWorkspace(wsId);
   if (!workspace?.preset) notFound();
 
-  const secrets = await getSecrets(wsId, ['ENABLE_CHAT'], true);
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_CHAT'],
+    forceAdmin: true,
+  });
 
   const verifySecret = (secret: string, value: string) =>
     secrets.find((s) => s.name === secret)?.value === value;

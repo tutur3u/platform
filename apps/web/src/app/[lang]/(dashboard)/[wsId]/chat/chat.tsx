@@ -32,7 +32,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   chats: AIChat[];
   count: number | null;
   hasKey?: boolean;
-  locale?: string;
+  locale: string;
 }
 
 const Chat = ({
@@ -207,6 +207,7 @@ const Chat = ({
                     })
               }
               setInput={setInput}
+              locale={locale}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

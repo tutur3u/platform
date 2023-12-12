@@ -5,47 +5,94 @@ import { Message } from 'ai';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { cn } from '@/lib/utils';
+import { capitalize, cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/ui/codeblock';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import 'katex/dist/katex.min.css';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import useTranslation from 'next-translate/useTranslation';
+import 'katex/dist/katex.min.css';
+import 'dayjs/locale/vi';
 
 export interface ChatMessageProps {
-  message: Message & { chat_id?: string };
+  message: Message & { chat_id?: string; created_at?: string };
   setInput: (input: string) => void;
   embeddedUrl?: string;
+  locale?: string;
 }
 
 export function ChatMessage({
   message,
   setInput,
   embeddedUrl,
+  locale = 'en',
   ...props
 }: ChatMessageProps) {
+  dayjs.extend(relativeTime);
+  dayjs.locale(locale);
+
+  const { t } = useTranslation('ai-chat');
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme?.includes('dark');
+
   return (
-    <div className={cn('group relative mb-4 flex items-start')} {...props}>
-      <div
-        className={cn(
-          'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow',
-          message.role === 'user'
-            ? 'bg-background'
-            : 'bg-primary text-primary-foreground'
-        )}
-      >
-        {message.role === 'user' ? (
-          <IconUser />
-        ) : (
-          <Avatar>
-            <AvatarImage src="/media/logos/light.png" alt="AI" />
-            <AvatarFallback className="font-semibold">AI</AvatarFallback>
-          </Avatar>
-        )}
+    <div className={cn('group relative mb-4 grid gap-4')} {...props}>
+      <div className="flex flex-wrap gap-2">
+        <div
+          className={`${
+            resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
+              ? 'bg-foreground/5'
+              : 'bg-foreground/10'
+          } flex w-fit select-none items-center space-x-2 rounded-lg border p-2`}
+        >
+          <div
+            className={cn(
+              'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
+            )}
+          >
+            {message.role === 'user' ? (
+              <IconUser className="h-5 w-5" />
+            ) : (
+              <Avatar className="h-10 w-10 rounded-md">
+                <AvatarImage src="/media/logos/light.png" alt="Skora" />
+                <AvatarFallback className="rounded-lg font-semibold">
+                  AI
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
+          <div>
+            <span className="line-clamp-1 font-semibold">
+              {message.role === 'user' ? (
+                t('you')
+              ) : (
+                <span
+                  className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
+                    isDark
+                      ? 'from-pink-300 via-amber-200 to-blue-300'
+                      : 'from-pink-600 via-purple-500 to-sky-500'
+                  }`}
+                >
+                  Skora AI
+                </span>
+              )}
+            </span>
+
+            <div className="text-xs md:text-sm font-semibold opacity-70">
+              {capitalize(dayjs(message?.created_at).fromNow())}
+            </div>
+          </div>
+        </div>
+
+        <ChatMessageActions message={message} />
       </div>
-      <div className="flex-1 space-y-2 overflow-hidden pl-4">
+
+      <div className="flex-1 space-y-2">
         <MemoizedReactMarkdown
           className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-full max-w-full break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
@@ -74,6 +121,15 @@ export function ChatMessage({
                 <strong className="text-foreground font-semibold">
                   {children}
                 </strong>
+              );
+            },
+            a({ children, href }) {
+              if (!href) return <>{children}</>;
+
+              return (
+                <Link href={href} className="text-foreground hover:underline">
+                  {children}
+                </Link>
               );
             },
             p({ children }) {
@@ -175,7 +231,6 @@ export function ChatMessage({
         >
           {message.content}
         </MemoizedReactMarkdown>
-        <ChatMessageActions message={message} />
       </div>
     </div>
   );

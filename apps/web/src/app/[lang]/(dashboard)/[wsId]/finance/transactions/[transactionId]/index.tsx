@@ -156,6 +156,7 @@ export default function TransactionDetailsPage() {
             }
             className="w-full"
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
+            placeholder={'Date & time'}
             locale={lang}
             disabled
           />

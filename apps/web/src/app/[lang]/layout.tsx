@@ -2,6 +2,7 @@ import '../../styles/globals.css';
 import { ReactNode } from 'react';
 
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
@@ -115,6 +116,7 @@ export default async function RootLayout({ children, params }: Props) {
         )}
       >
         <VercelAnalytics />
+        <VercelInsights />
         <Providers
           attribute="class"
           defaultTheme="dark"

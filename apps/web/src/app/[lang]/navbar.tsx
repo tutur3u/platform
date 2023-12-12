@@ -20,8 +20,8 @@ export default async function Navbar() {
     data: { user: sbUser },
   } = await supabase.auth.getUser();
 
+  const user = await getCurrentUser(true);
   const workspaces = await getWorkspaces(true);
-  const user = await getCurrentUser();
 
   return (
     <div id="navbar" className="fixed inset-x-0 top-0 z-50">

@@ -11,9 +11,10 @@ import { Message } from 'ai';
 import { ChatList } from './chat-list';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from './ui/separator';
+import { capitalize } from '@/lib/utils';
+import 'dayjs/locale/vi';
 
 export function EmptyScreen({
   wsId,
@@ -27,7 +28,7 @@ export function EmptyScreen({
   chats: AIChat[];
   count: number | null;
   previousMessages?: Message[];
-  locale?: string;
+  locale: string;
 }) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
@@ -65,7 +66,7 @@ export function EmptyScreen({
         <h1 className="mb-2 text-lg font-semibold">
           {t('welcome_to')}{' '}
           <span
-            className={`bg-gradient-to-r bg-clip-text font-bold text-transparent ${
+            className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
               isDark
                 ? 'from-pink-300 via-amber-300 to-blue-300'
                 : 'from-pink-600 via-yellow-500 to-sky-600'
@@ -87,8 +88,8 @@ export function EmptyScreen({
               className="h-auto p-0 text-left text-base"
               onClick={() => setInput(message.message)}
             >
-              <IconArrowRight className="text-foreground/80 mr-2 flex-none" />
-              {message.heading}
+              <IconArrowRight className="text-foreground/80 mr-2 shrink-0" />
+              <span className="line-clamp-2">{message.heading}</span>
             </Button>
           ))}
         </div>
@@ -97,27 +98,27 @@ export function EmptyScreen({
           <>
             <Separator className="my-4" />
             <div>
-              <h2 className="text-lg font-semibold">
+              <h2 className="line-clamp-1 text-lg font-semibold">
                 {t('recent_conversations')}
               </h2>
               <div className="mt-4 flex flex-col items-start space-y-2">
                 {chats.slice(0, 5).map((chat, index) => (
                   <div key={chat.id} className="flex items-start">
-                    <MessageCircle className="text-foreground/80 mr-2 flex-none" />
-                    <div>
+                    <MessageCircle className="text-foreground/80 mr-2 shrink-0" />
+                    <div className="w-full">
                       <Link href={`/${wsId}/chat/${chat.id}`}>
                         <Button
                           key={index}
                           variant="link"
                           className="h-auto p-0 text-left text-base"
                         >
-                          {chat.title}
+                          <span className="line-clamp-2">{chat.title}</span>
                         </Button>
                       </Link>
 
                       {chat?.created_at ? (
-                        <div className="opacity-50">
-                          {dayjs(chat?.created_at).fromNow()}
+                        <div className="text-xs opacity-70 md:text-sm">
+                          {capitalize(dayjs(chat?.created_at).fromNow())}
                         </div>
                       ) : null}
                     </div>
@@ -132,7 +133,9 @@ export function EmptyScreen({
       {previousMessages && previousMessages.length > 0 && (
         <div className="bg-background rounded-lg border p-4 md:p-8">
           <div>
-            <h2 className="text-lg font-semibold">{t('latest_messages')}</h2>
+            <h2 className="line-clamp-1 text-lg font-semibold">
+              {t('latest_messages')}
+            </h2>
             <Separator className="mb-8 mt-4" />
             <div className="flex flex-col items-start space-y-2">
               <ChatList
@@ -155,6 +158,7 @@ export function EmptyScreen({
                 })}
                 setInput={setInput}
                 embeddedUrl={`/${wsId}/chat`}
+                locale={locale}
               />
             </div>
           </div>
@@ -180,7 +184,7 @@ export function EmptyScreen({
             <div className="flex flex-col items-start space-y-2">
               {chats.map((chat, index) => (
                 <div key={chat.id} className="flex items-start">
-                  <MessageCircle className="text-foreground/80 mr-2 flex-none" />
+                  <MessageCircle className="text-foreground/80 mr-2 shrink-0" />
                   <div>
                     <Link href={`/${wsId}/chat/${chat.id}`}>
                       <Button
@@ -188,13 +192,13 @@ export function EmptyScreen({
                         variant="link"
                         className="h-auto p-0 text-left text-base"
                       >
-                        {chat.title}
+                        <span className="line-clamp-2">{chat.title}</span>
                       </Button>
                     </Link>
 
                     {chat?.created_at ? (
-                      <div className="opacity-50">
-                        {dayjs(chat?.created_at).fromNow()}
+                      <div className="text-xs opacity-70 md:text-sm">
+                        {capitalize(dayjs(chat.created_at).fromNow())}
                       </div>
                     ) : null}
                   </div>

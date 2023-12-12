@@ -24,7 +24,7 @@ export default async function AccountSettingsPage() {
         title={displayNameLabel}
         description={displayNameDescription}
       >
-        <DisplayNameInput defaultValue={user.display_name} />
+        <DisplayNameInput defaultValue={user!?.display_name} />
       </SettingItemTab>
 
       {/* <SettingItemTab title="Handle" description={handleDescription}>
@@ -46,7 +46,7 @@ export default async function AccountSettingsPage() {
       </SettingItemTab> */}
 
       <SettingItemTab title="Email" description={emailDescription}>
-        <EmailInput oldEmail={user.email} newEmail={user.new_email} />
+        <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
       </SettingItemTab>
 
       {/* <Separator className="my-2" />

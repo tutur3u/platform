@@ -9,7 +9,7 @@ export async function getReports(
   }: { q?: string; page?: string; pageSize?: string }
 ) {
   try {
-    const secrets = await getSecrets(wsId, undefined, true);
+    const secrets = await getSecrets({ wsId, forceAdmin: true });
 
     const fetchApi = secrets.find(
       (secret) => secret.name === 'EXTERNAL_USER_REPORTS_FETCH_API'
