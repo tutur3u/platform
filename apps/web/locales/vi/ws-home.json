@@ -1,5 +1,9 @@
 {
   "home": "Trang chủ",
   "description_p1": "Tổng quan về không gian làm việc",
-  "description_p2": "và tiến độ liên quan."
+  "description_p2": "và tiến độ liên quan.",
+  "latest_announcement": "Thông báo mới nhất",
+  "ai_chat_playground_experiment": "Thử nghiệm trò chuyện trí tuệ nhân tạo (Skora AI)",
+  "ai_chat_playground_discontinued_p1": "Chào các bạn,\n\nChúng tôi rất tiếc phải thông báo rằng",
+  "ai_chat_playground_discontinued_p2": "tạm thời bị vô hiệu hóa để cải thiện và kiểm tra. Đừng lo lắng! Chúng tôi đang làm việc trên các tính năng thú vị để mang lại trải nghiệm tốt hơn cho bạn. Hãy chờ đợi sự trở lại với nhiều tính năng vượt trội hơn. Cảm ơn bạn đã kiên nhẫn và hiểu biết.\n\nTrân trọng,\nTuturuuu"
 }
