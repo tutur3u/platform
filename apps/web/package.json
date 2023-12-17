@@ -71,7 +71,7 @@
     "@supabase/auth-helpers-react": "^0.4.2",
     "@supabase/supabase-js": "^2.39.0",
     "@tabler/icons-react": "^2.44.0",
-    "@tanstack/react-table": "^8.10.7",
+    "@tanstack/react-table": "^8.11.0",
     "@tiptap/extension-highlight": "^2.1.13",
     "@tiptap/extension-link": "^2.1.13",
     "@tiptap/extension-subscript": "^2.1.13",
@@ -97,7 +97,7 @@
     "moment": "^2.29.4",
     "nanoid": "^5.0.4",
     "negotiator": "^0.6.3",
-    "next": "canary",
+    "next": "^14.0.4",
     "next-themes": "^0.2.1",
     "next-translate": "^2.6.2",
     "openai": "^4.23.0",
@@ -123,8 +123,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "canary",
-    "@next/eslint-plugin-next": "canary",
+    "@next/bundle-analyzer": "^14.0.4",
+    "@next/eslint-plugin-next": "^14.0.4",
     "@tailwindcss/typography": "^0.5.10",
     "@types/cookie": "^0.6.0",
     "@types/js-cookie": "^3.0.6",
