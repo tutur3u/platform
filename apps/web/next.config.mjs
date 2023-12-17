@@ -17,9 +17,6 @@ const nextConfig = nextTranslate({
       },
     ],
   },
-  experimental: {
-    ppr: true,
-  },
 });
 
 // Next.js App Directory doesn't need the i18n config
