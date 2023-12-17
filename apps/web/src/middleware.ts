@@ -93,6 +93,15 @@ const handleRedirect = ({
     return { res: nextRes, redirect: true };
   }
 
+  // If current path ends with /realtime and user is not logged in, redirect to login page
+  if (req.nextUrl.pathname.endsWith('/realtime') && !session) {
+    const nextRes = NextResponse.redirect(
+      req.nextUrl.href.replace('/realtime', '/login')
+    );
+
+    return { res: nextRes, redirect: true };
+  }
+
   return { res, redirect: false };
 };
 
