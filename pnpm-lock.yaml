@@ -150,8 +150,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(@types/react-dom@18.2.18)(@types/react@18.2.45)(react-dom@18.2.0)(react@18.2.0)
       '@sentry/nextjs':
-        specifier: ^7.88.0
-        version: 7.88.0(encoding@0.1.13)(next@14.0.4)(react@18.2.0)
+        specifier: ^7.89.0
+        version: 7.89.0(encoding@0.1.13)(next@14.0.4)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.8.7
         version: 0.8.7(@supabase/supabase-js@2.39.1)
@@ -219,8 +219,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(@types/react@18.2.45)(react-dom@18.2.0)(react@18.2.0)
       date-fns:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.1
+        version: 3.0.1
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
@@ -252,8 +252,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.4)(react@18.2.0)
       openai:
-        specifier: ^4.23.0
-        version: 4.23.0(encoding@0.1.13)
+        specifier: ^4.24.0
+        version: 4.24.0(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -265,7 +265,7 @@ importers:
         version: 4.0.0(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0)
       react-day-picker:
         specifier: ^8.9.1
-        version: 8.9.1(date-fns@3.0.0)(react@18.2.0)
+        version: 8.9.1(date-fns@3.0.1)(react@18.2.0)
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -323,7 +323,7 @@ importers:
         version: 14.0.4
       '@tailwindcss/typography':
         specifier: ^0.5.10
-        version: 0.5.10(tailwindcss@3.3.7)
+        version: 0.5.10(tailwindcss@3.4.0)
       '@types/cookie':
         specifier: ^0.6.0
         version: 0.6.0
@@ -388,20 +388,20 @@ importers:
         specifier: ^8.4.32
         version: 8.4.32
       supabase:
-        specifier: ^1.126.1
-        version: 1.126.1
+        specifier: ^1.126.2
+        version: 1.126.2
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
       tailwind-scrollbar:
         specifier: ^3.0.5
-        version: 3.0.5(tailwindcss@3.3.7)
+        version: 3.0.5(tailwindcss@3.4.0)
       tailwindcss:
-        specifier: ^3.3.7
-        version: 3.3.7
+        specifier: ^3.4.0
+        version: 3.4.0
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.3.7)
+        version: 1.0.7(tailwindcss@3.4.0)
       tsconfig:
         specifier: workspace:*
         version: link:../../packages/tsconfig
@@ -432,13 +432,13 @@ importers:
     devDependencies:
       tailwind-scrollbar:
         specifier: ^3.0.5
-        version: 3.0.5(tailwindcss@3.3.7)
+        version: 3.0.5(tailwindcss@3.4.0)
       tailwindcss:
-        specifier: ^3.3.7
-        version: 3.3.7
+        specifier: ^3.4.0
+        version: 3.4.0
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.3.7)
+        version: 1.0.7(tailwindcss@3.4.0)
 
   packages/tsconfig: {}
 
@@ -2723,34 +2723,34 @@ packages:
     resolution: {integrity: sha512-UY+FGM/2jjMkzQLn8pxcHGMaVLh9aEitG3zY2CiY7XHdLiz3bZOwa6oDxNqEMv7zZkV+cj5DOdz0cQ1BP5Hjgw==}
     dev: false
 
-  /@sentry-internal/feedback@7.88.0:
-    resolution: {integrity: sha512-lbK6jgO1I0M96nZQ99mcLSZ55ebwPAP6LhEWhkmc+eAfy97VpiY+qsbmgsmOzCEPqMmEUCEcI0rEZ7fiye2v2Q==}
+  /@sentry-internal/feedback@7.89.0:
+    resolution: {integrity: sha512-Uz1A/ex3X/cvHjS3C9qH8ENa1Le7Jesxl3Umuv3n1e/rvoPxo2VFNCgDrpsM1mcg2XwiPkmpyMAVxDMgB0A7JQ==}
     engines: {node: '>=12'}
     dependencies:
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
-  /@sentry-internal/tracing@7.88.0:
-    resolution: {integrity: sha512-xXQdcYhsS+ourzJHjXNjZC9zakuc97udmpgaXRjEP7FjPYclIx+YXwgFBdHM2kzAwZLFOsEce5dr46GVXUDfZw==}
+  /@sentry-internal/tracing@7.89.0:
+    resolution: {integrity: sha512-cSwno2NYteBBqOvcm/ue9cJxGGl2uffG4laEyLR9y4we+bYxigfx/Ki2TFOtwXrv5o59eRAtN1lpzaAf43yfBw==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
-  /@sentry/browser@7.88.0:
-    resolution: {integrity: sha512-il4x3PB99nuU/OJQw2RltgYYbo8vtnYoIgneOeEiw4m0ppK1nKkMkd3vDRipGL6E/0i7IUmQfYYy6U10J5Rx+g==}
+  /@sentry/browser@7.89.0:
+    resolution: {integrity: sha512-84hZOymrKyfjQnbD6d/PhlHCsQHjUGCqVU/K6e7g+JiB1DNZOsfZTkLj6Xj8OQzvwKHWzB9egmJN6IA7dUSJXQ==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry-internal/feedback': 7.88.0
-      '@sentry-internal/tracing': 7.88.0
-      '@sentry/core': 7.88.0
-      '@sentry/replay': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry-internal/feedback': 7.89.0
+      '@sentry-internal/tracing': 7.89.0
+      '@sentry/core': 7.89.0
+      '@sentry/replay': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
   /@sentry/cli@1.77.1(encoding@0.1.13):
@@ -2770,26 +2770,26 @@ packages:
       - supports-color
     dev: false
 
-  /@sentry/core@7.88.0:
-    resolution: {integrity: sha512-Jzbb7dcwiCO7kI0a1w+32UzWxbEn2OcZWzp55QMEeAh6nZ/5CXhXwpuHi0tW7doPj+cJdmxMTMu9LqMVfdGkzQ==}
+  /@sentry/core@7.89.0:
+    resolution: {integrity: sha512-aU3wfZ+tyFi4T06fOH3z5xnTyMzwvzyEohYOmnQnDrqNgvDzjWkyeUzWse9FaFiut8lBN9O+Pd2H0ucPBMPEhQ==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
-  /@sentry/integrations@7.88.0:
-    resolution: {integrity: sha512-YBYPAtJeylMaaCmGntgiDpp1nk3IT6+FBXsmHxMdTKlrpt5ELj/jcc8gEgaRNeSBjx4Kv1OVzmZcYyWwEhkR4Q==}
+  /@sentry/integrations@7.89.0:
+    resolution: {integrity: sha512-vj0cXuTkePSMNPHNmIbDEZABriqf4NnjWkwvvOTqFeJWGOg7HiG7FucXi22OdbNcCcN2D6UShbFQOAwL0z2l5Q==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
       localforage: 1.10.0
     dev: false
 
-  /@sentry/nextjs@7.88.0(encoding@0.1.13)(next@14.0.4)(react@18.2.0):
-    resolution: {integrity: sha512-tvP9KU7SeL65szenGoexABdPqCVMUTWEP9DroNvBDvTtqfETOf8RbGw8zE+bFNxQ9bjAzhJPibu6oWNcpYvXMA==}
+  /@sentry/nextjs@7.89.0(encoding@0.1.13)(next@14.0.4)(react@18.2.0):
+    resolution: {integrity: sha512-gTQcsb1+uYal2ep5YjG0zrs5WZbF49ThlsOBPWTzgU6fJt6E2VrO/RFDfDp5De4gXHMsWBQ1Hk1BL/H++8y7uA==}
     engines: {node: '>=8'}
     peerDependencies:
       next: ^10.0.8 || ^11.0 || ^12.0 || ^13.0 || ^14.0
@@ -2800,13 +2800,13 @@ packages:
         optional: true
     dependencies:
       '@rollup/plugin-commonjs': 24.0.0(rollup@2.78.0)
-      '@sentry/core': 7.88.0
-      '@sentry/integrations': 7.88.0
-      '@sentry/node': 7.88.0
-      '@sentry/react': 7.88.0(react@18.2.0)
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
-      '@sentry/vercel-edge': 7.88.0
+      '@sentry/core': 7.89.0
+      '@sentry/integrations': 7.89.0
+      '@sentry/node': 7.89.0
+      '@sentry/react': 7.89.0(react@18.2.0)
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
+      '@sentry/vercel-edge': 7.89.0
       '@sentry/webpack-plugin': 1.21.0(encoding@0.1.13)
       chalk: 3.0.0
       next: 14.0.4(react-dom@18.2.0)(react@18.2.0)
@@ -2819,62 +2819,62 @@ packages:
       - supports-color
     dev: false
 
-  /@sentry/node@7.88.0:
-    resolution: {integrity: sha512-X6Xyh7AEitnWqn1CHQrmsUqRn0GKj/6nPE5VC2DLQfHiFH1Fknrt+csFzDchQ/86awXYwuY4Le5ECEH//X/WzQ==}
+  /@sentry/node@7.89.0:
+    resolution: {integrity: sha512-3uP0HtwsrTKOUi+Az8j/E2YQA9sjHWWLrNo2CiZVOtQNYtH8SZqQeTrnOi9bqhM7NyHtKz1JrXzttj/LWkUvRA==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry-internal/tracing': 7.88.0
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry-internal/tracing': 7.89.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
       https-proxy-agent: 5.0.1
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /@sentry/react@7.88.0(react@18.2.0):
-    resolution: {integrity: sha512-iDOImijbsc0cYLWNBXlYKhh/sG/czPK/51GcMi3GcEBkhHDDcdWSZ7cNjFAqHfdrMkPf26bYgDPIL6aJsBZwpQ==}
+  /@sentry/react@7.89.0(react@18.2.0):
+    resolution: {integrity: sha512-SoMmwAgAq/GtfR5loM9MSeyxyZAwB6v61C2ENRKcp8JwMf6Ho0usaauUxd5HAnkTbLrapLUDgw9XbUt2XYj8Pw==}
     engines: {node: '>=8'}
     peerDependencies:
       react: 15.x || 16.x || 17.x || 18.x
     dependencies:
-      '@sentry/browser': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/browser': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
       hoist-non-react-statics: 3.3.2
       react: 18.2.0
     dev: false
 
-  /@sentry/replay@7.88.0:
-    resolution: {integrity: sha512-em5dPKLPG7c/HGDbpIj3aHrWbA4iMwqjevqTzn+++KNO1YslkOosCaGsb1whU3AL1T9c3aIFIhZ4u3rNo+DxcA==}
+  /@sentry/replay@7.89.0:
+    resolution: {integrity: sha512-iD1E1SbW8Ca34Fn0slM9E0Kh0DjhkZGerPFKqbwjXR7QKCx+ljMRKaCQhb4bBKfVNYZORxpwY4PLJLQ+k6WHJg==}
     engines: {node: '>=12'}
     dependencies:
-      '@sentry-internal/tracing': 7.88.0
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry-internal/tracing': 7.89.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
-  /@sentry/types@7.88.0:
-    resolution: {integrity: sha512-FvwvmX1pWAZKicPj4EpKyho8Wm+C4+r5LiepbbBF8oKwSPJdD2QV1fo/LWxsrzNxWOllFIVIXF5Ed3nPYQWpTw==}
+  /@sentry/types@7.89.0:
+    resolution: {integrity: sha512-5Rqt6vIP652p01ypUaEIrELjsHF0vUnzj/JFz+i7nXv6w77GPpNzeIlMYdnauBIgJhLUvYCTQaOPV9GhgZhc4g==}
     engines: {node: '>=8'}
     dev: false
 
-  /@sentry/utils@7.88.0:
-    resolution: {integrity: sha512-ukminfRmdBXTzk49orwJf3Lu3hR60ZRHjE2a4IXwYhyDT6JJgJqgsq1hzGXx0AyFfyS4WhfZ6QUBy7fu3BScZQ==}
-    engines: {node: '>=8'}
-    dependencies:
-      '@sentry/types': 7.88.0
-    dev: false
-
-  /@sentry/vercel-edge@7.88.0:
-    resolution: {integrity: sha512-PfaOiPPRw7y4CcOeP337NsPGyERpO6OlSAmLIaUkKJRjnGNmg1tSzUNfG0lg//fQ8XsZsXIun/ND+XXYtEJFDw==}
+  /@sentry/utils@7.89.0:
+    resolution: {integrity: sha512-t6qDQajdAjZ6LPraAWO00ZjvDbNH82DoVGV/2o4C5MBPCutJGTGyWIpI2tliYPZPPx+3C2m5L757zh1dCzrgUg==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry-internal/tracing': 7.88.0
-      '@sentry/core': 7.88.0
-      '@sentry/types': 7.88.0
-      '@sentry/utils': 7.88.0
+      '@sentry/types': 7.89.0
+    dev: false
+
+  /@sentry/vercel-edge@7.89.0:
+    resolution: {integrity: sha512-WZrU6pj+pL1oaJ4x1TSgQuAEn7X5jMygIJ4XTSOoCV68Zb4Ty3vQtkjIKKORXkXHQ9IYP3LsG50acRdsl89rhQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry-internal/tracing': 7.89.0
+      '@sentry/core': 7.89.0
+      '@sentry/types': 7.89.0
+      '@sentry/utils': 7.89.0
     dev: false
 
   /@sentry/webpack-plugin@1.21.0(encoding@0.1.13):
@@ -2940,12 +2940,11 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/realtime-js@2.9.0:
-    resolution: {integrity: sha512-e/SI+/eqFJorAKAgVAwKQ9hSDQSBp86Yh7XbQmfJJ90LEfpM52HlTfJt/03lcepRu6BmH5h1uYn1b4zta7ghdw==}
+  /@supabase/realtime-js@2.9.1:
+    resolution: {integrity: sha512-OxmY2qj+y6+KI4ifTL92j5+WYP+u5/PdThlYxVb0GMcMiMHfA7yIku9yaQNC5/oRdIvhuRpTMG/8/R40eB+8pA==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
       '@types/phoenix': 1.6.4
-      '@types/websocket': 1.0.10
       ws: 8.15.1
     transitivePeerDependencies:
       - bufferutil
@@ -2965,7 +2964,7 @@ packages:
       '@supabase/gotrue-js': 2.60.1
       '@supabase/node-fetch': 2.6.15
       '@supabase/postgrest-js': 1.9.0
-      '@supabase/realtime-js': 2.9.0
+      '@supabase/realtime-js': 2.9.1
       '@supabase/storage-js': 2.5.5
     transitivePeerDependencies:
       - bufferutil
@@ -2991,7 +2990,7 @@ packages:
     resolution: {integrity: sha512-WPPtihDcAwEm1QZM9MXQw6+r/R2/qx7KMU1eegsi9DsqBLAb0W2kbt6e/syvd6j9c+6XNpRVBW1ziGqSWQAWOg==}
     dev: false
 
-  /@tailwindcss/typography@0.5.10(tailwindcss@3.3.7):
+  /@tailwindcss/typography@0.5.10(tailwindcss@3.4.0):
     resolution: {integrity: sha512-Pe8BuPJQJd3FfRnm6H0ulKIGoMEQS+Vq01R6M5aCrFB/ccR/shT+0kXLjouGC1gFLm9hopTFN+DMP0pfwRWzPw==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
@@ -3000,7 +2999,7 @@ packages:
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       postcss-selector-parser: 6.0.10
-      tailwindcss: 3.3.7
+      tailwindcss: 3.4.0
     dev: true
 
   /@tanstack/react-table@8.11.0(react-dom@18.2.0)(react@18.2.0):
@@ -3602,12 +3601,6 @@ packages:
   /@types/uuid@9.0.7:
     resolution: {integrity: sha512-WUtIVRUZ9i5dYXefDEAI7sh9/O7jGvHg7Df/5O/gtH3Yabe5odI3UWopVR1qbPXQtvOxWu3mM4XxlYeZtMWF4g==}
     dev: true
-
-  /@types/websocket@1.0.10:
-    resolution: {integrity: sha512-svjGZvPB7EzuYS94cI7a+qhwgGU1y89wUgjT6E2wVUfmAGIvRfT7obBvRtnhXCSsoMdlG4gBFGE7MfkIXZLoww==}
-    dependencies:
-      '@types/node': 20.10.5
-    dev: false
 
   /@typescript-eslint/eslint-plugin@6.15.0(@typescript-eslint/parser@6.15.0)(eslint@8.56.0)(typescript@5.3.3):
     resolution: {integrity: sha512-j5qoikQqPccq9QoBAupOP+CBu8BaJ8BLjaXSioDISeTZkVO3ig7oSIKh3H+rEpee7xCXtWwSB4KIL5l6hWZzpg==}
@@ -4573,8 +4566,8 @@ packages:
     engines: {node: '>= 12'}
     dev: true
 
-  /date-fns@3.0.0:
-    resolution: {integrity: sha512-xjDz3rNN9jp+Lh3P/4MeY4E5HkaRnEnrJCcrdRZnKdn42gJlIe6hwrrwVXePRwVR2kh1UcMnz00erYBnHF8PFA==}
+  /date-fns@3.0.1:
+    resolution: {integrity: sha512-cr9igCUa0QSqgAMj7JOrYTY6Nh1rmyGrFDko7ADqfmaQqP/I2N4rlfrLl7AWuzDaoIpz6MNjoEcTPzgZYIrhnA==}
     dev: false
 
   /dayjs@1.11.10:
@@ -7207,8 +7200,8 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
-  /openai@4.23.0(encoding@0.1.13):
-    resolution: {integrity: sha512-ey2CXh1OTcTUa0AWZWuTpgA9t5GuAG3DVU1MofCRUI7fQJij8XJ3Sr0VtgxoAE69C9wbHBMCux8Z/IQZfSwHiA==}
+  /openai@4.24.0(encoding@0.1.13):
+    resolution: {integrity: sha512-h8fsas4lu0ul18oDzFIZpEQryh2SJEUJWanyfEwjME/klcKWZM/blDz2cKiT+aFBqPJzcYdCUj/8E7n20f0jEw==}
     hasBin: true
     dependencies:
       '@types/node': 18.19.3
@@ -7745,13 +7738,13 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /react-day-picker@8.9.1(date-fns@3.0.0)(react@18.2.0):
+  /react-day-picker@8.9.1(date-fns@3.0.1)(react@18.2.0):
     resolution: {integrity: sha512-W0SPApKIsYq+XCtfGeMYDoU0KbsG3wfkYtlw8l+vZp6KoBXGOlhzBUp4tNx1XiwiOZwhfdGOlj7NGSCKGSlg5Q==}
     peerDependencies:
       date-fns: ^2.28.0
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      date-fns: 3.0.0
+      date-fns: 3.0.1
       react: 18.2.0
     dev: false
 
@@ -8588,8 +8581,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.126.1:
-    resolution: {integrity: sha512-+HvXX1UhBAjo0Ka9l1qM+MfldqjU95OSDh+Cwoa9TuqensjeAWIUGhzCRsmcJAAJ83rmuBs9EXwp9A/30RC2BA==}
+  /supabase@1.126.2:
+    resolution: {integrity: sha512-u0wIgQvZzylbIYYzFrB+3ESGqniLvBCghAUqPt/tchZbXK4k5hWyW0mUvAEYc2H/ixZ8uwCg8bW3Ohu0wVO4rw==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
@@ -8686,25 +8679,25 @@ packages:
       '@babel/runtime': 7.23.6
     dev: false
 
-  /tailwind-scrollbar@3.0.5(tailwindcss@3.3.7):
+  /tailwind-scrollbar@3.0.5(tailwindcss@3.4.0):
     resolution: {integrity: sha512-0ZwxTivevqq9BY9fRP9zDjHl7Tu+J5giBGbln+0O1R/7nHtBUKnjQcA1aTIhK7Oyjp6Uc/Dj6/dn8Dq58k5Uww==}
     engines: {node: '>=12.13.0'}
     peerDependencies:
       tailwindcss: 3.x
     dependencies:
-      tailwindcss: 3.3.7
+      tailwindcss: 3.4.0
     dev: true
 
-  /tailwindcss-animate@1.0.7(tailwindcss@3.3.7):
+  /tailwindcss-animate@1.0.7(tailwindcss@3.4.0):
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
     dependencies:
-      tailwindcss: 3.3.7
+      tailwindcss: 3.4.0
     dev: true
 
-  /tailwindcss@3.3.7:
-    resolution: {integrity: sha512-pjgQxDZPvyS/nG3ZYkyCvsbONJl7GdOejfm24iMt2ElYQQw8Jc4p0m8RdMp7mznPD0kUhfzwV3zAwa80qI0zmQ==}
+  /tailwindcss@3.4.0:
+    resolution: {integrity: sha512-VigzymniH77knD1dryXbyxR+ePHihHociZbXnLZHUyzf2MMs2ZVqlUrZ3FvpXP8pno9JzmILt1sZPD19M3IxtA==}
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
