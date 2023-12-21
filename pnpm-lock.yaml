@@ -165,8 +165,8 @@ importers:
         specifier: ^2.44.0
         version: 2.44.0(react@18.2.0)
       '@tanstack/react-table':
-        specifier: ^8.11.0
-        version: 8.11.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^8.11.2
+        version: 8.11.2(react-dom@18.2.0)(react@18.2.0)
       '@tiptap/extension-highlight':
         specifier: ^2.1.13
         version: 2.1.13(@tiptap/core@2.1.13)
@@ -204,8 +204,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@vercel/toolbar':
-        specifier: ^0.1.6
-        version: 0.1.6(next@14.0.4)
+        specifier: ^0.1.7
+        version: 0.1.7(next@14.0.4)(react@18.2.0)
       ai:
         specifier: ^2.2.29
         version: 2.2.29(react@18.2.0)(solid-js@1.8.7)(svelte@4.2.8)(vue@3.3.13)
@@ -219,8 +219,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(@types/react@18.2.45)(react-dom@18.2.0)(react@18.2.0)
       date-fns:
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^3.0.5
+        version: 3.0.5
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
@@ -265,7 +265,7 @@ importers:
         version: 4.0.0(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0)
       react-day-picker:
         specifier: ^8.9.1
-        version: 8.9.1(date-fns@3.0.1)(react@18.2.0)
+        version: 8.9.1(date-fns@3.0.5)(react@18.2.0)
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -388,8 +388,8 @@ importers:
         specifier: ^8.4.32
         version: 8.4.32
       supabase:
-        specifier: ^1.126.2
-        version: 1.126.2
+        specifier: ^1.127.1
+        version: 1.127.1
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -2921,8 +2921,8 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/gotrue-js@2.60.1:
-    resolution: {integrity: sha512-dM28NhyPS5NLWpJbVokxGbuEMmMK2K+EBXYlNU2NEYzp1BrkdxetNh8ucslMbKauJ93XAEhbMCQHSO9fZ2E+DQ==}
+  /@supabase/gotrue-js@2.62.0:
+    resolution: {integrity: sha512-4eBuZNXGOk7ewqJuHPYMnk8clCtEx6Hfnu6yHLjZlx7w18TqcojcTRUBZagErtpgwwdfzUwKbquexhbrpH/ysw==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
@@ -2961,7 +2961,7 @@ packages:
     resolution: {integrity: sha512-nz0aQPButJWjChX+bLXqvhHutfiOuiJwzibyJs0uhFrQ6JRDZZsl9+nX2jgyox2v2V+e4PEwbn/eaEOFVUr8iA==}
     dependencies:
       '@supabase/functions-js': 2.1.5
-      '@supabase/gotrue-js': 2.60.1
+      '@supabase/gotrue-js': 2.62.0
       '@supabase/node-fetch': 2.6.15
       '@supabase/postgrest-js': 1.9.0
       '@supabase/realtime-js': 2.9.1
@@ -3002,20 +3002,20 @@ packages:
       tailwindcss: 3.4.0
     dev: true
 
-  /@tanstack/react-table@8.11.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-47wdYFlsbJlR6qt4F38nTGo93E6wNkXlN8t1TUI5SpSGiewx+KzBayMjfud3LgqbPLYYcpHby/tGkIF3tR8Upg==}
+  /@tanstack/react-table@8.11.2(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-ztLg2OpM3HZIWzkQYjQER1inZuhbt79fBwZxc9bPXzsvqY+7RYI3dCZLw3CynYd9s4YltdrTbmSyh4xQSHexDQ==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16'
       react-dom: '>=16'
     dependencies:
-      '@tanstack/table-core': 8.11.0
+      '@tanstack/table-core': 8.11.2
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@tanstack/table-core@8.11.0:
-    resolution: {integrity: sha512-7SC8/v6cXbUriOs2UISN8Jho3ttnA8cRZgusLn15b8meb28prHnWg4t4oNSHIR3rYn0g7iiIg+pax2CtBnyffg==}
+  /@tanstack/table-core@8.11.2:
+    resolution: {integrity: sha512-rR0VEQOtr0ARLvaNLaSQnt2BVwOp0OavOUA0LcZ3N45tLYXc4sXruNv8kJ7R7+5W1CrzGha217tzjBG83CpoMQ==}
     engines: {node: '>=12'}
     dev: false
 
@@ -3749,10 +3749,11 @@ packages:
     requiresBuild: true
     dev: false
 
-  /@vercel/toolbar@0.1.6(next@14.0.4):
-    resolution: {integrity: sha512-n4fORKjWaX203ThcSIumY9TfWHxRFkU+McC15ivEuDzMsocY+4UGDhwgmfIBruWiXcrJf9gVnQHcxbr6YxKhnA==}
+  /@vercel/toolbar@0.1.7(next@14.0.4)(react@18.2.0):
+    resolution: {integrity: sha512-JDr+7MpUHWVvQHcffz+qNhhtxOcDD26VwIa48tC0xY6Jy05GvGV+VPYlIJqQ4EQi17EjQW+kU3d9Ceb5uHeVGw==}
     peerDependencies:
       next: '>=11.0.0'
+      react: '>=17'
     dependencies:
       '@tinyhttp/app': 1.3.0
       chokidar: 3.5.3
@@ -3760,6 +3761,7 @@ packages:
       find-up: 5.0.0
       get-port: 5.1.1
       next: 14.0.4(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
       strip-ansi: 6.0.1
     dev: false
 
@@ -4566,8 +4568,8 @@ packages:
     engines: {node: '>= 12'}
     dev: true
 
-  /date-fns@3.0.1:
-    resolution: {integrity: sha512-cr9igCUa0QSqgAMj7JOrYTY6Nh1rmyGrFDko7ADqfmaQqP/I2N4rlfrLl7AWuzDaoIpz6MNjoEcTPzgZYIrhnA==}
+  /date-fns@3.0.5:
+    resolution: {integrity: sha512-Q4Tq5c5s/Zl/zbgdWf6pejn9ru7UwdIlLfvEEg1hVsQNQ7LKt76qIduagIT9OPK7+JCv1mAKherdU6bOqGYDnw==}
     dev: false
 
   /dayjs@1.11.10:
@@ -7738,13 +7740,13 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /react-day-picker@8.9.1(date-fns@3.0.1)(react@18.2.0):
+  /react-day-picker@8.9.1(date-fns@3.0.5)(react@18.2.0):
     resolution: {integrity: sha512-W0SPApKIsYq+XCtfGeMYDoU0KbsG3wfkYtlw8l+vZp6KoBXGOlhzBUp4tNx1XiwiOZwhfdGOlj7NGSCKGSlg5Q==}
     peerDependencies:
       date-fns: ^2.28.0
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      date-fns: 3.0.1
+      date-fns: 3.0.5
       react: 18.2.0
     dev: false
 
@@ -8581,8 +8583,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.126.2:
-    resolution: {integrity: sha512-u0wIgQvZzylbIYYzFrB+3ESGqniLvBCghAUqPt/tchZbXK4k5hWyW0mUvAEYc2H/ixZ8uwCg8bW3Ohu0wVO4rw==}
+  /supabase@1.127.1:
+    resolution: {integrity: sha512-LxXPbfxaSd65NNCW0qhuvfwq4ciLipdhWZIMekherps9qk5WbLwxNs7s01RyJSHwv4wQXL7TyUn55fUWaFEtgQ==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
