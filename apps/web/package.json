@@ -85,7 +85,7 @@
     "@vercel/analytics": "^1.1.1",
     "@vercel/speed-insights": "^1.0.2",
     "@vercel/toolbar": "^0.1.7",
-    "ai": "^2.2.29",
+    "ai": "^2.2.30",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
