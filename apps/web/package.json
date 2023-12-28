@@ -93,7 +93,7 @@
     "dayjs": "^1.11.10",
     "eventsource-parser": "^1.1.1",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.302.0",
+    "lucide-react": "^0.303.0",
     "moment": "^2.30.1",
     "nanoid": "^5.0.4",
     "negotiator": "^0.6.3",
