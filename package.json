@@ -28,7 +28,7 @@
     "eslint": "^8.56.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.1.1",
-    "prettier-plugin-tailwindcss": "^0.5.9",
+    "prettier-plugin-tailwindcss": "^0.5.10",
     "tsconfig": "workspace:*",
     "turbo": "^1.11.2"
   },
