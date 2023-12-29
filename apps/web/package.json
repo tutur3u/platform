@@ -132,7 +132,7 @@
     "@types/negotiator": "^0.6.3",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.46",
-    "@types/react-beautiful-dnd": "^13.1.7",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.18",
     "@types/react-resizable": "^3.0.7",
     "@types/react-syntax-highlighter": "^15.5.11",
