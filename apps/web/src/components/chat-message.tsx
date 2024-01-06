@@ -83,7 +83,7 @@ export function ChatMessage({
               )}
             </span>
 
-            <div className="text-xs md:text-sm font-semibold opacity-70">
+            <div className="text-xs font-semibold opacity-70 md:text-sm">
               {capitalize(dayjs(message?.created_at).fromNow())}
             </div>
           </div>

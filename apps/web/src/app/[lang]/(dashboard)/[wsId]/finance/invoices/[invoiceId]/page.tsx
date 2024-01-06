@@ -249,7 +249,7 @@ export default function InvoiceDetailsPage({
             />
           ) : (
             <button
-              className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
+              className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 md:col-span-2 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               onClick={() => setNotice('')}
             >
               + {t('add-notice')}
@@ -270,7 +270,7 @@ export default function InvoiceDetailsPage({
             />
           ) : (
             <button
-              className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20 md:col-span-2"
+              className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 md:col-span-2 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               onClick={() => setNote('')}
             >
               + {t('add-note')}
@@ -325,7 +325,7 @@ export default function InvoiceDetailsPage({
               {diff != 0 && (
                 <>
                   <button
-                    className="mt-2 w-full rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-500/20 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20 md:col-span-2"
+                    className="mt-2 w-full rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-500/20 md:col-span-2 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20"
                     onClick={() => setDiff(0)}
                   >
                     {t('reset')}

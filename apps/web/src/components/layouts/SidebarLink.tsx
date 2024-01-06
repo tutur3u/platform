@@ -94,7 +94,7 @@ export default function SidebarLink({
                         ? ''
                         : 'border-border border dark:border-zinc-300/10'
                     }`
-                  : `text-zinc-700 dark:text-zinc-300 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
+                  : `text-zinc-700 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 dark:text-zinc-300 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100 ${
                       disableBorder ? '' : 'border border-transparent'
                     }`
                 : ''
