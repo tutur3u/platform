@@ -73,7 +73,7 @@
     "@supabase/supabase-js": "^2.39.2",
     "@tabler/icons-react": "^2.45.0",
     "@tanstack/react-table": "^8.11.3",
-    "@tiptap/extension-highlight": "^2.1.13",
+    "@tiptap/extension-highlight": "^2.1.15",
     "@tiptap/extension-link": "^2.1.13",
     "@tiptap/extension-subscript": "^2.1.13",
     "@tiptap/extension-superscript": "^2.1.13",
