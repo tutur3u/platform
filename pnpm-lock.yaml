@@ -177,8 +177,8 @@ importers:
         specifier: ^2.1.15
         version: 2.1.15(@tiptap/core@2.1.15)(@tiptap/pm@2.1.15)
       '@tiptap/extension-subscript':
-        specifier: ^2.1.15
-        version: 2.1.15(@tiptap/core@2.1.15)
+        specifier: ^2.1.16
+        version: 2.1.16(@tiptap/core@2.1.15)
       '@tiptap/extension-superscript':
         specifier: ^2.1.15
         version: 2.1.15(@tiptap/core@2.1.15)
@@ -3386,8 +3386,8 @@ packages:
       '@tiptap/core': 2.1.15(@tiptap/pm@2.1.15)
     dev: false
 
-  /@tiptap/extension-subscript@2.1.15(@tiptap/core@2.1.15):
-    resolution: {integrity: sha512-NYCW6/YIUbqp//FM3ITKaB6opJpIiVxOV3tm9suuOxtBDerWS+mZfj8iToF3OO85+iLzD8gBb2BmojdvKbPfeQ==}
+  /@tiptap/extension-subscript@2.1.16(@tiptap/core@2.1.15):
+    resolution: {integrity: sha512-wHz+2eyA7gVt9JHAuj8WVqFUuR2ng3nN1xd7ZZUbICcd3Q3vt3rVMq1lsvWhSh+URzfp0f8HBd2mBFAuWLWF8A==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
