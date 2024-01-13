@@ -156,7 +156,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(@types/react-dom@18.2.18)(@types/react@18.2.47)(react-dom@18.2.0)(react@18.2.0)
       '@sentry/nextjs':
-        specifier: ^7.93.0
+        specifier: ^7.92.0
         version: 7.93.0(encoding@0.1.13)(next@14.0.4)(react@18.2.0)
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.8.7
@@ -165,40 +165,40 @@ importers:
         specifier: ^0.4.2
         version: 0.4.2(@supabase/supabase-js@2.39.3)
       '@supabase/supabase-js':
-        specifier: ^2.39.3
+        specifier: ^2.39.2
         version: 2.39.3
       '@tabler/icons-react':
-        specifier: ^2.46.0
+        specifier: ^2.45.0
         version: 2.46.0(react@18.2.0)
       '@tanstack/react-table':
-        specifier: ^8.11.6
+        specifier: ^8.11.3
         version: 8.11.6(react-dom@18.2.0)(react@18.2.0)
       '@tiptap/extension-highlight':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)
       '@tiptap/extension-link':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)(@tiptap/pm@2.1.16)
       '@tiptap/extension-subscript':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)
       '@tiptap/extension-superscript':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)
       '@tiptap/extension-text-align':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)
       '@tiptap/extension-underline':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)
       '@tiptap/pm':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16
       '@tiptap/react':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/core@2.1.16)(@tiptap/pm@2.1.16)(react-dom@18.2.0)(react@18.2.0)
       '@tiptap/starter-kit':
-        specifier: ^2.1.16
+        specifier: ^2.1.15
         version: 2.1.16(@tiptap/pm@2.1.16)
       '@upstash/qstash':
         specifier: ^2.3.0
@@ -207,10 +207,10 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       '@vercel/speed-insights':
-        specifier: ^1.0.3
+        specifier: ^1.0.2
         version: 1.0.3
       '@vercel/toolbar':
-        specifier: ^0.1.10
+        specifier: ^0.1.9
         version: 0.1.10(next@14.0.4)(react@18.2.0)
       ai:
         specifier: ^2.2.31
@@ -261,7 +261,7 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.4)(react@18.2.0)
       openai:
-        specifier: ^4.24.7
+        specifier: ^4.24.2
         version: 4.24.7(encoding@0.1.13)
       react:
         specifier: 18.2.0
@@ -291,7 +291,7 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5(react-dom@18.2.0)(react@18.2.0)
       react-resizable-panels:
-        specifier: ^1.0.9
+        specifier: ^1.0.8
         version: 1.0.9(react-dom@18.2.0)(react@18.2.0)
       react-syntax-highlighter:
         specifier: ^15.5.0
@@ -355,7 +355,7 @@ importers:
         specifier: ^0.6.3
         version: 0.6.3
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.10.8
         version: 20.11.0
       '@types/react':
         specifier: ^18.2.47
@@ -406,7 +406,7 @@ importers:
         specifier: ^8.4.33
         version: 8.4.33
       supabase:
-        specifier: ^1.133.2
+        specifier: ^1.132.1
         version: 1.133.2
       tailwind-config:
         specifier: workspace:*
