@@ -96,6 +96,7 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
+      router.push('/onboarding');
       router.refresh();
     } else {
       setLoading(false);

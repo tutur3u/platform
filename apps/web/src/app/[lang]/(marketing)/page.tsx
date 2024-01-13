@@ -39,7 +39,7 @@ export default async function MarketingPage() {
             <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
             <Link
               href={workspaces?.[0]?.id ? `/${workspaces?.[0]?.id}` : '/login'}
-              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all dark:from-rose-400/60 dark:to-orange-300/60 md:text-lg"
+              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60"
             >
               {t('get-started')}
             </Link>

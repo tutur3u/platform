@@ -232,7 +232,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </p>
       </div>
 
-      <div className="bg-foreground/5 mt-4 rounded-lg border p-4">
+      {/* <div className="bg-foreground/5 mt-4 rounded-lg border p-4">
         <div className="text-2xl font-bold">{t('latest_announcement')}</div>
         <Separator className="my-2" />
         <div className="text-foreground/80 whitespace-pre-line">
@@ -242,7 +242,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           </span>{' '}
           {t('ai_chat_playground_discontinued_p2')}
         </div>
-      </div>
+      </div> */}
 
       {enableFinance && (
         <>

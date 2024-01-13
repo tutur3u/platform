@@ -1,12 +1,15 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import { createAdminClient } from '@/utils/supabase/client';
-import { buildPrompt, filterDuplicate } from './core';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
+import { buildPrompt } from './core';
 
 export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
@@ -29,7 +32,7 @@ export async function POST(req: Request) {
     if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
-    const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
+    const apiKey = previewToken || process.env.GOOGLE_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const cookieStore = cookies();
@@ -57,23 +60,17 @@ export async function POST(req: Request) {
       });
 
     const prompt = buildPrompt(messages);
-    const model = 'claude-2.1';
+    const model = 'gemini-pro';
 
-    const res = await fetch('https://api.anthropic.com/v1/complete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        prompt,
-        max_tokens_to_sample: 4000,
-        model,
-        stream: true,
-      }),
-    });
+    console.log('Prompt:', prompt);
 
-    const stream = AnthropicStream(res, {
+    if (!prompt) return new Response('Internal Server Error', { status: 500 });
+
+    const geminiStream = await genAI
+      .getGenerativeModel({ model })
+      .generateContentStream(prompt);
+
+    const stream = GoogleGenerativeAIStream(geminiStream, {
       onStart: async () => {
         // If there is only 1 message, we will not save it to the database
         // Since it is the prompt message that created the conversation
@@ -102,17 +99,16 @@ export async function POST(req: Request) {
         console.log('User message saved to database');
       },
       onCompletion: async (completion) => {
-        const content = filterDuplicate(completion);
-
-        if (!content) {
+        if (!completion) {
           console.log('No content found');
           throw new Error('No content found');
         }
 
         const { error } = await sbAdmin.from('ai_chat_messages').insert({
           chat_id: chatId,
-          content,
+          content: completion,
           role: 'ASSISTANT',
+          model: 'GOOGLE-GEMINI-PRO',
         });
 
         if (error) {

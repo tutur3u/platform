@@ -40,12 +40,16 @@ export default async function AIPage({
   const { data: chats, count } = await getChats();
   const messages = await getMessages();
 
-  const hasKey = hasAnthropicKey();
+  const hasKeys = {
+    openAI: hasKey('OPENAI_API_KEY'),
+    anthropic: hasKey('ANTHROPIC_API_KEY'),
+    google: hasKey('GOOGLE_API_KEY'),
+  };
 
   return (
     <Chat
       wsId={wsId}
-      hasKey={hasKey}
+      hasKeys={hasKeys}
       chats={chats}
       count={count}
       previousMessages={messages}
@@ -54,9 +58,9 @@ export default async function AIPage({
   );
 }
 
-const hasAnthropicKey = () => {
-  const key = process.env.ANTHROPIC_API_KEY;
-  const hasKey = !!key && key.length > 0;
+const hasKey = (key: string) => {
+  const keyEnv = process.env[key];
+  const hasKey = !!keyEnv && keyEnv.length > 0;
   return hasKey;
 };
 
@@ -65,7 +69,7 @@ const getMessages = async () => {
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
-    .select('*')
+    .select('*, ai_chats(*)')
     .order('created_at', { ascending: false })
     .limit(2);
 

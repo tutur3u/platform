@@ -108,7 +108,7 @@ export default async function FinanceTransactionsPage({
               key={date}
               className="border-border group rounded-lg border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
             >
-              <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 dark:text-zinc-300 md:flex-row">
+              <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 md:flex-row dark:text-zinc-300">
                 <div className="flex gap-2">
                   <div>{getRelativeDate(data.date)}</div>
                   <MiniPlusButton
