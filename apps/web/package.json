@@ -119,7 +119,7 @@
     "rehype-katex": "^7.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
-    "sharp": "^0.33.2",
+    "sharp": "^0.33.1",
     "sonner": "^1.3.1",
     "swr": "^2.2.4",
     "tailwind-merge": "^2.2.0",
