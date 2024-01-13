@@ -19,14 +19,14 @@ const normalize = (message: Message) => {
 const filterSystemMessages = (messages: Message[]) =>
   messages.filter((message) => message.role !== 'system');
 
-export function buildPrompt(messages: Message[]) {
-  const filteredMsgs = filterDuplicates(messages);
-  const normalizedMsgs = normalizeMessages(filteredMsgs);
-  return normalizedMsgs + AI_PROMPT;
-}
-
 const normalizeMessages = (messages: Message[]) =>
   [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
     .map(normalize)
     .join('')
     .trim();
+
+export function buildPrompt(messages: Message[]) {
+  const filteredMsgs = filterDuplicates(messages);
+  const normalizedMsgs = normalizeMessages(filteredMsgs);
+  return normalizedMsgs + AI_PROMPT;
+}

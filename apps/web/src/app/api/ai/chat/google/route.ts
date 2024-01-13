@@ -62,8 +62,6 @@ export async function POST(req: Request) {
     const prompt = buildPrompt(messages);
     const model = 'gemini-pro';
 
-    console.log('Prompt:', prompt);
-
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
     const geminiStream = await genAI

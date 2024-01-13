@@ -5,7 +5,7 @@ const normalize = (message: Message) => ({
   parts: [{ text: message.content }],
 });
 
-export const normalizeMessages = (messages: Message[]) =>
+const normalizeMessages = (messages: Message[]) =>
   messages
     .filter(
       (message) => message.role === 'user' || message.role === 'assistant'

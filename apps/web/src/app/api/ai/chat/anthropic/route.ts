@@ -1,8 +1,8 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 import { createAdminClient } from '@/utils/supabase/client';
-import { buildPrompt } from './core';
 import { cookies } from 'next/headers';
+import { buildPrompt } from './core';
 
 export const runtime = 'edge';
 export const preferredRegion = 'sin1';
@@ -58,8 +58,6 @@ export async function POST(req: Request) {
 
     const prompt = buildPrompt(messages);
     const model = 'claude-2.1';
-
-    console.log('Prompt:', prompt);
 
     const res = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
