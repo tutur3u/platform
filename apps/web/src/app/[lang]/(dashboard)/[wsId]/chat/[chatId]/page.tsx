@@ -47,12 +47,16 @@ export default async function AIPage({
   const chat = await getChat(chatId);
   const { data: chats, count } = await getChats();
 
-  const hasKey = hasAnthropicKey();
+  const hasKeys = {
+    openAI: hasKey('OPENAI_API_KEY'),
+    anthropic: hasKey('ANTHROPIC_API_KEY'),
+    google: hasKey('GOOGLE_API_KEY'),
+  };
 
   return (
     <Chat
       wsId={wsId}
-      hasKey={hasKey}
+      hasKeys={hasKeys}
       initialMessages={messages}
       defaultChat={chat}
       chats={chats}
@@ -62,9 +66,9 @@ export default async function AIPage({
   );
 }
 
-const hasAnthropicKey = () => {
-  const key = process.env.ANTHROPIC_API_KEY;
-  const hasKey = !!key && key.length > 0;
+const hasKey = (key: string) => {
+  const keyEnv = process.env[key];
+  const hasKey = !!keyEnv && keyEnv.length > 0;
   return hasKey;
 };
 
