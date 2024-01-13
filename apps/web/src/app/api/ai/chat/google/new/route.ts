@@ -3,10 +3,13 @@ import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
+    const apiKey = previewToken || process.env.GOOGLE_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const prompt = buildPrompt([
@@ -37,22 +40,16 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const model = 'claude-instant-1';
+    const model = 'gemini-pro';
 
-    const res = await fetch('https://api.anthropic.com/v1/complete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        prompt,
-        max_tokens_to_sample: 300,
-        model,
-      }),
-    });
+    const geminiRes = await genAI
+      .getGenerativeModel({ model })
+      .generateContent(prompt);
 
-    if (!res.ok) {
+    const title = geminiRes.response.candidates?.[0].content.parts[0].text;
+    console.log({ title });
+
+    if (!title) {
       return NextResponse.json(
         {
           message: 'Internal server error.',
@@ -60,9 +57,6 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-
-    const data = await res.json();
-    const title = data.completion;
 
     if (!title) {
       return NextResponse.json(
@@ -76,6 +70,7 @@ export async function POST(req: Request) {
     const { data: id, error } = await supabase.rpc('create_ai_chat', {
       title,
       message,
+      model: 'GOOGLE-GEMINI-PRO',
     });
 
     if (error) return NextResponse.json(error.message, { status: 500 });

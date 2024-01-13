@@ -93,7 +93,7 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
             </Avatar>
 
             <div>
-              <Text className="font-semibold text-zinc-900 dark:text-zinc-200 lg:text-lg">
+              <Text className="font-semibold text-zinc-900 lg:text-lg dark:text-zinc-200">
                 {display_name}
               </Text>
               <Text
@@ -189,7 +189,7 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
               <div>
                 <Text
                   weight="bold"
-                  className="font-semibold text-zinc-900 dark:text-zinc-200 lg:text-lg xl:text-xl"
+                  className="font-semibold text-zinc-900 lg:text-lg xl:text-xl dark:text-zinc-200"
                 >
                   {selectedUser.display_name}
                 </Text>

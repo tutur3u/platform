@@ -110,7 +110,7 @@ function LeftSidebar({ className }: SidebarProps) {
             </ActionIcon>
 
             <button
-              className="rounded border border-zinc-500/10 bg-zinc-500/10 p-1.5 transition dark:border-zinc-300/10 dark:bg-zinc-800/50 md:hidden"
+              className="rounded border border-zinc-500/10 bg-zinc-500/10 p-1.5 transition md:hidden dark:border-zinc-300/10 dark:bg-zinc-800/50"
               onClick={toggleSidebar}
             >
               <XMarkIcon className="h-5 w-5" />

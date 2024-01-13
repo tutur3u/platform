@@ -227,7 +227,7 @@ const InvoiceProductInput = ({
         </div>
 
         <button
-          className="mt-[1.6125rem] h-fit rounded border border-red-500/10 bg-red-500/10 px-1 py-1.5 font-semibold text-red-600 transition hover:bg-red-500/20 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20 md:px-4"
+          className="mt-[1.6125rem] h-fit rounded border border-red-500/10 bg-red-500/10 px-1 py-1.5 font-semibold text-red-600 transition hover:bg-red-500/20 md:px-4 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20"
           onClick={removePrice}
         >
           <TrashIcon className="h-5 w-5" />
