@@ -31,7 +31,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   previousMessages?: Message[];
   chats: AIChat[];
   count: number | null;
-  hasKey?: boolean;
+  hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
   locale: string;
 }
 
@@ -43,7 +43,7 @@ const Chat = ({
   chats,
   count,
   className,
-  hasKey,
+  hasKeys,
   locale,
 }: ChatProps) => {
   const { t } = useTranslation('ai-chat');
@@ -62,16 +62,17 @@ const Chat = ({
   useEffect(() => {
     // Don't show the dialog if the key is configured
     // on the server or the a preview token is set
-    setPreviewTokenDialog(!hasKey && !previewToken);
-  }, [hasKey, previewToken]);
+    setPreviewTokenDialog(!hasKeys && !previewToken);
+  }, [hasKeys, previewToken]);
 
   const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
+  const [model] = useState<'google' | 'anthropic'>('google');
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/chat/ai`,
+      api: `/api/ai/chat/${model}`,
       body: {
         id: chat?.id,
         wsId,
@@ -93,7 +94,7 @@ const Chat = ({
     });
 
   useEffect(() => {
-    if (!chat || (!hasKey && !previewToken) || isLoading) return;
+    if (!chat || (!hasKeys && !previewToken) || isLoading) return;
     if (messages[messages.length - 1]?.role !== 'user') return;
 
     // Reload the chat if the user sends a message
@@ -105,7 +106,7 @@ const Chat = ({
     return () => {
       clearTimeout(timeout);
     };
-  }, [chat, hasKey, previewToken, isLoading, messages, reload]);
+  }, [chat, hasKeys, previewToken, isLoading, messages, reload]);
 
   useEffect(() => {
     if (!chat?.id) return;
@@ -132,7 +133,7 @@ const Chat = ({
   const createChat = async (input: string) => {
     setPendingPrompt(input);
 
-    const res = await fetch(`/api/chat`, {
+    const res = await fetch(`/api/ai/chat/${model}/new`, {
       method: 'POST',
       body: JSON.stringify({
         message: input,
@@ -151,7 +152,7 @@ const Chat = ({
     const { id, title } = await res.json();
     if (id) {
       setCollapsed(true);
-      setChat({ id, title });
+      setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
     }
   };
 
@@ -208,6 +209,7 @@ const Chat = ({
               }
               setInput={setInput}
               locale={locale}
+              model={chat?.model}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

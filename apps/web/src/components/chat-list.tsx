@@ -5,10 +5,15 @@ import { ChatMessage } from '@/components/chat-message';
 export interface ChatList {
   title?: string;
   titleLoading?: boolean;
-  messages: (Message & { chat_id?: string; created_at?: string })[];
+  messages: (Message & {
+    chat_id?: string;
+    model?: string;
+    created_at?: string;
+  })[];
   setInput: (input: string) => void;
   embeddedUrl?: string;
   locale: string;
+  model?: string;
 }
 
 export function ChatList({
@@ -18,10 +23,10 @@ export function ChatList({
   setInput,
   embeddedUrl,
   locale,
+  model,
 }: ChatList) {
-  if (!messages.length) {
-    return null;
-  }
+  if (!messages.length) return null;
+  const formattedModel = model?.replace(/_/g, ' ').replace(/-/g, ' ');
 
   return (
     <div
@@ -37,6 +42,12 @@ export function ChatList({
             }`}
           >
             {titleLoading ? '...' : title}
+
+            {formattedModel && (
+              <div className="bg-foreground/10 mt-4 rounded-lg p-2 text-lg">
+                {formattedModel}
+              </div>
+            )}
           </div>
           <Separator className="my-4 md:mb-8" />
         </>
@@ -49,6 +60,10 @@ export function ChatList({
             setInput={setInput}
             embeddedUrl={embeddedUrl}
             locale={locale}
+            model={
+              message.model?.replace(/_/g, ' ').replace(/-/g, ' ') ||
+              formattedModel
+            }
           />
           {index < messages.length - 1 && (
             <Separator className="my-4 md:my-8" />

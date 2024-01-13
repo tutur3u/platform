@@ -23,7 +23,8 @@ export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
   setInput: (input: string) => void;
   embeddedUrl?: string;
-  locale?: string;
+  locale: string;
+  model?: string;
 }
 
 export function ChatMessage({
@@ -31,6 +32,7 @@ export function ChatMessage({
   setInput,
   embeddedUrl,
   locale = 'en',
+  model,
   ...props
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
@@ -45,9 +47,11 @@ export function ChatMessage({
       <div className="flex flex-wrap gap-2">
         <div
           className={`${
-            resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
-              ? 'bg-foreground/5'
-              : 'bg-foreground/10'
+            resolvedTheme === 'light'
+              ? 'bg-transparent'
+              : resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
+                ? 'bg-foreground/5'
+                : 'bg-foreground/10'
           } flex w-fit select-none items-center space-x-2 rounded-lg border p-2`}
         >
           <div
@@ -78,12 +82,12 @@ export function ChatMessage({
                       : 'from-pink-600 via-purple-500 to-sky-500'
                   }`}
                 >
-                  Skora AI
+                  Skora AI / {model}
                 </span>
               )}
             </span>
 
-            <div className="text-xs font-semibold opacity-70 md:text-sm">
+            <div className="text-xs font-semibold opacity-70">
               {capitalize(dayjs(message?.created_at).fromNow())}
             </div>
           </div>
