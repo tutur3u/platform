@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
-import { buildPrompt } from './core';
+import { buildGooglePrompt } from '../core';
 
 export const runtime = 'edge';
 export const preferredRegion = 'sin1';
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
         status: 401,
       });
 
-    const prompt = buildPrompt(messages);
+    const prompt = buildGooglePrompt(messages);
     const model = 'gemini-pro';
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });

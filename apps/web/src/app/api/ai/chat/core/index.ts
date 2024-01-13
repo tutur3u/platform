@@ -1,3 +1,4 @@
+import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { Message } from 'ai';
 
 export const leadingMessages: Message[] = [
@@ -27,3 +28,57 @@ export const filterDuplicate = (str: string) => {
   if (firstHalf !== secondHalf) return str;
   return firstHalf;
 };
+
+const filterDuplicates = (messages: Message[]) =>
+  // If there is 2 repeated substring in the
+  // message, we will merge them into one
+  messages.map((message) => {
+    return { ...message, content: filterDuplicate(message.content) };
+  });
+
+const normalizeAnthropic = (message: Message) => {
+  const { content, role } = message;
+  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
+  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
+  return content;
+};
+
+const filterSystemMessages = (messages: Message[]) =>
+  messages.filter((message) => message.role !== 'system');
+
+const normalizeAnthropicMessages = (messages: Message[]) =>
+  [...leadingMessages, ...filterSystemMessages(messages), ...trailingMessages]
+    .map(normalizeAnthropic)
+    .join('')
+    .trim();
+
+export function buildAnthropicPrompt(messages: Message[]) {
+  const filteredMsgs = filterDuplicates(messages);
+  const normalizedMsgs = normalizeAnthropicMessages(filteredMsgs);
+  return normalizedMsgs + AI_PROMPT;
+}
+
+const normalizeGoogle = (message: Message) => ({
+  role: message.role === 'user' ? 'user' : 'model',
+  parts: [{ text: message.content }],
+});
+
+const normalizeGoogleMessages = (messages: Message[]) =>
+  messages
+    .filter(
+      (message) => message.role === 'user' || message.role === 'assistant'
+    )
+    .map(normalizeGoogle);
+
+export function buildGooglePrompt(messages: Message[]) {
+  const normalizedMsgs = normalizeGoogleMessages(messages);
+  return { contents: normalizedMsgs };
+}
+
+export function buildPrompt(
+  messages: Message[],
+  provider: 'anthropic' | 'google'
+) {
+  if (provider === 'anthropic') return buildAnthropicPrompt(messages);
+  return buildGooglePrompt(messages);
+}
