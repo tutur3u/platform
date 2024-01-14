@@ -3,7 +3,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
-import { buildGooglePrompt } from '../core';
 
 export const runtime = 'edge';
 export const preferredRegion = 'sin1';
@@ -127,4 +126,21 @@ export async function POST(req: Request) {
       }
     );
   }
+}
+
+const normalizeGoogle = (message: Message) => ({
+  role: message.role === 'user' ? 'user' : 'model',
+  parts: [{ text: message.content }],
+});
+
+const normalizeGoogleMessages = (messages: Message[]) =>
+  messages
+    .filter(
+      (message) => message.role === 'user' || message.role === 'assistant'
+    )
+    .map(normalizeGoogle);
+
+function buildGooglePrompt(messages: Message[]) {
+  const normalizedMsgs = normalizeGoogleMessages(messages);
+  return { contents: normalizedMsgs };
 }
