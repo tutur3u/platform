@@ -264,8 +264,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@14.0.5-canary.56)(react@18.2.0)
       openai:
-        specifier: ^4.24.2
-        version: 4.24.2(encoding@0.1.13)
+        specifier: ^4.24.7
+        version: 4.24.7(encoding@0.1.13)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -7399,8 +7399,9 @@ packages:
       mimic-fn: 4.0.0
     dev: true
 
-  /openai@4.24.2(encoding@0.1.13):
-    resolution: {integrity: sha512-Np5zFPAYsBRmsfgPS8cMM25r1wVO5NCTdmeoYDNEUhJn/rw6jNXU0CFSFwhbWsjIkYhdv31pPIzQ0xChHCvltQ==}
+  /openai@4.24.7(encoding@0.1.13):
+    resolution: {integrity: sha512-JUesECWPtsDHO0TlZGb6q73hnAmXUdzj9NrwgZeL4lqlRt/kR1sWrXoy8LocxN/6uOtitywvcJqe0O1PLkG45g==}
+    hasBin: true
     dependencies:
       '@types/node': 18.19.6
       '@types/node-fetch': 2.6.10
