@@ -113,7 +113,7 @@
     "react-intersection-observer": "^9.5.3",
     "react-markdown": "^9.0.1",
     "react-resizable": "^3.0.5",
-    "react-resizable-panels": "^1.0.8",
+    "react-resizable-panels": "^1.0.9",
     "react-syntax-highlighter": "^15.5.0",
     "react-textarea-autosize": "^8.5.3",
     "rehype-katex": "^7.0.0",
