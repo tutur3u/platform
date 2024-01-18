@@ -78,7 +78,7 @@
     "@tiptap/extension-link": "^2.1.15",
     "@tiptap/extension-subscript": "^2.1.15",
     "@tiptap/extension-superscript": "^2.1.16",
-    "@tiptap/extension-text-align": "^2.1.15",
+    "@tiptap/extension-text-align": "^2.1.16",
     "@tiptap/extension-underline": "^2.1.16",
     "@tiptap/pm": "^2.1.16",
     "@tiptap/react": "^2.1.15",
