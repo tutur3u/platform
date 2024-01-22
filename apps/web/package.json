@@ -103,7 +103,7 @@
     "next": "canary",
     "next-themes": "^0.2.1",
     "next-translate": "^2.6.2",
-    "openai": "^4.24.7",
+    "openai": "^4.25.0",
     "react": "18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",
