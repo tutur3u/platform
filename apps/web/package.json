@@ -153,7 +153,7 @@
     "lint-staged": "^15.2.0",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.33",
-    "supabase": "^1.136.1",
+    "supabase": "^1.136.2",
     "tailwind-config": "workspace:*",
     "tailwind-scrollbar": "^3.0.5",
     "tailwindcss": "^3.4.1",
