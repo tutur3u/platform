@@ -1,4 +1,11 @@
 {
   "headline-p1": "Tìm khung thời gian tốt nhất cho mọi người,",
-  "headline-p2": "dễ như ăn bánh"
+  "headline-p2": "dễ như ăn bánh",
+  "dates-to-meet-together": "Những ngày gặp nhau",
+  "soonest-time-to-meet": "Thời gian sớm nhất",
+  "latest-time-to-meet": "Thời gian muộn nhất",
+  "time-zone": "Múi giờ",
+  "select-time-zone": "Chọn múi giờ",
+  "create-plan": "Tạo kế hoạch",
+  "your-plans": "Kế hoạch của bạn"
 }

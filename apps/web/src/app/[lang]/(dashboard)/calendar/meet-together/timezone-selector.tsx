@@ -11,8 +11,11 @@ import {
 } from '@/components/ui/select';
 
 import timezones from '../../../../../data/timezones.json';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function TimezoneSelector() {
+  const { t } = useTranslation('meet-together');
+
   const [selectedTimezone, setSelectedTimezone] = useState<string>();
 
   const handleSelect = (value: string) => {
@@ -24,7 +27,7 @@ export default function TimezoneSelector() {
     <div className="flex items-end justify-center gap-2">
       <Select value={selectedTimezone} onValueChange={handleSelect}>
         <SelectTrigger className="w-64">
-          <SelectValue placeholder="Select a timezone" />
+          <SelectValue placeholder={t('select-time-zone')} />
         </SelectTrigger>
         <SelectContent>
           {timezones.map((timezone, index) => (

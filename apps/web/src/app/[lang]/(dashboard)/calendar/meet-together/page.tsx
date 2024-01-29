@@ -28,23 +28,25 @@ export default async function MarketingPage() {
 
       <div className="flex flex-col items-center gap-8 text-center md:flex-row md:gap-16">
         <div className="grid justify-center gap-4">
-          <p className="text-xl font-semibold">Dates to meet together</p>
+          <p className="text-xl font-semibold">{t('dates-to-meet-together')}</p>
           <DateSelector />
         </div>
 
         <Separator className="hidden h-96 md:block" orientation="vertical" />
 
         <div className="grid w-full justify-stretch gap-2">
-          <p className="w-full text-xl font-semibold">Soonest time to meet</p>
+          <p className="w-full text-xl font-semibold">
+            {t('soonest-time-to-meet')}
+          </p>
           <TimeSelector defaultValue={9} />
           <p className="mt-4 w-full text-xl font-semibold">
-            Latest time to meet
+            {t('latest-time-to-meet')}
           </p>
           <TimeSelector defaultValue={17} />
 
           <Separator className="my-4" />
 
-          <p className="w-full text-xl font-semibold">Timezone</p>
+          <p className="w-full text-xl font-semibold">{t('time-zone')}</p>
           <TimezoneSelector />
 
           <div className="group relative mt-4 inline-flex">
@@ -53,7 +55,7 @@ export default async function MarketingPage() {
               href="/login"
               className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60"
             >
-              Create plan
+              {t('create-plan')}
             </Link>
           </div>
         </div>

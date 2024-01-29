@@ -9,12 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   defaultValue?: number;
 }
 
 export function TimeSelector({ defaultValue }: Props) {
+  const { lang } = useTranslation();
+
   const [selectedTime, setSelectedTime] = useState<string | undefined>(
     defaultValue ? String(defaultValue) : undefined
   );
@@ -35,8 +38,8 @@ export function TimeSelector({ defaultValue }: Props) {
           {hours.map((hour, index) => (
             <SelectItem key={index} value={hour.toString()}>
               {index < 12
-                ? `${String(hour).padStart(2, '0')}:00 AM`
-                : `${String(hour - 12).padStart(2, '0')}:00 PM`}
+                ? `${String(hour).padStart(2, '0')}:00 ${lang === 'vi' ? 'SA' : 'AM'}`
+                : `${String(hour - 12).padStart(2, '0')}:00 ${lang === 'vi' ? 'CH' : 'PM'}`}
             </SelectItem>
           ))}
         </SelectContent>
