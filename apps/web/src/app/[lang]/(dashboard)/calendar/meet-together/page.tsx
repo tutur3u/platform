@@ -26,7 +26,7 @@ export default async function MarketingPage() {
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-8 text-center md:flex-row md:gap-16">
+      <div className="mb-32 flex flex-col items-center gap-8 text-center md:mb-8 md:flex-row md:gap-16">
         <div className="grid justify-center gap-4">
           <p className="text-xl font-semibold">{t('dates-to-meet-together')}</p>
           <DateSelector />
