@@ -24,19 +24,17 @@ export default function TimezoneSelector() {
   };
 
   return (
-    <div className="flex items-end justify-center gap-2">
-      <Select value={selectedTimezone} onValueChange={handleSelect}>
-        <SelectTrigger className="w-64">
-          <SelectValue placeholder={t('select-time-zone')} />
-        </SelectTrigger>
-        <SelectContent>
-          {timezones.map((timezone, index) => (
-            <SelectItem key={index} value={timezone.value}>
-              {timezone.text}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={selectedTimezone} onValueChange={handleSelect}>
+      <SelectTrigger className="w-64">
+        <SelectValue placeholder={t('select-time-zone')} />
+      </SelectTrigger>
+      <SelectContent>
+        {timezones.map((timezone, index) => (
+          <SelectItem key={index} value={timezone.value}>
+            {timezone.text}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

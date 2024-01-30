@@ -7,13 +7,11 @@ export default function DateSelector() {
   const [dates, setDates] = useState<Date[] | undefined>([]);
 
   return (
-    <div>
-      <Calendar
-        mode="multiple"
-        selected={dates}
-        onSelect={setDates}
-        className="w-fit rounded-md border"
-      />
-    </div>
+    <Calendar
+      mode="multiple"
+      selected={dates}
+      onSelect={setDates}
+      className="w-fit rounded-md border"
+    />
   );
 }
