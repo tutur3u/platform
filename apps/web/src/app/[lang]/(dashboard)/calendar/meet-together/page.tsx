@@ -1,16 +1,8 @@
 import useTranslation from 'next-translate/useTranslation';
-import DateSelector from './date-selector';
-import { TimeSelector } from './time-selector';
-import TimezoneSelector from './timezone-selector';
-import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
-
-export const dynamic = 'force-dynamic';
+import Form from './form';
 
 export default async function MarketingPage() {
   const { t } = useTranslation('meet-together');
-
-  // const workspaces = await getWorkspaces(true);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -26,37 +18,7 @@ export default async function MarketingPage() {
         </div>
       </div>
 
-      <div className="mb-32 flex flex-col items-center gap-8 text-center md:mb-8 md:flex-row md:gap-16">
-        <div className="grid justify-center gap-4">
-          <p className="text-xl font-semibold">{t('dates-to-meet-together')}</p>
-          <DateSelector />
-        </div>
-
-        <Separator className="hidden h-96 md:block" orientation="vertical" />
-
-        <div className="grid w-full justify-stretch gap-2">
-          <p className="w-full text-xl font-semibold">
-            {t('soonest-time-to-meet')}
-          </p>
-          <TimeSelector defaultValue={9} />
-          <p className="mt-4 w-full text-xl font-semibold">
-            {t('latest-time-to-meet')}
-          </p>
-          <TimeSelector defaultValue={17} />
-
-          <Separator className="my-4" />
-
-          <p className="w-full text-xl font-semibold">{t('time-zone')}</p>
-          <TimezoneSelector />
-
-          <div className="group relative mt-4 inline-flex">
-            <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
-            <button className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60">
-              {t('create-plan')}
-            </button>
-          </div>
-        </div>
-      </div>
+      <Form />
 
       {/* <Separator className="mb-4 mt-8 md:mt-16" />
 

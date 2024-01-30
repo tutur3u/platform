@@ -1,10 +1,12 @@
-'use client';
 
 import { Calendar } from '@/components/ui/calendar';
-import { useState } from 'react';
 
-export default function DateSelector() {
-  const [dates, setDates] = useState<Date[] | undefined>([]);
+interface DateSelectorProps {
+  dates?: Date[];
+  setDates?: React.Dispatch<React.SetStateAction<Date[] | undefined>>;
+}
+
+export default function DateSelector({ dates, setDates }: DateSelectorProps) {
 
   return (
     <Calendar

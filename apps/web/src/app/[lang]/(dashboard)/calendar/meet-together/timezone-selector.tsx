@@ -12,6 +12,7 @@ import {
 
 import timezones from '../../../../../data/timezones.json';
 import useTranslation from 'next-translate/useTranslation';
+import { Timezone } from '@/types/primitives/Timezone';
 
 export default function TimezoneSelector() {
   const { t } = useTranslation('meet-together');
@@ -29,7 +30,7 @@ export default function TimezoneSelector() {
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>
       <SelectContent>
-        {timezones.map((timezone, index) => (
+        {timezones.map((timezone: Timezone, index) => (
           <SelectItem key={index} value={timezone.value}>
             {timezone.text}
           </SelectItem>
