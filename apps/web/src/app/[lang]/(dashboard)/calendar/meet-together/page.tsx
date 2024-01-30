@@ -51,12 +51,9 @@ export default async function MarketingPage() {
 
           <div className="group relative mt-4 inline-flex">
             <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
-            <Link
-              href="/login"
-              className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60"
-            >
+            <button className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60">
               {t('create-plan')}
-            </Link>
+            </button>
           </div>
         </div>
       </div>
