@@ -37,12 +37,20 @@ export default function Form() {
         <p className="w-full text-xl font-semibold">
           {t('soonest-time-to-meet')}
         </p>
-        <TimeSelector value={startTime} onValueChange={setStartTime} />
+        <TimeSelector
+          value={startTime}
+          onValueChange={setStartTime}
+          disabledTime={endTime}
+        />
 
         <p className="mt-4 w-full text-xl font-semibold">
           {t('latest-time-to-meet')}
         </p>
-        <TimeSelector value={endTime} onValueChange={setEndTime} />
+        <TimeSelector
+          value={endTime}
+          onValueChange={setEndTime}
+          disabledTime={startTime}
+        />
 
         <Separator className="my-4" />
 
