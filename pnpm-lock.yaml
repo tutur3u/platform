@@ -243,8 +243,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       lucide-react:
-        specifier: ^0.316.0
-        version: 0.316.0(react@18.2.0)
+        specifier: ^0.317.0
+        version: 0.317.0(react@18.2.0)
       moment:
         specifier: ^2.30.1
         version: 2.30.1
@@ -409,8 +409,8 @@ importers:
         specifier: ^8.4.33
         version: 8.4.33
       supabase:
-        specifier: ^1.140.0
-        version: 1.140.0
+        specifier: ^1.140.1
+        version: 1.140.1
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
@@ -6469,8 +6469,8 @@ packages:
     dependencies:
       yallist: 4.0.0
 
-  /lucide-react@0.316.0(react@18.2.0):
-    resolution: {integrity: sha512-dTmYX1H4IXsRfVcj/KUxworV6814ApTl7iXaS21AimK2RUEl4j4AfOmqD3VR8phe5V91m4vEJ8tCK4uT1jE5nA==}
+  /lucide-react@0.317.0(react@18.2.0):
+    resolution: {integrity: sha512-8J8fIim0Sc+AYn8skgVau+hRGXaqjErRNzuW0vIGt4QA/f3UvY8g8o2A/OL9deCBKxZjVD1zuoidyMCiq8rfFQ==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
     dependencies:
@@ -8807,8 +8807,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.140.0:
-    resolution: {integrity: sha512-4oQt653hXXujTYHy9ZfaN7RIufA1RrHMpFkVriXe88QFadZEUH0tvBvmuBhPr56RkfKntsHx97eIUQjr51R0Bw==}
+  /supabase@1.140.1:
+    resolution: {integrity: sha512-uFlbXX0ok7BVs8nvv3j6a4TwtNkePKoUNLM/NYN2Jj9ovyzpiVZYWoOxocu4ojGVHAVVqetBhfSZG96bmD7HFg==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
