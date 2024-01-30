@@ -17,11 +17,18 @@ export default function Form() {
   const [endTime, setEndTime] = useState<number | undefined>(17);
   const [timezone, setTimezone] = useState<Timezone | undefined>(undefined);
 
+  const plan = {
+    dates,
+    startTime,
+    endTime,
+    timezone,
+  };
+
   return (
     <div className="mb-32 flex flex-col items-center gap-8 text-center md:mb-8 md:flex-row md:gap-16">
       <div className="grid justify-center gap-4">
         <p className="text-xl font-semibold">{t('dates-to-meet-together')}</p>
-        <DateSelector dates={dates} setDates={setDates} />
+        <DateSelector value={dates} onSelect={setDates} />
       </div>
 
       <Separator className="hidden h-96 md:block" orientation="vertical" />
@@ -30,21 +37,21 @@ export default function Form() {
         <p className="w-full text-xl font-semibold">
           {t('soonest-time-to-meet')}
         </p>
-        <TimeSelector defaultValue={startTime} />
+        <TimeSelector value={startTime} onValueChange={setStartTime} />
 
         <p className="mt-4 w-full text-xl font-semibold">
           {t('latest-time-to-meet')}
         </p>
-        <TimeSelector defaultValue={endTime} />
+        <TimeSelector value={endTime} onValueChange={setEndTime} />
 
         <Separator className="my-4" />
 
         <p className="w-full text-xl font-semibold">{t('time-zone')}</p>
-        <TimezoneSelector />
+        <TimezoneSelector value={timezone} onValueChange={setTimezone} />
 
         <div className="group relative mt-4 inline-flex">
           <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
-          <CreatePlanDialog />
+          <CreatePlanDialog plan={plan} />
         </div>
       </div>
     </div>

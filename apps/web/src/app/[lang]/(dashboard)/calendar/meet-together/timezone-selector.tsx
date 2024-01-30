@@ -1,7 +1,3 @@
-'use client';
-
-import { useState } from 'react';
-
 import {
   Select,
   SelectContent,
@@ -14,18 +10,21 @@ import timezones from '../../../../../data/timezones.json';
 import useTranslation from 'next-translate/useTranslation';
 import { Timezone } from '@/types/primitives/Timezone';
 
-export default function TimezoneSelector() {
+interface Props {
+  value: Timezone | undefined;
+  onValueChange: (value: Timezone) => void;
+}
+
+export default function TimezoneSelector({ value, onValueChange }: Props) {
   const { t } = useTranslation('meet-together');
 
-  const [selectedTimezone, setSelectedTimezone] = useState<string>();
-
-  const handleSelect = (value: string) => {
-    const selected = timezones.find((timezone) => timezone.value === value);
-    setSelectedTimezone(selected?.value);
+  const handleValueChange = (value: string) => {
+    const timezone = timezones.find((timezone) => timezone.value === value);
+    if (timezone) onValueChange(timezone);
   };
 
   return (
-    <Select value={selectedTimezone} onValueChange={handleSelect}>
+    <Select value={value?.value} onValueChange={handleValueChange}>
       <SelectTrigger className="md:w-64">
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>

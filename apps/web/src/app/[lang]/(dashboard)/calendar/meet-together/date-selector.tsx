@@ -1,18 +1,16 @@
-
 import { Calendar } from '@/components/ui/calendar';
 
 interface DateSelectorProps {
-  dates?: Date[];
-  setDates?: React.Dispatch<React.SetStateAction<Date[] | undefined>>;
+  value?: Date[];
+  onSelect?: React.Dispatch<React.SetStateAction<Date[] | undefined>>;
 }
 
-export default function DateSelector({ dates, setDates }: DateSelectorProps) {
-
+export default function DateSelector({ value, onSelect }: DateSelectorProps) {
   return (
     <Calendar
       mode="multiple"
-      selected={dates}
-      onSelect={setDates}
+      selected={value}
+      onSelect={onSelect}
       className="w-fit rounded-md border"
     />
   );

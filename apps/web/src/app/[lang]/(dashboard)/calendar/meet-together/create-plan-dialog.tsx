@@ -9,11 +9,64 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Timezone } from '@/types/primitives/Timezone';
 import useTranslation from 'next-translate/useTranslation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import dayjs from 'dayjs';
 
-export default function CreatePlanDialog() {
+interface Props {
+  plan: {
+    dates: Date[] | undefined;
+    startTime: number | undefined;
+    endTime: number | undefined;
+    timezone: Timezone | undefined;
+  };
+}
+
+const FormSchema = z.object({
+  name: z.string(),
+  startTime: z.number().optional(),
+  endTime: z.number().optional(),
+  timezone: z.number().optional(),
+  dates: z.array(z.string()).optional(),
+});
+
+export default function CreatePlanDialog({ plan }: Props) {
   const { t } = useTranslation('meet-together');
+
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    values: {
+      name: '',
+      startTime: plan.startTime,
+      endTime: plan.endTime,
+      timezone: plan.timezone?.offset,
+      dates: plan.dates
+        ?.sort((a, b) => a.getTime() - b.getTime())
+        ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
+    },
+  });
+
+  const isDirty = form.formState.isDirty;
+  const isValid = form.formState.isValid;
+  const isSubmitting = form.formState.isSubmitting;
+
+  const disabled = !isDirty || !isValid || isSubmitting;
+
+  const handleSubmit = () => {
+    console.log(plan);
+    console.log(form.getValues());
+  };
 
   return (
     <Dialog>
@@ -30,13 +83,33 @@ export default function CreatePlanDialog() {
             colleagues.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid items-center gap-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" placeholder="My plan" />
-        </div>
-        <DialogFooter>
-          <Button type="submit">Create</Button>
-        </DialogFooter>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-3"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('name')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Name" autoComplete="off" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="submit" className="w-full" disabled={disabled}>
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
