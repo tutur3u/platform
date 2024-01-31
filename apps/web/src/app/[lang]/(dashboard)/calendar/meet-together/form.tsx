@@ -6,8 +6,9 @@ import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 import CreatePlanDialog from './create-plan-dialog';
 import useTranslation from 'next-translate/useTranslation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Timezone } from '@/types/primitives/Timezone';
+import timezones from '@/data/timezones.json';
 
 export default function Form() {
   const { t } = useTranslation('meet-together');
@@ -15,7 +16,19 @@ export default function Form() {
   const [dates, setDates] = useState<Date[] | undefined>([]);
   const [startTime, setStartTime] = useState<number | undefined>(9);
   const [endTime, setEndTime] = useState<number | undefined>(17);
+
   const [timezone, setTimezone] = useState<Timezone | undefined>(undefined);
+
+  useEffect(() => {
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const timezone = timezones.find((timezone) =>
+      timezone.utc.includes(userTimezone)
+    );
+
+    if (timezone) setTimezone(timezone);
+    return () => setTimezone(undefined);
+  }, []);
 
   const plan = {
     dates,
