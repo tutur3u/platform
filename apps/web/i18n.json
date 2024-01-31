@@ -11,6 +11,7 @@
     "/[lang]/reset-password": ["auth", "reset-password"],
     "/[lang]/(marketing)/branding": ["branding"],
 
+    "/[lang]/(dashboard)/calendar/meet-together": ["meet-together"],
     "/[lang]/(dashboard)/onboarding": ["onboarding", "invite"],
     "/[lang]/(dashboard)/settings/account": [
       "sidebar-tabs",

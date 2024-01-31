@@ -1,5 +1,5 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
+import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { Message } from 'ai';
@@ -119,5 +119,5 @@ const normalizeMessages = (messages: Message[]) =>
 
 function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(messages);
-  return normalizedMsgs + Anthropic.AI_PROMPT;
+  return normalizedMsgs + AI_PROMPT;
 }
