@@ -39,7 +39,7 @@ export default function Form() {
 
   return (
     <div className="mb-32 flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
-      <div className="grid justify-center gap-2">
+      <div className="grid justify-center gap-1">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
         <DateSelector value={dates} onSelect={setDates} />
       </div>
@@ -48,7 +48,7 @@ export default function Form() {
       <Separator className="md:hidden" />
 
       <div className="grid w-full justify-stretch gap-2 gap-x-4 lg:grid-cols-2">
-        <div className="grid gap-2">
+        <div className="grid gap-1">
           <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
           <TimeSelector
             value={startTime}
@@ -57,7 +57,7 @@ export default function Form() {
           />
         </div>
 
-        <div className="grid gap-2">
+        <div className="grid gap-1">
           <p className="w-full font-semibold max-lg:mt-4">
             {t('latest-time-to-meet')}
           </p>
@@ -70,7 +70,7 @@ export default function Form() {
 
         <Separator className="col-span-full my-4" />
 
-        <div className="col-span-full grid gap-2">
+        <div className="col-span-full grid gap-1">
           <p className="w-full font-semibold">{t('time-zone')}</p>
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
