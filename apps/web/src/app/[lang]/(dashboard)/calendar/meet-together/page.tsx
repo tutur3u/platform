@@ -3,30 +3,30 @@ import Form from './form';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
+import { cookies } from 'next/headers';
+import dayjs from 'dayjs';
 
-export default async function MarketingPage() {
+export const dynamic = 'force-dynamic';
+
+interface Props {
+  // params: {
+  //   wsId: string;
+  // };
+  searchParams: {
+    q: string;
+    // page: string;
+    // pageSize: string;
+  };
+}
+
+export default async function MarketingPage({
+  // params: { wsId },
+  searchParams,
+}: Props) {
   const { t } = useTranslation('meet-together');
-
-  const plans: MeetTogetherPlan[] = [
-    // {
-    //   id: '1',
-    //   title: 'Plan 1',
-    //   description: 'Description 1',
-    //   timezone: -5,
-    // },
-    // {
-    //   id: '2',
-    //   title: 'Plan 2',
-    //   description: 'Description 2',
-    //   timezone: 0,
-    // },
-    // {
-    //   id: '3',
-    //   title: 'Plan 3',
-    //   description: 'Description 3',
-    //   timezone: 7,
-    // },
-  ];
+  const { data: plans, count: _ } = await getData(searchParams);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -46,34 +46,70 @@ export default async function MarketingPage() {
 
       <Separator className="mb-4 mt-8 md:mt-16" />
 
-      <div className="text-foreground grid w-full items-center justify-center p-4 pb-8">
+      <div className="text-foreground flex w-full flex-col items-center justify-center p-4 pb-8">
         <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>
 
         {plans?.length > 0 ? (
-          <div className="mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan: MeetTogetherPlan) => (
               <Link
-                href={`/calendar/meet-together/plans/${plan.id}`}
-                key={plan.title}
-                className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-4"
+                href={`/calendar/meet-together/plans/${plan.id?.replace(
+                  /-/g,
+                  ''
+                )}`}
+                key={plan.name}
+                className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold">{plan.title}</h3>
-                  {plan?.timezone != undefined && (
+                <div className="flex w-full items-center justify-between gap-2">
+                  <h3 className="flex-1 font-bold">{plan.name}</h3>
+                  {plan.start_time && (
                     <div className="bg-foreground text-background rounded px-2 py-0.5 text-sm font-semibold">
                       GMT
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
-                      }).format(plan.timezone)}
+                      }).format(
+                        parseInt(plan.start_time?.split('+')?.[1] ?? 0)
+                      )}
                     </div>
                   )}
                 </div>
+
                 <div className="flex grow flex-col justify-between gap-4">
-                  <p className="text-sm opacity-80">{plan.description}</p>
-                  <div className="opacity-60 group-hover:opacity-100">
-                    24-01-2024
-                  </div>
+                  {plan.description && (
+                    <p className="text-sm opacity-80">{plan.description}</p>
+                  )}
+
+                  {plan.start_time && plan.end_time && (
+                    <div className="opacity-60 group-hover:opacity-100">
+                      <span className="font-semibold">
+                        {timetzToTime(plan.start_time)} -{' '}
+                        {timetzToTime(plan.end_time)}
+                      </span>{' '}
+                      ({t('local_time')})
+                    </div>
+                  )}
                 </div>
+
+                {plan.dates && plan.dates.length > 0 && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="flex h-full flex-wrap gap-2 text-center">
+                      {plan.dates?.slice(0, 5).map((date) => (
+                        <div
+                          key={date}
+                          className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
+                        >
+                          {dayjs(date).format('MMM D (ddd)')}
+                        </div>
+                      ))}
+                      {plan.dates.length > 5 && (
+                        <div className="bg-foreground/20 rounded px-2 py-0.5 text-sm">
+                          +{plan.dates.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </Link>
             ))}
           </div>
@@ -85,4 +121,58 @@ export default async function MarketingPage() {
       </div>
     </div>
   );
+}
+
+function timetzToTime(timetz: string) {
+  const [time, offsetStr] = timetz.split('+');
+  const [hourStr, minuteStr] = time.split(':');
+
+  const hour = parseInt(hourStr);
+  const offset = parseInt(offsetStr);
+
+  // get current user's timezone, then show the time in that timezone
+  const date = new Date();
+  const userOffset = date.getTimezoneOffset() / 60;
+
+  const offsetDiff =
+    offset * userOffset > 0 ? offset - userOffset : offset + userOffset;
+  const hourDiff = hour - offsetDiff;
+
+  return `${hourDiff}:${minuteStr.padStart(2, '0')}`;
+}
+
+async function getData(
+  // wsId: string,
+  {
+    q,
+    // page = '1',
+    // pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase.from('meet_together_plans').select('*', {
+    count: 'exact',
+  });
+  // .eq('ws_id', wsId);
+
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+
+  // if (
+  // page &&
+  // pageSize &&
+  // typeof page === 'string' &&
+  // typeof pageSize === 'string'
+  // ) {
+  // const parsedPage = parseInt(page);
+  // const parsedSize = parseInt(pageSize);
+  // const start = (parsedPage - 1) * parsedSize;
+  // const end = parsedPage * parsedSize;
+  // queryBuilder.range(start, end).limit(parsedSize);
+  // }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: MeetTogetherPlan[]; count: number };
 }

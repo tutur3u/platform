@@ -25,6 +25,7 @@ import * as z from 'zod';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   plan: {
@@ -37,14 +38,24 @@ interface Props {
 
 const FormSchema = z.object({
   name: z.string(),
-  startTime: z.number().optional(),
-  endTime: z.number().optional(),
-  timezone: z.number().optional(),
+  // start_time and end_time are time with timezone offset
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
+  is_public: z.boolean().optional(),
 });
+
+const convertToTimetz = (
+  time: number | undefined,
+  utcOffset: number | undefined
+) => {
+  if (!time || !utcOffset) return undefined;
+  return `${time}:00+${utcOffset}`;
+};
 
 export default function CreatePlanDialog({ plan }: Props) {
   const { t } = useTranslation('meet-together');
+  const router = useRouter();
 
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -53,12 +64,12 @@ export default function CreatePlanDialog({ plan }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       name: '',
-      startTime: plan.startTime,
-      endTime: plan.endTime,
-      timezone: plan.timezone?.offset,
+      start_time: convertToTimetz(plan.startTime, plan.timezone?.offset),
+      end_time: convertToTimetz(plan.endTime, plan.timezone?.offset),
       dates: plan.dates
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
+      is_public: true,
     },
   });
 
@@ -74,7 +85,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     const data = form.getValues();
     let hasError = false;
 
-    if (!data.startTime) {
+    if (!data.start_time) {
       toast({
         title: t('missing_fields'),
         description: t('start_time_required'),
@@ -82,18 +93,10 @@ export default function CreatePlanDialog({ plan }: Props) {
       hasError = true;
     }
 
-    if (!data.endTime) {
+    if (!data.end_time) {
       toast({
         title: t('missing_fields'),
         description: t('end_time_required'),
-      });
-      hasError = true;
-    }
-
-    if (!data.timezone) {
-      toast({
-        title: t('missing_fields'),
-        description: t('timezone_required'),
       });
       hasError = true;
     }
@@ -117,6 +120,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     });
 
     if (res.ok) {
+      router.refresh(); // TODO: redirect to the new plan
       toast({
         title: t('plan_created'),
         description: t('plan_created_desc'),
@@ -133,6 +137,9 @@ export default function CreatePlanDialog({ plan }: Props) {
     setIsOpened(false);
   };
 
+  const missingFields =
+    !plan.startTime || !plan.endTime || !plan.timezone || !plan.dates?.length;
+
   return (
     <Dialog
       open={isOpened}
@@ -142,7 +149,12 @@ export default function CreatePlanDialog({ plan }: Props) {
       }}
     >
       <DialogTrigger asChild>
-        <button className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60">
+        <button
+          className={`relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60 ${
+            missingFields ? 'cursor-not-allowed opacity-30' : ''
+          }`}
+          disabled={missingFields}
+        >
           {t('create_plan')}
         </button>
       </DialogTrigger>

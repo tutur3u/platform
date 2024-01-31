@@ -36,6 +36,8 @@ export default function Form() {
     timezone,
   };
 
+  const missingFields = !dates?.length || !startTime || !endTime || !timezone;
+
   return (
     <div className="mb-32 flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
       <div className="grid justify-center gap-1">
@@ -75,7 +77,13 @@ export default function Form() {
         </div>
 
         <div className="group relative col-span-full mt-4 inline-flex">
-          <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
+          <div
+            className={`animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 blur-lg transition-all dark:from-rose-400/60 dark:to-orange-300/60 ${
+              missingFields
+                ? 'cursor-not-allowed opacity-30'
+                : 'opacity-70 group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
+            }`}
+          />
           <CreatePlanDialog plan={plan} />
         </div>
       </div>
