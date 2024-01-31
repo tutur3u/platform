@@ -25,7 +25,7 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
 
   return (
     <Select value={value?.value} onValueChange={handleValueChange}>
-      <SelectTrigger className="md:w-64">
+      <SelectTrigger className="md:w-72 lg:w-96">
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>
       <SelectContent>
