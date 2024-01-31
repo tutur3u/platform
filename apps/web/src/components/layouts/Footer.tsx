@@ -126,31 +126,33 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:gap-32 lg:gap-32">
+        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-32 lg:gap-32">
           <div className="flex flex-col md:items-start">
             <div className="text-xl font-semibold">{t('common:resources')}</div>
-            <div>
-              <Link
-                href="/branding"
-                className="text-foreground/80 hover:text-foreground mt-2 block"
-              >
-                {t('common:branding')}
-              </Link>
-            </div>
+            <Link
+              href="/calendar/meet-together"
+              className="text-foreground/80 hover:text-foreground mt-2 block"
+            >
+              {t('common:meet-together')}
+            </Link>
+            <Link
+              href="/branding"
+              className="text-foreground/80 hover:text-foreground mt-2 block"
+            >
+              {t('common:branding')}
+            </Link>
           </div>
 
           <div className="flex flex-col md:items-start">
             <div className="text-xl font-semibold">
               {t('common:developers')}
             </div>
-            <div>
-              <Link
-                href="https://github.com/tutur3u/tutur3u"
-                className="text-foreground/80 hover:text-foreground mt-2 block"
-              >
-                {t('common:open-source')}
-              </Link>
-            </div>
+            <Link
+              href="https://github.com/tutur3u/tutur3u"
+              className="text-foreground/80 hover:text-foreground mt-2 block"
+            >
+              {t('common:open-source')}
+            </Link>
           </div>
         </div>
       </div>
