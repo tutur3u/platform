@@ -3,7 +3,10 @@ import Form from './form';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import {
+  User,
+  createServerComponentClient,
+} from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
@@ -26,7 +29,7 @@ export default async function MarketingPage({
   searchParams,
 }: Props) {
   const { t } = useTranslation('meet-together');
-  const { data: plans, count: _ } = await getData(searchParams);
+  const { data: plans, count: _, user } = await getData(searchParams);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -61,7 +64,9 @@ export default async function MarketingPage({
                 className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
               >
                 <div className="flex w-full items-center justify-between gap-2">
-                  <h3 className="flex-1 font-bold">{plan.name}</h3>
+                  <h3 className="line-clamp-1 w-full flex-1 font-bold">
+                    {plan.name}
+                  </h3>
                   {plan.start_time && (
                     <div className="bg-foreground text-background rounded px-2 py-0.5 text-sm font-semibold">
                       GMT
@@ -115,7 +120,7 @@ export default async function MarketingPage({
           </div>
         ) : (
           <p className="mt-2 text-center text-sm opacity-60">
-            {t('no_plans_yet')}
+            {user?.id ? t('no_plans_yet') : t('login_to_save_plans')}
           </p>
         )}
       </div>
@@ -151,9 +156,17 @@ async function getData(
 ) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
-  const queryBuilder = supabase.from('meet_together_plans').select('*', {
-    count: 'exact',
-  });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { data: [], count: 0, user };
+
+  const queryBuilder = supabase
+    .from('meet_together_plans')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('creator_id', user.id);
   // .eq('ws_id', wsId);
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -174,5 +187,9 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: MeetTogetherPlan[]; count: number };
+  return { data, count, user } as {
+    data: MeetTogetherPlan[];
+    count: number;
+    user: User;
+  };
 }

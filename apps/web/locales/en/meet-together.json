@@ -22,5 +22,6 @@
   "plan_created_desc": "You will be redirected to your plan details page in a few seconds.",
   "something_went_wrong": "Something went wrong",
   "cant_create_plan_right_now": "We can't create your plan right now. Please try again later.",
-  "local_time": "Local time"
+  "local_time": "Local time",
+  "login_to_save_plans": "Sign up or login into Tuturuuu to save your created plans."
 }
