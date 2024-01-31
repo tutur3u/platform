@@ -1,8 +1,32 @@
 import useTranslation from 'next-translate/useTranslation';
 import Form from './form';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
+import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 
 export default async function MarketingPage() {
   const { t } = useTranslation('meet-together');
+
+  const plans: MeetTogetherPlan[] = [
+    // {
+    //   id: '1',
+    //   title: 'Plan 1',
+    //   description: 'Description 1',
+    //   timezone: -5,
+    // },
+    // {
+    //   id: '2',
+    //   title: 'Plan 2',
+    //   description: 'Description 2',
+    //   timezone: 0,
+    // },
+    // {
+    //   id: '3',
+    //   title: 'Plan 3',
+    //   description: 'Description 3',
+    //   timezone: 7,
+    // },
+  ];
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -20,34 +44,45 @@ export default async function MarketingPage() {
 
       <Form />
 
-      {/* <Separator className="mb-4 mt-8 md:mt-16" />
+      <Separator className="mb-4 mt-8 md:mt-16" />
 
-      <div className="text-foreground flex flex-col gap-8">
-        <h2 className="text-center font-bold md:text-lg">Your plans</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-6">
-            <h3 className="min-h-[40px] font-bold">Feature 1</h3>
-            <div className="flex grow flex-col justify-between gap-4">
-              <p className="text-sm opacity-80">Feature 1 description</p>
-              <div className="opacity-60 group-hover:opacity-100">Icon 1</div>
-            </div>
+      <div className="text-foreground grid w-full items-center justify-center p-4 pb-8">
+        <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>
+
+        {plans?.length > 0 ? (
+          <div className="mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan: MeetTogetherPlan) => (
+              <Link
+                href={`/calendar/meet-together/plans/${plan.id}`}
+                key={plan.title}
+                className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-bold">{plan.title}</h3>
+                  {plan?.timezone != undefined && (
+                    <div className="bg-foreground text-background rounded px-2 py-0.5 text-sm font-semibold">
+                      GMT
+                      {Intl.NumberFormat('en-US', {
+                        signDisplay: 'always',
+                      }).format(plan.timezone)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex grow flex-col justify-between gap-4">
+                  <p className="text-sm opacity-80">{plan.description}</p>
+                  <div className="opacity-60 group-hover:opacity-100">
+                    24-01-2024
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
-          <div className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-6">
-            <h3 className="min-h-[40px] font-bold">Feature 2</h3>
-            <div className="flex grow flex-col justify-between gap-4">
-              <p className="text-sm opacity-80">Feature 2 description</p>
-              <div className="opacity-60 group-hover:opacity-100">Icon 2</div>
-            </div>
-          </div>
-          <div className="border-foreground/20 hover:border-foreground group relative flex flex-col rounded-lg border p-6">
-            <h3 className="min-h-[40px] font-bold">Feature 3</h3>
-            <div className="flex grow flex-col justify-between gap-4">
-              <p className="text-sm opacity-80">Feature 3 description</p>
-              <div className="opacity-60 group-hover:opacity-100">Icon 3</div>
-            </div>
-          </div>
-        </div>
-      </div> */}
+        ) : (
+          <p className="mt-2 text-center text-sm opacity-60">
+            {t('no_plans_yet')}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

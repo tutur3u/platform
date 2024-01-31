@@ -16,7 +16,6 @@ export default function Form() {
   const [dates, setDates] = useState<Date[] | undefined>([]);
   const [startTime, setStartTime] = useState<number | undefined>(9);
   const [endTime, setEndTime] = useState<number | undefined>(17);
-
   const [timezone, setTimezone] = useState<Timezone | undefined>(undefined);
 
   useEffect(() => {

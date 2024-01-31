@@ -23,6 +23,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import dayjs from 'dayjs';
+import { useState } from 'react';
+import { toast } from '@/components/ui/use-toast';
 
 interface Props {
   plan: {
@@ -44,6 +46,9 @@ const FormSchema = z.object({
 export default function CreatePlanDialog({ plan }: Props) {
   const { t } = useTranslation('meet-together');
 
+  const [isOpened, setIsOpened] = useState(false);
+  const [creating, setCreating] = useState(false);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
@@ -63,25 +68,88 @@ export default function CreatePlanDialog({ plan }: Props) {
 
   const disabled = !isDirty || !isValid || isSubmitting;
 
-  const handleSubmit = () => {
-    console.log(plan);
-    console.log(form.getValues());
+  const handleSubmit = async () => {
+    setCreating(true);
+
+    const data = form.getValues();
+    let hasError = false;
+
+    if (!data.startTime) {
+      toast({
+        title: t('missing_fields'),
+        description: t('start_time_required'),
+      });
+      hasError = true;
+    }
+
+    if (!data.endTime) {
+      toast({
+        title: t('missing_fields'),
+        description: t('end_time_required'),
+      });
+      hasError = true;
+    }
+
+    if (!data.timezone) {
+      toast({
+        title: t('missing_fields'),
+        description: t('timezone_required'),
+      });
+      hasError = true;
+    }
+
+    if (!data.dates) {
+      toast({
+        title: t('missing_fields'),
+        description: t('dates_required'),
+      });
+      hasError = true;
+    }
+
+    if (hasError) {
+      setCreating(false);
+      return;
+    }
+
+    const res = await fetch('/api/meet-together/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+      toast({
+        title: t('plan_created'),
+        description: t('plan_created_desc'),
+      });
+      form.reset();
+    } else {
+      toast({
+        title: t('something_went_wrong'),
+        description: t('cant_create_plan_right_now'),
+      });
+    }
+
+    setCreating(false);
+    setIsOpened(false);
   };
 
   return (
-    <Dialog>
+    <Dialog
+      open={isOpened}
+      onOpenChange={(open) => {
+        if (!open) form.reset();
+        setIsOpened(open);
+      }}
+    >
       <DialogTrigger asChild>
         <button className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60">
-          {t('create-plan')}
+          {t('create_plan')}
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New plan</DialogTitle>
-          <DialogDescription>
-            Create a new plan to meet together with your friends, family, or
-            colleagues.
-          </DialogDescription>
+          <DialogTitle>{t('new_plan')}</DialogTitle>
+          <DialogDescription>{t('new_plan_desc')}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -104,8 +172,12 @@ export default function CreatePlanDialog({ plan }: Props) {
             />
 
             <DialogFooter>
-              <Button type="submit" className="w-full" disabled={disabled}>
-                Create
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={disabled || creating}
+              >
+                {creating ? t('creating_plan') : t('create_plan')}
               </Button>
             </DialogFooter>
           </form>
