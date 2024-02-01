@@ -168,21 +168,37 @@ export const getDateRangeOptions = (
 };
 
 export function timetzToTime(timetz: string) {
-  const [time, offsetStr] = timetz.split('+');
+  // Find the position of the '+' or '-' that indicates the start of the offset
+  const offsetPos = Math.max(timetz.lastIndexOf('+'), timetz.lastIndexOf('-'));
+
+  // Split the input string into the time and offset parts
+  const time = timetz.substring(0, offsetPos);
+  const offsetStr = timetz.substring(offsetPos);
+
+  // Split the time into hours and minutes
   const [hourStr, minuteStr] = time.split(':');
 
-  const hour = parseInt(hourStr);
-  const offset = parseInt(offsetStr);
+  // Parse the hour, minute, and offset as integers
+  const hour = parseInt(hourStr, 10);
+  const minute = parseInt(minuteStr, 10);
+  const offset = parseInt(offsetStr, 10);
 
-  // get current user's timezone, then show the time in that timezone
+  // Convert the offset to minutes
+  const offsetMinutes = Math.floor(offset / 100) * 60 + (offset % 100);
+
+  // Get the current date and time
   const date = new Date();
-  const userOffset = date.getTimezoneOffset() / 60;
 
-  const offsetDiff =
-    offset * userOffset > 0 ? offset - userOffset : offset + userOffset;
-  const hourDiff = hour - offsetDiff;
+  // Set the hour and minute to the input time, adjusted by the offset
+  date.setHours(hour - Math.floor(offsetMinutes / 60));
+  date.setMinutes(minute - (offsetMinutes % 60));
 
-  return `${hourDiff}:${minuteStr.padStart(2, '0')}`;
+  // Format the hour and minute with leading zeros if necessary
+  const hourFormatted = date.getHours().toString().padStart(2, '0');
+  const minuteFormatted = date.getMinutes().toString().padStart(2, '0');
+
+  // Return the time in the user's timezone
+  return `${hourFormatted}:${minuteFormatted}`;
 }
 
 export function timetzToHour(timetz?: string) {
