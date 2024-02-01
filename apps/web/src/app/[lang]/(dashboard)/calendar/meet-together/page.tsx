@@ -24,7 +24,7 @@ interface Props {
   };
 }
 
-export default async function MarketingPage({
+export default async function MeetTogetherPage({
   // params: { wsId },
   searchParams,
 }: Props) {

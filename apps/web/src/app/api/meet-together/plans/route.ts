@@ -26,8 +26,11 @@ export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
-
-  const { error } = await supabase.from('meet_together_plans').insert(data);
+  const { data: plan, error } = await supabase
+    .from('meet_together_plans')
+    .insert(data)
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -37,5 +40,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ id: plan.id, message: 'success' });
 }
