@@ -27,15 +27,19 @@ export function TimeSelector({ value, onValueChange, disabledTime }: Props) {
         <SelectValue placeholder="Select a time" />
       </SelectTrigger>
       <SelectContent className="h-48">
-        {hours.map((hour, index) => (
+        {hours.map((hour) => (
           <SelectItem
-            key={index}
+            key={hour}
             value={hour.toString()}
             disabled={hour === disabledTime}
           >
-            {index < 12
-              ? `${String(hour).padStart(2, '0')}:00 ${lang === 'vi' ? 'SA' : 'AM'}`
-              : `${String(hour - 12).padStart(2, '0')}:00 ${lang === 'vi' ? 'CH' : 'PM'}`}
+            {hour === 12
+              ? '12:00 PM'
+              : hour === 24
+                ? '12:00 AM'
+                : hour < 12
+                  ? `${String(hour).padStart(2, '0')}:00 ${lang === 'vi' ? 'SA' : 'AM'}`
+                  : `${String(hour - 12).padStart(2, '0')}:00 ${lang === 'vi' ? 'CH' : 'PM'}`}
           </SelectItem>
         ))}
       </SelectContent>

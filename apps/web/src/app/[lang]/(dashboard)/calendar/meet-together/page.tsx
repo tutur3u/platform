@@ -10,6 +10,7 @@ import {
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
+import { timetzToTime } from '@/utils/date-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +29,12 @@ export default async function MeetTogetherPage({
   // params: { wsId },
   searchParams,
 }: Props) {
-  const { t } = useTranslation('meet-together');
+  const { t, lang } = useTranslation('meet-together');
   const { data: plans, count: _, user } = await getData(searchParams);
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
+      <div className="text-foreground flex max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex flex-col items-center">
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
             {t('headline-p1')}{' '}
@@ -104,7 +105,9 @@ export default async function MeetTogetherPage({
                           key={date}
                           className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
                         >
-                          {dayjs(date).format('MMM D (ddd)')}
+                          {dayjs(date).format(
+                            `${lang === 'vi' ? 'DD/MM' : 'MMM D'} (ddd)`
+                          )}
                         </div>
                       ))}
                       {plan.dates.length > 5 && (
@@ -126,24 +129,6 @@ export default async function MeetTogetherPage({
       </div>
     </div>
   );
-}
-
-function timetzToTime(timetz: string) {
-  const [time, offsetStr] = timetz.split('+');
-  const [hourStr, minuteStr] = time.split(':');
-
-  const hour = parseInt(hourStr);
-  const offset = parseInt(offsetStr);
-
-  // get current user's timezone, then show the time in that timezone
-  const date = new Date();
-  const userOffset = date.getTimezoneOffset() / 60;
-
-  const offsetDiff =
-    offset * userOffset > 0 ? offset - userOffset : offset + userOffset;
-  const hourDiff = hour - offsetDiff;
-
-  return `${hourDiff}:${minuteStr.padStart(2, '0')}`;
 }
 
 async function getData(

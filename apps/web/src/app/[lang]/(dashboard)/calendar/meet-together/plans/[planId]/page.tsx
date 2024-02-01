@@ -3,6 +3,11 @@ import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import UtilityButtons from './utility-buttons';
+import DatePlanner from './date-planner';
+import { timetzToHour } from '@/utils/date-helper';
+import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
 
 interface Props {
   params: {
@@ -13,17 +18,61 @@ interface Props {
 export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
+  const { t } = useTranslation('meet-together-plan-details');
   const plan = await getData(planId);
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
-        <div className="flex flex-col items-center">
+    <div className="flex min-h-screen w-full flex-col items-center">
+      <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
+        <div className="flex w-full flex-col items-center">
+          <div className="flex w-full justify-start gap-2">
+            <UtilityButtons plan={plan} />
+          </div>
+
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
             <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
               {plan.name}
             </span>
           </p>
+
+          <div className="mt-8 flex w-full flex-col items-center justify-evenly gap-4 md:flex-row">
+            <div className="grid gap-2 text-center">
+              <div className="font-semibold">{t('your_availability')}</div>
+
+              <div className="flex items-center justify-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div>{t('unavailable')}</div>
+                  <div className="border-foreground/50 h-4 w-8 border bg-red-500" />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div>{t('available')}</div>
+                  <div className="border-foreground/50 h-4 w-8 border bg-green-500" />
+                </div>
+              </div>
+
+              <DatePlanner
+                dates={plan.dates}
+                start={timetzToHour(plan.start_time)}
+                end={timetzToHour(plan.end_time)}
+              />
+            </div>
+            <div className="grid gap-2 text-center">
+              <div className="font-semibold">{t('everyone_availability')}</div>
+
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <div>0/0 {t('available')}</div>
+                <div className="border-foreground/50 bg-foreground/30 h-4 w-24 border" />
+                <div>0/0 {t('available')}</div>
+              </div>
+
+              <DatePlanner
+                dates={plan.dates}
+                start={timetzToHour(plan.start_time)}
+                end={timetzToHour(plan.end_time)}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

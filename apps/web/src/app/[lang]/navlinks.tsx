@@ -9,7 +9,12 @@ export default function Navlinks() {
   const pathname = usePathname();
 
   if (pathname === '/calendar/meet-together') return null;
-  if (pathname !== '/' && pathname !== '/branding') return null;
+  if (
+    pathname !== '/' &&
+    pathname !== '/branding' &&
+    !pathname.startsWith('/calendar/meet-together/')
+  )
+    return null;
 
   return (
     <div className="left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 transform items-center justify-center gap-4 md:absolute md:grid">

@@ -129,6 +129,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         description: t('plan_created_desc'),
       });
       form.reset();
+      return;
     } else {
       toast({
         title: t('something_went_wrong'),

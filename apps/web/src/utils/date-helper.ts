@@ -166,3 +166,28 @@ export const getDateRangeOptions = (
       return [];
   }
 };
+
+export function timetzToTime(timetz: string) {
+  const [time, offsetStr] = timetz.split('+');
+  const [hourStr, minuteStr] = time.split(':');
+
+  const hour = parseInt(hourStr);
+  const offset = parseInt(offsetStr);
+
+  // get current user's timezone, then show the time in that timezone
+  const date = new Date();
+  const userOffset = date.getTimezoneOffset() / 60;
+
+  const offsetDiff =
+    offset * userOffset > 0 ? offset - userOffset : offset + userOffset;
+  const hourDiff = hour - offsetDiff;
+
+  return `${hourDiff}:${minuteStr.padStart(2, '0')}`;
+}
+
+export function timetzToHour(timetz?: string) {
+  if (!timetz) return undefined;
+  const [hourStr] = timetzToTime(timetz).split(':');
+  const hour = parseInt(hourStr);
+  return hour;
+}
