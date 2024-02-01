@@ -1,3 +1,6 @@
+'use client';
+
+import { timetzToHour } from '@/utils/date-helper';
 import DayPlanner from './day-planner';
 import TimeColumn from './time-column';
 
@@ -7,16 +10,19 @@ export default function DatePlanner({
   end,
 }: {
   dates?: string[];
-  start?: number;
-  end?: number;
+  start?: string;
+  end?: string;
 }) {
-  if (!start || !end) return null;
+  const startHour = timetzToHour(start);
+  const endHour = timetzToHour(end);
+
+  if (!startHour || !endHour) return null;
 
   return (
     <div className="mt-4 flex items-start justify-center gap-2">
-      <TimeColumn start={start} end={end} />
+      <TimeColumn start={startHour} end={endHour} />
       {dates?.map((d) => (
-        <DayPlanner key={d} date={d} start={start} end={end} />
+        <DayPlanner key={d} date={d} start={startHour} end={endHour} />
       ))}
     </div>
   );

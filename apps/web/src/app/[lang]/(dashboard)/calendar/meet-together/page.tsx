@@ -10,7 +10,7 @@ import {
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
-import { timetzToTime } from '@/utils/date-helper';
+import UserTime from './user-time';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,8 +88,8 @@ export default async function MeetTogetherPage({
                   {plan.start_time && plan.end_time && (
                     <div className="opacity-60 group-hover:opacity-100">
                       <span className="font-semibold">
-                        {timetzToTime(plan.start_time)} -{' '}
-                        {timetzToTime(plan.end_time)}
+                        <UserTime time={plan.start_time} /> -{' '}
+                        <UserTime time={plan.end_time} />
                       </span>{' '}
                       ({t('local_time')})
                     </div>

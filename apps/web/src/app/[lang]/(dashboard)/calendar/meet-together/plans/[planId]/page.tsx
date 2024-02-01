@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import UtilityButtons from './utility-buttons';
 import DatePlanner from './date-planner';
-import { timetzToHour } from '@/utils/date-helper';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 
@@ -53,8 +52,8 @@ export default async function MeetTogetherPlanDetailsPage({
 
               <DatePlanner
                 dates={plan.dates}
-                start={timetzToHour(plan.start_time)}
-                end={timetzToHour(plan.end_time)}
+                start={plan.start_time}
+                end={plan.end_time}
               />
             </div>
             <div className="grid gap-2 text-center">
@@ -68,8 +67,8 @@ export default async function MeetTogetherPlanDetailsPage({
 
               <DatePlanner
                 dates={plan.dates}
-                start={timetzToHour(plan.start_time)}
-                end={timetzToHour(plan.end_time)}
+                start={plan.start_time}
+                end={plan.end_time}
               />
             </div>
           </div>
