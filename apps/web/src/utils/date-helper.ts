@@ -183,15 +183,18 @@ export function timetzToTime(timetz: string) {
   const minute = parseInt(minuteStr, 10);
   const offset = parseInt(offsetStr, 10);
 
-  // Convert the offset to minutes
-  const offsetMinutes = Math.floor(offset / 100) * 60 + (offset % 100);
-
   // Get the current date and time
   const date = new Date();
 
-  // Set the hour and minute to the input time, adjusted by the offset
-  date.setHours(hour - Math.floor(offsetMinutes / 60));
-  date.setMinutes(minute - (offsetMinutes % 60));
+  // Get the current user's timezone offset in hours
+  const currentUserOffset = -date.getTimezoneOffset() / 60;
+
+  // Calculate the difference between the user's timezone and the offset
+  const offsetDiff = currentUserOffset - offset;
+
+  // Set the hour and minute to the input time, adjusted by the offset difference
+  date.setHours(hour + offsetDiff);
+  date.setMinutes(minute);
 
   // Format the hour and minute with leading zeros if necessary
   const hourFormatted = date.getHours().toString().padStart(2, '0');
