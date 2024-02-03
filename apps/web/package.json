@@ -26,7 +26,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.12.7",
+    "@anthropic-ai/sdk": "^0.13.0",
     "@emotion/react": "^11.11.3",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.0",
@@ -113,7 +113,7 @@
     "react-intersection-observer": "^9.6.0",
     "react-markdown": "^9.0.1",
     "react-resizable": "^3.0.5",
-    "react-resizable-panels": "^2.0.2",
+    "react-resizable-panels": "^2.0.3",
     "react-syntax-highlighter": "^15.5.0",
     "react-textarea-autosize": "^8.5.3",
     "rehype-katex": "^7.0.0",
@@ -137,7 +137,7 @@
     "@types/lodash": "^4.14.202",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^20.11.16",
-    "@types/react": "^18.2.51",
+    "@types/react": "^18.2.52",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.18",
     "@types/react-resizable": "^3.0.7",
