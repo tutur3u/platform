@@ -14,7 +14,7 @@ export default function UtilityButtons({ plan }: { plan: MeetTogetherPlan }) {
     setUrl(`${window.location.origin}${pathname}`);
   }, [pathname]);
 
-  if (!plan?.id || !url) return null;
+  if (!plan?.id) return null;
 
   return (
     <>

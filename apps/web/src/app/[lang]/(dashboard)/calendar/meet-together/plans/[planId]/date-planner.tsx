@@ -10,11 +10,13 @@ export default function DatePlanner({
   start,
   end,
   editable = false,
+  disabled = false,
 }: {
   dates?: string[];
   start?: string;
   end?: string;
   editable?: boolean;
+  disabled?: boolean;
 }) {
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
@@ -23,7 +25,11 @@ export default function DatePlanner({
 
   return (
     <div className="mt-4 flex items-start justify-center gap-2">
-      <TimeColumn start={startHour} end={endHour} />
+      <TimeColumn
+        id={editable ? 'self' : 'group'}
+        start={startHour}
+        end={endHour}
+      />
 
       {dates && (
         <TimeBlockingProvider>
@@ -32,6 +38,7 @@ export default function DatePlanner({
             start={startHour}
             end={endHour}
             editable={editable}
+            disabled={disabled}
           />
         </TimeBlockingProvider>
       )}

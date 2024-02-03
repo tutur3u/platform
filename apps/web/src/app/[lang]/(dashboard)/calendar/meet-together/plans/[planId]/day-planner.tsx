@@ -8,11 +8,13 @@ export default function DayPlanner({
   start,
   end,
   editable,
+  disabled,
 }: {
   date: string;
   start: number;
   end: number;
   editable: boolean;
+  disabled: boolean;
 }) {
   const { lang } = useTranslation();
   dayjs.locale(lang);
@@ -26,7 +28,13 @@ export default function DayPlanner({
         <div className="text-lg font-semibold">{dayjs(date).format('ddd')}</div>
       </div>
 
-      <DayTime date={date} start={start} end={end} editable={editable} />
+      <DayTime
+        date={date}
+        start={start}
+        end={end}
+        editable={editable}
+        disabled={disabled}
+      />
     </div>
   );
 }

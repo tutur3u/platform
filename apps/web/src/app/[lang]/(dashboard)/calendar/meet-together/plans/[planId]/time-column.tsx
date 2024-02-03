@@ -1,9 +1,11 @@
 import useTranslation from 'next-translate/useTranslation';
 
 export default function TimeColumn({
+  id,
   start,
   end,
 }: {
+  id: string;
   start: number;
   end: number;
 }) {
@@ -23,7 +25,7 @@ export default function TimeColumn({
           .flatMap((i) => [i, i, i, i])
           .map((hr, i) => (
             <div
-              key={hr}
+              key={`${id}-${hr}-${i}`}
               className={`relative h-2 w-16 ${
                 hr === 0
                   ? ''

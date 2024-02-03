@@ -5,11 +5,13 @@ export default function DayTime({
   start,
   end,
   editable,
+  disabled,
 }: {
   date: string;
   start: number;
   end: number;
   editable: boolean;
+  disabled: boolean;
 }) {
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
 
@@ -34,7 +36,7 @@ export default function DayTime({
           <div
             key={`${date}-${i}`}
             onMouseDownCapture={
-              editable
+              editable && !disabled
                 ? () =>
                     startEditing({
                       selecting: !isTimeBlockSelected(i),
@@ -45,21 +47,25 @@ export default function DayTime({
                     })
                 : undefined
             }
-            onMouseUpCapture={editable ? endEditing : undefined}
+            onMouseUpCapture={editable && !disabled ? endEditing : undefined}
             onClick={
-              editable
+              editable && !disabled
                 ? () => toggleTimeBlock({ date, timeBlock: i })
                 : undefined
             }
             onMouseMove={
-              editable
+              editable && !disabled
                 ? () => {
                     if (editing) toggleTimeBlock({ date, timeBlock: i });
                   }
                 : undefined
             }
-            onDrag={editable ? (e) => e.preventDefault() : undefined}
-            onSelect={editable ? (e) => e.preventDefault() : undefined}
+            onDrag={
+              editable && !disabled ? (e) => e.preventDefault() : undefined
+            }
+            onSelect={
+              editable && !disabled ? (e) => e.preventDefault() : undefined
+            }
             className={`${
               i + 4 <= array.length - 1
                 ? isTimeBlockSelected(i)

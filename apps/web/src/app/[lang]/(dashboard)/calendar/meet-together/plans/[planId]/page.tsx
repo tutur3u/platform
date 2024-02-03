@@ -7,6 +7,7 @@ import UtilityButtons from './utility-buttons';
 import DatePlanner from './date-planner';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
+import PlanLogin from './plan-login';
 
 interface Props {
   params: {
@@ -35,28 +36,8 @@ export default async function MeetTogetherPlanDetailsPage({
           </p>
 
           <div className="mt-8 flex w-full flex-col items-center justify-evenly gap-4 md:flex-row">
-            <div className="grid gap-2 text-center">
-              <div className="font-semibold">{t('your_availability')}</div>
+            <PlanLogin plan={plan} />
 
-              <div className="flex items-center justify-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div>{t('unavailable')}</div>
-                  <div className="border-foreground/50 h-4 w-8 border bg-red-500/20" />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div>{t('available')}</div>
-                  <div className="border-foreground/50 h-4 w-8 border bg-green-500/70" />
-                </div>
-              </div>
-
-              <DatePlanner
-                dates={plan.dates}
-                start={plan.start_time}
-                end={plan.end_time}
-                editable
-              />
-            </div>
             <div className="grid gap-2 text-center">
               <div className="font-semibold">{t('everyone_availability')}</div>
 

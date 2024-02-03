@@ -24,6 +24,7 @@ export default function CopyLinkButton({ url }: { url: string }) {
         setCopied(true);
       }}
       variant={copied ? 'secondary' : 'default'}
+      disabled={copied || !url}
     >
       {copied ? (
         <Check className="mr-1 h-5 w-5" />

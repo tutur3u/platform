@@ -15,10 +15,14 @@ export default function EmailButton({
 
   return (
     <Link
-      href={`mailto:?subject=${t('common:meet-together')}: ${plan.name}&body=${t('mail_p1')},%0A%0A${t('mail_p2')} "${plan.name}".%0A%0A${t('mail_p3')} ${url} ${t('mail_p4')}.%0A%0A${t('mail_p5')}!`}
+      href={
+        url
+          ? `mailto:?subject=${t('common:meet-together')}: ${plan.name}&body=${t('mail_p1')},%0A%0A${t('mail_p2')} "${plan.name}".%0A%0A${t('mail_p3')} ${url} ${t('mail_p4')}.%0A%0A${t('mail_p5')}!`
+          : '#'
+      }
       target="_blank"
     >
-      <Button variant="outline">
+      <Button variant="outline" disabled={!url}>
         <Mail className="mr-1 h-5 w-5" />
         {t('send_email')}
       </Button>

@@ -9,5 +9,11 @@
   "your_availability": "Khung giờ bạn rảnh",
   "everyone_availability": "Khung giờ mọi người rảnh",
   "available": "Rảnh",
-  "unavailable": "Không rảnh"
+  "unavailable": "Không rảnh",
+  "identity_protection": "Bảo vệ danh tính",
+  "identity_protection_desc": "Sử dụng tài khoản khách và tùy chọn đặt mật khẩu cho kế hoạch này để bảo vệ danh tính của bạn.",
+  "your_name": "Tên của bạn",
+  "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này.",
+  "password": "Mật khẩu (không bắt buộc)",
+  "password_desc": "Ngăn người khác sử dụng tên của bạn trong kế hoạch này mà không có sự cho phép của bạn."
 }

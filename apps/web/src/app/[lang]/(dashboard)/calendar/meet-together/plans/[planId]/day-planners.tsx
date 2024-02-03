@@ -5,12 +5,14 @@ export default function DayPlanners({
   dates,
   start,
   end,
-  editable ,
+  editable,
+  disabled,
 }: {
   dates: string[];
   start: number;
   end: number;
   editable: boolean;
+  disabled: boolean;
 }) {
   const { endEditing } = useTimeBlocking();
 
@@ -20,7 +22,14 @@ export default function DayPlanners({
       onMouseLeave={endEditing}
     >
       {dates.map((d) => (
-        <DayPlanner key={d} date={d} start={start} end={end} editable={editable} />
+        <DayPlanner
+          key={d}
+          date={d}
+          start={start}
+          end={end}
+          editable={editable}
+          disabled={disabled}
+        />
       ))}
     </div>
   );

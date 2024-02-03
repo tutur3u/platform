@@ -9,5 +9,11 @@
   "your_availability": "Your availability",
   "everyone_availability": "Everyone's availability",
   "available": "Available",
-  "unavailable": "Unavailable"
+  "unavailable": "Unavailable",
+  "identity_protection": "Identity protection",
+  "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
+  "your_name": "Your name",
+  "your_name_desc": "This is how others will see you in this plan.",
+  "password": "Password (optional)",
+  "password_desc": "Prevent others from using your name in this plan without your permission."
 }
