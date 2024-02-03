@@ -4,17 +4,22 @@ import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import CopyLinkButton from './copy-link-button';
 import EmailButton from './email-button';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function UtilityButtons({ plan }: { plan: MeetTogetherPlan }) {
   const pathname = usePathname();
-  const currentUrl = `${window.location.origin}${pathname}`;
+  const [url, setUrl] = useState('');
 
-  if (!plan?.id) return null;
+  useEffect(() => {
+    setUrl(`${window.location.origin}${pathname}`);
+  }, [pathname]);
+
+  if (!plan?.id || !url) return null;
 
   return (
     <>
-      <CopyLinkButton url={currentUrl} />
-      <EmailButton plan={plan} url={currentUrl} />
+      <CopyLinkButton url={url} />
+      <EmailButton plan={plan} url={url} />
     </>
   );
 }
