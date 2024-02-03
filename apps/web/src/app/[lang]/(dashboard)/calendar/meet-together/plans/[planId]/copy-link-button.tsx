@@ -13,7 +13,7 @@ export default function CopyLinkButton({ url }: { url: string }) {
     if (copied) {
       setTimeout(() => {
         setCopied(false);
-      }, 2000);
+      }, 3000);
     }
   }, [copied]);
 
@@ -23,6 +23,7 @@ export default function CopyLinkButton({ url }: { url: string }) {
         navigator.clipboard.writeText(url);
         setCopied(true);
       }}
+      variant={copied ? 'secondary' : 'default'}
     >
       {copied ? (
         <Check className="mr-1 h-5 w-5" />
