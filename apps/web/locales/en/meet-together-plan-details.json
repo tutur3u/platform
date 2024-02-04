@@ -1,0 +1,19 @@
+{
+  "copy_link": "Copy link",
+  "send_email": "Send email",
+  "mail_p1": "Hi everyone",
+  "mail_p2": "I'm setting up a meet together plan for us to help figure out when we're all available for",
+  "mail_p3": "Please visit",
+  "mail_p4": "to add your availability and make it easier for everyone to meet together. Thank you",
+  "mail_p5": "Cheers",
+  "your_availability": "Your availability",
+  "everyone_availability": "Everyone's availability",
+  "available": "Available",
+  "unavailable": "Unavailable",
+  "identity_protection": "Identity protection",
+  "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
+  "your_name": "Your name",
+  "your_name_desc": "This is how others will see you in this plan.",
+  "password": "Password (optional)",
+  "password_desc": "Prevent others from using your name in this plan without your permission."
+}

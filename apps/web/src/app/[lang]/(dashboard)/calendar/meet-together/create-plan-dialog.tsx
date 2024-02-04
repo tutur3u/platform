@@ -120,12 +120,16 @@ export default function CreatePlanDialog({ plan }: Props) {
     });
 
     if (res.ok) {
-      router.refresh(); // TODO: redirect to the new plan
+      const { id } = await res.json();
+      const normalizedId = id.replace(/-/g, '');
+      router.push(`/calendar/meet-together/plans/${normalizedId}`);
+      router.refresh();
       toast({
         title: t('plan_created'),
         description: t('plan_created_desc'),
       });
       form.reset();
+      return;
     } else {
       toast({
         title: t('something_went_wrong'),
