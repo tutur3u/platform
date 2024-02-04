@@ -39,7 +39,7 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
   const [isOpened, setIsOpened] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  //   const [useGuest, setUseGuest] = useState(true);
+  const [useGuest, setUseGuest] = useState(true);
   const [user, setUser] = useState<{
     id: string;
     name: string;
@@ -53,32 +53,33 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    setUser({ id: 'test', name: values.guestName });
-    setIsOpened(false);
+    setUseGuest(true);
 
-    // setUseGuest(true);
+    if (useGuest) {
+      const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: values.guestName,
+          password: values.guestPassword,
+        }),
+      });
 
-    // if (useGuest) {
-    //   const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({
-    //       name: values.guestName,
-    //       password: values.guestPassword,
-    //     }),
-    //   });
-
-    //   if (res.ok) {
-    //     setIsOpened(false);
-    //   } else {
-    //     const data = await res.json();
-    //     form.setError('guestName', { message: data.message });
-    //   }
-    // }
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setIsOpened(false);
+      } else {
+        const data = await res.json();
+        form.setValue('guestPassword', '');
+        form.setError('guestPassword', { message: data.message });
+        setLoading(false);
+      }
+    }
   }
 
   const missingFields = !form.getValues().guestName;
@@ -87,7 +88,9 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
     <Dialog
       open={isOpened}
       onOpenChange={(open) => {
-        if (!open) form.reset();
+        setLoading(false);
+        form.reset();
+
         if (!user) setIsOpened(open);
       }}
     >
