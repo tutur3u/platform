@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/client';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,26 +59,15 @@ export async function POST(
 
   // If guest does not exist, create a new one
   if (!guest?.name) {
-    const salt = Math.random().toString(36).substring(2, 15);
-    const passwordWithSalt = password + salt;
-
-    // use native crypto to hash the password
-    const hashedPassword = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(passwordWithSalt)
-    );
-
-    const hashedPasswordStr = new Uint8Array(hashedPassword).join('');
-    const hashedPasswordHex = parseInt(hashedPasswordStr)
-      .toString(16)
-      .replace(/0+$/, '');
+    const salt = generateSalt();
+    const hashedPassword = await hashPassword(password, salt);
 
     const { data, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
         name,
         plan_id: planId,
-        password_hash: hashedPasswordHex,
+        password_hash: hashedPassword,
         password_salt: salt,
       })
       .select('name')
@@ -101,22 +91,8 @@ export async function POST(
   }
 
   // If guest exists, check password
-  const passwordWithSalt = password + guest.password_salt;
-
-  const hashedPassword = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(passwordWithSalt)
-  );
-
-  const hashedPasswordArray = new Uint8Array(hashedPassword).join('');
-  const hashedPasswordHex = parseInt(hashedPasswordArray)
-    .toString(16)
-    .replace(/0+$/, '');
-
-  console.log('hashedPassword', hashedPasswordHex);
-  console.log('guest.password_hash', guest.password_hash);
-
-  if (hashedPasswordHex === guest.password_hash)
+  const hashedPassword = await hashPassword(password, guest.password_salt);
+  if (hashedPassword === guest.password_hash)
     return NextResponse.json({
       user: {
         name: guest.name,
@@ -126,4 +102,27 @@ export async function POST(
     });
 
   return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+}
+
+function generateSalt() {
+  return crypto.randomBytes(10).toString('hex');
+}
+
+async function hashPassword(password: string, salt: string) {
+  // concatenate the password and salt
+  const passwordWithSalt = password + salt;
+
+  // use native crypto to hash the password
+  const hashedPassword = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(passwordWithSalt)
+  );
+
+  // convert the hashed password to a string
+  const hashedPasswordStr = new Uint8Array(hashedPassword).join('');
+  const hashedPasswordHex = parseInt(hashedPasswordStr)
+    .toString(16)
+    .replace(/0+$/, '');
+
+  return hashedPasswordHex;
 }
