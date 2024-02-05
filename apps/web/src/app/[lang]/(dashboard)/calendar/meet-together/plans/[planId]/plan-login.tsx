@@ -27,6 +27,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 import AvailabilityPlanner from './availability-planner';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { useTimeBlocking } from './time-blocking-provider';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
@@ -35,50 +36,42 @@ const formSchema = z.object({
 
 export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
   const { t } = useTranslation('meet-together-plan-details');
+  const { user, showLogin, setUser, setShowLogin } = useTimeBlocking();
 
-  const [isOpened, setIsOpened] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const [useGuest, setUseGuest] = useState(true);
-  const [user, setUser] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      guestName: '',
+      guestName: user?.name ?? '',
       guestPassword: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    setUseGuest(true);
 
-    if (useGuest) {
-      const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: values.guestName,
-          password: values.guestPassword,
-        }),
-      });
+    const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: values.guestName,
+        password: values.guestPassword,
+      }),
+    });
 
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setIsOpened(false);
-      } else {
-        const data = await res.json();
-        form.setValue('guestPassword', '');
-        form.setError('guestPassword', { message: data.message });
-        setLoading(false);
-      }
+    if (res.ok) {
+      const data = await res.json();
+      setUser(data.user);
+      setLoading(false);
+      setShowLogin(false);
+    } else {
+      const data = await res.json();
+      form.setValue('guestPassword', '');
+      form.setError('guestPassword', { message: data.message });
+      setLoading(false);
     }
   }
 
@@ -86,12 +79,11 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
 
   return (
     <Dialog
-      open={isOpened}
+      open={showLogin}
       onOpenChange={(open) => {
-        setLoading(false);
         form.reset();
-
-        if (!user) setIsOpened(open);
+        setLoading(false);
+        setShowLogin(open);
       }}
     >
       <DialogTrigger asChild={!!user}>

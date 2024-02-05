@@ -8,6 +8,7 @@ import DatePlanner from './date-planner';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import PlanLogin from './plan-login';
+import { TimeBlockingProvider } from './time-blocking-provider';
 
 interface Props {
   params: {
@@ -25,35 +26,35 @@ export default async function MeetTogetherPlanDetailsPage({
     <div className="flex min-h-screen w-full flex-col items-center">
       <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex w-full flex-col items-center">
-          <div className="flex w-full justify-start gap-2">
+          <TimeBlockingProvider>
             <UtilityButtons plan={plan} />
-          </div>
 
-          <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
-            <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
+            <p className="my-4 max-w-xl text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
               {plan.name}
-            </span>
-          </p>
+            </p>
 
-          <div className="mt-8 flex w-full flex-col items-center justify-evenly gap-4 md:flex-row">
-            <PlanLogin plan={plan} />
+            <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
+              <PlanLogin plan={plan} />
 
-            <div className="grid gap-2 text-center">
-              <div className="font-semibold">{t('everyone_availability')}</div>
+              <div className="grid gap-2 text-center">
+                <div className="font-semibold">
+                  {t('everyone_availability')}
+                </div>
 
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <div>0/0 {t('available')}</div>
-                <div className="border-foreground/50 bg-foreground/20 h-4 w-24 border" />
-                <div>0/0 {t('available')}</div>
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <div>0/0 {t('available')}</div>
+                  <div className="border-foreground/50 bg-foreground/10 h-4 w-24 border" />
+                  <div>0/0 {t('available')}</div>
+                </div>
+
+                <DatePlanner
+                  dates={plan.dates}
+                  start={plan.start_time}
+                  end={plan.end_time}
+                />
               </div>
-
-              <DatePlanner
-                dates={plan.dates}
-                start={plan.start_time}
-                end={plan.end_time}
-              />
             </div>
-          </div>
+          </TimeBlockingProvider>
         </div>
       </div>
     </div>

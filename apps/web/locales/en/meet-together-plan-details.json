@@ -15,5 +15,10 @@
   "your_name": "Your name",
   "your_name_desc": "This is how others will see you in this plan.",
   "password": "Password (optional)",
-  "password_desc": "Prevent others from using your name in this plan without your permission."
+  "password_desc": "Prevent others from using your name in this plan without your permission.",
+  "viewing_as": "Viewing as",
+  "anonymous": "Anonymous",
+  "interacting_as": "Interacting as",
+  "guest": "Guest",
+  "switch_account": "Switch account"
 }

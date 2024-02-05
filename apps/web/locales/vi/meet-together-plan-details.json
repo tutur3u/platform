@@ -15,5 +15,10 @@
   "your_name": "Tên của bạn",
   "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này.",
   "password": "Mật khẩu (không bắt buộc)",
-  "password_desc": "Ngăn người khác sử dụng tên của bạn trong kế hoạch này mà không có sự cho phép của bạn."
+  "password_desc": "Ngăn người khác sử dụng tên của bạn trong kế hoạch này mà không có sự cho phép của bạn.",
+  "viewing_as": "Đang xem bằng",
+  "anonymous": "Chế độ ẩn danh",
+  "interacting_as": "Đang tương tác bằng",
+  "guest": "Khách",
+  "switch_account": "Chuyển tài khoản"
 }

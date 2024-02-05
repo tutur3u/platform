@@ -23,7 +23,6 @@ export default function CopyLinkButton({ url }: { url: string }) {
         navigator.clipboard.writeText(url);
         setCopied(true);
       }}
-      variant={copied ? 'secondary' : 'default'}
       disabled={copied || !url}
     >
       {copied ? (

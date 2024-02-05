@@ -2,8 +2,8 @@
 
 import { timetzToHour } from '@/utils/date-helper';
 import TimeColumn from './time-column';
-import { TimeBlockingProvider } from './time-blocking-provider';
 import DayPlanners from './day-planners';
+import Debugger from './debugger';
 
 export default function DatePlanner({
   dates,
@@ -32,7 +32,7 @@ export default function DatePlanner({
       />
 
       {dates && (
-        <TimeBlockingProvider>
+        <div className="flex flex-col items-start justify-start gap-4">
           <DayPlanners
             dates={dates}
             start={startHour}
@@ -40,7 +40,8 @@ export default function DatePlanner({
             editable={editable}
             disabled={disabled}
           />
-        </TimeBlockingProvider>
+          {editable && <Debugger startTime={startHour} endTime={endHour} />}
+        </div>
       )}
     </div>
   );
