@@ -96,7 +96,7 @@
     "embla-carousel-react": "8.0.0-rc22",
     "eventsource-parser": "^1.1.1",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.321.0",
+    "lucide-react": "^0.322.0",
     "moment": "^2.30.1",
     "nanoid": "^5.0.5",
     "negotiator": "^0.6.3",
