@@ -44,7 +44,7 @@ export async function POST(
   // Fetch guest by name and planId
   const { data: guest, error } = await sbAdmin
     .from('meet_together_guests')
-    .select('name, password_hash, password_salt')
+    .select('id, name, password_hash, password_salt')
     .eq('plan_id', planId)
     .eq('name', name)
     .maybeSingle();
@@ -95,8 +95,11 @@ export async function POST(
   if (hashedPassword === guest.password_hash)
     return NextResponse.json({
       user: {
+        id: guest.id,
         name: guest.name,
-        plan_id: planId,
+        passwordHash: hashedPassword,
+        planId,
+        isGuest: true,
       },
       message: 'Logged in',
     });
