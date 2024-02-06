@@ -65,6 +65,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
+        id: `${rawPlanId}-${name}`,
         name,
         plan_id: planId,
         password_hash: hashedPassword,

@@ -18,8 +18,6 @@
   "end_time_required": "Vui lòng chọn thời gian kết thúc",
   "timezone_required": "Vui lòng chọn múi giờ",
   "dates_required": "Vui lòng chọn ít nhất một ngày",
-  "plan_created": "Kế hoạch đã được tạo",
-  "plan_created_desc": "Bạn sẽ được chuyển hướng trong giây lát.",
   "something_went_wrong": "Đã có lỗi xảy ra",
   "cant_create_plan_right_now": "Chúng tôi không thể tạo kế hoạch của bạn lúc này. Vui lòng thử lại sau.",
   "local_time": "Giờ địa phương",

@@ -124,21 +124,13 @@ export default function CreatePlanDialog({ plan }: Props) {
       const normalizedId = id.replace(/-/g, '');
       router.push(`/calendar/meet-together/plans/${normalizedId}`);
       router.refresh();
-      toast({
-        title: t('plan_created'),
-        description: t('plan_created_desc'),
-      });
-      form.reset();
-      return;
     } else {
+      setCreating(false);
       toast({
         title: t('something_went_wrong'),
         description: t('cant_create_plan_right_now'),
       });
     }
-
-    setCreating(false);
-    setIsOpened(false);
   };
 
   const missingFields =
@@ -157,7 +149,7 @@ export default function CreatePlanDialog({ plan }: Props) {
           className={`relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60 ${
             missingFields ? 'cursor-not-allowed opacity-30' : ''
           }`}
-          disabled={missingFields}
+          disabled={missingFields || creating}
         >
           {t('create_plan')}
         </button>
