@@ -181,7 +181,7 @@ importers:
         version: 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-link':
         specifier: ^2.2.1
-        version: 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
+        version: 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
       '@tiptap/extension-subscript':
         specifier: ^2.2.1
         version: 2.2.1(@tiptap/core@2.2.1)
@@ -195,14 +195,14 @@ importers:
         specifier: ^2.2.1
         version: 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/pm':
-        specifier: ^2.2.1
-        version: 2.2.1
+        specifier: ^2.2.2
+        version: 2.2.2
       '@tiptap/react':
         specifier: ^2.2.1
-        version: 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)(react-dom@18.2.0)(react@18.2.0)
+        version: 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)(react-dom@18.2.0)(react@18.2.0)
       '@tiptap/starter-kit':
         specifier: ^2.2.1
-        version: 2.2.1(@tiptap/pm@2.2.1)
+        version: 2.2.1(@tiptap/pm@2.2.2)
       '@upstash/qstash':
         specifier: ^2.3.0
         version: 2.3.0
@@ -1133,8 +1133,8 @@ packages:
       '@mantine/hooks': 6.0.21(react@18.2.0)
       '@mantine/utils': 6.0.21(react@18.2.0)
       '@tabler/icons-react': 2.47.0(react@18.2.0)
-      '@tiptap/extension-link': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
-      '@tiptap/react': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)(react-dom@18.2.0)(react@18.2.0)
+      '@tiptap/extension-link': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
+      '@tiptap/react': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
     dev: false
 
@@ -3219,12 +3219,12 @@ packages:
     engines: {node: '>=12.4.0'}
     dev: false
 
-  /@tiptap/core@2.2.1(@tiptap/pm@2.2.1):
+  /@tiptap/core@2.2.1(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-9G6N2d5q4M5i/elK61qu28uO5MBDKEbStQnHuVKNe+LVNpb6xZal1AcIilmq1FVeuCUh3kYl3cFH3nBQOXtZUw==}
     peerDependencies:
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/pm': 2.2.1
+      '@tiptap/pm': 2.2.2
     dev: false
 
   /@tiptap/extension-blockquote@2.2.1(@tiptap/core@2.2.1):
@@ -3232,7 +3232,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-bold@2.2.1(@tiptap/core@2.2.1):
@@ -3240,17 +3240,17 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/extension-bubble-menu@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-bubble-menu@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-FQO1CDS777E34T8jwnYDBz3VmGyVzv3Olj0o01c3fHR7OSnA7urAxx+z9Z4CWqUJhRMV9td0v0wiZjQ4q1DdYw==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
       tippy.js: 6.3.7
     dev: false
 
@@ -3259,17 +3259,17 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/extension-code-block@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-code-block@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-8Urq8OvdBXDs8cX7Tgw71uyHQknqOeEgU0w4PvhFlOnDKUyehiUGys86k/NUJwP2P9O+YGToM3sVJF0ONdlNGQ==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
     dev: false
 
   /@tiptap/extension-code@2.2.1(@tiptap/core@2.2.1):
@@ -3277,7 +3277,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-document@2.2.1(@tiptap/core@2.2.1):
@@ -3285,38 +3285,38 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/extension-dropcursor@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-dropcursor@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-Y9MmqRv0MMzhy8efVvHV1zAwr4oEiodggYOLC8Vav0IubWXqd8mVDCdz3DjEqGOdeR9Qy/zt4ohQlbkRno9twA==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
     dev: false
 
-  /@tiptap/extension-floating-menu@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-floating-menu@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-2lQaEIUbexw8yCGDLxNqhCwpZMoclnDtAdObDKCgufLcA+tVSdVirfcx7HJZ4kmRXmUhdG3uvawQVchZJ7FGiw==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
       tippy.js: 6.3.7
     dev: false
 
-  /@tiptap/extension-gapcursor@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-gapcursor@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-/OCQDwa1/LwFVEFWCkU4dnUt4pGt1IJKOEzT2JETrRQB4VzP1flIpwPAy5tJ3i2abkCZtnEGOJ5ZsXC01LgOxg==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
     dev: false
 
   /@tiptap/extension-hard-break@2.2.1(@tiptap/core@2.2.1):
@@ -3324,7 +3324,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-heading@2.2.1(@tiptap/core@2.2.1):
@@ -3332,7 +3332,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-highlight@2.2.1(@tiptap/core@2.2.1):
@@ -3340,27 +3340,27 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/extension-history@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-history@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-MZyIKWgNLzsEysyzWwsUE705+x4GRuLluS5cWGzZ/CKjSEUO152DVlM50MPpKqH+o1SW3cR7RUvDPJlpM7Lymw==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
     dev: false
 
-  /@tiptap/extension-horizontal-rule@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-horizontal-rule@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-M6mi6CPMeO/1i/0qqEIVbObB3VDT6HhO4cxvjiaWxRXsU+79kdvx33Mk6GHKuXZizAYN1qxeM7byAtFiRu/aIw==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
     dev: false
 
   /@tiptap/extension-italic@2.2.1(@tiptap/core@2.2.1):
@@ -3368,17 +3368,17 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/extension-link@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1):
+  /@tiptap/extension-link@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-3oh+tRFGtj3Scv3i6FBJOakX650NBI+cmemJxggaiH8PPw3+q+eZneqDQHqINcgel5/HQXFdXWSpfYsZi7EDoQ==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
       linkifyjs: 4.1.3
     dev: false
 
@@ -3387,7 +3387,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-ordered-list@2.2.1(@tiptap/core@2.2.1):
@@ -3395,7 +3395,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-paragraph@2.2.1(@tiptap/core@2.2.1):
@@ -3403,7 +3403,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-strike@2.2.1(@tiptap/core@2.2.1):
@@ -3411,7 +3411,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-subscript@2.2.1(@tiptap/core@2.2.1):
@@ -3419,7 +3419,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-superscript@2.2.1(@tiptap/core@2.2.1):
@@ -3427,7 +3427,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-text-align@2.2.1(@tiptap/core@2.2.1):
@@ -3435,7 +3435,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-text@2.2.1(@tiptap/core@2.2.1):
@@ -3443,7 +3443,7 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
   /@tiptap/extension-underline@2.2.1(@tiptap/core@2.2.1):
@@ -3451,11 +3451,11 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
     dev: false
 
-  /@tiptap/pm@2.2.1:
-    resolution: {integrity: sha512-jfbrvUlDZ5t6zgk7pXT6GtHX7v48PL6K9TfDEzROywJS2iXSt/0iHUi2Ap8u8hvfv4rBDO7m7LVLS0+rRa5Cyg==}
+  /@tiptap/pm@2.2.2:
+    resolution: {integrity: sha512-TcUxqevVcqLYOcbAGlmvZfOB5LL5zZmb6jxSHyevl41SRpGZLe9Jt0e1v98jS0o9GMS7nvcTK/scYQu9e0HqTA==}
     dependencies:
       prosemirror-changeset: 2.2.1
       prosemirror-collab: 1.3.1
@@ -3477,7 +3477,7 @@ packages:
       prosemirror-view: 1.32.7
     dev: false
 
-  /@tiptap/react@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)(react-dom@18.2.0)(react@18.2.0):
+  /@tiptap/react@2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-bKrW38l1mezJDAjQzDTOAXu0RFjNkGl7QR0n0tYjLsOinlUjNIKFAmOe9+Qy/bxvfsQWlPDOSSGjRYafe5zvVA==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
@@ -3485,30 +3485,30 @@ packages:
       react: ^17.0.0 || ^18.0.0
       react-dom: ^17.0.0 || ^18.0.0
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
-      '@tiptap/extension-bubble-menu': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
-      '@tiptap/extension-floating-menu': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
-      '@tiptap/pm': 2.2.1
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
+      '@tiptap/extension-bubble-menu': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
+      '@tiptap/extension-floating-menu': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
+      '@tiptap/pm': 2.2.2
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@tiptap/starter-kit@2.2.1(@tiptap/pm@2.2.1):
+  /@tiptap/starter-kit@2.2.1(@tiptap/pm@2.2.2):
     resolution: {integrity: sha512-x6Xm5KnecorskpCSdDxaPDU2kSB4cWCy/DCEANbOrVyj1ukg8mEnVPkW6/v4LzqJHZb0Ah9rKVOQw9oOeoFb9A==}
     dependencies:
-      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.1)
+      '@tiptap/core': 2.2.1(@tiptap/pm@2.2.2)
       '@tiptap/extension-blockquote': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-bold': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-bullet-list': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-code': 2.2.1(@tiptap/core@2.2.1)
-      '@tiptap/extension-code-block': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
+      '@tiptap/extension-code-block': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
       '@tiptap/extension-document': 2.2.1(@tiptap/core@2.2.1)
-      '@tiptap/extension-dropcursor': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
-      '@tiptap/extension-gapcursor': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
+      '@tiptap/extension-dropcursor': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
+      '@tiptap/extension-gapcursor': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
       '@tiptap/extension-hard-break': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-heading': 2.2.1(@tiptap/core@2.2.1)
-      '@tiptap/extension-history': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
-      '@tiptap/extension-horizontal-rule': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.1)
+      '@tiptap/extension-history': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
+      '@tiptap/extension-horizontal-rule': 2.2.1(@tiptap/core@2.2.1)(@tiptap/pm@2.2.2)
       '@tiptap/extension-italic': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-list-item': 2.2.1(@tiptap/core@2.2.1)
       '@tiptap/extension-ordered-list': 2.2.1(@tiptap/core@2.2.1)

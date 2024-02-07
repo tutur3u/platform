@@ -80,7 +80,7 @@
     "@tiptap/extension-superscript": "^2.2.1",
     "@tiptap/extension-text-align": "^2.2.1",
     "@tiptap/extension-underline": "^2.2.1",
-    "@tiptap/pm": "^2.2.1",
+    "@tiptap/pm": "^2.2.2",
     "@tiptap/react": "^2.2.1",
     "@tiptap/starter-kit": "^2.2.1",
     "@upstash/qstash": "^2.3.0",
