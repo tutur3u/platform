@@ -10,7 +10,10 @@ interface Params {
   };
 }
 
-export async function GET({ params: { transactionId: id } }: Params) {
+export async function GET(
+  _: Request,
+  { params: { transactionId: id } }: Params
+) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { data, error } = await supabase
