@@ -1,11 +1,10 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { createTransaction, transactionColumns } from '@/data/columns/transactions';
 import { getSecrets } from '@/lib/workspace-helper';
 import { redirect } from 'next/navigation';
 import { Transaction } from '@/types/primitives/Transaction';
+import TransactionsTable from './table';
 
 interface Props {
   params: {
@@ -18,7 +17,7 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceTransactionsPage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -36,20 +35,14 @@ export default async function WorkspaceWalletsPage({
   const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
   if (!enableFinance) redirect(`/${wsId}`);
 
-  // console.log(data);
-
   return (
-    <DataTable
-      data={data}
-      columnGenerator={transactionColumns}
-      namespace="transaction-data-table"
+    <TransactionsTable
+      wsId={wsId}
+      data={data.map((t) => ({
+        ...t,
+        ws_id: wsId,
+      }))}
       count={count}
-      defaultVisibility={{
-        id: false,
-        report_opt_in: false,
-        taken_at: false,
-      }}
-      onCreate={createTransaction}
     />
   );
 }

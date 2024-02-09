@@ -25,7 +25,7 @@ import {
 
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import useQuery from '@/hooks/useQuery';
 import useTranslation from 'next-translate/useTranslation';
 import { Translate } from 'next-translate';
@@ -33,7 +33,7 @@ import { Translate } from 'next-translate';
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
   columnGenerator?: (t: Translate) => ColumnDef<TData, TValue>[];
-  onCreate?: () => void;
+  editContent?: ReactNode;
   namespace?: string;
   data?: TData[];
   count?: number;
@@ -43,7 +43,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   columnGenerator,
-  onCreate,
+  editContent,
   namespace = 'common',
   data,
   count,
@@ -96,7 +96,7 @@ export function DataTable<TData, TValue>({
       <DataTableToolbar
         namespace={namespace}
         table={table}
-        onCreate={onCreate}
+        editContent={editContent}
       />
       <div className="rounded-md border">
         <Table>

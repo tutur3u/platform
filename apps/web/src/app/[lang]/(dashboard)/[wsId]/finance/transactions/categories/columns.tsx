@@ -8,9 +8,11 @@ import moment from 'moment';
 import { Check, X } from 'lucide-react';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { Translate } from 'next-translate';
+import { TransactionCategoryRowActions } from './row-actions';
 
 export const transactionCategoryColumns = (
-  t: Translate
+  t: Translate,
+  setCategory: (value: TransactionCategory | undefined) => void
 ): ColumnDef<TransactionCategory>[] => [
   {
     id: 'select',
@@ -78,10 +80,10 @@ export const transactionCategoryColumns = (
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  {
+    id: 'actions',
+    cell: ({ row }) => (
+      <TransactionCategoryRowActions row={row} setCategory={setCategory} />
+    ),
+  },
 ];
-
-export const createTransactionCategory = () => {};

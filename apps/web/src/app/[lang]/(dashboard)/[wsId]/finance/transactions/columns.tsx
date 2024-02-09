@@ -5,11 +5,15 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
-import { Wallet } from '@/types/primitives/Wallet';
 import { Check, X } from 'lucide-react';
+import { Transaction } from '@/types/primitives/Transaction';
 import { Translate } from 'next-translate';
+import { TransactionRowActions } from './row-actions';
 
-export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
+export const transactionColumns = (
+  t: Translate,
+  setTransaction: (value: Transaction | undefined) => void
+): ColumnDef<Transaction>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -36,49 +40,41 @@ export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('id')} />
     ),
-    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
+    cell: ({ row }) => (
+      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+    ),
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'wallet',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader column={column} title={t('wallet')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('wallet') || '-'}</div>
+    ),
   },
   {
     accessorKey: 'description',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('description')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('description') || '-'}</div>
+    ),
   },
   {
-    accessorKey: 'balance',
+    accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('balance')} />
+      <DataTableColumnHeader column={column} title={t('amount')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',
-        }).format(row.getValue('balance'))}
+        }).format(row.getValue('amount'))}
       </div>
     ),
-  },
-  {
-    accessorKey: 'type',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('type')} />
-    ),
-    cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
-  },
-  {
-    accessorKey: 'currency',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('currency')} />
-    ),
-    cell: ({ row }) => <div>{row.getValue('currency') || '-'}</div>,
   },
   {
     accessorKey: 'report_opt_in',
@@ -90,22 +86,35 @@ export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
     ),
   },
   {
+    accessorKey: 'taken_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('taken_at')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {row.getValue('taken_at')
+          ? moment(row.getValue('taken_at')).format('DD/MM/YYYY, HH:mm:ss')
+          : '-'}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
-      <div>
+      <div className="min-w-[8rem]">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  {
+    id: 'actions',
+    cell: ({ row }) => (
+      <TransactionRowActions row={row} setTransaction={setTransaction} />
+    ),
+  },
 ];
-
-export const createWallet = () => {};

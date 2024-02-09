@@ -8,15 +8,16 @@ import { DataTableViewOptions } from './data-table-view-options';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableCreateButton } from './data-table-create-button';
+import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
-  onCreate?: () => void;
+  editContent?: ReactNode;
   namespace: string;
   table: Table<TData>;
 }
 
 export function DataTableToolbar<TData>({
-  onCreate,
+  editContent,
   namespace,
   table,
 }: DataTableToolbarProps<TData>) {
@@ -52,7 +53,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
-        {onCreate && <DataTableCreateButton onClick={onCreate} />}
+        {editContent && <DataTableCreateButton editContent={editContent} />}
         <DataTableRefreshButton />
         <DataTableViewOptions namespace={namespace} table={table} />
       </div>
