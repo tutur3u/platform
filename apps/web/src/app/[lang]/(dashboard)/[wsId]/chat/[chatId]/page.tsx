@@ -4,8 +4,8 @@ import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Message } from 'ai';
 import Chat from '../chat';
-import { getChats } from '../page';
 import { AIChat } from '@/types/primitives/ai-chat';
+import { getChats } from '../helper';
 
 export const dynamic = 'force-dynamic';
 

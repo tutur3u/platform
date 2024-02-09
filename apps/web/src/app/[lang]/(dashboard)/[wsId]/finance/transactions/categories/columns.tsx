@@ -5,11 +5,15 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
-import { Wallet } from '@/types/primitives/Wallet';
 import { Check, X } from 'lucide-react';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { Translate } from 'next-translate';
+import { TransactionCategoryRowActions } from './row-actions';
 
-export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
+export const transactionCategoryColumns = (
+  t: Translate,
+  setCategory: (value: TransactionCategory | undefined) => void
+): ColumnDef<TransactionCategory>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -46,47 +50,21 @@ export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
-    accessorKey: 'description',
+    accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('description')} />
-    ),
-    cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
-  },
-  {
-    accessorKey: 'balance',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('balance')} />
+      <DataTableColumnHeader column={column} title={t('amount')} />
     ),
     cell: ({ row }) => (
-      <div>
-        {Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND',
-        }).format(row.getValue('balance'))}
-      </div>
+      <div className="font-semibold">{row.getValue('amount')}</div>
     ),
   },
   {
-    accessorKey: 'type',
+    accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('type')} />
-    ),
-    cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
-  },
-  {
-    accessorKey: 'currency',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('currency')} />
-    ),
-    cell: ({ row }) => <div>{row.getValue('currency') || '-'}</div>,
-  },
-  {
-    accessorKey: 'report_opt_in',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('report_opt_in')} />
+      <DataTableColumnHeader column={column} title={t('is_expense')} />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
+      <div>{row.getValue('is_expense') ? <Check /> : <X />}</div>
     ),
   },
   {
@@ -102,8 +80,10 @@ export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  {
+    id: 'actions',
+    cell: ({ row }) => (
+      <TransactionCategoryRowActions row={row} setCategory={setCategory} />
+    ),
+  },
 ];

@@ -16,27 +16,67 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { SelectField } from '@/components/ui/custom/select-field';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import useTranslation from 'next-translate/useTranslation';
+import { Wallet } from '@/types/primitives/Wallet';
+
+interface Props {
+  wsId: string;
+  data?: Wallet;
+  onComplete?: () => void;
+  submitLabel?: string;
+}
 
 const FormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1).max(255),
+  balance: z.number(),
   type: z.enum(['STANDARD', 'CREDIT']),
   currency: z.enum(['VND']),
 });
 
-export function CreateWalletForm() {
+export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
+  const { t } = useTranslation('common');
+
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
+    defaultValues: {
+      name: data?.name || '',
+      balance: data?.balance || 0,
+      type: data?.type || 'STANDARD',
+      currency: data?.currency || 'VND',
+    },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+    setLoading(true);
+
+    const res = await fetch(
+      data?.id
+        ? `/api/workspaces/${wsId}/wallets/${data.id}`
+        : `/api/workspaces/${wsId}/wallets`,
+      {
+        method: data?.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    if (res.ok) {
+      router.refresh();
+      if (onComplete) onComplete();
+    } else {
+      setLoading(false);
+      toast({
+        title: 'Error creating wallet',
+        description: 'An error occurred while creating the wallet',
+      });
+    }
   }
 
   return (
@@ -45,11 +85,32 @@ export function CreateWalletForm() {
         <FormField
           control={form.control}
           name="name"
+          disabled={loading}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Wallet name</FormLabel>
               <FormControl>
                 <Input placeholder="Cash" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="balance"
+          disabled={loading}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Wallet balance</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -74,6 +135,7 @@ export function CreateWalletForm() {
                     ]}
                     classNames={{ root: 'w-full' }}
                     {...field}
+                    disabled
                   />
                 </FormControl>
                 <FormMessage />
@@ -97,6 +159,7 @@ export function CreateWalletForm() {
                     ]}
                     classNames={{ root: 'w-full' }}
                     {...field}
+                    disabled
                   />
                 </FormControl>
                 <FormMessage />
@@ -105,7 +168,9 @@ export function CreateWalletForm() {
           />
         </div>
 
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? t('common:processing') : submitLabel}
+        </Button>
       </form>
     </Form>
   );

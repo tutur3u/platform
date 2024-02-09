@@ -1,9 +1,10 @@
-import { UserGroup } from '@/types/primitives/UserGroup';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { transactionColumns } from '@/data/columns/transactions';
+import { getSecrets } from '@/lib/workspace-helper';
+import { redirect } from 'next/navigation';
+import { Transaction } from '@/types/primitives/Transaction';
+import TransactionsTable from './table';
 
 interface Props {
   params: {
@@ -16,23 +17,32 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceTransactionsPage({
   params: { wsId },
   searchParams,
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
 
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_FINANCE'],
+    forceAdmin: true,
+  });
+
+  const verifySecret = (secret: string, value: string) =>
+    secrets.find((s) => s.name === secret)?.value === value;
+
+  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+  if (!enableFinance) redirect(`/${wsId}`);
+
   return (
-    <DataTable
-      data={data}
-      columnGenerator={transactionColumns}
-      namespace="transaction-data-table"
+    <TransactionsTable
+      wsId={wsId}
+      data={data.map((t) => ({
+        ...t,
+        ws_id: wsId,
+      }))}
       count={count}
-      defaultVisibility={{
-        id: false,
-        report_opt_in: false,
-        taken_at: false,
-      }}
     />
   );
 }
@@ -84,5 +94,5 @@ async function getData(
     })
   );
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: Transaction[]; count: number };
 }

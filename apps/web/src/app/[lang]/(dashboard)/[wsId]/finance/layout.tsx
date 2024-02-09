@@ -36,6 +36,7 @@ export default async function Layout({
     {
       name: t('invoices'),
       href: `/${wsId}/finance/invoices`,
+      requireRootWorkspace: true,
     },
     {
       name: t('settings'),

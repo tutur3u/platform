@@ -1,9 +1,10 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { walletColumns } from '@/data/columns/wallets';
 import { Wallet } from '@/types/primitives/Wallet';
+import { redirect } from 'next/navigation';
+import { getSecrets } from '@/lib/workspace-helper';
+import WalletsTable from './table';
 
 interface Props {
   params: {
@@ -22,20 +23,19 @@ export default async function WorkspaceWalletsPage({
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
 
-  return (
-    <DataTable
-      data={data}
-      columnGenerator={walletColumns}
-      namespace="wallet-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        description: false,
-        report_opt_in: false,
-        created_at: false,
-      }}
-    />
-  );
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_FINANCE'],
+    forceAdmin: true,
+  });
+
+  const verifySecret = (secret: string, value: string) =>
+    secrets.find((s) => s.name === secret)?.value === value;
+
+  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+  if (!enableFinance) redirect(`/${wsId}`);
+
+  return <WalletsTable wsId={wsId} data={data} count={count} />;
 }
 
 async function getData(
@@ -53,7 +53,8 @@ async function getData(
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

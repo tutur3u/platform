@@ -46,6 +46,7 @@ export async function POST(req: Request) {
 
   const data = await req.json();
 
+  // const userId = data.userId;
   const username = data.username;
   const passwordHash = data.passwordHash;
 

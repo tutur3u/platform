@@ -1,9 +1,8 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { transactionCategoryColumns } from '@/data/columns/transaction-categories';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import TransactionCategoriesTable from './table';
 
 interface Props {
   params: {
@@ -16,24 +15,12 @@ interface Props {
   };
 }
 
-export default async function WorkspaceWalletsPage({
+export default async function WorkspaceTransactionCategoriesPage({
   params: { wsId },
   searchParams,
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
-
-  return (
-    <DataTable
-      data={data}
-      columnGenerator={transactionCategoryColumns}
-      namespace="transaction-category-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
-  );
+  return <TransactionCategoriesTable wsId={wsId} data={data} count={count} />;
 }
 
 async function getData(
@@ -48,7 +35,8 @@ async function getData(
 
   const queryBuilder = supabase
     .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
