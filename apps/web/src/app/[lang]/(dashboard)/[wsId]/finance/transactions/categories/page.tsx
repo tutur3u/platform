@@ -2,7 +2,10 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { transactionCategoryColumns } from '@/data/columns/transaction-categories';
+import {
+  createTransactionCategory,
+  transactionCategoryColumns,
+} from '@/data/columns/transaction-categories';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 
 interface Props {
@@ -32,6 +35,7 @@ export default async function WorkspaceWalletsPage({
         id: false,
         created_at: false,
       }}
+      onCreate={createTransactionCategory}
     />
   );
 }

@@ -1,5 +1,8 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { transactionColumns } from '@/data/columns/transactions';
+import {
+  createTransaction,
+  transactionColumns,
+} from '@/data/columns/transactions';
 
 export default function Loading() {
   return (
@@ -11,6 +14,7 @@ export default function Loading() {
         report_opt_in: false,
         taken_at: false,
       }}
+      onCreate={createTransaction}
     />
   );
 }

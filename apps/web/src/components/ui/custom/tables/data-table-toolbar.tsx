@@ -7,13 +7,16 @@ import { Button } from '@/components/ui/button';
 import { DataTableViewOptions } from './data-table-view-options';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { DataTableRefreshButton } from './data-table-refresh-button';
+import { DataTableCreateButton } from './data-table-create-button';
 
 interface DataTableToolbarProps<TData> {
+  onCreate?: () => void;
   namespace: string;
   table: Table<TData>;
 }
 
 export function DataTableToolbar<TData>({
+  onCreate,
   namespace,
   table,
 }: DataTableToolbarProps<TData>) {
@@ -49,6 +52,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
+        {onCreate && <DataTableCreateButton onClick={onCreate} />}
         <DataTableRefreshButton />
         <DataTableViewOptions namespace={namespace} table={table} />
       </div>

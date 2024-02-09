@@ -1,5 +1,8 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { transactionCategoryColumns } from '@/data/columns/transaction-categories';
+import {
+  createTransactionCategory,
+  transactionCategoryColumns,
+} from '@/data/columns/transaction-categories';
 
 export default function Loading() {
   return (
@@ -10,6 +13,7 @@ export default function Loading() {
         id: false,
         created_at: false,
       }}
+      onCreate={createTransactionCategory}
     />
   );
 }

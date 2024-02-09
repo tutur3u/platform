@@ -33,6 +33,7 @@ import { Translate } from 'next-translate';
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
   columnGenerator?: (t: Translate) => ColumnDef<TData, TValue>[];
+  onCreate?: () => void;
   namespace?: string;
   data?: TData[];
   count?: number;
@@ -42,6 +43,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   columnGenerator,
+  onCreate,
   namespace = 'common',
   data,
   count,
@@ -91,7 +93,11 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar namespace={namespace} table={table} />
+      <DataTableToolbar
+        namespace={namespace}
+        table={table}
+        onCreate={onCreate}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

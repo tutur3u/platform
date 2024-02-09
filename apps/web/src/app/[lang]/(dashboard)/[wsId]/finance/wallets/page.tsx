@@ -2,8 +2,10 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { walletColumns } from '@/data/columns/wallets';
+import { createWallet, walletColumns } from '@/data/columns/wallets';
 import { Wallet } from '@/types/primitives/Wallet';
+import { redirect } from 'next/navigation';
+import { getSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -22,6 +24,18 @@ export default async function WorkspaceWalletsPage({
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
 
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_FINANCE'],
+    forceAdmin: true,
+  });
+
+  const verifySecret = (secret: string, value: string) =>
+    secrets.find((s) => s.name === secret)?.value === value;
+
+  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+  if (!enableFinance) redirect(`/${wsId}`);
+
   return (
     <DataTable
       data={data}
@@ -34,6 +48,7 @@ export default async function WorkspaceWalletsPage({
         report_opt_in: false,
         created_at: false,
       }}
+      onCreate={createWallet}
     />
   );
 }

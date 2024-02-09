@@ -4,6 +4,7 @@ import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import Chat from './chat';
 import { Message } from 'ai';
+import { getChats } from './helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,20 +85,4 @@ const getMessages = async () => {
   })) as Message[];
 
   return messages;
-};
-
-export const getChats = async () => {
-  const supabase = createServerComponentClient({ cookies });
-
-  const { data, count, error } = await supabase
-    .from('ai_chats')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return { data: [], count: 0 };
-  }
-
-  return { data, count };
 };

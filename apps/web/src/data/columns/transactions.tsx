@@ -41,21 +41,21 @@ export const transactionColumns = (t: Translate): ColumnDef<Transaction>[] => [
     ),
   },
   {
-    accessorKey: 'category',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('category')} />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('category') || '-'}</div>
-    ),
-  },
-  {
     accessorKey: 'wallet',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('wallet')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('wallet') || '-'}</div>
+    ),
+  },
+  {
+    accessorKey: 'description',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('description')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('description') || '-'}</div>
     ),
   },
   {
@@ -70,15 +70,6 @@ export const transactionColumns = (t: Translate): ColumnDef<Transaction>[] => [
           currency: 'VND',
         }).format(row.getValue('amount'))}
       </div>
-    ),
-  },
-  {
-    accessorKey: 'description',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('description')} />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('description') || '-'}</div>
     ),
   },
   {
@@ -121,3 +112,5 @@ export const transactionColumns = (t: Translate): ColumnDef<Transaction>[] => [
   //     cell: ({ row }) => <SecretRowActions row={row} />,
   //   },
 ];
+
+export const createTransaction = () => {};

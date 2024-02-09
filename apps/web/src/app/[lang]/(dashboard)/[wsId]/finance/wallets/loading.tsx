@@ -1,5 +1,5 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { walletColumns } from '@/data/columns/wallets';
+import { createWallet, walletColumns } from '@/data/columns/wallets';
 
 export default function Loading() {
   return (
@@ -12,6 +12,7 @@ export default function Loading() {
         report_opt_in: false,
         created_at: false,
       }}
+      onCreate={createWallet}
     />
   );
 }

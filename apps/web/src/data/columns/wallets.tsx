@@ -107,3 +107,5 @@ export const walletColumns = (t: Translate): ColumnDef<Wallet>[] => [
   //     cell: ({ row }) => <SecretRowActions row={row} />,
   //   },
 ];
+
+export const createWallet = () => {};

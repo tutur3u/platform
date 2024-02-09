@@ -83,3 +83,5 @@ export const transactionCategoryColumns = (
   //     cell: ({ row }) => <SecretRowActions row={row} />,
   //   },
 ];
+
+export const createTransactionCategory = () => {};
