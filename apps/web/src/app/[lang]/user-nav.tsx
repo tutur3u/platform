@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
-import { Globe, Palette, Settings, User } from 'lucide-react';
+import { CalendarClock, Globe, Palette, Settings, User } from 'lucide-react';
 import { Suspense } from 'react';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import Link from 'next/link';
@@ -63,6 +63,15 @@ export async function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DashboardMenuItem defaultWorkspaceId={workspaces?.[0]?.id} />
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <Link href="/calendar/meet-together">
+            <DropdownMenuItem className="cursor-pointer">
+              <CalendarClock className="mr-2 h-4 w-4" />
+              <span>{t('meet-together')}</span>
+            </DropdownMenuItem>
+          </Link>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>

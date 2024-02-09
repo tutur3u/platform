@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { match } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
-import type { Session } from '@supabase/auth-helpers-nextjs';
+import type { User } from '@supabase/auth-helpers-nextjs';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import type { Database } from '@/types/supabase';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  const { res, session } = await handleSupabaseAuth({ req });
-  const { res: nextRes, redirect } = handleRedirect({ req, res, session });
+  const { res, user } = await handleSupabaseAuth({ req });
+  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
 
   if (redirect) return nextRes;
   return handleLocale({ req, res: nextRes });
@@ -46,7 +46,7 @@ const handleSupabaseAuth = async ({
   req: NextRequest;
 }): Promise<{
   res: NextResponse;
-  session: Session | null;
+  user: User | null;
 }> => {
   // Create a NextResponse object to handle the response
   const res = NextResponse.next();
@@ -55,28 +55,28 @@ const handleSupabaseAuth = async ({
   const supabase = createMiddlewareClient<Database>({ req, res });
 
   // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
+  // https://supabase.com/docs/guides/auth/server-side/nextjs
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return { res, session };
+  return { res, user };
 };
 
 const handleRedirect = ({
   req,
   res,
-  session,
+  user,
 }: {
   req: NextRequest;
   res: NextResponse;
-  session: Session | null;
+  user: User | null;
 }): {
   res: NextResponse;
   redirect: boolean;
 } => {
   // If current path ends with /login and user is logged in, redirect to onboarding page
-  if (req.nextUrl.pathname.endsWith('/login') && session) {
+  if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
       req.nextUrl.href.replace('/login', '/onboarding')
     );
@@ -85,7 +85,7 @@ const handleRedirect = ({
   }
 
   // If current path ends with /onboarding and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/onboarding') && !session) {
+  if (req.nextUrl.pathname.endsWith('/onboarding') && !user) {
     const nextRes = NextResponse.redirect(
       req.nextUrl.href.replace('/onboarding', '/login')
     );
@@ -94,7 +94,7 @@ const handleRedirect = ({
   }
 
   // If current path ends with /realtime and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/realtime') && !session) {
+  if (req.nextUrl.pathname.endsWith('/realtime') && !user) {
     const nextRes = NextResponse.redirect(
       req.nextUrl.href.replace('/realtime', '/login')
     );

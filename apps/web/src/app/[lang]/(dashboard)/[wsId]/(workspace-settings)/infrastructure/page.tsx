@@ -3,6 +3,7 @@ import StatisticCard from '../../../../../../components/cards/StatisticCard';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/utils/supabase/client';
+import tzs from '@/data/timezones.json';
 
 interface Props {
   params: {
@@ -23,9 +24,11 @@ export default async function InfrastructureOverviewPage({
 
   const usersLabel = t('users');
   const workspacesLabel = t('workspaces');
+  const timezonesLabel = t('timezones');
 
   const users = await getUserCount();
   const workspaces = await getWorkspaceCount();
+  const timezones = tzs.length;
 
   return (
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -39,6 +42,12 @@ export default async function InfrastructureOverviewPage({
         title={workspacesLabel}
         value={workspaces}
         href={`/${wsId}/infrastructure/workspaces`}
+      />
+
+      <StatisticCard
+        title={timezonesLabel}
+        value={timezones}
+        href={`/${wsId}/infrastructure/timezones`}
       />
     </div>
   );

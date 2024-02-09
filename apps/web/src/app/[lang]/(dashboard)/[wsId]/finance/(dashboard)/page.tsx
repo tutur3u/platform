@@ -2,6 +2,8 @@ import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -16,6 +18,18 @@ export default async function WorkspaceFinancePage({
 }: Props) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation('finance-overview');
+
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_FINANCE'],
+    forceAdmin: true,
+  });
+
+  const verifySecret = (secret: string, value: string) =>
+    secrets.find((s) => s.name === secret)?.value === value;
+
+  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+  if (!enableFinance) redirect(`/${wsId}`);
 
   // const [dateRange, setDateRange] = useState<DateRange>([null, null]);
 

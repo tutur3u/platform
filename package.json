@@ -16,6 +16,7 @@
     "sb:start": "cd apps/web && pnpm sb:start",
     "sb:stop": "cd apps/web && pnpm sb:stop",
     "sb:sync": "cd apps/web && pnpm sb:sync",
+    "sb:link": "cd apps/web && pnpm supabase link",
     "sb:reset": "cd apps/web && pnpm sb:reset",
     "sb:diff": "cd apps/web && pnpm sb:diff",
     "sb:new": "cd apps/web && pnpm sb:new",
@@ -27,13 +28,14 @@
   "devDependencies": {
     "eslint": "^8.56.0",
     "eslint-config-custom": "workspace:*",
-    "prettier": "^3.2.1",
+    "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tsconfig": "workspace:*",
-    "turbo": "^1.11.3"
+    "turbo": "^1.12.3",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@8.14.0"
+  "packageManager": "pnpm@8.15.1"
 }

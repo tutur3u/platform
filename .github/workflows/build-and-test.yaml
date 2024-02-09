@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Cache .next
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -42,7 +42,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: pnpm/action-setup@v2.4.0
+      - uses: pnpm/action-setup@v3.0.0
         with:
           version: 7
 

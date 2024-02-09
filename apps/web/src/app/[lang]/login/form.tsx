@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
 
 const FormSchema = z.object({
@@ -28,6 +28,7 @@ const FormSchema = z.object({
 export default function LoginForm() {
   const { t } = useTranslation('login');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -96,7 +97,8 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      router.push('/onboarding');
+      const nextUrl = searchParams.get('nextUrl');
+      router.push(nextUrl ?? '/onboarding');
       router.refresh();
     } else {
       setLoading(false);
