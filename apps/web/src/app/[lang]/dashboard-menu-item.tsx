@@ -8,7 +8,6 @@ import {
 import { ActivitySquare } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 
 interface Props {
   defaultWorkspaceId: string | undefined;
@@ -16,10 +15,7 @@ interface Props {
 
 export default function DashboardMenuItem({ defaultWorkspaceId }: Props) {
   const { t } = useTranslation('common');
-  const params = useParams();
-
-  const hasWorkspace = !!params.wsId;
-  if (hasWorkspace) return null;
+  if (!defaultWorkspaceId) return null;
 
   return (
     <>

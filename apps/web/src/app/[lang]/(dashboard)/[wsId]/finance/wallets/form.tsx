@@ -30,7 +30,7 @@ interface Props {
 
 const FormSchema = z.object({
   name: z.string().min(1).max(255),
-  balance: z.number(),
+  balance: z.number().optional(),
   type: z.enum(['STANDARD', 'CREDIT']),
   currency: z.enum(['VND']),
 });
