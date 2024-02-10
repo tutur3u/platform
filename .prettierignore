@@ -1,16 +1,12 @@
-# Node
-node_modules
-pnpm-lock.yaml
-pnpm-workspace.yaml
-
-# Yarn
+**/node_modules/
+**/dist/
+**/.next/
+**/.turbo/
+**/coverage/
+**/package-lock.json
+**/pnpm-lock.yaml
+**/yarn.lock
+**/out/
+**/target/
 yarn-error.log
-yarn.lock
-
-# Next.js
-.next
-out
-target
-
-# Jest
-coverage
+pnpm-workspace.yaml
