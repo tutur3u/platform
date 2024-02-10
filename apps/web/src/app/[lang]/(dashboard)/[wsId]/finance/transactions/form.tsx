@@ -14,11 +14,32 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import { Transaction } from '@/types/primitives/Transaction';
+import useSWR from 'swr';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { toast } from '@/components/ui/use-toast';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { fetcher } from '@/utils/fetcher';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, CheckIcon, ChevronsUpDown } from 'lucide-react';
+import { Wallet } from '@/types/primitives/Wallet';
+import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 interface Props {
   wsId: string;
@@ -28,7 +49,13 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1).max(255),
+  description: z.string(),
+  amount: z.number().positive(),
+  origin_wallet_id: z.string().uuid(),
+  destination_wallet_id: z.string().uuid().optional(),
+  category_id: z.string().uuid(),
+  taken_at: z.date(),
+  report_opt_in: z.boolean(),
 });
 
 export function TransactionForm({
@@ -39,13 +66,36 @@ export function TransactionForm({
 }: Props) {
   const { t } = useTranslation('common');
 
+  // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
+
+  const [showCategories, setShowCategories] = useState(false);
+  const [showWallets, setShowWallets] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const { data: categories, error: categoriesError } = useSWR<
+    TransactionCategory[]
+  >(`/api/workspaces/${wsId}/transactions/categories`, fetcher);
+
+  const categoriesLoading = !categories && !categoriesError;
+
+  const { data: wallets, error: walletsError } = useSWR<Wallet[]>(
+    `/api/workspaces/${wsId}/wallets`,
+    fetcher
+  );
+
+  const walletsLoading = !wallets && !walletsError;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: data?.description || '',
+      description: data?.description || '',
+      amount: data?.amount ? Math.abs(data.amount) : undefined,
+      origin_wallet_id: data?.wallet_id || wallets?.[0]?.id || '',
+      category_id: data?.category_id || '',
+      taken_at: data?.taken_at ? new Date(data.taken_at) : new Date(),
+      report_opt_in: data?.report_opt_in || true,
     },
   });
 
@@ -54,15 +104,20 @@ export function TransactionForm({
 
     const res = await fetch(
       data?.id
-        ? `/api/workspaces/${wsId}/transactions/categories/${data.id}`
-        : `/api/workspaces/${wsId}/transactions/categories`,
+        ? `/api/workspaces/${wsId}/transactions/${data.id}`
+        : `/api/workspaces/${wsId}/transactions`,
       {
         method: data?.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
+          ...formData,
+          amount:
+            categories?.find((c) => c.id === formData.category_id)
+              ?.is_expense === false
+              ? Math.abs(formData.amount)
+              : -Math.abs(formData.amount),
         }),
       }
     );
@@ -81,21 +136,236 @@ export function TransactionForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col space-y-2"
+      >
         <FormField
           control={form.control}
-          name="name"
+          name="amount"
           disabled={loading}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category name</FormLabel>
+              <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input placeholder="Cash" {...field} />
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  value={Math.abs(field.value)}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="category_id"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Category</FormLabel>
+              <Popover open={showCategories} onOpenChange={setShowCategories}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        'justify-between',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                    >
+                      {field.value
+                        ? categories?.find((c) => c.id === field.value)?.name
+                        : categoriesLoading
+                          ? 'Fetching...'
+                          : 'Select category'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command
+                    filter={(value, search) => {
+                      if (value.includes(search)) return 1;
+                      return 0;
+                    }}
+                  >
+                    <CommandInput
+                      placeholder="Search category..."
+                      disabled={categoriesLoading}
+                    />
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup>
+                      {(categories?.length || 0) > 0
+                        ? categories?.map((category) => (
+                            <CommandItem
+                              key={category.id}
+                              value={category.name}
+                              onSelect={() => {
+                                form.setValue(
+                                  'category_id',
+                                  category?.id || ''
+                                );
+                                setShowCategories(false);
+                              }}
+                            >
+                              <CheckIcon
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  category.id === field.value
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {category.name}
+                            </CommandItem>
+                          ))
+                        : null}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="h-2" />
+        <Separator />
+        <div className="h-2" />
+
+        <FormField
+          control={form.control}
+          name="origin_wallet_id"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Wallet</FormLabel>
+              <Popover open={showWallets} onOpenChange={setShowWallets}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        'justify-between',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                    >
+                      {field.value
+                        ? wallets?.find((c) => c.id === field.value)?.name
+                        : walletsLoading
+                          ? 'Fetching...'
+                          : 'Select wallet'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command
+                    filter={(value, search) => {
+                      if (value.includes(search)) return 1;
+                      return 0;
+                    }}
+                  >
+                    <CommandInput
+                      placeholder="Search wallet..."
+                      disabled={walletsLoading}
+                    />
+                    <CommandEmpty>No wallet found.</CommandEmpty>
+                    <CommandGroup>
+                      {(wallets?.length || 0) > 0
+                        ? wallets?.map((wallet) => (
+                            <CommandItem
+                              key={wallet.id}
+                              value={wallet.name}
+                              onSelect={() => {
+                                form.setValue(
+                                  'origin_wallet_id',
+                                  wallet?.id || ''
+                                );
+                                setShowWallets(false);
+                              }}
+                            >
+                              <CheckIcon
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  wallet.id === field.value
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {wallet.name}
+                            </CommandItem>
+                          ))
+                        : null}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          disabled={loading}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input placeholder="Description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taken_at"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Taken at</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, 'PPP')
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? t('common:processing') : submitLabel}

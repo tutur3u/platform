@@ -428,7 +428,6 @@
       "view-mode",
       "pagination",
       "wallet-details-tabs",
-      "transactions",
       "transaction-card",
       "transaction-data-table"
     ],
@@ -444,19 +443,17 @@
       "search",
       "view-mode",
       "pagination",
-      "transactions",
+      "transaction-form",
       "transaction-data-table"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/new": [
       "sidebar-tabs",
-      "transactions",
       "wallet-selector",
       "category-selector",
       "transaction-modal"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
-      "transactions",
       "transaction-details-tabs",
       "wallet-selector",
       "category-selector",
@@ -464,7 +461,6 @@
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/[transactionId]/settings": [
       "sidebar-tabs",
-      "transactions",
       "transaction-details-tabs",
       "wallet-selector",
       "category-selector",

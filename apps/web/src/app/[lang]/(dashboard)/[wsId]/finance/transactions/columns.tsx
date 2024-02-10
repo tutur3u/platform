@@ -50,7 +50,9 @@ export const transactionColumns = (
       <DataTableColumnHeader column={column} title={t('wallet')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('wallet') || '-'}</div>
+      <div className="min-w-[8rem] font-semibold">
+        {row.getValue('wallet') || '-'}
+      </div>
     ),
   },
   {
@@ -59,7 +61,12 @@ export const transactionColumns = (
       <DataTableColumnHeader column={column} title={t('description')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('description') || '-'}</div>
+      <div className="min-w-[8rem]">
+        <div className="font-semibold">{row.original.category || '-'}</div>
+        {row.original.description && (
+          <div className="opacity-70">{row.original.description}</div>
+        )}
+      </div>
     ),
   },
   {
@@ -93,7 +100,7 @@ export const transactionColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('taken_at')
-          ? moment(row.getValue('taken_at')).format('DD/MM/YYYY, HH:mm:ss')
+          ? moment(row.getValue('taken_at')).fromNow()
           : '-'}
       </div>
     ),

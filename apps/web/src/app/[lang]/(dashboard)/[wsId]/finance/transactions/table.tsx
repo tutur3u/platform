@@ -5,8 +5,8 @@ import { Transaction } from '@/types/primitives/Transaction';
 import { useState } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { transactionColumns } from './columns';
-// import useTranslation from 'next-translate/useTranslation';
-// import { TransactionForm } from './form';
+import useTranslation from 'next-translate/useTranslation';
+import { TransactionForm } from './form';
 
 interface Props {
   wsId: string;
@@ -14,14 +14,14 @@ interface Props {
   count: number;
 }
 
-export default function TransactionsTable({ data, count }: Props) {
-  // const { t } = useTranslation('common');
+export default function TransactionsTable({ wsId, data, count }: Props) {
+  const { t } = useTranslation('common');
 
   const [transaction, setTransaction] = useState<Transaction>();
 
-  // const onComplete = () => {
-  //   setTransaction(undefined);
-  // };
+  const onComplete = () => {
+    setTransaction(undefined);
+  };
 
   return (
     <Dialog
@@ -38,16 +38,16 @@ export default function TransactionsTable({ data, count }: Props) {
         defaultVisibility={{
           id: false,
           report_opt_in: false,
-          taken_at: false,
+          created_at: false,
         }}
-        // editContent={
-        //   <TransactionForm
-        //     wsId={wsId}
-        //     data={transaction}
-        //     onComplete={onComplete}
-        //     submitLabel={transaction?.id ? t('edit') : t('create')}
-        //   />
-        // }
+        editContent={
+          <TransactionForm
+            wsId={wsId}
+            data={transaction}
+            onComplete={onComplete}
+            submitLabel={transaction?.id ? t('edit') : t('create')}
+          />
+        }
       />
     </Dialog>
   );

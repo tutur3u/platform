@@ -100,7 +100,6 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
         <FormField
           control={form.control}
           name="balance"
-          disabled={loading}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Wallet balance</FormLabel>
@@ -110,11 +109,14 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
                   placeholder="0"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  disabled
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
+          // disabled={loading}
+          disabled
         />
 
         <div className="flex gap-2">

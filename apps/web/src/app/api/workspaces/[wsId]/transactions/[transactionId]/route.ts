@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { Transaction } from '@/types/primitives/Transaction';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export async function GET(
   const supabase = createRouteHandlerClient({ cookies });
 
   const { data, error } = await supabase
-    .from('workspace_wallet_transactions')
+    .from('wallet_transactions')
     .select('*')
     .eq('id', id)
     .single();
@@ -38,11 +39,23 @@ export async function PUT(
   { params: { transactionId: id } }: Params
 ) {
   const supabase = createRouteHandlerClient({ cookies });
-  const data = await req.json();
+
+  const data: Transaction & {
+    origin_wallet_id?: string;
+    destination_wallet_id?: string;
+  } = await req.json();
+
+  const newData = {
+    ...data,
+    wallet_id: data.origin_wallet_id,
+  };
+
+  delete newData.origin_wallet_id;
+  delete newData.destination_wallet_id;
 
   const { error } = await supabase
-    .from('workspace_wallet_transactions')
-    .update(data)
+    .from('wallet_transactions')
+    .update(newData)
     .eq('id', id);
 
   if (error) {
@@ -63,7 +76,7 @@ export async function DELETE(
   const supabase = createRouteHandlerClient({ cookies });
 
   const { error } = await supabase
-    .from('workspace_wallet_transactions')
+    .from('wallet_transactions')
     .delete()
     .eq('id', id);
 
