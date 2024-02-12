@@ -294,8 +294,8 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5(react-dom@18.2.0)(react@18.2.0)
       react-resizable-panels:
-        specifier: ^2.0.3
-        version: 2.0.3(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^2.0.6
+        version: 2.0.6(react-dom@18.2.0)(react@18.2.0)
       react-syntax-highlighter:
         specifier: ^15.5.0
         version: 15.5.0(react@18.2.0)
@@ -8131,14 +8131,15 @@ packages:
       use-sidecar: 1.1.2(@types/react@18.2.55)(react@18.2.0)
     dev: false
 
-  /react-resizable-panels@2.0.3(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-m0upi03cdqCt/g/dUxRQkHiBzo0UDtMIYwcf8qhKM+QG0cnpusOVFKOD2ElpGrtxB/oIxTItuKYsDOeu76JHvg==}
+  /react-resizable-panels@2.0.6(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-GGkXtlDsUZvoHai4j1IO0GavLjxZJgFjfgx4CBN3cJQ+MN5HaOw3zMx+SsorQZ3caMYPYvuIArYFUhIo+q661w==}
     peerDependencies:
       react: ^16.14.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
+      stacking-order: 1.0.1
     dev: false
 
   /react-resizable@3.0.5(react-dom@18.2.0)(react@18.2.0):
@@ -8681,6 +8682,10 @@ packages:
     dependencies:
       svelte: 4.2.10
       swrev: 4.0.0
+    dev: false
+
+  /stacking-order@1.0.1:
+    resolution: {integrity: sha512-IxD2jw+DDiQ3FaXr6QcvSt5uE2vDWBYcC7bbCWfI5R9kEoj8Zgi4rFwPXALOjTtE96iIdZjcJFLQVr7r7xIdAA==}
     dev: false
 
   /stacktrace-parser@0.1.10:
