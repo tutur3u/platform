@@ -33,8 +33,8 @@ importers:
   apps/web:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.13.1
-        version: 0.13.1(encoding@0.1.13)
+        specifier: ^0.14.0
+        version: 0.14.0(encoding@0.1.13)
       '@emotion/react':
         specifier: ^11.11.3
         version: 11.11.3(@types/react@18.2.55)(react@18.2.0)
@@ -482,8 +482,8 @@ packages:
       '@jridgewell/trace-mapping': 0.3.22
     dev: false
 
-  /@anthropic-ai/sdk@0.13.1(encoding@0.1.13):
-    resolution: {integrity: sha512-e8DgY8ZI339wYUufqiX8SPLXzWyiKLCy2zHYYzA3H3BVH+ryo3/TYwyGFfPqPcanLAt5AZlsCKo9+Bj05vbDhQ==}
+  /@anthropic-ai/sdk@0.14.0(encoding@0.1.13):
+    resolution: {integrity: sha512-SXAlS9EXsFD4uxE2e/aKV2VFg7xPbb4yXnsAqh8X85+Z+Y7DWoV3MJFXdZeaRQRiTh6e/sQnRL+MFsctbQJSPg==}
     dependencies:
       '@types/node': 18.19.15
       '@types/node-fetch': 2.6.11
