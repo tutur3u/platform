@@ -63,7 +63,7 @@ export default function CreatePlanDialog({ plan }: Props) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: '',
+      name: t('untitled_plan'),
       start_time: convertToTimetz(plan.startTime, plan.timezone?.offset),
       end_time: convertToTimetz(plan.endTime, plan.timezone?.offset),
       dates: plan.dates
@@ -73,11 +73,10 @@ export default function CreatePlanDialog({ plan }: Props) {
     },
   });
 
-  const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
+  const disabled = !isValid || isSubmitting;
 
   const handleSubmit = async () => {
     setCreating(true);
