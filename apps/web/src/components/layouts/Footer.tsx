@@ -49,6 +49,7 @@ export default async function Footer() {
           <Link
             href="/"
             className="flex gap-2 transition dark:hover:text-blue-200"
+            aria-label="Tuturuuu"
           >
             <Image
               src="/media/logos/transparent.png"
@@ -62,7 +63,7 @@ export default async function Footer() {
 
           <div className="flex gap-8">
             <Link
-              href="https://www.facebook.com/Tuturuuu"
+              href="https://www.facebook.com/tuturuuu"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Facebook"
             >
@@ -78,7 +79,7 @@ export default async function Footer() {
             <Link
               href="https://x.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
-              aria-label="X (Twitter)"
+              aria-label="X (formerly Twitter)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +98,7 @@ export default async function Footer() {
             </Link>
 
             <Link
-              href="https://github.com/Tutur3u"
+              href="https://github.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Github"
             >
@@ -111,7 +112,7 @@ export default async function Footer() {
             </Link>
 
             <Link
-              href="https://www.linkedin.com/company/Tuturuuu/"
+              href="https://www.linkedin.com/company/tuturuuu/"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="LinkedIn"
             >
