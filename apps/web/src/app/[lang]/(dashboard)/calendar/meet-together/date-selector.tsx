@@ -11,7 +11,12 @@ export default function DateSelector({ value, onSelect }: DateSelectorProps) {
       mode="multiple"
       selected={value}
       onSelect={onSelect}
-      className="w-fit rounded-md border"
+      className="rounded-md border"
+      classNames={{
+        row: 'flex justify-center gap-2 md:gap-1',
+        head_row: 'flex justify-center gap-2 md:gap-1',
+        tbody: 'grid gap-2 md:gap-1',
+      }}
     />
   );
 }
