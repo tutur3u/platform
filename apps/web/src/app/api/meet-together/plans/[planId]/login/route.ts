@@ -65,7 +65,6 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
-        id: `${rawPlanId}-${name}`,
         name,
         plan_id: planId,
         password_hash: hashedPassword,
@@ -84,6 +83,7 @@ export async function POST(
 
     return NextResponse.json({
       user: {
+        id: `${planId}-guest-${name}`,
         name: data.name,
         plan_id: planId,
       },
