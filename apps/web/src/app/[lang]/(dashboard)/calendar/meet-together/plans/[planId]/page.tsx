@@ -4,11 +4,10 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import UtilityButtons from './utility-buttons';
-import DatePlanner from './date-planner';
-import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import PlanLogin from './plan-login';
 import { TimeBlockingProvider } from './time-blocking-provider';
+import AllAvailabilities from './all-availabilities';
 
 interface Props {
   params: {
@@ -19,7 +18,6 @@ interface Props {
 export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
-  const { t } = useTranslation('meet-together-plan-details');
   const plan = await getData(planId);
 
   return (
@@ -35,24 +33,7 @@ export default async function MeetTogetherPlanDetailsPage({
 
             <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
               <PlanLogin plan={plan} />
-
-              <div className="grid gap-2 text-center">
-                <div className="font-semibold">
-                  {t('everyone_availability')}
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <div>0/0 {t('available')}</div>
-                  <div className="border-foreground/50 bg-foreground/10 h-4 w-24 border" />
-                  <div>0/0 {t('available')}</div>
-                </div>
-
-                <DatePlanner
-                  dates={plan.dates}
-                  start={plan.start_time}
-                  end={plan.end_time}
-                />
-              </div>
+              <AllAvailabilities plan={plan} />
             </div>
           </TimeBlockingProvider>
         </div>

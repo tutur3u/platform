@@ -26,7 +26,7 @@ export default function TimeColumn({
           .map((hr, i) => (
             <div
               key={`${id}-${hr}-${i}`}
-              className={`relative h-2 w-16 ${
+              className={`relative h-3 w-16 ${
                 hr === 0
                   ? ''
                   : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
