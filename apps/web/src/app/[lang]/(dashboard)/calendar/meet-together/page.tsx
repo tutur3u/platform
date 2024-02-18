@@ -11,6 +11,7 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import UserTime from './user-time';
+import 'dayjs/locale/vi';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,9 +106,11 @@ export default async function MeetTogetherPage({
                           key={date}
                           className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
                         >
-                          {dayjs(date).format(
-                            `${lang === 'vi' ? 'DD/MM' : 'MMM D'} (ddd)`
-                          )}
+                          {dayjs(date)
+                            .locale(lang)
+                            .format(
+                              `${lang === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
+                            )}
                         </div>
                       ))}
                       {plan.dates.length > 5 && (
