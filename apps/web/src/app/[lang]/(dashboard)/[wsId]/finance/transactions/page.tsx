@@ -94,5 +94,8 @@ async function getData(
     })
   );
 
-  return { data, count } as { data: Transaction[]; count: number };
+  return { data, count } as {
+    data: Transaction[];
+    count: number;
+  };
 }

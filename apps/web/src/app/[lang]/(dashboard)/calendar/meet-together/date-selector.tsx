@@ -1,4 +1,6 @@
 import { Calendar } from '@/components/ui/calendar';
+import useTranslation from 'next-translate/useTranslation';
+import { enUS, vi } from 'date-fns/locale';
 
 interface DateSelectorProps {
   value?: Date[];
@@ -6,12 +8,19 @@ interface DateSelectorProps {
 }
 
 export default function DateSelector({ value, onSelect }: DateSelectorProps) {
+  const { lang } = useTranslation();
   return (
     <Calendar
       mode="multiple"
       selected={value}
       onSelect={onSelect}
-      className="w-fit rounded-md border"
+      className="rounded-md border"
+      classNames={{
+        row: 'flex justify-center gap-2 md:gap-1',
+        head_row: 'flex justify-center gap-2 md:gap-1',
+        tbody: 'grid gap-2 md:gap-1',
+      }}
+      locale={lang === 'vi' ? vi : enUS}
     />
   );
 }

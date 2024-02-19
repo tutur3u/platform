@@ -11,9 +11,13 @@
     "/[lang]/reset-password": ["auth", "reset-password"],
     "/[lang]/(marketing)/branding": ["branding"],
 
-    "/[lang]/(dashboard)/calendar/meet-together": ["meet-together"],
+    "/[lang]/(dashboard)/calendar/meet-together": [
+      "meet-together",
+      "experimental-notice"
+    ],
     "/[lang]/(dashboard)/calendar/meet-together/plans/[planId]": [
-      "meet-together-plan-details"
+      "meet-together-plan-details",
+      "experimental-notice"
     ],
     "/[lang]/(dashboard)/onboarding": ["onboarding", "invite"],
     "/[lang]/(dashboard)/settings/account": [
@@ -428,7 +432,6 @@
       "view-mode",
       "pagination",
       "wallet-details-tabs",
-      "transactions",
       "transaction-card",
       "transaction-data-table"
     ],
@@ -444,19 +447,17 @@
       "search",
       "view-mode",
       "pagination",
-      "transactions",
+      "transaction-form",
       "transaction-data-table"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/new": [
       "sidebar-tabs",
-      "transactions",
       "wallet-selector",
       "category-selector",
       "transaction-modal"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/[transactionId]": [
       "sidebar-tabs",
-      "transactions",
       "transaction-details-tabs",
       "wallet-selector",
       "category-selector",
@@ -464,7 +465,6 @@
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/[transactionId]/settings": [
       "sidebar-tabs",
-      "transactions",
       "transaction-details-tabs",
       "wallet-selector",
       "category-selector",

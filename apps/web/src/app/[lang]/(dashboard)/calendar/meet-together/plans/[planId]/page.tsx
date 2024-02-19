@@ -4,11 +4,13 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import UtilityButtons from './utility-buttons';
-import DatePlanner from './date-planner';
-import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import PlanLogin from './plan-login';
 import { TimeBlockingProvider } from './time-blocking-provider';
+import AllAvailabilities from './all-availabilities';
+import { getCurrentUser } from '@/lib/user-helper';
+import ExperimentalNotice from '../../experimental-notice';
+import { Separator } from '@/components/ui/separator';
 
 interface Props {
   params: {
@@ -19,40 +21,25 @@ interface Props {
 export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const platformUser = await getCurrentUser(true);
   const plan = await getData(planId);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
+      <ExperimentalNotice />
+      <Separator className="mb-4 mt-8" />
+
       <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex w-full flex-col items-center">
           <TimeBlockingProvider>
-            <UtilityButtons plan={plan} />
-
+            <UtilityButtons plan={plan} platformUser={platformUser} />
             <p className="my-4 max-w-xl text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
               {plan.name}
             </p>
 
             <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
-              <PlanLogin plan={plan} />
-
-              <div className="grid gap-2 text-center">
-                <div className="font-semibold">
-                  {t('everyone_availability')}
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <div>0/0 {t('available')}</div>
-                  <div className="border-foreground/50 bg-foreground/10 h-4 w-24 border" />
-                  <div>0/0 {t('available')}</div>
-                </div>
-
-                <DatePlanner
-                  dates={plan.dates}
-                  start={plan.start_time}
-                  end={plan.end_time}
-                />
-              </div>
+              <PlanLogin plan={plan} platformUser={platformUser} />
+              <AllAvailabilities plan={plan} />
             </div>
           </TimeBlockingProvider>
         </div>

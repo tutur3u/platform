@@ -11,6 +11,25 @@ interface Params {
   };
 }
 
+export async function GET(_: Request, { params: { wsId: id } }: Params) {
+  const supabase = createRouteHandlerClient({ cookies });
+
+  const { data, error } = await supabase
+    .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
+    .eq('ws_id', id)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error fetching transaction categories' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
 export async function POST(req: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 

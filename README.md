@@ -3,7 +3,7 @@
 [![Build and test](https://github.com/tutur3u/tutur3u/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/build-and-test.yaml)
 [![Supabase CI](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
 
-This is Tuturuuu's centralized monorepo, powered by Turborepo.
+This repository is a monorepo for all of Tuturuuu's services, powered by Turborepo.
 
 ## What's inside?
 

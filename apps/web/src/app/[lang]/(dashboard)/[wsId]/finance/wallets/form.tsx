@@ -30,7 +30,7 @@ interface Props {
 
 const FormSchema = z.object({
   name: z.string().min(1).max(255),
-  balance: z.number(),
+  balance: z.number().optional(),
   type: z.enum(['STANDARD', 'CREDIT']),
   currency: z.enum(['VND']),
 });
@@ -100,7 +100,6 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
         <FormField
           control={form.control}
           name="balance"
-          disabled={loading}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Wallet balance</FormLabel>
@@ -110,11 +109,14 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
                   placeholder="0"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  disabled
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
+          // disabled={loading}
+          disabled
         />
 
         <div className="flex gap-2">

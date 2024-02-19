@@ -3,7 +3,9 @@ export interface Transaction {
   amount?: number;
   description?: string;
   category_id?: string;
+  category?: string;
   wallet_id?: string;
+  wallet?: string;
   ws_id?: string;
   taken_at?: string | null;
   report_opt_in?: boolean;

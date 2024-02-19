@@ -6,8 +6,15 @@ import EmailButton from './email-button';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import LoggedInAsButton from './logged-in-as-button';
+import { User } from '@/types/primitives/User';
 
-export default function UtilityButtons({ plan }: { plan: MeetTogetherPlan }) {
+export default function UtilityButtons({
+  plan,
+  platformUser,
+}: {
+  plan: MeetTogetherPlan;
+  platformUser: User | null;
+}) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
 
@@ -23,7 +30,7 @@ export default function UtilityButtons({ plan }: { plan: MeetTogetherPlan }) {
         <CopyLinkButton url={url} />
         <EmailButton plan={plan} url={url} />
       </div>
-      <LoggedInAsButton />
+      <LoggedInAsButton platformUser={platformUser} />
     </div>
   );
 }

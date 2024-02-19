@@ -4,6 +4,7 @@ import { timetzToHour } from '@/utils/date-helper';
 import TimeColumn from './time-column';
 import DayPlanners from './day-planners';
 import Debugger from './debugger';
+import { DEV_MODE } from '@/constants/common';
 
 export default function DatePlanner({
   dates,
@@ -40,7 +41,10 @@ export default function DatePlanner({
             editable={editable}
             disabled={disabled}
           />
-          {editable && <Debugger startTime={startHour} endTime={endHour} />}
+
+          {DEV_MODE && editable && (
+            <Debugger startTime={startHour} endTime={endHour} />
+          )}
         </div>
       )}
     </div>

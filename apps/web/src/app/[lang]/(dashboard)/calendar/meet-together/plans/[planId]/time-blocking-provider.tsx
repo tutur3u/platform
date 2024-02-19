@@ -10,23 +10,25 @@ import {
 
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { User as PlatformUser } from '@/types/primitives/User';
 
 dayjs.extend(isBetween);
 
-interface User {
+interface GuestUser {
   id: string;
-  name?: string;
+  display_name?: string;
   passwordHash?: string;
-  isGuest?: boolean;
+  is_guest?: boolean;
 }
 
 const TimeBlockContext = createContext({
-  user: null as User | null,
+  user: null as PlatformUser | GuestUser | null,
   selectedTimeBlocks: new Map<string, number[]>(),
   editing: false as boolean,
   selecting: true as boolean,
   showLogin: false as boolean,
-  setUser: (_: User | null) => {},
+  showAccountSwitcher: false as boolean,
+  setUser: (_: PlatformUser | GuestUser | null) => {},
   startEditing: (_: {
     start: { date: string; timeBlock: number };
     selecting: boolean;
@@ -35,6 +37,7 @@ const TimeBlockContext = createContext({
   toggleTimeBlock: (_: { date: string; timeBlock: number }) => {},
   toggleEditing: () => {},
   setShowLogin: (_: boolean) => {},
+  setShowAccountSwitcher: (_: boolean) => {},
 });
 
 const TimeBlockingProvider = ({ children }: { children: ReactNode }) => {
@@ -44,8 +47,9 @@ const TimeBlockingProvider = ({ children }: { children: ReactNode }) => {
 
   const [editing, setEditing] = useState(false);
   const [selecting, setSelecting] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PlatformUser | GuestUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
 
   const [start, setStart] = useState<{
     date: string;
@@ -271,12 +275,14 @@ const TimeBlockingProvider = ({ children }: { children: ReactNode }) => {
         editing,
         selecting,
         showLogin,
+        showAccountSwitcher,
         setUser,
         startEditing,
         endEditing,
         toggleTimeBlock,
         toggleEditing,
         setShowLogin,
+        setShowAccountSwitcher,
       }}
     >
       {children}

@@ -3,7 +3,16 @@ module.exports = {
   rules: {
     '@next/next/no-html-link-for-pages': 'off',
   },
-  ignorePatterns: ['node_modules/', 'dist/'],
+  ignorePatterns: [
+    '**/node_modules/',
+    '**/dist/',
+    '**/.next/',
+    '**/.turbo/',
+    '**/coverage/',
+    '**/package-lock.json',
+    '**/pnpm-lock.yaml',
+    '**/yarn.lock',
+  ],
   parserOptions: {
     babelOptions: {
       presets: [require.resolve('next/babel')],

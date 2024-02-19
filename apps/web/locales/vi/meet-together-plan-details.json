@@ -12,6 +12,12 @@
   "unavailable": "Không rảnh",
   "identity_protection": "Bảo vệ danh tính",
   "identity_protection_desc": "Sử dụng tài khoản khách và tùy chọn đặt mật khẩu cho kế hoạch này để bảo vệ danh tính của bạn.",
+  "account_switcher": "Chuyển tài khoản",
+  "account_switcher_desc": "Tương tác với kế hoạch này thông qua tài khoản khách, hoặc sử dụng tài khoản Tuturuuu với nhiều tính năng nâng cao hơn.",
+  "use_guest_account": "Sử dụng tài khoản khách",
+  "use_other_guest_account": "Sử dụng tài khoản khách khác",
+  "use_tuturuuu_account": "Sử dụng tài khoản Tuturuuu",
+  "using_tuturuuu_account": "Bạn đang sử dụng tài khoản Tuturuuu",
   "your_name": "Tên của bạn",
   "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này.",
   "password": "Mật khẩu (không bắt buộc)",
@@ -19,6 +25,7 @@
   "viewing_as": "Đang xem bằng",
   "anonymous": "Chế độ ẩn danh",
   "interacting_as": "Đang tương tác bằng",
-  "guest": "Khách",
+  "guest_account": "Tài khoản khách",
+  "tuturuuu_account": "Tài khoản Tuturuuu",
   "switch_account": "Chuyển tài khoản"
 }

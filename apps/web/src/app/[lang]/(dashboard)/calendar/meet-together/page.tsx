@@ -11,6 +11,8 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import UserTime from './user-time';
+import 'dayjs/locale/vi';
+import ExperimentalNotice from './experimental-notice';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +36,9 @@ export default async function MeetTogetherPage({
 
   return (
     <div className="flex w-full flex-col items-center">
+      <ExperimentalNotice />
+      <Separator className="mb-4 mt-8" />
+
       <div className="text-foreground flex max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex flex-col items-center">
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
@@ -74,7 +79,8 @@ export default async function MeetTogetherPage({
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
                       }).format(
-                        parseInt(plan.start_time?.split('+')?.[1] ?? 0)
+                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? 0) *
+                          (plan.start_time?.includes('-') ? -1 : 1)
                       )}
                     </div>
                   )}
@@ -105,9 +111,11 @@ export default async function MeetTogetherPage({
                           key={date}
                           className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
                         >
-                          {dayjs(date).format(
-                            `${lang === 'vi' ? 'DD/MM' : 'MMM D'} (ddd)`
-                          )}
+                          {dayjs(date)
+                            .locale(lang)
+                            .format(
+                              `${lang === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
+                            )}
                         </div>
                       ))}
                       {plan.dates.length > 5 && (
