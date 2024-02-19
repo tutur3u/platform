@@ -207,8 +207,8 @@ importers:
         specifier: ^2.3.0
         version: 2.3.0
       '@vercel/analytics':
-        specifier: ^1.2.0
-        version: 1.2.0(next@14.1.1-canary.58)(react@18.2.0)
+        specifier: ^1.2.1
+        version: 1.2.1(next@14.1.1-canary.58)(react@18.2.0)
       '@vercel/speed-insights':
         specifier: ^1.0.10
         version: 1.0.10(next@14.1.1-canary.58)(react@18.2.0)(svelte@4.2.11)(vue@3.4.19)
@@ -3903,8 +3903,8 @@ packages:
       jose: 4.15.4
     dev: false
 
-  /@vercel/analytics@1.2.0(next@14.1.1-canary.58)(react@18.2.0):
-    resolution: {integrity: sha512-Q9hduY6+i73Is1m57Y3OlawleeYVi4cvuh/0j6IwmSndMOE4+BKkMwjnwz+7xnqfZCanipIG6+q+zHalH9X0Zg==}
+  /@vercel/analytics@1.2.1(next@14.1.1-canary.58)(react@18.2.0):
+    resolution: {integrity: sha512-ZB5gDPCQvHu0DcBbywIwMm5aY9mTV8mBl7Mmk8QD84JqBnuYbsNCDnnDuzblNjd82tDtRjAqruZ0mzNm6MAWpA==}
     peerDependencies:
       next: '>= 13'
       react: ^18 || ^19
