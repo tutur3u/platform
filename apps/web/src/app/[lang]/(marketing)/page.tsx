@@ -3,6 +3,8 @@ import { getFeatures } from './features';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
 import { getWorkspaces } from '@/lib/workspace-helper';
+import GradientHeadline from './gradient-headline';
+import GetStartedButton from './get-started-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,21 +31,12 @@ export default async function MarketingPage() {
 
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
             {t('headline-p1')} <br />
-            <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
-              {t('headline-p2')}
-            </span>
-            .
+            <GradientHeadline />.
           </p>
 
-          <div className="group relative inline-flex">
-            <div className="animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200 dark:from-rose-400/60 dark:to-orange-300/60"></div>
-            <Link
-              href={workspaces?.[0]?.id ? `/${workspaces?.[0]?.id}` : '/login'}
-              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60"
-            >
-              {t('get-started')}
-            </Link>
-          </div>
+          <GetStartedButton
+            href={workspaces?.[0]?.id ? `/${workspaces?.[0]?.id}` : '/login'}
+          />
         </div>
 
         <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />

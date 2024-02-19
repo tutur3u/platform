@@ -2,14 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
+import Slogan from './slogan';
 
 export default async function Footer() {
   const { t } = useTranslation('common');
-
-  const maximize = t('maximize');
-  const productivity = t('productivity');
-  const minimize = t('minimize');
-  const stress = t('stress');
 
   const getStarted = t('get-started');
   const getStartedDesc = t('get-started-desc');
@@ -18,17 +14,7 @@ export default async function Footer() {
     <div className="w-full text-center">
       <Separator className="bg-foreground/5 mb-8" />
       <div className="flex flex-col items-center p-8">
-        <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
-          <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
-          <span className="text-blue-500 dark:text-blue-300">
-            {productivity}
-          </span>
-          ,{' '}
-          <span className="text-orange-500 dark:text-orange-300">
-            {minimize}
-          </span>{' '}
-          <span className="text-red-500 dark:text-red-300">{stress}</span>.
-        </div>
+        <Slogan />
 
         <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
           {getStartedDesc}
