@@ -2,10 +2,17 @@ import useTranslation from 'next-translate/useTranslation';
 import { useTimeBlocking } from './time-blocking-provider';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { User as PlatformUser } from '@/types/primitives/User';
 
-export default function LoggedInAsButton() {
+export default function LoggedInAsButton({
+  platformUser,
+}: {
+  platformUser: PlatformUser | null;
+}) {
   const { t } = useTranslation('meet-together-plan-details');
-  const { user, setShowLogin } = useTimeBlocking();
+  const { user: guestUser, setShowLogin } = useTimeBlocking();
+
+  const user = platformUser ?? guestUser;
 
   return (
     <div className="bg-foreground/10 border-foreground/20 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
@@ -15,7 +22,7 @@ export default function LoggedInAsButton() {
       <div
         className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
-        {user?.name ?? t('anonymous')}
+        {guestUser?.name ?? platformUser?.display_name ?? t('anonymous')}
       </div>
       <Separator className="bg-foreground/20 my-2" />
       <Button className="w-full" onClick={() => setShowLogin(true)}>

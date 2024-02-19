@@ -28,13 +28,20 @@ import { useState } from 'react';
 import AvailabilityPlanner from './availability-planner';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from './time-blocking-provider';
+import { User } from '@/types/primitives/User';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
   guestPassword: z.string().max(255).optional(),
 });
 
-export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
+export default function PlanLogin({
+  plan,
+  platformUser,
+}: {
+  plan: MeetTogetherPlan;
+  platformUser: User | null;
+}) {
   const { t } = useTranslation('meet-together-plan-details');
   const { user, showLogin, setUser, setShowLogin } = useTimeBlocking();
 
@@ -86,8 +93,8 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
         setShowLogin(open);
       }}
     >
-      <DialogTrigger asChild={!!user}>
-        <AvailabilityPlanner plan={plan} disabled={!user} />
+      <DialogTrigger asChild={!!user || !!platformUser}>
+        <AvailabilityPlanner plan={plan} disabled={!user && !platformUser} />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

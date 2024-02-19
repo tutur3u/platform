@@ -50,7 +50,7 @@ const convertToTimetz = (
   utcOffset: number | undefined
 ) => {
   if (!time || !utcOffset) return undefined;
-  return `${time}:00+${utcOffset}`;
+  return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
 };
 
 export default function CreatePlanDialog({ plan }: Props) {
