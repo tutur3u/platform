@@ -150,16 +150,27 @@ export default function CreatePlanDialog({ plan }: Props) {
       }}
     >
       <DialogTrigger asChild>
-        <div className="group relative inline-flex w-full">
+        <button
+          className={`${
+            missingFields || creating
+              ? 'cursor-not-allowed opacity-30'
+              : 'cursor-pointer'
+          } group relative inline-flex w-full`}
+          onClick={() => setIsOpened(true)}
+          disabled={missingFields || creating}
+        >
           <div
             className={`${
               isDark
                 ? 'from-rose-400/60 to-orange-300/60'
                 : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
-            } animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200`}
+            } ${
+              missingFields || creating
+                ? 'opacity-30'
+                : 'group-hover:-inset-1 group-hover:opacity-100'
+            } animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r blur-lg transition-all duration-500`}
           />
-          <button
-            disabled={missingFields || creating}
+          <div
             className={`${
               isDark
                 ? 'from-rose-400/60 to-orange-300/60'
@@ -167,8 +178,8 @@ export default function CreatePlanDialog({ plan }: Props) {
             } relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
           >
             {t('create_plan')}
-          </button>
-        </div>
+          </div>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

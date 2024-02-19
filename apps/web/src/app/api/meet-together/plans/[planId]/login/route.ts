@@ -84,8 +84,10 @@ export async function POST(
     return NextResponse.json({
       user: {
         id: `${planId}-guest-${name}`,
-        name: data.name,
-        plan_id: planId,
+        display_name: data.name,
+        passwordHash: hashedPassword,
+        planId,
+        is_guest: true,
       },
       message: 'Created new guest',
     });
@@ -96,11 +98,11 @@ export async function POST(
   if (hashedPassword === guest.password_hash)
     return NextResponse.json({
       user: {
-        id: guest.id,
-        name: guest.name,
+        id: `${planId}-guest-${guest.name}`,
+        display_name: guest.name,
         passwordHash: hashedPassword,
         planId,
-        isGuest: true,
+        is_guest: true,
       },
       message: 'Logged in',
     });

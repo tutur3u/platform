@@ -16,12 +16,12 @@ export default function ExperimentalNotice() {
       className={`${
         isDark
           ? 'border-orange-300/20 bg-orange-300/10 text-orange-300'
-          : 'border-amber-600/20 bg-amber-600/10 text-amber-600'
+          : 'border-amber-600/20 bg-amber-600/10 text-amber-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300'
       } text-foreground mx-4 mt-8 max-w-xl rounded-lg border p-4 md:p-8`}
     >
       <FlaskConical className="mx-auto h-16 w-16" />
       <Separator
-        className={`${isDark ? 'bg-orange-300/20' : 'bg-amber-600/20'} my-4`}
+        className={`${isDark ? 'bg-orange-300/20' : 'bg-amber-600/20 dark:bg-orange-300/20'} my-4`}
       />
 
       <p className="mb-2 text-center text-xl font-bold md:text-3xl">
