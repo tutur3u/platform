@@ -65,7 +65,6 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
-        id: `${rawPlanId}-${name}`,
         name,
         plan_id: planId,
         password_hash: hashedPassword,
@@ -84,8 +83,11 @@ export async function POST(
 
     return NextResponse.json({
       user: {
-        name: data.name,
-        plan_id: planId,
+        id: `${planId}-guest-${name}`,
+        display_name: data.name,
+        passwordHash: hashedPassword,
+        planId,
+        is_guest: true,
       },
       message: 'Created new guest',
     });
@@ -96,11 +98,11 @@ export async function POST(
   if (hashedPassword === guest.password_hash)
     return NextResponse.json({
       user: {
-        id: guest.id,
-        name: guest.name,
+        id: `${planId}-guest-${guest.name}`,
+        display_name: guest.name,
         passwordHash: hashedPassword,
         planId,
-        isGuest: true,
+        is_guest: true,
       },
       message: 'Logged in',
     });

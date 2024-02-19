@@ -2,14 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
+import Slogan from './slogan';
 
 export default async function Footer() {
   const { t } = useTranslation('common');
-
-  const maximize = t('maximize');
-  const productivity = t('productivity');
-  const minimize = t('minimize');
-  const stress = t('stress');
 
   const getStarted = t('get-started');
   const getStartedDesc = t('get-started-desc');
@@ -18,17 +14,7 @@ export default async function Footer() {
     <div className="w-full text-center">
       <Separator className="bg-foreground/5 mb-8" />
       <div className="flex flex-col items-center p-8">
-        <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
-          <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
-          <span className="text-blue-500 dark:text-blue-300">
-            {productivity}
-          </span>
-          ,{' '}
-          <span className="text-orange-500 dark:text-orange-300">
-            {minimize}
-          </span>{' '}
-          <span className="text-red-500 dark:text-red-300">{stress}</span>.
-        </div>
+        <Slogan />
 
         <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
           {getStartedDesc}
@@ -49,6 +35,7 @@ export default async function Footer() {
           <Link
             href="/"
             className="flex gap-2 transition dark:hover:text-blue-200"
+            aria-label="Tuturuuu"
           >
             <Image
               src="/media/logos/transparent.png"
@@ -62,7 +49,7 @@ export default async function Footer() {
 
           <div className="flex gap-8">
             <Link
-              href="https://www.facebook.com/Tuturuuu"
+              href="https://www.facebook.com/tuturuuu"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Facebook"
             >
@@ -78,7 +65,7 @@ export default async function Footer() {
             <Link
               href="https://x.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
-              aria-label="X (Twitter)"
+              aria-label="X (formerly Twitter)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +84,7 @@ export default async function Footer() {
             </Link>
 
             <Link
-              href="https://github.com/Tutur3u"
+              href="https://github.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Github"
             >
@@ -111,7 +98,7 @@ export default async function Footer() {
             </Link>
 
             <Link
-              href="https://www.linkedin.com/company/Tuturuuu/"
+              href="https://www.linkedin.com/company/tuturuuu/"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="LinkedIn"
             >

@@ -74,7 +74,7 @@ export default function DayTime({
                     ? 'bg-red-500/20'
                     : 'bg-foreground/10'
                 : ''
-            } relative h-2 w-full ${
+            } relative h-3 w-full ${
               i === 0 || i + 4 > array.length - 1
                 ? ''
                 : (i + 1) % 4 === 0

@@ -62,7 +62,11 @@ export default function Debugger({
     };
 
     const timeblocks = Array.from(selectedTimeBlocks.entries())
+      // filter out empty blocks
       .filter(([_, blocks]) => blocks.length > 0)
+      // sort by date
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      // merge blocks
       .map(([date, blocks]) => {
         blocks.sort((a, b) => a - b);
 

@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import React from 'react';
 import DayTime from './day-time';
 import useTranslation from 'next-translate/useTranslation';
+import 'dayjs/locale/vi';
 
 export default function DayPlanner({
   date,
@@ -23,9 +24,13 @@ export default function DayPlanner({
     <div>
       <div className="pointer-events-none select-none p-1">
         <div className="text-xs">
-          {dayjs(date).format(lang === 'vi' ? 'DD/MM' : 'MMM D')}
+          {dayjs(date)
+            .locale(lang)
+            .format(lang === 'vi' ? 'DD/MM' : 'MMM D')}
         </div>
-        <div className="text-lg font-semibold">{dayjs(date).format('ddd')}</div>
+        <div className="text-lg font-semibold">
+          {dayjs(date).locale(lang).format('ddd')}
+        </div>
       </div>
 
       <DayTime

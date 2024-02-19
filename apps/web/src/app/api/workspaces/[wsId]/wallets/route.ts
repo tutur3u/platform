@@ -11,7 +11,29 @@ interface Params {
   };
 }
 
-export async function POST(req: Request, { params: { wsId: id } }: Params) {
+export async function GET(_: Request, { params: { wsId } }: Params) {
+  const supabase = createRouteHandlerClient({ cookies });
+
+  const { data, error } = await supabase
+    .from('workspace_wallets')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error fetching transaction categories' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
+export async function POST(req: Request, { params: { wsId } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data: Wallet = await req.json();
@@ -20,7 +42,7 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
     .from('workspace_wallets')
     .upsert({
       ...data,
-      ws_id: id,
+      ws_id: wsId,
     })
     .eq('id', data.id);
 
