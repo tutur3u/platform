@@ -17,7 +17,7 @@ export default function GetStartedButton({ href }: { href: string }) {
             ? 'from-rose-400/60 to-orange-300/60'
             : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
         } animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200`}
-      ></div>
+      />
       <Link
         href={href}
         className={`${

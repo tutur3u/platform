@@ -101,6 +101,19 @@ export function ThemeDropdownItems() {
 
       <DropdownMenuItem
         className="cursor-pointer"
+        onClick={() => updateTheme({ primary: primaryTheme, secondary: null })}
+        disabled={!secondaryTheme}
+      >
+        {!secondaryTheme ? (
+          <Check className="mr-2 h-4 w-4" />
+        ) : (
+          <Sparkles className="mr-2 h-4 w-4" />
+        )}
+        {t('standard')}
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        className="cursor-pointer"
         onClick={() => updateTheme({ secondary: 'pink' })}
         disabled={secondaryTheme === 'pink'}
       >
@@ -191,19 +204,6 @@ export function ThemeDropdownItems() {
         )}
 
         {t('system')}
-      </DropdownMenuItem>
-
-      <DropdownMenuItem
-        className="cursor-pointer"
-        onClick={() => updateTheme({ primary: primaryTheme, secondary: null })}
-        disabled={!secondaryTheme}
-      >
-        {!secondaryTheme ? (
-          <Check className="mr-2 h-4 w-4" />
-        ) : (
-          <Sparkles className="mr-2 h-4 w-4" />
-        )}
-        {t('standard')}
       </DropdownMenuItem>
     </>
   );

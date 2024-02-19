@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +28,7 @@ import dayjs from 'dayjs';
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 interface Props {
   plan: {
@@ -56,6 +59,9 @@ const convertToTimetz = (
 export default function CreatePlanDialog({ plan }: Props) {
   const { t } = useTranslation('meet-together');
   const router = useRouter();
+
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme?.includes('dark');
 
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -144,14 +150,25 @@ export default function CreatePlanDialog({ plan }: Props) {
       }}
     >
       <DialogTrigger asChild>
-        <button
-          className={`relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 px-8 py-2 font-bold text-white transition-all md:text-lg dark:from-rose-400/60 dark:to-orange-300/60 ${
-            missingFields ? 'cursor-not-allowed opacity-30' : ''
-          }`}
-          disabled={missingFields || creating}
-        >
-          {t('create_plan')}
-        </button>
+        <div className="group relative inline-flex w-full">
+          <div
+            className={`${
+              isDark
+                ? 'from-rose-400/60 to-orange-300/60'
+                : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
+            } animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r opacity-70 blur-lg transition-all group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200`}
+          />
+          <button
+            disabled={missingFields || creating}
+            className={`${
+              isDark
+                ? 'from-rose-400/60 to-orange-300/60'
+                : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
+            } relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
+          >
+            {t('create_plan')}
+          </button>
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

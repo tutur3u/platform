@@ -8,9 +8,6 @@ export default function GradientHeadline() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 
-  console.log('isDark', isDark);
-  console.log('resolvedTheme', resolvedTheme);
-
   return (
     <span
       className={`${
