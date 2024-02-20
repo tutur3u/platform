@@ -119,37 +119,45 @@ const TimeBlockingProvider = ({
     });
   };
 
-  // const convertDurationToTimeblocks = (
-  //   start?: Date,
-  //   end?: Date
-  // ): Timeblock[] => {
-  //   if (!start || !end) return [];
+  const convertDurationToTimeblocks = (
+    startDate?: Date,
+    endDate?: Date
+  ): Timeblock[] => {
+    if (!startDate || !endDate) return [];
 
-  //   const timeblocks = [];
+    const timeblocks = [];
 
-  //   const date = start.toISOString().split('T')[0];
-  //   const startTime = start.toISOString().split('T')[1].split('.')[0];
-  //   const endTime = end.toISOString().split('T')[1].split('.')[0];
+    let currentDate = new Date(startDate.getTime());
 
-  //   timeblocks.push({
-  //     date,
-  //     start_time: startTime,
-  //     end_time: endTime,
-  //   });
+    while (currentDate <= endDate) {
+      const date = currentDate.toISOString().split('T')[0];
+      const startTime = currentDate.toISOString().split('T')[1].split('.')[0];
+      // Assuming the end time is the end of the day
+      const endTime = '23:59:59';
 
-  //   return timeblocks;
-  // };
+      timeblocks.push({
+        date,
+        start_time: startTime,
+        end_time: endTime,
+      });
+
+      // Increment the date
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return timeblocks;
+  };
 
   const endEditing = () => {
     if (editing.startDate === undefined || editing.endDate === undefined)
       return;
 
-    // const extraTimeblocks = convertDurationToTimeblocks(
-    //   editing.startDate,
-    //   editing.endDate
-    // );
+    const extraTimeblocks = convertDurationToTimeblocks(
+      editing.startDate,
+      editing.endDate
+    );
 
-    // console.log('Extra timeblocks', extraTimeblocks);
+    console.log('Extra timeblocks', extraTimeblocks);
 
     console.log('Ending editing', editing);
 
