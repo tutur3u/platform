@@ -22,7 +22,8 @@ export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
   const platformUser = await getCurrentUser(true);
-  const plan = await getData(planId);
+  const plan = await getPlan(planId);
+  const timeblocks = await getTimeBlocks(planId);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
@@ -31,24 +32,36 @@ export default async function MeetTogetherPlanDetailsPage({
 
       <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex w-full flex-col items-center">
-          <TimeBlockingProvider>
-            <UtilityButtons plan={plan} platformUser={platformUser} />
-            <p className="my-4 max-w-xl text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
-              {plan.name}
-            </p>
+          {plan.id && (
+            <TimeBlockingProvider
+              platformUser={platformUser}
+              plan={plan}
+              timeblocks={timeblocks.filter(
+                (tb) => tb.user_id === platformUser?.id
+              )}
+            >
+              <UtilityButtons plan={plan} platformUser={platformUser} />
+              <p className="my-4 max-w-xl text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
+                {plan.name}
+              </p>
 
-            <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
-              <PlanLogin plan={plan} platformUser={platformUser} />
-              <AllAvailabilities plan={plan} />
-            </div>
-          </TimeBlockingProvider>
+              <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
+                <PlanLogin
+                  plan={plan}
+                  timeblocks={[]}
+                  platformUser={platformUser}
+                />
+                <AllAvailabilities plan={plan} timeblocks={timeblocks} />
+              </div>
+            </TimeBlockingProvider>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-async function getData(planId: string) {
+async function getPlan(planId: string) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   // planId is a uuid without dashes, so we need to add them back in
@@ -64,4 +77,36 @@ async function getData(planId: string) {
   if (error) notFound();
 
   return data as MeetTogetherPlan;
+}
+
+async function getTimeBlocks(planId: string) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const guestQueryBuilder = supabase
+    .from('meet_together_guest_timeblocks')
+    .select('*')
+    .eq('plan_id', planId);
+
+  const userQueryBuilder = supabase
+    .from('meet_together_user_timeblocks')
+    .select('*')
+    .eq('plan_id', planId);
+
+  const [guestTimeBlocks, userTimeBlocks] = await Promise.all([
+    guestQueryBuilder,
+    userQueryBuilder,
+  ]);
+
+  if (guestTimeBlocks.error || userTimeBlocks.error) {
+    console.log(guestTimeBlocks.error, userTimeBlocks.error);
+    return notFound();
+  }
+
+  // const data = {
+  //   guests: guestTimeBlocks.data,
+  //   users: userTimeBlocks.data,
+  // };
+
+  const data = [...guestTimeBlocks.data, ...userTimeBlocks.data];
+  return data;
 }

@@ -5,14 +5,17 @@ import TimeColumn from './time-column';
 import DayPlanners from './day-planners';
 import Debugger from './debugger';
 import { DEV_MODE } from '@/constants/common';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 export default function DatePlanner({
+  timeblocks,
   dates,
   start,
   end,
   editable = false,
   disabled = false,
 }: {
+  timeblocks: Timeblock[];
   dates?: string[];
   start?: string;
   end?: string;
@@ -35,6 +38,7 @@ export default function DatePlanner({
       {dates && (
         <div className="flex flex-col items-start justify-start gap-4">
           <DayPlanners
+            timeblocks={timeblocks}
             dates={dates}
             start={startHour}
             end={endHour}

@@ -3,14 +3,17 @@ import React from 'react';
 import DayTime from './day-time';
 import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 export default function DayPlanner({
+  timeblocks,
   date,
   start,
   end,
   editable,
   disabled,
 }: {
+  timeblocks: Timeblock[];
   date: string;
   start: number;
   end: number;
@@ -34,6 +37,7 @@ export default function DayPlanner({
       </div>
 
       <DayTime
+        timeblocks={timeblocks}
         date={date}
         start={start}
         end={end}

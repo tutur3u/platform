@@ -4,6 +4,12 @@ import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
+interface Params {
+  params: {
+    planId: string;
+  };
+}
+
 export async function GET(_: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
@@ -41,16 +47,27 @@ export async function GET(_: Request) {
   return NextResponse.json(timeblocks);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params: { planId } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
-  // const userId = data.userId;
-  const username = data.username;
+  const guestId = data.guestId;
   const passwordHash = data.passwordHash;
 
-  const userType = username && passwordHash ? 'guest' : 'user';
+  if (guestId && !passwordHash)
+    return NextResponse.json(
+      { message: 'Password hash required for guest timeblocks' },
+      { status: 400 }
+    );
+
+  if (passwordHash && !guestId)
+    return NextResponse.json(
+      { message: 'Guest id required for password hash' },
+      { status: 400 }
+    );
+
+  const userType = guestId ? 'guest' : 'user';
 
   const {
     data: { user },
@@ -59,9 +76,11 @@ export async function POST(req: Request) {
   if (userType === 'user' && !user)
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
+  const userId = userType === 'user' ? user?.id : guestId;
+
   const { data: plan, error } = await supabase
     .from(`meet_together_${userType}_timeblocks`)
-    .insert(data)
+    .insert({ ...data, plan_id: planId, user_id: userId })
     .select('id')
     .single();
 

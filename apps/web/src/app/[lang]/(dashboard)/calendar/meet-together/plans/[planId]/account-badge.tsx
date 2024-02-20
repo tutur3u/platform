@@ -15,7 +15,7 @@ export default function AccountBadge({ type }: { type: 'GUEST' | 'PLATFORM' }) {
           : isDark
             ? 'bg-gradient-to-r from-pink-300/50 via-amber-300/50 to-blue-300/50'
             : 'bg-gradient-to-r from-pink-500/70 via-yellow-500/70 to-sky-600/70 dark:from-pink-300/50 dark:via-amber-300/50 dark:to-blue-300/50'
-      } mt-2 rounded px-1 py-0.5 text-sm font-semibold`}
+      } mt-2 rounded px-2 py-1 text-sm font-semibold`}
     >
       <span
         className={`bg-gradient-to-r bg-clip-text text-transparent text-white`}

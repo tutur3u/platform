@@ -11,6 +11,9 @@ import {
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { User as PlatformUser } from '@/types/primitives/User';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Timeblock } from '@/types/primitives/Timeblock';
+import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 
 dayjs.extend(isBetween);
 
@@ -21,251 +24,148 @@ interface GuestUser {
   is_guest?: boolean;
 }
 
+interface EditingParams {
+  enabled: boolean;
+  mode?: 'add' | 'remove';
+  startDate?: Date;
+  endDate?: Date;
+}
+
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
-  selectedTimeBlocks: new Map<string, number[]>(),
-  editing: false as boolean,
-  selecting: true as boolean,
+  selectedTimeBlocks: [] as Timeblock[],
+  editing: {
+    enabled: false,
+  } as EditingParams,
   showLogin: false as boolean,
   showAccountSwitcher: false as boolean,
   setUser: (_: PlatformUser | GuestUser | null) => {},
-  startEditing: (_: {
-    start: { date: string; timeBlock: number };
-    selecting: boolean;
-  }) => {},
+  setSelectedTimeBlocks: (_: Timeblock[]) => {},
+  edit: (_: { mode: 'add' | 'remove'; date: Date }) => {},
   endEditing: () => {},
-  toggleTimeBlock: (_: { date: string; timeBlock: number }) => {},
-  toggleEditing: () => {},
   setShowLogin: (_: boolean) => {},
   setShowAccountSwitcher: (_: boolean) => {},
 });
 
-const TimeBlockingProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<
-    Map<string, number[]>
-  >(new Map());
+const TimeBlockingProvider = ({
+  platformUser,
+  plan,
+  timeblocks,
+  children,
+}: {
+  platformUser: PlatformUser | null;
+  plan: MeetTogetherPlan;
+  timeblocks: Timeblock[];
+  children: ReactNode;
+}) => {
+  const [selectedTimeBlocks, setSelectedTimeBlocks] =
+    useState<Timeblock[]>(timeblocks);
 
-  const [editing, setEditing] = useState(false);
-  const [selecting, setSelecting] = useState(true);
-  const [user, setUser] = useState<PlatformUser | GuestUser | null>(null);
+  const [editing, setEditing] = useState<EditingParams>({
+    enabled: false,
+  });
+
+  const [user, setUser] = useState<PlatformUser | GuestUser | null>(
+    platformUser
+  );
   const [showLogin, setShowLogin] = useState(false);
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
 
-  const [start, setStart] = useState<{
-    date: string;
-    timeBlock: number;
-  } | null>(null);
-
-  useEffect(() => {
-    console.log('Editing', editing);
-  }, [editing]);
-
-  const startEditing = ({
-    start,
-    selecting,
-  }: {
-    start: {
-      date: string;
-      timeBlock: number;
-    };
-    selecting: boolean;
-  }) => {
-    if (editing) return;
-    setStart(start);
-    setSelecting(selecting);
-    setEditing(true);
+  const edit = ({ mode, date }: { mode: 'add' | 'remove'; date: Date }) => {
+    setEditing((prevData) => {
+      return {
+        enabled: true,
+        mode: prevData?.mode === undefined ? mode : prevData.mode,
+        startDate:
+          prevData?.startDate === undefined ? date : prevData.startDate,
+        endDate: date,
+      };
+    });
   };
+
+  // const convertDurationToTimeblocks = (
+  //   start?: Date,
+  //   end?: Date
+  // ): Timeblock[] => {
+  //   if (!start || !end) return [];
+
+  //   const timeblocks = [];
+
+  //   const date = start.toISOString().split('T')[0];
+  //   const startTime = start.toISOString().split('T')[1].split('.')[0];
+  //   const endTime = end.toISOString().split('T')[1].split('.')[0];
+
+  //   timeblocks.push({
+  //     date,
+  //     start_time: startTime,
+  //     end_time: endTime,
+  //   });
+
+  //   return timeblocks;
+  // };
 
   const endEditing = () => {
-    if (!editing) return;
-    setStart(null);
-    setSelecting(true);
-    setEditing(false);
+    if (editing.startDate === undefined || editing.endDate === undefined)
+      return;
+
+    // const extraTimeblocks = convertDurationToTimeblocks(
+    //   editing.startDate,
+    //   editing.endDate
+    // );
+
+    // console.log('Extra timeblocks', extraTimeblocks);
+
+    console.log('Ending editing', editing);
+
+    setEditing({
+      enabled: false,
+    });
   };
 
-  const selectTimeBlock = ({
-    startDate,
-    endDate,
-    startBlock,
-    endBlock,
-  }: {
-    startDate: string;
-    endDate: string;
-    startBlock: number;
-    endBlock: number;
-  }) => {
-    const start = dayjs(startDate || endDate);
-    const end = dayjs(endDate);
-
-    for (let d = start; d.isSame(end) || d.isBefore(end); d = d.add(1, 'day')) {
-      const date = d.format('YYYY-MM-DD');
-
-      for (let block = startBlock; block <= endBlock; block++) {
-        if (selectedTimeBlocks.get(date)?.includes(block)) continue;
-        console.log('Selecting', date, block);
-
-        setSelectedTimeBlocks((prev) => {
-          const selectedTimes = prev.get(date) || [];
-          if (selectedTimes.includes(block)) return prev;
-          return new Map(prev.set(date, [...selectedTimes, block]));
-        });
-      }
-    }
-  };
-
-  const deselectTimeBlock = ({
-    startDate,
-    endDate,
-    startBlock,
-    endBlock,
-  }: {
-    startDate: string;
-    endDate: string;
-    startBlock: number;
-    endBlock: number;
-  }) => {
-    const start = dayjs(startDate || endDate);
-    const end = dayjs(endDate);
-
-    for (let d = start; d.isSame(end) || d.isBefore(end); d = d.add(1, 'day')) {
-      const date = d.format('YYYY-MM-DD');
-
-      for (let block = startBlock; block <= endBlock; block++) {
-        if (!selectedTimeBlocks.get(date)?.includes(block)) continue;
-        console.log('Deselecting', date, block);
-
-        setSelectedTimeBlocks((prev) => {
-          const selectedTimes = prev.get(date) || [];
-          if (!selectedTimes.includes(block)) return prev;
-          return new Map(
-            prev.set(
-              date,
-              selectedTimes.filter((i) => i !== block)
-            )
-          );
-        });
-      }
-    }
-  };
-
-  const toggleTimeBlock = ({
-    date,
-    timeBlock,
-  }: {
-    date: string;
-    timeBlock: number;
-  }) => {
-    if (!start) return;
-    if (selecting)
-      selectTimeBlock({
-        startDate: start.date,
-        endDate: date,
-        startBlock: start.timeBlock,
-        endBlock: timeBlock,
+  useEffect(() => {
+    const syncTimeBlock = async (timeblock: {
+      date: string;
+      start_time: string;
+      end_time: string;
+    }) => {
+      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
+        method: 'POST',
+        body: JSON.stringify(timeblock),
       });
-    else
-      deselectTimeBlock({
-        startDate: start.date,
-        endDate: date,
-        startBlock: start.timeBlock,
-        endBlock: timeBlock,
+    };
+
+    const fetchCurrentTimeBlocks = async () => {
+      if (!user) return [];
+
+      const supabase = createClientComponentClient();
+      const type = user?.is_guest ? 'guest' : 'user';
+
+      const { data, error } = await supabase
+        .from(`meet_together_${type}_timeblocks`)
+        .select('*')
+        .eq('plan_id', plan.id)
+        .eq('user_id', user?.id);
+      if (error) {
+        console.error('Error fetching timeblocks', error);
+        return;
+      }
+      console.log('Fetched timeblocks', data);
+    };
+
+    const syncTimeBlocks = async () => {
+      const serverTimeblocks = await fetchCurrentTimeBlocks();
+      console.log('Server timeblocks', serverTimeblocks);
+
+      // For each time block, asynchonously send the time block to the server
+      selectedTimeBlocks.forEach(async (timeblock) => {
+        console.log('Sending time block', timeblock);
+        await syncTimeBlock(timeblock);
       });
-  };
+    };
 
-  // const formatTime = ({
-  //   startTime,
-  //   block,
-  //   end,
-  // }: {
-  //   startTime: number;
-  //   block: number;
-  //   end: boolean;
-  // }) => {
-  //   const timeblock = block + (end ? 1 : 0);
-
-  //   const hour = Math.floor(startTime + timeblock / 4);
-  //   const minute = (timeblock * 15) % 60;
-
-  //   const time = dayjs()
-  //     .set('hour', hour)
-  //     .set('minute', minute % 60)
-  //     .format('HH:mm');
-
-  //   return time;
-  // };
-
-  // const createTimeBlock = ({
-  //   date,
-  //   startTime,
-  //   startBlock,
-  //   endBlock,
-  // }: {
-  //   date: string;
-  //   startTime: number;
-  //   startBlock: number;
-  //   endBlock: number;
-  // }) => {
-  //   return {
-  //     date,
-  //     start_time: formatTime({ startTime, block: startBlock, end: false }),
-  //     end_time: formatTime({ startTime, block: endBlock, end: true }),
-  //   };
-  // };
-
-  // const syncTimeBlock = async (timeblock: {
-  //   date: string;
-  //   start_time: string;
-  //   end_time: string;
-  // }) => {
-  // await fetch('/api/timeblock', {
-  //   method: 'POST',
-  //   body: JSON.stringify(timeblock),
-  // });
-  // };
-
-  // const syncTimeBlocks = ({ startTime }: { startTime: number }) => {
-  //   const timeblocks = Array.from(selectedTimeBlocks.entries())
-  //     .filter(([_, blocks]) => blocks.length > 0)
-  //     .map(([date, blocks]) => {
-  //       blocks.sort((a, b) => a - b);
-
-  //       let mergedBlocks = [];
-  //       let startBlock = blocks[0];
-
-  //       for (let i = 1; i < blocks.length; i++) {
-  //         if (blocks[i] !== blocks[i - 1] + 1) {
-  //           mergedBlocks.push(
-  //             createTimeBlock({
-  //               date,
-  //               startTime,
-  //               startBlock,
-  //               endBlock: blocks[i - 1],
-  //             })
-  //           );
-  //           startBlock = blocks[i];
-  //         }
-  //       }
-
-  //       mergedBlocks.push(
-  //         createTimeBlock({
-  //           date,
-  //           startTime,
-  //           startBlock,
-  //           endBlock: blocks[blocks.length - 1],
-  //         })
-  //       );
-  //       return mergedBlocks;
-  //     })
-  //     .flat();
-
-  //   // For each time block, asynchonously send the time block to the server
-  //   timeblocks.forEach(async (timeblock) => {
-  //     console.log('Sending time block', timeblock);
-  //     // await syncTimeBlock(timeblock);
-  //   });
-  // };
-
-  const toggleEditing = () => setEditing((prev) => !prev);
+    if (editing) return;
+    syncTimeBlocks();
+  }, [plan.id, user, selectedTimeBlocks, editing]);
 
   return (
     <TimeBlockContext.Provider
@@ -273,14 +173,12 @@ const TimeBlockingProvider = ({ children }: { children: ReactNode }) => {
         user,
         selectedTimeBlocks,
         editing,
-        selecting,
         showLogin,
         showAccountSwitcher,
         setUser,
-        startEditing,
+        setSelectedTimeBlocks,
+        edit,
         endEditing,
-        toggleTimeBlock,
-        toggleEditing,
         setShowLogin,
         setShowAccountSwitcher,
       }}

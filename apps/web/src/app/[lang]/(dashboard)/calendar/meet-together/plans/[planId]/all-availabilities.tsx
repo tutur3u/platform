@@ -2,11 +2,14 @@ import React from 'react';
 import DatePlanner from './date-planner';
 import useTranslation from 'next-translate/useTranslation';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 export default function AllAvailabilities({
   plan,
+  timeblocks,
 }: {
   plan: MeetTogetherPlan;
+  timeblocks: Timeblock[];
 }) {
   const { t } = useTranslation('meet-together-plan-details');
 
@@ -21,6 +24,7 @@ export default function AllAvailabilities({
       </div>
 
       <DatePlanner
+      timeblocks={timeblocks}
         dates={plan.dates}
         start={plan.start_time}
         end={plan.end_time}
