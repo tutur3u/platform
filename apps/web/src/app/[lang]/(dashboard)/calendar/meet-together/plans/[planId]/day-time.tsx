@@ -18,6 +18,7 @@ export default function DayTime({
   disabled: boolean;
 }) {
   const { editing, selectedTimeBlocks, edit, endEditing } = useTimeBlocking();
+
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
 
@@ -86,14 +87,7 @@ export default function DayTime({
         Math.floor(startHour * hourSplits + startMinute / 15) + 1;
       const endBlock = Math.floor(endHour * hourSplits + endMinute / 15);
 
-      // console.log('Evaluating block', i);
-      // console.log('Start time', startTime, startBlock);
-      // console.log('End time', endTime, endBlock);
-
-      const condition = i >= startBlock && i <= endBlock;
-      // console.log('Condition', condition);
-
-      return condition;
+      return i >= startBlock && i <= endBlock;
     });
   };
 
@@ -132,16 +126,15 @@ export default function DayTime({
                 endEditing();
               }}
               onTouchStart={(e) => {
-                e.preventDefault();
-                edit(editData);
+                if (editing.enabled) return;
+                edit(editData, e);
               }}
               onTouchMove={(e) => {
-                e.preventDefault();
                 if (!editing.enabled) return;
-                edit(editData);
+                edit(editData, e);
               }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
+              onTouchEnd={() => {
+                if (!editing.enabled) return;
                 endEditing();
               }}
               className={`${

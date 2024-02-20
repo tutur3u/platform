@@ -2,6 +2,7 @@
 
 import {
   ReactNode,
+  Touch,
   createContext,
   useContext,
   useEffect,
@@ -27,6 +28,7 @@ interface GuestUser {
 interface EditingParams {
   enabled: boolean;
   mode?: 'add' | 'remove';
+  initialTouch?: { x: number; y: number };
   startDate?: Date;
   endDate?: Date;
 }
@@ -41,7 +43,7 @@ const TimeBlockContext = createContext({
   showAccountSwitcher: false as boolean,
   setUser: (_: PlatformUser | GuestUser | null) => {},
   setSelectedTimeBlocks: (_: Timeblock[]) => {},
-  edit: (_: { mode: 'add' | 'remove'; date: Date }) => {},
+  edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
   setShowLogin: (_: boolean) => {},
   setShowAccountSwitcher: (_: boolean) => {},
@@ -71,14 +73,48 @@ const TimeBlockingProvider = ({
   const [showLogin, setShowLogin] = useState(false);
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
 
-  const edit = ({ mode, date }: { mode: 'add' | 'remove'; date: Date }) => {
+  const edit = (
+    { mode, date }: { mode: 'add' | 'remove'; date: Date },
+    event?: any
+  ) => {
+    const touch = event?.touches?.[0] as Touch | undefined;
+
     setEditing((prevData) => {
+      const nextMode = prevData?.mode === undefined ? mode : prevData.mode;
+      const nextTouch =
+        prevData?.initialTouch === undefined
+          ? touch
+            ? {
+                x: touch.clientX,
+                y: touch.clientY,
+              }
+            : undefined
+          : prevData.initialTouch;
+
+      const nextStart =
+        prevData?.startDate === undefined ? date : prevData.startDate;
+
+      const touchXDiff =
+        (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
+
+      const touchYDiff =
+        (touch?.clientY || 0) - (prevData?.initialTouch?.y || 0);
+
+      const nextEnd = nextTouch
+        ? nextStart
+          ? dayjs(nextStart)
+              .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
+              .add(Math.floor(touchXDiff / 15 / 3), 'day')
+              .toDate()
+          : nextStart
+        : date;
+
       return {
         enabled: true,
-        mode: prevData?.mode === undefined ? mode : prevData.mode,
-        startDate:
-          prevData?.startDate === undefined ? date : prevData.startDate,
-        endDate: date,
+        mode: nextMode,
+        startDate: nextStart,
+        endDate: nextEnd,
+        initialTouch: nextTouch,
       };
     });
   };
