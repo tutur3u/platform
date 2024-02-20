@@ -26,7 +26,7 @@ export default function DatePlanner({
   if (!startHour || !endHour) return null;
 
   return (
-    <div className="mt-4 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] items-start justify-center gap-2 md:w-96 md:max-w-96 lg:w-[32rem] lg:max-w-lg">
+    <div className="mt-4 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] items-start justify-center gap-2 md:w-96 md:max-w-96 lg:w-[32rem] lg:max-w-lg xl:w-[42rem] xl:max-w-2xl">
       <TimeColumn
         id={editable ? 'self' : 'group'}
         start={startHour}

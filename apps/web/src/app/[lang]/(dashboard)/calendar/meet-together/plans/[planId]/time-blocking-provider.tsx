@@ -100,14 +100,15 @@ const TimeBlockingProvider = ({
       const touchYDiff =
         (touch?.clientY || 0) - (prevData?.initialTouch?.y || 0);
 
-      const nextEnd = nextTouch
-        ? nextStart
-          ? dayjs(nextStart)
-              .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
-              .add(Math.floor(touchXDiff / 15 / 3), 'day')
-              .toDate()
-          : nextStart
-        : date;
+      const nextEnd =
+        prevData?.initialTouch !== undefined && nextTouch
+          ? nextStart
+            ? dayjs(nextStart)
+                .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
+                .add(Math.floor(touchXDiff / 15 / 3), 'day')
+                .toDate()
+            : nextStart
+          : date;
 
       return {
         enabled: true,
