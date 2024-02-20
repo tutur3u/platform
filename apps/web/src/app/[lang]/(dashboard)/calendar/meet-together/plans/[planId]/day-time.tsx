@@ -112,31 +112,55 @@ export default function DayTime({
           return (
             <div
               key={`${date}-${i}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                edit(editData);
-              }}
-              onMouseOver={(e) => {
-                e.preventDefault();
-                if (!editing.enabled) return;
-                edit(editData);
-              }}
-              onMouseUp={(e) => {
-                e.preventDefault();
-                endEditing();
-              }}
-              onTouchStart={(e) => {
-                if (editing.enabled) return;
-                edit(editData, e);
-              }}
-              onTouchMove={(e) => {
-                if (!editing.enabled) return;
-                edit(editData, e);
-              }}
-              onTouchEnd={() => {
-                if (!editing.enabled) return;
-                endEditing();
-              }}
+              onMouseDown={
+                editable
+                  ? (e) => {
+                      e.preventDefault();
+                      edit(editData);
+                    }
+                  : undefined
+              }
+              onMouseOver={
+                editable
+                  ? (e) => {
+                      e.preventDefault();
+                      if (!editing.enabled) return;
+                      edit(editData);
+                    }
+                  : undefined
+              }
+              onMouseUp={
+                editable
+                  ? (e) => {
+                      e.preventDefault();
+                      endEditing();
+                    }
+                  : undefined
+              }
+              onTouchStart={
+                editable
+                  ? (e) => {
+                      if (editing.enabled) return;
+                      edit(editData, e);
+                    }
+                  : undefined
+              }
+              onTouchMove={
+                editable
+                  ? (e) => {
+                      if (!editing.enabled) return;
+                      edit(editData, e);
+                    }
+                  : undefined
+              }
+              onTouchEnd={
+                editable
+                  ? () => {
+                      if (!editing.enabled) return;
+                      endEditing();
+                    }
+                  : undefined
+              }
               className={`${
                 i + hourSplits < array.length
                   ? isSelected

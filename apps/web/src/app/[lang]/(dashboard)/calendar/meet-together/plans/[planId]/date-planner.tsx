@@ -26,15 +26,16 @@ export default function DatePlanner({
   if (!startHour || !endHour) return null;
 
   return (
-    <div className="mt-4 flex items-start justify-center gap-2">
+    <div className="mt-4 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] items-start justify-center gap-2 md:w-96 md:max-w-96 lg:w-[32rem] lg:max-w-lg">
       <TimeColumn
         id={editable ? 'self' : 'group'}
         start={startHour}
         end={endHour}
+        className="flex-initial"
       />
 
       {dates && (
-        <div className="flex flex-col items-start justify-start gap-4">
+        <div className="flex flex-col items-start justify-start gap-4 overflow-x-scroll">
           <DayPlanners
             timeblocks={timeblocks}
             dates={dates}

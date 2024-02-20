@@ -49,7 +49,7 @@ export default function DayPlanners({
   return (
     <div
       id="scrollable"
-      className="relative flex items-start justify-center gap-2"
+      className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
     >
       {dates.map((d) => (
         <DayPlanner

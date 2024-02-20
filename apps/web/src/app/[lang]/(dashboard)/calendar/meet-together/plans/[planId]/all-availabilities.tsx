@@ -24,7 +24,7 @@ export default function AllAvailabilities({
       </div>
 
       <DatePlanner
-      timeblocks={timeblocks}
+        timeblocks={timeblocks}
         dates={plan.dates}
         start={plan.start_time}
         end={plan.end_time}
