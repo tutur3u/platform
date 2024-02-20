@@ -11,12 +11,15 @@ import {
 
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import minMax from 'dayjs/plugin/minMax';
 import { User as PlatformUser } from '@/types/primitives/User';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Timeblock } from '@/types/primitives/Timeblock';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { timeToTimetz } from '@/utils/date-helper';
 
 dayjs.extend(isBetween);
+dayjs.extend(minMax);
 
 interface GuestUser {
   id: string;
@@ -128,18 +131,18 @@ const TimeBlockingProvider = ({
 
     const timeblocks = [];
 
-    let currentDate = new Date(startDate.getTime());
+    let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
       const date = currentDate.toISOString().split('T')[0];
-      const startTime = currentDate.toISOString().split('T')[1].split('.')[0];
-      // Assuming the end time is the end of the day
-      const endTime = '23:59:59';
+
+      const startTime = dayjs(startDate).format('HH:mm');
+      const endTime = dayjs(endDate).add(15, 'minute').format('HH:mm');
 
       timeblocks.push({
         date,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: timeToTimetz(startTime),
+        end_time: timeToTimetz(endTime),
       });
 
       // Increment the date
@@ -158,9 +161,76 @@ const TimeBlockingProvider = ({
       editing.endDate
     );
 
-    console.log('Extra timeblocks', extraTimeblocks);
+    setSelectedTimeBlocks((prevTimeblocks) => {
+      if (editing.mode === 'add') {
+        // Concat the new timeblocks
+        const newTimeblocks = prevTimeblocks.concat(extraTimeblocks);
 
-    console.log('Ending editing', editing);
+        // Sort the timeblocks by start time and date
+        const sortedTimeblocks = newTimeblocks.sort((a, b) => {
+          const aTime = dayjs(`${a.date} ${a.start_time}`);
+          const bTime = dayjs(`${b.date} ${b.start_time}`);
+          return aTime.diff(bTime);
+        });
+
+        // Merge overlapping, consecutive, and matching end/start timeblocks
+        const mergedTimeblocks: Timeblock[] = [];
+        let currentBlock: Timeblock | undefined;
+
+        for (const tb of sortedTimeblocks) {
+          const tbStartTime = dayjs(`${tb.date} ${tb.start_time}`);
+          const tbEndTime = dayjs(`${tb.date} ${tb.end_time}`);
+
+          // Handle potential undefined currentBlock
+          if (!currentBlock) {
+            currentBlock = tb;
+            continue; // Skip further checks when starting a new block
+          }
+
+          // Revised merging logic:
+
+          // Check for subset block before merging
+          if (
+            tb.start_time > currentBlock.start_time &&
+            tb.end_time < currentBlock.end_time
+          ) {
+            continue; // Skip merging subset block
+          }
+
+          // Check for merging based on matching end and start times
+          if (tb.end_time == currentBlock.start_time) {
+            currentBlock.end_time = tb.end_time;
+          } else if (
+            // Check for overlap or consecutive timeblocks based on matching end/start
+            tbStartTime.isBefore(currentBlock.end_time) ||
+            (tb.end_time == currentBlock.start_time &&
+              tb.date === currentBlock.date)
+          ) {
+            // Merge overlapping or consecutive timeblocks
+            currentBlock.end_time = timeToTimetz(
+              dayjs
+                .max(dayjs(currentBlock.end_time), tbEndTime)
+                ?.format('HH:mm') || ''
+            );
+          } else {
+            // Add the previous block to the merged list and start a new one
+            mergedTimeblocks.push(currentBlock);
+            currentBlock = tb;
+          }
+        }
+
+        // Add the last block if it exists
+        if (currentBlock) {
+          mergedTimeblocks.push(currentBlock);
+        }
+
+        console.log('Merged timeblocks', mergedTimeblocks);
+        return mergedTimeblocks;
+      }
+
+      // Return existing timeblocks for other modes
+      return prevTimeblocks;
+    });
 
     setEditing({
       enabled: false,

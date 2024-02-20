@@ -22,7 +22,6 @@ export default function DayPlanners({
 
   function preventScroll(e: any) {
     e.preventDefault();
-    console.log('preventScroll');
     return false;
   }
 
