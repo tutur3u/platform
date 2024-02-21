@@ -22,7 +22,9 @@ export default function DayTime({
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
 
-  const isTimeBlockSelected = (i: number) => {
+  const isTimeBlockSelected = (
+    i: number
+  ): 'draft-add' | 'draft-remove' | 'added' | 'removed' => {
     const editingStartDate =
       editing.startDate && editing.endDate
         ? dayjs(editing.startDate).isAfter(editing.endDate)
@@ -66,7 +68,7 @@ export default function DayTime({
                 editingStartDate.getMinutes() / 15
             )))
     )
-      return editing.mode === 'add';
+      return editing.mode === 'add' ? 'draft-add' : 'draft-remove';
 
     // If the timeblock is pre-selected
     return (editable ? selectedTimeBlocks : timeblocks).some((tb) => {
@@ -88,7 +90,9 @@ export default function DayTime({
       const endBlock = Math.floor(endHour * hourSplits + endMinute / 15);
 
       return i >= startBlock && i <= endBlock;
-    });
+    })
+      ? 'added'
+      : 'removed';
   };
 
   return (
@@ -98,7 +102,9 @@ export default function DayTime({
         // duplicate each item `hourSplits` times
         .flatMap((i) => Array(hourSplits).fill(i))
         .map((_, i, array) => {
-          const isSelected = isTimeBlockSelected(i);
+          const isSelected = isTimeBlockSelected(i).includes('add');
+          const isDraft = isTimeBlockSelected(i).includes('draft');
+
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
 
           const editData = {
@@ -164,9 +170,13 @@ export default function DayTime({
               className={`${
                 i + hourSplits < array.length
                   ? isSelected
-                    ? 'bg-green-500/70'
+                    ? isDraft
+                      ? 'bg-green-500/50'
+                      : 'bg-green-500/70'
                     : editable
-                      ? 'bg-red-500/20'
+                      ? isDraft
+                        ? 'bg-red-500/50'
+                        : 'bg-red-500/20'
                       : 'bg-foreground/10'
                   : ''
               } relative h-3 w-full ${
