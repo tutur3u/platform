@@ -35,7 +35,7 @@ export default function DatePlanner({
       />
 
       {dates && (
-        <div className="flex flex-col items-start justify-start gap-4 overflow-x-scroll">
+        <div className="flex flex-col items-start justify-start gap-4 overflow-x-auto">
           <DayPlanners
             timeblocks={timeblocks}
             dates={dates}
