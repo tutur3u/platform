@@ -220,3 +220,17 @@ export function timeToTimetz(time: string) {
   const [hour, minute] = time.split(':');
   return `${hour}:${minute}:00${offsetStr}`;
 }
+
+export function compareTimetz(timetz1: string, timetz2: string) {
+  const time1 = timetzToTime(timetz1);
+  const time2 = timetzToTime(timetz2);
+  return time1.localeCompare(time2);
+}
+
+export function minTimetz(timetz1: string, timetz2: string) {
+  return compareTimetz(timetz1, timetz2) < 0 ? timetz1 : timetz2;
+}
+
+export function maxTimetz(timetz1: string, timetz2: string) {
+  return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
+}

@@ -156,10 +156,22 @@ const TimeBlockingProvider = ({
     if (editing.startDate === undefined || editing.endDate === undefined)
       return;
 
+    const editingStartDate =
+      editing.startDate.getTime() < editing.endDate.getTime()
+        ? editing.startDate
+        : editing.endDate;
+
+    const editingEndDate =
+      editing.startDate.getTime() < editing.endDate.getTime()
+        ? editing.endDate
+        : editing.startDate;
+
     const extraTimeblocks = convertDurationToTimeblocks(
-      editing.startDate,
-      editing.endDate
+      editingStartDate,
+      editingEndDate
     );
+
+    console.log('editing', editing);
 
     setSelectedTimeBlocks((prevTimeblocks) => {
       if (editing.mode === 'add') {
@@ -173,62 +185,204 @@ const TimeBlockingProvider = ({
           return aTime.diff(bTime);
         });
 
-        // Merge overlapping, consecutive, and matching end/start timeblocks
-        const mergedTimeblocks: Timeblock[] = [];
-        let currentBlock: Timeblock | undefined;
+        let nextTBs: Timeblock[] = [];
 
-        for (const tb of sortedTimeblocks) {
-          const tbStartTime = dayjs(`${tb.date} ${tb.start_time}`);
-          const tbEndTime = dayjs(`${tb.date} ${tb.end_time}`);
+        for (let i = 0; i < sortedTimeblocks.length; i++) {
+          const lastTB = nextTBs[nextTBs.length - 1];
+          const currTB = sortedTimeblocks[i];
 
-          // Handle potential undefined currentBlock
-          if (!currentBlock) {
-            currentBlock = tb;
-            continue; // Skip further checks when starting a new block
+          // If nextTBs is empty, add the current timeblock
+          if (nextTBs.length === 0) {
+            nextTBs.push(currTB);
+            continue;
           }
 
-          // Revised merging logic:
-
-          // Check for subset block before merging
+          // If currTB is in the middle of lastTB,
+          // skip the current timeblock
           if (
-            tb.start_time > currentBlock.start_time &&
-            tb.end_time < currentBlock.end_time
+            dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
+              dayjs(`${lastTB.date} ${lastTB.start_time}`),
+              dayjs(`${lastTB.date} ${lastTB.end_time}`),
+              null,
+              '[]'
+            ) &&
+            dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
+              dayjs(`${lastTB.date} ${lastTB.start_time}`),
+              dayjs(`${lastTB.date} ${lastTB.end_time}`),
+              null,
+              '[]'
+            )
           ) {
-            continue; // Skip merging subset block
+            continue;
           }
 
-          // Check for merging based on matching end and start times
-          if (tb.end_time == currentBlock.start_time) {
-            currentBlock.end_time = tb.end_time;
-          } else if (
-            // Check for overlap or consecutive timeblocks based on matching end/start
-            tbStartTime.isBefore(currentBlock.end_time) ||
-            (tb.end_time == currentBlock.start_time &&
-              tb.date === currentBlock.date)
+          // If lastTB's end time is greater than or equal to currTB's start time,
+          // set lastTB's end time to max of lastTB's end time and currTB's end time
+          if (
+            `${lastTB.date} ${lastTB.end_time}` ===
+              `${currTB.date} ${currTB.start_time}` ||
+            dayjs(`${lastTB.date} ${lastTB.end_time}`).isAfter(
+              dayjs(`${currTB.date} ${currTB.start_time}`)
+            )
           ) {
-            // Merge overlapping or consecutive timeblocks
-            currentBlock.end_time = timeToTimetz(
-              dayjs
-                .max(dayjs(currentBlock.end_time), tbEndTime)
-                ?.format('HH:mm') || ''
-            );
-          } else {
-            // Add the previous block to the merged list and start a new one
-            mergedTimeblocks.push(currentBlock);
-            currentBlock = tb;
+            lastTB.end_time = currTB.end_time;
+            continue;
           }
+
+          // If none of the above conditions are met, add the current timeblock
+          nextTBs.push(currTB);
         }
 
-        // Add the last block if it exists
-        if (currentBlock) {
-          mergedTimeblocks.push(currentBlock);
-        }
-
-        console.log('Merged timeblocks', mergedTimeblocks);
-        return mergedTimeblocks;
+        console.log('[ADD] timeblocks', nextTBs);
+        return nextTBs;
       }
 
-      // Return existing timeblocks for other modes
+      if (editing.mode === 'remove') {
+        // Sort the timeblocks by start time and date
+        const sortedTimeblocks = prevTimeblocks.sort((a, b) => {
+          const aTime = dayjs(`${a.date} ${a.start_time}`);
+          const bTime = dayjs(`${b.date} ${b.start_time}`);
+          return aTime.diff(bTime);
+        });
+
+        const nextTBs: Timeblock[] = [];
+
+        for (let i = 0; i < sortedTimeblocks.length; i++) {
+          const currTB = sortedTimeblocks[i];
+
+          // Filter out the timeblocks that are within the range
+          if (
+            dayjs(currTB.date).isBetween(
+              dayjs(editingStartDate),
+              dayjs(editingEndDate),
+              'day',
+              '[]'
+            ) &&
+            dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
+              dayjs(
+                `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
+              ),
+              dayjs(
+                `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
+              ),
+              null,
+              '[]'
+            ) &&
+            dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
+              dayjs(
+                `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
+              ),
+              dayjs(
+                `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
+              ),
+              null,
+              '[]'
+            )
+          ) {
+            continue;
+          }
+
+          // If currTB includes the range (exclusively), split the timeblock
+          // if (
+          //   dayjs(currTB.date).isBetween(
+          //     dayjs(editingStartDate),
+          //     dayjs(editingEndDate),
+          //     'day',
+          //     '[]'
+          //   ) &&
+          //   !dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
+          //     ),
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
+          //     ),
+          //     null
+          //   ) &&
+          //   !dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
+          //     ),
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
+          //     ),
+          //     null
+          //   )
+          // ) {
+          //   const beforeRange = {
+          //     date: currTB.date,
+          //     start_time: currTB.start_time,
+          //     end_time: timeToTimetz(dayjs(editingStartDate).format('HH:mm')),
+          //   };
+
+          //   const afterRange = {
+          //     date: currTB.date,
+          //     start_time: timeToTimetz(
+          //       dayjs(editingEndDate).add(15, 'minute').format('HH:mm')
+          //     ),
+          //     end_time: currTB.end_time,
+          //   };
+
+          //   nextTBs.push(beforeRange);
+          //   nextTBs.push(afterRange);
+          //   continue;
+          // }
+
+          // If currTB's start time is less than or equal to the range's start time,
+          // set currTB's end time to the range's start time
+          // if (
+          //   dayjs(currTB.date).isBetween(
+          //     dayjs(editingStartDate),
+          //     dayjs(editingEndDate),
+          //     'day',
+          //     '[]'
+          //   ) &&
+          //   dayjs(`${currTB.date} ${currTB.start_time}`).isBefore(
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
+          //     )
+          //   )
+          // ) {
+          //   currTB.end_time = minTimetz(
+          //     timeToTimetz(dayjs(editingStartDate).format('HH:mm')),
+          //     currTB.end_time
+          //   );
+          // }
+
+          // If currTB's end time is greater than or equal to the range's end time,
+          // set currTB's start time to the range's end time
+          // if (
+          //   dayjs(currTB.date).isBetween(
+          //     dayjs(editingStartDate),
+          //     dayjs(editingEndDate),
+          //     'day',
+          //     '[]'
+          //   ) &&
+          //   dayjs(`${currTB.date} ${currTB.end_time}`).isAfter(
+          //     dayjs(
+          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
+          //     )
+          //   )
+          // ) {
+          //   currTB.start_time = maxTimetz(
+          //     timeToTimetz(
+          //       dayjs(editingEndDate).add(15, 'minute').format('HH:mm')
+          //     ),
+          //     currTB.start_time
+          //   );
+          // }
+
+          nextTBs.push(currTB);
+        }
+
+        const filteredTBs = nextTBs.filter((tb) => {
+          return tb.start_time !== tb.end_time;
+        });
+
+        console.log('[REMOVE] timeblocks', filteredTBs);
+        return filteredTBs;
+      }
+
       return prevTimeblocks;
     });
 
