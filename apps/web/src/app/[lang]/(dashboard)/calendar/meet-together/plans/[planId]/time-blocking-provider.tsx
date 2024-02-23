@@ -16,7 +16,11 @@ import { User as PlatformUser } from '@/types/primitives/User';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Timeblock } from '@/types/primitives/Timeblock';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { timeToTimetz } from '@/utils/date-helper';
+import {
+  addTimeblocks,
+  durationToTimeblocks,
+  removeTimeblocks,
+} from '@/utils/timeblock-helper';
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
@@ -123,264 +127,24 @@ const TimeBlockingProvider = ({
     });
   };
 
-  const convertDurationToTimeblocks = (
-    startDate?: Date,
-    endDate?: Date
-  ): Timeblock[] => {
-    if (!startDate || !endDate) return [];
-
-    const timeblocks = [];
-
-    let currentDate = new Date(startDate);
-
-    while (currentDate <= endDate) {
-      const date = currentDate.toISOString().split('T')[0];
-
-      const startTime = dayjs(startDate).format('HH:mm');
-      const endTime = dayjs(endDate).add(15, 'minute').format('HH:mm');
-
-      timeblocks.push({
-        date,
-        start_time: timeToTimetz(startTime),
-        end_time: timeToTimetz(endTime),
-      });
-
-      // Increment the date
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return timeblocks;
-  };
-
   const endEditing = () => {
     if (editing.startDate === undefined || editing.endDate === undefined)
       return;
 
-    const editingStartDate =
-      editing.startDate.getTime() < editing.endDate.getTime()
-        ? editing.startDate
-        : editing.endDate;
-
-    const editingEndDate =
-      editing.startDate.getTime() < editing.endDate.getTime()
-        ? editing.endDate
-        : editing.startDate;
-
-    const extraTimeblocks = convertDurationToTimeblocks(
-      editingStartDate,
-      editingEndDate
-    );
-
-    console.log('editing', editing);
-
     setSelectedTimeBlocks((prevTimeblocks) => {
+      const dates = [editing.startDate, dayjs(editing.endDate).toDate()].filter(
+        Boolean
+      ) as Date[];
+
       if (editing.mode === 'add') {
-        // Concat the new timeblocks
-        const newTimeblocks = prevTimeblocks.concat(extraTimeblocks);
-
-        // Sort the timeblocks by start time and date
-        const sortedTimeblocks = newTimeblocks.sort((a, b) => {
-          const aTime = dayjs(`${a.date} ${a.start_time}`);
-          const bTime = dayjs(`${b.date} ${b.start_time}`);
-          return aTime.diff(bTime);
-        });
-
-        let nextTBs: Timeblock[] = [];
-
-        for (let i = 0; i < sortedTimeblocks.length; i++) {
-          const lastTB = nextTBs[nextTBs.length - 1];
-          const currTB = sortedTimeblocks[i];
-
-          // If nextTBs is empty, add the current timeblock
-          if (nextTBs.length === 0) {
-            nextTBs.push(currTB);
-            continue;
-          }
-
-          // If currTB is in the middle of lastTB,
-          // skip the current timeblock
-          if (
-            dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
-              dayjs(`${lastTB.date} ${lastTB.start_time}`),
-              dayjs(`${lastTB.date} ${lastTB.end_time}`),
-              null,
-              '[]'
-            ) &&
-            dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
-              dayjs(`${lastTB.date} ${lastTB.start_time}`),
-              dayjs(`${lastTB.date} ${lastTB.end_time}`),
-              null,
-              '[]'
-            )
-          ) {
-            continue;
-          }
-
-          // If lastTB's end time is greater than or equal to currTB's start time,
-          // set lastTB's end time to max of lastTB's end time and currTB's end time
-          if (
-            `${lastTB.date} ${lastTB.end_time}` ===
-              `${currTB.date} ${currTB.start_time}` ||
-            dayjs(`${lastTB.date} ${lastTB.end_time}`).isAfter(
-              dayjs(`${currTB.date} ${currTB.start_time}`)
-            )
-          ) {
-            lastTB.end_time = currTB.end_time;
-            continue;
-          }
-
-          // If none of the above conditions are met, add the current timeblock
-          nextTBs.push(currTB);
-        }
-
-        console.log('[ADD] timeblocks', nextTBs);
-        return nextTBs;
+        const extraTimeblocks = durationToTimeblocks(dates);
+        const timeblocks = addTimeblocks(prevTimeblocks, extraTimeblocks);
+        return timeblocks;
       }
 
       if (editing.mode === 'remove') {
-        // Sort the timeblocks by start time and date
-        const sortedTimeblocks = prevTimeblocks.sort((a, b) => {
-          const aTime = dayjs(`${a.date} ${a.start_time}`);
-          const bTime = dayjs(`${b.date} ${b.start_time}`);
-          return aTime.diff(bTime);
-        });
-
-        const nextTBs: Timeblock[] = [];
-
-        for (let i = 0; i < sortedTimeblocks.length; i++) {
-          const currTB = sortedTimeblocks[i];
-
-          // Filter out the timeblocks that are within the range
-          if (
-            dayjs(currTB.date).isBetween(
-              dayjs(editingStartDate),
-              dayjs(editingEndDate),
-              'day',
-              '[]'
-            ) &&
-            dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
-              dayjs(
-                `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
-              ),
-              dayjs(
-                `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
-              ),
-              null,
-              '[]'
-            ) &&
-            dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
-              dayjs(
-                `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
-              ),
-              dayjs(
-                `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
-              ),
-              null,
-              '[]'
-            )
-          ) {
-            continue;
-          }
-
-          // If currTB includes the range (exclusively), split the timeblock
-          // if (
-          //   dayjs(currTB.date).isBetween(
-          //     dayjs(editingStartDate),
-          //     dayjs(editingEndDate),
-          //     'day',
-          //     '[]'
-          //   ) &&
-          //   !dayjs(`${currTB.date} ${currTB.start_time}`).isBetween(
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
-          //     ),
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
-          //     ),
-          //     null
-          //   ) &&
-          //   !dayjs(`${currTB.date} ${currTB.end_time}`).isBetween(
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
-          //     ),
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
-          //     ),
-          //     null
-          //   )
-          // ) {
-          //   const beforeRange = {
-          //     date: currTB.date,
-          //     start_time: currTB.start_time,
-          //     end_time: timeToTimetz(dayjs(editingStartDate).format('HH:mm')),
-          //   };
-
-          //   const afterRange = {
-          //     date: currTB.date,
-          //     start_time: timeToTimetz(
-          //       dayjs(editingEndDate).add(15, 'minute').format('HH:mm')
-          //     ),
-          //     end_time: currTB.end_time,
-          //   };
-
-          //   nextTBs.push(beforeRange);
-          //   nextTBs.push(afterRange);
-          //   continue;
-          // }
-
-          // If currTB's start time is less than or equal to the range's start time,
-          // set currTB's end time to the range's start time
-          // if (
-          //   dayjs(currTB.date).isBetween(
-          //     dayjs(editingStartDate),
-          //     dayjs(editingEndDate),
-          //     'day',
-          //     '[]'
-          //   ) &&
-          //   dayjs(`${currTB.date} ${currTB.start_time}`).isBefore(
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingStartDate).format('HH:mm'))}`
-          //     )
-          //   )
-          // ) {
-          //   currTB.end_time = minTimetz(
-          //     timeToTimetz(dayjs(editingStartDate).format('HH:mm')),
-          //     currTB.end_time
-          //   );
-          // }
-
-          // If currTB's end time is greater than or equal to the range's end time,
-          // set currTB's start time to the range's end time
-          // if (
-          //   dayjs(currTB.date).isBetween(
-          //     dayjs(editingStartDate),
-          //     dayjs(editingEndDate),
-          //     'day',
-          //     '[]'
-          //   ) &&
-          //   dayjs(`${currTB.date} ${currTB.end_time}`).isAfter(
-          //     dayjs(
-          //       `${currTB.date} ${timeToTimetz(dayjs(editingEndDate).add(15, 'minute').format('HH:mm'))}`
-          //     )
-          //   )
-          // ) {
-          //   currTB.start_time = maxTimetz(
-          //     timeToTimetz(
-          //       dayjs(editingEndDate).add(15, 'minute').format('HH:mm')
-          //     ),
-          //     currTB.start_time
-          //   );
-          // }
-
-          nextTBs.push(currTB);
-        }
-
-        const filteredTBs = nextTBs.filter((tb) => {
-          return tb.start_time !== tb.end_time;
-        });
-
-        console.log('[REMOVE] timeblocks', filteredTBs);
-        return filteredTBs;
+        const timeblocks = removeTimeblocks(prevTimeblocks, dates);
+        return timeblocks;
       }
 
       return prevTimeblocks;

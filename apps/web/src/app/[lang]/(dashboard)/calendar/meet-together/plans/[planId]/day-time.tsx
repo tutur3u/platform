@@ -17,7 +17,7 @@ export default function DayTime({
   editable: boolean;
   disabled: boolean;
 }) {
-  const { editing, selectedTimeBlocks, edit, endEditing } = useTimeBlocking();
+  const { editing, selectedTimeBlocks, edit } = useTimeBlocking();
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
@@ -135,14 +135,6 @@ export default function DayTime({
                     }
                   : undefined
               }
-              onMouseUp={
-                editable
-                  ? (e) => {
-                      e.preventDefault();
-                      endEditing();
-                    }
-                  : undefined
-              }
               onTouchStart={
                 editable
                   ? (e) => {
@@ -156,14 +148,6 @@ export default function DayTime({
                   ? (e) => {
                       if (!editing.enabled) return;
                       edit(editData, e);
-                    }
-                  : undefined
-              }
-              onTouchEnd={
-                editable
-                  ? () => {
-                      if (!editing.enabled) return;
-                      endEditing();
                     }
                   : undefined
               }
