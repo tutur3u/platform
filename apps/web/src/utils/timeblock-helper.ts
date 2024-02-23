@@ -167,13 +167,13 @@ export function removeTimeblocks(
     if (timeblockStart.set('date', soonest.date()).isBefore(soonest)) {
       const splitTimeblock = {
         ...timeblock,
+        id: undefined,
         end_time: minTimetz(
           timeToTimetz(dayjs(soonest).format('HH:mm')),
           timeblock.end_time
         ),
       };
 
-      console.log('Split timeblock before soonest', splitTimeblock);
       splitTimeblocks.push(splitTimeblock);
     }
 
@@ -181,17 +181,15 @@ export function removeTimeblocks(
     if (timeblockEnd.set('date', latest.date()).isAfter(latest)) {
       const splitTimeblock = {
         ...timeblock,
+        id: undefined,
         start_time: maxTimetz(
           timeToTimetz(dayjs(latest).format('HH:mm')),
           timeblock.start_time
         ),
       };
 
-      console.log('Split timeblock after latest', splitTimeblock);
       splitTimeblocks.push(splitTimeblock);
     }
-
-    console.log('Split timeblocks', splitTimeblocks);
 
     // Add the split timeblocks to the filtered timeblocks
     filteredTimeblocks.push(...splitTimeblocks);

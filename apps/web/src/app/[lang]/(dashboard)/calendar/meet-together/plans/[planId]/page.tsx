@@ -9,8 +9,6 @@ import PlanLogin from './plan-login';
 import { TimeBlockingProvider } from './time-blocking-provider';
 import AllAvailabilities from './all-availabilities';
 import { getCurrentUser } from '@/lib/user-helper';
-import ExperimentalNotice from '../../experimental-notice';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
   params: {
@@ -27,9 +25,6 @@ export default async function MeetTogetherPlanDetailsPage({
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
-      <ExperimentalNotice />
-      <Separator className="mb-4 mt-8" />
-
       <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 px-3 py-8 lg:gap-14">
         <div className="flex w-full flex-col items-center">
           {plan.id && (

@@ -156,7 +156,7 @@ const TimeBlockingProvider = ({
   };
 
   useEffect(() => {
-    const syncTimeBlock = async (timeblock: {
+    const addTimeBlock = async (timeblock: {
       date: string;
       start_time: string;
       end_time: string;
@@ -164,6 +164,13 @@ const TimeBlockingProvider = ({
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
         method: 'POST',
         body: JSON.stringify(timeblock),
+      });
+    };
+
+    const removeTimeBlock = async (id: string) => {
+      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({}),
       });
     };
 
@@ -178,27 +185,52 @@ const TimeBlockingProvider = ({
         .select('*')
         .eq('plan_id', plan.id)
         .eq('user_id', user?.id);
-      if (error) {
-        console.error('Error fetching timeblocks', error);
-        return;
-      }
-      console.log('Fetched timeblocks', data);
+
+      if (error) return [];
+      return data;
     };
 
     const syncTimeBlocks = async () => {
       const serverTimeblocks = await fetchCurrentTimeBlocks();
       console.log('Server timeblocks', serverTimeblocks);
 
-      // For each time block, asynchonously send the time block to the server
-      selectedTimeBlocks.forEach(async (timeblock) => {
-        console.log('Sending time block', timeblock);
-        await syncTimeBlock(timeblock);
-      });
+      // For each time block, remove timeblocks that are not on local
+      // and add timeblocks that are not on server
+      const localTimeblocks = selectedTimeBlocks;
+      console.log('Local timeblocks', localTimeblocks);
+
+      const timeblocksToRemove = serverTimeblocks?.filter(
+        (serverTimeblock: Timeblock) =>
+          !localTimeblocks.some(
+            (localTimeblock: Timeblock) =>
+              localTimeblock.date === serverTimeblock.date &&
+              localTimeblock.start_time === serverTimeblock.start_time &&
+              localTimeblock.end_time === serverTimeblock.end_time
+          )
+      );
+
+      const timeblocksToAdd = localTimeblocks?.filter(
+        (localTimeblock: Timeblock) =>
+          !serverTimeblocks?.some(
+            (serverTimeblock: Timeblock) =>
+              serverTimeblock.date === localTimeblock.date &&
+              serverTimeblock.start_time === localTimeblock.start_time &&
+              serverTimeblock.end_time === localTimeblock.end_time
+          )
+      );
+
+      await Promise.all(
+        timeblocksToRemove?.map((timeblock) => removeTimeBlock(timeblock.id))
+      );
+
+      await Promise.all(
+        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
+      );
     };
 
-    if (editing) return;
+    if (editing.enabled) return;
     syncTimeBlocks();
-  }, [plan.id, user, selectedTimeBlocks, editing]);
+  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   return (
     <TimeBlockContext.Provider
