@@ -120,7 +120,7 @@
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
     "sharp": "^0.33.2",
-    "sonner": "^1.4.0",
+    "sonner": "^1.4.1",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.2.1",
     "uuid": "^9.0.1",
