@@ -1,17 +1,29 @@
+import { createAdminClient } from '@/utils/supabase/client';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+interface Params {
+  params: {
+    planId: string;
+  };
+}
 
-  const guestTimeBlocksQuery = supabase
+export async function GET(_: Request) {
+  const sbAdmin = createAdminClient();
+  if (!sbAdmin)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+
+  const guestTimeBlocksQuery = sbAdmin
     .from('meet_together_guest_timeblocks')
     .select('*');
 
-  const userTimeBlocksQuery = supabase
+  const userTimeBlocksQuery = sbAdmin
     .from('meet_together_user_timeblocks')
     .select('*');
 
@@ -19,11 +31,6 @@ export async function GET(_: Request) {
     guestTimeBlocksQuery,
     userTimeBlocksQuery,
   ]);
-
-  const timeblocks = {
-    guest: guestTimeBlocks.data,
-    user: userTimeBlocks.data,
-  };
 
   const errors = {
     guest: guestTimeBlocks.error,
@@ -38,40 +45,85 @@ export async function GET(_: Request) {
     );
   }
 
+  const timeblocks = [
+    ...(guestTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: true })),
+    ...(userTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: false })),
+  ];
+
+  console.log(timeblocks);
+
   return NextResponse.json(timeblocks);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params: { planId } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
-  // const userId = data.userId;
-  const username = data.username;
-  const passwordHash = data.passwordHash;
+  const timeblock = data.timeblock;
+  delete timeblock.is_guest;
 
-  const userType = username && passwordHash ? 'guest' : 'user';
+  const passwordHash = data.password_hash;
+  const userType = passwordHash ? 'guest' : 'user';
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!timeblock)
+    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
 
-  if (userType === 'user' && !user)
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (userType === 'user') {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data: plan, error } = await supabase
-    .from(`meet_together_${userType}_timeblocks`)
-    .insert(data)
-    .select('id')
-    .single();
+    if (!user?.id)
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error creating meet together plan' },
-      { status: 500 }
-    );
+    const { data: tb, error } = await supabase
+      .from(`meet_together_user_timeblocks`)
+      .insert({ ...timeblock, plan_id: planId, user_id: user?.id })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error creating timeblock' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ id: tb.id, message: 'success' });
+  } else {
+    const sbAdmin = createAdminClient();
+    if (!sbAdmin)
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
+
+    const { data: guest } = await sbAdmin
+      .from('meet_together_guests')
+      .select('id')
+      .eq('id', data.user_id)
+      .eq('password_hash', passwordHash)
+      .maybeSingle();
+
+    if (!guest)
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+    const { data: tb, error } = await sbAdmin
+      .from(`meet_together_guest_timeblocks`)
+      .insert({ ...timeblock, plan_id: planId, user_id: data.user_id })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error creating timeblock' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ id: tb.id, message: 'success' });
   }
-
-  return NextResponse.json({ id: plan.id, message: 'success' });
 }

@@ -62,7 +62,7 @@ export async function POST(
     const salt = generateSalt();
     const hashedPassword = await hashPassword(password, salt);
 
-    const { data, error } = await sbAdmin
+    const { data: guest, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
         name,
@@ -70,7 +70,7 @@ export async function POST(
         password_hash: hashedPassword,
         password_salt: salt,
       })
-      .select('name')
+      .select('id, name')
       .single();
 
     if (error) {
@@ -83,9 +83,9 @@ export async function POST(
 
     return NextResponse.json({
       user: {
-        id: `${planId}-guest-${name}`,
-        display_name: data.name,
-        passwordHash: hashedPassword,
+        id: guest.id,
+        display_name: guest.name,
+        password_hash: hashedPassword,
         planId,
         is_guest: true,
       },
@@ -98,9 +98,9 @@ export async function POST(
   if (hashedPassword === guest.password_hash)
     return NextResponse.json({
       user: {
-        id: `${planId}-guest-${guest.name}`,
+        id: guest.id,
         display_name: guest.name,
-        passwordHash: hashedPassword,
+        password_hash: hashedPassword,
         planId,
         is_guest: true,
       },

@@ -4,15 +4,17 @@ export default function TimeColumn({
   id,
   start,
   end,
+  className,
 }: {
   id: string;
   start: number;
   end: number;
+  className?: string;
 }) {
   const { lang } = useTranslation();
 
   return (
-    <div>
+    <div className={className}>
       <div className="p-1 text-transparent">
         <div className="text-xs">0</div>
         <div className="text-lg">0</div>
@@ -26,7 +28,7 @@ export default function TimeColumn({
           .map((hr, i) => (
             <div
               key={`${id}-${hr}-${i}`}
-              className={`relative h-3 w-16 ${
+              className={`relative h-3 w-14 ${
                 hr === 0
                   ? ''
                   : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0

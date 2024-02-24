@@ -30,6 +30,7 @@ import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from './time-blocking-provider';
 import { User } from '@/types/primitives/User';
 import { usePathname, useRouter } from 'next/navigation';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
@@ -38,9 +39,11 @@ const formSchema = z.object({
 
 export default function PlanLogin({
   plan,
+  timeblocks,
   platformUser,
 }: {
   plan: MeetTogetherPlan;
+  timeblocks: Timeblock[];
   platformUser: User | null;
 }) {
   const pathname = usePathname();
@@ -102,11 +105,16 @@ export default function PlanLogin({
       onOpenChange={(open) => {
         form.reset();
         setLoading(false);
+        setShowAccountSwitcher(open);
         setShowLogin(open);
       }}
     >
       <DialogTrigger asChild={!!user || !!platformUser}>
-        <AvailabilityPlanner plan={plan} disabled={!user && !platformUser} />
+        <AvailabilityPlanner
+          plan={plan}
+          timeblocks={timeblocks}
+          disabled={!user}
+        />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -26,7 +26,7 @@ export default function UtilityButtons({
 
   return (
     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:items-start">
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="flex w-full items-start gap-2">
         <CopyLinkButton url={url} />
         <EmailButton plan={plan} url={url} />
       </div>
