@@ -92,7 +92,7 @@ export default function PreviewDayTime({
             .toDate();
 
           const isSelected = isSaved || isLocal || result.includes('add');
-          const isSelectable = i + hourSplits < array.length && !disabled;
+          const isSelectable = i + hourSplits < array.length;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
           const opacity = getOpacityForDate(currentDate, timeblocks);
 
