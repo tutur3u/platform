@@ -21,7 +21,7 @@ export default function DatePlanner({
   editable?: boolean;
   disabled?: boolean;
 }) {
-  const { editing, endEditing } = useTimeBlocking();
+  const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
 
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
@@ -64,14 +64,24 @@ export default function DatePlanner({
       />
 
       {dates && (
-        <div className="flex flex-col items-start justify-start gap-4 overflow-x-auto">
+        <div
+          className="flex flex-col items-start justify-start gap-4 overflow-x-auto"
+          onMouseLeave={
+            editable
+              ? undefined
+              : (e) => {
+                  e.preventDefault();
+                  setPreviewDate(null);
+                }
+          }
+        >
           <DayPlanners
             timeblocks={timeblocks}
             dates={dates}
             start={startHour}
             end={endHour}
             editable={editable}
-            disabled={disabled}
+            disabled={user ? disabled : true}
           />
         </div>
       )}

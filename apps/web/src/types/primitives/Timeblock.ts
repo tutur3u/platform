@@ -5,5 +5,6 @@ export interface Timeblock {
   date: string;
   start_time: string;
   end_time: string;
+  is_guest?: boolean;
   created_at?: string | null;
 }

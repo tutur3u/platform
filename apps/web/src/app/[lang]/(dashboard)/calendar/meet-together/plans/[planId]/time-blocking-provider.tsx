@@ -13,7 +13,6 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
 import { User as PlatformUser } from '@/types/primitives/User';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Timeblock } from '@/types/primitives/Timeblock';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import {
@@ -21,6 +20,7 @@ import {
   durationToTimeblocks,
   removeTimeblocks,
 } from '@/utils/timeblock-helper';
+import { useRouter } from 'next/navigation';
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
@@ -28,7 +28,7 @@ dayjs.extend(minMax);
 interface GuestUser {
   id: string;
   display_name?: string;
-  passwordHash?: string;
+  password_hash?: string;
   is_guest?: boolean;
 }
 
@@ -42,13 +42,26 @@ interface EditingParams {
 
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
+  planUsers: [] as (PlatformUser | GuestUser)[],
+  filteredUserIds: [] as string[],
+  previewDate: null as Date | null,
   selectedTimeBlocks: [] as Timeblock[],
   editing: {
     enabled: false,
   } as EditingParams,
   showLogin: false as boolean,
   showAccountSwitcher: false as boolean,
+
+  getPreviewUsers: (_: Timeblock[]) =>
+    ({ available: [], unavailable: [] }) as {
+      available: (PlatformUser | GuestUser)[];
+      unavailable: (PlatformUser | GuestUser)[];
+    },
+  getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
+
   setUser: (_: PlatformUser | GuestUser | null) => {},
+  setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
+  setPreviewDate: (_: Date | null) => {},
   setSelectedTimeBlocks: (_: Timeblock[]) => {},
   edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
@@ -59,24 +72,92 @@ const TimeBlockContext = createContext({
 const TimeBlockingProvider = ({
   platformUser,
   plan,
+  users,
   timeblocks,
   children,
 }: {
   platformUser: PlatformUser | null;
   plan: MeetTogetherPlan;
+  users: (PlatformUser | GuestUser)[];
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
-  const [selectedTimeBlocks, setSelectedTimeBlocks] =
-    useState<Timeblock[]>(timeblocks);
+  const router = useRouter();
+
+  const [planUsers, setInternalUsers] = useState(users);
+  const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setInternalUsers(users);
+  }, [users]);
+
+  const [previewDate, setPreviewDate] = useState<Date | null>(null);
+
+  const getPreviewUsers = (timeblocks: Timeblock[]) => {
+    if (!previewDate) return { available: [], unavailable: [] };
+
+    const previewUserIds = timeblocks
+      .filter((timeblock) => {
+        const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+        const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+        return dayjs(previewDate).isBetween(start, end, null, '[)');
+      })
+      .map((timeblock) => timeblock.user_id)
+      .filter(Boolean) as string[];
+
+    const allUsers = planUsers.filter(
+      (user) =>
+        filteredUserIds.length === 0 || filteredUserIds.includes(user.id)
+    );
+
+    const uniqueUserIds = Array.from(new Set(previewUserIds));
+
+    return {
+      available: allUsers.filter((user) => uniqueUserIds.includes(user.id)),
+      unavailable: allUsers.filter((user) => !uniqueUserIds.includes(user.id)),
+    };
+  };
+
+  const getOpacityForDate = (date: Date, timeblocks: Timeblock[]) => {
+    const allTimeblocks = timeblocks
+      .filter((timeblock) => {
+        const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+        const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+        return dayjs(date).isBetween(start, end, null, '[)');
+      })
+      .map((timeblock) => timeblock.user_id)
+      .filter(Boolean) as string[];
+
+    const uniqueUserIds = Array.from(new Set(allTimeblocks));
+
+    return (
+      uniqueUserIds.length /
+      (filteredUserIds.length > 0 ? filteredUserIds.length : planUsers.length)
+    );
+  };
 
   const [editing, setEditing] = useState<EditingParams>({
     enabled: false,
   });
 
-  const [user, setUser] = useState<PlatformUser | GuestUser | null>(
+  const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
   );
+
+  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<Timeblock[]>(
+    timeblocks.filter((tb) => tb.user_id === user?.id)
+  );
+
+  const setUser = (user: PlatformUser | GuestUser | null) => {
+    setSelectedTimeBlocks(
+      timeblocks.filter(
+        (tb) =>
+          tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+      )
+    );
+    setInternalUser(user);
+  };
+
   const [showLogin, setShowLogin] = useState(false);
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
 
@@ -161,33 +242,45 @@ const TimeBlockingProvider = ({
       start_time: string;
       end_time: string;
     }) => {
+      const data = {
+        user_id: user?.id,
+        password_hash: user?.password_hash,
+        timeblock,
+      };
+
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
         method: 'POST',
-        body: JSON.stringify(timeblock),
+        body: JSON.stringify(data),
       });
     };
 
     const removeTimeBlock = async (id: string) => {
+      const data = {
+        user_id: user?.id,
+        password_hash: user?.password_hash,
+      };
+
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks/${id}`, {
         method: 'DELETE',
-        body: JSON.stringify({}),
+        body: JSON.stringify(data),
       });
     };
 
     const fetchCurrentTimeBlocks = async () => {
       if (!user) return [];
 
-      const supabase = createClientComponentClient();
-      const type = user?.is_guest ? 'guest' : 'user';
+      const res = await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`);
+      if (!res.ok) return [];
 
-      const { data, error } = await supabase
-        .from(`meet_together_${type}_timeblocks`)
-        .select('*')
-        .eq('plan_id', plan.id)
-        .eq('user_id', user?.id);
+      const timeblocks = (await res.json()) as Timeblock[];
+      const currentUserTimeblocks = timeblocks
+        ?.flat()
+        .filter(
+          (tb: Timeblock) =>
+            tb.user_id === user.id && tb.is_guest === (user.is_guest ?? false)
+        );
 
-      if (error) return [];
-      return data;
+      return currentUserTimeblocks;
     };
 
     const syncTimeBlocks = async () => {
@@ -220,27 +313,40 @@ const TimeBlockingProvider = ({
       );
 
       await Promise.all(
-        timeblocksToRemove?.map((timeblock) => removeTimeBlock(timeblock.id))
+        timeblocksToRemove?.map((timeblock) =>
+          timeblock.id ? removeTimeBlock(timeblock.id) : null
+        )
       );
 
       await Promise.all(
         timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
       );
+
+      router.refresh();
     };
 
     if (editing.enabled) return;
     syncTimeBlocks();
-  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
+  }, [router, plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   return (
     <TimeBlockContext.Provider
       value={{
         user,
+        planUsers,
+        filteredUserIds,
+        previewDate,
         selectedTimeBlocks,
         editing,
         showLogin,
         showAccountSwitcher,
+
+        getPreviewUsers,
+        getOpacityForDate,
+
         setUser,
+        setFilteredUserIds,
+        setPreviewDate,
         setSelectedTimeBlocks,
         edit,
         endEditing,

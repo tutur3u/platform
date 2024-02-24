@@ -23,6 +23,7 @@ export default function CopyLinkButton({ url }: { url: string }) {
         navigator.clipboard.writeText(url);
         setCopied(true);
       }}
+      className="w-full md:w-auto"
       disabled={copied || !url}
     >
       {copied ? (

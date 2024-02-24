@@ -6,21 +6,20 @@ export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
-    timezoneId: string;
+    planId: string;
   };
 }
 
-export async function PUT(
-  req: Request,
-  { params: { timezoneId: id } }: Params
-) {
+export async function PUT(req: Request, { params: { planId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
+  console.log(id);
 
   const data = await req.json();
+  const name = data.name;
 
   const { error } = await supabase
     .from('meet_together_plans')
-    .upsert(data)
+    .update({ name })
     .eq('id', id);
 
   if (error) {
@@ -34,10 +33,7 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { timezoneId: id } }: Params
-) {
+export async function DELETE(_: Request, { params: { planId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const { error } = await supabase
