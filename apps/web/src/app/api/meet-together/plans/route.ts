@@ -25,6 +25,7 @@ export async function GET(_: Request) {
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
+
   if (!sbAdmin) {
     return NextResponse.json(
       { message: 'Error creating meet together plan' },
@@ -33,9 +34,15 @@ export async function POST(req: Request) {
   }
 
   const data = await req.json();
+  const supabase = createRouteHandlerClient({ cookies });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
-    .insert(data)
+    .insert({ ...data, creator_id: user?.id })
     .select('id')
     .single();
 

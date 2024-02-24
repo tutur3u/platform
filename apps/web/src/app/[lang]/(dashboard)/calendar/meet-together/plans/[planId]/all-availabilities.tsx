@@ -14,10 +14,21 @@ export default function AllAvailabilities({
   timeblocks: Timeblock[];
 }) {
   const { t } = useTranslation('meet-together-plan-details');
-  const { planUsers, filteredUserIds } = useTimeBlocking();
+  const { user, planUsers, selectedTimeBlocks, filteredUserIds } =
+    useTimeBlocking();
 
   const totalUserCount =
     filteredUserIds.length === 0 ? planUsers.length : filteredUserIds.length;
+
+  const localTimeblocks = [
+    ...timeblocks.filter((tb) => {
+      return tb.user_id !== user?.id;
+    }),
+    ...selectedTimeBlocks.data.map((tb) => ({
+      ...tb,
+      user_id: user?.id,
+    })),
+  ];
 
   return (
     <div className="grid gap-2 text-center">
@@ -56,7 +67,7 @@ export default function AllAvailabilities({
       </div>
 
       <DatePlanner
-        timeblocks={timeblocks}
+        timeblocks={localTimeblocks}
         dates={plan.dates}
         start={plan.start_time}
         end={plan.end_time}

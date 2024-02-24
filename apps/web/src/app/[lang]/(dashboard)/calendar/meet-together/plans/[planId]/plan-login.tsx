@@ -71,6 +71,8 @@ export default function PlanLogin({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!plan.id) return;
+
     setLoading(true);
 
     const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
@@ -86,7 +88,7 @@ export default function PlanLogin({
 
     if (res.ok) {
       const data = await res.json();
-      setUser(data.user);
+      setUser(plan.id, data.user);
       setLoading(false);
       setShowLogin(false);
     } else {
@@ -135,17 +137,20 @@ export default function PlanLogin({
             <Button
               className="w-full"
               onClick={() => {
+                if (!plan.id) return;
+
                 if (!platformUser) {
                   router.push(`/login?nextUrl=${encodeURIComponent(pathname)}`);
                   return;
                 }
 
-                setUser(platformUser);
+                setUser(plan.id, platformUser);
                 setShowAccountSwitcher(false);
                 setShowLogin(false);
               }}
               disabled={
-                !!platformUser && (!user?.id || platformUser?.id === user?.id)
+                !plan.id ||
+                (!!platformUser && (!user?.id || platformUser?.id === user?.id))
               }
             >
               {!!platformUser && (!user?.id || platformUser?.id === user?.id)
