@@ -1,4 +1,5 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createAdminClient } from '@/utils/supabase/client';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
@@ -23,10 +24,10 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const sbAdmin = createAdminClient();
 
   const data = await req.json();
-  const { data: plan, error } = await supabase
+  const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
     .insert(data)
     .select('id')
