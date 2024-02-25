@@ -1,6 +1,6 @@
 import { Squares2X2Icon } from '@heroicons/react/24/solid';
 import { MultiSelect } from '@mantine/core';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 interface Props {
   teamIds: string[];

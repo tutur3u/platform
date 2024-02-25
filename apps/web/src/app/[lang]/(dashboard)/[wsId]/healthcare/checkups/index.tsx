@@ -6,10 +6,10 @@ import ModeSelector, {
 import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import CheckupCard from '../../../../../../components/cards/CheckupCard';
-import { Checkup } from '../../../../../../types/primitives/Checkup';
+import { Checkup } from '@/types/primitives/Checkup';
 import useSWR from 'swr';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 

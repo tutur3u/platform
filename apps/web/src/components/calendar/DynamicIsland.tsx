@@ -3,8 +3,8 @@ import { Divider } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { useCalendar } from '../../hooks/useCalendar';
-import { getCardColor } from '../../utils/color-helper';
+import { useCalendar } from '@/hooks/useCalendar';
+import { getCardColor } from '@/utils/color-helper';
 
 const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();
@@ -111,7 +111,7 @@ const DynamicIsland = () => {
       setCurrentCycle((prev) => prev + 1);
       setTime(cycle);
 
-      // Play an notification sound
+      // Play a notification sound
       const audio = new Audio('/media/sounds/alarm.mp3');
       audio.play();
 

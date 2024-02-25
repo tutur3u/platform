@@ -2,11 +2,10 @@
 
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { useState } from 'react';
-import { ChangeEvent } from 'react';
-import { User, UserRole } from '../../types/primitives/User';
+import React, { ChangeEvent, useState } from 'react';
+import { User, UserRole } from '@/types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
-import { getInitials } from '../../utils/name-helper';
+import { getInitials } from '@/utils/name-helper';
 
 interface Props {
   currentRole: UserRole;
@@ -57,9 +56,7 @@ const WorkspaceMemberEditForm = ({
     if (currentRolePriority < memberRolePriority) return false;
 
     // Compare current role with new role to be assigned
-    if (currentRolePriority < newRolePriority) return false;
-
-    return true;
+    return currentRolePriority >= newRolePriority;
   };
 
   return (

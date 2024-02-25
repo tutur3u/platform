@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { Vital } from '../../../../../../types/primitives/Vital';
-import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
+import { Vital } from '@/types/primitives/Vital';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
 import WorkspaceUserSelector from '../../../../../../components/selectors/WorkspaceUserSelector';
 import DiagnosisSelector from '../../../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
 
 export default function NewCheckupPage() {
   const { setRootSegment } = useSegments();

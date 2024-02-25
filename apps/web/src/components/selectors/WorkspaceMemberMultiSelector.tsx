@@ -1,8 +1,8 @@
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { MultiSelect } from '@mantine/core';
 import useSWR from 'swr';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { User } from '../../types/primitives/User';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { User } from '@/types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {

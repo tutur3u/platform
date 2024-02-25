@@ -1,13 +1,13 @@
 'use client';
 
 import { Divider } from '@mantine/core';
-import { Wallet } from '../../../../../../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import useSWR from 'swr';
 import TransactionCard from '../../../../../../../components/cards/TransactionCard';
 import MiniPlusButton from '../../../../../../../components/common/MiniPlusButton';
 import PlusCardButton from '../../../../../../../components/common/PlusCardButton';
-import { Mode } from '../../../../../../../components/selectors/ModeSelector';
-import { Transaction } from '../../../../../../../types/primitives/Transaction';
+import { Mode } from '@/components/selectors/ModeSelector';
+import { Transaction } from '@/types/primitives/Transaction';
 import moment from 'moment';
 import { useLocalStorage } from '@mantine/hooks';
 import useTranslation from 'next-translate/useTranslation';

@@ -1,9 +1,9 @@
 import { Squares2X2Icon } from '@heroicons/react/24/solid';
 import { Select } from '@mantine/core';
 import useSWR from 'swr';
-import { Team } from '../../types/primitives/Team';
+import { Team } from '@/types/primitives/Team';
 import { useEffect } from 'react';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 interface Props {
   teamId: string;

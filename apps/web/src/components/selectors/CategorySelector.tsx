@@ -1,7 +1,7 @@
 import { Select } from '@mantine/core';
-import { ProductCategory } from '../../types/primitives/ProductCategory';
+import { ProductCategory } from '@/types/primitives/ProductCategory';
 import useSWR, { mutate } from 'swr';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useEffect } from 'react';
 import { showNotification } from '@mantine/notifications';
 

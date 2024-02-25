@@ -2,7 +2,7 @@ import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { MultiSelect } from '@mantine/core';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
-import { Workspace } from '../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
 
 interface Props {

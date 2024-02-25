@@ -1,7 +1,7 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { VitalGroup } from '../../types/primitives/VitalGroup';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
 import VitalGroupSelector from '../selectors/VitalGroupSelector';
-import { Vital } from '../../types/primitives/Vital';
+import { Vital } from '@/types/primitives/Vital';
 import useSWR from 'swr';
 import { useEffect } from 'react';
 

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useWorkspaces } from './useWorkspaces';
 import useSWR, { mutate as swrMutate } from 'swr';
-import { CalendarEvent } from '../types/primitives/calendar-event';
+import { CalendarEvent } from '@/types/primitives/calendar-event';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import { useLocalStorage } from '@mantine/hooks';
@@ -187,10 +187,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
         // If the event ends before the current event starts,
         // or if the event starts after the current event ends
-        if (e.end_at <= event.start_at || e.start_at >= event.end_at)
-          return false;
-
-        return true;
+        return !(e.end_at <= event.start_at || e.start_at >= event.end_at);
       });
 
       if (prevEvents.length === 0) return 0;

@@ -1,6 +1,6 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
-import { Product } from '../../types/primitives/Product';
+import { Product } from '@/types/primitives/Product';
 import ProductUnitSelector from '../selectors/ProductUnitSelector';
 
 interface Props {

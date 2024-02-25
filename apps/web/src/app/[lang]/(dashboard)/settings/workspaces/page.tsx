@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
-import { useWorkspaces } from '../../../../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Workspace } from '../../../../../types/primitives/Workspace';
-import { StrictModeDroppable } from '../../../../../components/dnd/StrictModeDroppable';
+import { Workspace } from '@/types/primitives/Workspace';
+import { StrictModeDroppable } from '@/components/dnd/StrictModeDroppable';
 import { EyeIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { mutate } from 'swr';

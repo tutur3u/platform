@@ -3,19 +3,18 @@
 import { useEffect, useState } from 'react';
 import { Divider, NumberInput, Textarea } from '@mantine/core';
 import WorkspaceUserSelector from '../../../../../../../components/selectors/WorkspaceUserSelector';
-import { Product } from '../../../../../../../types/primitives/Product';
+import { Product } from '@/types/primitives/Product';
 import InvoiceProductInput from '../../../../../../../components/inputs/InvoiceProductInput';
 import useSWR, { mutate } from 'swr';
 import 'dayjs/locale/vi';
 import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../../../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import TransactionCategorySelector from '../../../../../../../components/selectors/TransactionCategorySelector';
-import { TransactionCategory } from '../../../../../../../types/primitives/TransactionCategory';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { DateTimePicker } from '@mantine/dates';
-import 'dayjs/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
-import { Invoice } from '../../../../../../../types/primitives/Invoice';
-import { Transaction } from '../../../../../../../types/primitives/Transaction';
+import { Invoice } from '@/types/primitives/Invoice';
+import { Transaction } from '@/types/primitives/Transaction';
 import moment from 'moment';
 
 interface Props {
@@ -141,7 +140,6 @@ export default function InvoiceDetailsPage({
 
   const toggleStatus = async () => {
     if (!invoice) return;
-    if (typeof invoiceId !== 'string') return;
     if (!wsId) return;
 
     try {

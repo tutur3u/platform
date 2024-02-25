@@ -11,7 +11,7 @@ import {
   getDateRangeUnits,
   getDateRange,
   getDateRangeOptions,
-} from '../../utils/date-helper';
+} from '@/utils/date-helper';
 
 interface Props {
   value?: DateRange;

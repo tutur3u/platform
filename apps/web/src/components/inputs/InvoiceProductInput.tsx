@@ -1,5 +1,5 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { Product } from '../../types/primitives/Product';
+import { Product } from '@/types/primitives/Product';
 import { NumberInput } from '@mantine/core';
 import { useEffect } from 'react';
 import SettingItemCard from '../settings/SettingItemCard';
@@ -216,9 +216,7 @@ const InvoiceProductInput = ({
                     ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                     : ''
                 }
-                disabled={
-                  p.stock === null || p.stock === null || p?.stock === 0
-                }
+                disabled={p.stock === null || p?.stock === 0}
                 max={hideStock ? undefined : p.stock || 0}
                 className={hideStock ? 'xl:col-span-2' : ''}
               />

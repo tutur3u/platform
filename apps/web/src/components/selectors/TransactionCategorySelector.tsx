@@ -1,10 +1,10 @@
 'use client';
 
 import { Select } from '@mantine/core';
-import { TransactionCategory } from '../../types/primitives/TransactionCategory';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 import useTranslation from 'next-translate/useTranslation';
 import { useParams } from 'next/navigation';

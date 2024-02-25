@@ -16,12 +16,12 @@ import {
 import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
 import React from 'react';
-import { Task } from '../../../types/primitives/Task';
-import { User } from '../../../types/primitives/User';
-import { getInitials } from '../../../utils/name-helper';
+import { Task } from '@/types/primitives/Task';
+import { User } from '@/types/primitives/User';
+import { getInitials } from '@/utils/name-helper';
 import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
-import { useUser } from '../../../hooks/useUser';
+import { useUser } from '@/hooks/useUser';
 
 export interface TaskWrapperProps {
   task: Task;

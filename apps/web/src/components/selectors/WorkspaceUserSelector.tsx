@@ -1,8 +1,8 @@
 import { Select } from '@mantine/core';
-import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 import useTranslation from 'next-translate/useTranslation';
 

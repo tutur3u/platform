@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import { UserGroup } from '../../../../../../../types/primitives/UserGroup';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import { useLocalStorage } from '@mantine/hooks';
 import ModeSelector, {
   Mode,
 } from '../../../../../../../components/selectors/ModeSelector';
-import { WorkspaceUser } from '../../../../../../../types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
 import { Divider, Switch } from '@mantine/core';
 import WorkspaceUserCard from '../../../../../../../components/cards/WorkspaceUserCard';

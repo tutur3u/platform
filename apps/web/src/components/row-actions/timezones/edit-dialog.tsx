@@ -11,7 +11,7 @@ import {
 import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import TimezoneForm, { ApiConfigFormSchema } from './form';
 import useTranslation from 'next-translate/useTranslation';
 import { Timezone } from '@/types/primitives/Timezone';

@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { Vital } from '../../../../../../types/primitives/Vital';
+import { Vital } from '@/types/primitives/Vital';
 import 'dayjs/locale/vi';
-import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
 import WorkspaceUserSelector from '../../../../../../components/selectors/WorkspaceUserSelector';
 import DiagnosisSelector from '../../../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import { useRouter } from 'next/router';
-import { Checkup } from '../../../../../../types/primitives/Checkup';
+import { Checkup } from '@/types/primitives/Checkup';
 import useSWR from 'swr';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import moment from 'moment';
 
 export default function CheckupDetailsPage() {

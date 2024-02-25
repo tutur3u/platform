@@ -7,15 +7,15 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { useSegments } from '../../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../../hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../../../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
 import TransactionCategorySelector from '../../../../../../../components/selectors/TransactionCategorySelector';
-import { TransactionCategory } from '../../../../../../../types/primitives/TransactionCategory';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { useRouter } from 'next/router';
-import { Transaction } from '../../../../../../../types/primitives/Transaction';
+import { Transaction } from '@/types/primitives/Transaction';
 import useSWR from 'swr';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';

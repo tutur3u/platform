@@ -21,14 +21,14 @@ import {
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
 import { openConfirmModal, openModal } from '@mantine/modals';
-import { TaskBoard } from '../../../../../../types/primitives/TaskBoard';
-import { TaskList } from '../../../../../../types/primitives/TaskList';
-import { Task } from '../../../../../../types/primitives/Task';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
+import { TaskList } from '@/types/primitives/TaskList';
+import { Task } from '@/types/primitives/Task';
 import BoardEditForm from '../../../../../../components/forms/BoardEditForm';
 import TaskListEditForm from '../../../../../../components/forms/TaskListEditForm';
 import TaskListWrapper from '../../../../../../components/tasks/lists/TaskListWrapper';
-import { useUser } from '../../../../../../hooks/useUser';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useUser } from '@/hooks/useUser';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -64,8 +64,7 @@ export default function WorkspaceBoardEditor({
   );
 
   const buildQuery = (wsId: string, listId: String) => {
-    let query = `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
-    return query;
+    return `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
   };
 
   const canFetchTasks = user?.id && boardId && selectedListId;

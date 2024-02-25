@@ -6,14 +6,14 @@ import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { mutate } from 'swr';
-import { User } from '../../types/primitives/User';
+import { User } from '@/types/primitives/User';
 import {
   isEmail,
   isIncompleteEmail,
   suggestEmails,
-} from '../../utils/email-helper';
+} from '@/utils/email-helper';
 import useTranslation from 'next-translate/useTranslation';
-import { getInitials } from '../../utils/name-helper';
+import { getInitials } from '@/utils/name-helper';
 
 interface SelectUserFormProps {
   wsId: string;

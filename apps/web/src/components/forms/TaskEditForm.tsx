@@ -12,16 +12,15 @@ import {
   TextInput,
 } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { forwardRef, useEffect, useState } from 'react';
-import { ChangeEvent } from 'react';
-import { Task } from '../../types/primitives/Task';
+import React, { ChangeEvent, forwardRef, useEffect, useState } from 'react';
+import { Task } from '@/types/primitives/Task';
 import { DateTimePicker } from '@mantine/dates';
 import moment from 'moment';
-import { Priority } from '../../types/primitives/Priority';
+import { Priority } from '@/types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
-import { getInitials } from '../../utils/name-helper';
+import { getInitials } from '@/utils/name-helper';
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -29,8 +28,8 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
-import { User } from '../../types/primitives/User';
-import { useUser } from '../../hooks/useUser';
+import { User } from '@/types/primitives/User';
+import { useUser } from '@/hooks/useUser';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -97,8 +96,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       const response = await fetch(`/api/users/search?query=${searchQuery}`);
 
       if (response.ok) {
-        const data = await response.json();
-        return data;
+        return await response.json();
       }
 
       return [];

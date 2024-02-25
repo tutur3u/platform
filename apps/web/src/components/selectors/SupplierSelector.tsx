@@ -1,7 +1,7 @@
 import { Select } from '@mantine/core';
-import { ProductSupplier } from '../../types/primitives/ProductSupplier';
+import { ProductSupplier } from '@/types/primitives/ProductSupplier';
 import useSWR, { mutate } from 'swr';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 
 interface Props {

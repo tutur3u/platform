@@ -1,4 +1,4 @@
-import { User } from '../../../../../../../types/primitives/User';
+import { User } from '@/types/primitives/User';
 import UserCard from '../../../../../../../components/cards/UserCard';
 import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';

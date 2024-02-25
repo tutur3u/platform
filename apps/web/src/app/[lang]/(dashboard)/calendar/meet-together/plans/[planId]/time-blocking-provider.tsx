@@ -1,9 +1,9 @@
 'use client';
 
 import {
+  createContext,
   ReactNode,
   Touch,
-  createContext,
   useContext,
   useEffect,
   useState,
@@ -293,14 +293,12 @@ const TimeBlockingProvider = ({
       if (!res.ok) return [];
 
       const timeblocks = (await res.json()) as Timeblock[];
-      const currentUserTimeblocks = timeblocks
+      return timeblocks
         ?.flat()
         .filter(
           (tb: Timeblock) =>
             tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
         );
-
-      return currentUserTimeblocks;
     };
 
     const syncTimeBlocks = async () => {

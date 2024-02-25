@@ -207,8 +207,7 @@ export function timetzToTime(timetz: string) {
 export function timetzToHour(timetz?: string) {
   if (!timetz) return undefined;
   const [hourStr] = timetzToTime(timetz).split(':');
-  const hour = parseInt(hourStr);
-  return hour;
+  return parseInt(hourStr);
 }
 
 export function timeToTimetz(time: string) {

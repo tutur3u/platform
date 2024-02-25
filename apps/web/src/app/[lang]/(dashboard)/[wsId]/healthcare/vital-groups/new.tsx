@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { Vital } from '../../../../../../types/primitives/Vital';
+import { Vital } from '@/types/primitives/Vital';
 import 'dayjs/locale/vi';
 import VitalSelector from '../../../../../../components/selectors/VitalSelector';
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
 
 export default function NewVitalGroupPage() {
   const { setRootSegment } = useSegments();

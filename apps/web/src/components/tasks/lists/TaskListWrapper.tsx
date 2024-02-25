@@ -1,14 +1,14 @@
 import { Accordion, Button, Loader } from '@mantine/core';
-import { TaskList } from '../../../types/primitives/TaskList';
+import { TaskList } from '@/types/primitives/TaskList';
 import React from 'react';
 import TaskListAccordionControl from './TaskListAccordionControl';
-import { Task } from '../../../types/primitives/Task';
+import { Task } from '@/types/primitives/Task';
 import useSWR, { mutate } from 'swr';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
-import { Workspace } from '../../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 
 export interface TaskListWrapperProps {
   ws: Workspace;
@@ -18,9 +18,7 @@ export interface TaskListWrapperProps {
 
 const TaskListWrapper = ({ ws, boardId, list }: TaskListWrapperProps) => {
   const buildQuery = (listId: string) => {
-    let query = `/api/workspaces/${ws.id}/boards/${boardId}/lists/${listId}/tasks`;
-
-    return query;
+    return `/api/workspaces/${ws.id}/boards/${boardId}/lists/${listId}/tasks`;
   };
 
   const resync = () => {

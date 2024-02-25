@@ -2,7 +2,7 @@
 
 import SettingItemCard from '../../../../../components/settings/SettingItemCard';
 import useTranslation from 'next-translate/useTranslation';
-import { useAppearance } from '../../../../../hooks/useAppearance';
+import { useAppearance } from '@/hooks/useAppearance';
 
 export default function SettingPage() {
   const { t } = useTranslation('settings-appearance');

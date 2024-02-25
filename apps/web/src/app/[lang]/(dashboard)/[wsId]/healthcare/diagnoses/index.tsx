@@ -6,10 +6,10 @@ import ModeSelector, {
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
 import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
 import useSWR from 'swr';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';

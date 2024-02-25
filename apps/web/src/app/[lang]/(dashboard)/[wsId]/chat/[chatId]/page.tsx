@@ -68,8 +68,7 @@ export default async function AIPage({
 
 const hasKey = (key: string) => {
   const keyEnv = process.env[key];
-  const hasKey = !!keyEnv && keyEnv.length > 0;
-  return hasKey;
+  return !!keyEnv && keyEnv.length > 0;
 };
 
 const getMessages = async (chatId: string) => {
@@ -86,12 +85,10 @@ const getMessages = async (chatId: string) => {
     return [];
   }
 
-  const messages = data.map(({ role, ...rest }) => ({
+  return data.map(({ role, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
   })) as Message[];
-
-  return messages;
 };
 
 const getChat = async (chatId: string) => {

@@ -1,8 +1,8 @@
 import { Squares2X2Icon } from '@heroicons/react/24/solid';
 import { MultiSelect } from '@mantine/core';
 import useSWR from 'swr';
-import { ProductCategory } from '../../types/primitives/ProductCategory';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { ProductCategory } from '@/types/primitives/ProductCategory';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {

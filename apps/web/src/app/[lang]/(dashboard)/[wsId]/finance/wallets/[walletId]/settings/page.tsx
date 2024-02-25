@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import SettingItemCard from '../../../../../../../../components/settings/SettingItemCard';
 import { useRouter } from 'next/navigation';
-import { Wallet } from '../../../../../../../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 

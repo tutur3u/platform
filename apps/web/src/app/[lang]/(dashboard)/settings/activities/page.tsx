@@ -10,9 +10,9 @@ import { useLocalStorage } from '@mantine/hooks';
 import AuditLogCard from '../../../../../components/cards/AuditLogCard';
 import useSWR from 'swr';
 import OperationMultiSelector from '../../../../../components/selectors/OperationMultiSelector';
-import { AuditLog } from '../../../../../types/primitives/audit-log';
+import { AuditLog } from '@/types/primitives/audit-log';
 import useTranslation from 'next-translate/useTranslation';
-import { useUser } from '../../../../../hooks/useUser';
+import { useUser } from '@/hooks/useUser';
 import WorkspaceMultiSelector from '../../../../../components/selectors/WorkspaceMultiSelector';
 
 export default function UserActivitiesPage() {

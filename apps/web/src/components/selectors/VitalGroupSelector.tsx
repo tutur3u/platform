@@ -1,8 +1,8 @@
 import { Select } from '@mantine/core';
-import { VitalGroup } from '../../types/primitives/VitalGroup';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
 import useSWR, { mutate } from 'swr';
 import { useEffect } from 'react';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { showNotification } from '@mantine/notifications';
 
 interface Props {

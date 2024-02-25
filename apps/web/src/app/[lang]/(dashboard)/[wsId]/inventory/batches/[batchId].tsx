@@ -3,12 +3,12 @@ import useSWR from 'swr';
 import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import WarehouseSelector from '../../../../../../components/selectors/WarehouseSelector';
-import { Product } from '../../../../../../types/primitives/Product';
+import { Product } from '@/types/primitives/Product';
 import SupplierSelector from '../../../../../../components/selectors/SupplierSelector';
-import { ProductBatch } from '../../../../../../types/primitives/ProductBatch';
+import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { useRouter } from 'next/router';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import BatchProductInput from '../../../../../../components/inputs/BatchProductInput';
 
 export default function BatchDetailsPage() {

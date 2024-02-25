@@ -13,9 +13,9 @@ import {
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import { mutate } from 'swr';
-import { TaskList } from '../../../types/primitives/TaskList';
+import { TaskList } from '@/types/primitives/TaskList';
 import TaskListEditForm from '../../forms/TaskListEditForm';
-import { Workspace } from '../../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 
 const TaskListAccordionControl = (
   props: AccordionControlProps & {

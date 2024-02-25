@@ -1,7 +1,7 @@
 import { Select } from '@mantine/core';
-import { Product } from '../../types/primitives/Product';
+import { Product } from '@/types/primitives/Product';
 import useSWR from 'swr';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 interface Props {
   warehouseId: string;

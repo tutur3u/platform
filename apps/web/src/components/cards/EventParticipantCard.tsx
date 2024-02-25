@@ -1,6 +1,6 @@
 import { CheckIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
-import { EventParticipant } from '../../types/primitives/EventParticipant';
+import { EventParticipant } from '@/types/primitives/EventParticipant';
 import { Button, Loader } from '@mantine/core';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';

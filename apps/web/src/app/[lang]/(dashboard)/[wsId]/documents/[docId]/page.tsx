@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useEffect, useState } from 'react';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { useSegments } from '@/hooks/useSegments';
 import {
   Divider,
   Loader,
@@ -19,7 +19,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { useDebouncedValue } from '@mantine/hooks';
 import DocumentEditor from '../../../../../../components/editor/DocumentEditor';
-import { Document } from '../../../../../../types/primitives/Document';
+import { Document } from '@/types/primitives/Document';
 import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -29,7 +29,7 @@ import SubScript from '@tiptap/extension-subscript';
 import { useEditor } from '@tiptap/react';
 import { Link } from '@mantine/tiptap';
 import { openConfirmModal } from '@mantine/modals';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
