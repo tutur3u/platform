@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
-import { CalendarClock, Globe, Palette, Settings, User } from 'lucide-react';
+import { Globe, Palette, Settings, User } from 'lucide-react';
 import { Suspense } from 'react';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ import { SystemLanguageWrapper } from './(dashboard)/_components/system-language
 import DashboardMenuItem from './dashboard-menu-item';
 import { getWorkspaces } from '@/lib/workspace-helper';
 import InviteMembersMenuItem from './invite-members-menu-item';
+import MeetTogetherMenuItem from './meet-together-menu-item';
 
 export async function UserNav() {
   const { t } = useTranslation('common');
@@ -63,15 +64,7 @@ export async function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DashboardMenuItem defaultWorkspaceId={workspaces?.[0]?.id} />
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <Link href="/calendar/meet-together">
-            <DropdownMenuItem className="cursor-pointer">
-              <CalendarClock className="mr-2 h-4 w-4" />
-              <span>{t('meet-together')}</span>
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
+        <MeetTogetherMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>

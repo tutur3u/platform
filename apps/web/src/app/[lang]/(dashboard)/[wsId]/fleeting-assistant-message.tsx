@@ -5,12 +5,11 @@ import { Message } from 'ai';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { capitalize, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/ui/codeblock';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { IconUser } from '@/components/ui/icons';
 import { ChatMessageActions } from '@/components/chat-message-actions';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import dayjs from 'dayjs';
@@ -18,33 +17,27 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import useTranslation from 'next-translate/useTranslation';
 import 'katex/dist/katex.min.css';
 import 'dayjs/locale/vi';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
-  setInput?: (input: string) => void;
-  embeddedUrl?: string;
-  locale?: string;
   model?: string;
 }
 
-export function ChatMessage({
+export function FleetingAssistantMessage({
   message,
-  setInput,
-  embeddedUrl,
-  locale = 'en',
   model,
   ...props
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
-  dayjs.locale(locale);
 
   const { t } = useTranslation('ai-chat');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 
   return (
-    <div className={cn('group relative mb-4 grid gap-4')} {...props}>
-      <div className="flex flex-wrap gap-2">
+    <div className={cn('group relative mb-4 grid h-fit gap-4')} {...props}>
+      <div className="flex h-fit flex-wrap gap-2">
         <div
           className={`${
             resolvedTheme === 'light'
@@ -52,7 +45,7 @@ export function ChatMessage({
               : resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
                 ? 'bg-foreground/5'
                 : 'bg-foreground/10'
-          } flex w-fit select-none items-center space-x-2 rounded-lg border p-2`}
+          } flex h-fit w-fit select-none items-center space-x-2 rounded-lg border p-2`}
         >
           <div
             className={cn(
@@ -86,10 +79,6 @@ export function ChatMessage({
                 </span>
               )}
             </span>
-
-            <div className="text-xs font-semibold opacity-70">
-              {capitalize(dayjs(message?.created_at).fromNow())}
-            </div>
           </div>
         </div>
 
@@ -98,7 +87,7 @@ export function ChatMessage({
 
       <div className="flex-1 space-y-2">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-full max-w-full break-words"
+          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-[30.8rem] break-words"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -149,30 +138,6 @@ export function ChatMessage({
                   ?.map((child) => child?.toString())
                   ?.join('')
                   ?.trim();
-
-                if (embeddedUrl)
-                  return (
-                    <Link
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
-                      href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
-                    >
-                      <span className="line-clamp-1 px-3 py-1">
-                        {content || '...'}
-                      </span>
-                    </Link>
-                  );
-
-                if (setInput)
-                  return (
-                    <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
-                      onClick={() => setInput(content || '')}
-                    >
-                      <span className="line-clamp-1 px-3 py-1">
-                        {content || '...'}
-                      </span>
-                    </button>
-                  );
 
                 return (
                   <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">

@@ -61,7 +61,7 @@ export function EmptyScreen({
   ];
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-4 lg:max-w-4xl xl:max-w-6xl">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
       <div className="bg-background rounded-lg border p-4 md:p-8">
         <h1 className="mb-2 text-lg font-semibold">
           {t('welcome_to')}{' '}
@@ -80,7 +80,7 @@ export function EmptyScreen({
           {t('welcome_msg')}
         </p>
 
-        <div className="mt-4 flex flex-col items-start space-y-2">
+        <div className="mt-4 flex w-full flex-col items-start space-y-2">
           {exampleMessages.map((message, index) => (
             <Button
               key={index}
@@ -102,23 +102,20 @@ export function EmptyScreen({
                 {t('recent_conversations')}
               </h2>
               <div className="mt-4 flex flex-col items-start space-y-2">
-                {chats.slice(0, 5).map((chat, index) => (
-                  <div key={chat.id} className="flex items-start">
-                    <MessageCircle className="text-foreground/80 mr-2 shrink-0" />
-                    <div className="w-full">
-                      <Link href={`/${wsId}/chat/${chat.id}`}>
-                        <Button
-                          key={index}
-                          variant="link"
-                          className="h-auto p-0 text-left text-base"
-                        >
-                          <span className="line-clamp-2">{chat.title}</span>
-                        </Button>
+                {chats.slice(0, 5).map((chat) => (
+                  <div key={chat.id} className="flex w-full items-center gap-2">
+                    <MessageCircle className="text-foreground/80 shrink-0" />
+                    <div className="flex w-full flex-col items-start">
+                      <Link
+                        href={`/${wsId}/chat/${chat.id}`}
+                        className="text-base hover:underline"
+                      >
+                        {chat.title}
                       </Link>
 
                       {chat?.created_at ? (
                         <div className="text-xs opacity-70 md:text-sm">
-                          {capitalize(dayjs(chat?.created_at).fromNow())}
+                          {capitalize(dayjs(chat.created_at).fromNow())}
                         </div>
                       ) : null}
                     </div>
@@ -167,7 +164,7 @@ export function EmptyScreen({
 
       {chats.length > 5 && (
         <div className="bg-background rounded-lg border p-4 md:p-8">
-          <div>
+          <div className="flex flex-col">
             <h2 className="text-lg font-semibold">
               {t('all_conversations')}{' '}
               {count ? (
@@ -182,18 +179,15 @@ export function EmptyScreen({
             <Separator className="mb-8 mt-4" />
 
             <div className="flex flex-col items-start space-y-2">
-              {chats.map((chat, index) => (
-                <div key={chat.id} className="flex items-start">
-                  <MessageCircle className="text-foreground/80 mr-2 shrink-0" />
-                  <div>
-                    <Link href={`/${wsId}/chat/${chat.id}`}>
-                      <Button
-                        key={index}
-                        variant="link"
-                        className="h-auto p-0 text-left text-base"
-                      >
-                        <span className="line-clamp-2">{chat.title}</span>
-                      </Button>
+              {chats.map((chat) => (
+                <div key={chat.id} className="flex w-full items-center gap-2">
+                  <MessageCircle className="text-foreground/80 shrink-0" />
+                  <div className="flex w-full flex-col items-start">
+                    <Link
+                      href={`/${wsId}/chat/${chat.id}`}
+                      className="text-base hover:underline"
+                    >
+                      {chat.title}
                     </Link>
 
                     {chat?.created_at ? (

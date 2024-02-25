@@ -182,6 +182,7 @@ export default function PlanLogin({
                       <Input
                         placeholder="Tuturuuu"
                         autoComplete="off"
+                        autoCorrect="off"
                         {...field}
                       />
                     </FormControl>
@@ -200,8 +201,9 @@ export default function PlanLogin({
                       <Input
                         placeholder="••••••••"
                         type="password"
-                        autoComplete="off"
                         disabled={missingFields}
+                        autoComplete="off"
+                        autoCorrect="off"
                         {...field}
                       />
                     </FormControl>
