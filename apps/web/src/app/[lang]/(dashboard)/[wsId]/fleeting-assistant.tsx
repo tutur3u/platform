@@ -113,7 +113,10 @@ export default function FleetingAssistant({
   }, [messagesRef, currentMessages]);
 
   useEffect(() => {
-    form.setFocus('prompt');
+    // only set focus when device is not mobile
+    if (window.innerWidth > 768) {
+      form.setFocus('prompt');
+    }
   }, [form, chat?.id]);
 
   return (
