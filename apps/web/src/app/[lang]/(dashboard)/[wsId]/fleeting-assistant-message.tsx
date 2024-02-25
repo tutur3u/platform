@@ -36,7 +36,10 @@ export function FleetingAssistantMessage({
   const isDark = resolvedTheme?.includes('dark');
 
   return (
-    <div className={cn('group relative mb-4 grid h-fit gap-4')} {...props}>
+    <div
+      className={cn('group relative mb-4 grid h-fit w-full gap-4')}
+      {...props}
+    >
       <div className="flex h-fit flex-wrap gap-2">
         <div
           className={`${
