@@ -73,7 +73,7 @@
     "@supabase/auth-helpers-react": "^0.4.2",
     "@supabase/supabase-js": "^2.39.7",
     "@tabler/icons-react": "^2.47.0",
-    "@tanstack/react-query": "^5.22.2",
+    "@tanstack/react-query": "^5.24.1",
     "@tanstack/react-table": "^8.12.0",
     "@tiptap/extension-highlight": "^2.2.4",
     "@tiptap/extension-link": "^2.2.4",
@@ -114,7 +114,7 @@
     "react-intersection-observer": "^9.8.1",
     "react-markdown": "^9.0.1",
     "react-resizable": "^3.0.5",
-    "react-resizable-panels": "^2.0.9",
+    "react-resizable-panels": "^2.0.11",
     "react-syntax-highlighter": "^15.5.0",
     "react-textarea-autosize": "^8.5.3",
     "rehype-katex": "^7.0.0",
@@ -134,7 +134,7 @@
     "@next/eslint-plugin-next": "canary",
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/eslint-plugin-query": "^5.20.1",
-    "@tanstack/react-query-devtools": "^5.24.0",
+    "@tanstack/react-query-devtools": "^5.24.1",
     "@types/cookie": "^0.6.0",
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.14.202",
@@ -164,5 +164,5 @@
     "tsconfig": "workspace:*",
     "typescript": "^5.3.3"
   },
-  "packageManager": "pnpm@8.15.1"
+  "packageManager": "pnpm@8.15.4"
 }
