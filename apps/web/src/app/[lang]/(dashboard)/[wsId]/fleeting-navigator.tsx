@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import FleetingAssistant from './fleeting-assistant';
 import { usePathname } from 'next/navigation';
@@ -44,6 +44,17 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     },
   });
 
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const ref = useClickOutside(() => setCurrentView(undefined));
   if (pathname.startsWith(`/${wsId}/chat`)) return null;
 
@@ -71,7 +82,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
 
   return (
     <>
-      <div className={`${currentView ? 'h-[32rem]' : 'h-14'} m-2`} />
+      {scrollPosition ? <div className="m-2 h-14" /> : null}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-center">
         <div
           ref={ref}
