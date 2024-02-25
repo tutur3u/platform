@@ -70,30 +70,33 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-center">
-      <div
-        ref={ref}
-        className={`pointer-events-auto m-4 rounded-lg border backdrop-blur-lg ${
-          currentView
-            ? 'bg-secondary/50 h-[32rem] w-[32rem]'
-            : 'bg-secondary/30 h-14 w-40'
-        } transition-all duration-300`}
-      >
-        {currentView === 'assistant' ? (
-          <FleetingAssistant
-            wsId={wsId}
-            chat={chat}
-            model={model}
-            messages={messages}
-            onBack={() => setCurrentView(undefined)}
-            onSubmit={async (prompt) => {
-              return chat?.id ? chat : await createChat(prompt);
-            }}
-          />
-        ) : (
-          <FleetingNavigatorMenu setCurrentView={setCurrentView} />
-        )}
+    <>
+      <div className={`${currentView ? 'h-[32rem]' : 'h-14'} m-2`} />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-center">
+        <div
+          ref={ref}
+          className={`pointer-events-auto m-4 rounded-lg border backdrop-blur-lg ${
+            currentView
+              ? 'bg-secondary/50 h-[32rem] w-[32rem]'
+              : 'bg-secondary/30 h-14 w-40'
+          } transition-all duration-300`}
+        >
+          {currentView === 'assistant' ? (
+            <FleetingAssistant
+              wsId={wsId}
+              chat={chat}
+              model={model}
+              messages={messages}
+              onBack={() => setCurrentView(undefined)}
+              onSubmit={async (prompt) => {
+                return chat?.id ? chat : await createChat(prompt);
+              }}
+            />
+          ) : (
+            <FleetingNavigatorMenu setCurrentView={setCurrentView} />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
