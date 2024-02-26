@@ -99,7 +99,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={deleteTimezone}
-                disabled={timezone.id === undefined}
+                disabled={!timezone?.id}
               >
                 Delete
               </DropdownMenuItem>

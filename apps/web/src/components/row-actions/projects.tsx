@@ -68,12 +68,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteProject}
-            disabled={project.id === undefined || project.ws_id === undefined}
-          >
-            Delete
-          </DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteProject}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ProjectEditDialog

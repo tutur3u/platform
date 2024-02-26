@@ -65,10 +65,7 @@ export function TransactionCategoryRowActions(props: Props) {
             {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteCategory}
-            disabled={category.id === undefined || category.ws_id === undefined}
-          >
+          <DropdownMenuItem onClick={deleteCategory}>
             {t('common:delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
