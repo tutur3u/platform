@@ -30,6 +30,7 @@ export default async function Layout({
       'ENABLE_CALENDAR',
       'ENABLE_USERS',
       'ENABLE_PROJECTS',
+      'ENABLE_DOCS',
       'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
       'ENABLE_FINANCE',
@@ -59,14 +60,12 @@ export default async function Layout({
     {
       name: t('projects'),
       href: `/${wsId}/projects`,
-      allowedPresets: ['ALL'],
       disabled: !verifySecret('ENABLE_PROJECTS', 'true'),
     },
     {
       name: t('documents'),
       href: `/${wsId}/documents`,
-      allowedPresets: ['ALL'],
-      disabled: true,
+      disabled: !verifySecret('ENABLE_DOCS', 'true'),
     },
     {
       name: t('users'),

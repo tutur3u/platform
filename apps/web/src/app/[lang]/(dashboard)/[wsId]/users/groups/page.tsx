@@ -32,6 +32,7 @@ export default async function WorkspaceUserGroupsPage({
       count={count}
       defaultVisibility={{
         id: false,
+        locked: false,
         created_at: false,
       }}
     />

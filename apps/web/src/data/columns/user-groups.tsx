@@ -7,6 +7,7 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { Translate } from 'next-translate';
+import { Check, X } from 'lucide-react';
 
 export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
   {
@@ -50,6 +51,13 @@ export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
       <DataTableColumnHeader column={column} title={t('amount')} />
     ),
     cell: ({ row }) => <div>{row.getValue('amount') || '-'}</div>,
+  },
+  {
+    accessorKey: 'locked',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('locked')} />
+    ),
+    cell: ({ row }) => <div>{row.getValue('locked') ? <Check /> : <X />}</div>,
   },
   {
     accessorKey: 'created_at',

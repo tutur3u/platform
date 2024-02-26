@@ -35,7 +35,7 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',
-      value: data.value || '',
+      value: data.value || (data.id ? '' : 'true'),
     },
   });
 

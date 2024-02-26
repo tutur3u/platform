@@ -24,7 +24,7 @@ export default async function AIPage({
   const { lang: locale } = searchParams;
 
   const workspace = await getWorkspace(wsId);
-  if (!workspace?.preset) notFound();
+  if (!workspace) notFound();
 
   const secrets = await getSecrets({
     wsId,
