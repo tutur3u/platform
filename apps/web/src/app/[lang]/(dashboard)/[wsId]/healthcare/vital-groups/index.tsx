@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../components/selectors/ModeSelector';
 import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
@@ -10,7 +7,6 @@ import useSWR from 'swr';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSegments } from '@/hooks/useSegments';
-import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 
@@ -39,9 +35,9 @@ export default function MiscVitalGroupsPage() {
   }, [ws, setRootSegment]);
 
   const [query] = useState('');
-  const [activePage, setPage] = useState(1);
+  const [activePage] = useState(1);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+  const [itemsPerPage] = useLocalStorage({
     key: 'healthcare-vital-groups-items-per-page',
     defaultValue: 15,
   });
@@ -56,11 +52,6 @@ export default function MiscVitalGroupsPage() {
 
   const { data: groups } = useSWR<VitalGroup[]>(apiPath);
   // const { data: count } = useSWR<number>(countApi);
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'healthcare-vital-groups-mode',
-    defaultValue: 'grid',
-  });
 
   const [showDescription, setShowDescription] = useLocalStorage({
     key: 'healthcare-vital-groups-showDescription',
@@ -83,14 +74,6 @@ export default function MiscVitalGroupsPage() {
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <GeneralSearchBar />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-        />
         <div className="hidden xl:block" />
         <Divider variant="dashed" className="col-span-full" />
         <Switch
@@ -113,11 +96,7 @@ export default function MiscVitalGroupsPage() {
       <Divider className="mt-4" />
       <PaginationIndicator totalItems={0} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws.id}/healthcare/vital-groups/new`} />
 
         {groups &&

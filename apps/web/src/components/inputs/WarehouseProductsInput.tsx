@@ -137,9 +137,9 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
             minAmount={p?.min_amount || ''}
             getUniqueUnitIds={getUniqueUnitIds}
             removePrice={() => removePrice(idx)}
-            updatePrice={(unitId, price) => updatePrice(unitId, price)}
+            updatePrice={(unitId, price) => updatePrice(unitId, Number(price))}
             updateMinAmount={(unitId, amount) =>
-              updateMinAmount(unitId, amount)
+              updateMinAmount(unitId, Number(amount))
             }
             updateUnitId={(unitId, oldUnitId) =>
               updateUnitId(idx, unitId, oldUnitId)

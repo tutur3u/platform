@@ -1,5 +1,4 @@
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
-import VitalSelector from '../selectors/VitalSelector';
 import { Divider, NumberInput } from '@mantine/core';
 import { Vital } from '@/types/primitives/Vital';
 
@@ -11,23 +10,10 @@ interface Props {
   removeVital: () => void;
 }
 
-const CheckupVitalInput = ({
-  vital,
-  blacklist,
-
-  updateVital,
-  removeVital,
-}: Props) => {
+const CheckupVitalInput = ({ vital, updateVital, removeVital }: Props) => {
   return (
     <div className="grid w-full gap-2 md:grid-cols-2">
       <div className="flex items-end gap-2">
-        <VitalSelector
-          vital={vital}
-          setVital={(vital) => updateVital(vital)}
-          blacklist={blacklist}
-          className="w-full"
-        />
-
         <button
           className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:hidden"
           onClick={removeVital}
@@ -49,12 +35,8 @@ const CheckupVitalInput = ({
             input: 'bg-white/5 border-zinc-300/20 font-semibold',
           }}
           disabled={!vital?.id}
-          precision={2}
           step={0.01}
           decimalSeparator=","
-          formatter={(num) =>
-            num != null && num != '' ? `${num} ${vital?.unit || ''}` : ''
-          }
         />
 
         <button

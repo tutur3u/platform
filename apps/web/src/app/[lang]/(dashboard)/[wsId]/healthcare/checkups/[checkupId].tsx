@@ -4,8 +4,6 @@ import { Vital } from '@/types/primitives/Vital';
 import 'dayjs/locale/vi';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
-import WorkspaceUserSelector from '../../../../../../components/selectors/WorkspaceUserSelector';
-import DiagnosisSelector from '../../../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import { useRouter } from 'next/router';
 import { Checkup } from '@/types/primitives/Checkup';
@@ -269,14 +267,6 @@ export default function CheckupDetailsPage() {
             <Divider className="my-2" variant="dashed" />
           </div>
 
-          <WorkspaceUserSelector
-            userId={userId}
-            setUserId={setUserId}
-            className="col-span-full"
-            notEmpty
-            required
-          />
-
           <Divider className="col-span-full mt-2" />
 
           <DateTimePicker
@@ -329,12 +319,6 @@ export default function CheckupDetailsPage() {
           )}
 
           <Divider className="col-span-full my-2" />
-
-          <DiagnosisSelector
-            diagnosis={diagnosis}
-            setDiagnosis={setDiagnosis}
-            className="md:col-span-2"
-          />
 
           {diagnosis?.description && (
             <div className="col-span-full w-full rounded border border-zinc-700 bg-zinc-800/70 p-2 text-center">

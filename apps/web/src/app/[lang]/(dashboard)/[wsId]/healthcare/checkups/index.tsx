@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../components/selectors/ModeSelector';
 import { Divider, Switch } from '@mantine/core';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import CheckupCard from '../../../../../../components/cards/CheckupCard';
@@ -10,7 +7,6 @@ import { Checkup } from '@/types/primitives/Checkup';
 import useSWR from 'swr';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 
 export default function MiscExaminationPage() {
@@ -37,9 +33,9 @@ export default function MiscExaminationPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [activePage, setPage] = useState(1);
+  const [activePage] = useState(1);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+  const [itemsPerPage] = useLocalStorage({
     key: 'healthcare-checkups-items-per-page',
     defaultValue: 15,
   });
@@ -54,11 +50,6 @@ export default function MiscExaminationPage() {
 
   const { data: checkups } = useSWR<Checkup[]>(apiPath);
   // const { data: count } = useSWR<number>(countApi);
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'healthcare-checkups-mode',
-    defaultValue: 'grid',
-  });
 
   const [showPhone, setShowPhone] = useLocalStorage({
     key: 'healthcare-checkups-showPhone',
@@ -98,16 +89,6 @@ export default function MiscExaminationPage() {
   return (
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-        />
-        <div className="hidden xl:block" />
-        <Divider variant="dashed" className="col-span-full" />
         <Switch
           label="Hiển thị số điện thoại"
           checked={showPhone}
@@ -148,11 +129,7 @@ export default function MiscExaminationPage() {
       <Divider className="mt-4" />
       <PaginationIndicator totalItems={0} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws?.id}/healthcare/checkups/new`} />
 
         {checkups &&

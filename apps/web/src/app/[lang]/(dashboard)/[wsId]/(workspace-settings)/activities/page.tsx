@@ -1,6 +1,5 @@
 import useTranslation from 'next-translate/useTranslation';
 import { getWorkspace } from '@/lib/workspace-helper';
-import Filters from './filters';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -46,7 +45,6 @@ export default async function WorkspaceActivitiesPage({
       )}
 
       <div className="flex min-h-full w-full flex-col ">
-        <Filters />
         <Separator className="mt-4" />
         {/* <PaginationIndicator
           activePage={activePage}

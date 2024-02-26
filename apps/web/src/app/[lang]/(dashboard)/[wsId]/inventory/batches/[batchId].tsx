@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Divider, NumberInput } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import WarehouseSelector from '../../../../../../components/selectors/WarehouseSelector';
 import { Product } from '@/types/primitives/Product';
-import SupplierSelector from '../../../../../../components/selectors/SupplierSelector';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { useRouter } from 'next/router';
 import { useSegments } from '@/hooks/useSegments';
@@ -66,7 +64,7 @@ export default function BatchDetailsPage() {
     defaultValue: '',
   });
 
-  const [price, setPrice] = useState<number | ''>('');
+  const [price, setPrice] = useState<number | string>('');
 
   useEffect(() => {
     if (batch) {
@@ -159,19 +157,6 @@ export default function BatchDetailsPage() {
             <Divider className="my-2" variant="dashed" />
           </div>
 
-          <WarehouseSelector
-            warehouseId={warehouseId}
-            setWarehouseId={setWarehouseId}
-            disabled
-            required
-          />
-
-          <SupplierSelector
-            supplierId={supplierId}
-            setSupplierId={setSupplierId}
-            required
-          />
-
           <NumberInput
             label="Giá nhập lô"
             placeholder="Nhập giá lô hàng"
@@ -179,12 +164,6 @@ export default function BatchDetailsPage() {
             onChange={setPrice}
             className="w-full"
             min={0}
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-            formatter={(value) =>
-              !Number.isNaN(parseFloat(value || ''))
-                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                : ''
-            }
           />
         </div>
 

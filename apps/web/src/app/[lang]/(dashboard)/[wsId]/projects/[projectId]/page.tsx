@@ -12,12 +12,8 @@ import {
   SegmentedControl,
 } from '@mantine/core';
 import {
-  ArchiveBoxIcon,
-  Cog6ToothIcon,
   EllipsisHorizontalIcon,
-  FolderPlusIcon,
   QueueListIcon,
-  TrashIcon,
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
 import { openConfirmModal, openModal } from '@mantine/modals';
@@ -207,7 +203,6 @@ export default function WorkspaceBoardEditor({
             <div className="flex items-center gap-2">
               <Button
                 className="border border-blue-300/10 bg-blue-300/10 text-blue-300 hover:bg-blue-300/20"
-                leftIcon={<FolderPlusIcon className="w-5" />}
                 onClick={() => showEditListModal()}
                 disabled={!boardId}
               >
@@ -249,18 +244,12 @@ export default function WorkspaceBoardEditor({
                 </Menu.Target>
 
                 <Menu.Dropdown className="font-semibold">
-                  <Menu.Item icon={<ArchiveBoxIcon className="w-5" />} disabled>
-                    Archived Lists
-                  </Menu.Item>
-                  <Menu.Item
-                    icon={<Cog6ToothIcon className="w-5" />}
-                    onClick={() => showEditBoardModal(board)}
-                  >
+                  <Menu.Item disabled>Archived Lists</Menu.Item>
+                  <Menu.Item onClick={() => showEditBoardModal(board)}>
                     Board Settings
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Item
-                    icon={<TrashIcon className="w-5" />}
                     color="red"
                     onClick={() => showDeleteBoardModal(board)}
                   >

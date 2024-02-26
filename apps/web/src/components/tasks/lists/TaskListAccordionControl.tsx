@@ -1,10 +1,4 @@
-import {
-  ArchiveBoxArrowDownIcon,
-  ArrowRightCircleIcon,
-  Cog6ToothIcon,
-  EllipsisHorizontalIcon,
-  TrashIcon,
-} from '@heroicons/react/24/solid';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Accordion,
   AccordionControlProps,
@@ -111,27 +105,13 @@ const TaskListAccordionControl = (
         </Menu.Target>
 
         <Menu.Dropdown className="font-semibold">
-          <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
-            Move list
-          </Menu.Item>
-          <Menu.Item
-            icon={<ArchiveBoxArrowDownIcon className="w-6" />}
-            disabled
-          >
-            Archive list
-          </Menu.Item>
-          <Menu.Item
-            icon={<Cog6ToothIcon className="w-6" />}
-            onClick={() => showEditListModal(list)}
-          >
+          <Menu.Item disabled>Move list</Menu.Item>
+          <Menu.Item disabled>Archive list</Menu.Item>
+          <Menu.Item onClick={() => showEditListModal(list)}>
             List settings
           </Menu.Item>
           <Menu.Divider />
-          <Menu.Item
-            icon={<TrashIcon className="w-6" />}
-            color="red"
-            onClick={() => showDeleteListModal(list)}
-          >
+          <Menu.Item color="red" onClick={() => showDeleteListModal(list)}>
             Delete list
           </Menu.Item>
         </Menu.Dropdown>

@@ -6,7 +6,6 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import DateRangeInput from '@/components/selectors/DateRangeInput';
 import PlusCardButton from '@/components/common/PlusCardButton';
 import MiniPlusButton from '@/components/common/MiniPlusButton';
 import TransactionCard from '@/components/cards/TransactionCard';
@@ -88,7 +87,6 @@ export default async function FinanceTransactionsPage({
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <GeneralSearchBar />
-        <DateRangeInput label={t('date-range')} placeholder={t('common:all')} />
       </div>
 
       <Separator className="my-4" />

@@ -3,13 +3,9 @@
 import { Divider } from '@mantine/core';
 import { Wallet } from '@/types/primitives/Wallet';
 import useSWR from 'swr';
-import TransactionCard from '../../../../../../../components/cards/TransactionCard';
 import MiniPlusButton from '../../../../../../../components/common/MiniPlusButton';
-import PlusCardButton from '../../../../../../../components/common/PlusCardButton';
-import { Mode } from '@/components/selectors/ModeSelector';
 import { Transaction } from '@/types/primitives/Transaction';
 import moment from 'moment';
-import { useLocalStorage } from '@mantine/hooks';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
@@ -45,11 +41,6 @@ export default function WalletDetailsPage({
 
   const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
   // const { data: count } = useSWR<number>(countApi);
-
-  const [mode] = useLocalStorage<Mode>({
-    key: 'finance-wallet-transactions-mode',
-    defaultValue: 'grid',
-  });
 
   const transactionsByDate = transactions?.reduce(
     (acc, cur) => {
@@ -171,17 +162,6 @@ export default function WalletDetailsPage({
 
       <Divider className="my-4" />
 
-      <div
-        className={`grid gap-x-4 gap-y-2 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
-        <h3 className="col-span-full text-lg font-semibold text-zinc-700 dark:text-zinc-300">
-          {t('new-transaction')}
-        </h3>
-        <PlusCardButton href={`/${wsId}/finance/transactions/new`} />
-      </div>
-
       <div className="mt-8 grid gap-8">
         {transactionsByDate &&
           Object.entries(transactionsByDate).length > 0 &&
@@ -220,21 +200,6 @@ export default function WalletDetailsPage({
               </h3>
 
               <Divider variant="dashed" className="mb-4 mt-2" />
-
-              <div
-                className={`grid gap-4 ${
-                  mode === 'grid' && 'lg:grid-cols-2 xl:grid-cols-3'
-                }`}
-              >
-                {data.transactions.map((c) => (
-                  <TransactionCard
-                    key={c.id}
-                    wsId={wsId}
-                    transaction={c}
-                    showAmount
-                  />
-                ))}
-              </div>
             </div>
           ))}
       </div>

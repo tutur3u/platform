@@ -21,7 +21,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
   return (
     <Tabs
       value={activeTab}
-      onTabChange={setActiveTab}
+      onChange={setActiveTab}
       variant="pills"
       color="blue"
     >

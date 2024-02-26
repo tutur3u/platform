@@ -119,12 +119,6 @@ export default function WalletSettingsPage({
             onChange={(num) => setBalance(Number(num))}
             className="w-full"
             min={0}
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-            formatter={(value) =>
-              !Number.isNaN(parseFloat(value || ''))
-                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                : ''
-            }
           />
 
           {type === 'CREDIT' && (
@@ -256,12 +250,6 @@ export default function WalletSettingsPage({
                   value={limit}
                   onChange={(num) => setLimit(Number(num))}
                   min={0}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                  formatter={(value) =>
-                    !Number.isNaN(parseFloat(value || ''))
-                      ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                      : ''
-                  }
                 />
 
                 <div className="flex w-full gap-4">

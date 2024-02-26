@@ -9,10 +9,8 @@ import {
 } from '@mantine/core';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
 import { Wallet } from '@/types/primitives/Wallet';
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import TransactionCategorySelector from '../../../../../../../components/selectors/TransactionCategorySelector';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { useRouter } from 'next/router';
 import { Transaction } from '@/types/primitives/Transaction';
@@ -99,7 +97,7 @@ export default function TransactionSettingsPage() {
   const [reportOptOut, setReportOptOut] = useState<boolean>(false);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [category, setCategory] = useState<TransactionCategory | null>(null);
+  const [category] = useState<TransactionCategory | null>(null);
 
   useEffect(() => {
     if (category && description === category.name) setDescription('');
@@ -171,14 +169,6 @@ export default function TransactionSettingsPage() {
           description={t('wallet-description')}
         >
           <div className="flex gap-2">
-            <WalletSelector
-              walletId={transaction?.wallet_id}
-              wallet={wallet}
-              setWallet={setWallet}
-              className="w-full"
-              preventPreselected
-              hideLabel
-            />
             {ws?.id && wallet?.id && (
               <Button
                 variant="light"
@@ -242,12 +232,6 @@ export default function TransactionSettingsPage() {
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
               disabled={!wallet}
             />
 
@@ -266,20 +250,6 @@ export default function TransactionSettingsPage() {
               onChange={(e) => setReportOptOut(e.currentTarget.checked)}
             />
           </div>
-        </SettingItemCard>
-
-        <SettingItemCard
-          title={t('category')}
-          description={t('category-description')}
-          disabled={!wallet}
-        >
-          <TransactionCategorySelector
-            categoryId={transaction?.category_id}
-            category={category}
-            setCategory={setCategory}
-            preventPreselected
-            hideLabel
-          />
         </SettingItemCard>
 
         <SettingItemCard

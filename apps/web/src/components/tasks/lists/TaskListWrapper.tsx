@@ -4,7 +4,6 @@ import React from 'react';
 import TaskListAccordionControl from './TaskListAccordionControl';
 import { Task } from '@/types/primitives/Task';
 import useSWR, { mutate } from 'swr';
-import { PlusIcon } from '@heroicons/react/24/solid';
 import { openModal } from '@mantine/modals';
 import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
@@ -72,7 +71,6 @@ const TaskListWrapper = ({ ws, boardId, list }: TaskListWrapperProps) => {
             <Button
               className="flex items-center gap-2 rounded border border-zinc-300/10 p-2 text-sm font-semibold text-zinc-400 hover:bg-zinc-300/5"
               onClick={() => showAddTaskModal()}
-              leftIcon={<PlusIcon className="w-5" />}
             >
               Task
             </Button>

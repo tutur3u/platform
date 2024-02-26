@@ -100,7 +100,6 @@ const WorkspaceMemberEditForm = ({
           currentRole === 'MEMBER' ||
           availableRoles.every((role) => !checkRole(role))
         }
-        withinPortal
       />
 
       <TextInput

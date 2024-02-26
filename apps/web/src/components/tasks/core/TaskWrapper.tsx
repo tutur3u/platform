@@ -1,10 +1,4 @@
-import {
-  ArrowRightCircleIcon,
-  EllipsisHorizontalIcon,
-  InboxIcon,
-  PencilIcon,
-  TrashIcon,
-} from '@heroicons/react/24/solid';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Avatar,
   Checkbox,
@@ -66,10 +60,7 @@ const TaskWrapper = ({
       centered: true,
       size: 'xl',
       overlayProps: {
-        color:
-          theme.colorScheme === 'dark'
-            ? theme.colors.dark[9]
-            : theme.colors.gray[2],
+        color: theme.colors.dark[9],
         opacity: 0.55,
         blur: 3,
       },
@@ -266,23 +257,12 @@ const TaskWrapper = ({
         </Menu.Target>
 
         <Menu.Dropdown className="font-semibold">
-          <Menu.Item
-            icon={<PencilIcon className="w-6" />}
-            onClick={() => showEditTaskModal(task)}
-          >
+          <Menu.Item onClick={() => showEditTaskModal(task)}>
             Edit task
           </Menu.Item>
-          <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
-            Move task
-          </Menu.Item>
-          <Menu.Item icon={<InboxIcon className="w-6" />} disabled>
-            Archive task
-          </Menu.Item>
-          <Menu.Item
-            icon={<TrashIcon className="w-6" />}
-            color="red"
-            onClick={() => showDeleteTaskModal(task)}
-          >
+          <Menu.Item disabled>Move task</Menu.Item>
+          <Menu.Item disabled>Archive task</Menu.Item>
+          <Menu.Item color="red" onClick={() => showDeleteTaskModal(task)}>
             Delete task
           </Menu.Item>
         </Menu.Dropdown>

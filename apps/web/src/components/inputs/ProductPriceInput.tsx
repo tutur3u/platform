@@ -1,15 +1,14 @@
 import { Divider, NumberInput } from '@mantine/core';
-import UnitSelector from '../selectors/UnitSelector';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { ProductPrice } from '@/types/primitives/ProductPrice';
 
 interface Props {
   price: ProductPrice;
-  minAmount: number | '';
+  minAmount: number | string;
   isLast: boolean;
 
-  updatePrice: (unitId: string, price: number | '') => void;
-  updateMinAmount: (unitId: string, amount: number | '') => void;
+  updatePrice: (unitId: string, price: number | string) => void;
+  updateMinAmount: (unitId: string, amount: number | string) => void;
 
   updateUnitId: (unitId: string, oldUnitId: string) => void;
   removePrice: () => void;
@@ -23,20 +22,11 @@ const ProductPriceInput = ({
 
   updatePrice,
   // updateMinAmount,
-  updateUnitId,
   removePrice,
-  getUniqueUnitIds,
 }: Props) => {
   return (
     <div className="flex gap-2">
       <div className="grid w-full gap-2 md:grid-cols-2 2xl:grid-cols-4">
-        <UnitSelector
-          unitId={price.unit_id}
-          setUnitId={(id) => updateUnitId(id, price.unit_id)}
-          blacklist={getUniqueUnitIds()}
-          className="w-full"
-        />
-
         <NumberInput
           label="Giá bán"
           placeholder="Nhập giá bán"
@@ -46,12 +36,6 @@ const ProductPriceInput = ({
           }
           className="w-full"
           min={0}
-          parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-          formatter={(value) =>
-            !Number.isNaN(parseFloat(value || ''))
-              ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-              : ''
-          }
           disabled={!price.unit_id}
         />
         {/* <NumberInput
@@ -81,12 +65,6 @@ const ProductPriceInput = ({
           }
           className="col-span-2 w-full"
           min={0}
-          parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-          formatter={(value) =>
-            !Number.isNaN(parseFloat(value || ''))
-              ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-              : ''
-          }
           disabled
         />
 

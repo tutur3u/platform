@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Divider, NumberInput, Textarea } from '@mantine/core';
-import WorkspaceUserSelector from '../../../../../../../components/selectors/WorkspaceUserSelector';
 import { Product } from '@/types/primitives/Product';
 import InvoiceProductInput from '../../../../../../../components/inputs/InvoiceProductInput';
 import useSWR, { mutate } from 'swr';
 import 'dayjs/locale/vi';
-import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
-import { Wallet } from '@/types/primitives/Wallet';
-import TransactionCategorySelector from '../../../../../../../components/selectors/TransactionCategorySelector';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
 import { Invoice } from '@/types/primitives/Invoice';
@@ -52,10 +47,6 @@ export default function InvoiceDetailsPage({
   const [walletId, setWalletId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
 
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [category, setCategory] = useState<TransactionCategory | null>(null);
-
-  const [userId, setUserId] = useState<string>('');
   const [takenAt, setTakenAt] = useState<Date | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -65,7 +56,6 @@ export default function InvoiceDetailsPage({
 
   useEffect(() => {
     if (invoice) {
-      setUserId(invoice?.customer_id || '');
       setNotice(invoice?.notice || '');
       setNote(invoice?.note || '');
       setDiff(invoice?.total_diff || 0);
@@ -129,12 +119,15 @@ export default function InvoiceDetailsPage({
     );
 
   const amount = products.reduce(
-    (acc, product) => acc + (product?.amount || 0),
+    (acc, product) => acc + (product?.amount ? Number(product?.amount) : 0),
     0
   );
 
   const price = products.reduce(
-    (acc, product) => acc + (product?.price || 0) * (product?.amount || 0),
+    (acc, product) =>
+      acc +
+      (product?.price ? Number(product?.price) : 0) *
+        (product?.amount ? Number(product?.amount) : 0),
     0
   );
 
@@ -210,13 +203,6 @@ export default function InvoiceDetailsPage({
             <Divider className="my-2" variant="dashed" />
           </div>
 
-          <WorkspaceUserSelector
-            userId={userId}
-            setUserId={setUserId}
-            className="col-span-full"
-            required
-          />
-
           <DateTimePicker
             value={takenAt}
             label={t('time')}
@@ -277,47 +263,13 @@ export default function InvoiceDetailsPage({
 
           <Divider className="col-span-full my-2" />
 
-          <WalletSelector
-            walletId={walletId}
-            wallet={wallet}
-            setWallet={(w) => {
-              setWallet(w);
-              setWalletId(w?.id || '');
-            }}
-            className="col-span-full"
-            disabled={!transaction?.wallet_id}
-            preventPreselected
-            hideBalance
-            required
-          />
-
-          <TransactionCategorySelector
-            categoryId={categoryId}
-            category={category}
-            setCategory={(c) => {
-              setCategory(c);
-              setCategoryId(c?.id || '');
-            }}
-            className="col-span-full"
-            isExpense={false}
-            preventPreselected
-            required
-            disabled={!transaction?.category_id}
-          />
-
           {products?.length > 0 && (
             <div className="col-span-full">
               <NumberInput
                 label={t('total')}
                 placeholder={t('total-placeholder')}
                 value={price + (diff || 0)}
-                onChange={(e) => setDiff((e || 0) - price)}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                formatter={(value) =>
-                  !Number.isNaN(parseFloat(value || ''))
-                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                    : ''
-                }
+                onChange={(e) => setDiff((e ? Number(e) : 0) - price)}
               />
 
               {diff != 0 && (
@@ -392,7 +344,10 @@ export default function InvoiceDetailsPage({
                           currency: 'VND',
                         }).format(
                           products.reduce(
-                            (a, b) => a + (b?.amount || 0) * (b?.price || 0),
+                            (a, b) =>
+                              a +
+                              (b?.amount ? Number(b.amount) : 0) *
+                                (b?.price ? Number(b.price) : 0),
                             0
                           ) + (diff || 0)
                         )}

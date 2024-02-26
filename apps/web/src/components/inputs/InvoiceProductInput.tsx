@@ -3,9 +3,6 @@ import { Product } from '@/types/primitives/Product';
 import { NumberInput } from '@mantine/core';
 import { useEffect } from 'react';
 import SettingItemCard from '../settings/SettingItemCard';
-import ProductSelector from '../selectors/ProductSelector';
-import UnitSelector from '../selectors/UnitSelector';
-import WarehouseSelector from '../selectors/WarehouseSelector';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
@@ -24,7 +21,6 @@ const InvoiceProductInput = ({
   wsId,
   product: p,
 
-  getUniqueWarehouseIds,
   updateProduct,
   removePrice,
 
@@ -66,7 +62,7 @@ const InvoiceProductInput = ({
           ? Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
-            }).format(Number(p?.price * (p?.amount || 0)))
+            }).format(Number(Number(p?.price || 0) * Number(p?.amount || 0)))
           : t('no-price')
       }
       description={
@@ -84,64 +80,6 @@ const InvoiceProductInput = ({
     >
       <div className="flex gap-2">
         <div className="grid w-full gap-2 xl:grid-cols-3">
-          <ProductSelector
-            productId={p.id}
-            setProductId={(id) =>
-              updateProduct({
-                ...p,
-                id,
-                unit_id: '',
-                warehouse_id: '',
-                price: '',
-                stock: '',
-                amount: '',
-              })
-            }
-          />
-
-          <UnitSelector
-            unitId={p.unit_id}
-            setUnitId={(id) =>
-              updateProduct({
-                ...p,
-                unit_id: id,
-                warehouse_id: '',
-                price: '',
-                stock: '',
-                amount: '',
-              })
-            }
-            customApiPath={
-              p.id
-                ? `/api/workspaces/${wsId}/inventory/products/${p.id}/units`
-                : null
-            }
-            creatable={false}
-            disabled={!p.id}
-          />
-
-          <WarehouseSelector
-            warehouseId={p.warehouse_id}
-            setWarehouseId={(id) =>
-              updateProduct({
-                ...p,
-                warehouse_id: id,
-                price: '',
-                stock: '',
-                amount: '',
-              })
-            }
-            customApiPath={
-              p.id && p.unit_id
-                ? `/api/workspaces/${wsId}/inventory/products/${p.id}/units/${
-                    p.unit_id
-                  }/warehouses?blacklist=${getUniqueWarehouseIds().join(',')}`
-                : null
-            }
-            creatable={false}
-            disabled={!p.id || !p.unit_id}
-          />
-
           {p?.warehouse_id === undefined || p?.warehouse_id === '' ? (
             <div className="col-span-full rounded border border-orange-500/20 bg-orange-500/10 p-4 text-center font-semibold text-orange-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
               {t('pending-data')}
@@ -166,12 +104,6 @@ const InvoiceProductInput = ({
                   }
                   value={p.stock}
                   min={0}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                  formatter={(value) =>
-                    !Number.isNaN(parseFloat(value || ''))
-                      ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                      : ''
-                  }
                   disabled
                 />
               )}
@@ -185,12 +117,6 @@ const InvoiceProductInput = ({
                 }
                 value={p.price}
                 min={0}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                formatter={(value) =>
-                  !Number.isNaN(parseFloat(value || ''))
-                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                    : ''
-                }
                 disabled
               />
 
@@ -210,14 +136,7 @@ const InvoiceProductInput = ({
                     : undefined
                 }
                 min={0}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                formatter={(value) =>
-                  !Number.isNaN(parseFloat(value || ''))
-                    ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                    : ''
-                }
                 disabled={p.stock === null || p?.stock === 0}
-                max={hideStock ? undefined : p.stock || 0}
                 className={hideStock ? 'xl:col-span-2' : ''}
               />
             </>
