@@ -147,7 +147,7 @@
     "@types/react-syntax-highlighter": "^15.5.11",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
+    "@typescript-eslint/parser": "^7.1.0",
     "autoprefixer": "^10.4.17",
     "cross-env": "^7.0.3",
     "encoding": "^0.1.13",
