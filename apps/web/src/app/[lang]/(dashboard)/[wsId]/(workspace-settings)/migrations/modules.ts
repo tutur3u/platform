@@ -42,7 +42,7 @@ export const modules: ModulePackage[] = [
     name: 'Virtual Users',
     module: 'users',
     externalAlias: 'users',
-    externalPath: '/dashboard/data/users',
+    externalPath: '/dashboard/data/users/migrate',
     internalPath: '/api/workspaces/[wsId]/users/migrate',
     mapping: (items) =>
       items.map((i) => ({
@@ -353,6 +353,7 @@ export const modules: ModulePackage[] = [
           note: i?.note,
           customer_id: i?.customer_id,
           completed_at: i?.created_at,
+          creator_id: i?.creator_id,
           created_at: i?.created_at,
         };
       }),

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Tooltip } from '@mantine/core';
 import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconGitMerge } from '@tabler/icons-react';
@@ -250,62 +249,52 @@ export default function MigrationDashboard() {
 
           <div className="flex gap-1">
             {getData('external', module) ? (
-              <Tooltip label="Total external items">
-                <div className="flex items-center justify-center rounded border px-2 py-0.5 text-sm font-semibold">
-                  {getCount('external', module)}
-                </div>
-              </Tooltip>
+              <div className="flex items-center justify-center rounded border px-2 py-0.5 text-sm font-semibold">
+                {getCount('external', module)}
+              </div>
             ) : null}
 
-            <Tooltip label="Migrate data">
-              <Button
-                onClick={() =>
-                  handleMigrate({
-                    name,
-                    module,
-                    externalAlias,
-                    internalAlias,
-                    externalPath,
-                    internalPath,
-                    mapping,
-                  })
-                }
-                variant="secondary"
-                size="icon"
-                disabled={disabled || getLoading(module)}
-              >
-                <IconGitMerge className="h-4 w-4" />
-              </Button>
-            </Tooltip>
-
-            <Tooltip
-              label={
-                getData('external', module) ? 'Refresh data' : 'Fetch data'
+            <Button
+              onClick={() =>
+                handleMigrate({
+                  name,
+                  module,
+                  externalAlias,
+                  internalAlias,
+                  externalPath,
+                  internalPath,
+                  mapping,
+                })
               }
+              variant="secondary"
+              size="icon"
+              disabled={disabled || getLoading(module)}
             >
-              <Button
-                onClick={() =>
-                  handleMigrate({
-                    name,
-                    module,
-                    externalAlias,
-                    internalAlias,
-                    externalPath,
-                    internalPath,
-                    mapping,
-                  })
-                }
-                variant="secondary"
-                size="icon"
-                disabled={disabled || getLoading(module)}
-              >
-                {getData('external', module) ? (
-                  <ArrowPathIcon className="h-4 w-4" />
-                ) : (
-                  <PlayIcon className="h-4 w-4" />
-                )}
-              </Button>
-            </Tooltip>
+              <IconGitMerge className="h-4 w-4" />
+            </Button>
+
+            <Button
+              onClick={() =>
+                handleMigrate({
+                  name,
+                  module,
+                  externalAlias,
+                  internalAlias,
+                  externalPath,
+                  internalPath,
+                  mapping,
+                })
+              }
+              variant="secondary"
+              size="icon"
+              disabled={disabled || getLoading(module)}
+            >
+              {getData('external', module) ? (
+                <ArrowPathIcon className="h-4 w-4" />
+              ) : (
+                <PlayIcon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </div>
 

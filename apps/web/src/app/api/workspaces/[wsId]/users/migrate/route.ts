@@ -11,20 +11,17 @@ interface Params {
   };
 }
 
-export async function PUT(req: Request, { params: { wsId: id } }: Params) {
+export async function PUT(req: Request, { params: { wsId } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
   const data = await req.json();
 
-  const { error } = await supabase
-    .from('workspace_users')
-    .upsert(
-      (data?.users || []).map((u: WorkspaceUser) => ({
-        ...u,
-        ws_id: id,
-      }))
-    )
-    .eq('id', data.id);
+  const { error } = await supabase.from('workspace_users').upsert(
+    (data?.users || []).map((u: WorkspaceUser) => ({
+      ...u,
+      ws_id: wsId,
+    }))
+  );
 
   if (error) {
     console.log(error);
