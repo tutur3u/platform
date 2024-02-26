@@ -179,7 +179,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     });
 
     if (response.ok) {
-      mutate(`/api/tasks/${task.id}/assignees`);
+      await mutate(`/api/tasks/${task.id}/assignees`);
     } else {
       const res = await response.json();
       showNotification({
@@ -265,7 +265,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       );
 
       await Promise.all(promises);
-      mutate(`/api/tasks/${task.id}/assignees`);
+      await mutate(`/api/tasks/${task.id}/assignees`);
     }
 
     if (task?.id) await updateTask();

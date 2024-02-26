@@ -67,7 +67,7 @@ export default function WorkspacesSettingPage() {
     });
 
     if (res.ok) {
-      mutate('/api/workspaces/current');
+      await mutate('/api/workspaces/current');
 
       showNotification({
         title: 'Success',

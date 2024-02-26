@@ -80,7 +80,7 @@ export default async function FinanceTransactionsPage({
         // Format the date to a string
         .format('dddd, DD/MM/YYYY')
         // Capitalize the first letter of the day
-        .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase())
+        .replace(/(^\w)|(\s+\w)/g, (letter) => letter.toUpperCase())
     );
   };
 

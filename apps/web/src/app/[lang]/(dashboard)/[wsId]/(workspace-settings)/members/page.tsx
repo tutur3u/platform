@@ -111,8 +111,7 @@ const getMembers = async (
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');
 
-  if (roles && typeof roles === 'string')
-    queryBuilder.in('role', roles.split(','));
+  if (roles) queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
   if (error) throw error;

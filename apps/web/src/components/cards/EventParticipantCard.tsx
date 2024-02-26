@@ -56,7 +56,7 @@ const EventParticipantCard = ({
 
     if (res.ok && !(await res.json())?.error) {
       mutatePaths?.forEach((path) => mutate(path));
-      mutate(apiPath);
+      await mutate(apiPath);
     } else setLoading(false);
   };
 
@@ -81,7 +81,7 @@ const EventParticipantCard = ({
 
       if (res.ok && !(await res.json())?.error) {
         mutatePaths?.forEach((path) => mutate(path));
-        mutate(apiPath);
+        await mutate(apiPath);
         setLoading(false);
       }
     };

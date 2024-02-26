@@ -89,7 +89,7 @@ export default function WalletDetailsPage({
     return moment(date)
       .locale(lang)
       .format('dddd, DD/MM/YYYY')
-      .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
+      .replace(/(^\w)|(\s+\w)/g, (letter) => letter.toUpperCase());
   };
 
   return (

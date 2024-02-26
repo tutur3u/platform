@@ -155,7 +155,7 @@ export default function InvoiceDetailsPage({
       );
 
       if (res.ok) {
-        mutate(`/api/workspaces/${wsId}/invoices/${invoiceId}`);
+        await mutate(`/api/workspaces/${wsId}/invoices/${invoiceId}`);
         setCompleted((completed) => !completed);
       }
     } catch (error) {

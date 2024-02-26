@@ -81,20 +81,15 @@ async function getLogs(
     .order('ts', { ascending: false })
     .eq('ws_id', wsId);
 
-  if (ops && typeof ops === 'string') {
+  if (ops) {
     queryBuilder.in('op', ops);
   }
 
-  if (userIds && typeof userIds === 'string') {
+  if (userIds) {
     queryBuilder.in('auth_uid', userIds);
   }
 
-  if (
-    page &&
-    itemsPerPage &&
-    typeof page === 'string' &&
-    typeof itemsPerPage === 'string'
-  ) {
+  if (page && itemsPerPage) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(itemsPerPage);
 

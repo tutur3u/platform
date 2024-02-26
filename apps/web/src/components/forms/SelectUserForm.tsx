@@ -1,6 +1,6 @@
 'use client';
 
-import { Text, Button, Autocomplete, Avatar, Group } from '@mantine/core';
+import { Autocomplete, Avatar, Button, Group, Text } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
@@ -130,8 +130,8 @@ const SelectUserForm = ({ wsId, onComplete }: SelectUserFormProps) => {
     if (response.ok) {
       onComplete?.();
 
-      mutate(`/api/workspaces/${wsId}/members`);
-      mutate(`/api/workspaces/${wsId}/members/invites`);
+      await mutate(`/api/workspaces/${wsId}/members`);
+      await mutate(`/api/workspaces/${wsId}/members/invites`);
 
       setQuery('');
       setSelectedUser(null);

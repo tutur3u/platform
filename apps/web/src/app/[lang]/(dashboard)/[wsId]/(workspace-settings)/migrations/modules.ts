@@ -59,10 +59,11 @@ export const modules: ModulePackage[] = [
         }${i?.relationship ? `Relationship: ${i.relationship}\n` : ''}${
           i?.notes ? `Notes: ${i.notes}\n` : ''
         }`,
-        archived:
-          i?.status === 'PERM_OFF' || i?.status === 'TEMP_OFF' || i?.off_until
-            ? true
-            : false,
+        archived: !!(
+          i?.status === 'PERM_OFF' ||
+          i?.status === 'TEMP_OFF' ||
+          i?.off_until
+        ),
         archived_until: i?.off_until,
         created_by: i?.creator_id,
         created_at: i?.created_at,

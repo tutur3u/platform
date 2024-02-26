@@ -1,6 +1,6 @@
 import { mutate } from 'swr';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 import { Document } from '@/types/primitives/Document';
 import { showNotification } from '@mantine/notifications';
 
@@ -25,7 +25,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!res.ok) throw new Error('Failed to create document');
-      mutate(`/api/workspaces/${wsId}/documents`);
+      await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to create document',
@@ -49,7 +49,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to update document');
-      mutate(`/api/workspaces/${wsId}/documents`);
+      await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to update document',
@@ -69,7 +69,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!res.ok) throw new Error('Failed to delete document');
-      mutate(`/api/workspaces/${wsId}/documents`);
+      await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
       showNotification({
         title: 'Failed to delete document',

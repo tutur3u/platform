@@ -37,13 +37,13 @@ export const UserDataProvider = ({
 
   useEffect(() => {
     const syncData = async () => {
-      mutate('/api/user');
-      mutate('/api/workspaces/invited');
+      await mutate('/api/user');
+      await mutate('/api/workspaces/invited');
     };
 
     const removeData = async () => {
-      mutate('/api/user', null);
-      mutate('/api/workspaces/invited', null);
+      await mutate('/api/user', null);
+      await mutate('/api/workspaces/invited', null);
     };
 
     const {
@@ -116,7 +116,7 @@ export const UserDataProvider = ({
     });
 
     if (response.ok) {
-      mutate('/api/user');
+      await mutate('/api/user');
       showNotification({
         title: 'Updated profile',
         message: 'Your profile has been updated',

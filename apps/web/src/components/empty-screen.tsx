@@ -1,5 +1,3 @@
-'use-client';
-
 import { UseChatHelpers } from 'ai/react';
 import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@/components/ui/icons';

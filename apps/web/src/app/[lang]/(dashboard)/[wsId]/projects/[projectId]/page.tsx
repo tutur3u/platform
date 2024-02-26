@@ -99,7 +99,7 @@ export default function WorkspaceBoardEditor({
     });
 
     if (res.ok) {
-      mutate(`/api/workspaces/${ws.id}/boards/${boardId}`);
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}`);
     }
   };
 
@@ -161,7 +161,8 @@ export default function WorkspaceBoardEditor({
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const updateList = async (list: TaskList) => {
@@ -180,7 +181,8 @@ export default function WorkspaceBoardEditor({
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showEditListModal = (list?: TaskList) => {

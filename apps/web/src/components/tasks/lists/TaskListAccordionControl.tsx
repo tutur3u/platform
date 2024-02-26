@@ -42,7 +42,8 @@ const TaskListAccordionControl = (
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const deleteList = async () => {
@@ -52,7 +53,8 @@ const TaskListAccordionControl = (
       method: 'DELETE',
     });
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showDeleteListModal = (list: TaskList) => {
