@@ -40,7 +40,7 @@ export default function TimezoneEditDialog({
   const setOpen = setExternalOpen ?? setInternalOpen;
 
   const handleSubmit = async (values: z.infer<typeof ApiConfigFormSchema>) => {
-    const res = await fetch('/api/timezones', {
+    const res = await fetch('/api/v1/infrastructure/timezones', {
       method: data.value ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });

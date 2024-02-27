@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { MigrationModule, ModulePackage, modules } from './modules';
+import { MigrationModule, ModulePackage, generateModules } from './modules';
 
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
@@ -188,44 +188,53 @@ export default function MigrationDashboard() {
     // Fetch internal data
     if (internalPath && workspaceId) {
       await new Promise((resolve) => setTimeout(resolve, 200));
-      for (let i = 0; i < externalData.length; i += chunkSize) {
-        if (internalError !== null) break;
 
-        const chunkMax = Math.min(i + chunkSize, externalData.length);
-        const chunk = externalData.slice(i, chunkMax);
+      if (externalData !== null && externalData.length > 0) {
+        for (let i = 0; i < externalData.length; i += chunkSize) {
+          if (internalError !== null) break;
 
-        const newInternalData = mapping ? mapping(chunk) : chunk;
+          const chunkMax = Math.min(i + chunkSize, externalData.length);
+          const chunk = externalData.slice(i, chunkMax);
 
-        try {
-          const res = await fetch(internalPath.replace('[wsId]', workspaceId), {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              [internalAlias ?? externalAlias ?? 'data']: newInternalData,
-            }),
-          });
+          const newInternalData = mapping ? mapping(workspaceId, chunk) : chunk;
 
-          const data = await res.json();
+          try {
+            const res = await fetch(
+              internalPath.replace('[wsId]', workspaceId),
+              {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  [internalAlias ?? externalAlias ?? 'data']: newInternalData,
+                }),
+              }
+            );
 
-          if (!res.ok) {
+            const data = await res.json();
+
+            if (!res.ok) {
+              setLoading(module, false);
+              setError(module, data);
+              internalError = data?.error;
+              return;
+            }
+
+            internalData.push(...newInternalData);
+            setData('internal', module, internalData, internalData.length);
+          } catch (error) {
             setLoading(module, false);
-            setError(module, data);
-            internalError = data?.error;
+            setError(module, error);
+            internalError = error;
             return;
+          } finally {
+            await new Promise((resolve) => setTimeout(resolve, 200));
           }
-
-          internalData.push(...newInternalData);
-          setData('internal', module, internalData, internalData.length);
-        } catch (error) {
-          setLoading(module, false);
-          setError(module, error);
-          internalError = error;
-          return;
-        } finally {
-          await new Promise((resolve) => setTimeout(resolve, 200));
         }
+      } else {
+        console.log('No external data to migrate');
+        setData('internal', module, internalData, 0);
       }
     }
 
@@ -248,7 +257,7 @@ export default function MigrationDashboard() {
           <div className="font-semibold">{name}</div>
 
           <div className="flex gap-1">
-            {getData('external', module) ? (
+            {getData('external', module) !== null ? (
               <div className="flex items-center justify-center rounded border px-2 py-0.5 text-sm font-semibold">
                 {getCount('external', module)}
               </div>
@@ -307,10 +316,12 @@ export default function MigrationDashboard() {
                 External
                 <Progress
                   value={
-                    getData('external', module)
-                      ? ((getData('external', module)?.length ?? 0) /
-                          getCount('external', module)) *
-                        100
+                    getData('external', module) !== null
+                      ? getData('external', module)?.length === 0
+                        ? 100
+                        : ((getData('external', module)?.length ?? 0) /
+                            getCount('external', module)) *
+                          100
                       : 0
                   }
                 />
@@ -320,14 +331,17 @@ export default function MigrationDashboard() {
                 Synchronized
                 <Progress
                   value={
-                    getData('external', module)
-                      ? ((getData('external', module) ?? []).filter((v) =>
-                          (getData('internal', module) ?? []).find(
-                            (iv) => iv.id === v.id || iv._id === v.id
-                          )
-                        ).length /
-                          (getData('external', module)?.length ?? 0)) *
-                        100
+                    getData('external', module) !== null
+                      ? getData('external', module)?.length ===
+                        getData('internal', module)?.length
+                        ? 100
+                        : ((getData('external', module) ?? []).filter((v) =>
+                            (getData('internal', module) ?? []).find(
+                              (iv) => iv.id === v.id || iv._id === v.id
+                            )
+                          ).length /
+                            (getData('external', module)?.length ?? 0)) *
+                          100
                       : 0
                   }
                 />
@@ -343,7 +357,9 @@ export default function MigrationDashboard() {
     );
   };
 
-  const generateModules = () => {
+  const modules = generateModules();
+
+  const generateModuleComponents = () => {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {modules.map((m) => generateModule(m))}
@@ -432,7 +448,7 @@ export default function MigrationDashboard() {
         </h2>
 
         <Separator className="mb-2" />
-        {generateModules()}
+        {generateModuleComponents()}
       </div>
     </div>
   );

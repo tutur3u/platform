@@ -29,7 +29,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   const timezone = row.original;
 
   const syncTimezone = async () => {
-    const res = await fetch(`/api/timezones`, {
+    const res = await fetch(`/api/v1/infrastructure/timezones`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   };
 
   const deleteTimezone = async () => {
-    const res = await fetch(`/api/timezones/${timezone.id}`, {
+    const res = await fetch(`/api/v1/infrastructure/timezones/${timezone.id}`, {
       method: 'DELETE',
     });
 
