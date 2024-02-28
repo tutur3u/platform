@@ -37,17 +37,35 @@ export const billsMapping = (wsId: string, data: any[]) =>
           ? '8ca90c9e-de28-4284-b388-294b704d78bc'
           : '';
 
+    const categoryId =
+      i?.type === 'TUITION'
+        ? '54f92acb-83c1-4755-a3d8-6a918f91880c'
+        : i?.type === 'COURSE'
+          ? '8f4136cf-08d4-4fb5-b075-377e3f664021'
+          : i?.type === 'LESSON'
+            ? '93a2a5c4-d518-4ef1-9a3d-3722a794070a'
+            : i?.type === 'ACCESSORY'
+              ? 'b4662d35-603a-4fd3-8193-ba88d80ff2ef'
+              : i?.type === 'BOOK'
+                ? 'a1377214-23a3-4fb4-83ed-379c7330f045'
+                : i?.type === 'EVENT'
+                  ? '0fe626f5-2ce7-405c-a545-4b90649d9aa1'
+                  : null;
+
     return {
       id: i?.id,
       transaction_id: generateUUID(i?.id, walletId),
+      wallet_id: walletId,
       price: i?.total,
       total_diff: i?.price_diff,
       notice: i?.content,
       note: i?.note,
       customer_id: i?.customer_id,
+      category_id: categoryId,
       completed_at: i?.created_at,
       creator_id: i?.creator_id,
       ws_id: wsId,
+      valid_until: i?.valid_until,
       created_at: i?.created_at,
     };
   });
@@ -240,23 +258,24 @@ export const usersMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-export const walletTransactionsMapping = (_: string, data: any[]) =>
-  data.map((i) => {
-    // There is a "valid_until" field on item, which is type of date
-    // convert it to timestamptz (+7) and use it as "taken_at" field
-    const takenAt = i?.valid_until ? new Date(i?.valid_until) : null;
+//! IGNORED, since it's handled by bills
+export const walletTransactionsMapping = (__: string, _: any[]) => [] as any[];
+// data.map((i) => {
+//   // There is a "valid_until" field on item, which is type of date
+//   // convert it to timestamptz (+7) and use it as "taken_at" field
+//   const takenAt = i?.valid_until ? new Date(i?.valid_until) : null;
 
-    return {
-      id: generateUUID(i?.id, i?.wallet_id),
-      wallet_id: i?.wallet_id,
-      amount: i?.total + i?.price_diff,
-      description: i?.content,
-      category_id: i?.category_id,
-      taken_at: takenAt ? takenAt.toISOString() : i?.created_at,
-      created_at: i?.created_at,
-      _id: i?.id,
-    };
-  });
+//   return {
+//     id: generateUUID(i?.id, i?.wallet_id),
+//     wallet_id: i?.wallet_id,
+//     amount: i?.total + i?.price_diff,
+//     description: i?.content,
+//     category_id: i?.category_id,
+//     taken_at: takenAt ? takenAt.toISOString() : i?.created_at,
+//     created_at: i?.created_at,
+//     _id: i?.id,
+//   };
+// });
 
 //! IGNORED, since it's handled by payment methods
 export const walletsMapping = (_: string, __: any[]) => [];

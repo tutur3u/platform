@@ -35,6 +35,7 @@ const availableModules = [
   'warehouses',
   'product-categories',
   'product-units',
+  'transaction-categories',
 
   // EXTERNAL MODULES
   'payment-methods',
@@ -57,7 +58,6 @@ const availableModules = [
   'class-attendance',
   'student-feedbacks',
   'package-stock-changes',
-  'transaction-categories',
   'user-monthly-report-logs',
   'user-monthly-reports',
   'user-status-changes',
