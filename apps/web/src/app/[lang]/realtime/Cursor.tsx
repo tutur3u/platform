@@ -54,10 +54,9 @@ const Cursor: FC<Props> = ({
       } else {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (isLocalClient) setHideInput(true);
-        const timeoutId = setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           setShowMessageBubble(false);
         }, MAX_DURATION);
-        timeoutRef.current = timeoutId;
       }
     }
   }, [isLocalClient, isTyping, isCancelled, message, inputRef]);

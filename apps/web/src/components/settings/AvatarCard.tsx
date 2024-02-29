@@ -1,9 +1,4 @@
-import {
-  ArrowUturnLeftIcon,
-  Cog6ToothIcon,
-  PencilIcon,
-  TrashIcon,
-} from '@heroicons/react/24/solid';
+import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { Menu, ActionIcon, FileButton, Button, Avatar } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
@@ -72,9 +67,6 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                   {...props}
                   variant="light"
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
-                  leftIcon={
-                    <PencilIcon className="h-4 w-4 text-zinc-900 dark:text-zinc-300" />
-                  }
                 >
                   {t('common:edit')}
                 </Button>
@@ -86,9 +78,6 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                 <Button
                   variant="light"
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
-                  leftIcon={
-                    <ArrowUturnLeftIcon className="h-4 w-4 text-zinc-900 dark:text-zinc-300" />
-                  }
                   onClick={() => updateFile(null)}
                 >
                   {t('revert_changes')}
@@ -97,9 +86,6 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                 <Button
                   variant="light"
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
-                  leftIcon={
-                    <TrashIcon className="h-4 w-4 text-zinc-900 dark:text-zinc-300" />
-                  }
                   onClick={removeFile}
                 >
                   {t('common:remove')}

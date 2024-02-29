@@ -27,7 +27,7 @@ const TimezoneCard = ({ data }: Props) => {
             text: {data.text}
           </div>
           <div className="line-clamp-1 font-semibold tracking-wide">
-            utc: {data.utc}
+            utc: {data.utc.join(', ')}
           </div>
         </div>
       </div>

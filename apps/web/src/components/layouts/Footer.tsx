@@ -2,14 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
+import Slogan from './slogan';
 
 export default async function Footer() {
   const { t } = useTranslation('common');
-
-  const maximize = t('maximize');
-  const productivity = t('productivity');
-  const minimize = t('minimize');
-  const stress = t('stress');
 
   const getStarted = t('get-started');
   const getStartedDesc = t('get-started-desc');
@@ -18,17 +14,7 @@ export default async function Footer() {
     <div className="w-full text-center">
       <Separator className="bg-foreground/5 mb-8" />
       <div className="flex flex-col items-center p-8">
-        <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
-          <span className="text-green-500 dark:text-green-300">{maximize}</span>{' '}
-          <span className="text-blue-500 dark:text-blue-300">
-            {productivity}
-          </span>
-          ,{' '}
-          <span className="text-orange-500 dark:text-orange-300">
-            {minimize}
-          </span>{' '}
-          <span className="text-red-500 dark:text-red-300">{stress}</span>.
-        </div>
+        <Slogan />
 
         <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
           {getStartedDesc}
@@ -48,7 +34,7 @@ export default async function Footer() {
         <div className="flex flex-col items-center justify-center gap-4">
           <Link
             href="/"
-            className="flex gap-2 transition dark:hover:text-blue-200"
+            className="flex items-center gap-4 transition dark:hover:text-blue-200"
             aria-label="Tuturuuu"
           >
             <Image
@@ -89,9 +75,9 @@ export default async function Footer() {
                 <polygon points="41,6 9.929,42 6.215,42 37.287,6" />
                 <polygon
                   className="fill-background"
-                  fill-rule="evenodd"
+                  fillRule="evenodd"
                   points="31.143,41 7.82,7 16.777,7 40.1,41"
-                  clip-rule="evenodd"
+                  clipRule="evenodd"
                 />
                 <path d="M15.724,9l20.578,30h-4.106L11.618,9H15.724 M17.304,6H5.922l24.694,36h11.382L17.304,6L17.304,6z" />
               </svg>

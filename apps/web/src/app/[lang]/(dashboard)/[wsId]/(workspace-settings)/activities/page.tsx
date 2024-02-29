@@ -1,6 +1,5 @@
 import useTranslation from 'next-translate/useTranslation';
 import { getWorkspace } from '@/lib/workspace-helper';
-import Filters from './filters';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -46,7 +45,6 @@ export default async function WorkspaceActivitiesPage({
       )}
 
       <div className="flex min-h-full w-full flex-col ">
-        <Filters />
         <Separator className="mt-4" />
         {/* <PaginationIndicator
           activePage={activePage}
@@ -81,20 +79,15 @@ async function getLogs(
     .order('ts', { ascending: false })
     .eq('ws_id', wsId);
 
-  if (ops && typeof ops === 'string') {
+  if (ops) {
     queryBuilder.in('op', ops);
   }
 
-  if (userIds && typeof userIds === 'string') {
+  if (userIds) {
     queryBuilder.in('auth_uid', userIds);
   }
 
-  if (
-    page &&
-    itemsPerPage &&
-    typeof page === 'string' &&
-    typeof itemsPerPage === 'string'
-  ) {
+  if (page && itemsPerPage) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(itemsPerPage);
 

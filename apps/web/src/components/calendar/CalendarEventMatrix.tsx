@@ -1,5 +1,5 @@
 import { useParams } from 'next/navigation';
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import EventCard from './EventCard';
 
 const CalendarEventMatrix = () => {

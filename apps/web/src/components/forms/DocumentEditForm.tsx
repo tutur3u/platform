@@ -4,7 +4,7 @@ import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
-import { Document } from '../../types/primitives/Document';
+import { Document } from '@/types/primitives/Document';
 import useTranslation from 'next-translate/useTranslation';
 
 interface DocumentEditFormProps {

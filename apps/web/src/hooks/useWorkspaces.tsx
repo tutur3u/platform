@@ -9,10 +9,10 @@ import {
   useState,
   useEffect,
 } from 'react';
-import { Workspace } from '../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
-import { Team } from '../types/primitives/Team';
+import { Team } from '@/types/primitives/Team';
 
 const WorkspaceContext = createContext({
   workspaces: undefined as Workspace[] | undefined,

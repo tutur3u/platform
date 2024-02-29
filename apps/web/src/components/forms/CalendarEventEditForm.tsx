@@ -1,11 +1,11 @@
-import { EyeIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useEffect, useState } from 'react';
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import ColorPallete from '../../../../web/src/components/color/ColorPallete';
 import moment from 'moment';
-import { SupportedColor } from '../../types/primitives/SupportedColors';
+import { SupportedColor } from '@/types/primitives/SupportedColors';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -303,11 +303,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
       <Divider mt="sm" mb="xs" className={getInputColor()} />
 
       <div className="flex gap-2">
-        <Button
-          className={`w-full border ${getInputColor()}`}
-          variant="light"
-          leftIcon={<EyeIcon className="h-5 w-5" />}
-        >
+        <Button className={`w-full border ${getInputColor()}`} variant="light">
           {t('view-event')}
         </Button>
 

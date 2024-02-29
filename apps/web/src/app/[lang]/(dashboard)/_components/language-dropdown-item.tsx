@@ -14,7 +14,7 @@ export function LanguageDropdownItem({ label, locale, selected }: Props) {
   const router = useRouter();
 
   const useLocale = async () => {
-    const res = await fetch('/api/languages', {
+    const res = await fetch('/api/v1/infrastructure/languages', {
       method: 'POST',
       body: JSON.stringify({ locale }),
       headers: {

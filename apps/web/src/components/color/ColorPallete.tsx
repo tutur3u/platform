@@ -1,4 +1,4 @@
-import { SupportedColor } from '../../types/primitives/SupportedColors';
+import { SupportedColor } from '@/types/primitives/SupportedColors';
 import ColorOption from './ColorOption';
 
 interface ColorPalleteProps {

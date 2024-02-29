@@ -69,7 +69,15 @@ const deleteWorkspace = async (
       method: 'DELETE',
     });
 
-    if (!res.ok) throw new Error('Failed to delete workspace');
+    if (!res.ok) {
+      if (options?.onError) options.onError();
+      toast({
+        title: 'Failed to delete workspace',
+        content: 'Please try again later.',
+        color: 'red',
+      });
+    }
+
     if (options?.onSuccess) options.onSuccess();
   } catch (e) {
     if (options?.onError) options.onError();

@@ -1,5 +1,6 @@
-import { NavLink, Navigation } from '@/components/navigation';
+import { Navigation, NavLink } from '@/components/navigation';
 import useTranslation from 'next-translate/useTranslation';
+import React from 'react';
 
 export const dynamic = 'force-dynamic';
 

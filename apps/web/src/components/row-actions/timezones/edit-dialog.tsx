@@ -11,7 +11,7 @@ import {
 import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import TimezoneForm, { ApiConfigFormSchema } from './form';
 import useTranslation from 'next-translate/useTranslation';
 import { Timezone } from '@/types/primitives/Timezone';
@@ -40,7 +40,7 @@ export default function TimezoneEditDialog({
   const setOpen = setExternalOpen ?? setInternalOpen;
 
   const handleSubmit = async (values: z.infer<typeof ApiConfigFormSchema>) => {
-    const res = await fetch('/api/timezones', {
+    const res = await fetch('/api/v1/infrastructure/timezones', {
       method: data.value ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });

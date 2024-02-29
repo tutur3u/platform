@@ -62,7 +62,7 @@ export async function POST(
     const salt = generateSalt();
     const hashedPassword = await hashPassword(password, salt);
 
-    const { data, error } = await sbAdmin
+    const { data: guest, error } = await sbAdmin
       .from('meet_together_guests')
       .insert({
         name,
@@ -70,7 +70,7 @@ export async function POST(
         password_hash: hashedPassword,
         password_salt: salt,
       })
-      .select('name')
+      .select('id, name')
       .single();
 
     if (error) {
@@ -83,9 +83,11 @@ export async function POST(
 
     return NextResponse.json({
       user: {
-        id: `${planId}-guest-${name}`,
-        name: data.name,
-        plan_id: planId,
+        id: guest.id,
+        display_name: guest.name,
+        password_hash: hashedPassword,
+        planId,
+        is_guest: true,
       },
       message: 'Created new guest',
     });
@@ -97,10 +99,10 @@ export async function POST(
     return NextResponse.json({
       user: {
         id: guest.id,
-        name: guest.name,
-        passwordHash: hashedPassword,
+        display_name: guest.name,
+        password_hash: hashedPassword,
         planId,
-        isGuest: true,
+        is_guest: true,
       },
       message: 'Logged in',
     });
@@ -124,9 +126,5 @@ async function hashPassword(password: string, salt: string) {
 
   // convert the hashed password to a string
   const hashedPasswordStr = new Uint8Array(hashedPassword).join('');
-  const hashedPasswordHex = parseInt(hashedPasswordStr)
-    .toString(16)
-    .replace(/0+$/, '');
-
-  return hashedPasswordHex;
+  return parseInt(hashedPasswordStr).toString(16).replace(/0+$/, '');
 }

@@ -13,5 +13,7 @@ export interface User {
   pending?: boolean;
   role?: UserRole;
   role_title?: string;
+  is_guest?: boolean;
+  password_hash?: string;
   created_at?: string | null;
 }

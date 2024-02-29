@@ -29,6 +29,8 @@ import AvailabilityPlanner from './availability-planner';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from './time-blocking-provider';
 import { User } from '@/types/primitives/User';
+import { usePathname, useRouter } from 'next/navigation';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
@@ -37,25 +39,40 @@ const formSchema = z.object({
 
 export default function PlanLogin({
   plan,
+  timeblocks,
   platformUser,
 }: {
   plan: MeetTogetherPlan;
+  timeblocks: Timeblock[];
   platformUser: User | null;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const { t } = useTranslation('meet-together-plan-details');
-  const { user, showLogin, setUser, setShowLogin } = useTimeBlocking();
+
+  const {
+    user,
+    showLogin,
+    showAccountSwitcher,
+    setUser,
+    setShowLogin,
+    setShowAccountSwitcher,
+  } = useTimeBlocking();
 
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      guestName: user?.name ?? '',
+      guestName: user?.display_name ?? '',
       guestPassword: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!plan.id) return;
+
     setLoading(true);
 
     const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
@@ -71,7 +88,7 @@ export default function PlanLogin({
 
     if (res.ok) {
       const data = await res.json();
-      setUser(data.user);
+      setUser(plan.id, data.user);
       setLoading(false);
       setShowLogin(false);
     } else {
@@ -90,70 +107,124 @@ export default function PlanLogin({
       onOpenChange={(open) => {
         form.reset();
         setLoading(false);
+        setShowAccountSwitcher(open);
         setShowLogin(open);
       }}
     >
       <DialogTrigger asChild={!!user || !!platformUser}>
-        <AvailabilityPlanner plan={plan} disabled={!user && !platformUser} />
+        <AvailabilityPlanner
+          plan={plan}
+          timeblocks={timeblocks}
+          disabled={!user}
+        />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('identity_protection')}</DialogTitle>
-          <DialogDescription>{t('identity_protection_desc')}</DialogDescription>
+          <DialogTitle>
+            {showAccountSwitcher
+              ? t('account_switcher')
+              : t('identity_protection')}
+          </DialogTitle>
+          <DialogDescription>
+            {showAccountSwitcher
+              ? t('account_switcher_desc')
+              : t('identity_protection_desc')}
+          </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="guestName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('your_name')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Tuturuuu"
-                      autoComplete="off"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>{t('your_name_desc')}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="guestPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('password')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="••••••••"
-                      type="password"
-                      autoComplete="off"
-                      disabled={missingFields}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>{t('password_desc')}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {showAccountSwitcher ? (
+          <div className="grid gap-2">
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (!plan.id) return;
 
-            <DialogFooter>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={missingFields || loading}
-              >
-                {loading ? t('common:processing') : t('common:login')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                if (!platformUser) {
+                  router.push(`/login?nextUrl=${encodeURIComponent(pathname)}`);
+                  return;
+                }
+
+                setUser(plan.id, platformUser);
+                setShowAccountSwitcher(false);
+                setShowLogin(false);
+              }}
+              disabled={
+                !plan.id ||
+                (!!platformUser && (!user?.id || platformUser?.id === user?.id))
+              }
+            >
+              {!!platformUser && (!user?.id || platformUser?.id === user?.id)
+                ? t('using_tuturuuu_account')
+                : t('use_tuturuuu_account')}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setShowAccountSwitcher(false);
+              }}
+            >
+              {user?.is_guest
+                ? t('use_other_guest_account')
+                : t('use_guest_account')}
+            </Button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <FormField
+                control={form.control}
+                name="guestName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('your_name')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Tuturuuu"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>{t('your_name_desc')}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="guestPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('password')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="••••••••"
+                        type="password"
+                        disabled={missingFields}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>{t('password_desc')}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={missingFields || loading}
+                >
+                  {loading ? t('common:processing') : t('common:continue')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

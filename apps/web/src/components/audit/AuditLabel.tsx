@@ -1,11 +1,11 @@
 import moment from 'moment';
-import { getLabel } from '../../utils/audit-helper';
-import { AuditLog } from '../../types/primitives/audit-log';
-import { User } from '../../types/primitives/User';
+import { getLabel } from '@/utils/audit-helper';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { User } from '@/types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
 import useSWR from 'swr';
 import 'moment/locale/vi';
-import { Workspace } from '../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 
 interface Props {
   data: AuditLog;

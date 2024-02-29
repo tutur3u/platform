@@ -1,9 +1,9 @@
 import { Popover } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import CalendarEventEditForm from '../forms/CalendarEventEditForm';
-import { CalendarEvent } from '../../types/primitives/calendar-event';
+import { CalendarEvent } from '@/types/primitives/calendar-event';
 import moment from 'moment';
 
 interface EventCardProps {

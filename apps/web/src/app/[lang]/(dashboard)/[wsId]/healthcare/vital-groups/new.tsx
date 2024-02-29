@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
-import { Vital } from '../../../../../../types/primitives/Vital';
+import { Vital } from '@/types/primitives/Vital';
 import 'dayjs/locale/vi';
-import VitalSelector from '../../../../../../components/selectors/VitalSelector';
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
 
 export default function NewVitalGroupPage() {
   const { setRootSegment } = useSegments();
@@ -51,15 +50,6 @@ export default function NewVitalGroupPage() {
         id: '',
       },
     ]);
-  };
-
-  const updateVital = (index: number, vital: Vital | null) => {
-    setVitals((vitals) => {
-      const newVitals = [...vitals];
-      if (vital) newVitals[index] = vital;
-      else newVitals.splice(index, 1);
-      return newVitals;
-    });
   };
 
   const removeVital = (index: number) => {
@@ -162,14 +152,8 @@ export default function NewVitalGroupPage() {
             </button>
           </div>
 
-          {vitals.map((v, idx) => (
+          {vitals.map((_, idx) => (
             <div key={`vital-${idx}`} className="flex w-full items-end gap-2">
-              <VitalSelector
-                vital={v}
-                setVital={(vital) => updateVital(idx, vital)}
-                blacklist={vitals.map((v) => v.id)}
-                className="w-full"
-              />
               <button
                 className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20"
                 onClick={() => removeVital(idx)}

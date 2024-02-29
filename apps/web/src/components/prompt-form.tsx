@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import React from 'react';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {

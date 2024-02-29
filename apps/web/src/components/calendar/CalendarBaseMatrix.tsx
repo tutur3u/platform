@@ -1,4 +1,4 @@
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import CalendarColumn from './CalendarColumn';
 
 const CalendarBaseMatrix = () => {

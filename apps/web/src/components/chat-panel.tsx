@@ -10,6 +10,7 @@ import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
 import { Message } from 'ai';
+import React from 'react';
 
 export interface ChatPanelProps
   extends Pick<

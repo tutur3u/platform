@@ -15,13 +15,12 @@ interface Props {
 
 export default function DashboardMenuItem({ defaultWorkspaceId }: Props) {
   const { t } = useTranslation('common');
-  if (!defaultWorkspaceId) return null;
 
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <Link href={`/${defaultWorkspaceId}`}>
+        <Link href={`/${defaultWorkspaceId || 'onboarding'}`}>
           <DropdownMenuItem className="cursor-pointer">
             <ActivitySquare className="mr-2 h-4 w-4" />
             <span>{t('dashboard')}</span>

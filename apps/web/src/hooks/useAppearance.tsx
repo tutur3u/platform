@@ -1,14 +1,14 @@
-import { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import {
   APP_THEME_KEY,
   DEFAULT_APP_THEME,
-  SIDEBAR_STATE_KEY,
+  DEFAULT_HIDE_EXPERIMENTAL_ON_SIDEBAR,
+  DEFAULT_HIDE_EXPERIMENTAL_ON_TOP_NAVBAR,
   DEFAULT_SIDEBAR_STATE,
   HIDE_EXPERIMENTAL_ON_SIDEBAR_KEY,
-  DEFAULT_HIDE_EXPERIMENTAL_ON_SIDEBAR,
   HIDE_EXPERIMENTAL_ON_TOP_NAVBAR_KEY,
-  DEFAULT_HIDE_EXPERIMENTAL_ON_TOP_NAVBAR,
-} from '../constants/prefs';
+  SIDEBAR_STATE_KEY,
+} from '@/constants/prefs';
 import { useLocalStorage } from '@mantine/hooks';
 
 export type Theme = 'light' | 'dark';

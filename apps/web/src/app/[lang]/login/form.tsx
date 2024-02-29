@@ -109,21 +109,19 @@ export default function LoginForm() {
     }
   };
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    try {
-      const { email, otp } = data;
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    const { email, otp } = data;
 
-      if (!otpSent) sendOtp({ email });
-      else if (otp) verifyOtp({ email, otp });
-      else throw new Error('OTP is required.');
-    } catch (e) {
-      setLoading(false);
+    if (!otpSent) await sendOtp({ email });
+    else if (otp) await verifyOtp({ email, otp });
+    else
       toast({
         title: 'Error',
         description:
-          e instanceof Error ? e.message : 'An unknown error occurred.',
+          'Please enter the OTP code sent to your email to continue.',
       });
-    }
+
+    setLoading(false);
   }
 
   return (

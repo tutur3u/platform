@@ -1,4 +1,4 @@
-import { SidebarState, Theme } from '../hooks/useAppearance';
+import { SidebarState, Theme } from '@/hooks/useAppearance';
 
 export const APP_THEME_KEY = 'APP_THEME';
 export const DEFAULT_APP_THEME: Theme = 'dark';
