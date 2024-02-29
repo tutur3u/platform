@@ -136,14 +136,17 @@ export default function FleetingAssistant({
 
         <div
           ref={messagesRef}
-          className="scrollbar-none flex h-full w-full flex-col items-center justify-center overflow-y-auto rounded-lg"
+          className={`scrollbar-none flex h-full w-full flex-col items-center overflow-y-auto rounded-lg ${
+            currentMessages.length > 0 ? 'justify-start' : 'justify-center'
+          }`}
         >
           {currentMessages.length > 0 ? (
-            <div className="grid h-full w-full gap-2">
+            <div className="grid h-fit w-full gap-2">
               {currentMessages.map((message, i) => (
                 <FleetingAssistantMessage
                   key={i}
                   message={{ ...message, content: message.content.trim() }}
+                  model={chat?.model}
                 />
               ))}
             </div>

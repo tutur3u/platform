@@ -35,6 +35,8 @@ export function FleetingAssistantMessage({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 
+  const formattedModel = model?.replace(/_/g, ' ').replace(/-/g, ' ');
+
   return (
     <div
       className={cn('group relative mb-4 grid h-fit w-full gap-4')}
@@ -78,7 +80,7 @@ export function FleetingAssistantMessage({
                       : 'from-pink-600 via-purple-500 to-sky-500'
                   }`}
                 >
-                  Skora AI / {model}
+                  Skora AI {formattedModel ? `/ ${formattedModel}` : ''}
                 </span>
               )}
             </span>
