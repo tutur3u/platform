@@ -1,5 +1,3 @@
-import { generateUUID } from '@/utils/uuid-helper';
-
 //* EXTERNAL MAPPING
 
 export const billCouponsMapping = (_: string, data: any[]) =>
@@ -54,7 +52,6 @@ export const billsMapping = (wsId: string, data: any[]) =>
 
     return {
       id: i?.id,
-      transaction_id: generateUUID(i?.id, walletId),
       wallet_id: walletId,
       price: i?.total,
       total_diff: i?.price_diff,

@@ -135,6 +135,7 @@ export default function MigrationDashboard() {
     externalAlias,
     internalAlias,
     mapping,
+    skip,
   }: ModulePackage) => {
     setLoading(module, true);
     resetData(module);
@@ -186,7 +187,9 @@ export default function MigrationDashboard() {
     let internalError: any = null;
 
     // Fetch internal data
-    if (internalPath && workspaceId) {
+    if (skip) {
+      console.log('Skipping migration for', module);
+    } else if (internalPath && workspaceId) {
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       if (externalData !== null && externalData.length > 0) {
@@ -249,6 +252,7 @@ export default function MigrationDashboard() {
     externalPath,
     internalPath,
     mapping,
+    skip,
     disabled,
   }: ModulePackage) => {
     return (
@@ -335,13 +339,15 @@ export default function MigrationDashboard() {
                       ? getData('external', module)?.length ===
                         getData('internal', module)?.length
                         ? 100
-                        : ((getData('external', module) ?? []).filter((v) =>
-                            (getData('internal', module) ?? []).find(
-                              (iv) => iv.id === v.id || iv._id === v.id
-                            )
-                          ).length /
-                            (getData('external', module)?.length ?? 0)) *
-                          100
+                        : skip
+                          ? 100
+                          : ((getData('external', module) ?? []).filter((v) =>
+                              (getData('internal', module) ?? []).find(
+                                (iv) => iv.id === v.id || iv._id === v.id
+                              )
+                            ).length /
+                              (getData('external', module)?.length ?? 0)) *
+                            100
                       : 0
                   }
                 />

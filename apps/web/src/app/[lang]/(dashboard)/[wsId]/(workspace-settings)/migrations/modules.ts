@@ -77,6 +77,7 @@ export interface ModulePackage {
   internalAlias?: string;
   internalPath?: string;
   mapping?: (wsId: string, data: any[]) => any[];
+  skip?: boolean;
   disabled?: boolean;
 }
 
@@ -213,11 +214,13 @@ export const generateModules = (): ModulePackage[] => {
       case 'wallet-transactions':
         // baseModule.name = 'Wallet transactions';
         baseModule.mapping = walletTransactionsMapping;
+        baseModule.skip = true;
         break;
 
       case 'wallets':
         // baseModule.name = 'Wallets';
         baseModule.mapping = walletsMapping;
+        baseModule.skip = true;
         break;
 
       //* TUTURUUU-RELATED MODULES
