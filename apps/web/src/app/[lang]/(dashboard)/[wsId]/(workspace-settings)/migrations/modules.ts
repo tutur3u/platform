@@ -58,8 +58,8 @@ const availableModules = [
   'class-attendance',
   'student-feedbacks',
   'package-stock-changes',
-  'user-monthly-report-logs',
   'user-monthly-reports',
+  'user-monthly-report-logs',
   'user-status-changes',
   'wallet-transactions',
 

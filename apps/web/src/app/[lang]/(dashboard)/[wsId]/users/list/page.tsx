@@ -64,9 +64,10 @@ async function getData(
       }
     )
     .eq('ws_id', wsId)
-    .eq('linked_users.users.workspace_members.ws_id', wsId);
+    .eq('linked_users.users.workspace_members.ws_id', wsId)
+    .order('full_name', { ascending: true, nullsFirst: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('full_name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
