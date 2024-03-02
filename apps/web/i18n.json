@@ -111,6 +111,13 @@
       "workspace-settings-layout",
       "ws-settings"
     ],
+    "/[lang]/(dashboard)/[wsId]/(workspace-settings)/api-keys": [
+      "sidebar-tabs",
+      "secret-data-table",
+      "workspace-settings-layout",
+      "search",
+      "ws-api-keys"
+    ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets": [
       "sidebar-tabs",
       "secret-data-table",

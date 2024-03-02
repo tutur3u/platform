@@ -1,0 +1,11 @@
+{
+  "api_key": "Khoá API",
+  "api_keys": "Khoá API",
+  "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của Tuturuuu một cách an toàn và bảo mật.",
+  "name": "Tên",
+  "value": "Giá trị",
+  "create_key": "Tạo khoá",
+  "edit_key": "Sửa khoá",
+  "add_new_workspace_key": "Thêm một khoá API mới cho không gian làm việc này.",
+  "edit_existing_workspace_key": "Sửa khoá API đã tồn tại cho không gian làm việc này."
+}

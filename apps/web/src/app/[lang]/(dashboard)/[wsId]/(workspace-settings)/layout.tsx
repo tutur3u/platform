@@ -38,6 +38,11 @@ export default async function Layout({
       disabled: true,
     },
     {
+      name: t('api_keys'),
+      href: `/${wsId}/api-keys`,
+      allowedRoles: ['ADMIN', 'OWNER'],
+    },
+    {
       name: t('secrets'),
       href: `/${wsId}/secrets`,
       allowedRoles: ['ADMIN', 'OWNER'],
@@ -60,7 +65,6 @@ export default async function Layout({
       href: `/${wsId}/activities`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
-      disabled: true,
     },
   ];
 

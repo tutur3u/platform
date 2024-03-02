@@ -1,11 +1,8 @@
-import useTranslation from 'next-translate/useTranslation';
-import { getWorkspace } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { AuditLog } from '@/types/primitives/audit-log';
 import LogList from './log-list';
-import { Separator } from '@/components/ui/separator';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,35 +21,11 @@ export default async function WorkspaceActivitiesPage({
 }: Props) {
   if (!wsId) notFound();
 
-  const { t } = useTranslation('workspace-tabs');
-  const ws = await getWorkspace(wsId);
   const logs = await getLogs(wsId, page, ops, userIds, itemsPerPage);
-
-  const activitiesLabel = t('activities');
 
   return (
     <>
-      {ws?.id && (
-        <>
-          <div className="border-border bg-foreground/5 rounded-lg border p-4">
-            <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
-            <p className="text-foreground/80">
-              {t('ws-activities:description')}
-            </p>
-          </div>
-          <Separator className="my-4" />
-        </>
-      )}
-
       <div className="flex min-h-full w-full flex-col ">
-        <Separator className="mt-4" />
-        {/* <PaginationIndicator
-          activePage={activePage}
-          setActivePage={setPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={logsData?.count}
-        /> */}
-
         <LogList logs={logs} />
       </div>
     </>
