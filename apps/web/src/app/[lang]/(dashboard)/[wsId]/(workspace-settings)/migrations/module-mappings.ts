@@ -224,7 +224,19 @@ export const userCouponsMapping = (_: string, data: any[]) =>
   }));
 
 export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
-  data.map(() => ({}));
+  data.map((i) => ({
+    id: i?.id,
+    report_id: i?.report_id,
+    user_id: i?.user_id,
+    group_id: i?.class_id,
+    title: i?.title,
+    content: i?.learned_lessons,
+    feedback: i?.feedback,
+    score: i?.score,
+    scores: i?.scores,
+    creator_id: i?.creator_id,
+    created_at: i?.created_at,
+  }));
 
 export const userMonthlyReportsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
