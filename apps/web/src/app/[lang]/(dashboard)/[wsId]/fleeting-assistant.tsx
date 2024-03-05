@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AIChat } from '@/types/primitives/ai-chat';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { Expand } from 'lucide-react';
+import { Expand, RotateCcw } from 'lucide-react';
 import { Message } from 'ai';
 import Link from 'next/link';
 import { useChat } from 'ai/react';
@@ -27,6 +27,7 @@ export default function FleetingAssistant({
   model,
   messages,
   onBack,
+  onReset,
   onSubmit: createChat,
 }: {
   wsId: string;
@@ -34,11 +35,12 @@ export default function FleetingAssistant({
   model: 'google' | 'anthropic';
   messages: Message[];
   onBack: () => void;
-  onSubmit: (prompt: string) => Promise<AIChat>;
+  onReset: () => void;
+  onSubmit: (prompt: string) => Promise<AIChat | undefined>;
 }) {
   const { t } = useTranslation('ai-chat');
 
-  const { isLoading, append } = useChat({
+  const { isLoading, append, setMessages } = useChat({
     id: chat?.id,
     //   initialMessages,
     api: `/api/ai/chat/${model}`,
@@ -71,12 +73,24 @@ export default function FleetingAssistant({
   const [pendingPrompt, setPendingPrompt] = useState<string | undefined>();
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    if (isLoading) return;
+    if (!!chat?.id && isLoading) return;
 
     setPendingPrompt(data.prompt);
     form.setValue('prompt', '');
 
-    const currentChat = await createChat(data.prompt);
+    let currentChat = chat;
+
+    if (!currentChat) {
+      const newChat = await createChat(data.prompt);
+      if (!newChat) {
+        form.setValue('prompt', data.prompt);
+        setPendingPrompt(undefined);
+        return;
+      }
+
+      currentChat = newChat;
+      setMessages([]);
+    }
 
     await append({
       id: currentChat.id,
@@ -97,10 +111,15 @@ export default function FleetingAssistant({
                 content: pendingPrompt,
                 role: 'user',
               },
+              {
+                id: 'assistant-pending',
+                content: t('common:waiting_for_response'),
+                role: 'assistant',
+              },
             ]
           : messages
         : messages,
-    [messages, pendingPrompt]
+    [t, messages, pendingPrompt]
   ) as Message[];
 
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -122,16 +141,32 @@ export default function FleetingAssistant({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-[28.25rem] flex-col p-2">
-        <div className="mb-2 flex items-center justify-end gap-2 transition">
+        <div className="mb-2 flex items-center justify-between gap-2 transition">
           <div className="bg-foreground text-background w-fit rounded border px-2 py-0.5 font-mono text-xs font-bold">
             ALPHA
           </div>
 
-          <Link href={`/${wsId}/chat${chat?.id ? `/${chat.id}` : ''}`}>
-            <Button variant="ghost" size="icon" onClick={onBack}>
-              <Expand className="h-5 w-5" />
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setPendingPrompt(undefined);
+                setMessages([]);
+                form.reset();
+                onReset();
+              }}
+              disabled={chat?.id === undefined || isLoading}
+            >
+              <RotateCcw className="h-5 w-5" />
             </Button>
-          </Link>
+
+            <Link href={`/${wsId}/chat${chat?.id ? `/${chat.id}` : ''}`}>
+              <Button variant="ghost" size="icon" onClick={onBack}>
+                <Expand className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div
@@ -199,7 +234,11 @@ export default function FleetingAssistant({
                 variant="ghost"
                 size="icon"
                 className="flex-shrink-0"
-                disabled={!form.formState.isValid || isLoading}
+                disabled={
+                  !form.formState.isValid ||
+                  (!!chat?.id && isLoading) ||
+                  !!pendingPrompt
+                }
               >
                 <PaperAirplaneIcon className="h-5 w-5" />
               </Button>

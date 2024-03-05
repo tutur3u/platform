@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} from '@google/generative-ai';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
@@ -8,14 +12,36 @@ export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+const MODEL_NAME = 'gemini-1.0-pro';
+const API_KEY = process.env.GOOGLE_API_KEY || '';
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 const generationConfig = {
-  maxOutputTokens: 30000,
   temperature: 0.9,
-  // topP: 0.1,
-  // topK: 16,
+  topK: 1,
+  topP: 1,
+  maxOutputTokens: 2048,
 };
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+];
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
@@ -61,12 +87,15 @@ export async function POST(req: Request) {
       });
 
     const prompt = buildGooglePrompt(messages);
-    const model = 'gemini-pro';
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
     const geminiStream = await genAI
-      .getGenerativeModel({ model, generationConfig })
+      .getGenerativeModel({
+        model: MODEL_NAME,
+        generationConfig,
+        safetySettings,
+      })
       .generateContentStream(prompt);
 
     let chatId = id;

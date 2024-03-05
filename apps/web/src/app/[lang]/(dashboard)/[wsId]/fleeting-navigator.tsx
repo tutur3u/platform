@@ -21,7 +21,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const [chat, setChat] = useState<AIChat | undefined>();
   const [model] = useState<'google' | 'anthropic'>('google');
 
-  const { messages } = useChat({
+  const { messages, setMessages } = useChat({
     id: chat?.id,
     //   initialMessages,
     api: `/api/ai/chat/${model}`,
@@ -77,7 +77,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     const { id, title } = await res.json();
     if (id) setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
 
-    return id;
+    return { id, title, model: 'GOOGLE-GEMINI-PRO' } as AIChat;
   };
 
   return (
@@ -99,6 +99,10 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
               model={model}
               messages={messages}
               onBack={() => setCurrentView(undefined)}
+              onReset={() => {
+                setMessages([]);
+                setChat(undefined);
+              }}
               onSubmit={async (prompt) => {
                 return chat?.id ? chat : await createChat(prompt);
               }}

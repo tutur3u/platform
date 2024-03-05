@@ -81,5 +81,7 @@
   "ascending": "Ascending",
   "descending": "Descending",
   "hide-column": "Hide column",
-  "unnamed": "No name"
+  "unnamed": "No name",
+
+  "waiting_for_response": "I'll respond to you shortly, please wait..."
 }
