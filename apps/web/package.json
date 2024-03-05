@@ -134,7 +134,7 @@
     "@next/eslint-plugin-next": "^14.1.2",
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/eslint-plugin-query": "^5.20.1",
-    "@tanstack/react-query-devtools": "^5.24.8",
+    "@tanstack/react-query-devtools": "^5.25.0",
     "@types/cookie": "^0.6.0",
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.14.202",
