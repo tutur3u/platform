@@ -1,5 +1,6 @@
 //* EXTERNAL MAPPING
 
+// STATUS: ✅
 export const billCouponsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     _id: i?.id,
@@ -12,6 +13,7 @@ export const billCouponsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const billPackagesMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     _id: i?.id,
@@ -26,6 +28,7 @@ export const billPackagesMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const billsMapping = (wsId: string, data: any[]) =>
   data.map((i) => {
     const walletId =
@@ -54,10 +57,12 @@ export const billsMapping = (wsId: string, data: any[]) =>
       id: i?.id,
       wallet_id: walletId,
       price: i?.total,
+      paid_amount: i?.paid_amount,
       total_diff: i?.price_diff,
       notice: i?.content,
       note: i?.note,
       customer_id: i?.customer_id,
+      user_group_id: i?.class_id,
       category_id: categoryId,
       completed_at: i?.created_at,
       creator_id: i?.creator_id,
@@ -67,6 +72,7 @@ export const billsMapping = (wsId: string, data: any[]) =>
     };
   });
 
+// STATUS: ✅
 export const classAttendanceMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     group_id: i?.class_id,
@@ -77,13 +83,16 @@ export const classAttendanceMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const classMembersMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
     group_id: i?.class_id,
+    role: i?.role,
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const classPackagesMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     group_id: i?.class_id,
@@ -92,23 +101,32 @@ export const classPackagesMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const classScoresMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
     indicator_id: i?.score_id,
     group_id: i?.class_id,
     value: i?.value,
+    creator_id: i?.creator_id,
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const classesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
     name: i?.code,
     ws_id: wsId,
+    notes: `${i?.mode ? `Mode: ${i.mode}\n` : ''}${i?.location ? `Location: ${i.location}\n` : ''}${i?.syllabus ? `Syllabus: ${i.syllabus}\n` : ''}${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
+    starting_date: i?.starting_date,
+    ending_date: i?.ending_date,
+    sessions: i?.sessions,
+    archived: i?.status === 'COMPLETED',
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const couponsMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -118,9 +136,11 @@ export const couponsMapping = (wsId: string, data: any[]) =>
     value: i?.value,
     use_ratio: i?.use_ratio,
     ws_id: wsId,
+    creator_id: i?.creator_id,
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const lessonsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -131,6 +151,7 @@ export const lessonsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const packageStockChangesMapping = (_: string, data: any[]) => {
   console.log('packageStockChangesMapping', data);
   return data.map((i) => ({
@@ -145,11 +166,13 @@ export const packageStockChangesMapping = (_: string, data: any[]) => {
   }));
 };
 
+// STATUS: ✅
 export const packagesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
     name: i?.name,
     description: i?.content,
+    avatar_url: i?.avatar_url,
     category_id:
       i?.type === 'COURSE'
         ? 'b58cdb48-67fb-49ef-86c6-1ba84c4728d6'
@@ -164,9 +187,11 @@ export const packagesMapping = (wsId: string, data: any[]) =>
                 : undefined,
     manufacturer: i?.manufacturer,
     ws_id: wsId,
+    creator_id: i?.creator_id,
     created_at: i?.created_at,
   }));
 
+// STATUS: ✅
 export const paymentMethodsMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -174,6 +199,7 @@ export const paymentMethodsMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
+// STATUS: ✅
 export const rolesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -182,6 +208,7 @@ export const rolesMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const scoreNamesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -190,6 +217,7 @@ export const scoreNamesMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const groupedScoreNamesMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     indicator_id: i?.id,
@@ -197,6 +225,7 @@ export const groupedScoreNamesMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const studentFeedbacksMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -208,6 +237,7 @@ export const studentFeedbacksMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -216,6 +246,7 @@ export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
+// STATUS: PENDING
 export const userCouponsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
@@ -223,6 +254,7 @@ export const userCouponsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -238,6 +270,7 @@ export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const userMonthlyReportsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -253,6 +286,7 @@ export const userMonthlyReportsMapping = (_: string, data: any[]) =>
     updated_at: i?.updated_at,
   }));
 
+// STATUS: PENDING
 export const userStatusChangesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
@@ -263,6 +297,7 @@ export const userStatusChangesMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
+// STATUS: PENDING
 export const usersMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -313,6 +348,7 @@ export const walletsMapping = (_: string, __: any[]) => [];
 
 //* TUTURUUU INFRASTRUCTURE MAPPING
 
+// STATUS: PENDING
 export const warehousesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -320,6 +356,7 @@ export const warehousesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
+// STATUS: PENDING
 export const productCategoriesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -327,6 +364,7 @@ export const productCategoriesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
+// STATUS: PENDING
 export const productUnitsMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -334,6 +372,7 @@ export const productUnitsMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
+// STATUS: ✅
 export const productPricesMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     product_id: i?.id,
