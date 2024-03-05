@@ -572,3 +572,102 @@ for all
 to authenticated
 using (((get_user_role(auth.uid(), ws_id) = 'ADMIN'::text) OR (get_user_role(auth.uid(), ws_id) = 'OWNER'::text)))
 with check (((get_user_role(auth.uid(), ws_id) = 'ADMIN'::text) OR (get_user_role(auth.uid(), ws_id) = 'OWNER'::text)));
+
+
+create table "public"."external_user_monthly_report_logs" (
+    "id" uuid not null default gen_random_uuid(),
+    "report_id" uuid not null,
+    "user_id" uuid not null,
+    "group_id" uuid not null,
+    "title" text not null default ''::text,
+    "content" text not null default ''::text,
+    "feedback" text not null default ''::text,
+    "score" real,
+    "scores" real[],
+    "creator_id" uuid,
+    "created_at" timestamp with time zone not null default now()
+);
+
+
+alter table "public"."external_user_monthly_report_logs" enable row level security;
+
+CREATE UNIQUE INDEX external_user_monthly_report_logs_pkey ON public.external_user_monthly_report_logs USING btree (id);
+
+alter table "public"."external_user_monthly_report_logs" add constraint "external_user_monthly_report_logs_pkey" PRIMARY KEY using index "external_user_monthly_report_logs_pkey";
+
+alter table "public"."external_user_monthly_report_logs" add constraint "external_user_monthly_report_logs_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES workspace_users(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+
+alter table "public"."external_user_monthly_report_logs" validate constraint "external_user_monthly_report_logs_creator_id_fkey";
+
+alter table "public"."external_user_monthly_report_logs" add constraint "external_user_monthly_report_logs_group_id_fkey" FOREIGN KEY (group_id) REFERENCES workspace_user_groups(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table "public"."external_user_monthly_report_logs" validate constraint "external_user_monthly_report_logs_group_id_fkey";
+
+alter table "public"."external_user_monthly_report_logs" add constraint "external_user_monthly_report_logs_report_id_fkey" FOREIGN KEY (report_id) REFERENCES external_user_monthly_reports(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table "public"."external_user_monthly_report_logs" validate constraint "external_user_monthly_report_logs_report_id_fkey";
+
+alter table "public"."external_user_monthly_report_logs" add constraint "external_user_monthly_report_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES workspace_users(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table "public"."external_user_monthly_report_logs" validate constraint "external_user_monthly_report_logs_user_id_fkey";
+
+grant delete on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant insert on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant references on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant select on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant trigger on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant truncate on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant update on table "public"."external_user_monthly_report_logs" to "anon";
+
+grant delete on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant insert on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant references on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant select on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant trigger on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant truncate on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant update on table "public"."external_user_monthly_report_logs" to "authenticated";
+
+grant delete on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant insert on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant references on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant select on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant trigger on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant truncate on table "public"."external_user_monthly_report_logs" to "service_role";
+
+grant update on table "public"."external_user_monthly_report_logs" to "service_role";
+
+create policy "Allow all access for workspace admins"
+on "public"."external_user_monthly_report_logs"
+as permissive
+for all
+to authenticated
+using (((get_user_role(auth.uid(), ( SELECT wu.ws_id
+   FROM workspace_users wu
+  WHERE (wu.id = external_user_monthly_report_logs.user_id))) = 'ADMIN'::text) OR (get_user_role(auth.uid(), ( SELECT wu.ws_id
+   FROM workspace_users wu
+  WHERE (wu.id = external_user_monthly_report_logs.user_id))) = 'OWNER'::text)))
+with check (((get_user_role(auth.uid(), ( SELECT wu.ws_id
+   FROM workspace_users wu
+  WHERE (wu.id = external_user_monthly_report_logs.user_id))) = 'ADMIN'::text) OR (get_user_role(auth.uid(), ( SELECT wu.ws_id
+   FROM workspace_users wu
+  WHERE (wu.id = external_user_monthly_report_logs.user_id))) = 'OWNER'::text)));
+
+
+
