@@ -11,31 +11,31 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { Button } from '@/components/ui/button';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
-  data: WorkspaceSecret;
+  data: WorkspaceApiKey;
   submitLabel?: string;
   onSubmit: (values: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   name: z.string().min(1),
-  value: z.string().min(1),
+  value: z.string().optional(),
 });
 
 export const ApiConfigFormSchema = FormSchema;
 
-export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-secrets');
+export default function ApiKeyForm({ data, submitLabel, onSubmit }: Props) {
+  const { t } = useTranslation('ws-api-keys');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',
-      value: data.value || (data.id ? '' : 'true'),
+      value: data.value || undefined,
     },
   });
 
@@ -62,19 +62,26 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="value"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('value')}</FormLabel>
-              <FormControl>
-                <Input placeholder="Value" autoComplete="off" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {data?.value && (
+          <FormField
+            control={form.control}
+            name="value"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('value')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Value"
+                    autoComplete="off"
+                    {...field}
+                    disabled
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button type="submit" className="w-full" disabled={disabled}>
           {submitLabel}

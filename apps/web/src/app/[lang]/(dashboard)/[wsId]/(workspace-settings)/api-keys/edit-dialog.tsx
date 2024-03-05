@@ -12,19 +12,20 @@ import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import SecretForm, { ApiConfigFormSchema } from './secret-form';
+import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import ApiKeyForm, { ApiConfigFormSchema } from './form';
 import useTranslation from 'next-translate/useTranslation';
+import { generateRandomUUID } from '@/utils/uuid-helper';
 
 interface Props {
-  data: WorkspaceSecret;
+  data: WorkspaceApiKey;
   trigger?: React.ReactNode;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   submitLabel?: string;
 }
 
-export default function SecretEditDialog({
+export default function ApiKeyEditDialog({
   data,
   trigger,
   open: externalOpen,
@@ -32,7 +33,7 @@ export default function SecretEditDialog({
   submitLabel,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('ws-secrets');
+  const { t } = useTranslation('ws-api-keys');
 
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -42,11 +43,19 @@ export default function SecretEditDialog({
   const handleSubmit = async (values: z.infer<typeof ApiConfigFormSchema>) => {
     const res = await fetch(
       data.id
-        ? `/api/workspaces/${data.ws_id}/secrets/${data.id}`
-        : `/api/workspaces/${data.ws_id}/secrets`,
+        ? `/api/v1/workspaces/${data.ws_id}/api-keys/${data.id}`
+        : `/api/v1/workspaces/${data.ws_id}/api-keys`,
       {
         method: data.id ? 'PUT' : 'POST',
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          value: data.id
+            ? values.value
+            : `${generateRandomUUID() + generateRandomUUID()}`.replace(
+                /-/g,
+                ''
+              ),
+        }),
       }
     );
 
@@ -56,7 +65,7 @@ export default function SecretEditDialog({
     } else {
       const data = await res.json();
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} secret`,
+        title: `Failed to ${data.id ? 'edit' : 'create'} api key`,
         description: data.message,
       });
     }
@@ -69,15 +78,15 @@ export default function SecretEditDialog({
         onOpenAutoFocus={(e) => (data.name ? e.preventDefault() : null)}
       >
         <DialogHeader>
-          <DialogTitle>{t('workspace_secret')}</DialogTitle>
+          <DialogTitle>{t('api_key')}</DialogTitle>
           <DialogDescription>
             {data.id
-              ? t('edit_existing_workspace_secret')
-              : t('add_new_workspace_secret')}
+              ? t('edit_existing_workspace_key')
+              : t('add_new_workspace_key')}
           </DialogDescription>
         </DialogHeader>
 
-        <SecretForm
+        <ApiKeyForm
           data={data}
           onSubmit={handleSubmit}
           submitLabel={submitLabel}

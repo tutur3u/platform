@@ -113,7 +113,7 @@
     ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/api-keys": [
       "sidebar-tabs",
-      "secret-data-table",
+      "api-key-data-table",
       "workspace-settings-layout",
       "search",
       "ws-api-keys"

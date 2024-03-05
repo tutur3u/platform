@@ -114,14 +114,14 @@ export default function LoginForm() {
 
     if (!otpSent) await sendOtp({ email });
     else if (otp) await verifyOtp({ email, otp });
-    else
+    else {
+      setLoading(false);
       toast({
         title: 'Error',
         description:
           'Please enter the OTP code sent to your email to continue.',
       });
-
-    setLoading(false);
+    }
   }
 
   return (
