@@ -86,10 +86,10 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-center">
         <div
           ref={ref}
-          className={`pointer-events-auto m-4 rounded-lg border backdrop-blur-lg ${
+          className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
             currentView
-              ? 'bg-secondary/50 h-[32rem] w-[32rem]'
-              : 'bg-secondary/30 h-14 w-40'
+              ? 'h-[32rem] w-[32rem] rounded-t-lg border-t md:rounded-lg md:border'
+              : 'mb-4 h-14 w-40 rounded-lg border'
           } transition-all duration-300`}
         >
           {currentView === 'assistant' ? (

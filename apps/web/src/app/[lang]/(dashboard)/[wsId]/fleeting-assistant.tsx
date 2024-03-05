@@ -221,7 +221,7 @@ export default function FleetingAssistant({
                     <FormControl>
                       <Input
                         placeholder="Meet up with my team at 7pm"
-                        className="bg-secondary/70 w-full focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:ring-offset-transparent"
+                        className="w-full focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:ring-offset-transparent"
                         autoComplete="off"
                         {...field}
                       />
