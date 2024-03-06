@@ -219,8 +219,8 @@ importers:
         specifier: ^0.1.11
         version: 0.1.11(next@14.1.2)(react@18.2.0)
       ai:
-        specifier: ^3.0.5
-        version: 3.0.5(react@18.2.0)(solid-js@1.8.15)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4)
+        specifier: ^3.0.6
+        version: 3.0.6(react@18.2.0)(solid-js@1.8.15)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -4035,8 +4035,8 @@ packages:
       humanize-ms: 1.2.1
     dev: false
 
-  /ai@3.0.5(react@18.2.0)(solid-js@1.8.15)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4):
-    resolution: {integrity: sha512-JYNq2E3lBEiAegwIw6maxqMA092MKq3Ko/XYsfKkJ+BFOHdFKibbwznZkbY6S79mIjz2YOzuZBx15q7olb50Hg==}
+  /ai@3.0.6(react@18.2.0)(solid-js@1.8.15)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4):
+    resolution: {integrity: sha512-TmcjR5rs3bLsnySLXmBf+rDrY8MdTdXP2kq16MqgYJfF9hkLfO89/tSJ/jPAVhmH5zFPVxaFv+zlUqA5I+22ng==}
     engines: {node: '>=14.6'}
     peerDependencies:
       react: ^18.2.0
