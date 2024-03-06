@@ -81,5 +81,7 @@
   "ascending": "Tăng dần",
   "descending": "Giảm dần",
   "hide-column": "Ẩn cột",
-  "unnamed": "Chưa đặt tên"
+  "unnamed": "Chưa đặt tên",
+
+  "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi..."
 }
