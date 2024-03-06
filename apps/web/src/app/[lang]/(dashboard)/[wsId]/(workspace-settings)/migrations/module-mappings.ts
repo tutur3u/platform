@@ -208,16 +208,19 @@ export const rolesMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const scoreNamesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
     name: i?.name,
+    group_id: i?.class_id,
+    unit: 'Điểm',
+    factor: i?.factor,
     ws_id: wsId,
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const groupedScoreNamesMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     indicator_id: i?.id,
@@ -225,7 +228,7 @@ export const groupedScoreNamesMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const studentFeedbacksMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -237,7 +240,7 @@ export const studentFeedbacksMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -246,7 +249,7 @@ export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const userCouponsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
@@ -254,7 +257,7 @@ export const userCouponsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -270,7 +273,7 @@ export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const userMonthlyReportsMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -286,9 +289,10 @@ export const userMonthlyReportsMapping = (_: string, data: any[]) =>
     updated_at: i?.updated_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const userStatusChangesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
+    id: i?.id,
     user_id: i?.user_id,
     ws_id: wsId,
     archived: i?.status === 'PERM_OFF' || i?.status === 'TEMP_OFF',
@@ -297,7 +301,7 @@ export const userStatusChangesMapping = (wsId: string, data: any[]) =>
     created_at: i?.created_at,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const usersMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -321,7 +325,9 @@ export const usersMapping = (wsId: string, data: any[]) =>
     archived_until: i?.off_until,
     ws_id: wsId,
     created_by: i?.creator_id,
+    updated_by: i?.updater_id,
     created_at: i?.created_at,
+    updated_at: i?.updated_at,
   }));
 
 //! IGNORED, since it's handled by bills
@@ -348,7 +354,7 @@ export const walletsMapping = (_: string, __: any[]) => [];
 
 //* TUTURUUU INFRASTRUCTURE MAPPING
 
-// STATUS: PENDING
+// STATUS: ✅
 export const warehousesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -356,7 +362,7 @@ export const warehousesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const productCategoriesMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
@@ -364,7 +370,7 @@ export const productCategoriesMapping = (wsId: string, data: any[]) =>
     ws_id: wsId,
   }));
 
-// STATUS: PENDING
+// STATUS: ✅
 export const productUnitsMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
