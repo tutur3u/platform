@@ -23,6 +23,7 @@ import {
   userCouponsMapping,
   userMonthlyReportLogsMapping,
   userMonthlyReportsMapping,
+  userRolesMapping,
   userStatusChangesMapping,
   usersMapping,
   walletTransactionsMapping,
@@ -142,6 +143,7 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'class-members':
         // baseModule.name = 'User Group Members';
+        baseModule.externalPath = `/migrate/user-group-users`;
         baseModule.mapping = classMembersMapping;
         break;
 

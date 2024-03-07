@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/20/solid';
+import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import AssistantGradientName from './assistant-gradient-name';
@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AIChat } from '@/types/primitives/ai-chat';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { Expand, RotateCcw } from 'lucide-react';
+import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
 import { Message } from 'ai';
 import Link from 'next/link';
 import { useChat } from 'ai/react';
@@ -203,7 +203,7 @@ export default function FleetingAssistant({
             className="flex-shrink-0"
             onClick={onBack}
           >
-            <ArrowLeftIcon className="h-5 w-5" />
+            <ArrowDownToLine className="h-5 w-5" />
           </Button>
 
           <Separator orientation="vertical" className="mx-1 h-6" />

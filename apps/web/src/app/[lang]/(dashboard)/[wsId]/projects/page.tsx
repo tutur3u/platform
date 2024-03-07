@@ -61,6 +61,7 @@ export default async function WorkspaceProjectsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          created_at: false,
         }}
       />
     </>
