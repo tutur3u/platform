@@ -207,8 +207,8 @@ importers:
         specifier: ^2.2.4
         version: 2.2.4(@tiptap/pm@2.2.4)
       '@upstash/qstash':
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^2.3.1
+        version: 2.3.1
       '@vercel/analytics':
         specifier: ^1.2.2
         version: 1.2.2(next@14.1.3)(react@18.2.0)
@@ -3839,11 +3839,11 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  /@upstash/qstash@2.3.0:
-    resolution: {integrity: sha512-p4L1n5/OWk8UUJJ6S5iInx+1YXm1LseTXthuFhJ7dY08NSKkGGJqipjH4/2jTxxhXMiXARRng+SQyF71NTnnBA==}
+  /@upstash/qstash@2.3.1:
+    resolution: {integrity: sha512-ju8DjCn7+JFCBDayygpRvIsgZzClDY7CA7VgmAWMYv+eiWz9dI4mzTkKIax4z0hKrPChjJQxXC2oLxE0oHu2CA==}
     dependencies:
       crypto-js: 4.2.0
-      jose: 4.15.4
+      jose: 5.2.3
     dev: false
 
   /@vercel/analytics@1.2.2(next@14.1.3)(react@18.2.0):
@@ -6326,6 +6326,11 @@ packages:
 
   /jose@4.15.4:
     resolution: {integrity: sha512-W+oqK4H+r5sITxfxpSU+MMdr/YSWGvgZMQDIsNoBDGGy4i7GBPTtvFKibQzW06n3U3TqHjhvBJsirShsEJ6eeQ==}
+    deprecated: this version is no longer supported
+    dev: false
+
+  /jose@5.2.3:
+    resolution: {integrity: sha512-KUXdbctm1uHVL8BYhnyHkgp3zDX5KW8ZhAKVFEfUbU2P8Alpzjb+48hHvjOdQIyPshoblhzsuqOwEEAbtHVirA==}
     dev: false
 
   /js-tokens@4.0.0:
