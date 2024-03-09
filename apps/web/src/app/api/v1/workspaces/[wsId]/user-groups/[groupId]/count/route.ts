@@ -68,6 +68,7 @@ async function getDataWithApiKey({
     );
   }
 
+  // @ts-expect-error: Supabase types don't support count() yet
   return NextResponse.json(data?.count || 0);
 }
 
@@ -95,5 +96,6 @@ async function getDataFromSession({
     );
   }
 
+  // @ts-expect-error: Supabase types don't support count() yet
   return NextResponse.json(data?.count || 0);
 }

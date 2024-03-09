@@ -1,11 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { NotificationAction } from './notification-action-list';
+import { NotificationAction as Action } from './notification-action-list';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  action: NotificationAction;
+  action: Action;
   onStart?: () => void;
   onEnd?: () => void;
   onSuccess?: () => void;

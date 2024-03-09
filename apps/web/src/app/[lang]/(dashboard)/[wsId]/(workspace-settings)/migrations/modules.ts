@@ -23,7 +23,6 @@ import {
   userCouponsMapping,
   userMonthlyReportLogsMapping,
   userMonthlyReportsMapping,
-  userRolesMapping,
   userStatusChangesMapping,
   usersMapping,
   walletTransactionsMapping,

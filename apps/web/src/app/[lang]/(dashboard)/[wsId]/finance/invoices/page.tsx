@@ -89,7 +89,7 @@ async function getData(
 
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
-    // @ts-ignore
+    // @ts-expect-error
     customer: customer?.full_name || '-',
   }));
 

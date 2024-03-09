@@ -65,6 +65,7 @@ async function getDataWithApiKey({
     );
   }
 
+  // @ts-expect-error: Supabase types don't support sum() yet
   return NextResponse.json(data?.sum || 0);
 }
 
@@ -86,5 +87,6 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
     );
   }
 
+  // @ts-expect-error: Supabase types don't support sum() yet
   return NextResponse.json(data?.sum || 0);
 }
