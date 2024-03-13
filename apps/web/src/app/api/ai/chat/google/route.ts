@@ -177,7 +177,10 @@ export async function POST(req: Request) {
 }
 
 const normalizeGoogle = (message: Message) => ({
-  role: message.role === 'user' ? 'user' : 'model',
+  role:
+    message.role === 'user'
+      ? 'user'
+      : ('model' as 'user' | 'function' | 'model'),
   parts: [{ text: message.content }],
 });
 
