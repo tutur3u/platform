@@ -352,8 +352,8 @@ importers:
         specifier: ^5.27.7
         version: 5.27.7(eslint@8.57.0)(typescript@5.4.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.28.3
-        version: 5.28.3(@tanstack/react-query@5.28.2)(react@18.2.0)
+        specifier: ^5.28.4
+        version: 5.28.4(@tanstack/react-query@5.28.2)(react@18.2.0)
       '@types/cookie':
         specifier: ^0.6.0
         version: 0.6.0
@@ -2822,10 +2822,10 @@ packages:
     resolution: {integrity: sha512-Kxch05PVnxLUAyRiz2gXYQhXATHfXbQQwvz858YPjYYQyi7yk8SyS9Z5hyw90bRb0pd3rjelXyGFCsNMWvEghw==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.28.3(@tanstack/react-query@5.28.2)(react@18.2.0):
-    resolution: {integrity: sha512-gHg4u6hBrKynv/zdjjVqfx/4WB0R3cHuEHFF94Jv8NLyohsuSI96Scbhm/GXBC/jsh1i2NYNX69XG2HFf3Efyw==}
+  /@tanstack/react-query-devtools@5.28.4(@tanstack/react-query@5.28.2)(react@18.2.0):
+    resolution: {integrity: sha512-oS+3INjCIX4Nkh0IAV6LH2mgLqJjkcd/DDxp8dwdWCGloLrz6IBj+bOuuI2wD0zb8r7l45wIAYIhl4Z6XyTupQ==}
     peerDependencies:
-      '@tanstack/react-query': ^5.28.2
+      '@tanstack/react-query': ^5.28.4
       react: ^18.0.0
     dependencies:
       '@tanstack/query-devtools': 5.28.3
