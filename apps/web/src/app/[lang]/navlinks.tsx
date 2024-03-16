@@ -11,7 +11,9 @@ export default function Navlinks() {
       <Link href="/" className="opacity-50 hover:opacity-100">
         {t('home')}
       </Link>
-      <div className="cursor-not-allowed opacity-20">{t('about')}</div>
+      <Link href="/about" className="opacity-50 hover:opacity-100">
+        {t('about')}
+      </Link>
       <div className="cursor-not-allowed opacity-20">{t('members')}</div>
       <div className="cursor-not-allowed opacity-20">{t('projects')}</div>
       <Link
