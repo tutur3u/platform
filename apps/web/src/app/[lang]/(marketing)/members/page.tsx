@@ -1,21 +1,12 @@
-import { members } from './core-members';
-import GetStartedButton from './get-started-button';
-import {
-  CalendarHeart,
-  Cpu,
-  MemoryStick,
-  Network,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
+import { Cpu, MemoryStick, Sparkles } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MarketingPage() {
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col items-center justify-center gap-6 px-3 py-16 pb-0">
-        <div className="flex flex-col items-center justify-center">
+      <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16">
+        <div className="flex flex-col items-center">
           <h1 className="relative text-center text-4xl font-bold lg:text-7xl">
             <span className="sr-only">RMIT Neo Culture Tech</span>
             <div className="h-64 w-64">
@@ -56,8 +47,6 @@ export default async function MarketingPage() {
             </span>
             .
           </p>
-
-          <GetStartedButton href="/onboarding" />
         </div>
 
         <div>
@@ -86,136 +75,41 @@ export default async function MarketingPage() {
 
         <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
 
-        <div className="max-w-4xl text-center">
-          <div className="mb-2 text-4xl font-bold">The team</div>
-          <div className="bg-foreground/5 border-foreground/10 text-foreground relative mx-auto mb-4 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide">
-            RMIT Neo Culture Tech Club mostly operates technical events,
-            workshops, trainings, etc… related to technology. Our target
-            students are from the house of{' '}
-            <span className="text-brand-light-red font-bold underline underline-offset-4">
-              SSET
+        <div className="text-center">
+          <div className="text-brand-light-yellow mb-2 text-4xl font-bold">
+            The team
+          </div>
+          <div className="max-w-4xl">
+            <div className="bg-brand-light-yellow/5 border-brand-light-yellow/10 text-brand-light-yellow relative mx-auto mb-4 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide">
+              RMIT Neo Culture Tech Club mostly operates technical events,
+              workshops, trainings, etc… related to technology. Our target
+              students are from the house of{' '}
+              <span className="text-brand-light-red font-bold underline underline-offset-4">
+                SSET
+              </span>
+              .
+            </div>
+            The club has 5 core teams:{' '}
+            <span className="font-semibold text-green-500 dark:text-green-300">
+              Finance
+            </span>
+            ,{' '}
+            <span className="font-semibold text-blue-500 dark:text-blue-300">
+              Project Management
+            </span>
+            ,{' '}
+            <span className="font-semibold text-purple-500 dark:text-purple-300">
+              Human Resources
+            </span>
+            ,{' '}
+            <span className="font-semibold text-orange-500 dark:text-orange-300">
+              Marketing
+            </span>
+            ,{' '}
+            <span className="font-semibold text-red-500 dark:text-red-300">
+              External Relations
             </span>
             .
-          </div>
-          The club has 6 core teams:{' '}
-          <span className="font-semibold text-green-500 underline underline-offset-2 dark:text-green-300">
-            Finance
-          </span>
-          ,{' '}
-          <span className="font-semibold text-blue-500 underline underline-offset-2 dark:text-blue-300">
-            Project Management
-          </span>
-          ,{' '}
-          <span className="font-semibold text-purple-500 underline underline-offset-2 dark:text-purple-300">
-            Human Resources
-          </span>
-          ,{' '}
-          <span className="font-semibold text-orange-500 underline underline-offset-2 dark:text-orange-300">
-            Marketing
-          </span>
-          ,{' '}
-          <span className="font-semibold text-red-500 underline underline-offset-2 dark:text-red-300">
-            External Relations
-          </span>
-          , with a dedicated{' '}
-          <span className="font-semibold text-pink-500 underline underline-offset-2 dark:text-pink-300">
-            Executive Board
-          </span>{' '}
-          to oversee the operations of the club.
-        </div>
-
-        <div className="my-4 grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {members.map((member) => (
-            <div
-              key={member.name}
-              className={`flex w-full items-center justify-center rounded-lg border p-2 ${
-                member.department === 'Executive Board'
-                  ? 'border-pink-500/20 bg-pink-500/5 text-pink-700 dark:border-pink-300/20 dark:bg-pink-300/5 dark:text-pink-100'
-                  : member.department === 'Finance'
-                    ? 'border-green-500/20 bg-green-500/5 text-green-700 dark:border-green-300/20 dark:bg-green-300/5 dark:text-green-100'
-                    : member.department === 'Project Management'
-                      ? 'border-blue-500/20 bg-blue-500/5 text-blue-700 dark:border-blue-300/20 dark:bg-blue-300/5 dark:text-blue-100'
-                      : member.department === 'Human Resources'
-                        ? 'border-purple-500/20 bg-purple-500/5 text-purple-700 dark:border-purple-300/20 dark:bg-purple-300/5 dark:text-purple-100'
-                        : member.department === 'Marketing'
-                          ? 'border-orange-500/20 bg-orange-500/5 text-orange-700 dark:border-orange-300/20 dark:bg-orange-300/5 dark:text-orange-100'
-                          : member.department === 'External Relations'
-                            ? 'border-red-500/20 bg-red-500/5 text-red-700 dark:border-red-300/20 dark:bg-red-300/5 dark:text-red-100'
-                            : ''
-              }`}
-            >
-              <div className="flex w-full flex-col items-center justify-center">
-                <div className="text-foreground text-lg font-bold">
-                  {member.name}
-                </div>
-                <div className="text-sm font-semibold leading-none">
-                  {member.role}
-                </div>
-                <div
-                  className={`mt-2 w-full rounded border p-1 text-center text-sm font-semibold ${
-                    member.department === 'Executive Board'
-                      ? 'border-pink-500/20 bg-pink-500/10 text-pink-500 dark:border-pink-300/20 dark:bg-pink-300/10 dark:text-pink-300'
-                      : member.department === 'Finance'
-                        ? 'border-green-500/20 bg-green-500/10 text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300'
-                        : member.department === 'Project Management'
-                          ? 'border-blue-500/20 bg-blue-500/10 text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300'
-                          : member.department === 'Human Resources'
-                            ? 'border-purple-500/20 bg-purple-500/10 text-purple-500 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300'
-                            : member.department === 'Marketing'
-                              ? 'border-orange-500/20 bg-orange-500/10 text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300'
-                              : member.department === 'External Relations'
-                                ? 'border-red-500/20 bg-red-500/10 text-red-500 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300'
-                                : ''
-                  }`}
-                >
-                  {member.department}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="via-foreground/10 mt-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
-
-        <div className="w-full text-center">
-          <div className="mb-4 text-4xl font-bold">Why us?</div>
-
-          <div className="grid w-full gap-4 md:grid-cols-3">
-            <div className="flex flex-col items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-4">
-              <CalendarHeart className="h-16 w-16 text-purple-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-purple-300">
-                Special Events
-              </div>
-              <div className="text-purple-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-4">
-              <Network className="h-16 w-16 text-red-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-red-300">
-                Networking
-              </div>
-              <div className="text-red-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-4">
-              <Telescope className="h-16 w-16 text-blue-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-blue-300">
-                Vision
-              </div>
-              <div className="text-blue-100">
-                We create an environment not only for students from SSET
-                students but also others to learn new knowledge, have fun, and
-                expand their network.
-              </div>
-            </div>
           </div>
         </div>
       </div>
