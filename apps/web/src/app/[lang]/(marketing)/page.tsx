@@ -182,11 +182,11 @@ export default async function MarketingPage() {
 
           <div className="grid w-full gap-4 md:grid-cols-3">
             <div className="flex flex-col items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-4">
-              <CalendarHeart className="h-16 w-16 text-purple-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-purple-300">
+              <CalendarHeart className="h-16 w-16 text-purple-500 dark:text-purple-300" />
+              <div className="mb-2 mt-1 text-2xl font-semibold text-purple-500 dark:text-purple-300">
                 Special Events
               </div>
-              <div className="text-purple-100">
+              <div className="text-purple-500 dark:text-purple-100">
                 Events organized to support you find career paths in technology,
                 gain deeper insights from company trips and alumni, and join
                 coding competitions.
@@ -194,11 +194,11 @@ export default async function MarketingPage() {
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-4">
-              <Network className="h-16 w-16 text-red-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-red-300">
+              <Network className="h-16 w-16 text-red-500 dark:text-red-300" />
+              <div className="mb-2 mt-1 text-2xl font-semibold text-red-500 dark:text-red-300">
                 Networking
               </div>
-              <div className="text-red-100">
+              <div className="text-red-500 dark:text-red-100">
                 Events organized to support you find career paths in technology,
                 gain deeper insights from company trips and alumni, and join
                 coding competitions.
@@ -206,11 +206,11 @@ export default async function MarketingPage() {
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-4">
-              <Telescope className="h-16 w-16 text-blue-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-blue-300">
+              <Telescope className="h-16 w-16 text-blue-500 dark:text-blue-300" />
+              <div className="mb-2 mt-1 text-2xl font-semibold text-blue-500 dark:text-blue-300">
                 Vision
               </div>
-              <div className="text-blue-100">
+              <div className="text-blue-500 dark:text-blue-100">
                 We create an environment not only for students from SSET
                 students but also others to learn new knowledge, have fun, and
                 expand their network.
