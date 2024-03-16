@@ -8,9 +8,9 @@ export const projects: {
   status: 'planning' | 'in-progress' | 'completed';
 }[] = [
   {
-    name: 'NCT Landing Page (V2)',
+    name: 'NCT Hub',
     description:
-      'The second version of the club landing page, based on Tuturuuu.',
+      'The second version of the club web platform, based on Tuturuuu.',
     type: 'web',
     techStack: [
       'Next.js',
@@ -44,8 +44,8 @@ export const projects: {
       'An alternative tool to When2meet with enhances UI/UX and additional features.',
   },
   {
-    name: 'NCT Landing Page (V1)',
-    description: 'The first version of the club landing page.',
+    name: 'NCT Web Platform',
+    description: 'The first version of the club web platform.',
     type: 'web',
     techStack: ['React.js', 'Node.js', 'Javascript'],
     status: 'completed',
