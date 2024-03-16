@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { members as mbs } from './core-members';
+import { members as mbs } from './data';
 
 export default function Members() {
   const [department, setDepartment] = useState<string | undefined>(undefined);

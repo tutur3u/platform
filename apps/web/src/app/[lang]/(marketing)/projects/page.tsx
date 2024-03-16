@@ -1,4 +1,4 @@
-import { Cpu, MemoryStick, Sparkles } from 'lucide-react';
+import Projects from './projects';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,79 +38,14 @@ export default async function MarketingPage() {
           </h1>
 
           <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            The best club for SSET students to explore the world of technology
-            <span>
-              {' at '}
-              <span className="text-brand-light-red font-bold underline underline-offset-4">
-                RMIT University
-              </span>
+            The place where you can learn, grow and have fun with technology, by{' '}
+            <span className="text-brand-light-red font-bold underline underline-offset-4">
+              building projects
             </span>
             .
           </p>
-        </div>
 
-        <div>
-          <div className="bg-brand-light-blue/5 border-brand-light-blue/10 text-brand-light-blue relative mx-auto mt-32 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl">
-            <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
-            <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
-            <span className="text-brand-dark-blue decoration-brand-dark-blue font-bold tracking-wide underline underline-offset-4">
-              STRONGER TOGETHER
-            </span>{' '}
-            is our core value. As a club, we strive to create a community where
-            everyone can learn and grow together.
-          </div>
-          <div className="mx-auto flex items-center justify-center text-center">
-            <div className="border-brand-light-red/10 bg-brand-light-red/5 text-brand-dark-red relative mx-4 mb-32 max-w-xl rounded-b-lg border border-t-0 p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-8 md:text-base lg:text-lg">
-              <Cpu className="text-brand-light-red absolute -bottom-1 -right-3 h-8 w-8 rotate-12 md:bottom-3 md:right-5" />
-              <MemoryStick className="text-brand-light-red absolute -left-5 top-4 h-8 w-8 rotate-12 md:left-2 md:top-3" />
-              If you are passionate about technology, you should definitely
-              consider being{' '}
-              <span className="text-brand-light-red font-bold underline decoration-wavy underline-offset-4">
-                a part of us
-              </span>{' '}
-              to enhance your skills and gain valuable experience.
-            </div>
-          </div>
-        </div>
-
-        <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
-
-        <div className="text-center">
-          <div className="text-brand-light-yellow mb-2 text-4xl font-bold">
-            The team
-          </div>
-          <div className="max-w-4xl">
-            <div className="bg-brand-light-yellow/5 border-brand-light-yellow/10 text-brand-light-yellow relative mx-auto mb-4 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide">
-              RMIT Neo Culture Tech Club mostly operates technical events,
-              workshops, trainings, etc… related to technology. Our target
-              students are from the house of{' '}
-              <span className="text-brand-light-red font-bold underline underline-offset-4">
-                SSET
-              </span>
-              .
-            </div>
-            The club has 5 core teams:{' '}
-            <span className="font-semibold text-green-500 dark:text-green-300">
-              Finance
-            </span>
-            ,{' '}
-            <span className="font-semibold text-blue-500 dark:text-blue-300">
-              Project Management
-            </span>
-            ,{' '}
-            <span className="font-semibold text-purple-500 dark:text-purple-300">
-              Human Resources
-            </span>
-            ,{' '}
-            <span className="font-semibold text-orange-500 dark:text-orange-300">
-              Marketing
-            </span>
-            ,{' '}
-            <span className="font-semibold text-red-500 dark:text-red-300">
-              External Relations
-            </span>
-            .
-          </div>
+          <Projects />
         </div>
       </div>
     </div>
