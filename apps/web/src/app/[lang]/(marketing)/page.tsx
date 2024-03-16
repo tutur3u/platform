@@ -47,7 +47,11 @@ export default async function MarketingPage() {
           </h1>
 
           <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            The best club for SSET students to explore the world of technology
+            The{' '}
+            <span className="text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-300">
+              best club for SSET students
+            </span>{' '}
+            to explore the world of technology
             <span>
               {' at '}
               <span className="text-brand-light-red font-bold underline underline-offset-4">

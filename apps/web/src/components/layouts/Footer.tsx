@@ -43,13 +43,16 @@ export default async function Footer() {
                 />
               </svg>
             </div>
-            <div className="text-4xl font-semibold">Neo Culture Tech</div>
+            <div className="text-2xl font-semibold md:text-4xl">
+              Neo Culture Tech
+            </div>
           </Link>
 
           <div>
             <div className="font-semibold">
-              702 Nguyen Van Linh, Tan Hung ward, District 7, Ho Chi Minh City,
-              Vietnam
+              702 Nguyen Van Linh, Tan Hung ward,
+              <br />
+              District 7, Ho Chi Minh City, Vietnam
             </div>
             <div>
               <Mail className="mr-1 inline-block" size={16} />
@@ -63,6 +66,8 @@ export default async function Footer() {
               </span>
             </div>
           </div>
+
+          <Separator className="bg-foreground/5 my-8 w-full md:hidden" />
 
           <div className="flex gap-8">
             <Link

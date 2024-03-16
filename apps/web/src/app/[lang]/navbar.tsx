@@ -1,8 +1,4 @@
 import Link from 'next/link';
-import { UserNav } from './user-nav';
-import NotificationPopover from './notification-popover';
-import { ThemeToggle } from './theme-toggle';
-import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import WorkspaceSelect from './workspace-select';
@@ -10,8 +6,8 @@ import LogoTitle from './logo-title';
 import { Suspense } from 'react';
 import { getWorkspaces } from '@/lib/workspace-helper';
 import { getCurrentUser } from '@/lib/user-helper';
-import Navlinks from './navlinks';
 import NavbarSeparator from './navbar-separator';
+import Menu from './menu';
 
 export default async function Navbar() {
   const supabase = createServerComponentClient({ cookies });
@@ -68,28 +64,7 @@ export default async function Navbar() {
               ) : null}
             </Suspense>
           </div>
-
-          <Navlinks />
-
-          <div className="flex items-center gap-2">
-            <Suspense
-              fallback={
-                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
-              }
-            >
-              {sbUser ? (
-                <>
-                  <NotificationPopover />
-                  <UserNav />
-                </>
-              ) : (
-                <>
-                  <GetStartedButton />
-                  <ThemeToggle />
-                </>
-              )}
-            </Suspense>
-          </div>
+          <Menu sbUser={sbUser} user={user} />
         </div>
       </div>
       <NavbarSeparator />
