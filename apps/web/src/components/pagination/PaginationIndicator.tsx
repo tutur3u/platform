@@ -49,7 +49,6 @@ export default function PaginationIndicator({ totalItems }: Props) {
         value={activePage}
         // onChange={setActivePage}
         total={totalPages}
-        noWrap
       />
     </div>
   );

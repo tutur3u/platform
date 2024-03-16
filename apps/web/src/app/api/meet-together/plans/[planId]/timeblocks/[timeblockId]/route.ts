@@ -7,13 +7,14 @@ export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
+    planId: string;
     timeblockId: string;
   };
 }
 
 export async function DELETE(
   req: Request,
-  { params: { timeblockId: id } }: Params
+  { params: { planId, timeblockId: id } }: Params
 ) {
   const supabase = createRouteHandlerClient({ cookies });
 
@@ -35,6 +36,7 @@ export async function DELETE(
     const { error } = await supabase
       .from(`meet_together_user_timeblocks`)
       .delete()
+      .eq('plan_id', planId)
       .eq('id', id)
       .eq('user_id', userId);
 
@@ -58,6 +60,7 @@ export async function DELETE(
     const { data: guest } = await sbAdmin
       .from('meet_together_guests')
       .select('id')
+      .eq('plan_id', planId)
       .eq('id', userId)
       .eq('password_hash', passwordHash)
       .maybeSingle();
@@ -68,6 +71,7 @@ export async function DELETE(
     const { error } = await sbAdmin
       .from(`meet_together_guest_timeblocks`)
       .delete()
+      .eq('plan_id', planId)
       .eq('id', id)
       .eq('user_id', userId);
 

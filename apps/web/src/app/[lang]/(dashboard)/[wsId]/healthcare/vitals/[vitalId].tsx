@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput } from '@mantine/core';
 import { useRouter } from 'next/router';
-import { Vital } from '../../../../../../types/primitives/Vital';
+import { Vital } from '@/types/primitives/Vital';
 import useSWR from 'swr';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
 
 export default function NewVitalPage() {
   const { setRootSegment } = useSegments();

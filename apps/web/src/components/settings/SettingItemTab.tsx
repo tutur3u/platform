@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface SettingItemTabProps {
   title: string;
   description?: string;

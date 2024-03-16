@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useState } from 'react';
-import { Segment } from '../types/primitives/Segment';
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import { Segment } from '@/types/primitives/Segment';
 
 const SegmentContext = createContext({
   segments: [] as Segment[],

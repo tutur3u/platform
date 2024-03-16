@@ -4,7 +4,7 @@ import {
   createServerComponentClient,
 } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
-import { getInitials } from '../../../../../utils/name-helper';
+import { getInitials } from '@/utils/name-helper';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';

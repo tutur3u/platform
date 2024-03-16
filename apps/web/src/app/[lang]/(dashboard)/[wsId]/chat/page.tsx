@@ -24,7 +24,7 @@ export default async function AIPage({
   const { lang: locale } = searchParams;
 
   const workspace = await getWorkspace(wsId);
-  if (!workspace?.preset) notFound();
+  if (!workspace) notFound();
 
   const secrets = await getSecrets({
     wsId,
@@ -61,8 +61,7 @@ export default async function AIPage({
 
 const hasKey = (key: string) => {
   const keyEnv = process.env[key];
-  const hasKey = !!keyEnv && keyEnv.length > 0;
-  return hasKey;
+  return !!keyEnv && keyEnv.length > 0;
 };
 
 const getMessages = async () => {
@@ -79,10 +78,8 @@ const getMessages = async () => {
     return [];
   }
 
-  const messages = data.map(({ role, ...rest }) => ({
+  return data.map(({ role, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
   })) as Message[];
-
-  return messages;
 };

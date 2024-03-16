@@ -1,6 +1,6 @@
 import { Button } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import { Wallet } from '../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 
 interface Props {
   wallet: Wallet;

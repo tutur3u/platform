@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { Workspace } from '../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 import { Separator } from '../ui/separator';
 
 interface Props {

@@ -41,7 +41,7 @@ export default function LogoInput({ workspace, disabled }: Props) {
   }, [workspace.logo_url, supabase]);
 
   const uploadLogo = async () => {
-    uploadObject({
+    await uploadObject({
       supabase,
       bucket,
       file,

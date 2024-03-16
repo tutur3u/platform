@@ -1,5 +1,5 @@
 import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
-import { Workspace } from '../../../../../../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
 import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';

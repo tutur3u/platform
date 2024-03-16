@@ -68,12 +68,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
             Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteSecret}
-            disabled={secret.id === undefined || secret.ws_id === undefined}
-          >
-            Delete
-          </DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteSecret}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <SecretEditDialog

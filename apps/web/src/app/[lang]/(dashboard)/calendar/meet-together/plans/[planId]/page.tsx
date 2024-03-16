@@ -17,6 +17,8 @@ interface Props {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
@@ -64,7 +66,7 @@ async function getPlan(planId: string) {
   const sbAdmin = createAdminClient();
   if (!sbAdmin) return notFound();
 
-  // planId is a uuid without dashes, so we need to add them back in
+  // planId is an uuid without dashes, so we need to add them back in
   planId = planId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 
   const queryBuilder = sbAdmin
@@ -124,7 +126,7 @@ async function getTimeBlocks(planId: string) {
     return notFound();
   }
 
-  const data = [
+  return [
     ...guestTimeBlocks.data.map((tb) => ({
       ...tb,
       is_guest: true,
@@ -134,6 +136,4 @@ async function getTimeBlocks(planId: string) {
       is_guest: false,
     })),
   ];
-
-  return data;
 }

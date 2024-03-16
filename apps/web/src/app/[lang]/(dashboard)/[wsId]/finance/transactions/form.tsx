@@ -177,6 +177,7 @@ export function TransactionForm({
                         'justify-between',
                         !field.value && 'text-muted-foreground'
                       )}
+                      disabled={categoriesLoading}
                     >
                       {field.value
                         ? categories?.find((c) => c.id === field.value)?.name
@@ -254,6 +255,7 @@ export function TransactionForm({
                         'justify-between',
                         !field.value && 'text-muted-foreground'
                       )}
+                      disabled={walletsLoading}
                     >
                       {field.value
                         ? wallets?.find((c) => c.id === field.value)?.name

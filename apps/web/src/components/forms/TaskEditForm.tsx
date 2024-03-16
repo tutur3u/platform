@@ -12,16 +12,15 @@ import {
   TextInput,
 } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { forwardRef, useEffect, useState } from 'react';
-import { ChangeEvent } from 'react';
-import { Task } from '../../types/primitives/Task';
+import React, { ChangeEvent, useEffect, useState } from 'react';
+import { Task } from '@/types/primitives/Task';
 import { DateTimePicker } from '@mantine/dates';
 import moment from 'moment';
-import { Priority } from '../../types/primitives/Priority';
+import { Priority } from '@/types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import useSWR, { mutate } from 'swr';
-import { getInitials } from '../../utils/name-helper';
+import { getInitials } from '@/utils/name-helper';
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -29,8 +28,8 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
-import { User } from '../../types/primitives/User';
-import { useUser } from '../../hooks/useUser';
+import { User } from '@/types/primitives/User';
+import { useUser } from '@/hooks/useUser';
 
 interface TaskEditFormProps {
   task?: Task;
@@ -97,8 +96,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       const response = await fetch(`/api/users/search?query=${searchQuery}`);
 
       if (response.ok) {
-        const data = await response.json();
-        return data;
+        return await response.json();
       }
 
       return [];
@@ -117,29 +115,6 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     if (debounced) fetchData(debounced);
     else setSuggestions([]);
   }, [debounced]);
-
-  // eslint-disable-next-line react/display-name
-  const AutoCompleteItem = forwardRef<HTMLDivElement, UserWithValue>(
-    (
-      { handle, avatar_url, display_name, ...others }: UserWithValue,
-      ref: React.ForwardedRef<HTMLDivElement>
-    ) => (
-      <div ref={ref} {...others}>
-        <Group noWrap>
-          <Avatar src={avatar_url} size="lg" color="blue">
-            {getInitials(display_name || 'Unknown')}
-          </Avatar>
-
-          <div>
-            <Text>{display_name}</Text>
-            <Text size="xs" color="dimmed">
-              {handle ? `@${handle}` : 'No handle'}
-            </Text>
-          </div>
-        </Group>
-      </div>
-    )
-  );
 
   const handleAssignUser = async (userId: string) => {
     if (!task?.id) return;
@@ -181,7 +156,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     });
 
     if (response.ok) {
-      mutate(`/api/tasks/${task.id}/assignees`);
+      await mutate(`/api/tasks/${task.id}/assignees`);
     } else {
       const res = await response.json();
       showNotification({
@@ -267,7 +242,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       );
 
       await Promise.all(promises);
-      mutate(`/api/tasks/${task.id}/assignees`);
+      await mutate(`/api/tasks/${task.id}/assignees`);
     }
 
     if (task?.id) await updateTask();
@@ -316,11 +291,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
   return (
     <>
-      <Tabs
-        defaultValue="details"
-        value={currentTab}
-        onTabChange={setCurrentTab}
-      >
+      <Tabs defaultValue="details" value={currentTab} onChange={setCurrentTab}>
         <Tabs.List className="mb-2">
           <Tabs.Tab value="details">Details</Tabs.Tab>
           <Tabs.Tab value="datetime">Duration</Tabs.Tab>
@@ -509,18 +480,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Enter an handle"
-                itemComponent={AutoCompleteItem}
                 data={suggestions}
-                onItemSubmit={(item) => {
-                  const { value, ...user } = item as UserWithValue;
-
-                  // Update assignees
-                  setCandidateAssignees((prev) => [...(prev || []), user]);
-
-                  // Clear search query and suggestions
-                  setSearchQuery('');
-                  setSuggestions([]);
-                }}
                 className="flex-grow"
               />
 
@@ -569,10 +529,10 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                         </Avatar>
                       </Link>
                       <div>
-                        <Text weight="bold" className="text-blue-200">
+                        <Text className="text-blue-200">
                           {assignee.display_name}
                         </Text>
-                        <Text weight="light" className="text-blue-100">
+                        <Text className="text-blue-100">
                           @{assignee.handle}
                         </Text>
                       </div>

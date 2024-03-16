@@ -2,18 +2,14 @@
 
 import { useState } from 'react';
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import { UserGroup } from '../../../../../../../types/primitives/UserGroup';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import { useLocalStorage } from '@mantine/hooks';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../../components/selectors/ModeSelector';
-import { WorkspaceUser } from '../../../../../../../types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
 import { Divider, Switch } from '@mantine/core';
 import WorkspaceUserCard from '../../../../../../../components/cards/WorkspaceUserCard';
-import PaginationSelector from '../../../../../../../components/selectors/PaginationSelector';
 import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
 
 interface Props {
@@ -36,9 +32,9 @@ export default function UserGroupDetailsPage({
   const { data: group } = useSWR<UserGroup>(apiPath);
 
   const [query] = useState('');
-  const [activePage, setPage] = useState(1);
+  const [activePage] = useState(1);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+  const [itemsPerPage] = useLocalStorage({
     key: 'workspace-user-groups-items-per-page',
     defaultValue: 16,
   });
@@ -54,11 +50,6 @@ export default function UserGroupDetailsPage({
 
   const users = data?.data;
   // const count = data?.count;
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'workspace-user-groups-mode',
-    defaultValue: 'grid',
-  });
 
   const [showPhone, setShowPhone] = useLocalStorage({
     key: 'workspace-user-groups-showPhone',
@@ -81,15 +72,6 @@ export default function UserGroupDetailsPage({
 
       <div className="mt-4 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <GeneralSearchBar />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-          evenNumbers
-        />
         <div className="hidden xl:block" />
         <Divider variant="dashed" className="col-span-full" />
         <Switch
@@ -112,11 +94,7 @@ export default function UserGroupDetailsPage({
       <Divider className="mt-4" />
       <PaginationIndicator totalItems={0} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         {/* <PlusCardButton onClick={() => {}} /> */}
         {users &&
           users?.map((p) => (

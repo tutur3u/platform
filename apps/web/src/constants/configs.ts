@@ -1,7 +1,7 @@
 import { DEV_MODE } from './common';
 
 export const siteConfig = {
-  name: 'Tuturuuu',
+  name: 'RMIT Neo Culture Tech',
   url: DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com',
   ogImage: DEV_MODE
     ? 'http://localhost:7803/media/logos/og-image.png'

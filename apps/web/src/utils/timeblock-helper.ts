@@ -159,7 +159,7 @@ export function removeTimeblocks(
       continue;
     }
 
-    // Split the timeblock no matter what, since it's inside the date range
+    // Split the timeblock no matter what, since it's inside the date range,
     // and we'll do the filtering to remove 0-duration timeblocks at the end
     const splitTimeblocks: Timeblock[] = [];
 

@@ -1,38 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
-  content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-  ],
-  safelist: [
-    'to-orange-300',
-    'to-orange-300/60',
-    'from-rose-400',
-    'from-rose-400/60',
-    'text-green-300',
-    'text-green-500',
-    'text-blue-300',
-    'text-blue-500',
-    'text-orange-300',
-    'text-orange-500',
-    'text-red-300',
-    'text-red-500',
-    'from-pink-300',
-    'from-pink-300/50',
-    'via-amber-300',
-    'via-amber-300/50',
-    'to-blue-300',
-    'to-blue-300/50',
-    'from-pink-500',
-    'from-pink-500/70',
-    'via-yellow-500',
-    'via-yellow-500/70',
-    'to-sky-600',
-    'to-sky-600/70',
-  ],
+  content: ['./src/**/*.{ts,tsx}'],
   theme: {
     container: {
       center: true,
@@ -43,6 +12,15 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Brand colors
+        'brand-light-blue': 'hsl(var(--brand-light-blue))',
+        'brand-dark-blue': 'hsl(var(--brand-dark-blue))',
+        'brand-light-yellow': 'hsl(var(--brand-light-yellow))',
+        'brand-dark-yellow': 'hsl(var(--brand-dark-yellow))',
+        'brand-light-red': 'hsl(var(--brand-light-red))',
+        'brand-dark-red': 'hsl(var(--brand-dark-red))',
+
+        // Default colors
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

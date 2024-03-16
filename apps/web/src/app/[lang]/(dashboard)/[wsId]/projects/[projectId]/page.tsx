@@ -12,23 +12,19 @@ import {
   SegmentedControl,
 } from '@mantine/core';
 import {
-  ArchiveBoxIcon,
-  Cog6ToothIcon,
   EllipsisHorizontalIcon,
-  FolderPlusIcon,
   QueueListIcon,
-  TrashIcon,
   ViewColumnsIcon,
 } from '@heroicons/react/24/solid';
 import { openConfirmModal, openModal } from '@mantine/modals';
-import { TaskBoard } from '../../../../../../types/primitives/TaskBoard';
-import { TaskList } from '../../../../../../types/primitives/TaskList';
-import { Task } from '../../../../../../types/primitives/Task';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
+import { TaskList } from '@/types/primitives/TaskList';
+import { Task } from '@/types/primitives/Task';
 import BoardEditForm from '../../../../../../components/forms/BoardEditForm';
 import TaskListEditForm from '../../../../../../components/forms/TaskListEditForm';
 import TaskListWrapper from '../../../../../../components/tasks/lists/TaskListWrapper';
-import { useUser } from '../../../../../../hooks/useUser';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useUser } from '@/hooks/useUser';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -64,8 +60,7 @@ export default function WorkspaceBoardEditor({
   );
 
   const buildQuery = (wsId: string, listId: String) => {
-    let query = `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
-    return query;
+    return `/api/workspaces/${wsId}/boards/${boardId}/lists/${listId}/tasks`;
   };
 
   const canFetchTasks = user?.id && boardId && selectedListId;
@@ -100,7 +95,7 @@ export default function WorkspaceBoardEditor({
     });
 
     if (res.ok) {
-      mutate(`/api/workspaces/${ws.id}/boards/${boardId}`);
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}`);
     }
   };
 
@@ -162,7 +157,8 @@ export default function WorkspaceBoardEditor({
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const updateList = async (list: TaskList) => {
@@ -181,7 +177,8 @@ export default function WorkspaceBoardEditor({
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showEditListModal = (list?: TaskList) => {
@@ -206,7 +203,6 @@ export default function WorkspaceBoardEditor({
             <div className="flex items-center gap-2">
               <Button
                 className="border border-blue-300/10 bg-blue-300/10 text-blue-300 hover:bg-blue-300/20"
-                leftIcon={<FolderPlusIcon className="w-5" />}
                 onClick={() => showEditListModal()}
                 disabled={!boardId}
               >
@@ -248,18 +244,12 @@ export default function WorkspaceBoardEditor({
                 </Menu.Target>
 
                 <Menu.Dropdown className="font-semibold">
-                  <Menu.Item icon={<ArchiveBoxIcon className="w-5" />} disabled>
-                    Archived Lists
-                  </Menu.Item>
-                  <Menu.Item
-                    icon={<Cog6ToothIcon className="w-5" />}
-                    onClick={() => showEditBoardModal(board)}
-                  >
+                  <Menu.Item disabled>Archived Lists</Menu.Item>
+                  <Menu.Item onClick={() => showEditBoardModal(board)}>
                     Board Settings
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Item
-                    icon={<TrashIcon className="w-5" />}
                     color="red"
                     onClick={() => showDeleteBoardModal(board)}
                   >

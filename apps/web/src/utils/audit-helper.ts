@@ -1,5 +1,5 @@
 import { Translate } from 'next-translate';
-import { AuditLog, Operation } from '../types/primitives/audit-log';
+import { AuditLog, Operation } from '@/types/primitives/audit-log';
 
 const getLeadingLabel = (t: Translate, op: Operation, table: string) => {
   switch (op) {
@@ -30,7 +30,5 @@ export const getLabel = (t: Translate, data: AuditLog) => {
   const leadingLabel = getLeadingLabel(t, data.op, data.table_name);
   const trailingLabel = getTrailingLabel(t, data);
 
-  const label = `${leadingLabel} ${trailingLabel}`;
-
-  return label;
+  return `${leadingLabel} ${trailingLabel}`;
 };

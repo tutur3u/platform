@@ -1,4 +1,3 @@
-import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { Select } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
@@ -11,7 +10,7 @@ import {
   getDateRangeUnits,
   getDateRange,
   getDateRangeOptions,
-} from '../../utils/date-helper';
+} from '@/utils/date-helper';
 
 interface Props {
   value?: DateRange;
@@ -60,7 +59,6 @@ const DateRangePicker = ({
           setUnit((value || 'day') as DateRangeUnit);
         }}
         data={dateRangeUnits}
-        icon={<CalendarDaysIcon className="h-5" />}
       />
 
       {unit === 'custom' ? (
@@ -82,7 +80,6 @@ const DateRangePicker = ({
           value={option}
           onChange={(value) => setOption((value || 'today') as DateRangeOption)}
           data={getDateRangeOptions(unit, t)}
-          icon={<CalendarDaysIcon className="h-5" />}
         />
       )}
     </>
