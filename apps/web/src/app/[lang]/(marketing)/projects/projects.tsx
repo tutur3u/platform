@@ -158,22 +158,22 @@ export default function Projects() {
 
       <div className="my-4 grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {projects.map((member) => (
-          <div
+          <button
             key={member.name}
             className={`flex h-full w-full items-center justify-center rounded-lg border p-2 ${
               member.type === 'web'
-                ? 'border-blue-500/20 bg-blue-500/5 text-blue-700 dark:border-blue-300/20 dark:bg-blue-300/5 dark:text-blue-100'
+                ? 'border-blue-500/20 bg-blue-500/5 text-blue-700 hover:bg-blue-500/10 dark:border-blue-300/20 dark:bg-blue-300/5 dark:text-blue-100 dark:hover:bg-blue-300/10'
                 : member.type === 'software'
-                  ? 'border-red-500/20 bg-red-500/5 text-red-700 dark:border-red-300/20 dark:bg-red-300/5 dark:text-red-100'
+                  ? 'border-red-500/20 bg-red-500/5 text-red-700 hover:bg-red-500/10 dark:border-red-300/20 dark:bg-red-300/5 dark:text-red-100 dark:hover:bg-red-300/10'
                   : member.type === 'hardware'
-                    ? 'border-pink-500/20 bg-pink-500/5 text-pink-700 dark:border-pink-300/20 dark:bg-pink-300/5 dark:text-pink-100'
+                    ? 'border-pink-500/20 bg-pink-500/5 text-pink-700 hover:bg-pink-500/10 dark:border-pink-300/20 dark:bg-pink-300/5 dark:text-pink-100 dark:hover:bg-pink-300/10'
                     : ''
             } ${
               (type !== undefined && type !== member.type) ||
               (status !== undefined && status !== member.status)
                 ? 'opacity-30'
                 : ''
-            } transition duration-300`}
+            } transition duration-300 hover:-translate-y-2`}
           >
             <div className="flex h-full w-full flex-col items-center justify-center">
               <div className="text-foreground text-center font-bold">
@@ -270,7 +270,7 @@ export default function Projects() {
                       : ''}
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </>
