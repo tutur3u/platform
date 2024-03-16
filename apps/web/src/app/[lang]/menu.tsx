@@ -22,15 +22,20 @@ export default function Menu({
 
   return (
     <>
-      <div className="hidden gap-4 font-semibold md:flex">
+      <div className="hidden gap-8 font-semibold md:flex">
         <Link href="/" className="h-fit opacity-50 hover:opacity-100">
           Home
         </Link>
         <Link href="/about" className="h-fit opacity-50 hover:opacity-100">
           About
         </Link>
-        <div className="h-fit cursor-not-allowed opacity-20">Members</div>
         <div className="h-fit cursor-not-allowed opacity-20">Projects</div>
+        <Link
+          href="/calendar/meet-together"
+          className="h-fit opacity-50 hover:opacity-100"
+        >
+          Meet Together
+        </Link>
       </div>
 
       <div className="hidden gap-1 md:flex">
@@ -80,11 +85,15 @@ export default function Menu({
                 About
               </Link>
               <div className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue cursor-not-allowed rounded-lg border p-2 font-semibold opacity-50">
-                Members
-              </div>
-              <div className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue cursor-not-allowed rounded-lg border p-2 font-semibold opacity-50">
                 Projects
               </div>
+              <Link
+                href="/calendar/meet-together"
+                className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue rounded-lg border p-2 font-semibold"
+                onClick={() => setIsOpened(false)}
+              >
+                Meet Together
+              </Link>
             </div>
           </SheetContent>
         </Sheet>
