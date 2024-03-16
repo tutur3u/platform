@@ -95,7 +95,7 @@ export default async function MarketingPage() {
           <div className="via-foreground/10 my-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
 
           <div>
-            <div className="bg-brand-light-blue/5 text-brand-light-blue relative mx-auto mt-32 max-w-4xl rounded-lg border border-cyan-500/20 p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl dark:border-cyan-300/20">
+            <div className="bg-brand-light-blue/5 text-brand-light-blue relative mx-auto mb-4 mt-32 max-w-4xl rounded-lg border border-cyan-500/20 p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl dark:border-cyan-300/20">
               <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
               <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
               &quot;To newbies of our NEO Culture Tech club, first of all I
@@ -107,7 +107,7 @@ export default async function MarketingPage() {
               all!&quot;
             </div>
             <div className="mx-auto flex items-center justify-center text-center">
-              <div className="relative mx-4 mb-32 max-w-xl rounded-b-lg border border-t-0 border-red-500/20 bg-red-500/10 p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-4 md:text-base lg:text-lg dark:border-red-300/20 dark:bg-red-300/10">
+              <div className="relative mx-4 mb-32 max-w-xl rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-4 md:text-base lg:text-lg dark:border-red-300/20 dark:bg-red-300/10">
                 <div className="font-bold leading-tight text-red-700 dark:text-red-100">
                   Tran Mach So Han
                 </div>
