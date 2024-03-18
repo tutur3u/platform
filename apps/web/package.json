@@ -155,7 +155,7 @@
     "eslint-config-custom": "workspace:*",
     "lint-staged": "^15.2.2",
     "next-translate-plugin": "^2.6.2",
-    "postcss": "^8.4.35",
+    "postcss": "^8.4.36",
     "supabase": "^1.148.6",
     "tailwind-config": "workspace:*",
     "tailwind-scrollbar": "^3.1.0",
