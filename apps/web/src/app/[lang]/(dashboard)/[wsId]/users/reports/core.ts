@@ -34,7 +34,10 @@ export async function getReports(
       },
     });
 
-    if (!response.ok) throw new Error('Failed to fetch');
+    if (!response.ok) {
+      console.error('Failed to fetch reports', response);
+      return { data: [], count: 0 };
+    }
 
     const { reports: data, count } = await response.json();
 

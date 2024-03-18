@@ -1,8 +1,8 @@
 import { Divider } from '@mantine/core';
-import { ProductWarehouse } from '../../types/primitives/ProductWarehouse';
+import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import ProductPriceInput from './ProductPriceInput';
 import { useEffect, useState } from 'react';
-import { ProductPrice } from '../../types/primitives/ProductPrice';
+import { ProductPrice } from '@/types/primitives/ProductPrice';
 import useSWR from 'swr';
 
 interface Props {
@@ -137,9 +137,9 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
             minAmount={p?.min_amount || ''}
             getUniqueUnitIds={getUniqueUnitIds}
             removePrice={() => removePrice(idx)}
-            updatePrice={(unitId, price) => updatePrice(unitId, price)}
+            updatePrice={(unitId, price) => updatePrice(unitId, Number(price))}
             updateMinAmount={(unitId, amount) =>
-              updateMinAmount(unitId, amount)
+              updateMinAmount(unitId, Number(amount))
             }
             updateUnitId={(unitId, oldUnitId) =>
               updateUnitId(idx, unitId, oldUnitId)

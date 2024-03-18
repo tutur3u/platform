@@ -1,7 +1,10 @@
-import { NavLink, Navigation } from '@/components/navigation';
+import { Navigation, NavLink } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
 import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
+import FleetingNavigator from './fleeting-navigator';
+
+import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +12,7 @@ interface LayoutProps {
   params: {
     wsId: string;
   };
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default async function Layout({
@@ -24,8 +27,10 @@ export default async function Layout({
     wsId,
     requiredSecrets: [
       'ENABLE_CHAT',
+      'ENABLE_CALENDAR',
       'ENABLE_USERS',
       'ENABLE_PROJECTS',
+      'ENABLE_DOCS',
       'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
       'ENABLE_FINANCE',
@@ -48,21 +53,24 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('users'),
-      href: `/${wsId}/users`,
-      disabled: !verifySecret('ENABLE_USERS', 'true'),
-    },
-    {
-      name: t('documents'),
-      href: `/${wsId}/documents`,
-      allowedPresets: ['ALL'],
-      disabled: true,
+      name: t('calendar'),
+      href: `/${wsId}/calendar`,
+      disabled: !verifySecret('ENABLE_CALENDAR', 'true'),
     },
     {
       name: t('projects'),
       href: `/${wsId}/projects`,
-      allowedPresets: ['ALL'],
       disabled: !verifySecret('ENABLE_PROJECTS', 'true'),
+    },
+    {
+      name: t('documents'),
+      href: `/${wsId}/documents`,
+      disabled: !verifySecret('ENABLE_DOCS', 'true'),
+    },
+    {
+      name: t('users'),
+      href: `/${wsId}/users`,
+      disabled: !verifySecret('ENABLE_USERS', 'true'),
     },
     {
       name: t('inventory'),
@@ -105,9 +113,10 @@ export default async function Layout({
           />
         </div>
       </div>
-
       <Separator className="opacity-50" />
+
       <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
+      {verifySecret('ENABLE_CHAT', 'true') && <FleetingNavigator wsId={wsId} />}
     </>
   );
 }

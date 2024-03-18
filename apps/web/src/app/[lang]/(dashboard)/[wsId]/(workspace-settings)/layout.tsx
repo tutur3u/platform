@@ -1,7 +1,8 @@
-import { NavLink, Navigation } from '@/components/navigation';
+import { Navigation, NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
+import React from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,11 @@ export default async function Layout({
       disabled: true,
     },
     {
+      name: t('api_keys'),
+      href: `/${wsId}/api-keys`,
+      allowedRoles: ['ADMIN', 'OWNER'],
+    },
+    {
       name: t('secrets'),
       href: `/${wsId}/secrets`,
       allowedRoles: ['ADMIN', 'OWNER'],
@@ -59,7 +65,6 @@ export default async function Layout({
       href: `/${wsId}/activities`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
-      disabled: true,
     },
   ];
 

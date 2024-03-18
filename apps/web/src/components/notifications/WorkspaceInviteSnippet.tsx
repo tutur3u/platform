@@ -1,7 +1,7 @@
 'use client';
 
 import moment from 'moment';
-import { Workspace } from '../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 import useTranslation from 'next-translate/useTranslation';
 import 'moment/locale/vi';
 import { toast } from '../ui/use-toast';
@@ -16,9 +16,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const router = useRouter();
   const { t, lang } = useTranslation('invite');
 
-  const creationDate = moment(ws?.created_at)
-    .locale(lang)
-    .fromNow();
+  const creationDate = moment(ws?.created_at).locale(lang).fromNow();
 
   const invitedTo = t('invited-to');
 

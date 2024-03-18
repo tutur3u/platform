@@ -1,5 +1,5 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import { Document } from '../../../../../types/primitives/Document';
+import { Document } from '@/types/primitives/Document';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';

@@ -1,6 +1,6 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { ROOT_WORKSPACE_ID } from '../../constants/common';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 
 export const verifyRootAccess = async (
   req: NextApiRequest,

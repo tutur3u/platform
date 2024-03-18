@@ -2,18 +2,12 @@
 
 import { useState } from 'react';
 import { Accordion, Divider } from '@mantine/core';
-import PaginationSelector from '../../../../../components/selectors/PaginationSelector';
-import ModeSelector, {
-  Mode,
-} from '../../../../../components/selectors/ModeSelector';
 import { useLocalStorage } from '@mantine/hooks';
 import AuditLogCard from '../../../../../components/cards/AuditLogCard';
 import useSWR from 'swr';
-import OperationMultiSelector from '../../../../../components/selectors/OperationMultiSelector';
-import { AuditLog } from '../../../../../types/primitives/audit-log';
+import { AuditLog } from '@/types/primitives/audit-log';
 import useTranslation from 'next-translate/useTranslation';
-import { useUser } from '../../../../../hooks/useUser';
-import WorkspaceMultiSelector from '../../../../../components/selectors/WorkspaceMultiSelector';
+import { useUser } from '@/hooks/useUser';
 
 export default function UserActivitiesPage() {
   const { t } = useTranslation('settings-tabs');
@@ -21,12 +15,12 @@ export default function UserActivitiesPage() {
 
   const activitiesLabel = t('activities');
 
-  const [activePage, setPage] = useState(1);
+  const [activePage] = useState(1);
 
-  const [ops, setOps] = useState<string[]>([]);
-  const [wsIds, setWsIds] = useState<string[]>([]);
+  const [ops] = useState<string[]>([]);
+  const [wsIds] = useState<string[]>([]);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+  const [itemsPerPage] = useLocalStorage({
     key: 'activities-items-per-page',
     defaultValue: 15,
   });
@@ -40,11 +34,6 @@ export default function UserActivitiesPage() {
   const { data: logsData } = useSWR<{ data: AuditLog[]; count: number }>(
     apiPath
   );
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'activities-mode',
-    defaultValue: 'list',
-  });
 
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
 
@@ -63,31 +52,6 @@ export default function UserActivitiesPage() {
       )}
 
       <div className="flex min-h-full w-full flex-col ">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <ModeSelector mode={mode} setMode={setMode} />
-          <PaginationSelector
-            items={itemsPerPage}
-            setItems={(size) => {
-              setPage(1);
-              setItemsPerPage(size);
-            }}
-          />
-          <OperationMultiSelector
-            ops={ops}
-            setOps={(newOps) => {
-              setPage(1);
-              setOps(newOps);
-            }}
-          />
-          <WorkspaceMultiSelector
-            wsIds={wsIds}
-            setWsIds={(newWsIds) => {
-              setPage(1);
-              setWsIds(newWsIds);
-            }}
-          />
-        </div>
-
         <Divider className="mt-4" variant="dashed" />
         {/* <PaginationIndicator
           activePage={activePage}
@@ -99,9 +63,7 @@ export default function UserActivitiesPage() {
         <Accordion
           value={selectedLog}
           onChange={setSelectedLog}
-          className={`grid gap-2 ${
-            mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-          }`}
+          className={`grid gap-2 ${'md:grid-cols-2 xl:grid-cols-4'}`}
           variant="contained"
           classNames={{
             content:

@@ -21,9 +21,9 @@ import 'dayjs/locale/vi';
 
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
-  setInput: (input: string) => void;
+  setInput?: (input: string) => void;
   embeddedUrl?: string;
-  locale: string;
+  locale?: string;
   model?: string;
 }
 
@@ -162,15 +162,24 @@ export function ChatMessage({
                     </Link>
                   );
 
+                if (setInput)
+                  return (
+                    <button
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                      onClick={() => setInput(content || '')}
+                    >
+                      <span className="line-clamp-1 px-3 py-1">
+                        {content || '...'}
+                      </span>
+                    </button>
+                  );
+
                 return (
-                  <button
-                    className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
-                    onClick={() => setInput(content || '')}
-                  >
+                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
-                  </button>
+                  </span>
                 );
               }
 

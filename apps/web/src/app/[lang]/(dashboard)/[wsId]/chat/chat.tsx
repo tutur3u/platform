@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Message } from 'ai';
 import { useLocalStorage } from '@mantine/hooks';
 import { toast } from '@/components/ui/use-toast';
@@ -61,7 +61,7 @@ const Chat = ({
 
   useEffect(() => {
     // Don't show the dialog if the key is configured
-    // on the server or the a preview token is set
+    // on the server or the preview token is set
     setPreviewTokenDialog(!hasKeys && !previewToken);
   }, [hasKeys, previewToken]);
 

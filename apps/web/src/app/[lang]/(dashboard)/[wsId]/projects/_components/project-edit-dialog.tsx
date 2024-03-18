@@ -11,10 +11,9 @@ import {
 import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { ApiConfigFormSchema } from './project-form';
+import React, { useState } from 'react';
+import ProjectForm, { ApiConfigFormSchema } from './project-form';
 import useTranslation from 'next-translate/useTranslation';
-import ProjectForm from './project-form';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 
 interface Props {

@@ -70,7 +70,7 @@ export default function SelectableDayTime({
       return editing.mode === 'add' ? 'draft-add' : 'draft-remove';
 
     // If the timeblock is pre-selected
-    const tb = selectedTimeBlocks.find((tb) => {
+    const tb = selectedTimeBlocks.data.find((tb) => {
       if (tb.date !== date) return false;
 
       const startTime = timetzToTime(tb.start_time);
@@ -159,7 +159,6 @@ export default function SelectableDayTime({
                       }
                     : (e) => {
                         e.preventDefault();
-                        console.log('preview', editData.date);
                         setPreviewDate(editData.date);
                       }
               }

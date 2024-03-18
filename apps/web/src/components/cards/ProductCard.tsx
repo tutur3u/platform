@@ -1,7 +1,7 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Product } from '../../types/primitives/Product';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { Product } from '@/types/primitives/Product';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 interface Props {
   product: Product;
@@ -51,7 +51,7 @@ const ProductCard = ({
                 <div className="line-clamp-1 w-full rounded border border-blue-500/20 bg-blue-500/10 px-4 py-0.5 font-semibold text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
                   {Intl.NumberFormat('vi-VN', {
                     style: 'decimal',
-                  }).format(product?.amount || 0)}{' '}
+                  }).format(Number(product?.amount || 0))}{' '}
                   <span className="opacity-75">sản phẩm</span>
                 </div>
               )}
@@ -84,7 +84,7 @@ const ProductCard = ({
                   {Intl.NumberFormat('vi-VN', {
                     style: 'currency',
                     currency: 'VND',
-                  }).format(product?.price || 0)}{' '}
+                  }).format(Number(product?.price || 0))}{' '}
                   <span className="opacity-75">/ {product?.unit}</span>
                 </>
               ) : (

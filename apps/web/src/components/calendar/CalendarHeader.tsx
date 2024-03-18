@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { SegmentedControl } from '@mantine/core';
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import useTranslation from 'next-translate/useTranslation';
 import { useEffect } from 'react';
 

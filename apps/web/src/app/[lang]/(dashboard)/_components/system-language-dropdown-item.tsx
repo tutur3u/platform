@@ -14,7 +14,7 @@ export function SystemLanguageDropdownItem({ selected }: Props) {
   const router = useRouter();
 
   const useDefaultLocale = async () => {
-    const res = await fetch('/api/languages', {
+    const res = await fetch('/api/v1/infrastructure/languages', {
       method: 'DELETE',
     });
 

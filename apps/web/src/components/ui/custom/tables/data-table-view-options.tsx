@@ -57,7 +57,7 @@ export function DataTableViewOptions<TData>({
                 <DropdownMenuCheckboxItem
                   key={column.id}
                   checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  onCheckedChange={(value) => column.toggleVisibility(value)}
                 >
                   {t(column.id)}
                 </DropdownMenuCheckboxItem>
@@ -72,9 +72,7 @@ export function DataTableViewOptions<TData>({
             onClick={() => {
               table
                 .getAllColumns()
-                .forEach((column) =>
-                  column.toggleVisibility(isShowingAll ? false : true)
-                );
+                .forEach((column) => column.toggleVisibility(!isShowingAll));
             }}
           >
             {isShowingAll ? t('common:hide-all') : t('common:show-all')}

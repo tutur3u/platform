@@ -3,11 +3,11 @@
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
 import moment from 'moment';
-import { WorkspaceUser } from '../../types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import useSWR from 'swr';
-import { getGender } from '../../utils/gender-helper';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { Invoice } from '../../types/primitives/Invoice';
+import { getGender } from '@/utils/gender-helper';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Invoice } from '@/types/primitives/Invoice';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {

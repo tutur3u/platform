@@ -1,4 +1,4 @@
-import { version } from '../core/version';
+import { version } from '@/core/version';
 
 export const APP_VERSION = version;
 

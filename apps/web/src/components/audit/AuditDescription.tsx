@@ -1,7 +1,7 @@
 import { JsonInput, Tabs } from '@mantine/core';
 import { useState } from 'react';
-import { AuditLog } from '../../types/primitives/audit-log';
-import { DEV_MODE } from '../../constants/common';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { DEV_MODE } from '@/constants/common';
 import AuditSmartContent from './AuditSmartContent';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -21,7 +21,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
   return (
     <Tabs
       value={activeTab}
-      onTabChange={setActiveTab}
+      onChange={setActiveTab}
       variant="pills"
       color="blue"
     >

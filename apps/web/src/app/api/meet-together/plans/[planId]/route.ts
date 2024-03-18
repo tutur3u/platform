@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +10,18 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params: { planId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
-  console.log(id);
+  const sbAdmin = createAdminClient();
+
+  if (!sbAdmin)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
 
   const data = await req.json();
   const name = data.name;
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('meet_together_plans')
     .update({ name })
     .eq('id', id);
@@ -34,9 +38,15 @@ export async function PUT(req: Request, { params: { planId: id } }: Params) {
 }
 
 export async function DELETE(_: Request, { params: { planId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const sbAdmin = createAdminClient();
 
-  const { error } = await supabase
+  if (!sbAdmin)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+
+  const { error } = await sbAdmin
     .from('meet_together_plans')
     .delete()
     .eq('id', id);

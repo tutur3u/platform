@@ -3,7 +3,7 @@ import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskList } from '../../types/primitives/TaskList';
+import { TaskList } from '@/types/primitives/TaskList';
 
 interface TaskListEditFormProps {
   list?: TaskList;

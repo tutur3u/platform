@@ -1,10 +1,4 @@
-import {
-  ArchiveBoxArrowDownIcon,
-  ArrowRightCircleIcon,
-  Cog6ToothIcon,
-  EllipsisHorizontalIcon,
-  TrashIcon,
-} from '@heroicons/react/24/solid';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Accordion,
   AccordionControlProps,
@@ -13,9 +7,9 @@ import {
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import { mutate } from 'swr';
-import { TaskList } from '../../../types/primitives/TaskList';
+import { TaskList } from '@/types/primitives/TaskList';
 import TaskListEditForm from '../../forms/TaskListEditForm';
-import { Workspace } from '../../../types/primitives/Workspace';
+import { Workspace } from '@/types/primitives/Workspace';
 
 const TaskListAccordionControl = (
   props: AccordionControlProps & {
@@ -42,7 +36,8 @@ const TaskListAccordionControl = (
       }
     );
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const deleteList = async () => {
@@ -52,7 +47,8 @@ const TaskListAccordionControl = (
       method: 'DELETE',
     });
 
-    if (res.ok) mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
+    if (res.ok)
+      await mutate(`/api/workspaces/${ws.id}/boards/${boardId}/lists`);
   };
 
   const showDeleteListModal = (list: TaskList) => {
@@ -109,27 +105,13 @@ const TaskListAccordionControl = (
         </Menu.Target>
 
         <Menu.Dropdown className="font-semibold">
-          <Menu.Item icon={<ArrowRightCircleIcon className="w-6" />} disabled>
-            Move list
-          </Menu.Item>
-          <Menu.Item
-            icon={<ArchiveBoxArrowDownIcon className="w-6" />}
-            disabled
-          >
-            Archive list
-          </Menu.Item>
-          <Menu.Item
-            icon={<Cog6ToothIcon className="w-6" />}
-            onClick={() => showEditListModal(list)}
-          >
+          <Menu.Item disabled>Move list</Menu.Item>
+          <Menu.Item disabled>Archive list</Menu.Item>
+          <Menu.Item onClick={() => showEditListModal(list)}>
             List settings
           </Menu.Item>
           <Menu.Divider />
-          <Menu.Item
-            icon={<TrashIcon className="w-6" />}
-            color="red"
-            onClick={() => showDeleteListModal(list)}
-          >
+          <Menu.Item color="red" onClick={() => showDeleteListModal(list)}>
             Delete list
           </Menu.Item>
         </Menu.Dropdown>

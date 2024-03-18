@@ -43,11 +43,11 @@ export default function AvatarInput({ workspace, disabled }: Props) {
             description: 'There was an error downloading the avatar.',
           });
         },
-      });
+      }).then((r) => (r ? setAvatarUrl(r) : null));
   }, [workspace.avatar_url, supabase]);
 
   const uploadAvatar = async () => {
-    uploadObject({
+    await uploadObject({
       supabase,
       bucket,
       file,

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from '../../../../../../components/ui/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { Wallet } from '@/types/primitives/Wallet';
 import useTranslation from 'next-translate/useTranslation';
@@ -65,10 +65,7 @@ export function WalletRowActions(props: WalletRowActionsProps) {
             {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteWallet}
-            disabled={wallet.id === undefined || wallet.ws_id === undefined}
-          >
+          <DropdownMenuItem onClick={deleteWallet}>
             {t('common:delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

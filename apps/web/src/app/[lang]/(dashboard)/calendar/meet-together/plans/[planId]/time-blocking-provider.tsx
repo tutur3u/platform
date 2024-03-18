@@ -1,9 +1,9 @@
 'use client';
 
 import {
+  createContext,
   ReactNode,
   Touch,
-  createContext,
   useContext,
   useEffect,
   useState,
@@ -45,7 +45,9 @@ const TimeBlockContext = createContext({
   planUsers: [] as (PlatformUser | GuestUser)[],
   filteredUserIds: [] as string[],
   previewDate: null as Date | null,
-  selectedTimeBlocks: [] as Timeblock[],
+  selectedTimeBlocks: {
+    data: [] as Timeblock[],
+  } as { planId?: string; data: Timeblock[] },
   editing: {
     enabled: false,
   } as EditingParams,
@@ -59,10 +61,10 @@ const TimeBlockContext = createContext({
     },
   getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
 
-  setUser: (_: PlatformUser | GuestUser | null) => {},
+  setUser: (_: string, __: PlatformUser | GuestUser | null) => {},
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
   setPreviewDate: (_: Date | null) => {},
-  setSelectedTimeBlocks: (_: Timeblock[]) => {},
+  setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
   edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
   setShowLogin: (_: boolean) => {},
@@ -144,17 +146,22 @@ const TimeBlockingProvider = ({
     platformUser
   );
 
-  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<Timeblock[]>(
-    timeblocks.filter((tb) => tb.user_id === user?.id)
-  );
+  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<{
+    planId?: string;
+    data: Timeblock[];
+  }>({
+    planId: plan.id,
+    data: timeblocks.filter((tb) => tb.user_id === user?.id),
+  });
 
-  const setUser = (user: PlatformUser | GuestUser | null) => {
-    setSelectedTimeBlocks(
-      timeblocks.filter(
+  const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
+    setSelectedTimeBlocks({
+      planId,
+      data: timeblocks.filter(
         (tb) =>
           tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-      )
-    );
+      ),
+    });
     setInternalUser(user);
   };
 
@@ -209,7 +216,11 @@ const TimeBlockingProvider = ({
   };
 
   const endEditing = () => {
-    if (editing.startDate === undefined || editing.endDate === undefined)
+    if (
+      !plan.id ||
+      editing.startDate === undefined ||
+      editing.endDate === undefined
+    )
       return;
 
     setSelectedTimeBlocks((prevTimeblocks) => {
@@ -219,13 +230,19 @@ const TimeBlockingProvider = ({
 
       if (editing.mode === 'add') {
         const extraTimeblocks = durationToTimeblocks(dates);
-        const timeblocks = addTimeblocks(prevTimeblocks, extraTimeblocks);
-        return timeblocks;
+        const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
+        return {
+          planId: plan.id,
+          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
+        };
       }
 
       if (editing.mode === 'remove') {
-        const timeblocks = removeTimeblocks(prevTimeblocks, dates);
-        return timeblocks;
+        const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
+        return {
+          planId: plan.id,
+          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
+        };
       }
 
       return prevTimeblocks;
@@ -237,11 +254,10 @@ const TimeBlockingProvider = ({
   };
 
   useEffect(() => {
-    const addTimeBlock = async (timeblock: {
-      date: string;
-      start_time: string;
-      end_time: string;
-    }) => {
+    const addTimeBlock = async (timeblock: Timeblock) => {
+      console.log(plan.id);
+      if (plan.id !== selectedTimeBlocks.planId) return;
+
       const data = {
         user_id: user?.id,
         password_hash: user?.password_hash,
@@ -254,42 +270,46 @@ const TimeBlockingProvider = ({
       });
     };
 
-    const removeTimeBlock = async (id: string) => {
+    const removeTimeBlock = async (timeblock: Timeblock) => {
+      console.log(plan.id);
+      if (plan.id !== selectedTimeBlocks.planId) return;
+
       const data = {
         user_id: user?.id,
         password_hash: user?.password_hash,
       };
 
-      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks/${id}`, {
-        method: 'DELETE',
-        body: JSON.stringify(data),
-      });
+      await fetch(
+        `/api/meet-together/plans/${plan.id}/timeblocks/${timeblock.id}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify(data),
+        }
+      );
     };
 
-    const fetchCurrentTimeBlocks = async () => {
-      if (!user) return [];
-
-      const res = await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`);
+    const fetchCurrentTimeBlocks = async (planId: string) => {
+      const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
       if (!res.ok) return [];
 
       const timeblocks = (await res.json()) as Timeblock[];
-      const currentUserTimeblocks = timeblocks
+      return timeblocks
         ?.flat()
         .filter(
           (tb: Timeblock) =>
-            tb.user_id === user.id && tb.is_guest === (user.is_guest ?? false)
+            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
         );
-
-      return currentUserTimeblocks;
     };
 
     const syncTimeBlocks = async () => {
-      const serverTimeblocks = await fetchCurrentTimeBlocks();
+      if (!plan.id || !user) return;
+
+      const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       console.log('Server timeblocks', serverTimeblocks);
 
       // For each time block, remove timeblocks that are not on local
       // and add timeblocks that are not on server
-      const localTimeblocks = selectedTimeBlocks;
+      const localTimeblocks = selectedTimeBlocks.data;
       console.log('Local timeblocks', localTimeblocks);
 
       const timeblocksToRemove = serverTimeblocks?.filter(
@@ -314,7 +334,7 @@ const TimeBlockingProvider = ({
 
       await Promise.all(
         timeblocksToRemove?.map((timeblock) =>
-          timeblock.id ? removeTimeBlock(timeblock.id) : null
+          timeblock.id ? removeTimeBlock(timeblock) : null
         )
       );
 

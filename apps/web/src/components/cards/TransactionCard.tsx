@@ -2,10 +2,10 @@
 
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Transaction } from '../../types/primitives/Transaction';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
+import { Transaction } from '@/types/primitives/Transaction';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import moment from 'moment';
-import { Wallet } from '../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 

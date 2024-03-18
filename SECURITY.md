@@ -6,7 +6,7 @@ For security-related inquiries, please send an email to <security@tuturuuu.com>.
 
 ## Security At Tuturuuu
 
-Security is a top priority at Tuturuuu. While we invest heavily in proactively protecting our systems and customer data, vulnerabilities can still exist. If you discover a security issue with our systems, please report it to us responsibly so we can address it as quickly as possible.
+Security is a top priority at Tuturuuu. While we invest heavily in proactively protecting our systems and customer data, vulnerabilities can still exist. If you discover a security issue with our systems, please report it to us responsibly, so we can address it as quickly as possible.
 
 ### Responsible Disclosure Guidelines
 

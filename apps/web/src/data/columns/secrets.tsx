@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { SecretRowActions } from '../../components/row-actions/secrets';
+import { SecretRowActions } from '@/components/row-actions/secrets';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import moment from 'moment';
 import { Translate } from 'next-translate';
