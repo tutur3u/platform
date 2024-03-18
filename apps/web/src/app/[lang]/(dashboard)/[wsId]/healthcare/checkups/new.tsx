@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { Vital } from '../../../../../../types/primitives/Vital';
-import { VitalGroup } from '../../../../../../types/primitives/VitalGroup';
+import { Vital } from '@/types/primitives/Vital';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { DateTimePicker } from '@mantine/dates';
-import WorkspaceUserSelector from '../../../../../../components/selectors/WorkspaceUserSelector';
-import DiagnosisSelector from '../../../../../../components/selectors/DiagnosisSelector';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import { useSegments } from '../../../../../../hooks/useSegments';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
 
 export default function NewCheckupPage() {
   const { setRootSegment } = useSegments();
@@ -36,8 +34,8 @@ export default function NewCheckupPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [userId, setUserId] = useState<string>('');
-  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [userId] = useState<string>('');
+  const [diagnosis] = useState<Diagnosis | null>(null);
 
   const [checkupAt, setCheckupAt] = useState<Date | null>(new Date());
   const [nextCheckupAt, setNextCheckupAt] = useState<Date | null>(null);
@@ -184,14 +182,6 @@ export default function NewCheckupPage() {
             <Divider className="my-2" variant="dashed" />
           </div>
 
-          <WorkspaceUserSelector
-            userId={userId}
-            setUserId={setUserId}
-            className="col-span-full"
-            notEmpty
-            required
-          />
-
           <Divider className="col-span-full mt-2" />
 
           <DateTimePicker
@@ -244,12 +234,6 @@ export default function NewCheckupPage() {
           )}
 
           <Divider className="col-span-full my-2" />
-
-          <DiagnosisSelector
-            diagnosis={diagnosis}
-            setDiagnosis={setDiagnosis}
-            className="md:col-span-2"
-          />
 
           {diagnosis?.description && (
             <div className="col-span-full w-full rounded border border-zinc-700 bg-zinc-800/70 p-2 text-center">

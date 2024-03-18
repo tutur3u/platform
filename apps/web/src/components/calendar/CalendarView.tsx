@@ -1,4 +1,4 @@
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import CalendarMatrix from './CalendarMatrix';
 import TimeIndicator from './TimeIndicator';
 

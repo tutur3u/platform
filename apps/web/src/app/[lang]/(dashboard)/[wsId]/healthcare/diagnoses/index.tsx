@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Divider, Switch } from '@mantine/core';
-import ModeSelector, {
-  Mode,
-} from '../../../../../../components/selectors/ModeSelector';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import { useLocalStorage } from '@mantine/hooks';
 import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
 import useSWR from 'swr';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
-import PaginationSelector from '../../../../../../components/selectors/PaginationSelector';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 
@@ -39,9 +35,9 @@ export default function HealthcareDiagnosesPage() {
   }, [ws, setRootSegment]);
 
   const [query] = useState('');
-  const [activePage, setPage] = useState(1);
+  const [activePage] = useState(1);
 
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage({
+  const [itemsPerPage] = useLocalStorage({
     key: 'healthcare-diagnoses-items-per-page',
     defaultValue: 15,
   });
@@ -56,11 +52,6 @@ export default function HealthcareDiagnosesPage() {
 
   const { data: diagnoses } = useSWR<Diagnosis[]>(apiPath);
   // const { data: count } = useSWR<number>(countApi);
-
-  const [mode, setMode] = useLocalStorage<Mode>({
-    key: 'healthcare-diagnoses-mode',
-    defaultValue: 'grid',
-  });
 
   const [showDescription, setShowDescription] = useLocalStorage({
     key: 'healthcare-diagnoses-showDescription',
@@ -78,14 +69,6 @@ export default function HealthcareDiagnosesPage() {
     <div className="flex min-h-full w-full flex-col ">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <GeneralSearchBar />
-        <ModeSelector mode={mode} setMode={setMode} />
-        <PaginationSelector
-          items={itemsPerPage}
-          setItems={(size) => {
-            setPage(1);
-            setItemsPerPage(size);
-          }}
-        />
         <div className="hidden xl:block" />
         <Divider variant="dashed" className="col-span-full" />
         <Switch
@@ -103,11 +86,7 @@ export default function HealthcareDiagnosesPage() {
       <Divider className="mt-4" />
       <PaginationIndicator totalItems={0} />
 
-      <div
-        className={`grid gap-4 ${
-          mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
-        }`}
-      >
+      <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws.id}/healthcare/diagnoses/new`} />
 
         {diagnoses &&

@@ -1,4 +1,4 @@
-import { User } from '../../types/primitives/User';
+import { User } from '@/types/primitives/User';
 import moment from 'moment';
 import { Separator } from '../ui/separator';
 import Link from 'next/link';

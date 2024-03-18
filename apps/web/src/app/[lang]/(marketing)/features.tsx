@@ -1,12 +1,13 @@
 import {
-  PencilIcon,
-  CodeBracketIcon,
+  BanknotesIcon,
   ChatBubbleLeftEllipsisIcon,
   CheckCircleIcon,
-  BanknotesIcon,
+  CodeBracketIcon,
+  PencilIcon,
   SparklesIcon,
 } from '@heroicons/react/20/solid';
 import { Translate } from 'next-translate';
+import React from 'react';
 
 interface Feature {
   title: string;

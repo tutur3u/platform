@@ -2,7 +2,7 @@ import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
-import { Team } from '../../types/primitives/Team';
+import { Team } from '@/types/primitives/Team';
 
 interface Props {
   team?: Team;

@@ -25,44 +25,39 @@ export default function Month({ hasGrid, month, year }: MonthProps) {
 
   // get the first day of the month prop
   const getFirstDay = () => {
-    const firstDay = new Date(year, month, 1);
-    return firstDay;
+    return new Date(year, month, 1);
   };
 
   // get monday of the week of the first day of the month
   const getFirstMonday = () => {
     const firstDay = getFirstDay();
-    const firstMonday = new Date(
+    return new Date(
       firstDay.getFullYear(),
       firstDay.getMonth(),
       firstDay.getDate() - firstDay.getDay() + 1
     );
-    return firstMonday;
   };
 
   // get last day of the month prop
   const getLastDay = () => {
-    const lastDay = new Date(year, month + 1, 0);
-    return lastDay;
+    return new Date(year, month + 1, 0);
   };
 
   // get week of the last day of month
   const getLastWeek = () => {
     const lastDay = getLastDay();
-    const lastWeek = lastDay.getDay();
-    return lastWeek;
+    return lastDay.getDay();
   };
 
   // get sunday of the week of the last day of the month
   const getLastDayOfLastWeek = () => {
     const lastDay = getLastDay();
     const lastWeek = getLastWeek();
-    const lastDayOfLastWeek = new Date(
+    return new Date(
       lastDay.getFullYear(),
       lastDay.getMonth(),
       lastDay.getDate() + (6 - lastWeek)
     );
-    return lastDayOfLastWeek;
   };
 
   // get other date from first monday to the last day of last week
@@ -84,10 +79,9 @@ export default function Month({ hasGrid, month, year }: MonthProps) {
   const getMonthDaysLength = () => {
     const firstMonday = getFirstMonday();
     const lastDayOfLastWeek = getLastDayOfLastWeek();
-    const daysLength =
-      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) /
-      (1000 * 3600 * 24);
-    return daysLength;
+    return (
+      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) / (1000 * 3600 * 24)
+    );
   };
 
   return (

@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} from '@google/generative-ai';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 import { cookies } from 'next/headers';
@@ -8,25 +12,42 @@ export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+const MODEL_NAME = 'gemini-1.0-pro';
+const API_KEY = process.env.GOOGLE_API_KEY || '';
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 const generationConfig = {
-  maxOutputTokens: 30000,
   temperature: 0.9,
-  // topP: 0.1,
-  // topK: 16,
+  topK: 1,
+  topP: 1,
+  maxOutputTokens: 2048,
 };
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+];
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
   if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
-  const {
-    id: chatId,
-    wsId,
-    messages,
-    previewToken,
-  } = (await req.json()) as {
+  const { id, wsId, messages, previewToken } = (await req.json()) as {
     id?: string;
     wsId?: string;
     messages?: Message[];
@@ -34,7 +55,7 @@ export async function POST(req: Request) {
   };
 
   try {
-    if (!chatId) return new Response('Missing chat ID', { status: 400 });
+    // if (!id) return new Response('Missing chat ID', { status: 400 });
     if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
@@ -66,13 +87,33 @@ export async function POST(req: Request) {
       });
 
     const prompt = buildGooglePrompt(messages);
-    const model = 'gemini-pro';
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
     const geminiStream = await genAI
-      .getGenerativeModel({ model, generationConfig })
+      .getGenerativeModel({
+        model: MODEL_NAME,
+        generationConfig,
+        safetySettings,
+      })
       .generateContentStream(prompt);
+
+    let chatId = id;
+
+    if (!chatId) {
+      const { data, error } = await sbAdmin
+        .from('ai_chats')
+        .select('id')
+        .eq('creator_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) return new Response(error.message, { status: 500 });
+      if (!data) return new Response('Internal Server Error', { status: 500 });
+
+      chatId = data.id;
+    }
 
     const stream = GoogleGenerativeAIStream(geminiStream, {
       onStart: async () => {
@@ -136,7 +177,10 @@ export async function POST(req: Request) {
 }
 
 const normalizeGoogle = (message: Message) => ({
-  role: message.role === 'user' ? 'user' : 'model',
+  role:
+    message.role === 'user'
+      ? 'user'
+      : ('model' as 'user' | 'function' | 'model'),
   parts: [{ text: message.content }],
 });
 
@@ -147,29 +191,29 @@ const normalizeGoogleMessages = (messages: Message[]) =>
     )
     .map(normalizeGoogle);
 
-const leadingMessages: Message[] = [
-  {
-    id: 'identity-reminder',
-    role: 'system',
-    content: `
-    You are Skora, an AI by Tuturuuu, customized and engineered by Võ Hoàng Phúc - The Founder of Tuturuuu.
-    
-    Here is a set of guidelines you MUST follow:
-    
-    - Utilize markdown formatting (WITHOUT HTML, as it is NOT SUPPORTED) and turn your response into an essay, or even better, a blog post where possible to enrich the chatting experience with the user in a smart, easy-to-understand, and organized way.
-    - If there are any math operations or formulas, you MUST use LaTeX, in combination with Markdown, to render them properly.
-    - At THE END and ONLY at THE END of your answer, you MUST provide 3 helpful follow-up prompts that predict WHAT THE USER MIGHT ASK, note that the question MUST be asked from the user perspective (each enclosed in "@<FOLLOWUP>" and "</FOLLOWUP>" pairs and NO USAGE of Markdown or LaTeX in this section, e.g. \n\n@<FOLLOWUP>Can you elaborate on the first topic?</FOLLOWUP>\n\n@<FOLLOWUP>Can you provide an alternative solution?</FOLLOWUP>\n\n@<FOLLOWUP>How would the approach that you suggested be more suitable for my use case?</FOLLOWUP>) so that user can choose to ask you and continue the conversation with you in a meaningful and helpful way. Outside of this section, ALWAYS use Markdown and LaTeX to enrich the chatting experience with the user.
-    `.trim(),
-  },
-];
+// const leadingMessages: Message[] = [
+//   {
+//     id: 'identity-reminder',
+//     role: 'system',
+//     content: `
+//     You are Skora, an AI by Tuturuuu, customized and engineered by Võ Hoàng Phúc - The Founder of Tuturuuu.
 
-const trailingMessages: Message[] = [];
+//     Here is a set of guidelines you MUST follow:
+
+//     - Utilize Markdown formatting (WITHOUT HTML, as it is NOT SUPPORTED) and turn your response into an essay, or even better, a blog post where possible to enrich the chatting experience with the user in a smart, easy-to-understand, and organized way.
+//     - If there are any math operations or formulas, you MUST use LaTeX, in combination with Markdown, to render them properly.
+//     - At THE END and ONLY at THE END of your answer, you MUST provide 3 helpful follow-up prompts that predict WHAT THE USER MIGHT ASK, note that the question MUST be asked from the user perspective (each enclosed in "@<FOLLOWUP>" and "</FOLLOWUP>" pairs and NO USAGE of Markdown or LaTeX in this section, e.g. \n\n@<FOLLOWUP>Can you elaborate on the first topic?</FOLLOWUP>\n\n@<FOLLOWUP>Can you provide an alternative solution?</FOLLOWUP>\n\n@<FOLLOWUP>How would the approach that you suggested be more suitable for my use case?</FOLLOWUP>) so that user can choose to ask you and continue the conversation with you in a meaningful and helpful way. Outside of this section, ALWAYS use Markdown and LaTeX to enrich the chatting experience with the user.
+//     `.trim(),
+//   },
+// ];
+
+// const trailingMessages: Message[] = [];
 
 function buildGooglePrompt(messages: Message[]) {
   const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
+    // ...leadingMessages,
     ...messages,
-    ...trailingMessages,
+    // ...trailingMessages,
   ]);
 
   return { contents: normalizedMsgs };

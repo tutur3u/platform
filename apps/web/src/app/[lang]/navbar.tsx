@@ -1,4 +1,3 @@
-import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserNav } from './user-nav';
@@ -13,6 +12,7 @@ import { Suspense } from 'react';
 import { getWorkspaces } from '@/lib/workspace-helper';
 import { getCurrentUser } from '@/lib/user-helper';
 import Navlinks from './navlinks';
+import NavbarSeparator from './navbar-separator';
 
 export default async function Navbar() {
   const supabase = createServerComponentClient({ cookies });
@@ -26,13 +26,13 @@ export default async function Navbar() {
 
   return (
     <div id="navbar" className="fixed inset-x-0 top-0 z-50">
-      <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="bg-background p-4 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="relative flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
-                className="h-6 w-6 md:h-8 md:w-8"
+                className="h-8 w-8"
                 width={32}
                 height={32}
                 alt="logo"
@@ -74,7 +74,7 @@ export default async function Navbar() {
           </div>
         </div>
       </div>
-      <Separator />
+      <NavbarSeparator />
     </div>
   );
 }

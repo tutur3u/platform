@@ -4,9 +4,9 @@ export interface Product {
   manufacturer?: string;
   description?: string;
   usage?: string;
-  stock?: number | '';
-  amount?: number | '';
-  price?: number | '';
+  stock?: number | string;
+  amount?: number | string;
+  price?: number | string;
   unit?: string;
   category?: string;
   category_id?: string;

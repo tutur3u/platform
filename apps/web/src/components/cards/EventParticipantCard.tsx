@@ -1,6 +1,6 @@
 import { CheckIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
-import { EventParticipant } from '../../types/primitives/EventParticipant';
+import { EventParticipant } from '@/types/primitives/EventParticipant';
 import { Button, Loader } from '@mantine/core';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
@@ -56,7 +56,7 @@ const EventParticipantCard = ({
 
     if (res.ok && !(await res.json())?.error) {
       mutatePaths?.forEach((path) => mutate(path));
-      mutate(apiPath);
+      await mutate(apiPath);
     } else setLoading(false);
   };
 
@@ -81,7 +81,7 @@ const EventParticipantCard = ({
 
       if (res.ok && !(await res.json())?.error) {
         mutatePaths?.forEach((path) => mutate(path));
-        mutate(apiPath);
+        await mutate(apiPath);
         setLoading(false);
       }
     };

@@ -65,12 +65,7 @@ export function TransactionRowActions(props: Props) {
             {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteTransaction}
-            disabled={
-              transaction.id === undefined || transaction.ws_id === undefined
-            }
-          >
+          <DropdownMenuItem onClick={deleteTransaction}>
             {t('common:delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

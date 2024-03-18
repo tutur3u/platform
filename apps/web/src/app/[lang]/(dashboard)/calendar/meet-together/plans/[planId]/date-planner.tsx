@@ -81,7 +81,7 @@ export default function DatePlanner({
             start={startHour}
             end={endHour}
             editable={editable}
-            disabled={user ? disabled : true}
+            disabled={editable ? (user ? disabled : true) : disabled}
           />
         </div>
       )}

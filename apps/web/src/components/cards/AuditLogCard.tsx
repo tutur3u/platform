@@ -1,6 +1,6 @@
 import { Accordion } from '@mantine/core';
-import { AuditLog } from '../../types/primitives/audit-log';
-import { User } from '../../types/primitives/User';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { User } from '@/types/primitives/User';
 import useSWR from 'swr';
 import AuditDescription from '../audit/AuditDescription';
 import AuditLabel from '../audit/AuditLabel';

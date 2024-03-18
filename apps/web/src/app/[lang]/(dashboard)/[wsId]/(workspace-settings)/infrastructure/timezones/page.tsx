@@ -55,12 +55,7 @@ async function getData({
 
   const count = filteredTimezones.length;
 
-  if (
-    page &&
-    pageSize &&
-    typeof page === 'string' &&
-    typeof pageSize === 'string'
-  ) {
+  if (page && pageSize) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;

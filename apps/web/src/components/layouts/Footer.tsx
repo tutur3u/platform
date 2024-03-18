@@ -34,7 +34,7 @@ export default async function Footer() {
         <div className="flex flex-col items-center justify-center gap-4">
           <Link
             href="/"
-            className="flex gap-2 transition dark:hover:text-blue-200"
+            className="flex items-center gap-4 transition dark:hover:text-blue-200"
             aria-label="Tuturuuu"
           >
             <Image

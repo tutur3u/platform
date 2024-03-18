@@ -1,5 +1,4 @@
 import { Separator } from '@/components/ui/separator';
-import MemberRoleMultiSelector from '@/components/selectors/MemberRoleMultiSelector';
 import useTranslation from 'next-translate/useTranslation';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberTabs from './_components/member-tabs';
@@ -59,11 +58,6 @@ export default async function WorkspaceMembersPage({
       <Separator className="my-4" />
 
       <div className="flex min-h-full w-full flex-col">
-        <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MemberRoleMultiSelector />
-        </div>
-        <Separator className="my-4" />
-
         <div className="grid items-end gap-4 lg:grid-cols-2">
           <MemberList
             workspace={ws}
@@ -111,8 +105,7 @@ const getMembers = async (
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');
 
-  if (roles && typeof roles === 'string')
-    queryBuilder.in('role', roles.split(','));
+  if (roles) queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
   if (error) throw error;

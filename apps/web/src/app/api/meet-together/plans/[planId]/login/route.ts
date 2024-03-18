@@ -126,9 +126,5 @@ async function hashPassword(password: string, salt: string) {
 
   // convert the hashed password to a string
   const hashedPasswordStr = new Uint8Array(hashedPassword).join('');
-  const hashedPasswordHex = parseInt(hashedPasswordStr)
-    .toString(16)
-    .replace(/0+$/, '');
-
-  return hashedPasswordHex;
+  return parseInt(hashedPasswordStr).toString(16).replace(/0+$/, '');
 }

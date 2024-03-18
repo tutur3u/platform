@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import SettingItemCard from '../../../../../../../../components/settings/SettingItemCard';
 import { useRouter } from 'next/navigation';
-import { Wallet } from '../../../../../../../../types/primitives/Wallet';
+import { Wallet } from '@/types/primitives/Wallet';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -119,12 +119,6 @@ export default function WalletSettingsPage({
             onChange={(num) => setBalance(Number(num))}
             className="w-full"
             min={0}
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-            formatter={(value) =>
-              !Number.isNaN(parseFloat(value || ''))
-                ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                : ''
-            }
           />
 
           {type === 'CREDIT' && (
@@ -256,12 +250,6 @@ export default function WalletSettingsPage({
                   value={limit}
                   onChange={(num) => setLimit(Number(num))}
                   min={0}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-                  formatter={(value) =>
-                    !Number.isNaN(parseFloat(value || ''))
-                      ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                      : ''
-                  }
                 />
 
                 <div className="flex w-full gap-4">

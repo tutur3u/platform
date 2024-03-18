@@ -12,6 +12,7 @@ import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import UserTime from './user-time';
 import 'dayjs/locale/vi';
+import { createAdminClient } from '@/utils/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export default async function MeetTogetherPage({
   searchParams,
 }: Props) {
   const { t, lang } = useTranslation('meet-together');
-  const { data: plans, count: _, user } = await getData(searchParams);
+  const { data: plans, user } = await getData(searchParams);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -138,7 +139,7 @@ export default async function MeetTogetherPage({
 async function getData(
   // wsId: string,
   {
-    q,
+    // q,
     // page = '1',
     // pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
@@ -148,37 +149,44 @@ async function getData(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) return { data: [], count: 0, user };
 
-  const queryBuilder = supabase
+  const sbAdmin = createAdminClient();
+
+  if (!sbAdmin) {
+    throw new Error('Error fetching plans');
+  }
+
+  const createdPlansQuery = sbAdmin
     .from('meet_together_plans')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('creator_id', user.id);
-  // .eq('ws_id', wsId);
+    .select('*')
+    .eq('creator_id', user.id)
+    .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  const joinedPlansQuery = sbAdmin
+    .from('meet_together_user_timeblocks')
+    .select('...meet_together_plans(*)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
 
-  // if (
-  // page &&
-  // pageSize &&
-  // typeof page === 'string' &&
-  // typeof pageSize === 'string'
-  // ) {
-  // const parsedPage = parseInt(page);
-  // const parsedSize = parseInt(pageSize);
-  // const start = (parsedPage - 1) * parsedSize;
-  // const end = parsedPage * parsedSize;
-  // queryBuilder.range(start, end).limit(parsedSize);
-  // }
+  const [createdPlans, joinedPlans] = await Promise.all([
+    createdPlansQuery,
+    joinedPlansQuery,
+  ]);
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  const { data: createdPlanData, error: createdPlansError } = createdPlans;
+  const { data: joinedPlanData, error: joinedPlansError } = joinedPlans;
 
-  return { data, count, user } as {
+  if (createdPlansError) throw createdPlansError;
+  if (joinedPlansError) throw joinedPlansError;
+
+  const data = [...createdPlanData, ...joinedPlanData]
+    // filter out duplicates
+    .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i);
+
+  return { data, user } as {
     data: MeetTogetherPlan[];
-    count: number;
     user: User;
   };
 }

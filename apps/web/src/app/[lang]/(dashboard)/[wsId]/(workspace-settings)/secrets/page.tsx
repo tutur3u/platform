@@ -88,12 +88,7 @@ async function getSecrets(
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
-  if (
-    page &&
-    pageSize &&
-    typeof page === 'string' &&
-    typeof pageSize === 'string'
-  ) {
+  if (page && pageSize) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;

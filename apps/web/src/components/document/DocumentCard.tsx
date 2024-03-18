@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Document } from '../../types/primitives/Document';
+import { Document } from '@/types/primitives/Document';
 import moment from 'moment';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import useTranslation from 'next-translate/useTranslation';

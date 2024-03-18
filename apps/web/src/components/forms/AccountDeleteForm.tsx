@@ -1,5 +1,5 @@
 import { Button, TextInput } from '@mantine/core';
-import { User } from '../../types/primitives/User';
+import { User } from '@/types/primitives/User';
 import { useEffect, useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 

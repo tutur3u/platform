@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   Button,
   Checkbox,
@@ -7,14 +7,12 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { useSegments } from '../../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../../hooks/useWorkspaces';
-import WalletSelector from '../../../../../../../components/selectors/WalletSelector';
-import { Wallet } from '../../../../../../../types/primitives/Wallet';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Wallet } from '@/types/primitives/Wallet';
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import TransactionCategorySelector from '../../../../../../../components/selectors/TransactionCategorySelector';
 import { useRouter } from 'next/router';
-import { Transaction } from '../../../../../../../types/primitives/Transaction';
+import { Transaction } from '@/types/primitives/Transaction';
 import useSWR from 'swr';
 import { DateTimePicker } from '@mantine/dates';
 import useTranslation from 'next-translate/useTranslation';
@@ -51,7 +49,6 @@ export default function TransactionDetailsPage() {
       : null;
 
   const { data: transactionWallet } = useSWR<Wallet>(walletApiPath);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
 
   useEffect(() => {
     setRootSegment(
@@ -106,15 +103,6 @@ export default function TransactionDetailsPage() {
           disabled={!transactionWallet}
         >
           <div className="flex gap-2">
-            <WalletSelector
-              walletId={transaction?.wallet_id}
-              wallet={wallet}
-              setWallet={setWallet}
-              className="w-full"
-              preventPreselected
-              hideLabel
-              disabled
-            />
             {ws?.id && transactionWallet?.id && (
               <Button
                 variant="light"
@@ -175,12 +163,6 @@ export default function TransactionDetailsPage() {
               classNames={{
                 input: 'bg-white/5 border-zinc-300/20 font-semibold',
               }}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') || ''}
-              formatter={(value) =>
-                !Number.isNaN(parseFloat(value || ''))
-                  ? (value || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  : ''
-              }
               disabled
             />
 
@@ -191,26 +173,6 @@ export default function TransactionDetailsPage() {
               disabled
             />
           </div>
-        </SettingItemCard>
-
-        <SettingItemCard
-          title={t('category')}
-          description={t('category-description')}
-          disabled={!transactionWallet}
-        >
-          <TransactionCategorySelector
-            category={
-              transaction?.category_id
-                ? {
-                    id: transaction?.category_id,
-                  }
-                : null
-            }
-            categoryId={transaction?.category_id}
-            preventPreselected
-            hideLabel
-            disabled
-          />
         </SettingItemCard>
 
         <SettingItemCard

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Divider, TextInput, Textarea } from '@mantine/core';
 import { useRouter } from 'next/router';
-import { Diagnosis } from '../../../../../../types/primitives/Diagnosis';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
 import useSWR from 'swr';
-import { useSegments } from '../../../../../../hooks/useSegments';
-import { useWorkspaces } from '../../../../../../hooks/useWorkspaces';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 export default function NewDiagnosisPage() {
   const { setRootSegment } = useSegments();

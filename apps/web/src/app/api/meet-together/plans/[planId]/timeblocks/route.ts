@@ -50,8 +50,6 @@ export async function GET(_: Request) {
     ...(userTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: false })),
   ];
 
-  console.log(timeblocks);
-
   return NextResponse.json(timeblocks);
 }
 

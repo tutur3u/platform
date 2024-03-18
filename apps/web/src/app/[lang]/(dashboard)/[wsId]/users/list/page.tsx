@@ -1,7 +1,7 @@
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { getUserColumns } from '../../../../../../data/columns/users';
+import { getUserColumns } from '@/data/columns/users';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 export const dynamic = 'force-dynamic';
@@ -64,16 +64,12 @@ async function getData(
       }
     )
     .eq('ws_id', wsId)
-    .eq('linked_users.users.workspace_members.ws_id', wsId);
+    .eq('linked_users.users.workspace_members.ws_id', wsId)
+    .order('full_name', { ascending: true, nullsFirst: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('full_name', `%${q}%`);
 
-  if (
-    page &&
-    pageSize &&
-    typeof page === 'string' &&
-    typeof pageSize === 'string'
-  ) {
+  if (page && pageSize) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;

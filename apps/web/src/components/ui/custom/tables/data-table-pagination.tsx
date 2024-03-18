@@ -17,6 +17,7 @@ import {
 import useQuery from '@/hooks/useQuery';
 import { cn } from '@/lib/utils';
 import useTranslation from 'next-translate/useTranslation';
+import { Separator } from '../../separator';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
@@ -39,7 +40,7 @@ export function DataTablePagination<TData>({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-between gap-1 px-2 md:flex-row',
+        'flex flex-col items-center justify-between gap-1 px-2 text-center md:flex-row',
         className
       )}
     >
@@ -62,7 +63,9 @@ export function DataTablePagination<TData>({
         <div />
       )}
 
-      <div className="flex items-center gap-4 lg:gap-8">
+      <Separator className="my-1 md:hidden" />
+
+      <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
           <p className="text-sm font-medium">{t('rows-per-page')}</p>
           <Select

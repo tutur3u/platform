@@ -1,5 +1,5 @@
 import useTranslation from 'next-translate/useTranslation';
-import { useCalendar } from '../../hooks/useCalendar';
+import { useCalendar } from '@/hooks/useCalendar';
 import DayTitle from './DayTitle';
 
 const WeekdayBar = () => {

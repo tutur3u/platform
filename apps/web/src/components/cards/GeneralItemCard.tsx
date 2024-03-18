@@ -95,9 +95,7 @@ const GeneralItemCard = ({
               !batchData?.count &&
               !productData?.count && (
                 <div className="flex h-full items-center justify-center rounded border border-zinc-300/20 bg-zinc-300/10 p-2 text-center font-semibold text-zinc-300">
-                  {amountFetchPath && amountData?.count === undefined
-                    ? t('common:loading')
-                    : t('common:empty')}
+                  {amountFetchPath ? t('common:loading') : t('common:empty')}
                 </div>
               )}
 
