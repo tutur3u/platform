@@ -44,15 +44,17 @@ async function getDataWithApiKey(
 
   const mainQuery = sbAdmin
     .from('workspace_users')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('ws_id', wsId);
 
   const searchParams = req.nextUrl.searchParams;
-  const query = searchParams.get('query');
+  const query = searchParams.get('q');
 
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const limit = searchParams.get('limit');
+
+  console.log({ query, from, to, limit });
 
   if (query) mainQuery.textSearch('full_name', query);
   if (from && to) mainQuery.range(parseInt(from), parseInt(to));
@@ -67,7 +69,7 @@ async function getDataWithApiKey(
     return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
   }
 
-  const { data, error } = response;
+  const { data, count, error } = response;
 
   if (error) {
     console.log(error);
@@ -77,7 +79,7 @@ async function getDataWithApiKey(
     );
   }
 
-  return NextResponse.json(data || []);
+  return NextResponse.json({ data, count });
 }
 
 async function getDataFromSession(
