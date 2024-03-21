@@ -45,7 +45,9 @@ async function getDataWithApiKey(
   const mainQuery = sbAdmin
     .from('workspace_users')
     .select('*', { count: 'exact' })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('full_name', { ascending: true })
+    .order('display_name', { ascending: true });
 
   const searchParams = req.nextUrl.searchParams;
   const query = searchParams.get('q');
