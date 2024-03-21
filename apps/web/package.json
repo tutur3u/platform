@@ -87,7 +87,7 @@
     "@upstash/qstash": "^2.4.2",
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
-    "@vercel/toolbar": "^0.1.12",
+    "@vercel/toolbar": "^0.1.13",
     "ai": "^3.0.13",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
