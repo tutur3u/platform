@@ -91,7 +91,7 @@
     "ai": "^3.0.13",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "cmdk": "^1.0.0",
+    "cmdk": "^0.2.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.10",
     "embla-carousel-react": "8.0.0",

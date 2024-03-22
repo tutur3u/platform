@@ -9,6 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command';
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,10 +38,10 @@ import { cn } from '@/lib/utils';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import { CaretSortIcon } from '@radix-ui/react-icons';
+import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { CheckIcon } from 'lucide-react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   user: User | null;
@@ -77,6 +79,19 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
   const [open, setOpen] = useState(false);
   const [showNewWorkspaceDialog, setShowNewWorkspaceDialog] = useState(false);
 
+  // Toggle the menu when ⌘K is pressed
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+
   const onValueChange = (wsId: string) => {
     const newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
     if (newPathname) router.push(newPathname);
@@ -89,21 +104,6 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
   return (
     <>
       <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
-      {/* <Select value={wsId} onValueChange={onValueChange} disabled={!workspaces}>
-        <SelectTrigger className="w-full md:w-48">
-          <SelectValue placeholder="Select a workspace" />
-        </SelectTrigger>
-        <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
-          <SelectGroup>
-            {workspaces.map((workspace) => (
-              <SelectItem key={workspace.id} value={workspace.id}>
-                <span className="line-clamp-1">{workspace.name}</span>
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select> */}
-
       <Dialog
         open={showNewWorkspaceDialog}
         onOpenChange={setShowNewWorkspaceDialog}
@@ -125,7 +125,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                 <AvatarFallback>{getInitials(workspace.name)}</AvatarFallback>
               </Avatar>
               <span className="line-clamp-1">{workspace.name}</span>
-              <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full max-w-[16rem] p-0">
@@ -172,22 +172,21 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                   </CommandGroup>
                 ))}
               </CommandList>
-              {/* <CommandSeparator />
-              <CommandList>
-                <CommandGroup>
-                  <DialogTrigger asChild>
-                    <CommandItem
-                      onSelect={() => {
-                        setOpen(false);
-                        setShowNewWorkspaceDialog(true);
-                      }}
-                    >
-                      <PlusCircledIcon className="mr-2 h-5 w-5" />
-                      Create new workspace
-                    </CommandItem>
-                  </DialogTrigger>
-                </CommandGroup>
-              </CommandList> */}
+              <CommandSeparator />
+              <CommandGroup>
+                <DialogTrigger asChild>
+                  <CommandItem
+                    onSelect={() => {
+                      setOpen(false);
+                      setShowNewWorkspaceDialog(true);
+                    }}
+                    disabled
+                  >
+                    <PlusCircledIcon className="mr-2 h-5 w-5" />
+                    Create new workspace
+                  </CommandItem>
+                </DialogTrigger>
+              </CommandGroup>
             </Command>
           </PopoverContent>
         </Popover>
