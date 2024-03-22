@@ -1,123 +1,55 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Canvas } from '@react-three/fiber';
 import { useState } from 'react';
-import { BoxGeometry } from 'three';
+import { CubePopover } from './cube-popover';
+import { Size } from './types';
+import { Cube } from './cube';
+import { CameraPopover } from './camera-popover';
+import { CameraController } from './camera-controller';
+import { LightBulb } from './light-bulb';
+import { AmbientPopover } from './ambient-popover';
 
-interface Size {
-  x: number;
-  y: number;
-  z: number;
-}
+const defaultSize: Size = {
+  x: 100,
+  y: 100,
+  z: 3,
+};
 
-function Cube({ size }: { size: Size }) {
-  return (
-    <mesh receiveShadow>
-      <primitive object={new BoxGeometry(size.x, size.z, size.y)} />
-      <meshStandardMaterial color="gray" />
-    </mesh>
-  );
-}
+const defaultCameraPosition: Size = {
+  x: 0,
+  y: 2,
+  z: 5,
+};
 
 export default function AIPlaygroundPage() {
-  const [size, setSize] = useState<Size>({
-    x: 1,
-    y: 1,
-    z: 1,
-  });
+  const [size, setSize] = useState(defaultSize);
+  const [intensity, setIntensity] = useState(1);
+  const [cameraPosition, setCameraPosition] = useState(defaultCameraPosition);
+  const [cameraQuaternion, setCameraQuaternion] = useState([0, 0, 0, 0]);
 
   return (
-    <div className="h-[calc(100vh-12rem)] w-full">
-      <div className="grid gap-2 lg:grid-cols-3">
-        <div className="flex gap-2">
-          <Input
-            placeholder="X"
-            value={size.x}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-
-              // If value is not a number, do nothing
-              if (e.target.value !== '' && (isNaN(value) || !e.target.value))
-                return;
-
-              setSize((s) => ({
-                ...s,
-                x: value < 0 ? 0 : value > 100 ? 100 : value,
-              }));
-            }}
-          />
-          <Slider
-            defaultValue={[1]}
-            max={100}
-            step={1}
-            value={[size.x]}
-            onValueChange={(v) => setSize((s) => ({ ...s, x: v[0] }))}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Input
-            placeholder="Y"
-            value={size.y}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-
-              // If value is not a number, do nothing
-              if (e.target.value !== '' && (isNaN(value) || !e.target.value))
-                return;
-
-              setSize((s) => ({
-                ...s,
-                y: value < 0 ? 0 : value > 100 ? 100 : value,
-              }));
-            }}
-          />
-          <Slider
-            defaultValue={[1]}
-            max={100}
-            step={1}
-            value={[size.y]}
-            onValueChange={(v) => setSize((s) => ({ ...s, y: v[0] }))}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Input
-            placeholder="Z"
-            value={size.z}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-
-              // If value is not a number, do nothing
-              if (e.target.value !== '' && (isNaN(value) || !e.target.value))
-                return;
-
-              setSize((s) => ({
-                ...s,
-                z: value < 0 ? 0 : value > 100 ? 100 : value,
-              }));
-            }}
-          />
-          <Slider
-            defaultValue={[1]}
-            max={100}
-            step={1}
-            value={[size.z]}
-            onValueChange={(v) => setSize((s) => ({ ...s, z: v[0] }))}
-          />
-        </div>
+    <div className="relative h-[calc(100vh-10rem)] w-full">
+      <div className="absolute right-2 top-2 z-50 flex gap-2">
+        <AmbientPopover intensity={intensity} setIntensity={setIntensity} />
+        <CameraPopover
+          position={cameraPosition}
+          quaternion={cameraQuaternion}
+          setPosition={setCameraPosition}
+          setQuaternion={setCameraQuaternion}
+        />
+        <CubePopover size={size} setSize={setSize} />
       </div>
-
       <Canvas
-        shadows
         className="bg-foreground/5 border-foreground/10 mt-2 h-full w-full rounded-lg border"
-        camera={{
-          position: [-6, 7, 7],
-        }}
+        shadows
       >
-        <ambientLight intensity={2} />
+        <ambientLight intensity={intensity} />
+        <LightBulb position={[0, 2, 2]} intensity={1} />
+        <CameraController
+          position={cameraPosition}
+          quaternion={cameraQuaternion}
+        />
         <Cube size={size} />
       </Canvas>
     </div>
