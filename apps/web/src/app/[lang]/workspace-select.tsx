@@ -323,7 +323,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
           <Button
             variant="outline"
             aria-label="Online users"
-            className="flex items-center gap-1"
+            className="hidden items-center gap-1 md:flex"
           >
             {onlineUsers.length > 0 ? (
               onlineUsers.slice(0, 3).map((user) => (
@@ -335,7 +335,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                         user.display_name || user.handle || user.email || '?'
                       }
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-xs font-semibold">
                       {getInitials(
                         user?.display_name || user?.handle || user.email || '?'
                       )}
@@ -356,12 +356,12 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64">
+        <PopoverContent>
           <div className="grid gap-2">
-            <div>
+            <div className="font-semibold">
               {t('common:currently_online')} ({onlineUsers.length})
             </div>
-            <Separator className="my-1" />
+            <Separator className="mb-1" />
             {onlineUsers.map((user) => (
               <div key={user.id} className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
@@ -369,7 +369,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                     src={user?.avatar_url || undefined}
                     alt={user.display_name || user.handle || user.email || '?'}
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="text-sm font-semibold">
                     {getInitials(
                       user?.display_name || user?.handle || user.email || '?'
                     )}
