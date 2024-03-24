@@ -158,7 +158,20 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
     }
 
     const supabase = createClientComponentClient();
-    const channel = wsId ? supabase.channel(`workspace:${wsId}`) : null;
+    const channel = wsId
+      ? supabase.channel(
+          `workspace:${wsId}`,
+          user?.id
+            ? {
+                config: {
+                  presence: {
+                    key: user.id,
+                  },
+                },
+              }
+            : undefined
+        )
+      : null;
 
     trackPresence(channel);
     return () => {
