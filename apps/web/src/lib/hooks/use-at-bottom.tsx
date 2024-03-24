@@ -21,3 +21,22 @@ export function useAtBottom(offset = 0) {
 
   return isAtBottom;
 }
+
+export function useAtTop(offset = 0) {
+  const [isAtTop, setIsAtTop] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY <= offset);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [offset]);
+
+  return isAtTop;
+}
