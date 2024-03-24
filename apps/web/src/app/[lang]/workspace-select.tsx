@@ -344,6 +344,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                         alt={
                           user.display_name || user.handle || user.email || '?'
                         }
+                        className="overflow-clip rounded-full"
                       />
                       <AvatarFallback className="text-xs font-semibold">
                         {getInitials(
@@ -353,8 +354,9 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                             '?'
                         )}
                       </AvatarFallback>
+                      <div className="bg-background absolute bottom-0 right-0 z-10 h-2 w-2 rounded-full" />
                       <div
-                        className={`absolute bottom-0 right-0 z-10 h-1.5 w-1.5 rounded-full ${
+                        className={`absolute bottom-0 right-0 z-20 h-1.5 w-1.5 rounded-full ${
                           isDefault
                             ? 'bg-green-500 dark:bg-green-400'
                             : 'bg-foreground'
@@ -375,6 +377,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
             {onlineUsers && (
               <div className="flex items-center gap-2 font-semibold md:hidden">
                 <div>{onlineUsers.length || 0}</div>
+                <div className="bg-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full" />
                 <div
                   className={`relative inset-0 h-2 w-2 rounded-full ${
                     isDefault
@@ -412,12 +415,14 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                   <AvatarImage
                     src={user?.avatar_url || undefined}
                     alt={user.display_name || user.handle || user.email || '?'}
+                    className="overflow-clip rounded-full"
                   />
                   <AvatarFallback className="text-sm font-semibold">
                     {getInitials(
                       user?.display_name || user?.handle || user.email || '?'
                     )}
                   </AvatarFallback>
+                  <div className="bg-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full" />
                   <div
                     className={`absolute bottom-0 right-0 z-10 h-2 w-2 rounded-full ${
                       isDefault

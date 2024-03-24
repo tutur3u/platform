@@ -26,7 +26,7 @@ export default async function Layout({
   const secrets = await getSecrets({
     wsId,
     requiredSecrets: [
-      'ENABLE_AI_PLAYGROUND',
+      'ENABLE_BLACKBOX',
       'ENABLE_CHAT',
       'ENABLE_CALENDAR',
       'ENABLE_USERS',
@@ -54,9 +54,9 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('ai_playground'),
-      href: `/${wsId}/ai/playground`,
-      disabled: !verifySecret('ENABLE_AI_PLAYGROUND', 'true'),
+      name: t('blackbox'),
+      href: `/${wsId}/blackbox`,
+      disabled: !verifySecret('ENABLE_BLACKBOX', 'true'),
     },
     {
       name: t('calendar'),
