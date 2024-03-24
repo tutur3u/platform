@@ -25,12 +25,12 @@ export function CameraPopover({
 }) {
   return (
     <Popover>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button variant="secondary" size="icon">
           <Camera size={24} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end">
+      <PopoverContent align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Camera Position</h4>

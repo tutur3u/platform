@@ -18,12 +18,12 @@ export function CubePopover({
 }) {
   return (
     <Popover>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button variant="secondary" size="icon">
           <SettingsIcon size={24} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-full">
+      <PopoverContent align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Scale</h4>
@@ -112,7 +112,7 @@ export function CubePopover({
               />
               <Slider
                 defaultValue={[1]}
-                max={100}
+                max={3}
                 step={1}
                 value={[size.z]}
                 onValueChange={(v) => setSize((s) => ({ ...s, z: v[0] }))}

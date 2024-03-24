@@ -17,12 +17,12 @@ export function AmbientPopover({
 }) {
   return (
     <Popover>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button variant="secondary" size="icon">
           <Sun size={24} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-full">
+      <PopoverContent align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">
