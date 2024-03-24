@@ -49,7 +49,7 @@ export function ChatMessage({
       className={cn('group relative mb-4 grid h-fit w-full gap-4')}
       {...props}
     >
-      <div className="flex h-fit flex-wrap gap-2">
+      <div className="flex h-fit flex-wrap justify-between gap-2">
         <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
