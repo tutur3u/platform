@@ -82,6 +82,7 @@
   "descending": "Giảm dần",
   "hide-column": "Ẩn cột",
   "unnamed": "Chưa đặt tên",
-
+  "currently_online": "Đang trực tuyến",
+  "no_online_users": "Không có ai trực tuyến",
   "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi..."
 }

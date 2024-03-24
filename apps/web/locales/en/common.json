@@ -82,6 +82,7 @@
   "descending": "Descending",
   "hide-column": "Hide column",
   "unnamed": "No name",
-
+  "currently_online": "Currently online",
+  "no_online_users": "No online users",
   "waiting_for_response": "I'll respond to you shortly, please wait..."
 }

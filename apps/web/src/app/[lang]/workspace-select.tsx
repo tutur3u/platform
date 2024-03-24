@@ -34,12 +34,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -49,6 +53,8 @@ interface Props {
 }
 
 export default function WorkspaceSelect({ user, workspaces }: Props) {
+  const { t } = useTranslation();
+
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
@@ -79,19 +85,6 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
   const [open, setOpen] = useState(false);
   const [showNewWorkspaceDialog, setShowNewWorkspaceDialog] = useState(false);
 
-  // Toggle the menu when ⌘K is pressed
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
-  }, []);
-
   const onValueChange = (wsId: string) => {
     const newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
     if (newPathname) router.push(newPathname);
@@ -99,11 +92,85 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
 
   const wsId = params.wsId as string;
   const workspace = workspaces?.find((ws) => ws.id === wsId);
+
+  // Toggle the menu when ⌘K is pressed
+  useEffect(() => {
+    function down(e: KeyboardEvent) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    }
+
+    document.addEventListener('keydown', down);
+
+    return () => {
+      document.removeEventListener('keydown', down);
+    };
+  }, []);
+
+  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    async function trackPresence(channel: RealtimeChannel | null) {
+      if (!wsId || !user || !channel) return;
+
+      const userStatus = {
+        id: user.id,
+        display_name: user.display_name || user.handle || user.email,
+        avatar_url: user.avatar_url,
+        online_at: new Date().toISOString(),
+      };
+
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const newState = channel.presenceState();
+          // console.log('sync', newState);
+
+          const users = Object.values(newState)
+            .map(
+              (user) =>
+                ({
+                  ...user?.[0],
+                }) as unknown as User
+            )
+            // sort ones with display_name first, then prioritize ones with avatar_url
+            .sort((a, b) => {
+              if (a.display_name && !b.display_name) return -1;
+              if (!a.display_name && b.display_name) return 1;
+              if (a.avatar_url && !b.avatar_url) return -1;
+              if (!a.avatar_url && b.avatar_url) return 1;
+              return 0;
+            });
+
+          setOnlineUsers(users);
+        })
+        // .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        //   console.log('join', key, newPresences);
+        // })
+        // .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        //   console.log('leave', key, leftPresences);
+        // })
+        .subscribe(async (status) => {
+          if (status !== 'SUBSCRIBED') return;
+          await channel.track(userStatus);
+        });
+    }
+
+    const supabase = createClientComponentClient();
+    const channel = wsId ? supabase.channel(`workspace:${wsId}`) : null;
+
+    trackPresence(channel);
+    return () => {
+      channel?.unsubscribe();
+    };
+  }, [wsId, user]);
+
   if (!workspace || !workspaces?.length) return null;
 
   return (
     <>
-      <div className="bg-foreground/20 h-4 w-[1px] rotate-[30deg]" />
+      <div className="bg-foreground/20 mx-2 hidden h-4 w-[1px] rotate-[30deg] md:block" />
       <Dialog
         open={showNewWorkspaceDialog}
         onOpenChange={setShowNewWorkspaceDialog}
@@ -237,6 +304,75 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            aria-label="Online users"
+            className="flex items-center gap-1"
+          >
+            {onlineUsers.length > 0 ? (
+              onlineUsers.slice(0, 3).map((user) => (
+                <div key={user.id} className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage
+                      src={user?.avatar_url || undefined}
+                      alt={
+                        user.display_name || user.handle || user.email || '?'
+                      }
+                    />
+                    <AvatarFallback>
+                      {getInitials(
+                        user?.display_name || user?.handle || user.email || '?'
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              ))
+            ) : (
+              <span className="text-foreground/50">
+                {t('common:no_online_users')}
+              </span>
+            )}
+
+            {onlineUsers.length > 3 && (
+              <span className="text-foreground/70 text-xs font-semibold">
+                +{onlineUsers.length - 3}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64">
+          <div className="grid gap-2">
+            <div>
+              {t('common:currently_online')} ({onlineUsers.length})
+            </div>
+            <Separator className="my-1" />
+            {onlineUsers.map((user) => (
+              <div key={user.id} className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src={user?.avatar_url || undefined}
+                    alt={user.display_name || user.handle || user.email || '?'}
+                  />
+                  <AvatarFallback>
+                    {getInitials(
+                      user?.display_name || user?.handle || user.email || '?'
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="line-clamp-1">
+                  {user.display_name ||
+                    user.handle ||
+                    user.email ||
+                    t('common:unknown')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </>
   );
 }
