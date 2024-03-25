@@ -36,6 +36,10 @@ export default async function Layout({
       href: `/${wsId}/users/reports`,
       allowedPresets: ['EDUCATION'],
     },
+    {
+      name: t('fields'),
+      href: `/${wsId}/users/fields`,
+    },
   ];
 
   return (
