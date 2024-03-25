@@ -132,14 +132,13 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
         language={language}
         style={isDark ? coldarkDark : coldarkCold}
         PreTag="div"
-        showLineNumbers
         customStyle={{
           margin: 0,
           marginTop: '0.5rem',
           width: '100%',
           padding: '1.5rem 1rem',
           borderRadius: '0.25rem',
-          backgroundColor: 'transparent',
+          background: 'transparent',
         }}
         lineNumberStyle={{
           // Disable line number selection
@@ -151,6 +150,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
             fontFamily: 'var(--font-mono)',
           },
         }}
+        showLineNumbers
       >
         {value}
       </SyntaxHighlighter>

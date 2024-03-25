@@ -44,7 +44,7 @@ export default async function MeetTogetherPlanDetailsPage({
                 {plan.name} <EditPlanDialog plan={plan} />
               </p>
 
-              <div className="mt-8 flex w-full flex-col items-start justify-evenly gap-4 md:flex-row">
+              <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
                 <PlanLogin
                   plan={plan}
                   timeblocks={[]}
@@ -54,8 +54,13 @@ export default async function MeetTogetherPlanDetailsPage({
               </div>
             </div>
           </div>
-          <Separator className="mt-8" />
-          <PlanUserFilter users={users} />
+
+          {users.length > 0 && (
+            <>
+              <Separator className="mt-8" />
+              <PlanUserFilter users={users} />
+            </>
+          )}
         </TimeBlockingProvider>
       )}
     </div>

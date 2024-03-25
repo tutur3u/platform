@@ -26,6 +26,7 @@ export default async function Layout({
   const secrets = await getSecrets({
     wsId,
     requiredSecrets: [
+      'ENABLE_BLACKBOX',
       'ENABLE_CHAT',
       'ENABLE_CALENDAR',
       'ENABLE_USERS',
@@ -51,6 +52,11 @@ export default async function Layout({
       name: t('common:dashboard'),
       href: `/${wsId}`,
       matchExact: true,
+    },
+    {
+      name: t('blackbox'),
+      href: `/${wsId}/blackbox`,
+      disabled: !verifySecret('ENABLE_BLACKBOX', 'true'),
     },
     {
       name: t('calendar'),

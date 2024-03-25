@@ -15,7 +15,7 @@ export default function AvailabilityPlanner({
   const { t } = useTranslation('meet-together-plan-details');
 
   return (
-    <div className="grid gap-2 text-center">
+    <div className="flex flex-col gap-2 text-center">
       <div className="font-semibold">{t('your_availability')}</div>
 
       <div className="flex items-center justify-center gap-4 text-sm">

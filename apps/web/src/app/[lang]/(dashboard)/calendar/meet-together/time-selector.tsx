@@ -16,7 +16,7 @@ interface Props {
 export function TimeSelector({ value, onValueChange, disabledTime }: Props) {
   const { lang } = useTranslation();
 
-  const hours = Array.from({ length: 24 }, (_, index) => index + 1);
+  const hours = Array.from({ length: 23 }, (_, index) => index + 1);
 
   return (
     <Select

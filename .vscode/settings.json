@@ -4,14 +4,5 @@
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[sql]": {
-    "editor.defaultFormatter": "mtxr.sqltools"
-  },
-  "[toml]": {
-    "editor.defaultFormatter": "tamasfe.even-better-toml"
-  },
-  "typescript.tsdk": "node_modules\\typescript\\lib",
-  "[yaml]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  "typescript.tsdk": "node_modules\\typescript\\lib"
 }

@@ -56,7 +56,9 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   }, []);
 
   const ref = useClickOutside(() => setCurrentView(undefined));
+
   if (pathname.startsWith(`/${wsId}/chat`)) return null;
+  if (pathname.startsWith(`/${wsId}/ai/playground`)) return null;
 
   const createChat = async (input: string) => {
     const res = await fetch(`/api/ai/chat/${model}/new`, {
