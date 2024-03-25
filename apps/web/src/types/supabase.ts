@@ -6,9 +6,147 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
+      ai_chat_messages: {
+        Row: {
+          chat_id: string;
+          content: string | null;
+          created_at: string;
+          creator_id: string | null;
+          id: string;
+          model: string | null;
+          role: Database['public']['Enums']['chat_role'];
+        };
+        Insert: {
+          chat_id: string;
+          content?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          model?: string | null;
+          role: Database['public']['Enums']['chat_role'];
+        };
+        Update: {
+          chat_id?: string;
+          content?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          model?: string | null;
+          role?: Database['public']['Enums']['chat_role'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_chat_messages_chat_id_fkey';
+            columns: ['chat_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_messages_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_messages_model_fkey';
+            columns: ['model'];
+            isOneToOne: false;
+            referencedRelation: 'ai_models';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_chats: {
+        Row: {
+          created_at: string;
+          creator_id: string | null;
+          id: string;
+          model: string | null;
+          title: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          model?: string | null;
+          title?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          model?: string | null;
+          title?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_chats_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chats_model_fkey';
+            columns: ['model'];
+            isOneToOne: false;
+            referencedRelation: 'ai_models';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_models: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string | null;
+          provider: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          name?: string | null;
+          provider?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+          provider?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_models_provider_fkey';
+            columns: ['provider'];
+            isOneToOne: false;
+            referencedRelation: 'ai_providers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_providers: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       calendar_event_colors: {
         Row: {
           value: string;
@@ -47,18 +185,21 @@ export interface Database {
           {
             foreignKeyName: 'calendar_event_participant_groups_event_id_fkey';
             columns: ['event_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_calendar_events';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
@@ -93,12 +234,14 @@ export interface Database {
           {
             foreignKeyName: 'calendar_event_platform_participants_event_id_fkey';
             columns: ['event_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_calendar_events';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -133,12 +276,21 @@ export interface Database {
           {
             foreignKeyName: 'calendar_event_virtual_participants_event_id_fkey';
             columns: ['event_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_calendar_events';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -167,6 +319,7 @@ export interface Database {
           {
             foreignKeyName: 'credit_wallets_wallet_id_fkey';
             columns: ['wallet_id'];
+            isOneToOne: true;
             referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
@@ -187,6 +340,183 @@ export interface Database {
         };
         Relationships: [];
       };
+      external_user_monthly_report_logs: {
+        Row: {
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          feedback: string;
+          group_id: string;
+          id: string;
+          report_id: string;
+          score: number | null;
+          scores: number[] | null;
+          title: string;
+          user_id: string;
+        };
+        Insert: {
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          feedback?: string;
+          group_id: string;
+          id?: string;
+          report_id: string;
+          score?: number | null;
+          scores?: number[] | null;
+          title?: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          feedback?: string;
+          group_id?: string;
+          id?: string;
+          report_id?: string;
+          score?: number | null;
+          scores?: number[] | null;
+          title?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: false;
+            referencedRelation: 'external_user_monthly_reports';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      external_user_monthly_reports: {
+        Row: {
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          feedback: string;
+          group_id: string;
+          id: string;
+          score: number | null;
+          scores: number[] | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          creator_id?: string | null;
+          feedback: string;
+          group_id: string;
+          id?: string;
+          score?: number | null;
+          scores?: number[] | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          feedback?: string;
+          group_id?: string;
+          id?: string;
+          score?: number | null;
+          scores?: number[] | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_user_monthly_reports_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       finance_invoice_products: {
         Row: {
           amount: number;
@@ -197,9 +527,9 @@ export interface Database {
           product_name: string;
           product_unit: string;
           total_diff: number;
-          unit_id: string | null;
+          unit_id: string;
           warehouse: string;
-          warehouse_id: string | null;
+          warehouse_id: string;
         };
         Insert: {
           amount: number;
@@ -210,9 +540,9 @@ export interface Database {
           product_name?: string;
           product_unit?: string;
           total_diff?: number;
-          unit_id?: string | null;
+          unit_id: string;
           warehouse?: string;
-          warehouse_id?: string | null;
+          warehouse_id: string;
         };
         Update: {
           amount?: number;
@@ -223,32 +553,36 @@ export interface Database {
           product_name?: string;
           product_unit?: string;
           total_diff?: number;
-          unit_id?: string | null;
+          unit_id?: string;
           warehouse?: string;
-          warehouse_id?: string | null;
+          warehouse_id?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'finance_invoice_products_invoice_id_fkey';
             columns: ['invoice_id'];
+            isOneToOne: false;
             referencedRelation: 'finance_invoices';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'finance_invoice_products_product_id_fkey';
             columns: ['product_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_products';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'finance_invoice_products_unit_id_fkey';
             columns: ['unit_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'finance_invoice_products_warehouse_id_fkey';
             columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -289,12 +623,14 @@ export interface Database {
           {
             foreignKeyName: 'finance_invoice_promotions_invoice_id_fkey';
             columns: ['invoice_id'];
+            isOneToOne: false;
             referencedRelation: 'finance_invoices';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'finance_invoice_promotions_promo_id_fkey';
             columns: ['promo_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_promotions';
             referencedColumns: ['id'];
           },
@@ -302,6 +638,7 @@ export interface Database {
       };
       finance_invoices: {
         Row: {
+          category_id: string;
           completed_at: string | null;
           created_at: string | null;
           creator_id: string | null;
@@ -309,12 +646,17 @@ export interface Database {
           id: string;
           note: string | null;
           notice: string | null;
+          paid_amount: number;
           price: number;
           total_diff: number;
-          transaction_id: string;
+          transaction_id: string | null;
+          user_group_id: string | null;
+          valid_until: string | null;
+          wallet_id: string;
           ws_id: string;
         };
         Insert: {
+          category_id: string;
           completed_at?: string | null;
           created_at?: string | null;
           creator_id?: string | null;
@@ -322,12 +664,17 @@ export interface Database {
           id?: string;
           note?: string | null;
           notice?: string | null;
+          paid_amount?: number;
           price: number;
           total_diff?: number;
-          transaction_id: string;
+          transaction_id?: string | null;
+          user_group_id?: string | null;
+          valid_until?: string | null;
+          wallet_id: string;
           ws_id: string;
         };
         Update: {
+          category_id?: string;
           completed_at?: string | null;
           created_at?: string | null;
           creator_id?: string | null;
@@ -335,34 +682,84 @@ export interface Database {
           id?: string;
           note?: string | null;
           notice?: string | null;
+          paid_amount?: number;
           price?: number;
           total_diff?: number;
-          transaction_id?: string;
+          transaction_id?: string | null;
+          user_group_id?: string | null;
+          valid_until?: string | null;
+          wallet_id?: string;
           ws_id?: string;
         };
         Relationships: [
           {
+            foreignKeyName: 'finance_invoices_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'transaction_categories';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'finance_invoices_creator_id_fkey';
             columns: ['creator_id'];
-            referencedRelation: 'users';
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'finance_invoices_transaction_id_fkey';
             columns: ['transaction_id'];
+            isOneToOne: true;
             referencedRelation: 'wallet_transactions';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'healthcare_prescriptions_patient_id_fkey';
-            columns: ['customer_id'];
-            referencedRelation: 'workspace_users';
+            foreignKeyName: 'finance_invoices_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'healthcare_prescriptions_ws_id_fkey';
+            foreignKeyName: 'finance_invoices_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
         ];
@@ -387,6 +784,7 @@ export interface Database {
           {
             foreignKeyName: 'handles_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -412,12 +810,14 @@ export interface Database {
           {
             foreignKeyName: 'healthcare_checkup_vital_groups_checkup_id_fkey';
             columns: ['checkup_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_checkups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'healthcare_checkup_vital_groups_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_vital_groups';
             referencedColumns: ['id'];
           },
@@ -446,12 +846,14 @@ export interface Database {
           {
             foreignKeyName: 'healthcare_checkup_vitals_checkup_id_fkey';
             columns: ['checkup_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_checkups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'healthcare_checkup_vitals_vital_id_fkey';
             columns: ['vital_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_vitals';
             referencedColumns: ['id'];
           },
@@ -504,24 +906,35 @@ export interface Database {
           {
             foreignKeyName: 'healthcare_checkups_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'healthcare_checkups_diagnosis_id_fkey';
             columns: ['diagnosis_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_diagnoses';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'healthcare_checkups_patient_id_fkey';
             columns: ['patient_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
+            columns: ['patient_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'healthcare_checkups_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -556,6 +969,7 @@ export interface Database {
           {
             foreignKeyName: 'healthcare_diagnoses_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -590,6 +1004,7 @@ export interface Database {
           {
             foreignKeyName: 'healthcare_vital_groups_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -598,30 +1013,51 @@ export interface Database {
       healthcare_vitals: {
         Row: {
           created_at: string | null;
+          factor: number;
+          group_id: string | null;
           id: string;
           name: string;
-          unit: string | null;
+          unit: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
+          factor?: number;
+          group_id?: string | null;
           id?: string;
           name: string;
-          unit?: string | null;
+          unit: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
+          factor?: number;
+          group_id?: string | null;
           id?: string;
           name?: string;
-          unit?: string | null;
+          unit?: string;
           ws_id?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'healthcare_vitals_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_healthcare_vitals_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_healthcare_vitals_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
         ];
@@ -655,18 +1091,21 @@ export interface Database {
           {
             foreignKeyName: 'inventory_batch_products_batch_id_fkey';
             columns: ['batch_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_batches';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'inventory_batch_products_product_id_fkey';
             columns: ['product_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_products';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'inventory_batch_products_unit_id_fkey';
             columns: ['unit_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
@@ -701,12 +1140,14 @@ export interface Database {
           {
             foreignKeyName: 'inventory_batches_supplier_id_fkey';
             columns: ['supplier_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_suppliers';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'inventory_batches_warehouse_id_fkey';
             columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -744,18 +1185,21 @@ export interface Database {
           {
             foreignKeyName: 'inventory_products_product_id_fkey';
             columns: ['product_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_products';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'inventory_products_unit_id_fkey';
             columns: ['unit_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'inventory_products_warehouse_id_fkey';
             columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -784,6 +1228,7 @@ export interface Database {
           {
             foreignKeyName: 'inventory_suppliers_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -812,6 +1257,7 @@ export interface Database {
           {
             foreignKeyName: 'inventory_units_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -840,7 +1286,177 @@ export interface Database {
           {
             foreignKeyName: 'inventory_warehouses_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_together_guest_timeblocks: {
+        Row: {
+          created_at: string;
+          date: string;
+          end_time: string;
+          id: string;
+          plan_id: string;
+          start_time: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          date: string;
+          end_time: string;
+          id?: string;
+          plan_id: string;
+          start_time: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          date?: string;
+          end_time?: string;
+          id?: string;
+          plan_id?: string;
+          start_time?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_together_guest_timeblocks_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_guest_timeblocks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_guests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_together_guests: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          password_hash: string;
+          password_salt: string;
+          plan_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          password_hash: string;
+          password_salt: string;
+          plan_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          password_hash?: string;
+          password_salt?: string;
+          plan_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_together_guests_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_plans';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_together_plans: {
+        Row: {
+          created_at: string | null;
+          creator_id: string | null;
+          dates: string[];
+          description: string | null;
+          end_time: string;
+          id: string;
+          is_public: boolean;
+          name: string | null;
+          start_time: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          creator_id?: string | null;
+          dates: string[];
+          description?: string | null;
+          end_time: string;
+          id?: string;
+          is_public?: boolean;
+          name?: string | null;
+          start_time: string;
+        };
+        Update: {
+          created_at?: string | null;
+          creator_id?: string | null;
+          dates?: string[];
+          description?: string | null;
+          end_time?: string;
+          id?: string;
+          is_public?: boolean;
+          name?: string | null;
+          start_time?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_together_plans_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_together_user_timeblocks: {
+        Row: {
+          created_at: string;
+          date: string;
+          end_time: string;
+          id: string;
+          plan_id: string;
+          start_time: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          date: string;
+          end_time: string;
+          id?: string;
+          plan_id: string;
+          start_time: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          date?: string;
+          end_time?: string;
+          id?: string;
+          plan_id?: string;
+          start_time?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_together_user_timeblocks_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_user_timeblocks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -868,12 +1484,14 @@ export interface Database {
           {
             foreignKeyName: 'personal_notes_owner_id_fkey';
             columns: ['owner_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'personal_notes_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -902,25 +1520,94 @@ export interface Database {
           {
             foreignKeyName: 'product_categories_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
       };
-      schema_migrations: {
+      product_stock_changes: {
         Row: {
-          inserted_at: string | null;
-          version: number;
+          amount: number;
+          beneficiary_id: string | null;
+          created_at: string;
+          creator_id: string;
+          id: string;
+          product_id: string;
+          unit_id: string;
+          warehouse_id: string;
         };
         Insert: {
-          inserted_at?: string | null;
-          version: number;
+          amount: number;
+          beneficiary_id?: string | null;
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          product_id: string;
+          unit_id: string;
+          warehouse_id: string;
         };
         Update: {
-          inserted_at?: string | null;
-          version?: number;
+          amount?: number;
+          beneficiary_id?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          product_id?: string;
+          unit_id?: string;
+          warehouse_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'product_stock_changes_beneficiary_id_fkey';
+            columns: ['beneficiary_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_beneficiary_id_fkey';
+            columns: ['beneficiary_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_unit_id_fkey';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       task_assignees: {
         Row: {
@@ -942,12 +1629,14 @@ export interface Database {
           {
             foreignKeyName: 'task_assignees_task_id_fkey';
             columns: ['task_id'];
+            isOneToOne: false;
             referencedRelation: 'tasks';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'task_assignees_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -985,12 +1674,14 @@ export interface Database {
           {
             foreignKeyName: 'task_lists_board_id_fkey';
             columns: ['board_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_boards';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'task_lists_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -1043,12 +1734,14 @@ export interface Database {
           {
             foreignKeyName: 'tasks_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'tasks_list_id_fkey';
             columns: ['list_id'];
+            isOneToOne: false;
             referencedRelation: 'task_lists';
             referencedColumns: ['id'];
           },
@@ -1071,16 +1764,51 @@ export interface Database {
           {
             foreignKeyName: 'project_members_project_id_fkey';
             columns: ['team_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_teams';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'project_members_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
+      };
+      timezones: {
+        Row: {
+          abbr: string;
+          created_at: string | null;
+          id: string;
+          isdst: boolean;
+          offset: number;
+          text: string;
+          utc: string[];
+          value: string;
+        };
+        Insert: {
+          abbr: string;
+          created_at?: string | null;
+          id?: string;
+          isdst: boolean;
+          offset: number;
+          text: string;
+          utc: string[];
+          value: string;
+        };
+        Update: {
+          abbr?: string;
+          created_at?: string | null;
+          id?: string;
+          isdst?: boolean;
+          offset?: number;
+          text?: string;
+          utc?: string[];
+          value?: string;
+        };
+        Relationships: [];
       };
       transaction_categories: {
         Row: {
@@ -1108,6 +1836,7 @@ export interface Database {
           {
             foreignKeyName: 'transaction_categories_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1145,24 +1874,42 @@ export interface Database {
           {
             foreignKeyName: 'user_feedbacks_creator_id_fkey';
             columns: ['creator_id'];
-            referencedRelation: 'users';
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_feedbacks_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_feedbacks_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_feedbacks_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -1197,18 +1944,28 @@ export interface Database {
           {
             foreignKeyName: 'user_group_attendance_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_attendance_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_attendance_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -1234,18 +1991,21 @@ export interface Database {
           {
             foreignKeyName: 'user_group_indicators_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_indicators_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_indicators_indicator_id_fkey';
             columns: ['indicator_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_vitals';
             referencedColumns: ['id'];
           },
@@ -1274,24 +2034,28 @@ export interface Database {
           {
             foreignKeyName: 'user_group_linked_products_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_linked_products_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_linked_products_product_id_fkey';
             columns: ['product_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_products';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_linked_products_unit_id_fkey';
             columns: ['unit_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
@@ -1326,13 +2090,92 @@ export interface Database {
           {
             foreignKeyName: 'user_group_posts_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_group_posts_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_indicators: {
+        Row: {
+          created_at: string;
+          creator_id: string | null;
+          group_id: string;
+          indicator_id: string;
+          user_id: string;
+          value: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id?: string | null;
+          group_id: string;
+          indicator_id: string;
+          user_id: string;
+          value?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string;
+          indicator_id?: string;
+          user_id?: string;
+          value?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_indicators_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_indicator_id_fkey';
+            columns: ['indicator_id'];
+            isOneToOne: false;
+            referencedRelation: 'healthcare_vitals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
         ];
@@ -1357,12 +2200,21 @@ export interface Database {
           {
             foreignKeyName: 'user_linked_promotions_promo_id_fkey';
             columns: ['promo_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_promotions';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'user_linked_promotions_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_linked_promotions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -1391,6 +2243,7 @@ export interface Database {
           {
             foreignKeyName: 'user_private_details_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -1425,6 +2278,7 @@ export interface Database {
           {
             foreignKeyName: 'users_handle_fkey';
             columns: ['handle'];
+            isOneToOne: true;
             referencedRelation: 'handles';
             referencedColumns: ['value'];
           },
@@ -1450,12 +2304,14 @@ export interface Database {
           {
             foreignKeyName: 'vital_group_vitals_group_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_vital_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'vital_group_vitals_vital_id_fkey';
             columns: ['vital_id'];
+            isOneToOne: false;
             referencedRelation: 'healthcare_vitals';
             referencedColumns: ['id'];
           },
@@ -1466,8 +2322,10 @@ export interface Database {
           amount: number | null;
           category_id: string | null;
           created_at: string | null;
+          creator_id: string | null;
           description: string | null;
           id: string;
+          invoice_id: string | null;
           report_opt_in: boolean;
           taken_at: string;
           wallet_id: string;
@@ -1476,8 +2334,10 @@ export interface Database {
           amount?: number | null;
           category_id?: string | null;
           created_at?: string | null;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
+          invoice_id?: string | null;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id: string;
@@ -1486,8 +2346,10 @@ export interface Database {
           amount?: number | null;
           category_id?: string | null;
           created_at?: string | null;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
+          invoice_id?: string | null;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id?: string;
@@ -1496,12 +2358,35 @@ export interface Database {
           {
             foreignKeyName: 'wallet_transactions_category_id_fkey';
             columns: ['category_id'];
+            isOneToOne: false;
             referencedRelation: 'transaction_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: true;
+            referencedRelation: 'finance_invoices';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'wallet_transactions_wallet_id_fkey';
             columns: ['wallet_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
@@ -1518,6 +2403,38 @@ export interface Database {
           id?: string;
         };
         Relationships: [];
+      };
+      workspace_api_keys: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          value: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          value: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          value?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_api_keys_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       workspace_boards: {
         Row: {
@@ -1551,12 +2468,14 @@ export interface Database {
           {
             foreignKeyName: 'project_boards_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_boards_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1597,12 +2516,14 @@ export interface Database {
           {
             foreignKeyName: 'workspace_calendar_events_color_fkey';
             columns: ['color'];
+            isOneToOne: false;
             referencedRelation: 'calendar_event_colors';
             referencedColumns: ['value'];
           },
           {
             foreignKeyName: 'workspace_calendar_events_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1646,6 +2567,7 @@ export interface Database {
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1677,18 +2599,21 @@ export interface Database {
           {
             foreignKeyName: 'workspace_invites_role_fkey';
             columns: ['role'];
+            isOneToOne: false;
             referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_invites_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1723,18 +2648,21 @@ export interface Database {
           {
             foreignKeyName: 'workspace_members_role_fkey';
             columns: ['role'];
+            isOneToOne: false;
             referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_members_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_members_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1757,8 +2685,10 @@ export interface Database {
       };
       workspace_products: {
         Row: {
-          category_id: string | null;
+          avatar_url: string | null;
+          category_id: string;
           created_at: string | null;
+          creator_id: string | null;
           description: string | null;
           id: string;
           manufacturer: string | null;
@@ -1767,8 +2697,10 @@ export interface Database {
           ws_id: string;
         };
         Insert: {
-          category_id?: string | null;
+          avatar_url?: string | null;
+          category_id: string;
           created_at?: string | null;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
           manufacturer?: string | null;
@@ -1777,8 +2709,10 @@ export interface Database {
           ws_id: string;
         };
         Update: {
-          category_id?: string | null;
+          avatar_url?: string | null;
+          category_id?: string;
           created_at?: string | null;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
           manufacturer?: string | null;
@@ -1788,14 +2722,30 @@ export interface Database {
         };
         Relationships: [
           {
+            foreignKeyName: 'public_workspace_products_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_products_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'workspace_products_category_id_fkey';
             columns: ['category_id'];
+            isOneToOne: false;
             referencedRelation: 'product_categories';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_products_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1805,6 +2755,7 @@ export interface Database {
         Row: {
           code: string | null;
           created_at: string;
+          creator_id: string | null;
           description: string | null;
           id: string;
           name: string | null;
@@ -1815,6 +2766,7 @@ export interface Database {
         Insert: {
           code?: string | null;
           created_at?: string;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
           name?: string | null;
@@ -1825,6 +2777,7 @@ export interface Database {
         Update: {
           code?: string | null;
           created_at?: string;
+          creator_id?: string | null;
           description?: string | null;
           id?: string;
           name?: string | null;
@@ -1834,8 +2787,23 @@ export interface Database {
         };
         Relationships: [
           {
+            foreignKeyName: 'public_workspace_promotions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_promotions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'workspace_promotions_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1867,6 +2835,7 @@ export interface Database {
           {
             foreignKeyName: 'workspace_secrets_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1898,6 +2867,7 @@ export interface Database {
           {
             foreignKeyName: 'workspace_teams_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1905,27 +2875,43 @@ export interface Database {
       };
       workspace_user_groups: {
         Row: {
+          archived: boolean;
           created_at: string | null;
+          ending_date: string | null;
           id: string;
           name: string;
+          notes: string | null;
+          sessions: string[] | null;
+          starting_date: string | null;
           ws_id: string;
         };
         Insert: {
+          archived?: boolean;
           created_at?: string | null;
+          ending_date?: string | null;
           id?: string;
           name: string;
+          notes?: string | null;
+          sessions?: string[] | null;
+          starting_date?: string | null;
           ws_id: string;
         };
         Update: {
+          archived?: boolean;
           created_at?: string | null;
+          ending_date?: string | null;
           id?: string;
           name?: string;
+          notes?: string | null;
+          sessions?: string[] | null;
+          starting_date?: string | null;
           ws_id?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'workspace_user_roles_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -1935,34 +2921,47 @@ export interface Database {
         Row: {
           created_at: string | null;
           group_id: string;
+          role: string | null;
           user_id: string;
         };
         Insert: {
           created_at?: string | null;
           group_id: string;
+          role?: string | null;
           user_id: string;
         };
         Update: {
           created_at?: string | null;
           group_id?: string;
+          role?: string | null;
           user_id?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
             columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_amount';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -1991,18 +2990,94 @@ export interface Database {
           {
             foreignKeyName: 'workspace_user_linked_users_platform_user_id_fkey';
             columns: ['platform_user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_user_linked_users_virtual_user_id_fkey';
             columns: ['virtual_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_virtual_user_id_fkey';
+            columns: ['virtual_user_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_user_linked_users_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_status_changes: {
+        Row: {
+          archived: boolean;
+          archived_until: string | null;
+          created_at: string;
+          creator_id: string;
+          id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived: boolean;
+          archived_until?: string | null;
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean;
+          archived_until?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -2028,6 +3103,8 @@ export interface Database {
           national_id: string | null;
           note: string | null;
           phone: string | null;
+          updated_at: string;
+          updated_by: string | null;
           ws_id: string;
         };
         Insert: {
@@ -2049,6 +3126,8 @@ export interface Database {
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
           ws_id: string;
         };
         Update: {
@@ -2070,18 +3149,43 @@ export interface Database {
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
           ws_id?: string;
         };
         Relationships: [
           {
+            foreignKeyName: 'public_workspace_users_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_users_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'workspace_users_created_by_fkey';
             columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_users_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_users_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -2107,12 +3211,14 @@ export interface Database {
           {
             foreignKeyName: 'workspace_wallet_transfers_from_transaction_id_fkey';
             columns: ['from_transaction_id'];
+            isOneToOne: false;
             referencedRelation: 'wallet_transactions';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_wallet_transfers_to_transaction_id_fkey';
             columns: ['to_transaction_id'];
+            isOneToOne: false;
             referencedRelation: 'wallet_transactions';
             referencedColumns: ['id'];
           },
@@ -2156,18 +3262,21 @@ export interface Database {
           {
             foreignKeyName: 'workspace_wallets_currency_fkey';
             columns: ['currency'];
+            isOneToOne: false;
             referencedRelation: 'currencies';
             referencedColumns: ['code'];
           },
           {
             foreignKeyName: 'workspace_wallets_type_fkey';
             columns: ['type'];
+            isOneToOne: false;
             referencedRelation: 'wallet_types';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_wallets_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -2208,6 +3317,7 @@ export interface Database {
           {
             foreignKeyName: 'workspaces_preset_fkey';
             columns: ['preset'];
+            isOneToOne: false;
             referencedRelation: 'workspace_presets';
             referencedColumns: ['name'];
           },
@@ -2259,6 +3369,7 @@ export interface Database {
           {
             foreignKeyName: 'record_version_auth_uid_fkey';
             columns: ['auth_uid'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -2273,6 +3384,23 @@ export interface Database {
           handle: string | null;
           participant_id: string | null;
           type: string | null;
+        };
+        Relationships: [];
+      };
+      distinct_invoice_creators: {
+        Row: {
+          display_name: string | null;
+          id: string | null;
+        };
+        Relationships: [];
+      };
+      meet_together_users: {
+        Row: {
+          display_name: string | null;
+          is_guest: boolean | null;
+          plan_id: string | null;
+          timeblock_count: number | null;
+          user_id: string | null;
         };
         Relationships: [];
       };
@@ -2303,6 +3431,7 @@ export interface Database {
           {
             foreignKeyName: 'workspace_user_roles_ws_id_fkey';
             columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -2310,6 +3439,14 @@ export interface Database {
       };
     };
     Functions: {
+      create_ai_chat: {
+        Args: {
+          title: string;
+          message: string;
+          model: string;
+        };
+        Returns: string;
+      };
       get_finance_invoices_count: {
         Args: {
           ws_id: string;
@@ -2527,6 +3664,13 @@ export interface Database {
         };
         Returns: boolean;
       };
+      insert_ai_chat_message: {
+        Args: {
+          message: string;
+          chat_id: string;
+        };
+        Returns: undefined;
+      };
       is_list_accessible: {
         Args: {
           _list_id: string;
@@ -2601,7 +3745,7 @@ export interface Database {
         Args: {
           '': string;
         };
-        Returns: unknown;
+        Returns: string[];
       };
       transactions_have_same_abs_amount: {
         Args: {
@@ -2619,10 +3763,92 @@ export interface Database {
       };
     };
     Enums: {
-      [_ in never]: never;
+      chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
     };
     CompositeTypes: {
       [_ in never]: never;
     };
   };
-}
+};
+
+type PublicSchema = Database[Extract<keyof Database, 'public'>];
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema['Tables'] & PublicSchema['Views'])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+        Database[PublicTableNameOrOptions['schema']]['Views'])
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+      Database[PublicTableNameOrOptions['schema']]['Views'])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] &
+        PublicSchema['Views'])
+    ? (PublicSchema['Tables'] &
+        PublicSchema['Views'])[PublicTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema['Tables']
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema['Tables']
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema['Enums']
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions['schema']]['Enums']
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
+    ? PublicSchema['Enums'][PublicEnumNameOrOptions]
+    : never;
