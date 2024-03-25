@@ -2,7 +2,7 @@ import { type UseChatHelpers } from 'ai/react';
 
 import { Button } from '@/components/ui/button';
 import { PromptForm } from '@/components/prompt-form';
-import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
+import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
 import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
@@ -11,6 +11,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
 import { Message } from 'ai';
 import React from 'react';
+import { ScrollToTopButton } from './scroll-to-top-button';
 
 export interface ChatPanelProps
   extends Pick<
@@ -54,7 +55,10 @@ export function ChatPanel({
 
   return (
     <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
-      <ButtonScrollToBottom />
+      <div className="absolute bottom-20 right-4 z-10 grid gap-2 md:bottom-28 md:right-8">
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
+      </div>
 
       <div className="mx-auto sm:px-4 lg:max-w-4xl xl:max-w-6xl">
         <div className="relative mb-2 flex items-center justify-center gap-2">
