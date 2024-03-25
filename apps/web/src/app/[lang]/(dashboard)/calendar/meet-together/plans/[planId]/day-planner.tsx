@@ -26,12 +26,12 @@ export default function DayPlanner({
   return (
     <div>
       <div className="pointer-events-none select-none p-1">
-        <div className="text-xs">
+        <div className="line-clamp-1 text-xs">
           {dayjs(date)
             .locale(lang)
             .format(lang === 'vi' ? 'DD/MM' : 'MMM D')}
         </div>
-        <div className="text-lg font-semibold">
+        <div className="font-semibold">
           {dayjs(date).locale(lang).format('ddd')}
         </div>
       </div>

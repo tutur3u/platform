@@ -54,7 +54,7 @@ export default function DatePlanner({
             }
           : undefined
       }
-      className="mt-4 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] items-start justify-center gap-2 md:w-96 md:max-w-96 lg:w-[32rem] lg:max-w-lg xl:w-[42rem] xl:max-w-2xl"
+      className="mt-4 flex items-start justify-center gap-2"
     >
       <TimeColumn
         id={editable ? 'self' : 'group'}
