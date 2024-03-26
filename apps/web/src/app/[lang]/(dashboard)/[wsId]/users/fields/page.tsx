@@ -1,12 +1,14 @@
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { getUserColumns } from '@/data/columns/users';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
+import { Separator } from '@/components/ui/separator';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
+import { cookies } from 'next/headers';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { apiKeyColumns } from './columns';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import UserFieldEditDialog from './edit-dialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,65 +27,66 @@ export default async function WorkspaceUserFieldsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { t } = useTranslation('ws-secrets');
-
-  const { data, count } = await getData(wsId, searchParams);
-  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/${u.id}` }));
+  const { data: apiKeys, count } = await getUserFields(wsId, searchParams);
+  const { t } = useTranslation('ws-user-fields');
 
   return (
     <>
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold">{t('user_fields')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
+          <h1 className="text-lg font-bold md:text-2xl">{t('module')}</h1>
+          <p className="text-foreground/80">{t('module_description')}</p>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          {/* <SecretEditDialog
+          <UserFieldEditDialog
             data={{
               ws_id: wsId,
             }}
-            trigger={ */}
-          <Button>
-            <Plus className="mr-2 h-5 w-5" />
-            {t('create_field')}
-          </Button>
-          {/* }
-            submitLabel={t('create_secret')}
-          /> */}
+            trigger={
+              <Button className="w-full md:w-fit">
+                <Plus className="mr-2 h-5 w-5" />
+                {t('create_field')}
+              </Button>
+            }
+            submitLabel={t('create_field')}
+          />
         </div>
       </div>
       <Separator className="my-4" />
       <DataTable
-        data={users}
-        namespace="user-data-table"
-        columnGenerator={getUserColumns}
+        columnGenerator={apiKeyColumns}
+        namespace="user-field-data-table"
+        data={apiKeys}
         count={count}
         defaultVisibility={{
           id: false,
+          default_value: false,
+          notes: false,
+          created_at: false,
         }}
       />
     </>
   );
 }
 
-async function getData(
+async function getUserFields(
   wsId: string,
   {
     q,
     page = '1',
     pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+  }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
     .from('workspace_user_fields')
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -96,11 +99,7 @@ async function getData(
   }
 
   const { data, error, count } = await queryBuilder;
+  if (error) throw error;
 
-  if (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
-  }
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data, count } as { data: WorkspaceUserField[]; count: number };
 }

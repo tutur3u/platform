@@ -1,0 +1,14 @@
+{
+  "module": "Trường thông tin người dùng",
+  "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",
+  "name": "Tên",
+  "description": "Mô tả",
+  "type": "Loại dữ liệu",
+  "possible_values": "Giá trị khả dụng",
+  "default_value": "Giá trị mặc định",
+  "notes": "Ghi chú",
+  "create_field": "Tạo trường",
+  "edit_field": "Sửa trường",
+  "add_new_user_field": "Thêm trường người dùng mới cho không gian làm việc này.",
+  "edit_existing_user_field": "Chỉnh sửa trường người dùng hiện tại cho không gian làm việc này."
+}

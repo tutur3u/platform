@@ -1,0 +1,10 @@
+{
+  "id": "ID",
+  "name": "Name",
+  "description": "Description",
+  "type": "Type",
+  "possible_values": "Possible values",
+  "default_value": "Default value",
+  "notes": "Notes",
+  "created_at": "Created at"
+}

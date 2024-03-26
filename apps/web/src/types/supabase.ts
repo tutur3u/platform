@@ -517,6 +517,21 @@ export type Database = {
           },
         ];
       };
+      field_types: {
+        Row: {
+          enabled: boolean;
+          id: string;
+        };
+        Insert: {
+          enabled?: boolean;
+          id: string;
+        };
+        Update: {
+          enabled?: boolean;
+          id?: string;
+        };
+        Relationships: [];
+      };
       finance_invoice_products: {
         Row: {
           amount: number;
@@ -2866,6 +2881,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'workspace_teams_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_fields: {
+        Row: {
+          created_at: string;
+          default_value: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          possible_values: string[] | null;
+          type: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_value?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          possible_values?: string[] | null;
+          type: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          default_value?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          possible_values?: string[] | null;
+          type?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_user_fields_type_fkey';
+            columns: ['type'];
+            isOneToOne: false;
+            referencedRelation: 'field_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_user_fields_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

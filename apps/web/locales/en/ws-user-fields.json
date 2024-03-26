@@ -1,0 +1,14 @@
+{
+  "module": "User Fields",
+  "module_description": "User fields are used to store additional information about users in your workspace.",
+  "name": "Name",
+  "description": "Description",
+  "type": "Type",
+  "possible_values": "Possible Values",
+  "default_value": "Default Value",
+  "notes": "Notes",
+  "create_field": "Create field",
+  "edit_field": "Edit field",
+  "add_new_user_field": "Add a new user field for this workspace.",
+  "edit_existing_user_field": "Edit an existing user field for this workspace."
+}

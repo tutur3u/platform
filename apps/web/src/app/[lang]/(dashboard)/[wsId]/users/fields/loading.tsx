@@ -1,21 +1,17 @@
-import { getUserColumns } from '@/data/columns/users';
+import { Separator } from '@/components/ui/separator';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 
 export default function Loading() {
   return (
-    <DataTable
-      namespace="user-data-table"
-      columnGenerator={getUserColumns}
-      defaultVisibility={{
-        id: false,
-        avatar_url: false,
-        ethnicity: false,
-        guardian: false,
-        address: false,
-        national_id: false,
-        note: false,
-        linked_users: false,
-      }}
-    />
+    <>
+      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 text-transparent md:flex-row md:items-start">
+        <div>
+          <h1 className="text-2xl font-bold">api keys</h1>
+          <p className="">description</p>
+        </div>
+      </div>
+      <Separator className="my-4" />
+      <DataTable namespace="secret-data-table" />
+    </>
   );
 }
