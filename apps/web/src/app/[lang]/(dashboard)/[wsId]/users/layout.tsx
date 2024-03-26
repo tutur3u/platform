@@ -24,8 +24,8 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('list'),
-      href: `/${wsId}/users/list`,
+      name: t('database'),
+      href: `/${wsId}/users/database`,
     },
     {
       name: t('groups'),
