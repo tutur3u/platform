@@ -134,7 +134,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "canary",
     "@next/eslint-plugin-next": "canary",
-    "@tailwindcss/typography": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.11",
     "@tanstack/eslint-plugin-query": "^5.28.6",
     "@tanstack/react-query-devtools": "^5.28.8",
     "@types/cookie": "^0.6.0",
