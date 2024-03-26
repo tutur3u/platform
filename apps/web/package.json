@@ -142,7 +142,7 @@
     "@types/lodash": "^4.17.0",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^20.11.30",
-    "@types/react": "^18.2.70",
+    "@types/react": "^18.2.71",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.22",
     "@types/react-resizable": "^3.0.7",
