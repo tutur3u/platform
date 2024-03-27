@@ -35,6 +35,8 @@ import {
 import useSWR from 'swr';
 import { fetcher } from '@/utils/fetcher';
 import { useState } from 'react';
+import { DatePicker } from '@/components/row-actions/users/date-picker';
+import dayjs from 'dayjs';
 interface Props {
   data: WorkspaceUserField;
   submitLabel?: string;
@@ -186,9 +188,7 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                                     form.setValue('possible_values', ['']);
                                   }
                                 }}
-                                disabled={['DATE', 'DATETIME'].includes(
-                                  type.id
-                                )}
+                                disabled={['DATETIME'].includes(type.id)}
                               >
                                 <CheckIcon
                                   className={cn(
@@ -230,23 +230,37 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                   {field.value?.map((value, index) => (
                     <div key={index} className="flex w-full gap-1">
                       <FormControl>
-                        <Input
-                          type={
-                            form.getValues('type') === 'NUMBER'
-                              ? 'number'
-                              : 'text'
-                          }
-                          placeholder={t('value')}
-                          autoComplete="off"
-                          className="w-full"
-                          value={value}
-                          onChange={(e) => {
-                            const values = field.value || [];
-                            values[index] = e.target.value;
-                            form.setValue('possible_values', values);
-                          }}
-                          disabled={form.getValues('type') === 'BOOLEAN'}
-                        />
+                        {form.getValues('type') === 'DATE' ? (
+                          <DatePicker
+                            defaultValue={value ? new Date(value) : undefined}
+                            onValueChange={(value) => {
+                              const values = field.value || [];
+                              values[index] = value
+                                ? dayjs(value).format('YYYY-MM-DD')
+                                : '';
+                              form.setValue('possible_values', values);
+                            }}
+                            className="w-full"
+                          />
+                        ) : (
+                          <Input
+                            type={
+                              form.getValues('type') === 'NUMBER'
+                                ? 'number'
+                                : 'text'
+                            }
+                            placeholder={t('value')}
+                            autoComplete="off"
+                            className="w-full"
+                            value={value}
+                            onChange={(e) => {
+                              const values = field.value || [];
+                              values[index] = e.target.value;
+                              form.setValue('possible_values', values);
+                            }}
+                            disabled={form.getValues('type') === 'BOOLEAN'}
+                          />
+                        )}
                       </FormControl>
                       {form.getValues('type') !== 'BOOLEAN' && (
                         <Button
