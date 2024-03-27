@@ -92,7 +92,7 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Auth templates
 [auth.email.template.confirmation]
-subject = "Confirm your Tuturuuu account"
+subject = "Confirm your NCT Hub account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
@@ -100,15 +100,15 @@ subject = "Email Change Confirmation"
 content_path = "./supabase/templates/email_change.html"
 
 [auth.email.template.invite]
-subject = "Invitation to Tuturuuu"
+subject = "Invitation to NCT Hub"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Tuturuuu Verification Code"
+subject = "NCT Hub Verification Code"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.recovery]
-subject = "Tuturuuu Password Recovery"
+subject = "NCT Hub Password Recovery"
 content_path = "./supabase/templates/recovery.html"
 
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
