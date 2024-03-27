@@ -108,26 +108,6 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
 
           <FormField
             control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('description')}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder={t('description')}
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Separator />
-
-          <FormField
-            control={form.control}
             name="type"
             render={({ field }) => (
               <FormItem className="flex flex-col">
@@ -210,6 +190,8 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
               </FormItem>
             )}
           />
+
+          <Separator />
 
           <FormField
             control={form.control}
@@ -321,6 +303,24 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
           />
 
           <Separator />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('description')}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={t('description')}
+                    autoComplete="off"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
