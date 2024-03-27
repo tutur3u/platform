@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { apiKeyColumns } from './columns';
+import { userFieldColumns } from './columns';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import UserFieldEditDialog from './edit-dialog';
 
@@ -27,7 +27,7 @@ export default async function WorkspaceUserFieldsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: apiKeys, count } = await getUserFields(wsId, searchParams);
+  const { data: userFields, count } = await getUserFields(wsId, searchParams);
   const { t } = useTranslation('ws-user-fields');
 
   return (
@@ -55,12 +55,13 @@ export default async function WorkspaceUserFieldsPage({
       </div>
       <Separator className="my-4" />
       <DataTable
-        columnGenerator={apiKeyColumns}
+        columnGenerator={userFieldColumns}
         namespace="user-field-data-table"
-        data={apiKeys}
+        data={userFields}
         count={count}
         defaultVisibility={{
           id: false,
+          description: false,
           default_value: false,
           notes: false,
           created_at: false,

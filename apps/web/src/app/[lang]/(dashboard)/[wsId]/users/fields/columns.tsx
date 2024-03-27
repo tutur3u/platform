@@ -4,12 +4,14 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import moment from 'moment';
 import { Translate } from 'next-translate';
-import { ApiKeyRowActions } from './row-actions';
+import { UserFieldRowActions } from './row-actions';
 
-export const apiKeyColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
+export const userFieldColumns = (
+  t: Translate
+): ColumnDef<WorkspaceUserField>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -71,7 +73,11 @@ export const apiKeyColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('type') || '-'}
+        {row.getValue('type')
+          ? t(
+              `ws-user-fields:${(row.getValue('type') as string).toLowerCase()}`
+            )
+          : '-'}
       </div>
     ),
   },
@@ -81,8 +87,21 @@ export const apiKeyColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
       <DataTableColumnHeader column={column} title={t('possible_values')} />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('possible_values') || '-'}
+      <div className="line-clamp-1 max-w-[12rem] break-all">
+        {(row.getValue('possible_values') as string[] | null)?.length ? (
+          <div className="flex flex-wrap gap-1">
+            {(row.getValue('possible_values') as string[]).map((value) => (
+              <div
+                key={value}
+                className="border-foreground/10 bg-foreground/5 line-clamp-1 max-w-[8rem] break-all rounded-lg border p-1"
+              >
+                {value}
+              </div>
+            ))}
+          </div>
+        ) : (
+          '-'
+        )}
       </div>
     ),
   },
@@ -124,6 +143,6 @@ export const apiKeyColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader column={column} />,
-    cell: ({ row }) => <ApiKeyRowActions row={row} />,
+    cell: ({ row }) => <UserFieldRowActions row={row} />,
   },
 ];

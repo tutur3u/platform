@@ -3,12 +3,23 @@
   "module_description": "User fields are used to store additional information about users in your workspace.",
   "name": "Name",
   "description": "Description",
+  "select_type": "Select a type",
   "type": "Type",
   "possible_values": "Possible Values",
+  "possible_values_description": "If you want to have a dropdown list of possible values for this field, enter them here, one per line.",
+  "add_possible_value": "Add possible value",
   "default_value": "Default Value",
+  "value": "Value",
   "notes": "Notes",
   "create_field": "Create field",
   "edit_field": "Edit field",
   "add_new_user_field": "Add a new user field for this workspace.",
-  "edit_existing_user_field": "Edit an existing user field for this workspace."
+  "edit_existing_user_field": "Edit an existing user field for this workspace.",
+
+  "null": "None",
+  "boolean": "Boolean",
+  "text": "Text",
+  "number": "Number",
+  "date": "Date",
+  "datetime": "Date and Time"
 }

@@ -16,5 +16,7 @@
   "address": "Địa chỉ",
   "note": "Ghi chú",
   "linked_users": "Người dùng liên kết",
-  "linked_to": "Đã liên kết với"
+  "linked_to": "Đã liên kết với",
+  "created_at": "Ngày tạo",
+  "updated_at": "Ngày cập nhật cuối"
 }

@@ -14,23 +14,23 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { toast } from '@/components/ui/use-toast';
-import ApiKeyEditDialog from './edit-dialog';
+import UserFieldEditDialog from './edit-dialog';
 
-interface ApiKeyRowActionsProps {
-  row: Row<WorkspaceApiKey>;
+interface UserFieldRowActionsProps {
+  row: Row<WorkspaceUserField>;
 }
 
-export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
+export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-api-keys');
+  const { t } = useTranslation('ws-user-fields');
 
-  const apiKey = row.original;
+  const userField = row.original;
 
-  const deleteApiKey = async () => {
+  const deleteUserField = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${apiKey.ws_id}/api-keys/${apiKey.id}`,
+      `/api/v1/workspaces/${userField.ws_id}/users/fields/${userField.id}`,
       {
         method: 'DELETE',
       }
@@ -49,7 +49,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!apiKey.id || !apiKey.ws_id) return null;
+  if (!userField.id || !userField.ws_id) return null;
 
   return (
     <>
@@ -68,14 +68,14 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
             Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteApiKey}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteUserField}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ApiKeyEditDialog
-        data={apiKey}
+      <UserFieldEditDialog
+        data={userField}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_key')}
+        submitLabel={t('edit_field')}
       />
     </>
   );

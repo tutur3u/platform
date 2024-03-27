@@ -14,12 +14,14 @@ interface DataTableToolbarProps<TData> {
   editContent?: ReactNode;
   namespace: string;
   table: Table<TData>;
+  extraColumns?: any[];
 }
 
 export function DataTableToolbar<TData>({
   editContent,
   namespace,
   table,
+  extraColumns,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -55,7 +57,11 @@ export function DataTableToolbar<TData>({
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
         {editContent && <DataTableCreateButton editContent={editContent} />}
         <DataTableRefreshButton />
-        <DataTableViewOptions namespace={namespace} table={table} />
+        <DataTableViewOptions
+          namespace={namespace}
+          table={table}
+          extraColumns={extraColumns}
+        />
       </div>
     </div>
   );

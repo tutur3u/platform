@@ -16,8 +16,12 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { UserRowActions } from '@/components/row-actions/users';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 
-export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
+export const getUserColumns = (
+  t: Translate,
+  extraFields?: WorkspaceUserField[]
+): ColumnDef<WorkspaceUser>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -124,7 +128,9 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
           <TooltipProvider>
             <Tooltip delayDuration={0}>
               <TooltipTrigger className="font-semibold underline">
-                {row.getValue('display_name') || '-'}
+                {row.getValue('display_name') ||
+                  row.getValue('full_name') ||
+                  '-'}
               </TooltipTrigger>
               <TooltipContent className="text-center">
                 {t('linked_to')}{' '}
@@ -149,7 +155,7 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
             </Tooltip>
           </TooltipProvider>
         ) : (
-          row.getValue('display_name') || '-'
+          row.getValue('display_name') || row.getValue('full_name') || '-'
         )}
       </Link>
     ),
@@ -267,6 +273,28 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
       </div>
     ),
   },
+  {
+    accessorKey: 'created_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('created_at')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'updated_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('updated_at')} />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {moment(row.getValue('updated_at')).format('DD/MM/YYYY')}
+      </div>
+    ),
+  },
   // {
   //   accessorKey: 'status',
   //   header: ({ column }) => (
@@ -321,6 +349,18 @@ export const getUserColumns = (t: Translate): ColumnDef<WorkspaceUser>[] => [
   //     return value.includes(row.getValue(id));
   //   },
   // },
+  ...((extraFields?.map((field) => ({
+    id: field.id,
+    accessorKey: field.id,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={field.name} />
+    ),
+    cell: ({ row: _ }) => (
+      <div className="line-clamp-1 w-[8rem]">
+        {/* {row.getValue(field.id) || '-'} */}-
+      </div>
+    ),
+  })) || []) as ColumnDef<WorkspaceUser>[]),
   {
     id: 'actions',
     cell: ({ row }) => <UserRowActions row={row} href={row.original.href} />,
