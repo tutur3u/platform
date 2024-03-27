@@ -352,8 +352,8 @@ importers:
         specifier: canary
         version: 14.2.0-canary.44
       '@tailwindcss/typography':
-        specifier: ^0.5.11
-        version: 0.5.11(tailwindcss@3.4.2)
+        specifier: ^0.5.12
+        version: 0.5.12(tailwindcss@3.4.2)
       '@tanstack/eslint-plugin-query':
         specifier: ^5.28.6
         version: 5.28.6(eslint@8.57.0)(typescript@5.4.3)
@@ -3031,8 +3031,8 @@ packages:
     resolution: {integrity: sha512-CpZGyS1IVJKFcv88yZ2sYZIpWWhQ6oy76BQKQ5SF0fGgOqgyqKdBGG/YGyyMW632on37MX7VqQIMTzN/uQqmFg==}
     dev: false
 
-  /@tailwindcss/typography@0.5.11(tailwindcss@3.4.2):
-    resolution: {integrity: sha512-ahOULqBQGCdSqL3vMNjH1R5cU2gxTh059fJIKF2enHXE8c/s3yKGDSKZ1+4poCr7BZRREJS8n5cCFmwsW4Ok3A==}
+  /@tailwindcss/typography@0.5.12(tailwindcss@3.4.2):
+    resolution: {integrity: sha512-CNwpBpconcP7ppxmuq3qvaCxiRWnbhANpY/ruH4L5qs2GCiVDJXde/pjj2HWPV1+Q4G9+V/etrwUYopdcjAlyg==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
     dependencies:
