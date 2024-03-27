@@ -41,7 +41,7 @@ export function DefaultUserDropdown({ user }: { user: any }) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
             <Link
-              href="/settings"
+              href="/settings/account"
               className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
             >
               {user?.display_name || 'No name'}
@@ -53,7 +53,7 @@ export function DefaultUserDropdown({ user }: { user: any }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/calendar/plans">
+          <Link href="/calendar/meet-together">
             <DropdownMenuItem className="cursor-pointer">
               <CalendarSearch className="mr-2 h-4 w-4" />
               <span>Meet Together</span>
@@ -73,7 +73,7 @@ export function DefaultUserDropdown({ user }: { user: any }) {
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <Link href="/settings">
+          <Link href="/settings/account">
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
