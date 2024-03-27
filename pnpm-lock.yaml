@@ -222,8 +222,8 @@ importers:
         specifier: ^0.1.13
         version: 0.1.13(next@14.2.0-canary.44)(react@18.2.0)
       ai:
-        specifier: ^3.0.14
-        version: 3.0.14(react@18.2.0)(solid-js@1.8.16)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4)
+        specifier: ^3.0.15
+        version: 3.0.15(react@18.2.0)(solid-js@1.8.16)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -353,13 +353,13 @@ importers:
         version: 14.2.0-canary.44
       '@tailwindcss/typography':
         specifier: ^0.5.11
-        version: 0.5.11(tailwindcss@3.4.1)
+        version: 0.5.11(tailwindcss@3.4.2)
       '@tanstack/eslint-plugin-query':
         specifier: ^5.28.6
         version: 5.28.6(eslint@8.57.0)(typescript@5.4.3)
       '@tanstack/react-query-devtools':
-        specifier: ^5.28.9
-        version: 5.28.9(@tanstack/react-query@5.28.9)(react@18.2.0)
+        specifier: ^5.28.10
+        version: 5.28.10(@tanstack/react-query@5.28.9)(react@18.2.0)
       '@types/cookie':
         specifier: ^0.6.0
         version: 0.6.0
@@ -427,20 +427,20 @@ importers:
         specifier: ^8.4.38
         version: 8.4.38
       supabase:
-        specifier: ^1.152.2
-        version: 1.152.2
+        specifier: ^1.152.4
+        version: 1.152.4
       tailwind-config:
         specifier: workspace:*
         version: link:../../packages/tailwind-config
       tailwind-scrollbar:
         specifier: ^3.1.0
-        version: 3.1.0(tailwindcss@3.4.1)
+        version: 3.1.0(tailwindcss@3.4.2)
       tailwindcss:
-        specifier: ^3.4.1
-        version: 3.4.1
+        specifier: ^3.4.2
+        version: 3.4.2
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.1)
+        version: 1.0.7(tailwindcss@3.4.2)
       tsconfig:
         specifier: workspace:*
         version: link:../../packages/tsconfig
@@ -471,13 +471,13 @@ importers:
     devDependencies:
       tailwind-scrollbar:
         specifier: ^3.1.0
-        version: 3.1.0(tailwindcss@3.4.1)
+        version: 3.1.0(tailwindcss@3.4.2)
       tailwindcss:
-        specifier: ^3.4.1
-        version: 3.4.1
+        specifier: ^3.4.2
+        version: 3.4.2
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.1)
+        version: 1.0.7(tailwindcss@3.4.2)
 
   packages/tsconfig: {}
 
@@ -3031,7 +3031,7 @@ packages:
     resolution: {integrity: sha512-CpZGyS1IVJKFcv88yZ2sYZIpWWhQ6oy76BQKQ5SF0fGgOqgyqKdBGG/YGyyMW632on37MX7VqQIMTzN/uQqmFg==}
     dev: false
 
-  /@tailwindcss/typography@0.5.11(tailwindcss@3.4.1):
+  /@tailwindcss/typography@0.5.11(tailwindcss@3.4.2):
     resolution: {integrity: sha512-ahOULqBQGCdSqL3vMNjH1R5cU2gxTh059fJIKF2enHXE8c/s3yKGDSKZ1+4poCr7BZRREJS8n5cCFmwsW4Ok3A==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
@@ -3040,7 +3040,7 @@ packages:
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       postcss-selector-parser: 6.0.10
-      tailwindcss: 3.4.1
+      tailwindcss: 3.4.2
     dev: true
 
   /@tanstack/eslint-plugin-query@5.28.6(eslint@8.57.0)(typescript@5.4.3):
@@ -3058,17 +3058,17 @@ packages:
   /@tanstack/query-core@5.28.9:
     resolution: {integrity: sha512-hNlfCiqZevr3GRVPXS3MhaGW5hjcxvCsIQ4q6ff7EPlvFwYZaS+0d9EIIgofnegDaU2BbCDlyURoYfRl5rmzow==}
 
-  /@tanstack/query-devtools@5.28.6:
-    resolution: {integrity: sha512-DXJGqbrsteWU9XehDf6s3k3QxwQqGUlNXpitsF1xbwkYBcDaAakiC6hjJSMfPBHOrbZCnWfAGCVf4vh2D75/xw==}
+  /@tanstack/query-devtools@5.28.10:
+    resolution: {integrity: sha512-5UN629fKa5/1K/2Pd26gaU7epxRrYiT1gy+V+pW5K6hnf1DeUKK3pANSb2eHKlecjIKIhTwyF7k9XdyE2gREvQ==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.28.9(@tanstack/react-query@5.28.9)(react@18.2.0):
-    resolution: {integrity: sha512-GHbJDJIhAak2B+7NJvSfT+jfajxMf/CEwbVn4Z+JSVLUZ21/TITwQWaihN1WKKj/nMbizUu6U2O9MTNHW4YPqg==}
+  /@tanstack/react-query-devtools@5.28.10(@tanstack/react-query@5.28.9)(react@18.2.0):
+    resolution: {integrity: sha512-D+SiHZTWhK2sNgBYj+xIvUOqonsKy74OLU/YHmRB5OZVLLTiekvZd12C3rKlU+WM69jid0hjEjuFqkULOMwc3A==}
     peerDependencies:
       '@tanstack/react-query': ^5.28.9
       react: ^18.0.0
     dependencies:
-      '@tanstack/query-devtools': 5.28.6
+      '@tanstack/query-devtools': 5.28.10
       '@tanstack/react-query': 5.28.9(react@18.2.0)
       react: 18.2.0
     dev: true
@@ -4170,8 +4170,8 @@ packages:
       humanize-ms: 1.2.1
     dev: false
 
-  /ai@3.0.14(react@18.2.0)(solid-js@1.8.16)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4):
-    resolution: {integrity: sha512-YTucJ3DcUrIlOsoeDfHbfdlhPEUtMkBf9Dq8u+XwL8kX0UiWjp4mdoapmIcseDaazbNgY1J0Eymx4HRGbuWEoQ==}
+  /ai@3.0.15(react@18.2.0)(solid-js@1.8.16)(svelte@4.2.12)(vue@3.4.21)(zod@3.22.4):
+    resolution: {integrity: sha512-ZQOsVWvH8OOAz9nuOluOWUs/3U+c3w7m6iWEQPbaxsuRcG/8W6fjPD6gdtzwRA+wX5i2OxoA/01iX1VD2yVA1A==}
     engines: {node: '>=14.6'}
     peerDependencies:
       react: ^18.2.0
@@ -9113,8 +9113,8 @@ packages:
       ts-interface-checker: 0.1.13
     dev: true
 
-  /supabase@1.152.2:
-    resolution: {integrity: sha512-if3r9KwuXbCa2w6R25VwGz9Fm666zdAJYMB6fjCWoA9PD7acadUjoF8DxJgCBA0FhNKHJZqBwX/qerzgKZEYqw==}
+  /supabase@1.152.4:
+    resolution: {integrity: sha512-bkBREH+45Lu2zd4NGl7MJRHvm25+zY/xesGdkPOHbHBkKv1QYhMaSkRzN+3UbsmGFe1p8GUc4nUmLd/FMELFwA==}
     engines: {npm: '>=8'}
     hasBin: true
     requiresBuild: true
@@ -9220,25 +9220,25 @@ packages:
       '@babel/runtime': 7.24.1
     dev: false
 
-  /tailwind-scrollbar@3.1.0(tailwindcss@3.4.1):
+  /tailwind-scrollbar@3.1.0(tailwindcss@3.4.2):
     resolution: {integrity: sha512-pmrtDIZeHyu2idTejfV59SbaJyvp1VRjYxAjZBH0jnyrPRo6HL1kD5Glz8VPagasqr6oAx6M05+Tuw429Z8jxg==}
     engines: {node: '>=12.13.0'}
     peerDependencies:
       tailwindcss: 3.x
     dependencies:
-      tailwindcss: 3.4.1
+      tailwindcss: 3.4.2
     dev: true
 
-  /tailwindcss-animate@1.0.7(tailwindcss@3.4.1):
+  /tailwindcss-animate@1.0.7(tailwindcss@3.4.2):
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
     dependencies:
-      tailwindcss: 3.4.1
+      tailwindcss: 3.4.2
     dev: true
 
-  /tailwindcss@3.4.1:
-    resolution: {integrity: sha512-qAYmXRfk3ENzuPBakNK0SRrUDipP8NQnEY6772uDhflcQz5EhRdD7JNZxyrFHVQNCwULPBn6FNPp9brpO7ctcA==}
+  /tailwindcss@3.4.2:
+    resolution: {integrity: sha512-1kIzVecynNKMhhX8mPTOwTkkVHupUTMbEvk4n1ByxdM8sQTJ8fE41Y4TdORG6GmiVXHhfZ/++0hiIFJFwfadsA==}
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
