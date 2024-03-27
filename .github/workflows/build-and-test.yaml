@@ -2,6 +2,7 @@ name: General CI
 
 on:
   push:
+    branches: ['main', 'staging', 'production']
   pull_request:
     types: [opened, synchronize]
 
