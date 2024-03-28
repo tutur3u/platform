@@ -2,40 +2,19 @@ import { Timeblock } from '@/types/primitives/Timeblock';
 import dayjs, { Dayjs } from 'dayjs';
 import { maxTimetz, minTimetz, timeToTimetz } from './date-helper';
 
-export function datesToDateMatrix(dates: Date[]): {
+export function datesToDateMatrix(dates?: Date[] | null): {
   soonest: Dayjs;
   latest: Dayjs;
 } {
-  const sortedDates = dates.sort((a, b) => {
-    return a.getTime() - b.getTime();
-  });
+  if (!dates || dates.length === 0) {
+    throw new Error('Invalid input');
+  }
 
-  const dateWithEarliestTime = sortedDates.reduce((prev, curr) => {
-    // check for difference in both hours and minutes
-    return prev.getHours() < curr.getHours() ||
-      (prev.getHours() === curr.getHours() &&
-        prev.getMinutes() < curr.getMinutes())
-      ? prev
-      : curr;
-  });
+  const datesInDayjs = dates.map((date) => dayjs(date));
+  const sortedDates = datesInDayjs.sort((a, b) => a.diff(b));
 
-  const dateWithLatestTime = dayjs(
-    sortedDates.reduce((prev, curr) => {
-      // check for difference in both hours and minutes
-      return prev.getHours() > curr.getHours() ||
-        (prev.getHours() === curr.getHours() &&
-          prev.getMinutes() > curr.getMinutes())
-        ? prev
-        : curr;
-    })
-  ).add(15, 'minutes');
-
-  const soonest = dayjs(dateWithEarliestTime).set('date', dates[0].getDate());
-
-  const latest = dayjs(dateWithLatestTime).set(
-    'date',
-    dates[dates.length - 1].getDate()
-  );
+  const soonest = dayjs(sortedDates[0]);
+  const latest = dayjs(sortedDates[sortedDates.length - 1]).add(15, 'minutes');
 
   return { soonest, latest };
 }

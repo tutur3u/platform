@@ -47,7 +47,7 @@ const nextConfig = nextTranslate({
       '@tiptap/react',
       'lodash',
     ],
-    ppr: true,
+    // ppr: true,
   },
   logging: {
     fetches: {

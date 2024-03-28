@@ -25,9 +25,11 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 This turborepo has some additional tools already setup for you:
 
 - [Tailwind CSS](https://tailwindcss.com/) for styles
+- [Shadcn UI](https://ui.shadcn.com/) for UI components
 - [TypeScript](https://www.typescriptlang.org/) for static type checking.
 - [ESLint](https://eslint.org/) for code linting.
 - [Prettier](https://prettier.io) for code formatting.
+- [Vitest](https://vitest.dev/) for testing.
 
 ### Setup
 

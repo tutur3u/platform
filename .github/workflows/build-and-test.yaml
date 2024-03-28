@@ -2,7 +2,7 @@ name: General CI
 
 on:
   push:
-    branches: ['staging', 'production']
+    branches: ['main', 'staging', 'production']
   pull_request:
     types: [opened, synchronize]
 
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [20]
 
     env:
       # Use Vercel Remote Caching
@@ -23,6 +23,7 @@ jobs:
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
     steps:
       - name: Cache .next
