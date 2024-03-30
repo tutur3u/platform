@@ -21,8 +21,9 @@ import { ScrollArea } from './ui/scroll-area';
 import { Model, defaultModel, models, providers } from '@/data/models';
 import { Separator } from './ui/separator';
 
-export function ChatModelSelector() {
+export function ChatModelSelector({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
+
   const [selectedModel, setSelectedModel] = useState<Model>(defaultModel);
   const [previewModel, setPreviewModel] = useState<Model>(defaultModel);
 
@@ -41,43 +42,21 @@ export function ChatModelSelector() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-64 justify-between"
+          className={`flex w-full ${className}`}
         >
-          {selectedModel
-            ? models.find((model) => model.value === selectedModel)?.label
-            : 'Select model'}
+          <div className="line-clamp-1 text-start">
+            {selectedModel
+              ? `${models.find((model) => model.value === selectedModel)?.provider.toLowerCase()}/${models.find((model) => model.value === selectedModel)?.label}`
+              : 'Select model'}
+          </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="grid w-[32rem] grid-cols-2 gap-2 p-0"
-        align="start"
-      >
-        <Command className="rounded-r-none border-r">
+      <PopoverContent className="grid w-80 p-0 md:w-[48rem] md:grid-cols-2 xl:w-[64rem]">
+        <Command className="rounded-b-none border-b md:rounded-r-none md:border-b-0 md:border-r">
           <CommandInput placeholder="Search model..." />
-          <ScrollArea className="h-64">
+          <ScrollArea className="h-48 md:h-64">
             <CommandEmpty>No model found.</CommandEmpty>
-            {/* <CommandGroup> */}
-            {/* {models.map((model) => (
-                <CommandItem
-                  key={model.value}
-                  value={model.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? '' : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === model.value ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  <div className="bg-foreground text-background rounded-full px-2 py-0.5">
-                    {model.label}
-                  </div>
-                </CommandItem>
-              ))} */}
             {providers.map((provider) => (
               <CommandGroup key={provider} heading={provider}>
                 {models
@@ -95,8 +74,8 @@ export function ChatModelSelector() {
 
                         setOpen(false);
                       }}
-                      //   disabled={model.disabled}
                       onMouseOver={() => setPreviewModel(model.value)}
+                      disabled={model.disabled}
                     >
                       <Check
                         className={cn(
@@ -116,18 +95,28 @@ export function ChatModelSelector() {
           </ScrollArea>
         </Command>
 
-        <div className="p-2 pl-0">
-          <div className="flex items-center">
-            <div className="font-semibold opacity-80">
+        <div>
+          <div className="flex items-center px-2 pb-1 pt-3">
+            <div className="text-sm font-semibold opacity-80">
               {currentModel?.provider}{' '}
             </div>
-            <div className="bg-foreground/20 mx-2 hidden h-4 w-[1px] rotate-[30deg] md:block" />
-            <div>{currentModel?.model}</div>
+            <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+            <div className="line-clamp-1 text-xs">{currentModel?.model}</div>
           </div>
           <Separator className="my-2" />
-          <div>{currentModel?.description}</div>
-          <div className="text-sm opacity-80">
-            {currentModel?.context} context window
+          <div className="p-2 pt-0">
+            <div className="text-sm">{currentModel?.description}</div>
+            {currentModel?.context != undefined && (
+              <>
+                <Separator className="my-2" />
+                <div className="bg-foreground text-background rounded px-2 py-0.5 text-center text-sm font-semibold">
+                  {Intl.NumberFormat('en-US', {
+                    style: 'decimal',
+                  }).format(currentModel.context)}{' '}
+                  tokens
+                </div>
+              </>
+            )}
           </div>
         </div>
       </PopoverContent>

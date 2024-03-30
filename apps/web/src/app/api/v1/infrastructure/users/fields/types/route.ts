@@ -11,18 +11,25 @@ export async function GET(_: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from('field_types')
-    .select('id')
-    .eq('enabled', true);
+  // const { data, error } = await supabase
+  //   .from('field_types')
+  //   .select('id')
+  //   .eq('enabled', true);
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching user field types' },
-      { status: 500 }
-    );
-  }
+  // if (error) {
+  //   console.log(error);
+  //   return NextResponse.json(
+  //     { message: 'Error fetching user field types' },
+  //     { status: 500 }
+  //   );
+  // }
 
-  return NextResponse.json(data);
+  // return NextResponse.json(data);
+  return NextResponse.json([
+    { id: 'BOOLEAN' },
+    { id: 'TEXT' },
+    { id: 'NUMBER' },
+    { id: 'DATE' },
+    { id: 'DATETIME' },
+  ]);
 }
