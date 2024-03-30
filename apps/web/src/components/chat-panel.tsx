@@ -12,6 +12,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Message } from 'ai';
 import React from 'react';
 import { ScrollToTopButton } from './scroll-to-top-button';
+import { ChatModelSelector } from './chat-model-selector';
 
 export interface ChatPanelProps
   extends Pick<
@@ -188,7 +189,8 @@ export function ChatPanel({
           ) : null} */}
         </div>
 
-        <div className="bg-background/20 space-y-4 rounded-t-xl border border-t px-4 py-2 shadow-lg backdrop-blur-lg md:py-4">
+        <div className="bg-background/20 space-y-2 rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg">
+          <ChatModelSelector />
           <PromptForm
             onSubmit={async (value) => {
               // If there is no id, create a new chat
