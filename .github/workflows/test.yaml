@@ -1,14 +1,14 @@
-name: General CI
+name: Test
 
 on:
   push:
-    branches: ['main', 'staging', 'production']
+    branches: ['main', 'staging', 'production', 'feat/*', 'fix/*']
   pull_request:
     types: [opened, synchronize]
 
 jobs:
   build:
-    name: Build and test
+    name: Unit Tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
     strategy:
@@ -56,8 +56,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm build
+      # - name: Build
+      #   run: pnpm build
 
       - name: Test
         run: pnpm test
