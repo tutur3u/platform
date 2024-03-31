@@ -1,8 +1,25 @@
 import { Timeblock } from '@/types/primitives/Timeblock';
 import dayjs, { Dayjs } from 'dayjs';
-import { maxTimetz, minTimetz, timeToTimetz } from './date-helper';
+
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isBetween from 'dayjs/plugin/isBetween';
+import timezone from 'dayjs/plugin/timezone';
+import minMax from 'dayjs/plugin/minMax';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 dayjs.extend(isBetween);
+dayjs.extend(timezone);
+dayjs.extend(minMax);
+dayjs.extend(utc);
+
+dayjs.tz.setDefault();
+
+export function getDateStrings(dates: Date[]): string[] {
+  return dates.map((date) => dayjs(date).format('YYYY-MM-DD'));
+}
 
 export function datesToDateMatrix(dates?: Date[] | null): {
   soonest: Dayjs;
@@ -21,6 +38,41 @@ export function datesToDateMatrix(dates?: Date[] | null): {
   return { soonest, latest };
 }
 
+export function datesToTimeMatrix(dates?: Date[] | null): {
+  soonest: Dayjs;
+  latest: Dayjs;
+} {
+  if (!dates || dates.length === 0) {
+    throw new Error('Invalid input');
+  }
+
+  if (dates.length === 1)
+    return { soonest: dayjs(dates[0]), latest: dayjs(dates[0]) };
+
+  const now = dayjs(dates[0]);
+
+  let soonest = now;
+  let latest = now;
+
+  for (let i = 1; i < dates.length; i++) {
+    const date = dayjs(dates[i])
+      .set('year', now.year())
+      .set('month', now.month())
+      .set('date', now.date());
+
+    if (date.isBefore(soonest, 'hour')) {
+      soonest = date;
+    } else if (date.isAfter(latest, 'hour')) {
+      latest = date;
+    }
+  }
+
+  return {
+    soonest,
+    latest,
+  };
+}
+
 export function durationToTimeblocks(
   dates: Date[],
   forcedOffset?: number
@@ -28,19 +80,35 @@ export function durationToTimeblocks(
   if (dates.length != 2) return [];
   const timeblocks: Timeblock[] = [];
 
-  const { soonest, latest } = datesToDateMatrix(dates);
-  let start = soonest;
+  const { soonest: soonestTime, latest: latestTime } = datesToTimeMatrix(dates);
+  const { soonest: soonestDate, latest: latestDate } = datesToDateMatrix(dates);
 
-  while (start.isBefore(latest)) {
+  let start = soonestDate
+    .set('hour', soonestTime.hour())
+    .set('minute', soonestTime.minute())
+    .set('second', 0);
+
+  const end = latestDate
+    .set('hour', latestTime.hour())
+    .set('minute', latestTime.minute())
+    .set('second', 0);
+
+  while (start.isBefore(end)) {
     const date = start.format('YYYY-MM-DD');
 
-    const startTime = dayjs(soonest).format('HH:mm');
-    const endTime = dayjs(latest).format('HH:mm');
+    const startTime = dayjs(soonestTime)
+      .utcOffset(forcedOffset ?? start.utcOffset(), true)
+      .format('HH:mm:ssZ');
+
+    const endTime = dayjs(latestTime)
+      .utcOffset(forcedOffset ?? start.utcOffset(), true)
+      .add(15, 'minutes')
+      .format('HH:mm:ssZ');
 
     timeblocks.push({
       date,
-      start_time: timeToTimetz(startTime, forcedOffset),
-      end_time: timeToTimetz(endTime, forcedOffset),
+      start_time: startTime,
+      end_time: endTime,
     });
 
     // Increment the date
@@ -117,72 +185,120 @@ export function addTimeblocks(
 
 export function removeTimeblocks(
   prevTimeblocks: Timeblock[],
-  dates: Date[]
+  dates: Date[],
+  forcedOffset?: number
 ): Timeblock[] {
   // Return the previous timeblocks if the dates are empty
   if (!dates || dates.length === 0) {
     return prevTimeblocks;
   }
 
-  // Get the soonest and latest dates from the given dates
-  const { soonest, latest } = datesToDateMatrix(dates);
+  // Get the soonest and latest dates and hours
+  const { soonest: removalStartTime, latest: removalEndTime } =
+    datesToTimeMatrix(dates);
+
+  const { soonest: soonestDate, latest: latestDate } = datesToDateMatrix(dates);
+
+  const removalStart = soonestDate
+    .set('hour', removalStartTime.hour())
+    .set('minute', removalStartTime.minute())
+    .set('second', 0);
+
+  const removalEnd = latestDate
+    .set('hour', removalEndTime.hour())
+    .set('minute', removalEndTime.minute())
+    .set('second', 0);
+
   const filteredTimeblocks: Timeblock[] = [];
 
   // Iterate through each timeblock
-  for (const timeblock of prevTimeblocks) {
-    const timeblockStart = dayjs(`${timeblock.date} ${timeblock.start_time}`);
-    const timeblockEnd = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+  for (const tb of prevTimeblocks) {
+    const tbStart = dayjs(`${tb.date} ${tb.start_time}`);
+    const tbEnd = dayjs(`${tb.date} ${tb.end_time}`);
 
     // Check if the timeblock is completely outside the date range
-    if (timeblockStart.isBefore(soonest) && timeblockEnd.isBefore(soonest)) {
-      // Add the timeblock to the filtered timeblocks
-      // without any modification
-      filteredTimeblocks.push(timeblock);
+    if (
+      tbStart.isSameOrAfter(removalEnd, 'minutes') ||
+      tbEnd.isSameOrBefore(removalStart, 'minutes')
+    ) {
+      filteredTimeblocks.push(tb);
       continue;
     }
 
-    if (timeblockStart.isAfter(latest) && timeblockEnd.isAfter(latest)) {
-      // Add the timeblock to the filtered timeblocks
-      // without any modification
-      filteredTimeblocks.push(timeblock);
+    // Check if the timeblock is completely inside the date range
+    if (
+      tbStart.isSameOrAfter(removalStart, 'minutes') &&
+      tbEnd.isSameOrBefore(removalEnd, 'minutes')
+    ) {
       continue;
     }
 
-    // Split the timeblock no matter what, since it's inside the date range,
-    // and we'll do the filtering to remove 0-duration timeblocks at the end
-    const splitTimeblocks: Timeblock[] = [];
+    const date = dayjs(tb.date);
 
-    // If the timeblock starts before the soonest date
-    if (timeblockStart.set('date', soonest.date()).isBefore(soonest)) {
-      const splitTimeblock = {
-        ...timeblock,
-        id: undefined,
-        end_time: minTimetz(
-          timeToTimetz(dayjs(soonest).format('HH:mm')),
-          timeblock.end_time
-        ),
-      };
+    const rmStart = dayjs(removalStart)
+      .set('year', date.year())
+      .set('month', date.month())
+      .set('date', date.date());
 
-      splitTimeblocks.push(splitTimeblock);
+    const rmEnd = dayjs(removalEnd)
+      .set('year', date.year())
+      .set('month', date.month())
+      .set('date', date.date());
+
+    // Check if the removal time is within the timeblock
+    // if (
+    //   tbStart.isBefore(rmStart, 'minutes') &&
+    //   tbEnd.isAfter(rmEnd, 'minutes')
+    // ) {
+    //   const newTimeblock = { ...tb };
+
+    //   newTimeblock.start_time = (dayjs.max(tbStart, rmStart) ?? tbStart)
+    //     .utcOffset(forcedOffset ?? rmStart.utcOffset(), true)
+    //     .format('HH:mm:ssZ');
+
+    //   newTimeblock.end_time = (dayjs.min(rmEnd, tbEnd) ?? tbEnd)
+    //     .add(15, 'minutes')
+    //     .utcOffset(forcedOffset ?? rmEnd.utcOffset(), true)
+    //     .format('HH:mm:ssZ');
+
+    //   filteredTimeblocks.push(newTimeblock);
+    //   continue;
+    // }
+
+    // Check if the timeblock ends after the removal time starts
+    // and before the removal time ends
+    if (
+      tbEnd.isSameOrAfter(rmStart, 'minutes') &&
+      tbEnd.isSameOrBefore(rmEnd, 'minutes')
+    ) {
+      const newTimeblock = { ...tb };
+
+      newTimeblock.end_time = (dayjs.min(rmStart, tbEnd) ?? tbEnd)
+        .utcOffset(forcedOffset ?? rmStart.utcOffset())
+        .format('HH:mm:ssZ');
+
+      filteredTimeblocks.push(newTimeblock);
+      continue;
     }
 
-    // If the timeblock ends after the latest date
-    if (timeblockEnd.set('date', latest.date()).isAfter(latest)) {
-      const splitTimeblock = {
-        ...timeblock,
-        id: undefined,
-        start_time: maxTimetz(
-          timeToTimetz(dayjs(latest).format('HH:mm')),
-          timeblock.start_time
-        ),
-      };
+    // Check if the timeblock starts after the removal time starts
+    // and before the removal time ends
+    if (
+      tbStart.isSameOrAfter(rmStart, 'minutes') &&
+      tbStart.isSameOrBefore(rmEnd, 'minutes')
+    ) {
+      const newTimeblock = { ...tb };
 
-      splitTimeblocks.push(splitTimeblock);
+      newTimeblock.start_time = (dayjs.max(rmEnd, tbStart) ?? tbStart)
+        .utcOffset(forcedOffset ?? rmEnd.utcOffset())
+        .format('HH:mm:ssZ');
+
+      filteredTimeblocks.push(newTimeblock);
+      continue;
     }
-
-    // Add the split timeblocks to the filtered timeblocks
-    filteredTimeblocks.push(...splitTimeblocks);
   }
 
-  return filteredTimeblocks;
+  return filteredTimeblocks.filter(
+    (timeblock) => timeblock.start_time !== timeblock.end_time
+  );
 }

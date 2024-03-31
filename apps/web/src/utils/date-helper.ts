@@ -210,25 +210,6 @@ export function timetzToHour(timetz?: string) {
   return parseInt(hourStr);
 }
 
-export function timeToTimetz(time: string, forcedOffset?: number) {
-  // time is HH:MM
-  // end result should be HH:MM:SS+TZ (offset should be whole number based on the user's timezone)
-  const date = new Date();
-  const offset = -date.getTimezoneOffset() / 60;
-
-  const offsetStr =
-    forcedOffset != null
-      ? forcedOffset >= 0
-        ? `+${forcedOffset}`
-        : `${forcedOffset}`
-      : offset >= 0
-        ? `+${offset}`
-        : `${offset}`;
-
-  const [hour, minute] = time.split(':');
-  return `${hour}:${minute}:00${offsetStr}`;
-}
-
 export function compareTimetz(timetz1: string, timetz2: string) {
   const time1 = timetzToTime(timetz1);
   const time2 = timetzToTime(timetz2);
