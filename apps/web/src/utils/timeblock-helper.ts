@@ -1,6 +1,8 @@
 import { Timeblock } from '@/types/primitives/Timeblock';
 import dayjs, { Dayjs } from 'dayjs';
 import { maxTimetz, minTimetz, timeToTimetz } from './date-helper';
+import isBetween from 'dayjs/plugin/isBetween';
+dayjs.extend(isBetween);
 
 export function datesToDateMatrix(dates?: Date[] | null): {
   soonest: Dayjs;
@@ -19,7 +21,10 @@ export function datesToDateMatrix(dates?: Date[] | null): {
   return { soonest, latest };
 }
 
-export function durationToTimeblocks(dates: Date[]): Timeblock[] {
+export function durationToTimeblocks(
+  dates: Date[],
+  forcedOffset?: number
+): Timeblock[] {
   if (dates.length != 2) return [];
   const timeblocks: Timeblock[] = [];
 
@@ -34,8 +39,8 @@ export function durationToTimeblocks(dates: Date[]): Timeblock[] {
 
     timeblocks.push({
       date,
-      start_time: timeToTimetz(startTime),
-      end_time: timeToTimetz(endTime),
+      start_time: timeToTimetz(startTime, forcedOffset),
+      end_time: timeToTimetz(endTime, forcedOffset),
     });
 
     // Increment the date
@@ -114,6 +119,11 @@ export function removeTimeblocks(
   prevTimeblocks: Timeblock[],
   dates: Date[]
 ): Timeblock[] {
+  // Return the previous timeblocks if the dates are empty
+  if (!dates || dates.length === 0) {
+    return prevTimeblocks;
+  }
+
   // Get the soonest and latest dates from the given dates
   const { soonest, latest } = datesToDateMatrix(dates);
   const filteredTimeblocks: Timeblock[] = [];
