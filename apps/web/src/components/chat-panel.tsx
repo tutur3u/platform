@@ -1,5 +1,4 @@
 import { type UseChatHelpers } from 'ai/react';
-
 import { Button } from '@/components/ui/button';
 import { PromptForm } from '@/components/prompt-form';
 import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
@@ -18,6 +17,7 @@ import { Message } from 'ai';
 import React, { useState } from 'react';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { ChatModelSelector } from './chat-model-selector';
+import { Model } from '@/data/models';
 
 export interface ChatPanelProps
   extends Pick<
@@ -35,6 +35,8 @@ export interface ChatPanelProps
   count: number | null;
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
+  model: Model;
+  setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
@@ -52,6 +54,8 @@ export function ChatPanel({
   input,
   inputRef,
   setInput,
+  model,
+  setModel,
   createChat,
   clearChat,
   collapsed,
@@ -207,6 +211,11 @@ export function ChatPanel({
                 ? 'pointer-events-auto opacity-100 delay-500 duration-500'
                 : 'pointer-events-none opacity-0'
             } transition-all ease-in-out`}
+            model={model}
+            onChange={(m) => {
+              setModel(m);
+              console.log(m);
+            }}
           />
           <div className="flex w-full items-center gap-2">
             <PromptForm

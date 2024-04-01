@@ -1,5 +1,3 @@
-'use client';
-
 import { Check, ChevronsUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -18,22 +16,28 @@ import {
 } from '@/components/ui/popover';
 import { useState } from 'react';
 import { ScrollArea } from './ui/scroll-area';
-import { Model, defaultModel, models, providers } from '@/data/models';
+import { Model, models, providers } from '@/data/models';
 import { Separator } from './ui/separator';
 
-export function ChatModelSelector({ className }: { className?: string }) {
+export function ChatModelSelector({
+  model,
+  onChange,
+  className,
+}: {
+  model: Model;
+  onChange: (value: Model) => void;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [previewModel, setPreviewModel] = useState<Model>(model);
 
-  const [selectedModel, setSelectedModel] = useState<Model>(defaultModel);
-  const [previewModel, setPreviewModel] = useState<Model>(defaultModel);
-
-  const currentModel = models.find((model) => model.value === previewModel);
+  const currentModel = models.find((m) => m.value === model.value);
 
   return (
     <Popover
       open={open}
       onOpenChange={(o) => {
-        if (!o) setPreviewModel(selectedModel);
+        if (!o) setPreviewModel(model);
         setOpen(o);
       }}
     >
@@ -45,8 +49,8 @@ export function ChatModelSelector({ className }: { className?: string }) {
           className={`flex w-full ${className}`}
         >
           <div className="line-clamp-1 text-start">
-            {selectedModel
-              ? `${models.find((model) => model.value === selectedModel)?.provider.toLowerCase()}/${models.find((model) => model.value === selectedModel)?.label}`
+            {model
+              ? `${currentModel?.provider.toLowerCase()}/${currentModel?.label}`
               : 'Select model'}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -60,33 +64,29 @@ export function ChatModelSelector({ className }: { className?: string }) {
             {providers.map((provider) => (
               <CommandGroup key={provider} heading={provider}>
                 {models
-                  .filter((model) => model.provider === provider)
-                  .map((model) => (
+                  .filter((m) => m.provider === provider)
+                  .map((m) => (
                     <CommandItem
-                      key={model.value}
-                      value={model.value}
+                      key={m.value}
+                      value={m.value}
                       onSelect={(currentValue) => {
-                        setSelectedModel(
-                          currentValue === selectedModel
-                            ? defaultModel
-                            : (currentValue as Model)
+                        onChange(
+                          models.find((m) => m.value === currentValue) as Model
                         );
 
                         setOpen(false);
                       }}
-                      onMouseOver={() => setPreviewModel(model.value)}
-                      disabled={model.disabled}
+                      onMouseOver={() => setPreviewModel(m)}
+                      disabled={m.disabled}
                     >
                       <Check
                         className={cn(
                           'mr-2 h-4 w-4',
-                          selectedModel === model.value
-                            ? 'opacity-100'
-                            : 'opacity-0'
+                          model.value === m.value ? 'opacity-100' : 'opacity-0'
                         )}
                       />
                       <div className="bg-foreground text-background rounded-full px-2 py-0.5">
-                        {model.label}
+                        {m.label}
                       </div>
                     </CommandItem>
                   ))}
@@ -98,21 +98,21 @@ export function ChatModelSelector({ className }: { className?: string }) {
         <div>
           <div className="flex items-center px-2 pb-1 pt-3">
             <div className="text-sm font-semibold opacity-80">
-              {currentModel?.provider}{' '}
+              {previewModel?.provider}{' '}
             </div>
             <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
-            <div className="line-clamp-1 text-xs">{currentModel?.model}</div>
+            <div className="line-clamp-1 text-xs">{previewModel?.label}</div>
           </div>
           <Separator className="my-2" />
           <div className="p-2 pt-0">
-            <div className="text-sm">{currentModel?.description}</div>
-            {currentModel?.context != undefined && (
+            <div className="text-sm">{previewModel?.description}</div>
+            {previewModel?.context != undefined && (
               <>
                 <Separator className="my-2" />
                 <div className="bg-foreground text-background rounded px-2 py-0.5 text-center text-sm font-semibold">
                   {Intl.NumberFormat('en-US', {
                     style: 'decimal',
-                  }).format(currentModel.context)}{' '}
+                  }).format(previewModel.context)}{' '}
                   tokens
                 </div>
               </>
