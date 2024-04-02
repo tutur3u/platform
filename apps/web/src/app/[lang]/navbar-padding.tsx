@@ -23,11 +23,18 @@ export default function NavbarPadding({ children }: Props) {
   }, [pathname]);
 
   return (
-    <div
-      className={`min-h-screen ${pathname === '/login' ? 'flex' : ''}`}
-      style={{ paddingTop: navbarHeight }}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        className={`${pathname === '/login' ? 'flex' : ''}`}
+        style={{ height: navbarHeight }}
+      />
+      <div
+        style={{
+          height: `calc(100vh - ${navbarHeight}px)`,
+        }}
+      >
+        {children}
+      </div>
+    </>
   );
 }
