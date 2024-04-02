@@ -26,6 +26,9 @@
     },
     "lint": {},
     "test": {},
+    "test:watch": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true

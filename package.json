@@ -10,6 +10,7 @@
     "devrs": "cd apps/web && pnpm devrs",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "stop": "cd apps/web && pnpm stop",
     "sb:status": "cd apps/web && pnpm sb:status",
