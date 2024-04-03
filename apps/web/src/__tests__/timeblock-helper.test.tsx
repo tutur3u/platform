@@ -323,147 +323,147 @@ describe('durationToTimeblocks', () => {
     );
   });
 
-  // test('returns an array of timeblocks for a duration in a day (normal order)', () => {
-  //   const dates = [
-  //     new Date('2024-03-15T08:00:00+00:00'),
-  //     new Date('2024-03-15T19:00:00+00:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration in a day (normal order)', () => {
+    const dates = [
+      new Date('2024-03-15T08:00:00+00:00'),
+      new Date('2024-03-15T19:00:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 
-  // test('returns an array of timeblocks for a duration spanning multiple days (normal order)', () => {
-  //   const dates = [
-  //     new Date('2024-03-15T08:00:00+00:00'),
-  //     new Date('2024-03-17T19:00:00+00:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration spanning multiple days (normal order)', () => {
+    const dates = [
+      new Date('2024-03-15T08:00:00+00:00'),
+      new Date('2024-03-17T19:00:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-17',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-16',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-17',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 
-  // test('returns an array of timeblocks for a duration in a day (reverse order)', () => {
-  //   const dates = [
-  //     new Date('2024-03-15T19:00:00+00:00'),
-  //     new Date('2024-03-15T08:00:00+00:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration in a day (reverse order)', () => {
+    const dates = [
+      new Date('2024-03-15T19:00:00+00:00'),
+      new Date('2024-03-15T08:00:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 
-  // test('returns an array of timeblocks for a duration spanning multiple days (reverse order)', () => {
-  //   const dates = [
-  //     new Date('2024-03-17T19:00:00+00:00'),
-  //     new Date('2024-03-15T08:00:00+00:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration spanning multiple days (reverse order)', () => {
+    const dates = [
+      new Date('2024-03-17T19:00:00+00:00'),
+      new Date('2024-03-15T08:00:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-17',
-  //       start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-16',
+        start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-17',
+        start_time: dayjs(dates[1]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[0]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 
-  // test('returns an array of timeblocks for a duration spanning multiple days (with offset)', () => {
-  //   const dates = [
-  //     new Date('2024-03-15T08:00:00+02:00'),
-  //     new Date('2024-03-17T19:00:00+02:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration spanning multiple days (with offset)', () => {
+    const dates = [
+      new Date('2024-03-15T08:00:00+02:00'),
+      new Date('2024-03-17T19:00:00+02:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-17',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-16',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-17',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 
-  // test('returns an array of timeblocks for a duration spanning multiple days (with negative offset)', () => {
-  //   const dates = [
-  //     new Date('2024-03-15T08:00:00-02:00'),
-  //     new Date('2024-03-17T19:00:00-02:00'),
-  //   ];
+  test.skip('returns an array of timeblocks for a duration spanning multiple days (with negative offset)', () => {
+    const dates = [
+      new Date('2024-03-15T08:00:00-02:00'),
+      new Date('2024-03-17T19:00:00-02:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //     {
-  //       date: '2024-03-17',
-  //       start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
-  //       end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-16',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+      {
+        date: '2024-03-17',
+        start_time: dayjs(dates[0]).format('HH:mm:ssZ'),
+        end_time: dayjs(dates[1]).add(15, 'minutes').format('HH:mm:ssZ'),
+      },
+    ];
 
-  //   expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
-  // });
+    expect(durationToTimeblocks(dates)).toEqual(expectedOutput);
+  });
 });
 
 describe('addTimeblocks', () => {
@@ -744,131 +744,131 @@ describe('removeTimeblocks', () => {
     expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
   });
 
-  // test('cut last split of a timeblock that is in the removal date range (single day)', () => {
-  //   const prevTimeblocks: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
-  //   const dates: Date[] = [
-  //     new Date('2024-03-15T12:00:00+00:00'),
-  //     new Date('2024-03-15T19:15:00+00:00'),
-  //   ];
+  test.skip('cut last split of a timeblock that is in the removal date range (single day)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
+    const dates: Date[] = [
+      new Date('2024-03-15T12:00:00+00:00'),
+      new Date('2024-03-15T19:15:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '12:00:00+00:00',
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '12:00:00+00:00',
+      },
+    ];
 
-  //   expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
-  // });
+    expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
+  });
 
-  // test('cut last split of a timeblock that is in the removal date range (multiple days)', () => {
-  //   const prevTimeblocks: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
-  //   const dates: Date[] = [
-  //     new Date('2024-03-15T12:00:00+00:00'),
-  //     new Date('2024-03-15T19:15:00+00:00'),
-  //   ];
+  test.skip('cut last split of a timeblock that is in the removal date range (multiple days)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
+    const dates: Date[] = [
+      new Date('2024-03-15T12:00:00+00:00'),
+      new Date('2024-03-15T19:15:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '12:00:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '12:00:00+00:00',
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
 
-  //   expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
-  // });
+    expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
+  });
 
-  // test('cut middle split of a timeblock that is in the removal date range (single day)', () => {
-  //   const prevTimeblocks: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
-  //   const dates: Date[] = [
-  //     new Date('2024-03-15T10:00:00+00:00'),
-  //     new Date('2024-03-15T15:15:00+00:00'),
-  //   ];
+  test.skip('cut middle split of a timeblock that is in the removal date range (single day)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
+    const dates: Date[] = [
+      new Date('2024-03-15T10:00:00+00:00'),
+      new Date('2024-03-15T15:15:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '10:00:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '15:30:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '10:00:00+00:00',
+      },
+      {
+        date: '2024-03-15',
+        start_time: '15:30:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
 
-  //   expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
-  // });
+    expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
+  });
 
-  // test('cut middle split of a timeblock that is in the removal date range (multiple days)', () => {
-  //   const prevTimeblocks: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
-  //   const dates: Date[] = [
-  //     new Date('2024-03-15T10:00:00+00:00'),
-  //     new Date('2024-03-15T15:15:00+00:00'),
-  //   ];
+  test.skip('cut middle split of a timeblock that is in the removal date range (multiple days)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
+    const dates: Date[] = [
+      new Date('2024-03-15T10:00:00+00:00'),
+      new Date('2024-03-15T15:15:00+00:00'),
+    ];
 
-  //   const expectedOutput: Timeblock[] = [
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '10:00:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-15',
-  //       start_time: '15:30:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //     {
-  //       date: '2024-03-16',
-  //       start_time: '08:00:00+00:00',
-  //       end_time: '19:15:00+00:00',
-  //     },
-  //   ];
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '10:00:00+00:00',
+      },
+      {
+        date: '2024-03-15',
+        start_time: '15:30:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '19:15:00+00:00',
+      },
+    ];
 
-  //   expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
-  // });
+    expect(removeTimeblocks(prevTimeblocks, dates, 0)).toEqual(expectedOutput);
+  });
 
   test('cut entire timeblock that is in the removal date range (single day)', () => {
     const prevTimeblocks: Timeblock[] = [
