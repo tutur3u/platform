@@ -66,6 +66,7 @@ const nextConfig = nextTranslate({
       },
     ],
   },
+
   async headers() {
     return [
       {
@@ -84,6 +85,20 @@ const nextConfig = nextTranslate({
               'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
           },
         ],
+      },
+    ];
+  },
+
+  async rewrites() {
+    // Rewrite all '/docs/:path*' to 'https://docs.tuturuuu.com/:path*'
+    return [
+      {
+        source: '/(.*)/docs',
+        destination: 'https://docs.tuturuuu.com',
+      },
+      {
+        source: '/(.*)/docs/:slug',
+        destination: 'https://docs.tuturuuu.com/:slug',
       },
     ];
   },
