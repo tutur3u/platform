@@ -24,7 +24,10 @@ export default function Navlinks() {
       >
         {t('meet-together')}
       </Link>
-      <Link href="/docs" className="opacity-50 hover:opacity-100">
+      <Link
+        href="https://docs.tuturuuu.com"
+        className="opacity-50 hover:opacity-100"
+      >
         {t('docs')}
       </Link>
     </div>
