@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
 
-const CalendarViewWithTrail = () => {
+const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   // On mount, scroll to current time
   useEffect(() => {
     const component = document.getElementById('calendar-view');
@@ -24,7 +24,7 @@ const CalendarViewWithTrail = () => {
       className="scrollbar-none border-border flex h-full overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l text-center dark:border-zinc-800"
     >
       <TimeTrail />
-      <CalendarView />
+      <CalendarView dates={dates} />
     </div>
   );
 };

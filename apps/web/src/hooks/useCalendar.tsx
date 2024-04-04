@@ -3,44 +3,16 @@ import {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
-import { useWorkspaces } from './useWorkspaces';
 import useSWR, { mutate as swrMutate } from 'swr';
 import { CalendarEvent } from '@/types/primitives/calendar-event';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
-import { useLocalStorage } from '@mantine/hooks';
 import 'moment/locale/vi';
+import { Workspace } from '@/types/primitives/Workspace';
 
 const CalendarContext = createContext({
-  refresh: async () => console.log('refresh'),
-  getDate: () => new Date(),
-  getTitle: () => 'Title' as string,
-
-  isToday: () => true as boolean,
-  selectToday: () => console.log('selectToday'),
-  selectDate: (date: Date) => console.log('selectDate', date),
-
-  handleNext: () => console.log('handleNext'),
-  handlePrev: () => console.log('handlePrev'),
-
-  view: 'day' as 'day' | '4-days' | 'week',
-  datesInView: [] as Date[],
-  availableViews: [] as { label: string; value: string; disabled?: boolean }[],
-  setAvailableViews: (
-    views: {
-      label: string;
-      value: string;
-      disabled?: boolean;
-    }[]
-  ) => console.log('setAvailableViews', views),
-  enableDayView: () => console.log('enableDayView'),
-  enable4DayView: () => console.log('enable4DayView'),
-  enableWeekView: () => console.log('enableWeekView'),
-
   getEvent: (eventId: string) => {
     console.log('getEvent', eventId);
     return undefined as CalendarEvent | undefined;
@@ -82,28 +54,28 @@ const CalendarContext = createContext({
   showModal: () => console.log('showModal'),
 });
 
-export const CalendarProvider = ({ children }: { children: ReactNode }) => {
-  const [date, setDate] = useState(new Date());
-
-  const { ws } = useWorkspaces();
-
-  const [datesInView, setDatesInView] = useState<Date[]>([]);
-  const [view, setView] = useLocalStorage({
-    key: 'calendar-view',
-    defaultValue: 'week' as 'day' | '4-days' | 'week',
-  });
-
-  const getDateRangeQuery = () => {
-    if (!datesInView.length) return '';
-
-    const startAt = datesInView[0];
-    const endAt = datesInView[datesInView.length - 1];
-
-    return `?start_at=${startAt.toISOString()}&end_at=${endAt.toISOString()}`;
+export const CalendarProvider = ({
+  ws,
+  children,
+}: {
+  ws: Workspace;
+  children: ReactNode;
+}) => {
+  const getDateRangeQuery = ({
+    startDate,
+    endDate,
+  }: {
+    startDate: Date;
+    endDate: Date;
+  }) => {
+    return `?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`;
   };
 
   const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/calendar/events${getDateRangeQuery()}`
+    ? `/api/workspaces/${ws?.id}/calendar/events${getDateRangeQuery({
+        startDate: new Date(),
+        endDate: new Date(),
+      })}`
     : null;
 
   const { data } = useSWR<{
@@ -312,166 +284,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     setOpenedModalId(null);
   };
 
-  const getDate = () => date;
-
-  const { lang } = useTranslation('calendar');
-
-  const getTitle = () =>
-    moment(date)
-      .locale(lang)
-      .format(lang === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
-      .replace(/^\w/, (c) => c.toUpperCase());
-
-  // Update the date's hour and minute, every minute
-  useEffect(() => {
-    // calculate seconds to next minute
-    const secondsToNextMinute = 60 - new Date().getSeconds();
-
-    // Make sure the date is updated at the start of the next minute
-    const timeout = setTimeout(() => {
-      setDate((date) => {
-        const newDate = new Date(date);
-
-        newDate.setHours(new Date().getHours());
-        newDate.setMinutes(new Date().getMinutes());
-
-        return newDate;
-      });
-
-      // And then update it every minute
-      const interval = setInterval(() => {
-        setDate((date) => {
-          const newDate = new Date(date);
-
-          newDate.setHours(new Date().getHours());
-          newDate.setMinutes(new Date().getMinutes());
-
-          return newDate;
-        });
-      }, 60000);
-
-      return () => clearInterval(interval);
-    }, secondsToNextMinute * 1000);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  const isToday = () => {
-    const today = new Date();
-    return date?.toDateString() === today.toDateString();
-  };
-
-  const selectDate = (date: Date) => {
-    setDate(date);
-  };
-
-  const selectToday = () => {
-    setDate(new Date());
-  };
-
-  const [availableViews, setAvailableViews] = useState<
-    { value: string; label: string; disabled?: boolean }[]
-  >([]);
-
-  const enableDayView = useCallback(() => {
-    if (availableViews.find((v) => v.value === 'day')?.disabled) return;
-
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0);
-    setDatesInView([newDate]);
-    setView('day');
-  }, [date, setView, availableViews]);
-
-  const enable4DayView = useCallback(() => {
-    if (availableViews.find((v) => v.value === '4-days')?.disabled) return;
-
-    const dates: Date[] = [];
-
-    for (let i = 0; i < 4; i++) {
-      const newDate = new Date(date);
-      newDate.setHours(0, 0, 0, 0);
-      newDate.setDate(newDate.getDate() + i);
-      dates.push(newDate);
-    }
-
-    setDatesInView(dates);
-    setView('4-days');
-  }, [date, setView, availableViews]);
-
-  const enableWeekView = useCallback(() => {
-    if (availableViews.find((v) => v.value === 'week')?.disabled) return;
-
-    const getMonday = () => {
-      const day = date.getDay() || 7;
-      const newDate = new Date(date);
-      if (day !== 1) newDate.setHours(-24 * (day - 1));
-      return newDate;
-    };
-
-    const getWeekdays = () => {
-      const monday = getMonday();
-      const dates: Date[] = [];
-
-      for (let i = 0; i < 7; i++) {
-        const newDate = new Date(monday);
-        newDate.setHours(0, 0, 0, 0);
-        newDate.setDate(newDate.getDate() + i);
-        dates.push(newDate);
-      }
-      return dates;
-    };
-
-    setDatesInView(getWeekdays());
-    setView('week');
-  }, [date, setView, availableViews]);
-
-  useEffect(() => {
-    const updateDatesInView = () => {
-      if (
-        datesInView.length === 7 &&
-        availableViews.find((v) => v.value === 'week')?.disabled === false
-      )
-        enableWeekView();
-      else if (
-        datesInView.length === 4 &&
-        availableViews.find((v) => v.value === '4-days')?.disabled === false
-      )
-        enable4DayView();
-      else enableDayView();
-    };
-
-    updateDatesInView();
-  }, [
-    view,
-    date,
-    datesInView.length,
-    availableViews,
-    enableDayView,
-    enable4DayView,
-    enableWeekView,
-  ]);
-
-  const handleNext = () =>
-    setDate((date) => {
-      const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() + datesInView.length);
-      return newDate;
-    });
-
-  const handlePrev = () =>
-    setDate((date) => {
-      const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - datesInView.length);
-      return newDate;
-    });
-
-  // Set the initial view to week view
-  useEffect(() => {
-    if (datesInView.length !== 0) return;
-    if (window.innerWidth > 768) enableWeekView();
-    else enableDayView();
-  }, [datesInView.length, enableWeekView, enableDayView]);
-
   const [isModalHidden, setModalHidden] = useState(false);
 
   const getModalStatus = useCallback(
@@ -506,25 +318,6 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const showModal = useCallback(() => setModalHidden(false), []);
 
   const values = {
-    refresh,
-    getDate,
-    getTitle,
-
-    isToday,
-    selectToday,
-    selectDate,
-
-    handleNext,
-    handlePrev,
-
-    view,
-    datesInView,
-    availableViews,
-    setAvailableViews,
-    enableDayView,
-    enable4DayView,
-    enableWeekView,
-
     getEvent,
     getCurrentEvents,
     getUpcomingEvent,

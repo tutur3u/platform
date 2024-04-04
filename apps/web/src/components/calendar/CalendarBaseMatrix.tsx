@@ -1,9 +1,6 @@
-import { useCalendar } from '@/hooks/useCalendar';
 import CalendarColumn from './CalendarColumn';
 
-const CalendarBaseMatrix = () => {
-  const { datesInView: dates } = useCalendar();
-
+const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
   return (
     <>
       {dates.map((_, index) => (

@@ -2,11 +2,11 @@ import { useParams } from 'next/navigation';
 import { useCalendar } from '@/hooks/useCalendar';
 import EventCard from './EventCard';
 
-const CalendarEventMatrix = () => {
+const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
 
-  const { getEvents, datesInView: dates } = useCalendar();
+  const { getEvents } = useCalendar();
 
   const events = getEvents();
   const columns = dates.length;
@@ -19,7 +19,7 @@ const CalendarEventMatrix = () => {
     >
       <div id="calendar-event-matrix" className="relative">
         {events.map((event) => (
-          <EventCard wsId={wsId} key={event.id} event={event} />
+          <EventCard wsId={wsId} key={event.id} event={event} dates={dates} />
         ))}
       </div>
     </div>

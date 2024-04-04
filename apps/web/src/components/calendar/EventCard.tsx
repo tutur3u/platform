@@ -7,18 +7,17 @@ import { CalendarEvent } from '@/types/primitives/calendar-event';
 import moment from 'moment';
 
 interface EventCardProps {
+  dates: Date[];
   wsId: string;
   event: CalendarEvent;
 }
 
-export default function EventCard({ wsId, event }: EventCardProps) {
+export default function EventCard({ dates, wsId, event }: EventCardProps) {
   const { id, title, start_at, end_at, color } = event;
 
   const {
-    refresh,
     getEventLevel: getLevel,
     updateEvent,
-    datesInView: dates,
     getActiveEvent,
     openModal,
     closeModal,
@@ -41,7 +40,6 @@ export default function EventCard({ wsId, event }: EventCardProps) {
         );
 
         if (!res.ok) throw new Error('Failed to sync event');
-        await refresh();
       } catch (err) {
         console.error(err);
       }
@@ -55,7 +53,7 @@ export default function EventCard({ wsId, event }: EventCardProps) {
 
       return () => clearTimeout(timeout);
     }
-  }, [event, wsId, id, refresh]);
+  }, [event, wsId, id]);
 
   const convertTime = (time: number) => {
     // 9.5 => 9:30
