@@ -23,7 +23,6 @@ export const models: {
     context: 1048576,
     disabled: true,
   },
-
   {
     value: 'claude-instant-1.2',
     label: 'claude-instant-1.2',

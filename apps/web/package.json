@@ -27,7 +27,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.19.1",
+    "@anthropic-ai/sdk": "^0.20.0",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
@@ -90,7 +90,7 @@
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
     "@vercel/toolbar": "^0.1.13",
-    "ai": "^3.0.17",
+    "ai": "^3.0.18",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.1",
@@ -106,7 +106,7 @@
     "next": "canary",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
-    "openai": "^4.32.1",
+    "openai": "^4.32.2",
     "react": "18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",
@@ -163,18 +163,18 @@
     "lint-staged": "^15.2.2",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.38",
-    "supabase": "^1.153.1",
+    "supabase": "^1.153.4",
     "tailwind-config": "workspace:*",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "tsconfig": "workspace:*",
-    "typescript": "^5.4.3",
+    "typescript": "^5.4.4",
     "vitest": "^1.4.0"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@8.15.5"
+  "packageManager": "pnpm@8.15.6"
 }

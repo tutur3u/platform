@@ -27,6 +27,7 @@ export default function Navlinks() {
       <Link
         href="https://docs.tuturuuu.com"
         className="opacity-50 hover:opacity-100"
+        target="_blank"
       >
         {t('docs')}
       </Link>
