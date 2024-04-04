@@ -88,20 +88,6 @@ const nextConfig = nextTranslate({
       },
     ];
   },
-
-  async rewrites() {
-    // Rewrite all '/docs/:path*' to 'https://docs.tuturuuu.com/:path*'
-    return [
-      {
-        source: '/(.*)/docs',
-        destination: 'https://docs.tuturuuu.com',
-      },
-      {
-        source: '/(.*)/docs/:slug',
-        destination: 'https://docs.tuturuuu.com/:slug',
-      },
-    ];
-  },
 });
 
 // Next.js App Directory doesn't need the i18n config
