@@ -3,7 +3,8 @@
   "name": "Tuturuuu Docs",
   "logo": {
     "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "light": "/logo/light.svg",
+    "href": "https://tuturuuu.com"
   },
   "favicon": "/favicon.svg",
   "colors": {
@@ -22,7 +23,7 @@
     }
   ],
   "topbarCtaButton": {
-    "name": "Dashboard",
+    "name": "Get Started",
     "url": "https://tuturuuu.com/login"
   },
   "tabs": [],
@@ -37,6 +38,23 @@
     {
       "group": "Get Started",
       "pages": ["introduction", "development", "documentation"]
+    },
+    {
+      "group": "Features",
+      "pages": ["features/meet-together"]
+    },
+    {
+      "group": "Personalization",
+      "pages": ["personalization/themes", "personalization/language"]
+    },
+    {
+      "group": "Experiments",
+      "pages": [
+        "experiments/form-builder",
+        "experiments/calendar",
+        "experiments/project-management",
+        "experiments/ai-chat"
+      ]
     }
   ],
   "footerSocials": {
@@ -46,6 +64,7 @@
     "linkedin": "https://www.linkedin.com/company/tuturuuu"
   },
   "feedback": {
-    "thumbsRating": true
+    "thumbsRating": true,
+    "suggestEdit": true
   }
 }

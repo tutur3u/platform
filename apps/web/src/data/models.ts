@@ -21,7 +21,6 @@ export const models: {
     description:
       "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
     context: 1048576,
-    disabled: true,
   },
   {
     value: 'claude-instant-1.2',
