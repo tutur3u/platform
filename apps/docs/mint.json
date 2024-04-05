@@ -36,7 +36,7 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "development"]
+      "pages": ["introduction", "development", "documentation"]
     }
   ],
   "footerSocials": {
