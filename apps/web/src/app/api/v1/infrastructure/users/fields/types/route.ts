@@ -26,9 +26,9 @@ export async function GET(_: Request) {
 
   // return NextResponse.json(data);
   return NextResponse.json([
-    { id: 'BOOLEAN' },
     { id: 'TEXT' },
     { id: 'NUMBER' },
+    { id: 'BOOLEAN' },
     { id: 'DATE' },
     { id: 'DATETIME' },
   ]);
