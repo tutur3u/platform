@@ -4,11 +4,8 @@
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[sql]": {
-    "editor.defaultFormatter": "mtxr.sqltools"
-  },
-  "[toml]": {
-    "editor.defaultFormatter": "tamasfe.even-better-toml"
-  },
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+
+  "vitest.enable": true,
+  "vitest.commandLine": "pnpm exec vitest"
 }

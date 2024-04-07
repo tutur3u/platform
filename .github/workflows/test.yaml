@@ -1,19 +1,19 @@
-name: General CI
+name: Test
 
 on:
   push:
-    branches: ['staging', 'production']
+    branches: ['main', 'staging', 'production']
   pull_request:
     types: [opened, synchronize]
 
 jobs:
   build:
-    name: Build and test
+    name: Unit Tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [20]
 
     env:
       # Use Vercel Remote Caching
@@ -23,28 +23,17 @@ jobs:
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
     steps:
-      - name: Cache .next
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ${{ github.workspace }}/.next/cache
-          # Generate a new cache whenever packages or source files change.
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-          # If source files changed but packages didn't, rebuild from a prior cache.
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
-
       - name: Check out code
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - uses: pnpm/action-setup@v3.0.0
+      - uses: pnpm/action-setup@v3
         with:
-          version: 7
+          version: 8
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -54,9 +43,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Build
-        run: pnpm build
 
       - name: Test
         run: pnpm test

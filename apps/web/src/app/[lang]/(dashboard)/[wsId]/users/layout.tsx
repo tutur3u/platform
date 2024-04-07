@@ -24,8 +24,8 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('list'),
-      href: `/${wsId}/users/list`,
+      name: t('database'),
+      href: `/${wsId}/users/database`,
     },
     {
       name: t('groups'),
@@ -35,6 +35,11 @@ export default async function Layout({
       name: t('reports'),
       href: `/${wsId}/users/reports`,
       allowedPresets: ['EDUCATION'],
+      disabled: true,
+    },
+    {
+      name: t('fields'),
+      href: `/${wsId}/users/fields`,
     },
   ];
 

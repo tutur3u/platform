@@ -1,16 +1,23 @@
 import { type UseChatHelpers } from 'ai/react';
-
 import { Button } from '@/components/ui/button';
 import { PromptForm } from '@/components/prompt-form';
-import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom';
+import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import { ArrowLeftToLine, FolderOpen } from 'lucide-react';
+import {
+  ArrowDownFromLine,
+  ArrowLeftToLine,
+  ArrowUpFromLine,
+  FolderOpen,
+} from 'lucide-react';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from './ui/scroll-area';
 import { Message } from 'ai';
-import React from 'react';
+import React, { useState } from 'react';
+import { ScrollToTopButton } from './scroll-to-top-button';
+import { ChatModelSelector } from './chat-model-selector';
+import { Model } from '@/data/models';
 
 export interface ChatPanelProps
   extends Pick<
@@ -28,6 +35,8 @@ export interface ChatPanelProps
   count: number | null;
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
+  model: Model;
+  setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
@@ -45,6 +54,8 @@ export function ChatPanel({
   input,
   inputRef,
   setInput,
+  model,
+  setModel,
   createChat,
   clearChat,
   collapsed,
@@ -52,9 +63,14 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const { t } = useTranslation('ai-chat');
 
+  const [showExtraOptions, setShowExtraOptions] = useState(false);
+
   return (
     <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
-      <ButtonScrollToBottom />
+      <div className="absolute bottom-20 right-4 z-10 grid gap-2 md:bottom-28 md:right-8">
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
+      </div>
 
       <div className="mx-auto sm:px-4 lg:max-w-4xl xl:max-w-6xl">
         <div className="relative mb-2 flex items-center justify-center gap-2">
@@ -184,24 +200,51 @@ export function ChatPanel({
           ) : null} */}
         </div>
 
-        <div className="bg-background/20 space-y-4 rounded-t-xl border border-t px-4 py-2 shadow-lg backdrop-blur-lg md:py-4">
-          <PromptForm
-            onSubmit={async (value) => {
-              // If there is no id, create a new chat
-              if (!id) return await createChat(value);
-
-              // If there is an id, append the message to the chat
-              await append({
-                id,
-                content: value,
-                role: 'user',
-              });
+        <div
+          className={`bg-background/20 flex flex-col items-start justify-end space-y-2 rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg ${
+            showExtraOptions ? 'h-[7.75rem]' : 'h-20'
+          } transition-all duration-500`}
+        >
+          <ChatModelSelector
+            className={`${
+              showExtraOptions
+                ? 'pointer-events-auto opacity-100 delay-500 duration-500'
+                : 'pointer-events-none opacity-0'
+            } transition-all ease-in-out`}
+            model={model}
+            onChange={(m) => {
+              setModel(m);
+              console.log(m);
             }}
-            input={input}
-            inputRef={inputRef}
-            setInput={setInput}
-            isLoading={isLoading}
           />
+          <div className="flex w-full items-center gap-2">
+            <PromptForm
+              onSubmit={async (value) => {
+                // If there is no id, create a new chat
+                if (!id) return await createChat(value);
+
+                // If there is an id, append the message to the chat
+                await append({
+                  id,
+                  content: value,
+                  role: 'user',
+                });
+              }}
+              input={input}
+              inputRef={inputRef}
+              setInput={setInput}
+              isLoading={isLoading}
+            />
+            <Button
+              size="icon"
+              type="submit"
+              variant="ghost"
+              onClick={() => setShowExtraOptions((prev) => !prev)}
+            >
+              {showExtraOptions ? <ArrowDownFromLine /> : <ArrowUpFromLine />}
+              <span className="sr-only">Send message</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

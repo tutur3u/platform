@@ -1,13 +1,10 @@
-import { useCalendar } from '@/hooks/useCalendar';
-
 interface DayTitleProps {
+  view: 'day' | '4-days' | 'week';
   date: Date;
   weekday: string;
 }
 
-export default function DayTitle({ date, weekday }: DayTitleProps) {
-  const { view } = useCalendar();
-
+export default function DayTitle({ view, date, weekday }: DayTitleProps) {
   const today = new Date();
   const isToday = date.toDateString() === today.toDateString();
 

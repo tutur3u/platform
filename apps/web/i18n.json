@@ -194,7 +194,7 @@
       "sidebar-tabs",
       "workspace-users-tabs"
     ],
-    "/[lang]/(dashboard)/[wsId]/users/list": [
+    "/[lang]/(dashboard)/[wsId]/users/database": [
       "sidebar-tabs",
       "search",
       "gender",
@@ -235,6 +235,13 @@
       "sidebar-tabs",
       "search",
       "user-report-data-table"
+    ],
+
+    "/[lang]/(dashboard)/[wsId]/users/fields": [
+      "sidebar-tabs",
+      "search",
+      "ws-user-fields",
+      "user-field-data-table"
     ],
 
     "/[lang]/(dashboard)/[wsId]/users/[userId]": ["user-data-table"],

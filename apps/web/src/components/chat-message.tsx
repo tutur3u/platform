@@ -1,3 +1,5 @@
+'use client';
+
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 
@@ -43,17 +45,12 @@ export function ChatMessage({
   const isDark = resolvedTheme?.includes('dark');
 
   return (
-    <div className={cn('group relative mb-4 grid gap-4')} {...props}>
-      <div className="flex flex-wrap gap-2">
-        <div
-          className={`${
-            resolvedTheme === 'light'
-              ? 'bg-transparent'
-              : resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
-                ? 'bg-foreground/5'
-                : 'bg-foreground/10'
-          } flex w-fit select-none items-center space-x-2 rounded-lg border p-2`}
-        >
+    <div
+      className={cn('group relative mb-4 grid h-fit w-full gap-4')}
+      {...props}
+    >
+      <div className="flex h-fit flex-wrap justify-between gap-2">
+        <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
               'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
@@ -82,7 +79,7 @@ export function ChatMessage({
                       : 'from-pink-600 via-purple-500 to-sky-500'
                   }`}
                 >
-                  Skora AI / {model}
+                  Skora
                 </span>
               )}
             </span>
@@ -98,7 +95,7 @@ export function ChatMessage({
 
       <div className="flex-1 space-y-2">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-full max-w-full break-words"
+          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-[calc(100vw-8rem)] min-w-full break-words md:w-[38rem] lg:w-full"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{

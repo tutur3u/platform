@@ -14,15 +14,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from '../../scroll-area';
+import { UserCog } from 'lucide-react';
 
 interface DataTableViewOptionsProps<TData> {
   namespace: string;
   table: Table<TData>;
+  extraColumns?: any[];
 }
 
 export function DataTableViewOptions<TData>({
   namespace,
   table,
+  extraColumns,
 }: DataTableViewOptionsProps<TData>) {
   const { t } = useTranslation(namespace);
 
@@ -52,15 +55,33 @@ export function DataTableViewOptions<TData>({
               (column) =>
                 typeof column.accessorFn !== 'undefined' && column.getCanHide()
             )
-            .map((column) => {
+            .map((column, idx) => {
               return (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(value)}
-                >
-                  {t(column.id)}
-                </DropdownMenuCheckboxItem>
+                <>
+                  {/* If this item is the last system column before the extra
+                  columns start (if there is any), add a separator */}
+                  {extraColumns?.length &&
+                  extraColumns[0].id === column.id &&
+                  idx !== 0 ? (
+                    <DropdownMenuSeparator />
+                  ) : null}
+
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(value)}
+                  >
+                    {extraColumns?.some(
+                      (extraColumn) => extraColumn.id === column.id
+                    ) ? (
+                      <UserCog className="mr-2 h-4 w-4" />
+                    ) : undefined}
+
+                    {extraColumns?.findLast(
+                      (extraColumn) => extraColumn.id === column.id
+                    )?.name || t(column.id)}
+                  </DropdownMenuCheckboxItem>
+                </>
               );
             })}
         </ScrollArea>

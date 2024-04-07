@@ -6,14 +6,14 @@ import { useAtBottom } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { IconArrowDown } from '@/components/ui/icons';
 
-export function ButtonScrollToBottom({ className, ...props }: ButtonProps) {
+export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
   const isAtBottom = useAtBottom();
 
   return (
     <Button
       className={cn(
-        'bg-background/20 absolute bottom-20 right-4 z-10 backdrop-blur-lg transition-opacity duration-300 md:bottom-28 md:right-8',
-        isAtBottom ? 'opacity-0' : 'opacity-100',
+        'bg-background/20 backdrop-blur-lg transition-opacity duration-300',
+        isAtBottom ? 'pointer-events-none opacity-0' : 'opacity-100',
         className
       )}
       onClick={() => {

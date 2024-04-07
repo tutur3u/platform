@@ -32,7 +32,11 @@ import { Translate } from 'next-translate';
 
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
-  columnGenerator?: (t: Translate) => ColumnDef<TData, TValue>[];
+  columnGenerator?: (
+    t: Translate,
+    extraColumns?: any[]
+  ) => ColumnDef<TData, TValue>[];
+  extraColumns?: any[];
   editContent?: ReactNode;
   namespace?: string;
   data?: TData[];
@@ -43,6 +47,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   columnGenerator,
+  extraColumns,
   editContent,
   namespace = 'common',
   data,
@@ -63,7 +68,7 @@ export function DataTable<TData, TValue>({
 
   const table = useReactTable({
     data: data || [],
-    columns: columnGenerator ? columnGenerator(t) : columns || [],
+    columns: columnGenerator ? columnGenerator(t, extraColumns) : columns || [],
     state: {
       sorting,
       columnVisibility,
@@ -97,6 +102,7 @@ export function DataTable<TData, TValue>({
         namespace={namespace}
         table={table}
         editContent={editContent}
+        extraColumns={extraColumns}
       />
       <div className="rounded-md border">
         <Table>

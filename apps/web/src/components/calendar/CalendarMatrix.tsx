@@ -1,11 +1,11 @@
 import CalendarBaseMatrix from './CalendarBaseMatrix';
 import CalendarEventMatrix from './CalendarEventMatrix';
 
-const CalendarMatrix = () => {
+const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
   return (
     <>
-      <CalendarBaseMatrix />
-      <CalendarEventMatrix />
+      <CalendarBaseMatrix dates={dates} />
+      <CalendarEventMatrix dates={dates} />
     </>
   );
 };

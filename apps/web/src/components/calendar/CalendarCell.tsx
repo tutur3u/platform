@@ -1,4 +1,4 @@
-import { useCalendar } from '@/hooks/useCalendar';
+// import { useCalendar } from '@/hooks/useCalendar';
 
 interface CalendarCellProps {
   date: string;
@@ -6,18 +6,18 @@ interface CalendarCellProps {
 }
 
 const CalendarCell = ({ date, hour }: CalendarCellProps) => {
-  const { addEmptyEvent } = useCalendar();
+  // const { addEmptyEvent } = useCalendar();
 
   const id = `cell-${date}-${hour}`;
 
-  const handleCreateEvent = (midHour?: boolean) => {
-    const newDate = new Date(date);
+  // const handleCreateEvent = (midHour?: boolean) => {
+  //   const newDate = new Date(date);
 
-    newDate.setDate(newDate.getDate() + 1);
-    newDate.setHours(hour, midHour ? 30 : 0, 0, 0);
+  //   newDate.setDate(newDate.getDate() + 1);
+  //   newDate.setHours(hour, midHour ? 30 : 0, 0, 0);
 
-    addEmptyEvent(newDate);
-  };
+  //   addEmptyEvent(newDate);
+  // };
 
   return (
     <div
@@ -31,11 +31,11 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     >
       <button
         className="row-span-2 cursor-default"
-        onClick={() => handleCreateEvent()}
+        // onClick={() => handleCreateEvent()}
       />
       <button
         className="cursor-default"
-        onClick={() => handleCreateEvent(true)}
+        // onClick={() => handleCreateEvent(true)}
       />
     </div>
   );

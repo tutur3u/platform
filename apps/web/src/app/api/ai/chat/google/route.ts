@@ -12,7 +12,7 @@ export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
-const MODEL_NAME = 'gemini-1.0-pro';
+const DEFAULT_MODEL_NAME = 'gemini-1.0-pro';
 const API_KEY = process.env.GOOGLE_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -47,9 +47,10 @@ export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
   if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
-  const { id, wsId, messages, previewToken } = (await req.json()) as {
+  const { id, wsId, model, messages, previewToken } = (await req.json()) as {
     id?: string;
     wsId?: string;
+    model?: string;
     messages?: Message[];
     previewToken?: string;
   };
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
 
     const geminiStream = await genAI
       .getGenerativeModel({
-        model: MODEL_NAME,
+        model: model || DEFAULT_MODEL_NAME,
         generationConfig,
         safetySettings,
       })

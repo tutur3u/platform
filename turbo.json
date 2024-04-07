@@ -7,7 +7,9 @@
     "SHOW_TAILWIND_INDICATOR",
     "NEXT_PUBLIC_VERCEL_ENV",
     "SUPABASE_SERVICE_KEY",
+    "MODAL_TOKEN_SECRET",
     "ANTHROPIC_API_KEY",
+    "MODAL_TOKEN_ID",
     "OPENAI_API_KEY",
     "GOOGLE_API_KEY",
     "CF_ACCOUNT_ID",
@@ -24,6 +26,9 @@
     },
     "lint": {},
     "test": {},
+    "test:watch": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true

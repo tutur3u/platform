@@ -1,7 +1,7 @@
 # Tuturuuu Monorepo
 
-[![Build and test](https://github.com/tutur3u/tutur3u/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/build-and-test.yaml)
-[![Supabase CI](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
+[![Tests](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml)
+[![Supabase](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
 
 This repository is a monorepo for all of Tuturuuu's services, powered by Turborepo.
 
@@ -25,9 +25,11 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 This turborepo has some additional tools already setup for you:
 
 - [Tailwind CSS](https://tailwindcss.com/) for styles
+- [Shadcn UI](https://ui.shadcn.com/) for UI components
 - [TypeScript](https://www.typescriptlang.org/) for static type checking.
 - [ESLint](https://eslint.org/) for code linting.
 - [Prettier](https://prettier.io) for code formatting.
+- [Vitest](https://vitest.dev/) for testing.
 
 ### Setup
 
