@@ -1,4 +1,3 @@
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { notFound } from 'next/navigation';
 import UtilityButtons from './utility-buttons';
 import 'dayjs/locale/vi';
@@ -10,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import EditPlanDialog from './edit-plan-dialog';
 import { createAdminClient } from '@/utils/supabase/client';
 import PlanUserFilter from './plan-user-filter';
+import { getPlan } from './helpers';
 
 interface Props {
   params: {
@@ -65,29 +65,6 @@ export default async function MeetTogetherPlanDetailsPage({
       )}
     </div>
   );
-}
-
-async function getPlan(planId: string) {
-  const sbAdmin = createAdminClient();
-  if (!sbAdmin) return notFound();
-
-  // planId is an uuid without dashes, so we need to add them back in
-  planId = planId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-
-  const queryBuilder = sbAdmin
-    .from('meet_together_plans')
-    .select('*')
-    .eq('id', planId)
-    .single();
-
-  const { data, error } = await queryBuilder;
-
-  if (error) {
-    console.log(error);
-    notFound();
-  }
-
-  return data as MeetTogetherPlan;
 }
 
 async function getUsers(planId: string) {
