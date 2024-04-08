@@ -24,7 +24,7 @@ export async function generateMetadata({
   return {
     title: {
       default: title,
-      template: `%s - ${title}`,
+      template: `%s - ${siteConfig.name}`,
     },
     description,
     keywords: [
