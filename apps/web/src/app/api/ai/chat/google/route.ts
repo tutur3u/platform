@@ -12,7 +12,7 @@ export const runtime = 'edge';
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.0-pro';
+const DEFAULT_MODEL_NAME = 'gemini-1.0-pro-latest';
 const API_KEY = process.env.GOOGLE_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -27,19 +27,19 @@ const generationConfig = {
 const safetySettings = [
   {
     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
   },
   {
     category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
   },
   {
     category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
   },
   {
     category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
   },
 ];
 
