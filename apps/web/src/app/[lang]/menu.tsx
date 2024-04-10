@@ -63,6 +63,17 @@ export default function Menu({
         >
           Meet Together
         </Link>
+        <Link
+        href="https://docs.tuturuuu.com"
+          className={`h-fit ${
+            pathname === '/calendar/meet-together'
+              ? 'opacity-100'
+              : 'opacity-50 hover:opacity-100'
+          }`}
+        target="_blank"
+        >
+          Docs
+        </Link>
       </div>
 
       <div className="hidden gap-1 md:flex">
