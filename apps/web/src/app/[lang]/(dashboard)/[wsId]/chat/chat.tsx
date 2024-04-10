@@ -23,6 +23,7 @@ import { ChatPanel } from '@/components/chat-panel';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
+import { Model, defaultModel } from '@/data/models';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: AIChat;
@@ -66,16 +67,17 @@ const Chat = ({
   }, [hasKeys, previewToken]);
 
   const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
-  const [model] = useState<'google' | 'anthropic'>('google');
+  const [model, setModel] = useState<Model>(defaultModel);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/ai/chat/${model}`,
+      api: `/api/ai/chat/${model.provider.toLowerCase()}`,
       body: {
         id: chat?.id,
         wsId,
+        model: model.value,
         previewToken,
       },
       onResponse(response) {
@@ -133,13 +135,16 @@ const Chat = ({
   const createChat = async (input: string) => {
     setPendingPrompt(input);
 
-    const res = await fetch(`/api/ai/chat/${model}/new`, {
-      method: 'POST',
-      body: JSON.stringify({
-        message: input,
-        previewToken,
-      }),
-    });
+    const res = await fetch(
+      `/api/ai/chat/${model.provider.toLowerCase()}/new`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          message: input,
+          previewToken,
+        }),
+      }
+    );
 
     if (!res.ok) {
       toast({
@@ -236,6 +241,8 @@ const Chat = ({
         input={input}
         inputRef={inputRef}
         setInput={setInput}
+        model={model}
+        setModel={setModel}
         messages={messages}
         collapsed={collapsed}
         createChat={createChat}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Tuturuuu Docs",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg",
+    "href": "https://tuturuuu.com"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#000000",
+    "light": "#ffffff",
+    "dark": "#000000",
+    "anchors": {
+      "from": "#000000",
+      "to": "#ffffff"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:contact@tuturuuu.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://tuturuuu.com/login"
+  },
+  "tabs": [],
+  "anchors": [
+    {
+      "name": "GitHub Repository",
+      "icon": "github",
+      "url": "https://github.com/tutur3u/tutur3u"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": ["introduction", "development", "documentation"]
+    },
+    {
+      "group": "Features",
+      "pages": ["features/meet-together"]
+    },
+    {
+      "group": "Personalization",
+      "pages": ["personalization/themes", "personalization/language"]
+    },
+    {
+      "group": "Experiments",
+      "pages": [
+        "experiments/form-builder",
+        "experiments/calendar",
+        "experiments/project-management",
+        "experiments/ai-chat"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "facebook": "https://www.facebook.com/tuturuuu",
+    "x": "https://x.com/tutur3u",
+    "github": "https://github.com/tutur3u",
+    "linkedin": "https://www.linkedin.com/company/tuturuuu"
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
+  }
+}

@@ -1,6 +1,7 @@
 {
   "overview": "Overview",
-  "list": "List",
+  "database": "Database",
   "groups": "Groups",
-  "reports": "Reports"
+  "reports": "Reports",
+  "fields": "Fields"
 }

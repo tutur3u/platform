@@ -36,6 +36,7 @@ export function PromptForm({
         await onSubmit(input);
       }}
       ref={formRef}
+      className="w-full"
     >
       <div className="bg-background/70 flex max-h-60 w-full items-end overflow-hidden rounded-lg border p-2 pl-4">
         <Textarea

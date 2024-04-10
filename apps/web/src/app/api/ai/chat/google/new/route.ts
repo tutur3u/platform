@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const model = 'gemini-pro';
+    const model = 'gemini-1.0-pro-latest';
 
     const geminiRes = await genAI
       .getGenerativeModel({ model })

@@ -5,8 +5,8 @@
   "main": "index.js",
   "devDependencies": {
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7"
   },
-  "packageManager": "pnpm@8.15.5"
+  "packageManager": "pnpm@8.15.6"
 }

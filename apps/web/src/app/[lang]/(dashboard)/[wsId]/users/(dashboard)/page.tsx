@@ -27,7 +27,7 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
         <StatisticCard
           title={usersLabel}
           value={users}
-          href={`/${wsId}/users/list`}
+          href={`/${wsId}/users/database`}
         />
         <StatisticCard
           title={t('workspace-users-tabs:groups')}

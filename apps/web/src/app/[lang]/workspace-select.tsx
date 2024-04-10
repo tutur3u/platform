@@ -331,53 +331,42 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
             className="flex items-center gap-1 px-2"
             disabled={!onlineUsers}
           >
-            {onlineUsers ? (
-              onlineUsers.length > 0 ? (
-                onlineUsers.slice(0, 3).map((user) => (
-                  <div
-                    key={user.id}
-                    className="hidden items-center gap-2 md:flex"
-                  >
-                    <Avatar className="relative h-6 w-6 overflow-visible">
-                      <AvatarImage
-                        src={user?.avatar_url || undefined}
-                        alt={
-                          user.display_name || user.handle || user.email || '?'
-                        }
-                        className="overflow-clip rounded-full"
-                      />
-                      <AvatarFallback className="text-xs font-semibold">
-                        {getInitials(
-                          user?.display_name ||
-                            user?.handle ||
-                            user.email ||
-                            '?'
-                        )}
-                      </AvatarFallback>
-                      <div className="bg-background absolute bottom-0 right-0 z-10 h-2 w-2 rounded-full" />
-                      <div
-                        className={`absolute bottom-0 right-0 z-20 h-1.5 w-1.5 rounded-full ${
-                          isDefault
-                            ? 'bg-green-500 dark:bg-green-400'
-                            : 'bg-foreground'
-                        }`}
-                      />
-                    </Avatar>
-                  </div>
-                ))
-              ) : (
-                <span className="text-foreground/50">
-                  {t('common:no_online_users')}
-                </span>
-              )
+            {onlineUsers && (onlineUsers?.length || 0) > 0 ? (
+              onlineUsers.slice(0, 3).map((user) => (
+                <div
+                  key={user.id}
+                  className="hidden items-center gap-2 md:flex"
+                >
+                  <Avatar className="border-background relative h-6 w-6 overflow-visible border">
+                    <AvatarImage
+                      src={user?.avatar_url || undefined}
+                      alt={
+                        user.display_name || user.handle || user.email || '?'
+                      }
+                      className="overflow-clip rounded-full"
+                    />
+                    <AvatarFallback className="text-xs font-semibold">
+                      {getInitials(
+                        user?.display_name || user?.handle || user.email || '?'
+                      )}
+                    </AvatarFallback>
+                    <div
+                      className={`border-background absolute bottom-0 right-0 z-20 h-2 w-2 rounded-full border ${
+                        isDefault
+                          ? 'bg-green-500 dark:bg-green-400'
+                          : 'bg-foreground'
+                      }`}
+                    />
+                  </Avatar>
+                </div>
+              ))
             ) : (
-              <LoadingIndicator />
+              <LoadingIndicator className="h-6 w-6" />
             )}
 
             {onlineUsers && (
               <div className="flex items-center gap-2 font-semibold md:hidden">
                 <div>{onlineUsers.length || 0}</div>
-                <div className="bg-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full" />
                 <div
                   className={`relative inset-0 h-2 w-2 rounded-full ${
                     isDefault
@@ -422,9 +411,8 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                       user?.display_name || user?.handle || user.email || '?'
                     )}
                   </AvatarFallback>
-                  <div className="bg-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full" />
                   <div
-                    className={`absolute bottom-0 right-0 z-10 h-2 w-2 rounded-full ${
+                    className={`border-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 ${
                       isDefault
                         ? 'bg-green-500 dark:bg-green-400'
                         : 'bg-foreground'

@@ -56,7 +56,7 @@ const FormSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  birthday: z.string().optional(),
+  birthday: z.date().optional(),
   ethnicity: z.string().optional(),
   guardianName: z.string().optional(),
   nationalId: z.string().optional(),
@@ -93,19 +93,19 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
       id: user?.id || '',
       fullName: user?.full_name || '',
       displayName: user?.display_name || '',
-      email: user?.email,
-      phone: user?.phone,
+      email: user?.email || '',
+      phone: user?.phone || '',
       gender: user?.gender?.toLocaleUpperCase() as
         | 'MALE'
         | 'FEMALE'
         | 'OTHER'
         | undefined,
-      birthday: user?.birthday,
-      ethnicity: user?.ethnicity,
-      guardianName: user?.guardian,
-      nationalId: user?.national_id,
-      address: user?.address,
-      note: user?.note,
+      birthday: user?.birthday ? new Date(user.birthday) : undefined,
+      ethnicity: user?.ethnicity || '',
+      guardianName: user?.guardian || '',
+      nationalId: user?.national_id || '',
+      address: user?.address || '',
+      note: user?.note || '',
     },
   });
 

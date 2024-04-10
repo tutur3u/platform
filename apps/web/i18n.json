@@ -77,6 +77,12 @@
     "/[lang]/(dashboard)/[wsId]/chat": ["ai-chat"],
     "/[lang]/(dashboard)/[wsId]/chat/[chatId]": ["ai-chat"],
 
+    "/[lang]/(dashboard)/[wsId]/ai": ["workspace-ai-layout"],
+    "/[lang]/(dashboard)/[wsId]/ai/workflows": [
+      "workspace-ai-layout",
+      "ws-ai-workflows"
+    ],
+
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)": [
       "sidebar-tabs",
       "workspace-settings-layout"
@@ -194,7 +200,7 @@
       "sidebar-tabs",
       "workspace-users-tabs"
     ],
-    "/[lang]/(dashboard)/[wsId]/users/list": [
+    "/[lang]/(dashboard)/[wsId]/users/database": [
       "sidebar-tabs",
       "search",
       "gender",
@@ -235,6 +241,13 @@
       "sidebar-tabs",
       "search",
       "user-report-data-table"
+    ],
+
+    "/[lang]/(dashboard)/[wsId]/users/fields": [
+      "sidebar-tabs",
+      "search",
+      "ws-user-fields",
+      "user-field-data-table"
     ],
 
     "/[lang]/(dashboard)/[wsId]/users/[userId]": ["user-data-table"],

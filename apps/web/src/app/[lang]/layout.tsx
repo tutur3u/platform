@@ -31,12 +31,7 @@ export async function generateMetadata({
   const viDescription =
     'Câu lạc bộ công nghệ hàng đầu dành cho sinh viên SSET tại Đại học RMIT.';
 
-  const description =
-    lang === 'en'
-      ? enDescription
-      : lang === 'vi'
-        ? viDescription
-        : enDescription;
+  const description = lang === 'vi' ? viDescription : enDescription;
 
   return {
     title: {

@@ -1,52 +1,50 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
-import { SegmentedControl } from '@mantine/core';
-import { useCalendar } from '@/hooks/useCalendar';
+import dayjs from 'dayjs';
 import useTranslation from 'next-translate/useTranslation';
-import { useEffect } from 'react';
 
-export default function CalendarHeader() {
-  const {
-    isToday,
-    getTitle,
-    availableViews,
-    setAvailableViews,
-    view,
-    handlePrev,
-    handleNext,
-    selectToday,
-    enableDayView,
-    enable4DayView,
-    enableWeekView,
-  } = useCalendar();
+export default function CalendarHeader({
+  date,
+  setDate,
+  view,
+  offset,
+  // availableViews,
+}: {
+  date: Date;
+  setDate: React.Dispatch<React.SetStateAction<Date>>;
+  view: 'day' | '4-days' | 'week';
+  offset: number;
+  availableViews: { value: string; label: string; disabled?: boolean }[];
+}) {
+  const { t, lang } = useTranslation('calendar');
 
-  const { t } = useTranslation('calendar');
+  // const views = availableViews.filter((view) => view?.disabled !== true);
 
-  const views = availableViews.filter((view) => view?.disabled !== true);
+  const title = dayjs(date)
+    .locale(lang)
+    .format(lang === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
+    .replace(/^\w/, (c) => c.toUpperCase());
 
-  useEffect(() => {
-    setAvailableViews([
-      {
-        value: 'day',
-        label: t('day'),
-        disabled: false,
-      },
-      {
-        value: '4-days',
-        label: t('4-days'),
-        disabled: window.innerWidth <= 768,
-      },
-      {
-        value: 'week',
-        label: t('week'),
-        disabled: window.innerWidth <= 768,
-      },
-    ]);
-  }, [t, setAvailableViews]);
+  const handleNext = () =>
+    setDate((date) => {
+      const newDate = new Date(date);
+      newDate.setDate(newDate.getDate() + offset);
+      return newDate;
+    });
+
+  const handlePrev = () =>
+    setDate((date) => {
+      const newDate = new Date(date);
+      newDate.setDate(newDate.getDate() - offset);
+      return newDate;
+    });
+
+  const selectToday = () => setDate(new Date());
+  const isToday = () => dayjs(date).isSame(dayjs(), 'day');
 
   return (
     <div className="mb-2 flex items-center justify-between gap-2">
       <div className="flex items-center gap-4 text-2xl font-semibold lg:text-3xl">
-        <span>{getTitle()}</span>
+        <span>{title}</span>
       </div>
 
       <div className="flex items-center justify-center gap-4 text-zinc-600 dark:text-zinc-300">
@@ -81,7 +79,7 @@ export default function CalendarHeader() {
           </button>
         </div>
 
-        {views.length > 1 && (
+        {/* {views.length > 1 && (
           <SegmentedControl
             radius="md"
             value={view}
@@ -92,7 +90,7 @@ export default function CalendarHeader() {
               if (value === 'week') enableWeekView();
             }}
           />
-        )}
+        )} */}
       </div>
     </div>
   );

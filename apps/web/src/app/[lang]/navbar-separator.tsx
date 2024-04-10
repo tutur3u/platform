@@ -1,9 +1,11 @@
 'use client';
 
 import { Separator } from '@/components/ui/separator';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function NavbarSeparator() {
+  const pathname = usePathname();
   const [scroll, setScroll] = useState(0);
 
   useEffect(() => {
@@ -19,9 +21,11 @@ export default function NavbarSeparator() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const forceShow = pathname.startsWith('/docs');
+
   return (
     <Separator
-      className={`${scroll > 0 ? 'opacity-100' : 'opacity-0'} transition duration-300`}
+      className={`${forceShow || scroll > 0 ? 'opacity-100' : 'opacity-0'} transition duration-300`}
     />
   );
 }

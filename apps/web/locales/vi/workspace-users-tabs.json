@@ -1,6 +1,7 @@
 {
   "overview": "Tổng quan",
-  "list": "Danh sách",
+  "database": "Danh sách",
   "groups": "Nhóm",
-  "reports": "Báo cáo"
+  "reports": "Báo cáo",
+  "fields": "Trường thông tin"
 }

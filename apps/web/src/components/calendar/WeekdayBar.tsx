@@ -1,13 +1,17 @@
 import useTranslation from 'next-translate/useTranslation';
-import { useCalendar } from '@/hooks/useCalendar';
 import DayTitle from './DayTitle';
 
-const WeekdayBar = () => {
+const WeekdayBar = ({
+  view,
+  dates,
+}: {
+  view: 'day' | '4-days' | 'week';
+  dates: Date[];
+}) => {
   const { lang } = useTranslation();
-  const { datesInView: days } = useCalendar();
 
   const getGridCols = () => {
-    switch (days.length) {
+    switch (dates.length) {
       case 1:
         return 'grid-cols-1';
 
@@ -30,14 +34,15 @@ const WeekdayBar = () => {
       <div
         className={`border-border grid flex-1 rounded-tr-lg border-r border-t dark:border-zinc-800 ${getGridCols()}`}
       >
-        {days.map((weekday, index) => (
+        {dates.map((weekday, index) => (
           <div
             key={`date-${weekday.toLocaleString(lang, {
               weekday: 'short',
             })}`}
           >
             <DayTitle
-              date={days[index]}
+              view={view}
+              date={dates[index]}
               weekday={weekday.toLocaleString(lang, {
                 weekday: lang === 'vi' ? 'narrow' : 'short',
               })}

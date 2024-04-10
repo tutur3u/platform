@@ -16,5 +16,7 @@
   "address": "Address",
   "note": "Note",
   "linked_users": "Linked Users",
-  "linked_to": "Linked to"
+  "linked_to": "Linked to",
+  "created_at": "Created At",
+  "updated_at": "Updated At"
 }
