@@ -143,7 +143,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.0",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^20.12.6",
+    "@types/node": "^20.12.7",
     "@types/react": "^18.2.75",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.24",
