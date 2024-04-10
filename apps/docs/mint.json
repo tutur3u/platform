@@ -37,7 +37,7 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "development", "documentation"]
+      "pages": ["introduction", "development", "documenting"]
     },
     {
       "group": "Features",
@@ -52,6 +52,7 @@
       "pages": [
         "experiments/form-builder",
         "experiments/calendar",
+        "experiments/finance",
         "experiments/project-management",
         "experiments/ai-chat"
       ]
