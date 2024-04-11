@@ -3,7 +3,7 @@
 [![Tests](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml)
 [![Supabase](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
 
-This repository is a monorepo for all of Tuturuuu's services, powered by Turborepo.
+This repository is a monorepo for all of Tuturuuu's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 
 ## What's inside?
 
