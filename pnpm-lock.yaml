@@ -364,8 +364,8 @@ importers:
         specifier: ^5.29.0
         version: 5.29.0(@tanstack/react-query@5.29.0)(react@18.2.0)
       '@testing-library/react':
-        specifier: ^15.0.0
-        version: 15.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^15.0.1
+        version: 15.0.1(react-dom@18.2.0)(react@18.2.0)
       '@types/cookie':
         specifier: ^0.6.0
         version: 0.6.0
@@ -3660,8 +3660,8 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@testing-library/react@15.0.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-Nb2Sq8MoSvGVdOGGppRqXeafLtvXCOwiOQtcbqCfkpVNZZNUqIjeSOwrfJ59zBfmZbAn8PitnWEzUKD1YwMrCg==}
+  /@testing-library/react@15.0.1(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-I8u4qqGAuBg7C1/kRB9n7Oz9Pc/UHEkmiQRbJziSG8B13eZfAcAUn8TSP26ZIvfSeb68CngmtZbKKcRqcQKa3g==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18.0.0
