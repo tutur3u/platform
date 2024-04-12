@@ -6,19 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Carrot,
-  Check,
-  Crown,
-  Ghost,
-  Heart,
-  Monitor,
-  Moon,
-  Sparkles,
-  Sun,
-  Trees,
-  Waves,
-} from 'lucide-react';
+import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
 export function ThemeDropdownItems() {
@@ -33,33 +21,33 @@ export function ThemeDropdownItems() {
     | 'system'
     | undefined;
 
-  const secondaryTheme = theme?.split('-')?.[1] as
-    | 'pink'
-    | 'purple'
-    | 'yellow'
-    | 'orange'
-    | 'green'
-    | 'blue'
-    | undefined;
+  // const secondaryTheme = theme?.split('-')?.[1] as
+  //   | 'pink'
+  //   | 'purple'
+  //   | 'yellow'
+  //   | 'orange'
+  //   | 'green'
+  //   | 'blue'
+  //   | undefined;
 
   const updateTheme = ({
     primary = primaryTheme,
-    secondary = secondaryTheme,
+    // secondary = secondaryTheme,
   }: {
     primary?: 'light' | 'dark' | 'system';
-    secondary?:
-      | 'pink'
-      | 'purple'
-      | 'yellow'
-      | 'orange'
-      | 'green'
-      | 'blue'
-      | null;
+    // secondary?:
+    //   | 'pink'
+    //   | 'purple'
+    //   | 'yellow'
+    //   | 'orange'
+    //   | 'green'
+    //   | 'blue'
+    //   | null;
   }) => {
     let theme = '';
 
     if (primary) theme += primary === 'system' ? systemTheme : primary;
-    if (secondary) theme += `-${secondary}`;
+    // if (secondary) theme += `-${secondary}`;
 
     // remove leading dash
     if (theme.startsWith('-')) theme = theme.slice(1);
@@ -97,9 +85,9 @@ export function ThemeDropdownItems() {
         {t('dark')}
       </DropdownMenuItem>
 
-      <DropdownMenuSeparator />
+      {/* <DropdownMenuSeparator /> */}
 
-      <DropdownMenuItem
+      {/* <DropdownMenuItem
         className="cursor-pointer"
         onClick={() => updateTheme({ primary: primaryTheme, secondary: null })}
         disabled={!secondaryTheme}
@@ -188,7 +176,7 @@ export function ThemeDropdownItems() {
           <Waves className="mr-2 h-4 w-4" />
         )}
         {t('blue')}
-      </DropdownMenuItem>
+      </DropdownMenuItem> */}
 
       <DropdownMenuSeparator />
 
