@@ -26,10 +26,8 @@ interface Props {
 export async function generateMetadata({
   params: { lang },
 }: Props): Promise<Metadata> {
-  const enDescription =
-    'The best tech club for SSET students at RMIT University.';
-  const viDescription =
-    'Câu lạc bộ công nghệ hàng đầu dành cho sinh viên SSET tại Đại học RMIT.';
+  const enDescription = 'Take control of your workflow, supercharged by AI.';
+  const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
   const description = lang === 'vi' ? viDescription : enDescription;
 

@@ -1,4 +1,4 @@
-# Contributing to NCT Hub
+# Contributing to Tuturuuu
 
 We welcome contributions from the community to help strengthen our project and better serve our users. Please follow these guidelines if you wish to contribute:
 
@@ -47,11 +47,11 @@ Contributors are expected to comply with our conduct principles:
 - Be considerate, constructive, and helpful
 - Be professional, ethical, and take responsibility
 
-Thank you again for your interest in contributing to NCT Hub! Together we can build an exceptional experience for our users.
+Thank you again for your interest in contributing to Tuturuuu! Together we can build an exceptional experience for our users.
 
 ## Local Setup
 
-To setup NCT Hub locally, you'll need:
+To setup Tuturuuu locally, you'll need:
 
 - pnpm installed (our package manager of choice)
 - A database (we recommend PostgreSQL)

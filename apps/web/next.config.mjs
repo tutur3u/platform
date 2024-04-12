@@ -98,27 +98,27 @@ const withBundleAnalyzerConfig = withBundleAnalyzer({
 });
 
 export default withBundleAnalyzerConfig(
-  // withSentryConfig(
-  nextConfig
-  // {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-webpack-plugin#options
+  withSentryConfig(
+    nextConfig,
+    {
+      // For all available options, see:
+      // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  // Suppresses source map uploading logs during build
-  //   silent: true,
+      // Suppresses source map uploading logs during build
+      silent: true,
 
-  //   org: 'tuturuuu',
-  //   project: 'web-app',
-  // },
-  // {
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+      org: 'tuturuuu',
+      project: 'web-app',
+    },
+    {
+      // For all available options, see:
+      // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Hides source maps from generated client bundles
-  // hideSourceMaps: true,
+      // Hides source maps from generated client bundles
+      hideSourceMaps: true,
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  // disableLogger: true,
-  // }
-  // )
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      disableLogger: true,
+    }
+  )
 );

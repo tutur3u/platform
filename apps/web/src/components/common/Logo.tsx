@@ -14,7 +14,7 @@ export default function Logo({
   alwaysShowLabel = false,
   onClick,
 }: LogoProps) {
-  const label = 'NCT';
+  const label = 'Tuturuuu';
 
   return (
     <Link

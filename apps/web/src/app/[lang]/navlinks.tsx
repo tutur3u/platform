@@ -2,20 +2,22 @@
 
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Navlinks() {
   const { t } = useTranslation('common');
+  const pathname = usePathname();
+
+  if (pathname === '/calendar/meet-together') return null;
+  if (
+    pathname !== '/' &&
+    pathname !== '/branding' &&
+    !pathname.startsWith('/calendar/meet-together/')
+  )
+    return null;
 
   return (
-    <div className="left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 transform items-center justify-center gap-4 md:absolute md:flex md:gap-8">
-      <Link href="/" className="opacity-50 hover:opacity-100">
-        {t('home')}
-      </Link>
-      <Link href="/about" className="opacity-50 hover:opacity-100">
-        {t('about')}
-      </Link>
-      <div className="cursor-not-allowed opacity-20">{t('members')}</div>
-      <div className="cursor-not-allowed opacity-20">{t('projects')}</div>
+    <div className="left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 transform items-center justify-center gap-4 md:absolute md:flex">
       <Link
         href="/calendar/meet-together"
         className="opacity-50 hover:opacity-100"

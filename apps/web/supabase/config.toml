@@ -1,6 +1,6 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "nct"
+project_id = "tuturuuu"
 
 [api]
 # Port to use for the API URL.
@@ -92,7 +92,7 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Auth templates
 [auth.email.template.confirmation]
-subject = "Confirm your NCT Hub account"
+subject = "Confirm your Tuturuuu account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
@@ -100,15 +100,15 @@ subject = "Email Change Confirmation"
 content_path = "./supabase/templates/email_change.html"
 
 [auth.email.template.invite]
-subject = "Invitation to NCT Hub"
+subject = "Invitation to Tuturuuu"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "NCT Hub Verification Code"
+subject = "Tuturuuu Verification Code"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.recovery]
-subject = "NCT Hub Password Recovery"
+subject = "Tuturuuu Password Recovery"
 content_path = "./supabase/templates/recovery.html"
 
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,

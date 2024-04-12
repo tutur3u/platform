@@ -1,4 +1,4 @@
-# NCT Monorepo (NCT Hub)
+# Tuturuuu Monorepo
 
 [![Tests](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml)
 [![Supabase](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
@@ -11,7 +11,7 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 
 ### Apps
 
-- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT, including the landing page, pricing plans, branding-related resources and NCT's services through a web application interface. On production, this app is located at [**rmitneoculturetechclub.com**](https://rmitneoculturetechclub.com).
+- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about Tuturuuu, including the landing page, pricing plans, branding-related resources and Tuturuuu's services through a web application interface. On production, this app is located at [**tuturuuu.com**](https://tuturuuu.com).
 
 ### Packages
 
