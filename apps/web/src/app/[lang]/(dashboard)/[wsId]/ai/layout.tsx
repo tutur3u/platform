@@ -29,6 +29,11 @@ export default async function Layout({
       matchExact: true,
     },
     {
+      name: t('test_generation'),
+      href: `/${wsId}/ai/test-generation`,
+      // disabled: true,
+    },
+    {
       name: t('prompts'),
       href: `/${wsId}/ai/prompts`,
       // disabled: true,

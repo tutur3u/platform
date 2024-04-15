@@ -23,11 +23,11 @@ interface Props {
   };
 }
 
-export default async function WorkspaceAIWorkflowsPage({
+export default async function WorkspaceAIPromptsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: projects, count } = await getWorkflows(wsId, searchParams);
+  const { data: projects, count } = await getPrompts(wsId, searchParams);
   const { t } = useTranslation('ws-ai-workflows');
 
   return (
@@ -68,7 +68,7 @@ export default async function WorkspaceAIWorkflowsPage({
   );
 }
 
-async function getWorkflows(
+async function getPrompts(
   wsId: string,
   {
     q,

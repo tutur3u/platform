@@ -1,5 +1,6 @@
 {
   "overview": "Tổng quan",
+  "test_generation": "Tạo test case tự động",
   "prompts": "Lệnh nhắc",
   "workflows": "Quy trình",
   "pipeline": "Luồng xử lý"
