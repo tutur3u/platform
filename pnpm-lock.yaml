@@ -51,8 +51,8 @@ importers:
         specifier: ^0.5.4
         version: 0.5.4
       '@google/generative-ai':
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.7.0
+        version: 0.7.0
       '@heroicons/react':
         specifier: ^2.1.3
         version: 2.1.3(react@18.2.0)
@@ -1139,8 +1139,8 @@ packages:
       tslib: 2.6.2
     dev: false
 
-  /@google/generative-ai@0.6.0:
-    resolution: {integrity: sha512-jkc7vBOW/yKhNtOkpQI1jYFtAybEc0kjf8I6CpSUBWVdrVh45jIikeTlYaYckH+KtZjteARUhg26mh5XnFT6Yg==}
+  /@google/generative-ai@0.7.0:
+    resolution: {integrity: sha512-+1kNkKbkDJftrvwfULQphkyC2ZQ42exlyR+TFARMuykuu6y8XyevbX0dDarqt1GVpZDm55yg0TBq6I1J65X6OA==}
     engines: {node: '>=18.0.0'}
     dev: false
 
