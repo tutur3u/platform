@@ -22,7 +22,7 @@ export default async function OnboardingPage() {
   const noInvites = t('no-invites');
 
   return (
-    <div className="inset-0 m-4 mt-32 flex items-center justify-center lg:mx-32">
+    <div className="inset-0 flex h-full items-center justify-center p-4 lg:px-32">
       <div className="border-foreground/20 flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border p-4 backdrop-blur-2xl md:p-8">
         <Suspense
           fallback={

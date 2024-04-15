@@ -8,7 +8,7 @@ export default async function Login() {
   const { t } = useTranslation('auth');
 
   return (
-    <div className="relative flex w-full flex-col items-center justify-center p-8">
+    <div className="relative flex h-full w-full flex-col items-center justify-center p-8">
       <Link
         href="/"
         className="text-foreground bg-btn-background hover:bg-btn-background-hover group absolute left-8 top-8 flex items-center rounded-md px-4 py-2 text-sm no-underline"
