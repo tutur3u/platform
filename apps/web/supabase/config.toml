@@ -126,7 +126,7 @@ redirect_uri = ""
 url = ""
 
 [analytics]
-enabled = true
+enabled = false
 port = 8007
 vector_port = 8008
 # Configure one of the supported backends: `postgres`, `bigquery`
