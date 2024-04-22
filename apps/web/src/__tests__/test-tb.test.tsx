@@ -1,7 +1,7 @@
 import {
   datesToDateMatrix,
 } from '@/utils/timeblock-helper';
-import { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { expect, test } from 'vitest';
 
 test('datesToDateMatrix should return the soonest and latest dates from an array of dates', () => {
