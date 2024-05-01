@@ -6,7 +6,8 @@
       "@/*": ["*"]
     },
     "plugins": [{ "name": "next" }],
-    "target": "ESNext"
+    "target": "ESNext",
+    "allowJs": false
   },
   "include": [
     "next-env.d.ts",
