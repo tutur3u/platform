@@ -15,6 +15,7 @@
   "workbench.editor.customLabels.patterns": {
     "**/app/**/page.tsx": "${dirname} - Page",
     "**/app/**/layout.tsx": "${dirname} - Layout",
+    "**/app/**/route.ts": "${dirname} - API",
     "**/components/**/index.tsx": "${dirname} - Component"
   }
 }

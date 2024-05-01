@@ -158,9 +158,28 @@ export async function getSecrets({
   return data as WorkspaceSecret[];
 }
 
+export async function verifyHasSecrets(
+  wsId: string,
+  requiredSecrets: string[]
+) {
+  const secrets = await getSecrets({ wsId, requiredSecrets });
+  return requiredSecrets.every((secret) =>
+    secrets.some(({ name }) => name === secret)
+  );
+}
+
 export function getSecret(
   secretName: string,
   secrets: WorkspaceSecret[]
 ): WorkspaceSecret | undefined {
   return secrets.find(({ name }) => name === secretName);
+}
+
+export function verifySecret(
+  secretName: string,
+  secretValue: string,
+  secrets: WorkspaceSecret[]
+) {
+  const secret = getSecret(secretName, secrets);
+  return secret?.value === secretValue;
 }
