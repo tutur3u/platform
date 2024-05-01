@@ -4,13 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "eslint-config-next": "canary",
-    "eslint-config-turbo": "^1.13.3",
+    "eslint-config-next": "14.3.0-canary.33",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-config-turbo": "^1.13.3",
     "eslint-plugin-react": "^7.34.1"
   },
   "devDependencies": {
-    "next": "canary"
+    "next": "14.3.0-canary.33"
   },
   "publishConfig": {
     "access": "public"

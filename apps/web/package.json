@@ -103,7 +103,7 @@
     "moment": "^2.30.1",
     "nanoid": "^5.0.7",
     "negotiator": "^0.6.3",
-    "next": "canary",
+    "next": "14.3.0-canary.33",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
     "openai": "^4.40.0",
@@ -133,8 +133,8 @@
     "zod": "^3.23.5"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "canary",
-    "@next/eslint-plugin-next": "canary",
+    "@next/bundle-analyzer": "14.3.0-canary.33",
+    "@next/eslint-plugin-next": "14.3.0-canary.33",
     "@tailwindcss/typography": "^0.5.13",
     "@tanstack/eslint-plugin-query": "^5.32.1",
     "@tanstack/react-query-devtools": "^5.32.1",
