@@ -1,25 +1,19 @@
-import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '@/components/ui/separator';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { TaskBoard } from '@/types/primitives/TaskBoard';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { projectColumns } from '@/data/columns/projects';
-import ProjectEditDialog from '../../projects/_components/project-edit-dialog';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
+import AIPromptsTable from './table';
+import { Database } from '@/types/supabase';
+import { AIPrompt } from '@/types/db';
 
 interface Props {
   params: {
     wsId: string;
   };
   searchParams: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
+    q: string;
+    page: string;
+    pageSize: string;
   };
 }
 
@@ -27,48 +21,14 @@ export default async function WorkspaceAIPromptsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: projects, count } = await getPrompts(wsId, searchParams);
-  const { t } = useTranslation('ws-ai-workflows');
+  const enabled = verifyHasSecrets(wsId, ['ENABLE_AI']);
+  if (!enabled) redirect(`/${wsId}`);
 
-  return (
-    <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('module')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <ProjectEditDialog
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create')}
-              </Button>
-            }
-            submitLabel={t('create')}
-          />
-        </div>
-      </div>
-      <Separator className="my-4" />
-      <DataTable
-        columnGenerator={projectColumns}
-        namespace="basic-data-table"
-        data={projects}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
-  );
+  const { data, count } = await getData(wsId, searchParams);
+  return <AIPromptsTable wsId={wsId} data={data} count={count} />;
 }
 
-async function getPrompts(
+async function getData(
   wsId: string,
   {
     q,
@@ -79,12 +39,12 @@ async function getPrompts(
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase
-    .from('workspace_boards')
+    .from('workspace_ai_prompts')
     .select('*', {
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -96,9 +56,8 @@ async function getPrompts(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  // const { data, error, count } = await queryBuilder;
-  // if (error) throw error;
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
 
-  // return { data, count } as { data: TaskBoard[]; count: number };
-  return { data: [], count: 0 } as { data: TaskBoard[]; count: number };
+  return { data, count } as { data: AIPrompt[]; count: number };
 }

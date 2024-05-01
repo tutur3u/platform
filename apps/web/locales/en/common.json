@@ -44,7 +44,7 @@
   "reset": "Reset",
   "cancel": "Cancel",
   "start": "Start",
-  "processing": "Processing",
+  "processing": "Processing...",
   "saving": "Saving",
   "loading": "Loading",
   "success": "Success",

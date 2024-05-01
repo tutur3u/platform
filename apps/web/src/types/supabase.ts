@@ -2419,6 +2419,68 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_ai_prompts: {
+        Row: {
+          created_at: string;
+          creator_id: string;
+          id: string;
+          input: string;
+          model: string;
+          name: string | null;
+          output: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          input: string;
+          model: string;
+          name?: string | null;
+          output: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          input?: string;
+          model?: string;
+          name?: string | null;
+          output?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_model_fkey';
+            columns: ['model'];
+            isOneToOne: false;
+            referencedRelation: 'ai_models';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_api_keys: {
         Row: {
           created_at: string;
@@ -2682,21 +2744,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      workspace_presets: {
-        Row: {
-          enabled: boolean;
-          name: string;
-        };
-        Insert: {
-          enabled?: boolean;
-          name: string;
-        };
-        Update: {
-          enabled?: boolean;
-          name?: string;
-        };
-        Relationships: [];
       };
       workspace_products: {
         Row: {
@@ -3357,7 +3404,6 @@ export type Database = {
           id: string;
           logo_url: string | null;
           name: string | null;
-          preset: string;
         };
         Insert: {
           avatar_url?: string | null;
@@ -3367,7 +3413,6 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name?: string | null;
-          preset?: string;
         };
         Update: {
           avatar_url?: string | null;
@@ -3377,17 +3422,8 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name?: string | null;
-          preset?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'workspaces_preset_fkey';
-            columns: ['preset'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_presets';
-            referencedColumns: ['name'];
-          },
-        ];
+        Relationships: [];
       };
     };
     Views: {

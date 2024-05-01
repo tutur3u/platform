@@ -47,12 +47,20 @@ export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
   if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
-  const { id, wsId, model, messages, previewToken } = (await req.json()) as {
+  const {
+    id,
+    wsId,
+    model,
+    messages,
+    previewToken,
+    stream = true,
+  } = (await req.json()) as {
     id?: string;
     wsId?: string;
     model?: string;
     messages?: Message[];
     previewToken?: string;
+    stream?: boolean;
   };
 
   try {
@@ -91,14 +99,6 @@ export async function POST(req: Request) {
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
-    const geminiStream = await genAI
-      .getGenerativeModel({
-        model: model || DEFAULT_MODEL_NAME,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContentStream(prompt);
-
     let chatId = id;
 
     if (!chatId) {
@@ -116,56 +116,91 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
-    const stream = GoogleGenerativeAIStream(geminiStream, {
-      onStart: async () => {
-        // If there is only 1 message, we will not save it to the database
-        // Since it is the prompt message that created the conversation
-        if (messages.length === 1) return;
+    if (stream) {
+      const geminiStream = await genAI
+        .getGenerativeModel({
+          model: model || DEFAULT_MODEL_NAME,
+          generationConfig,
+          safetySettings,
+        })
+        .generateContentStream(prompt);
 
-        const userMessages = messages.filter(
-          (msg: Message) => msg.role === 'user'
-        );
+      const res = GoogleGenerativeAIStream(geminiStream, {
+        onStart: async () => {
+          // If there is only 1 message, we will not save it to the database
+          // Since it is the prompt message that created the conversation
+          if (messages.length === 1) return;
 
-        const message = userMessages[userMessages.length - 1]?.content;
-        if (!message) {
-          console.log('No message found');
-          throw new Error('No message found');
-        }
+          const userMessages = messages.filter(
+            (msg: Message) => msg.role === 'user'
+          );
 
-        const { error } = await sbAdmin.rpc('insert_ai_chat_message', {
-          message,
-          chat_id: chatId,
-        });
+          const message = userMessages[userMessages.length - 1]?.content;
+          if (!message) {
+            console.log('No message found');
+            throw new Error('No message found');
+          }
 
-        if (error) {
-          console.log(error);
-          throw new Error(error.message);
-        }
+          const { error } = await sbAdmin.rpc('insert_ai_chat_message', {
+            message,
+            chat_id: chatId,
+          });
 
-        console.log('User message saved to database');
-      },
-      onCompletion: async (completion) => {
-        if (!completion) {
-          console.log('No content found');
-          throw new Error('No content found');
-        }
+          if (error) {
+            console.log(error);
+            throw new Error(error.message);
+          }
 
-        const { error } = await sbAdmin.from('ai_chat_messages').insert({
-          chat_id: chatId,
-          content: completion,
-          role: 'ASSISTANT',
-          model: 'GOOGLE-GEMINI-PRO',
-        });
+          console.log('User message saved to database');
+        },
+        onCompletion: async (completion) => {
+          if (!completion) {
+            console.log('No content found');
+            throw new Error('No content found');
+          }
 
-        if (error) {
-          console.log(error);
-          throw new Error(error.message);
-        }
+          const { error } = await sbAdmin.from('ai_chat_messages').insert({
+            chat_id: chatId,
+            content: completion,
+            role: 'ASSISTANT',
+            model: 'GOOGLE-GEMINI-PRO',
+          });
 
-        console.log('AI Response saved to database');
-      },
-    });
-    return new StreamingTextResponse(stream);
+          if (error) {
+            console.log(error);
+            throw new Error(error.message);
+          }
+
+          console.log('AI Response saved to database');
+        },
+      });
+      return new StreamingTextResponse(res);
+    } else {
+      const geminiRes = await genAI
+        .getGenerativeModel({
+          model: model || DEFAULT_MODEL_NAME,
+          generationConfig,
+          safetySettings,
+        })
+        .generateContent(prompt);
+
+      const completion =
+        geminiRes.response.candidates?.[0].content.parts[0].text;
+      if (!completion) return new Response('No content found', { status: 404 });
+
+      const { error } = await sbAdmin.from('ai_chat_messages').insert({
+        chat_id: chatId,
+        content: completion,
+        role: 'ASSISTANT',
+        model: 'GOOGLE-GEMINI-PRO',
+      });
+
+      if (error) return new Response(error.message, { status: 500 });
+
+      return new Response(JSON.stringify({ response: completion }), {
+        status: 200,
+      });
+    }
   } catch (error: any) {
     console.log(error);
     return new Response(
