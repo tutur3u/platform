@@ -49,6 +49,7 @@ export default async function Login() {
           {t('notice-p1')}{' '}
           <Link
             href="/terms"
+            target="_blank"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             {t('tos')}
@@ -56,6 +57,7 @@ export default async function Login() {
           {t('common:and')}{' '}
           <Link
             href="/privacy"
+            target="_blank"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             {t('privacy')}
