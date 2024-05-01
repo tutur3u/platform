@@ -31,7 +31,7 @@ export default async function MarketingPage() {
 
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
             {t('headline-p1')} <br />
-            <GradientHeadline />.
+            <GradientHeadline title={t('headline-p2')} />.
           </p>
 
           <GetStartedButton
