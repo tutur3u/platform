@@ -1,5 +1,5 @@
 import { suggestEmails } from '@/utils/email-helper';
-import { describe, expect, it,  } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('suggestEmails', () => {
   it('should return an array of suggested emails', () => {

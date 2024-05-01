@@ -5,10 +5,17 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "typescript.tsdk": "node_modules\\typescript\\lib",
-
-  "vitest.enable": true,
-  "vitest.commandLine": "pnpm exec vitest",
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.turbo": true
+  },
+  "workbench.editor.customLabels.patterns": {
+    "**/app/**/page.tsx": "${dirname} - Page",
+    "**/app/**/layout.tsx": "${dirname} - Layout",
+    "**/app/**/route.ts": "${dirname} - API",
+    "**/components/**/index.tsx": "${dirname} - Component"
   }
 }

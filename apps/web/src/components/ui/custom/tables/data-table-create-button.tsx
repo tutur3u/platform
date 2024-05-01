@@ -21,7 +21,10 @@ export function DataTableCreateButton(props: DataTableCreateButtonProps) {
           {t('create')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         {props.editContent}
       </DialogContent>
     </>

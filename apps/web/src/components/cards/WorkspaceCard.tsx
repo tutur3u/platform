@@ -14,9 +14,6 @@ const WorkspaceCard = ({ ws }: Props) => {
           <div className="line-clamp-1 font-semibold tracking-wide">
             {ws.name}
           </div>
-          <div className="line-clamp-1 font-semibold text-blue-600 dark:text-blue-300">
-            {ws?.preset || 'Chưa có preset'}
-          </div>
         </div>
       </div>
 

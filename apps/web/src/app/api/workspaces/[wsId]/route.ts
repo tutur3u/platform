@@ -26,7 +26,7 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, preset, created_at, workspace_members!inner(role)')
+    .select('id, name, created_at, workspace_members!inner(role)')
     .eq('id', id)
     .eq('workspace_members.user_id', user.id)
     .single();
@@ -46,13 +46,12 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
 export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const { name, preset } = await req.json();
+  const { name } = await req.json();
 
   const { error } = await supabase
     .from('workspaces')
     .update({
       name,
-      preset,
     })
     .eq('id', id);
 

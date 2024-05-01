@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
+import { getSecrets } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Message } from 'ai';
 import Chat from '../chat';
@@ -26,9 +26,6 @@ export default async function AIPage({
   const { lang: locale } = searchParams;
 
   if (!chatId) notFound();
-
-  const workspace = await getWorkspace(wsId);
-  if (!workspace?.preset) notFound();
 
   const secrets = await getSecrets({
     wsId,

@@ -21,7 +21,7 @@ export async function getWorkspace(id?: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
     )
     .eq('id', id)
     .eq('workspace_members.user_id', user.id)
@@ -53,7 +53,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -158,9 +158,28 @@ export async function getSecrets({
   return data as WorkspaceSecret[];
 }
 
+export async function verifyHasSecrets(
+  wsId: string,
+  requiredSecrets: string[]
+) {
+  const secrets = await getSecrets({ wsId, requiredSecrets });
+  return requiredSecrets.every((secret) =>
+    secrets.some(({ name }) => name === secret)
+  );
+}
+
 export function getSecret(
   secretName: string,
   secrets: WorkspaceSecret[]
 ): WorkspaceSecret | undefined {
   return secrets.find(({ name }) => name === secretName);
+}
+
+export function verifySecret(
+  secretName: string,
+  secretValue: string,
+  secrets: WorkspaceSecret[]
+) {
+  const secret = getSecret(secretName, secrets);
+  return secret?.value === secretValue;
 }

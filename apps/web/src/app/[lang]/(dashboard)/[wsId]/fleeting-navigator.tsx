@@ -11,6 +11,8 @@ import { toast } from '@/components/ui/use-toast';
 import useTranslation from 'next-translate/useTranslation';
 
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
+  const disabledPaths = [`/${wsId}/chat`, `/${wsId}/ai/playground`];
+
   const { t } = useTranslation('sidebar-tabs');
   const pathname = usePathname();
 
@@ -57,8 +59,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
 
   const ref = useClickOutside(() => setCurrentView(undefined));
 
-  if (pathname.startsWith(`/${wsId}/chat`)) return null;
-  if (pathname.startsWith(`/${wsId}/ai/playground`)) return null;
+  if (disabledPaths.some((path) => pathname.startsWith(path))) return null;
 
   const createChat = async (input: string) => {
     const res = await fetch(`/api/ai/chat/${model}/new`, {

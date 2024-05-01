@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { WorkspacePreset } from '@/types/primitives/WorkspacePreset';
 import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { User } from '@/types/primitives/User';
 import Link from 'next/link';
@@ -15,9 +14,7 @@ export interface NavLink {
   disableOnProduction?: boolean;
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
-  allowedPresets?: WorkspacePreset[];
   allowedRoles?: string[];
-  disabledPresets?: WorkspacePreset[];
   disabledRoles?: string[];
 }
 
@@ -25,7 +22,6 @@ interface Props {
   currentWsId?: string;
   currentRole?: string;
   currentUser?: User | null;
-  currentPreset?: WorkspacePreset;
   navLinks: NavLink[];
 }
 
@@ -33,7 +29,6 @@ export function Navigation({
   currentWsId,
   currentRole,
   currentUser,
-  currentPreset,
   navLinks,
 }: Props) {
   const pathname = usePathname();
@@ -57,15 +52,6 @@ export function Navigation({
 
         // If the link requires the root workspace, check if the current workspace is the root workspace
         if (link?.requireRootWorkspace && !isRootWorkspace) return null;
-
-        // If the link is only allowed for certain presets, check if the current preset is allowed
-        if (
-          currentPreset !== 'ALL' &&
-          currentPreset !== undefined &&
-          (link?.allowedPresets?.includes(currentPreset) === false ||
-            link?.disabledPresets?.includes(currentPreset) === true)
-        )
-          return null;
 
         // If the link is only allowed for certain roles, check if the current role is allowed
         if (

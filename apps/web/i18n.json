@@ -78,6 +78,11 @@
     "/[lang]/(dashboard)/[wsId]/chat/[chatId]": ["ai-chat"],
 
     "/[lang]/(dashboard)/[wsId]/ai": ["workspace-ai-layout"],
+    "/[lang]/(dashboard)/[wsId]/ai/prompts": [
+      "workspace-ai-layout",
+      "ai-prompts-data-table",
+      "search"
+    ],
     "/[lang]/(dashboard)/[wsId]/ai/workflows": [
       "workspace-ai-layout",
       "ws-ai-workflows"

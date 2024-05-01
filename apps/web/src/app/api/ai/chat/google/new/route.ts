@@ -47,7 +47,6 @@ export async function POST(req: Request) {
       .generateContent(prompt);
 
     const title = geminiRes.response.candidates?.[0].content.parts[0].text;
-    console.log({ title });
 
     if (!title) {
       return NextResponse.json(
