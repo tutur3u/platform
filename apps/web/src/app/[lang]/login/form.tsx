@@ -19,6 +19,10 @@ import { toast } from '@/components/ui/use-toast';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useTranslation from 'next-translate/useTranslation';
+import { DEV_MODE } from '@/constants/common';
+import Link from 'next/link';
+import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
+import { Mail } from 'lucide-react';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -177,18 +181,59 @@ export default function LoginForm() {
           )}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={
-            loading ||
-            form.formState.isSubmitting ||
-            !form.formState.isValid ||
-            (otpSent && !form.formState.dirtyFields.otp)
-          }
-        >
-          {loading ? t('processing') : t('continue')}
-        </Button>
+        {otpSent && (
+          <div className="grid gap-2 md:grid-cols-2">
+            {DEV_MODE ? (
+              <Link
+                href="http://localhost:8004/monitor"
+                target="_blank"
+                className="col-span-full"
+              >
+                <Button type="button" className="w-full" variant="outline">
+                  <Mail size={18} className="mr-1" />
+                  {t('open_inbucket')}
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="https://mail.google.com/mail/u/0/#inbox"
+                  target="_blank"
+                >
+                  <Button type="button" className="w-full" variant="outline">
+                    <IconBrandGmail size={18} className="mr-1" />
+                    {t('open_gmail')}
+                  </Button>
+                </Link>
+
+                <Link
+                  href="https://outlook.live.com/mail/inbox"
+                  target="_blank"
+                >
+                  <Button type="button" className="w-full" variant="outline">
+                    <IconBrandWindows size={18} className="mr-1" />
+                    {t('open_outlook')}
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="grid gap-2">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={
+              loading ||
+              form.formState.isSubmitting ||
+              !form.formState.isValid ||
+              (otpSent && !form.formState.dirtyFields.otp)
+            }
+          >
+            {loading ? t('processing') : t('continue')}
+          </Button>
+        </div>
       </form>
     </Form>
   );
