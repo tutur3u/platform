@@ -21,7 +21,7 @@ export async function getWorkspace(id?: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
     )
     .eq('id', id)
     .eq('workspace_members.user_id', user.id)
@@ -53,7 +53,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, preset, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 

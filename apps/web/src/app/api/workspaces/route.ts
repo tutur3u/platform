@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('id:ws_id, role, workspaces(name, preset)')
+    .select('id:ws_id, role, workspaces(name)')
     .order('sort_key')
     .order('created_at', { ascending: false });
 
@@ -31,13 +31,12 @@ export async function GET() {
 export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const { name, preset } = await req.json();
+  const { name } = await req.json();
 
   const { error } = await supabase
     .from('workspaces')
     .insert({
       name,
-      preset,
     })
     .single();
 

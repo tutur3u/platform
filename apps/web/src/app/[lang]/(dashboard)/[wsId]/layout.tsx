@@ -1,6 +1,6 @@
 import { Navigation, NavLink } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
-import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
+import { getSecret, getSecrets } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
 import FleetingNavigator from './fleeting-navigator';
 
@@ -20,8 +20,6 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const { t } = useTranslation('sidebar-tabs');
-
-  const workspace = await getWorkspace(wsId);
 
   const secrets = await getSecrets({
     wsId,
@@ -92,7 +90,6 @@ export default async function Layout({
     {
       name: t('healthcare'),
       href: `/${wsId}/healthcare`,
-      allowedPresets: ['ALL', 'PHARMACY'],
       disabled: !verifySecret('ENABLE_HEALTHCARE', 'true'),
     },
     {
@@ -118,11 +115,7 @@ export default async function Layout({
     <>
       <div className="px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="scrollbar-none flex gap-1 overflow-x-auto">
-          <Navigation
-            currentWsId={wsId}
-            currentPreset={workspace?.preset ?? 'GENERAL'}
-            navLinks={navLinks}
-          />
+          <Navigation currentWsId={wsId} navLinks={navLinks} />
         </div>
       </div>
       <Separator className="opacity-50" />
