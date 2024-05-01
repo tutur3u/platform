@@ -22,7 +22,7 @@ export default async function Footer() {
 
         <Link
           href="/login"
-          className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 block w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
+          className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
         >
           {getStarted}
         </Link>
@@ -113,30 +113,61 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-32 lg:gap-32">
-          <div className="flex flex-col md:items-start">
-            <div className="text-xl font-semibold">{t('common:resources')}</div>
+        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
+              {t('common:legal')}
+            </div>
+            <Link
+              href="/terms"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common:terms')}
+            </Link>
+            <Link
+              href="/privacy"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common:privacy')}
+            </Link>
+          </div>
+
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
+              {t('common:resources')}
+            </div>
             <Link
               href="/calendar/meet-together"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common:meet-together')}
             </Link>
             <Link
               href="/branding"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common:branding')}
             </Link>
           </div>
 
-          <div className="flex flex-col md:items-start">
-            <div className="text-xl font-semibold">
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
               {t('common:developers')}
             </div>
             <Link
+              href="https://docs.tuturuuu.com"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common:documentation')}
+            </Link>
+            <Link
               href="https://github.com/tutur3u/tutur3u"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common:open-source')}
             </Link>

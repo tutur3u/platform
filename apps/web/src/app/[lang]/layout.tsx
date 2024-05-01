@@ -29,12 +29,7 @@ export async function generateMetadata({
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
-  const description =
-    lang === 'en'
-      ? enDescription
-      : lang === 'vi'
-        ? viDescription
-        : enDescription;
+  const description = lang === 'vi' ? viDescription : enDescription;
 
   return {
     title: {
