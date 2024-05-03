@@ -439,8 +439,8 @@ importers:
         specifier: ^8.4.38
         version: 8.4.38
       supabase:
-        specifier: ^1.164.1
-        version: 1.164.1
+        specifier: ^1.165.0
+        version: 1.165.0
       tailwind-scrollbar:
         specifier: ^3.1.0
         version: 3.1.0(tailwindcss@3.4.3)
@@ -5565,8 +5565,8 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  supabase@1.164.1:
-    resolution: {integrity: sha512-1NwkDBW9Ny28Nhdxwf79tyU/x3BLNWNw/9m5olZXvJZvhaZhOCKt1JZgPnSYX/eXS2OQiKd8MJkE0gMYRZorew==}
+  supabase@1.165.0:
+    resolution: {integrity: sha512-bN1TSR6p4POxCQqb3OsO6vo2H9yKIUB2HW44SiLAV9leBIjdm4AsrJJ1hmc/YecqjtuBooAr7RXz/uGKQEQbEQ==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -12055,7 +12055,7 @@ snapshots:
       pirates: 4.0.6
       ts-interface-checker: 0.1.13
 
-  supabase@1.164.1:
+  supabase@1.165.0:
     dependencies:
       bin-links: 4.0.3
       https-proxy-agent: 7.0.4
