@@ -11,6 +11,7 @@ import { DataTableCreateButton } from './data-table-create-button';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
+  newObjectTitle?: string;
   editContent?: ReactNode;
   namespace: string;
   table: Table<TData>;
@@ -18,6 +19,7 @@ interface DataTableToolbarProps<TData> {
 }
 
 export function DataTableToolbar<TData>({
+  newObjectTitle,
   editContent,
   namespace,
   table,
@@ -55,7 +57,12 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
-        {editContent && <DataTableCreateButton editContent={editContent} />}
+        {editContent && (
+          <DataTableCreateButton
+            newObjectTitle={newObjectTitle}
+            editContent={editContent}
+          />
+        )}
         <DataTableRefreshButton />
         <DataTableViewOptions
           namespace={namespace}
