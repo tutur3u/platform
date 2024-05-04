@@ -5,14 +5,16 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
-import { Transaction } from '@/types/primitives/Transaction';
+import { StorageObject } from '@/types/primitives/StorageObject';
 import { Translate } from 'next-translate';
-import { TransactionRowActions } from './row-actions';
+import { StorageObjectRowActions } from './row-actions';
+import { formatBytes } from '@/utils/file-helper';
 
-export const transactionColumns = (
+export const storageObjectsColumns = (
   t: Translate,
-  setTransaction: (value: Transaction | undefined) => void
-): ColumnDef<Transaction>[] => [
+  setStorageObject: (value: StorageObject | undefined) => void,
+  wsId: string
+): ColumnDef<StorageObject>[] => [
   {
     id: 'select',
     header: ({ table }) => (
@@ -49,11 +51,23 @@ export const transactionColumns = (
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
+      <div className="min-w-[8rem] font-semibold">
+        {row.getValue('name')
+          ? (row.getValue('name') as string).split(`${wsId}/`)[1]
+          : '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'size',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('size')} />
+    ),
+    cell: ({ row }) => (
       <div className="min-w-[8rem]">
-        <div className="font-semibold">{row.original.category || '-'}</div>
-        {row.original.description && (
-          <div className="opacity-70">{row.original.description}</div>
-        )}
+        {row.original?.metadata?.size !== undefined
+          ? formatBytes(row.original.metadata.size)
+          : '-'}
       </div>
     ),
   },
@@ -73,7 +87,11 @@ export const transactionColumns = (
   {
     id: 'actions',
     cell: ({ row }) => (
-      <TransactionRowActions row={row} setTransaction={setTransaction} />
+      <StorageObjectRowActions
+        wsId={wsId}
+        row={row}
+        setStorageObject={setStorageObject}
+      />
     ),
   },
 ];

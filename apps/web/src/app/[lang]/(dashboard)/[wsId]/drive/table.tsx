@@ -1,51 +1,51 @@
 'use client';
 
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Transaction } from '@/types/primitives/Transaction';
+import { StorageObject } from '@/types/primitives/StorageObject';
 import { useState } from 'react';
 import { Dialog } from '@/components/ui/dialog';
-import { transactionColumns } from './columns';
+import { storageObjectsColumns } from './columns';
 import useTranslation from 'next-translate/useTranslation';
-import { TransactionForm } from './form';
+import { StorageObjectForm } from './form';
 
 interface Props {
   wsId: string;
-  data: Transaction[];
+  data: StorageObject[];
   count: number;
 }
 
-export default function TransactionsTable({ wsId, data, count }: Props) {
+export default function StorageObjectsTable({ wsId, data, count }: Props) {
   const { t } = useTranslation('common');
 
-  const [transaction, setTransaction] = useState<Transaction>();
+  const [storageObj, setStorageObject] = useState<StorageObject>();
 
   const onComplete = () => {
-    setTransaction(undefined);
+    setStorageObject(undefined);
   };
 
   return (
     <Dialog
-      open={!!transaction}
+      open={!!storageObj}
       onOpenChange={(open) =>
-        setTransaction(open ? transaction || {} : undefined)
+        setStorageObject(open ? storageObj || {} : undefined)
       }
     >
       <DataTable
         data={data}
-        columnGenerator={(t) => transactionColumns(t, setTransaction)}
-        namespace="transaction-data-table"
+        columnGenerator={(t) =>
+          storageObjectsColumns(t, setStorageObject, wsId)
+        }
+        namespace="storage-object-data-table"
         count={count}
         defaultVisibility={{
           id: false,
-          report_opt_in: false,
-          created_at: false,
         }}
-        newObjectTitle="Upload"
+        newObjectTitle={t('upload')}
         editContent={
-          <TransactionForm
+          <StorageObjectForm
             wsId={wsId}
             onComplete={onComplete}
-            submitLabel={transaction?.id ? t('edit') : t('upload')}
+            submitLabel={storageObj?.id ? t('edit') : t('upload')}
           />
         }
       />

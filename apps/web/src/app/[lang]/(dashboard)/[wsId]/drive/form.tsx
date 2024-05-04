@@ -19,6 +19,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Trash } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   wsId: string;
@@ -36,8 +37,10 @@ const FormSchema = z.object({
   }),
 });
 
-export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
+export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
   const { t } = useTranslation('common');
+
+  const router = useRouter();
   const supabase = createClientComponentClient();
 
   const [loading, setLoading] = useState(false);
@@ -51,10 +54,18 @@ export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
 
   const [fileStatuses, setFileStatuses] = useState<Record<string, string>>({});
 
+  const [editingFile, setEditingFile] = useState<File | null>(null);
+  const [newFileName, setNewFileName] = useState<string>('');
+
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
+    if (loading || editingFile) return;
+
     setLoading(true);
 
     formData.files.forEach(async (file) => {
+      // if the file is already uploaded, skip it
+      if (fileStatuses[file.name] === 'uploaded') return;
+
       // Set the status of the file to uploading
       setFileStatuses((prev) => ({
         ...prev,
@@ -87,6 +98,7 @@ export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
       onComplete?.();
     }
 
+    router.refresh();
     setLoading(false);
   }
 
@@ -110,7 +122,8 @@ export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
           render={({ field: { value, onChange, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
-                Files{files.length > 0 ? ` (${files.length})` : ''}
+                {t('storage-object-data-table:files')}
+                {files.length > 0 ? ` (${files.length})` : ''}
               </FormLabel>
               {files.length === 0 ? (
                 <FormControl>
@@ -131,62 +144,119 @@ export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
                     files.length > 3 ? 'h-48' : 'h-auto'
                   } rounded-md border`}
                 >
-                  {files.map((file, i) => (
-                    <>
-                      <div
-                        key={i}
-                        className="flex items-center justify-between gap-2 p-2"
-                      >
-                        <div>
-                          <div className="line-clamp-1 text-sm opacity-70">
-                            {file.name}
-                          </div>
-                          <div className="text-xs font-semibold">
-                            {fileStatuses[file.name] === 'uploading' ? (
-                              <span className="opacity-70">
-                                {t('uploading')}...
-                              </span>
-                            ) : fileStatuses[file.name] === 'uploaded' ? (
-                              <span>{t('uploaded')}</span>
-                            ) : fileStatuses[file.name] === 'error' ? (
-                              <span className="text-destructive">
-                                {t('error')}
-                              </span>
-                            ) : (
-                              <span>{Math.round(file.size / 1024)} KB</span>
-                            )}
-                          </div>
-                        </div>
-                        {uploadedAllFiles ||
-                        fileStatuses[file.name] === 'uploaded' ? (
-                          <Check className="h-5 w-5" />
-                        ) : (
-                          <Button
-                            size="icon"
-                            type="button"
-                            variant="ghost"
-                            className="flex h-7 w-7 shrink-0 items-center justify-center"
-                            onClick={() => {
-                              setFileStatuses((prev) => {
-                                const next = { ...prev };
-                                delete next[file.name];
-                                return next;
-                              });
+                  {files
+                    // sort "uploaded" files first, then sort by name
+                    .sort((a, b) => {
+                      if (fileStatuses[a.name] === 'uploaded') return -1;
+                      if (fileStatuses[b.name] === 'uploaded') return 1;
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map((file, i) => (
+                      <>
+                        <div
+                          key={i}
+                          className="flex items-center justify-between gap-2 p-2"
+                        >
+                          <div>
+                            {editingFile?.name === file.name ? (
+                              <input
+                                type="text"
+                                value={newFileName}
+                                className="w-full bg-transparent text-sm outline-0"
+                                onChange={(e) => {
+                                  setNewFileName(e.target.value);
+                                }}
+                                onFocus={(e) => {
+                                  const value = e.target.value;
+                                  const lastIndex = value.lastIndexOf('.');
+                                  // Select the part of the text that excludes the file extension
+                                  e.target.setSelectionRange(
+                                    0,
+                                    lastIndex > 0 ? lastIndex : value.length
+                                  );
+                                }}
+                                onBlur={() => {
+                                  if (newFileName.trim() === '') {
+                                    setNewFileName(file.name);
+                                    return;
+                                  }
 
-                              form.setValue(
-                                'files',
-                                files.filter((_, index) => index !== i)
-                              );
-                            }}
-                            disabled={loading}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {i !== files.length - 1 && <div className="border-b" />}
-                    </>
-                  ))}
+                                  setEditingFile(null);
+                                  onChange(
+                                    files.map((f) =>
+                                      f.name === file.name
+                                        ? new File([file], newFileName)
+                                        : f
+                                    )
+                                  );
+
+                                  setNewFileName('');
+                                }}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <div
+                                className="line-clamp-1 text-sm opacity-70"
+                                onClick={() => {
+                                  setNewFileName(file.name);
+                                  setEditingFile(file);
+                                }}
+                              >
+                                {file.name}
+                              </div>
+                            )}
+
+                            <div className="text-xs font-semibold">
+                              {fileStatuses[file.name] === 'uploading' ? (
+                                <span className="opacity-70">
+                                  {t('uploading')}...
+                                </span>
+                              ) : fileStatuses[file.name] === 'uploaded' ? (
+                                <span>{t('uploaded')}</span>
+                              ) : fileStatuses[file.name] === 'error' ? (
+                                <span className="text-destructive">
+                                  {t('error')}
+                                </span>
+                              ) : (
+                                <span>{Math.round(file.size / 1024)} KB</span>
+                              )}
+                            </div>
+                          </div>
+                          {uploadedAllFiles ||
+                          fileStatuses[file.name] === 'uploaded' ? (
+                            <Check className="h-5 w-5" />
+                          ) : (
+                            <Button
+                              size="icon"
+                              type="button"
+                              variant="ghost"
+                              className="flex h-7 w-7 shrink-0 items-center justify-center"
+                              onClick={() => {
+                                setFileStatuses((prev) => {
+                                  const next = { ...prev };
+                                  delete next[file.name];
+                                  return next;
+                                });
+
+                                form.setValue(
+                                  'files',
+                                  files.filter((_, index) => index !== i)
+                                );
+                              }}
+                              disabled={loading}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {i !== files.length - 1 && <div className="border-b" />}
+                      </>
+                    ))}
                 </ScrollArea>
               )}
               <FormMessage />
@@ -206,7 +276,7 @@ export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
               variant="ghost"
               disabled={loading || files.length === 0 || uploadedAllFiles}
             >
-              Clear files
+              {t('storage-object-data-table:clear_files')}
             </Button>
             <Button
               type="submit"

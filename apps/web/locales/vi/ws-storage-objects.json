@@ -1,0 +1,8 @@
+{
+  "module": "Tuturuuu Drive",
+  "description": "Lưu trữ tệp làm việc một cách an toàn và truy cập chúng từ bất kỳ nơi nào.",
+  "total_files": "Tổng số tệp",
+  "total_size": "Tổng dung lượng",
+  "largest_file": "Tệp lớn nhất",
+  "smallest_file": "Tệp nhỏ nhất"
+}
