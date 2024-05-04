@@ -4,8 +4,7 @@ import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { Invoice } from '@/types/primitives/Invoice';
-import { getSecrets } from '@/lib/workspace-helper';
-import { redirect } from 'next/navigation';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -22,22 +21,12 @@ export default async function WorkspaceInvoicesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data, count } = await getData(wsId, searchParams);
-
-  const secrets = await getSecrets({
+  await verifyHasSecrets(
     wsId,
-    requiredSecrets: ['ENABLE_FINANCE', 'ENABLE_INVOICE'],
-    forceAdmin: true,
-  });
-
-  const verifySecret = (secret: string, value: string) =>
-    secrets.find((s) => s.name === secret)?.value === value;
-
-  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
-  const enableInvoice = verifySecret('ENABLE_INVOICE', 'true');
-
-  if (!enableFinance) redirect(`/${wsId}`);
-  if (!enableInvoice) redirect(`/${wsId}/finance`);
+    ['ENABLE_FINANCE', 'ENABLE_INVOICE'],
+    `/${wsId}`
+  );
+  const { data, count } = await getData(wsId, searchParams);
 
   return (
     <DataTable

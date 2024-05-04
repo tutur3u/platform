@@ -3,6 +3,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import { getReportsCount } from '../reports/core';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +14,9 @@ interface Props {
 }
 
 export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
-  const { t } = useTranslation();
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
+  const { t } = useTranslation();
   const usersLabel = t('sidebar-tabs:users');
 
   const users = await getUsersCount(wsId);

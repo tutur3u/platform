@@ -1,6 +1,7 @@
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { getReports } from './core';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,7 @@ export default async function WorkspaceUserReportsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const { data, count } = await getReports(wsId, searchParams);
 
   return (

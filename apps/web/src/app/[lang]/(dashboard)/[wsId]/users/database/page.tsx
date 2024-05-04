@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { getUserColumns } from '@/data/columns/users';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,8 @@ export default async function WorkspaceUsersPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
+
   const { data, count } = await getData(wsId, searchParams);
   const { data: extraFields } = await getUserFields(wsId, searchParams);
 
