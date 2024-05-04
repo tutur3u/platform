@@ -96,7 +96,7 @@
     "cmdk": "^0.2.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.11",
-    "embla-carousel-react": "8.0.2",
+    "embla-carousel-react": "8.0.3",
     "eventsource-parser": "^1.1.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.378.0",
