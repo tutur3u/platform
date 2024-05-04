@@ -37,8 +37,9 @@ interface Props {
 export default function WorkspaceBoardEditor({
   params: { wsId, boardId },
 }: Props) {
-  const router = useRouter();
+  // await verifyHasSecrets(wsId, ['ENABLE_PROJECTS'], `/${wsId}`);
 
+  const router = useRouter();
   const { ws } = useWorkspaces();
 
   const { data: board } = useSWR<TaskBoard>(

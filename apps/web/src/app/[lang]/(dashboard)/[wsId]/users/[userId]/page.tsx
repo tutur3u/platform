@@ -1,4 +1,5 @@
 import { Separator } from '@/components/ui/separator';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -13,9 +14,13 @@ interface Props {
   };
 }
 
-export default async function WorkspaceUserDetailsPage({ params }: Props) {
+export default async function WorkspaceUserDetailsPage({
+  params: { wsId, userId },
+}: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
+
   const { t } = useTranslation('user-data-table');
-  const data = await getData(params);
+  const data = await getData({ wsId, userId });
 
   return (
     <div className="flex min-h-full w-full flex-col ">

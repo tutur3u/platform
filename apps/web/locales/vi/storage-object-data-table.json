@@ -1,0 +1,8 @@
+{
+  "id": "Mã số",
+  "name": "Tên",
+  "size": "Kích cỡ",
+  "created_at": "Ngày tạo",
+  "files": "Tệp tin",
+  "clear_files": "Huỷ tất cả"
+}

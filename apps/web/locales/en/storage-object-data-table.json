@@ -1,0 +1,8 @@
+{
+  "id": "ID",
+  "name": "Name",
+  "size": "Size",
+  "created_at": "Created at",
+  "files": "Files",
+  "clear_files": "Clear files"
+}

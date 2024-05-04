@@ -1,8 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { getSecrets } from '@/lib/workspace-helper';
-import { redirect } from 'next/navigation';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Transaction } from '@/types/primitives/Transaction';
 import TransactionsTable from './table';
 
@@ -21,19 +20,8 @@ export default async function WorkspaceTransactionsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_FINANCE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
-
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: ['ENABLE_FINANCE'],
-    forceAdmin: true,
-  });
-
-  const verifySecret = (secret: string, value: string) =>
-    secrets.find((s) => s.name === secret)?.value === value;
-
-  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
-  if (!enableFinance) redirect(`/${wsId}`);
 
   return (
     <TransactionsTable

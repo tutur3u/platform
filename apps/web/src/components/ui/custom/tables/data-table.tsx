@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
     extraColumns?: any[]
   ) => ColumnDef<TData, TValue>[];
   extraColumns?: any[];
+  newObjectTitle?: string;
   editContent?: ReactNode;
   namespace?: string;
   data?: TData[];
@@ -48,6 +49,7 @@ export function DataTable<TData, TValue>({
   columns,
   columnGenerator,
   extraColumns,
+  newObjectTitle,
   editContent,
   namespace = 'common',
   data,
@@ -101,6 +103,7 @@ export function DataTable<TData, TValue>({
       <DataTableToolbar
         namespace={namespace}
         table={table}
+        newObjectTitle={newObjectTitle}
         editContent={editContent}
         extraColumns={extraColumns}
       />

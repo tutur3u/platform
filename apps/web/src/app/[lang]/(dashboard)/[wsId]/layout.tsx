@@ -31,6 +31,7 @@ export default async function Layout({
       'ENABLE_USERS',
       'ENABLE_PROJECTS',
       'ENABLE_DOCS',
+      'ENABLE_DRIVE',
       'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
       'ENABLE_FINANCE',
@@ -76,6 +77,11 @@ export default async function Layout({
       name: t('documents'),
       href: `/${wsId}/documents`,
       disabled: !verifySecret('ENABLE_DOCS', 'true'),
+    },
+    {
+      name: t('drive'),
+      href: `/${wsId}/drive`,
+      disabled: !verifySecret('ENABLE_DRIVE', 'true'),
     },
     {
       name: t('users'),

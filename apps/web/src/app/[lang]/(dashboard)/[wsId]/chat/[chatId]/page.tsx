@@ -1,6 +1,6 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getSecrets } from '@/lib/workspace-helper';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Message } from 'ai';
 import Chat from '../chat';
@@ -23,21 +23,10 @@ export default async function AIPage({
   params: { wsId, chatId },
   searchParams,
 }: Props) {
-  const { lang: locale } = searchParams;
-
+  await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
   if (!chatId) notFound();
 
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: ['ENABLE_CHAT'],
-    forceAdmin: true,
-  });
-
-  const verifySecret = (secret: string, value: string) =>
-    secrets.find((s) => s.name === secret)?.value === value;
-
-  const enableChat = verifySecret('ENABLE_CHAT', 'true');
-  if (!enableChat) redirect(`/${wsId}`);
+  const { lang: locale } = searchParams;
 
   const messages = await getMessages(chatId);
 
