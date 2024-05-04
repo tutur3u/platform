@@ -34,7 +34,7 @@
     "tsconfig": "workspace:*",
     "turbo": "^1.13.3",
     "typescript": "^5.4.5",
-    "vitest": "^1.5.3"
+    "vitest": "^1.6.0"
   },
   "engines": {
     "node": ">=18.0.0"
