@@ -226,7 +226,7 @@ importers:
         version: 0.1.14(next@14.3.0-canary.33(@babel/core@7.24.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(vite@5.2.10(@types/node@20.12.7))
       ai:
         specifier: ^3.1.0
-        version: 3.1.0(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.15)(vue@3.4.25(typescript@5.4.5))(zod@3.23.5)
+        version: 3.1.0(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.15)(vue@3.4.25(typescript@5.4.5))(zod@3.23.6)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -346,7 +346,7 @@ importers:
         version: 0.18.5
       zod:
         specifier: ^3.23.5
-        version: 3.23.5
+        version: 3.23.6
     devDependencies:
       '@next/bundle-analyzer':
         specifier: 14.3.0-canary.33
@@ -6184,8 +6184,8 @@ packages:
     peerDependencies:
       zod: ^3.22.4
 
-  zod@3.23.5:
-    resolution: {integrity: sha512-fkwiq0VIQTksNNA131rDOsVJcns0pfVUjHzLrNBiF/O/Xxb5lQyEXkhZWcJ7npWsYlvs+h0jFWXXy4X46Em1JA==}
+  zod@3.23.6:
+    resolution: {integrity: sha512-RTHJlZhsRbuA8Hmp/iNL7jnfc4nZishjsanDAfEY1QpDQZCahUp3xDzl+zfweE9BklxMUcgBgS1b7Lvie/ZVwA==}
 
   zustand@3.7.2:
     resolution: {integrity: sha512-PIJDIZKtokhof+9+60cpockVOq05sJzHCriyvaLBmEJixseQ1a5Kdov6fWZfWOu5SK9c+FhH1jU0tntLxRJYMA==}
@@ -6201,14 +6201,14 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/provider-utils@0.0.5(zod@3.23.5)':
+  '@ai-sdk/provider-utils@0.0.5(zod@3.23.6)':
     dependencies:
       '@ai-sdk/provider': 0.0.3
       eventsource-parser: 1.1.2
       nanoid: 3.3.6
       secure-json-parse: 2.7.0
     optionalDependencies:
-      zod: 3.23.5
+      zod: 3.23.6
 
   '@ai-sdk/provider@0.0.3':
     dependencies:
@@ -8702,10 +8702,10 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.1.0(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.15)(vue@3.4.25(typescript@5.4.5))(zod@3.23.5):
+  ai@3.1.0(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.15)(vue@3.4.25(typescript@5.4.5))(zod@3.23.6):
     dependencies:
       '@ai-sdk/provider': 0.0.3
-      '@ai-sdk/provider-utils': 0.0.5(zod@3.23.5)
+      '@ai-sdk/provider-utils': 0.0.5(zod@3.23.6)
       eventsource-parser: 1.1.2
       json-schema: 0.4.0
       jsondiffpatch: 0.6.0
@@ -8716,13 +8716,13 @@ snapshots:
       swr: 2.2.0(react@18.3.1)
       swr-store: 0.10.6
       swrv: 1.0.4(vue@3.4.25(typescript@5.4.5))
-      zod-to-json-schema: 3.22.5(zod@3.23.5)
+      zod-to-json-schema: 3.22.5(zod@3.23.6)
     optionalDependencies:
       react: 18.3.1
       solid-js: 1.8.17
       svelte: 4.2.15
       vue: 3.4.25(typescript@5.4.5)
-      zod: 3.23.5
+      zod: 3.23.6
 
   ajv@6.12.6:
     dependencies:
@@ -12699,11 +12699,11 @@ snapshots:
 
   yocto-queue@1.0.0: {}
 
-  zod-to-json-schema@3.22.5(zod@3.23.5):
+  zod-to-json-schema@3.22.5(zod@3.23.6):
     dependencies:
-      zod: 3.23.5
+      zod: 3.23.6
 
-  zod@3.23.5: {}
+  zod@3.23.6: {}
 
   zustand@3.7.2(react@18.3.1):
     optionalDependencies:
