@@ -45,6 +45,8 @@
   "cancel": "Cancel",
   "start": "Start",
   "upload": "Upload",
+  "uploading": "Uploading",
+  "uploaded": "Uploaded",
   "processing": "Processing...",
   "saving": "Saving",
   "loading": "Loading",

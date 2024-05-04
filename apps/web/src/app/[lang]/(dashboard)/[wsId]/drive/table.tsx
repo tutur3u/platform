@@ -44,7 +44,6 @@ export default function TransactionsTable({ wsId, data, count }: Props) {
         editContent={
           <TransactionForm
             wsId={wsId}
-            // data={transaction}
             onComplete={onComplete}
             submitLabel={transaction?.id ? t('edit') : t('upload')}
           />

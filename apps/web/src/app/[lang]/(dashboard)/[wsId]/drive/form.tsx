@@ -14,19 +14,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import useTranslation from 'next-translate/useTranslation';
-import { toast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash } from 'lucide-react';
+import { Check, Trash } from 'lucide-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface Props {
   wsId: string;
-  data?: {
-    id: string;
-    name: string;
-  };
   onComplete?: () => void;
   submitLabel?: string;
 }
@@ -41,15 +36,9 @@ const FormSchema = z.object({
   }),
 });
 
-export function TransactionForm({
-  wsId,
-  data,
-  onComplete,
-  submitLabel,
-}: Props) {
+export function TransactionForm({ wsId, onComplete, submitLabel }: Props) {
   const { t } = useTranslation('common');
-
-  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const [loading, setLoading] = useState(false);
 
@@ -60,35 +49,56 @@ export function TransactionForm({
     },
   });
 
+  const [fileStatuses, setFileStatuses] = useState<Record<string, string>>({});
+
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     setLoading(true);
 
-    const res = await fetch(
-      data?.id
-        ? `/api/workspaces/${wsId}/transactions/${data.id}`
-        : `/api/workspaces/${wsId}/transactions`,
-      {
-        method: data?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      }
-    );
+    formData.files.forEach(async (file) => {
+      // Set the status of the file to uploading
+      setFileStatuses((prev) => ({
+        ...prev,
+        [file.name]: 'uploading',
+      }));
 
-    if (res.ok) {
-      router.refresh();
-      if (onComplete) onComplete();
-    } else {
-      setLoading(false);
-      toast({
-        title: 'Error creating category',
-        description: 'An error occurred while creating the category',
-      });
+      const { data: _, error } = await supabase.storage
+        .from('workspaces')
+        .upload(`${wsId}/${file.name}`, file);
+
+      if (error) {
+        setFileStatuses((prev) => ({
+          ...prev,
+          [file.name]: 'error',
+        }));
+        return;
+      }
+
+      // Set the status of the file to uploaded
+      setFileStatuses((prev) => ({
+        ...prev,
+        [file.name]: 'uploaded',
+      }));
+    });
+
+    // if all files are uploaded, call onComplete
+    if (
+      formData.files.every((file) => fileStatuses[file.name] === 'uploaded')
+    ) {
+      onComplete?.();
     }
+
+    setLoading(false);
   }
 
   const files = form.watch('files');
+
+  const uploadedAllFiles =
+    // at least one file is uploaded
+    form.watch('files').length > 0 &&
+    // all files match the uploaded status
+    files.every((file) => fileStatuses[file.name] === 'uploaded') &&
+    // all file statuses are uploaded
+    Object.values(fileStatuses).every((status) => status === 'uploaded');
 
   return (
     <Form {...form}>
@@ -118,7 +128,7 @@ export function TransactionForm({
               ) : (
                 <ScrollArea
                   className={`${
-                    files.length > 3 ? 'h-32' : 'h-auto'
+                    files.length > 3 ? 'h-48' : 'h-auto'
                   } rounded-md border`}
                 >
                   {files.map((file, i) => (
@@ -127,26 +137,52 @@ export function TransactionForm({
                         key={i}
                         className="flex items-center justify-between gap-2 p-2"
                       >
-                        <span className="line-clamp-1">
-                          {file.name} {file.name} {file.name} {file.name}{' '}
-                          {file.name} {file.name} {file.name} {file.name}{' '}
-                          {file.name} {file.name} {file.name} {file.name}{' '}
-                          {file.name}
-                        </span>
-                        <Button
-                          size="icon"
-                          type="button"
-                          variant="destructive"
-                          className="flex h-7 w-7 shrink-0 items-center justify-center"
-                          onClick={() =>
-                            form.setValue(
-                              'files',
-                              files.filter((_, index) => index !== i)
-                            )
-                          }
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+                        <div>
+                          <div className="line-clamp-1 text-sm opacity-70">
+                            {file.name}
+                          </div>
+                          <div className="text-xs font-semibold">
+                            {fileStatuses[file.name] === 'uploading' ? (
+                              <span className="opacity-70">
+                                {t('uploading')}...
+                              </span>
+                            ) : fileStatuses[file.name] === 'uploaded' ? (
+                              <span>{t('uploaded')}</span>
+                            ) : fileStatuses[file.name] === 'error' ? (
+                              <span className="text-destructive">
+                                {t('error')}
+                              </span>
+                            ) : (
+                              <span>{Math.round(file.size / 1024)} KB</span>
+                            )}
+                          </div>
+                        </div>
+                        {uploadedAllFiles ||
+                        fileStatuses[file.name] === 'uploaded' ? (
+                          <Check className="h-5 w-5" />
+                        ) : (
+                          <Button
+                            size="icon"
+                            type="button"
+                            variant="ghost"
+                            className="flex h-7 w-7 shrink-0 items-center justify-center"
+                            onClick={() => {
+                              setFileStatuses((prev) => {
+                                const next = { ...prev };
+                                delete next[file.name];
+                                return next;
+                              });
+
+                              form.setValue(
+                                'files',
+                                files.filter((_, index) => index !== i)
+                              );
+                            }}
+                            disabled={loading}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                       {i !== files.length - 1 && <div className="border-b" />}
                     </>
@@ -158,24 +194,29 @@ export function TransactionForm({
           )}
         />
 
-        <div className="mt-2 flex gap-2">
-          <Button
-            type="button"
-            className="w-fit"
-            onClick={() => form.setValue('files', [])}
-            variant="ghost"
-            disabled={loading || files.length === 0}
-          >
-            Clear files
-          </Button>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loading || files.length === 0}
-          >
-            {loading ? t('common:processing') : submitLabel}
-          </Button>
-        </div>
+        {uploadedAllFiles || (
+          <div className="mt-2 flex gap-2">
+            <Button
+              type="button"
+              className="w-fit"
+              onClick={() => {
+                setFileStatuses({});
+                form.setValue('files', []);
+              }}
+              variant="ghost"
+              disabled={loading || files.length === 0 || uploadedAllFiles}
+            >
+              Clear files
+            </Button>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || files.length === 0 || uploadedAllFiles}
+            >
+              {loading ? t('common:processing') : submitLabel}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

@@ -5,7 +5,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
-import { Check, X } from 'lucide-react';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Translate } from 'next-translate';
 import { TransactionRowActions } from './row-actions';
@@ -45,20 +44,9 @@ export const transactionColumns = (
     ),
   },
   {
-    accessorKey: 'wallet',
+    accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('wallet')} />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem] font-semibold">
-        {row.getValue('wallet') || '-'}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'description',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('description')} />
+      <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -66,42 +54,6 @@ export const transactionColumns = (
         {row.original.description && (
           <div className="opacity-70">{row.original.description}</div>
         )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'amount',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('amount')} />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND',
-        }).format(row.getValue('amount'))}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'report_opt_in',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('report_opt_in')} />
-    ),
-    cell: ({ row }) => (
-      <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
-    ),
-  },
-  {
-    accessorKey: 'taken_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('taken_at')} />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.getValue('taken_at')
-          ? moment(row.getValue('taken_at')).fromNow()
-          : '-'}
       </div>
     ),
   },
