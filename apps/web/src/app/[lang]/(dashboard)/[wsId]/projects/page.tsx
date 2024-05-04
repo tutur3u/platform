@@ -9,6 +9,7 @@ import ProjectEditDialog from './_components/project-edit-dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { projectColumns } from '@/data/columns/projects';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export default async function WorkspaceProjectsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_PROJECTS'], `/${wsId}`);
+
   const { data: projects, count } = await getProjects(wsId, searchParams);
   const { t } = useTranslation('ws-projects');
 

@@ -1,6 +1,5 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import AIPromptsTable from './table';
 import { Database } from '@/types/supabase';
@@ -21,8 +20,7 @@ export default async function WorkspaceAIPromptsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const enabled = verifyHasSecrets(wsId, ['ENABLE_AI']);
-  if (!enabled) redirect(`/${wsId}`);
+  await verifyHasSecrets(wsId, ['ENABLE_AI'], `/${wsId}`);
 
   const { data, count } = await getData(wsId, searchParams);
   return <AIPromptsTable wsId={wsId} data={data} count={count} />;

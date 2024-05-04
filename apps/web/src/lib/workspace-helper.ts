@@ -144,28 +144,33 @@ export async function getSecrets({
     : createServerComponentClient<Database>({ cookies });
 
   if (!supabase) throw new Error('Supabase client not initialized');
-
-  const queryBuilder = supabase
-    .from('workspace_secrets')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);
   if (requiredSecrets) queryBuilder.in('name', requiredSecrets);
 
-  const { data, error } = await queryBuilder;
+  const { data, error } = await queryBuilder.order('created_at', {
+    ascending: false,
+  });
+
   if (error) throw error;
   return data as WorkspaceSecret[];
 }
 
 export async function verifyHasSecrets(
   wsId: string,
-  requiredSecrets: string[]
+  requiredSecrets: string[],
+  redirectPath?: string
 ) {
-  const secrets = await getSecrets({ wsId, requiredSecrets });
-  return requiredSecrets.every((secret) =>
-    secrets.some(({ name }) => name === secret)
-  );
+  const secrets = await getSecrets({ wsId, requiredSecrets, forceAdmin: true });
+
+  const allSecretsVerified = requiredSecrets.every((secret) => {
+    const { value } = getSecret(secret, secrets) || {};
+    return value === 'true';
+  });
+
+  if (!allSecretsVerified && redirectPath) redirect(redirectPath);
+  return allSecretsVerified;
 }
 
 export function getSecret(

@@ -2,6 +2,7 @@ import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -12,6 +13,8 @@ interface Props {
 export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage({ params: { wsId } }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
+
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation('workspace-inventory-tabs');
 

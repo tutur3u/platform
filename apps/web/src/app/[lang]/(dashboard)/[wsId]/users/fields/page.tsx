@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { userFieldColumns } from './columns';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import UserFieldEditDialog from './edit-dialog';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export default async function WorkspaceUserFieldsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
+
   const { data: userFields, count } = await getUserFields(wsId, searchParams);
   const { t } = useTranslation('ws-user-fields');
 

@@ -4,6 +4,7 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,7 @@ export default async function WorkspaceUserGroupsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (

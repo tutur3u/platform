@@ -183,6 +183,13 @@
       "documents"
     ],
 
+    "/[lang]/(dashboard)/[wsId]/drive": [
+      "sidebar-tabs",
+      "search",
+      "ws-storage-objects",
+      "storage-object-data-table"
+    ],
+
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/teams/[teamId]": [
       "sidebar-tabs",
       "team-tabs"
