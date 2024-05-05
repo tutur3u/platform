@@ -51,8 +51,7 @@ const TimeBlockContext = createContext({
   editing: {
     enabled: false,
   } as EditingParams,
-  showLogin: false as boolean,
-  showAccountSwitcher: false as boolean,
+  displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
 
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], unavailable: [] }) as {
@@ -67,8 +66,14 @@ const TimeBlockContext = createContext({
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
   edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
-  setShowLogin: (_: boolean) => {},
-  setShowAccountSwitcher: (_: boolean) => {},
+  setDisplayMode: (
+    _?:
+      | 'login'
+      | 'account-switcher'
+      | ((
+          prev: 'login' | 'account-switcher' | undefined
+        ) => 'login' | 'account-switcher' | undefined)
+  ) => {},
 });
 
 const TimeBlockingProvider = ({
@@ -146,6 +151,10 @@ const TimeBlockingProvider = ({
     platformUser
   );
 
+  useEffect(() => {
+    setInternalUser(platformUser);
+  }, [platformUser]);
+
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<{
     planId?: string;
     data: Timeblock[];
@@ -165,8 +174,9 @@ const TimeBlockingProvider = ({
     setInternalUser(user);
   };
 
-  const [showLogin, setShowLogin] = useState(false);
-  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const [displayMode, setDisplayMode] = useState<
+    'login' | 'account-switcher'
+  >();
 
   const edit = (
     { mode, date }: { mode: 'add' | 'remove'; date: Date },
@@ -358,8 +368,7 @@ const TimeBlockingProvider = ({
         previewDate,
         selectedTimeBlocks,
         editing,
-        showLogin,
-        showAccountSwitcher,
+        displayMode,
 
         getPreviewUsers,
         getOpacityForDate,
@@ -370,8 +379,7 @@ const TimeBlockingProvider = ({
         setSelectedTimeBlocks,
         edit,
         endEditing,
-        setShowLogin,
-        setShowAccountSwitcher,
+        setDisplayMode,
       }}
     >
       {children}

@@ -23,7 +23,7 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1).max(50),
+  name: z.string().min(0).max(50).optional(),
 });
 
 export default function DisplayNameInput({ defaultValue = '' }: Props) {
@@ -94,7 +94,7 @@ export default function DisplayNameInput({ defaultValue = '' }: Props) {
             type="submit"
             size="icon"
             onClick={form.handleSubmit(onSubmit)}
-            disabled={!name || name === defaultValue || saving}
+            disabled={name === defaultValue || saving}
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
