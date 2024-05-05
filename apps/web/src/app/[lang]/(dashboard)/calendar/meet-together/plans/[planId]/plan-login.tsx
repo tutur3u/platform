@@ -51,14 +51,7 @@ export default function PlanLogin({
 
   const { t } = useTranslation('meet-together-plan-details');
 
-  const {
-    user,
-    showLogin,
-    showAccountSwitcher,
-    setUser,
-    setShowLogin,
-    setShowAccountSwitcher,
-  } = useTimeBlocking();
+  const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
 
   const [loading, setLoading] = useState(false);
 
@@ -90,7 +83,7 @@ export default function PlanLogin({
       const data = await res.json();
       setUser(plan.id, data.user);
       setLoading(false);
-      setShowLogin(false);
+      setDisplayMode();
     } else {
       const data = await res.json();
       form.setValue('guestPassword', '');
@@ -103,12 +96,13 @@ export default function PlanLogin({
 
   return (
     <Dialog
-      open={showLogin}
+      open={!!displayMode}
       onOpenChange={(open) => {
         form.reset();
         setLoading(false);
-        setShowAccountSwitcher(open);
-        setShowLogin(open);
+        setDisplayMode((prevMode) =>
+          open ? prevMode || 'account-switcher' : undefined
+        );
       }}
     >
       <DialogTrigger asChild={!!user || !!platformUser}>
@@ -121,18 +115,22 @@ export default function PlanLogin({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {showAccountSwitcher
+            {displayMode === 'account-switcher'
               ? t('account_switcher')
-              : t('identity_protection')}
+              : displayMode === 'login'
+                ? t('identity_protection')
+                : null}
           </DialogTitle>
           <DialogDescription>
-            {showAccountSwitcher
+            {displayMode === 'account-switcher'
               ? t('account_switcher_desc')
-              : t('identity_protection_desc')}
+              : displayMode === 'login'
+                ? t('identity_protection_desc')
+                : null}
           </DialogDescription>
         </DialogHeader>
 
-        {showAccountSwitcher ? (
+        {displayMode === 'account-switcher' ? (
           <div className="grid gap-2">
             <Button
               className="w-full"
@@ -145,8 +143,7 @@ export default function PlanLogin({
                 }
 
                 setUser(plan.id, platformUser);
-                setShowAccountSwitcher(false);
-                setShowLogin(false);
+                setDisplayMode();
               }}
               disabled={
                 !plan.id ||
@@ -161,7 +158,7 @@ export default function PlanLogin({
               variant="outline"
               className="w-full"
               onClick={() => {
-                setShowAccountSwitcher(false);
+                setDisplayMode('login');
               }}
             >
               {user?.is_guest
@@ -169,7 +166,7 @@ export default function PlanLogin({
                 : t('use_guest_account')}
             </Button>
           </div>
-        ) : (
+        ) : displayMode === 'login' ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
@@ -224,7 +221,7 @@ export default function PlanLogin({
               </DialogFooter>
             </form>
           </Form>
-        )}
+        ) : null}
       </DialogContent>
     </Dialog>
   );
