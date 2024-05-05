@@ -27,7 +27,7 @@ export default function LoggedInAsButton({
       <div
         className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
-        {user?.display_name ?? t('anonymous')}{' '}
+        {user?.display_name || platformUser?.email || t('anonymous')}{' '}
       </div>
 
       {user?.id ? (
