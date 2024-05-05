@@ -11,11 +11,7 @@ export default function LoggedInAsButton({
   platformUser: PlatformUser | null;
 }) {
   const { t } = useTranslation('meet-together-plan-details');
-  const {
-    user: guestUser,
-    setShowLogin,
-    setShowAccountSwitcher,
-  } = useTimeBlocking();
+  const { user: guestUser, setDisplayMode } = useTimeBlocking();
 
   const user = guestUser ?? platformUser;
 
@@ -27,7 +23,7 @@ export default function LoggedInAsButton({
       <div
         className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
-        {user?.display_name ?? t('anonymous')}{' '}
+        {user?.display_name || platformUser?.email || t('anonymous')}{' '}
       </div>
 
       {user?.id ? (
@@ -45,8 +41,7 @@ export default function LoggedInAsButton({
       <Button
         className="w-full"
         onClick={() => {
-          setShowLogin(true);
-          setShowAccountSwitcher(true);
+          setDisplayMode('account-switcher');
         }}
       >
         {user?.id ? t('switch_account') : t('common:login')}
