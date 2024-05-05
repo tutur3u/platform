@@ -35,7 +35,7 @@ export default function DashboardMenuItem({ defaultWorkspaceId }: Props) {
           >
             <DropdownMenuItem className="cursor-pointer">
               <Database className="mr-2 h-4 w-4" />
-              <span>{t('database')}</span>
+              <span>{t('local_database')}</span>
             </DropdownMenuItem>
           </Link>
         )}
