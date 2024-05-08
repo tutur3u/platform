@@ -79,7 +79,7 @@
     "@tanstack/react-table": "^8.16.0",
     "@tiptap/extension-highlight": "^2.3.1",
     "@tiptap/extension-link": "^2.3.1",
-    "@tiptap/extension-subscript": "^2.3.1",
+    "@tiptap/extension-subscript": "^2.3.2",
     "@tiptap/extension-superscript": "^2.3.1",
     "@tiptap/extension-text-align": "^2.3.1",
     "@tiptap/extension-underline": "^2.3.1",
