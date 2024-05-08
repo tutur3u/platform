@@ -81,7 +81,7 @@
     "@tiptap/extension-link": "^2.3.1",
     "@tiptap/extension-subscript": "^2.3.1",
     "@tiptap/extension-superscript": "^2.3.1",
-    "@tiptap/extension-text-align": "^2.3.1",
+    "@tiptap/extension-text-align": "^2.3.2",
     "@tiptap/extension-underline": "^2.3.1",
     "@tiptap/pm": "^2.3.1",
     "@tiptap/react": "^2.3.1",
