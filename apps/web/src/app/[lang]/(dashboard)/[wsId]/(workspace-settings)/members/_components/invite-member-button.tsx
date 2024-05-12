@@ -38,6 +38,7 @@ interface Props {
   currentUser?: User;
   label?: string;
   variant?: 'outline';
+  disabled?: boolean;
 }
 
 const FormSchema = z.object({
@@ -52,6 +53,7 @@ export default function InviteMemberButton({
   currentUser,
   label,
   variant,
+  disabled,
 }: Props) {
   const router = useRouter();
 
@@ -133,7 +135,7 @@ export default function InviteMemberButton({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={variant} disabled={!wsId || !currentUser}>
+        <Button variant={variant} disabled={!wsId || !currentUser || disabled}>
           <UserPlus className="mr-2 h-5 w-5" />
           {label}
         </Button>
