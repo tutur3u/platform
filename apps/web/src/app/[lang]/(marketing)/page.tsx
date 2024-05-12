@@ -2,17 +2,12 @@ import Link from 'next/link';
 import { getFeatures } from './features';
 import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
-import { getWorkspaces } from '@/lib/workspace-helper';
 import GradientHeadline from './gradient-headline';
 import GetStartedButton from './get-started-button';
 
-export const dynamic = 'force-dynamic';
-
-export default async function MarketingPage() {
+export default function MarketingPage() {
   const { t } = useTranslation('home');
-
   const features = getFeatures(t);
-  const workspaces = await getWorkspaces(true);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -34,9 +29,7 @@ export default async function MarketingPage() {
             <GradientHeadline title={t('headline-p2')} />.
           </p>
 
-          <GetStartedButton
-            href={workspaces?.[0]?.id ? `/${workspaces?.[0]?.id}` : '/login'}
-          />
+          <GetStartedButton href="/login" />
         </div>
 
         <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />

@@ -16,7 +16,7 @@ interface Feature {
   icon: React.ReactNode;
 }
 
-export const getFeatures = (t: Translate): Feature[] => {
+export function getFeatures(t: Translate): Feature[] {
   return [
     {
       title: t('features-1-title'),
@@ -50,4 +50,4 @@ export const getFeatures = (t: Translate): Feature[] => {
       icon: <CodeBracketIcon className="h-6 w-6" />,
     },
   ];
-};
+}
