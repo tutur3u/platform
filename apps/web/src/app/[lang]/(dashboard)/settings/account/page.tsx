@@ -3,6 +3,7 @@ import SettingItemTab from '../../../../../components/settings/SettingItemTab';
 import { getCurrentUser } from '@/lib/user-helper';
 import DisplayNameInput from './display-name-input';
 import EmailInput from './email-input';
+import { Suspense } from 'react';
 
 export default async function AccountSettingsPage() {
   const { t } = useTranslation('settings-account');
@@ -20,12 +21,23 @@ export default async function AccountSettingsPage() {
         <Avatar user={user} />
       </SettingItemTab> */}
 
-      <SettingItemTab
-        title={displayNameLabel}
-        description={displayNameDescription}
+      <Suspense
+        fallback={
+          <SettingItemTab
+            title={displayNameLabel}
+            description={displayNameDescription}
+          >
+            <DisplayNameInput disabled />
+          </SettingItemTab>
+        }
       >
-        <DisplayNameInput defaultValue={user!?.display_name} />
-      </SettingItemTab>
+        <SettingItemTab
+          title={displayNameLabel}
+          description={displayNameDescription}
+        >
+          <DisplayNameInput defaultValue={user!?.display_name} />
+        </SettingItemTab>
+      </Suspense>
 
       {/* <SettingItemTab title="Handle" description={handleDescription}>
         <Input
@@ -45,9 +57,17 @@ export default async function AccountSettingsPage() {
         />
       </SettingItemTab> */}
 
-      <SettingItemTab title="Email" description={emailDescription}>
-        <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
-      </SettingItemTab>
+      <Suspense
+        fallback={
+          <SettingItemTab title="Email" description={emailDescription}>
+            <EmailInput disabled />
+          </SettingItemTab>
+        }
+      >
+        <SettingItemTab title="Email" description={emailDescription}>
+          <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
+        </SettingItemTab>
+      </Suspense>
 
       {/* <Separator className="my-2" />
 
