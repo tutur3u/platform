@@ -6,6 +6,7 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 const nextConfig = nextTranslate({
   reactStrictMode: true,
   experimental: {
+    ppr: true,
     optimizePackageImports: [
       '@mantine/core',
       '@mantine/dates',
