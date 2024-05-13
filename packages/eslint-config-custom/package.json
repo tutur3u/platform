@@ -10,7 +10,7 @@
     "eslint-plugin-react": "^7.34.1"
   },
   "devDependencies": {
-    "next": "14.3.0-canary.58"
+    "next": "14.3.0-canary.59"
   },
   "publishConfig": {
     "access": "public"
