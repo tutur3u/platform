@@ -136,7 +136,7 @@
     "@next/bundle-analyzer": "14.3.0-canary.58",
     "@next/eslint-plugin-next": "14.3.0-canary.58",
     "@tailwindcss/typography": "^0.5.13",
-    "@tanstack/eslint-plugin-query": "^5.32.1",
+    "@tanstack/eslint-plugin-query": "^5.35.6",
     "@tanstack/react-query-devtools": "^5.35.5",
     "@testing-library/react": "^15.0.7",
     "@types/cookie": "^0.6.0",
