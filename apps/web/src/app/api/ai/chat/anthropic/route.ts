@@ -5,6 +5,7 @@ import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { cookies } from 'next/headers';
 
 export const runtime = 'edge';
+export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 export const dynamic = 'force-dynamic';
 
