@@ -39,7 +39,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@9.1.1",
   "workspaces": {
     "packages": [
       "apps/*",
@@ -47,7 +47,6 @@
     ]
   },
   "trustedDependencies": [
-    "@sentry/cli",
     "@vercel/speed-insights",
     "next-translate-plugin"
   ]
