@@ -80,7 +80,7 @@
     "@tiptap/extension-link": "^2.3.2",
     "@tiptap/extension-subscript": "^2.3.2",
     "@tiptap/extension-superscript": "^2.3.2",
-    "@tiptap/extension-text-align": "^2.3.2",
+    "@tiptap/extension-text-align": "^2.4.0",
     "@tiptap/extension-underline": "^2.3.2",
     "@tiptap/pm": "^2.3.2",
     "@tiptap/react": "^2.3.2",
