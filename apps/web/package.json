@@ -150,7 +150,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/three": "^0.164.0",
     "@types/uuid": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.9.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
