@@ -31,6 +31,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 import useSWR from 'swr';
 import { fetcher } from '@/utils/fetcher';
@@ -149,40 +150,42 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                         disabled={typesLoading}
                       />
                       <CommandEmpty>No type found.</CommandEmpty>
-                      <CommandGroup>
-                        {(types?.length || 0) > 0
-                          ? types?.map((type) => (
-                              <CommandItem
-                                key={type.id}
-                                value={type.id}
-                                onSelect={() => {
-                                  form.setValue('type', type.id || '');
-                                  setShowTypes(false);
+                      <CommandList>
+                        <CommandGroup>
+                          {(types?.length || 0) > 0
+                            ? types?.map((type) => (
+                                <CommandItem
+                                  key={type.id}
+                                  value={type.id}
+                                  onSelect={() => {
+                                    form.setValue('type', type.id || '');
+                                    setShowTypes(false);
 
-                                  if (type.id === 'BOOLEAN') {
-                                    form.setValue('possible_values', [
-                                      'true',
-                                      'false',
-                                    ]);
-                                  } else {
-                                    form.setValue('possible_values', ['']);
-                                  }
-                                }}
-                                disabled={['DATETIME'].includes(type.id)}
-                              >
-                                <CheckIcon
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    type.id === field.value
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                {t(type.id.toLowerCase())}
-                              </CommandItem>
-                            ))
-                          : null}
-                      </CommandGroup>
+                                    if (type.id === 'BOOLEAN') {
+                                      form.setValue('possible_values', [
+                                        'true',
+                                        'false',
+                                      ]);
+                                    } else {
+                                      form.setValue('possible_values', ['']);
+                                    }
+                                  }}
+                                  disabled={['DATETIME'].includes(type.id)}
+                                >
+                                  <CheckIcon
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      type.id === field.value
+                                        ? 'opacity-100'
+                                        : 'opacity-0'
+                                    )}
+                                  />
+                                  {t(type.id.toLowerCase())}
+                                </CommandItem>
+                              ))
+                            : null}
+                        </CommandGroup>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>

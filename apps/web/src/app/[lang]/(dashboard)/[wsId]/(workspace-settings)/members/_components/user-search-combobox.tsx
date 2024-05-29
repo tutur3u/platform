@@ -8,6 +8,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 import {
   Popover,
@@ -60,33 +61,35 @@ export function UserSearchCombobox({
           />
 
           <CommandEmpty>No user found.</CommandEmpty>
-          {query && (
-            <CommandGroup>
-              {users.map((u) => (
-                <CommandItem
-                  key={u.id}
-                  onSelect={() => {
-                    setUser(
-                      user?.id === undefined
-                        ? u
-                        : u.id === user.id
+          <CommandList>
+            {query && (
+              <CommandGroup>
+                {users.map((u) => (
+                  <CommandItem
+                    key={u.id}
+                    onSelect={() => {
+                      setUser(
+                        user?.id === undefined
                           ? u
-                          : undefined
-                    );
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      u.id === user?.id ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {u.display_name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+                          : u.id === user.id
+                            ? u
+                            : undefined
+                      );
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        u.id === user?.id ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {u.display_name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

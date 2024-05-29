@@ -256,22 +256,22 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                     ))}
                   </CommandGroup>
                 ))}
+                <CommandSeparator />
+                <CommandGroup>
+                  <DialogTrigger asChild>
+                    <CommandItem
+                      onSelect={() => {
+                        setOpen(false);
+                        setShowNewWorkspaceDialog(true);
+                      }}
+                      disabled
+                    >
+                      <PlusCircledIcon className="mr-2 h-5 w-5" />
+                      Create new workspace
+                    </CommandItem>
+                  </DialogTrigger>
+                </CommandGroup>
               </CommandList>
-              <CommandSeparator />
-              <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewWorkspaceDialog(true);
-                    }}
-                    disabled
-                  >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    Create new workspace
-                  </CommandItem>
-                </DialogTrigger>
-              </CommandGroup>
             </Command>
           </PopoverContent>
         </Popover>

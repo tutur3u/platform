@@ -6,6 +6,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 import {
   Popover,
@@ -84,28 +85,30 @@ export default function AIModelSelector({
               disabled={disabled || loading}
             />
             <CommandEmpty>{emptyDataMessage || 'No data found.'}</CommandEmpty>
-            <CommandGroup>
-              {(data?.length || 0) > 0
-                ? data?.map((row) => (
-                    <CommandItem
-                      key={row.id}
-                      value={row.name}
-                      onSelect={() => {
-                        onValueChange(row?.id || '');
-                        onOpenChange(false);
-                      }}
-                    >
-                      <CheckIcon
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          row.id === value ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      {row.name}
-                    </CommandItem>
-                  ))
-                : null}
-            </CommandGroup>
+            <CommandList>
+              <CommandGroup>
+                {(data?.length || 0) > 0
+                  ? data?.map((row) => (
+                      <CommandItem
+                        key={row.id}
+                        value={row.name}
+                        onSelect={() => {
+                          onValueChange(row?.id || '');
+                          onOpenChange(false);
+                        }}
+                      >
+                        <CheckIcon
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            row.id === value ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        {row.name}
+                      </CommandItem>
+                    ))
+                  : null}
+              </CommandGroup>
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>

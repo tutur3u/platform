@@ -8,6 +8,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 import {
   Popover,
@@ -61,6 +62,7 @@ export function ChatModelSelector({
           <CommandInput placeholder="Search model..." />
           <ScrollArea className="h-48 md:h-64">
             <CommandEmpty>No model found.</CommandEmpty>
+            <CommandList>
             {providers.map((provider) => (
               <CommandGroup key={provider} heading={provider}>
                 {models
@@ -91,7 +93,7 @@ export function ChatModelSelector({
                     </CommandItem>
                   ))}
               </CommandGroup>
-            ))}
+            ))}</CommandList>
           </ScrollArea>
         </Command>
 
