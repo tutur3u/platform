@@ -346,8 +346,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@next/bundle-analyzer':
-        specifier: 15.0.0-canary.0
-        version: 15.0.0-canary.0
+        specifier: 15.0.0-rc.0
+        version: 15.0.0-rc.0
       '@next/eslint-plugin-next':
         specifier: 15.0.0-canary.0
         version: 15.0.0-canary.0
@@ -1078,8 +1078,8 @@ packages:
       react: ^18.2.0
       react-dom: ^18.2.0
 
-  '@next/bundle-analyzer@15.0.0-canary.0':
-    resolution: {integrity: sha512-Apd50ck9Bx+yPfzGQ0k7gcz5FlI61xwRysFfq70M+U93dtIVZnf+Vl4r6UbUkIGtsKCRo94tkRFvXBJJjJBDTQ==}
+  '@next/bundle-analyzer@15.0.0-rc.0':
+    resolution: {integrity: sha512-42idubQ3sV0BsP+x+BC5XuESr8jO5o5jnmhKOKI/lCFzq5hUvnAxkqcmehkiyCy6b3bTSUv6D8nC1fOisqFtew==}
 
   '@next/env@15.0.0-canary.0':
     resolution: {integrity: sha512-NVgNXlOdTBCJrpFzmwnXm36iQfJ5qB4rjowhg5LWx+Zh8nPP5EQTZqGgrF3Uveh65sQeMhRVBrCc6kCTZ8XWww==}
@@ -6521,7 +6521,7 @@ snapshots:
       react: 19.0.0-rc-935180c7e0-20240524
       react-dom: 19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524)
 
-  '@next/bundle-analyzer@15.0.0-canary.0':
+  '@next/bundle-analyzer@15.0.0-rc.0':
     dependencies:
       webpack-bundle-analyzer: 4.10.1
     transitivePeerDependencies:
