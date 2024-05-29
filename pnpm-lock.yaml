@@ -349,8 +349,8 @@ importers:
         specifier: 15.0.0-canary.0
         version: 15.0.0-canary.0
       '@next/eslint-plugin-next':
-        specifier: 15.0.0-canary.0
-        version: 15.0.0-canary.0
+        specifier: 15.0.0-rc.0
+        version: 15.0.0-rc.0
       '@tailwindcss/typography':
         specifier: ^0.5.13
         version: 0.5.13(tailwindcss@3.4.3)
@@ -1086,6 +1086,9 @@ packages:
 
   '@next/eslint-plugin-next@15.0.0-canary.0':
     resolution: {integrity: sha512-yVrlDQEtanGZwycGfOHgzPdDxN3AIl9zSyPu16KAqTyHv4/msFo5ifeiOoJy+KUW7i/VY9N9jB881jBlGPan4A==}
+
+  '@next/eslint-plugin-next@15.0.0-rc.0':
+    resolution: {integrity: sha512-/rQXrN47qxlFHtZg77LdcCYbL54ogQuLeqIGV/6HMGnZH8iL81XEFOITO8GZjOukR5i3BbwyfrsmIqFl/scg+w==}
 
   '@next/swc-darwin-arm64@15.0.0-canary.0':
     resolution: {integrity: sha512-5oAf5Pn3pF7XYmezaMRZX5FZQW52vXUxXSKrx6qfGXFTWGni8xRfoV+7oqRwQEMN53rFZV0G6ldukFgmLWHHCw==}
@@ -6531,6 +6534,10 @@ snapshots:
   '@next/env@15.0.0-canary.0': {}
 
   '@next/eslint-plugin-next@15.0.0-canary.0':
+    dependencies:
+      glob: 10.3.10
+
+  '@next/eslint-plugin-next@15.0.0-rc.0':
     dependencies:
       glob: 10.3.10
 

@@ -133,7 +133,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.0.0-canary.0",
-    "@next/eslint-plugin-next": "15.0.0-canary.0",
+    "@next/eslint-plugin-next": "15.0.0-rc.0",
     "@tailwindcss/typography": "^0.5.13",
     "@tanstack/eslint-plugin-query": "^5.35.6",
     "@tanstack/react-query-devtools": "^5.40.0",
