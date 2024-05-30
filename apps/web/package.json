@@ -27,7 +27,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.21.1",
+    "@anthropic-ai/sdk": "^0.22.0",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
