@@ -70,7 +70,7 @@ export function MemberSettingsButton({
     const invited = user?.pending;
 
     const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}`,
+      `/api/workspaces/${ws.id}/members${user.id ? `?id=${user.id}` : `?email=${user.email}`}`,
       {
         method: 'DELETE',
       }
@@ -104,7 +104,7 @@ export function MemberSettingsButton({
 
   const updateMember = async (data: z.infer<typeof FormSchema>) => {
     const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}`,
+      `/api/workspaces/${ws.id}/members${user.id ? `?id=${user.id}` : `?email=${user.email}`}`,
       {
         method: 'PUT',
         headers: {
