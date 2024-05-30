@@ -51,8 +51,8 @@ importers:
         specifier: ^0.5.4
         version: 0.5.4
       '@google/generative-ai':
-        specifier: ^0.11.4
-        version: 0.11.4
+        specifier: ^0.12.0
+        version: 0.12.0
       '@heroicons/react':
         specifier: ^2.1.3
         version: 2.1.3(react@19.0.0-rc-935180c7e0-20240524)
@@ -854,8 +854,8 @@ packages:
   '@formatjs/intl-localematcher@0.5.4':
     resolution: {integrity: sha512-zTwEpWOzZ2CiKcB93BLngUX59hQkuZjT2+SAQEscSm52peDW/getsawMcWF1rGRpMCX6D7nSJA3CzJ8gn13N/g==}
 
-  '@google/generative-ai@0.11.4':
-    resolution: {integrity: sha512-hlw+E9Prv9aUIQISRnLSXi4rukFqKe5WhxPvzBccTvIvXjw2BHMFOJWSC/Gq7WE0W+L/qRHGmYxopmx9qjrB9w==}
+  '@google/generative-ai@0.12.0':
+    resolution: {integrity: sha512-krWjurjEUHSFhCX4lGHMOhbnpBfYZGU31mpHpPBQwcfWm0T+/+wxC4UCAJfkxxc3/HvGJVG8r4AqrffaeDHDlA==}
     engines: {node: '>=18.0.0'}
 
   '@heroicons/react@2.1.3':
@@ -6328,7 +6328,7 @@ snapshots:
     dependencies:
       tslib: 2.6.2
 
-  '@google/generative-ai@0.11.4': {}
+  '@google/generative-ai@0.12.0': {}
 
   '@heroicons/react@2.1.3(react@19.0.0-rc-935180c7e0-20240524)':
     dependencies:
