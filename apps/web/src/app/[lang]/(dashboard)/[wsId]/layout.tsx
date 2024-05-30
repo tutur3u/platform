@@ -25,7 +25,6 @@ export default async function Layout({
     wsId,
     requiredSecrets: [
       'ENABLE_AI',
-      'ENABLE_BLACKBOX',
       'ENABLE_CHAT',
       'ENABLE_CALENDAR',
       'ENABLE_USERS',
@@ -61,7 +60,7 @@ export default async function Layout({
     {
       name: t('blackbox'),
       href: `/${wsId}/blackbox`,
-      disabled: !verifySecret('ENABLE_BLACKBOX', 'true'),
+      disabled: true,
     },
     {
       name: t('calendar'),

@@ -71,12 +71,28 @@ export async function getWorkspaceInvites() {
 
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
+  const invitesQuery = supabase
     .from('workspace_invites')
     .select('workspaces(id, name), created_at')
     .eq('user_id', user.id);
 
-  if (error) throw error;
+  const emailInvitesQuery = user.email
+    ? supabase
+        .from('workspace_email_invites')
+        .select('workspaces(id, name), created_at')
+        .eq('email', user.email)
+    : null;
+
+  // use promise.all to run both queries in parallel
+  const [invites, emailInvites] = await Promise.all([
+    invitesQuery,
+    emailInvitesQuery,
+  ]);
+
+  if (invites.error || emailInvites?.error)
+    throw invites.error || emailInvites?.error;
+
+  const data = [...invites.data, ...(emailInvites?.data || [])];
 
   const workspaces = data.map(({ workspaces, created_at }) => ({
     ...workspaces,
