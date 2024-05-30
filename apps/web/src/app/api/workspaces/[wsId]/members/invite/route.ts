@@ -14,11 +14,11 @@ interface Params {
 export async function POST(req: Request, { params: { wsId } }: Params) {
   const supabase = createRouteHandlerClient<Database>({ cookies });
 
-  const { userId, role, accessLevel } = await req.json();
+  const { email, role, accessLevel } = await req.json();
 
-  const { error } = await supabase.from('workspace_invites').insert({
+  const { error } = await supabase.from('workspace_email_invites').insert({
     ws_id: wsId,
-    user_id: userId,
+    email,
     role_title: role,
     role: accessLevel,
   });

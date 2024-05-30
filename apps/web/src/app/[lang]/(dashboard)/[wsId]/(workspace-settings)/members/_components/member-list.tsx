@@ -32,15 +32,18 @@ export default async function MemberList({
         <p className="text-foreground/80 text-center">
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
-        <InviteMemberButton
-          wsId={workspace?.id}
-          currentUser={{
-            ...user!,
-            role: workspace?.role,
-          }}
-          label={t('invite_member')}
-          variant="outline"
-        />
+
+        {!!workspace?.id && (
+          <InviteMemberButton
+            wsId={workspace?.id}
+            currentUser={{
+              ...user!,
+              role: workspace?.role,
+            }}
+            label={t('invite_member')}
+            variant="outline"
+          />
+        )}
       </div>
     );
   }

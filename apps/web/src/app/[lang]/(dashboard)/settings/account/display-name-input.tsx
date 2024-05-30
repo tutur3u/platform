@@ -20,13 +20,17 @@ import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   defaultValue?: string;
+  disabled?: boolean;
 }
 
 const FormSchema = z.object({
   name: z.string().min(0).max(50).optional(),
 });
 
-export default function DisplayNameInput({ defaultValue = '' }: Props) {
+export default function DisplayNameInput({
+  defaultValue = '',
+  disabled,
+}: Props) {
   const { t } = useTranslation('settings-account');
   const router = useRouter();
 
@@ -82,6 +86,7 @@ export default function DisplayNameInput({ defaultValue = '' }: Props) {
                   <Input
                     id="display-name"
                     placeholder={t('display-name')}
+                    disabled={disabled}
                     {...field}
                   />
                 </FormControl>
@@ -94,7 +99,7 @@ export default function DisplayNameInput({ defaultValue = '' }: Props) {
             type="submit"
             size="icon"
             onClick={form.handleSubmit(onSubmit)}
-            disabled={name === defaultValue || saving}
+            disabled={name === defaultValue || saving || disabled}
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />

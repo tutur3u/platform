@@ -9,13 +9,16 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "files.exclude": {
-    "**/node_modules": true,
-    "**/.turbo": true
+    // "**/node_modules": true,
+    // "**/.turbo": true
   },
   "workbench.editor.customLabels.patterns": {
     "**/app/**/page.tsx": "${dirname} - Page",
     "**/app/**/layout.tsx": "${dirname} - Layout",
     "**/app/**/route.ts": "${dirname} - API",
     "**/components/**/index.tsx": "${dirname} - Component"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
   }
 }

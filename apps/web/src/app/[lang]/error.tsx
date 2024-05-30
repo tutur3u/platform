@@ -1,8 +1,6 @@
 'use client'; // Error components must be Client Components
 
 import { Button } from '@/components/ui/button';
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
 
 export default function Error({
   error,
@@ -11,11 +9,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // Log the error to Sentry
-    Sentry.captureException(error);
-  }, [error]);
-
   return (
     <div className="absolute inset-0 mx-4 mb-8 mt-24 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
       <h1 className="text-xl font-bold">Something went wrong.</h1>
