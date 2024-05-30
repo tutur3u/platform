@@ -9,6 +9,7 @@ import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/user-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient } from '@/utils/supabase/client';
+import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,14 +45,28 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <InviteMemberButton
-            wsId={wsId}
-            currentUser={{
-              ...user!,
-              role: ws?.role,
-            }}
-            label={inviteLabel}
-          />
+          <Suspense
+            fallback={
+              <InviteMemberButton
+                wsId={wsId}
+                currentUser={{
+                  id: '',
+                  role: 'MEMBER',
+                }}
+                label={inviteLabel}
+                disabled
+              />
+            }
+          >
+            <InviteMemberButton
+              wsId={wsId}
+              currentUser={{
+                ...user!,
+                role: ws?.role,
+              }}
+              label={inviteLabel}
+            />
+          </Suspense>
           <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
@@ -59,11 +74,25 @@ export default async function WorkspaceMembersPage({
 
       <div className="flex min-h-full w-full flex-col">
         <div className="grid items-end gap-4 lg:grid-cols-2">
-          <MemberList
-            workspace={ws}
-            members={members}
-            invited={searchParams?.status === 'invited'}
-          />
+          <Suspense
+            fallback={
+              <MemberList
+                members={Array.from({ length: 10 }).map((_, i) => ({
+                  id: i.toString(),
+                  display_name: 'Unknown',
+                  role: 'MEMBER',
+                  pending: true,
+                }))}
+                loading
+              />
+            }
+          >
+            <MemberList
+              workspace={ws}
+              members={members}
+              invited={searchParams?.status === 'invited'}
+            />
+          </Suspense>
         </div>
       </div>
     </>

@@ -103,18 +103,21 @@ export type Database = {
       ai_models: {
         Row: {
           created_at: string;
+          enabled: boolean;
           id: string;
           name: string | null;
           provider: string | null;
         };
         Insert: {
           created_at?: string;
+          enabled?: boolean;
           id: string;
           name?: string | null;
           provider?: string | null;
         };
         Update: {
           created_at?: string;
+          enabled?: boolean;
           id?: string;
           name?: string | null;
           provider?: string | null;
@@ -2422,7 +2425,7 @@ export type Database = {
       workspace_ai_prompts: {
         Row: {
           created_at: string;
-          creator_id: string;
+          creator_id: string | null;
           id: string;
           input: string;
           model: string;
@@ -2432,7 +2435,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           id?: string;
           input: string;
           model: string;
@@ -2442,7 +2445,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           id?: string;
           input?: string;
           model?: string;
@@ -2455,14 +2458,7 @@ export type Database = {
             foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
@@ -2643,6 +2639,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_email_invites: {
+        Row: {
+          created_at: string;
+          email: string;
+          role: string;
+          role_title: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          role?: string;
+          role_title?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          role?: string;
+          role_title?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_email_invites_role_fkey';
+            columns: ['role'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_default_roles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_email_invites_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -3674,6 +3709,12 @@ export type Database = {
           list_id: string;
           board_id: string;
         }[];
+      };
+      get_workspace_drive_size: {
+        Args: {
+          ws_id: string;
+        };
+        Returns: number;
       };
       get_workspace_products_count: {
         Args: {

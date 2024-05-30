@@ -25,6 +25,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 import {
   Popover,
@@ -200,33 +201,35 @@ export function TransactionForm({
                       disabled={categoriesLoading}
                     />
                     <CommandEmpty>No category found.</CommandEmpty>
-                    <CommandGroup>
-                      {(categories?.length || 0) > 0
-                        ? categories?.map((category) => (
-                            <CommandItem
-                              key={category.id}
-                              value={category.name}
-                              onSelect={() => {
-                                form.setValue(
-                                  'category_id',
-                                  category?.id || ''
-                                );
-                                setShowCategories(false);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  category.id === field.value
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              {category.name}
-                            </CommandItem>
-                          ))
-                        : null}
-                    </CommandGroup>
+                    <CommandList>
+                      <CommandGroup>
+                        {(categories?.length || 0) > 0
+                          ? categories?.map((category) => (
+                              <CommandItem
+                                key={category.id}
+                                value={category.name}
+                                onSelect={() => {
+                                  form.setValue(
+                                    'category_id',
+                                    category?.id || ''
+                                  );
+                                  setShowCategories(false);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    category.id === field.value
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {category.name}
+                              </CommandItem>
+                            ))
+                          : null}
+                      </CommandGroup>
+                    </CommandList>
                   </Command>
                 </PopoverContent>
               </Popover>
