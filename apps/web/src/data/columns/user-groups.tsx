@@ -50,7 +50,7 @@ export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('amount')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('amount') || '-'}</div>,
+    cell: ({ row }) => <div>{row.getValue('amount')}</div>,
   },
   {
     accessorKey: 'locked',
