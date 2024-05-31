@@ -21,8 +21,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
@@ -36,10 +43,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -48,11 +57,18 @@ import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface Props {
   user: User | null;
   workspaces: Workspace[] | null;
 }
+
+const FormSchema = z.object({
+  name: z.string(),
+  plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
+});
 
 export default function WorkspaceSelect({ user, workspaces }: Props) {
   const { t } = useTranslation();
@@ -60,6 +76,50 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      name: '',
+      plan: 'FREE',
+    },
+  });
+
+  const [open, setOpen] = useState(false);
+  const [showNewWorkspaceDialog, setShowNewWorkspaceDialog] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+    setLoading(true);
+
+    const res = await fetch(`/api/v1/workspaces`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (res.ok) {
+      form.reset();
+
+      const { id } = await res.json();
+
+      router.push(`/${id}`);
+      router.refresh();
+
+      setShowNewWorkspaceDialog(false);
+      setLoading(false);
+      setOpen(false);
+    } else {
+      setLoading(false);
+      toast({
+        title: 'Error creating workspace',
+        description: 'An error occurred while creating the workspace',
+      });
+    }
+  }
 
   const groups = [
     {
@@ -83,9 +143,6 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
         })) || [],
     },
   ];
-
-  const [open, setOpen] = useState(false);
-  const [showNewWorkspaceDialog, setShowNewWorkspaceDialog] = useState(false);
 
   const onValueChange = (wsId: string) => {
     const newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
@@ -215,9 +272,9 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
           </PopoverTrigger>
           <PopoverContent className="w-full max-w-[16rem] p-0">
             <Command>
-              <CommandList>
-                <CommandInput placeholder="Search workspace..." />
-                <CommandEmpty>No workspace found.</CommandEmpty>
+              <CommandInput placeholder="Search workspace..." />
+              <CommandEmpty>No workspace found.</CommandEmpty>
+              <CommandList className="max-h-64">
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map((ws) => (
@@ -256,22 +313,19 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                     ))}
                   </CommandGroup>
                 ))}
-                <CommandSeparator />
-                <CommandGroup>
-                  <DialogTrigger asChild>
-                    <CommandItem
-                      onSelect={() => {
-                        setOpen(false);
-                        setShowNewWorkspaceDialog(true);
-                      }}
-                      disabled
-                    >
-                      <PlusCircledIcon className="mr-2 h-5 w-5" />
-                      Create new workspace
-                    </CommandItem>
-                  </DialogTrigger>
-                </CommandGroup>
               </CommandList>
+              <CommandSeparator />
+              <DialogTrigger asChild>
+                <CommandItem
+                  onSelect={() => {
+                    setOpen(false);
+                    setShowNewWorkspaceDialog(true);
+                  }}
+                >
+                  <PlusCircledIcon className="mr-2 h-5 w-5" />
+                  Create new workspace
+                </CommandItem>
+              </DialogTrigger>
             </Command>
           </PopoverContent>
         </Popover>
@@ -283,43 +337,76 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
               you, and collaborate with your team as you go.
             </DialogDescription>
           </DialogHeader>
-          <div>
-            <div className="space-y-4 py-2 pb-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Workspace name</Label>
-                <Input id="name" placeholder="Acme Inc." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="plan">Subscription plan</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">
-                      <span className="font-medium">Free</span> -{' '}
-                      <span className="text-muted-foreground">
-                        $0/month per user
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="pro" disabled>
-                      <span className="font-medium">Pro</span> -{' '}
-                      <span className="text-muted-foreground">Coming soon</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewWorkspaceDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Continue</Button>
-          </DialogFooter>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2">
+              <FormField
+                control={form.control}
+                name="name"
+                disabled={loading}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workspace name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Acme Inc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="plan"
+                disabled={loading}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subscription plan</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="FREE">
+                            <span className="font-medium">Free</span> -{' '}
+                            <span className="text-muted-foreground">
+                              $0/month per user
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="PRO" disabled>
+                            <span className="font-medium">Pro</span> -{' '}
+                            <span className="text-muted-foreground">
+                              Coming soon
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="ENTERPRISE" disabled>
+                            <span className="font-medium">Enterprise</span> -{' '}
+                            <span className="text-muted-foreground">
+                              Coming soon
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowNewWorkspaceDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Continue</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

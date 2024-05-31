@@ -21,11 +21,7 @@ export default async function WorkspaceInvoicesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(
-    wsId,
-    ['ENABLE_FINANCE', 'ENABLE_INVOICE'],
-    `/${wsId}`
-  );
+  await verifyHasSecrets(wsId, ['ENABLE_INVOICE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (

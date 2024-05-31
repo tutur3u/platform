@@ -2,7 +2,6 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { Wallet } from '@/types/primitives/Wallet';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import WalletsTable from './table';
 
 interface Props {
@@ -20,7 +19,6 @@ export default async function WorkspaceWalletsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_FINANCE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return <WalletsTable wsId={wsId} data={data} count={count} />;

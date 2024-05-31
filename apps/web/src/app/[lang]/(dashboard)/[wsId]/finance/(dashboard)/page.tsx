@@ -2,7 +2,6 @@ import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -15,8 +14,6 @@ export const dynamic = 'force-dynamic';
 export default async function WorkspaceFinancePage({
   params: { wsId },
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_FINANCE'], `/${wsId}`);
-
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation('finance-overview');
 
