@@ -2,7 +2,6 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { Wallet } from '@/types/primitives/Wallet';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import WalletsTable from './table';
 
 interface Props {
