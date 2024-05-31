@@ -77,7 +77,7 @@ export default async function WorkspaceUserDetailsPage({
           </div>
         </div>
 
-        {/* <div className="grid h-fit gap-2">
+        <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Nhóm đã tham gia</div>
           <Separator />
           <div className="border-border bg-foreground/5 rounded border p-2">
@@ -85,9 +85,9 @@ export default async function WorkspaceUserDetailsPage({
               <span className="opacity-60">Nhóm đã tham gia</span>
             </div>
           </div>
-        </div> */}
+        </div>
 
-        {/* <div className="grid h-fit gap-2">
+        <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Mã giảm giá liên kết</div>
           <Separator />
           <div className="border-border bg-foreground/5 rounded border p-2">
@@ -95,9 +95,9 @@ export default async function WorkspaceUserDetailsPage({
               <span className="opacity-60">Mã giảm giá liên kết</span>
             </div>
           </div>
-        </div> */}
+        </div>
 
-        {/* <div className="grid h-fit gap-2">
+        <div className="grid h-fit gap-2">
           <div className="text-2xl font-semibold">Hoá đơn</div>
           <Separator />
           <div className="border-border bg-foreground/5 rounded border p-2">
@@ -105,7 +105,7 @@ export default async function WorkspaceUserDetailsPage({
               <span className="opacity-60">Hoá đơn</span>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

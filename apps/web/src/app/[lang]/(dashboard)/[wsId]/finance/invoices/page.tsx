@@ -21,7 +21,7 @@ export default async function WorkspaceInvoicesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVOICE'], `/${wsId}`);
+  await verifyHasSecrets(wsId, ['ENABLE_INVOICES'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (
@@ -36,7 +36,6 @@ export default async function WorkspaceInvoicesPage({
         price: false,
         total_diff: false,
         note: false,
-        created_at: false,
       }}
     />
   );
@@ -57,7 +56,8 @@ async function getData(
     .select('*, customer:workspace_users!customer_id(full_name)', {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

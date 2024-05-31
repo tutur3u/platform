@@ -26,9 +26,9 @@ export default async function WorkspaceUsersPage({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
   const { data, count } = await getData(wsId, searchParams);
-  const { data: extraFields } = await getUserFields(wsId, searchParams);
+  const { data: extraFields } = await getUserFields(wsId);
 
-  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/${u.id}` }));
+  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/database/${u.id}` }));
 
   return (
     <>
@@ -65,6 +65,7 @@ export default async function WorkspaceUsersPage({
           id: false,
           gender: false,
           avatar_url: false,
+          display_name: false,
           ethnicity: false,
           guardian: false,
           address: false,
@@ -89,7 +90,7 @@ async function getData(
     page = '1',
     pageSize = '10',
     retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean }
 ) {
   const supabase = createServerComponentClient({ cookies });
 
@@ -145,14 +146,7 @@ async function getData(
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }
 
-async function getUserFields(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
+async function getUserFields(wsId: string) {
   const supabase = createServerComponentClient({ cookies });
 
   const queryBuilder = supabase
@@ -162,16 +156,6 @@ async function getUserFields(
     })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
