@@ -30,7 +30,7 @@ const SettingItemCard = ({
 }: Props) => {
   const { t } = useTranslation('common');
 
-  const comingSoonLabel = t('coming-soon');
+  const comingSoonLabel = t('coming_soon');
   const extraAction = onSave || onDelete || comingSoon;
 
   return (
