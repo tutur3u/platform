@@ -18,5 +18,7 @@
   "linked_users": "Người dùng liên kết",
   "linked_to": "Đã liên kết với",
   "created_at": "Ngày tạo",
-  "updated_at": "Ngày cập nhật cuối"
+  "updated_at": "Ngày cập nhật cuối",
+  "no_coupons": "Chưa có liên kết nào",
+  "no_groups": "Không thuộc nhóm nào"
 }
