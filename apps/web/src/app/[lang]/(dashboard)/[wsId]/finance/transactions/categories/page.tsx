@@ -3,7 +3,6 @@ import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import TransactionCategoriesTable from './table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 interface Props {
   params: {
@@ -20,7 +19,6 @@ export default async function WorkspaceTransactionCategoriesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_FINANCE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return <TransactionCategoriesTable wsId={wsId} data={data} count={count} />;

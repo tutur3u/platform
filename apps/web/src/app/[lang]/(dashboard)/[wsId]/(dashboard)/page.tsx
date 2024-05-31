@@ -22,7 +22,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   const secrets = await getSecrets({
     wsId,
-    requiredSecrets: ['ENABLE_USERS', 'ENABLE_INVENTORY', 'ENABLE_FINANCE'],
+    requiredSecrets: ['ENABLE_USERS', 'ENABLE_INVENTORY'],
   });
 
   const verifySecret = (secret: string, value: string) =>
@@ -30,7 +30,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   const enableUsers = verifySecret('ENABLE_USERS', 'true');
   const enableInventory = verifySecret('ENABLE_INVENTORY', 'true');
-  const enableFinance = verifySecret('ENABLE_FINANCE', 'true');
+  const enableFinance = true;
 
   const homeLabel = t('home');
 

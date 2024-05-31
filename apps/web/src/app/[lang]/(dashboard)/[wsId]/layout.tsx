@@ -33,7 +33,6 @@ export default async function Layout({
       'ENABLE_DRIVE',
       'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
-      'ENABLE_FINANCE',
     ],
     forceAdmin: true,
   });
@@ -100,7 +99,6 @@ export default async function Layout({
     {
       name: t('finance'),
       href: `/${wsId}/finance`,
-      disabled: !verifySecret('ENABLE_FINANCE', 'true'),
     },
     {
       name: t('common:settings'),

@@ -1,7 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Transaction } from '@/types/primitives/Transaction';
 import TransactionsTable from './table';
 
@@ -20,7 +19,6 @@ export default async function WorkspaceTransactionsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_FINANCE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (
