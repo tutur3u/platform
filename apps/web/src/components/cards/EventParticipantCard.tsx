@@ -104,7 +104,7 @@ const EventParticipantCard = ({
     >
       {participant.type === 'virtual_user' ? (
         <Link
-          href={`/${wsId}/users/${participant.participant_id}`}
+          href={`/${wsId}/users/database/${participant.participant_id}`}
           className="line-clamp-1 font-semibold underline-offset-1 hover:underline"
         >
           {participant.display_name || participant.handle}

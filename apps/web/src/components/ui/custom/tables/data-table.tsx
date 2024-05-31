@@ -43,6 +43,7 @@ interface DataTableProps<TData, TValue> {
   data?: TData[];
   count?: number;
   defaultVisibility?: VisibilityState;
+  noBottomPadding?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -55,6 +56,7 @@ export function DataTable<TData, TValue>({
   data,
   count,
   defaultVisibility = {},
+  noBottomPadding,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation(namespace);
   const query = useQuery();
@@ -159,10 +161,12 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination
-        table={table}
-        className="pointer-events-none hidden opacity-0 lg:block"
-      />
+      {noBottomPadding || (
+        <DataTablePagination
+          table={table}
+          className="pointer-events-none hidden opacity-0 lg:block"
+        />
+      )}
       <DataTablePagination
         table={table}
         count={count}

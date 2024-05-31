@@ -26,35 +26,15 @@ export default async function WorkspaceUsersPage({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
   const { data, count } = await getData(wsId, searchParams);
-  const { data: extraFields } = await getUserFields(wsId, searchParams);
+  const { data: extraFields } = await getUserFields(wsId);
 
-  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/${u.id}` }));
+  const users = data.map((u) => ({
+    ...u,
+    href: `/${wsId}/users/database/${u.id}`,
+  }));
 
   return (
     <>
-      {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('users')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <SecretEditDialog
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create_user')}
-              </Button>
-            }
-            submitLabel={t('create_secret')}
-          />
-        </div>
-      </div>
-      <Separator className="my-4" /> */}
-
       <DataTable
         data={users}
         namespace="user-data-table"
@@ -65,6 +45,7 @@ export default async function WorkspaceUsersPage({
           id: false,
           gender: false,
           avatar_url: false,
+          display_name: false,
           ethnicity: false,
           guardian: false,
           address: false,
@@ -89,7 +70,7 @@ async function getData(
     page = '1',
     pageSize = '10',
     retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean }
 ) {
   const supabase = createServerComponentClient({ cookies });
 
@@ -145,14 +126,7 @@ async function getData(
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }
 
-async function getUserFields(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
+async function getUserFields(wsId: string) {
   const supabase = createServerComponentClient({ cookies });
 
   const queryBuilder = supabase
@@ -162,16 +136,6 @@ async function getUserFields(
     })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;

@@ -26,9 +26,14 @@ export default async function WorkspaceUserGroupsPage({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
+  const groups = data.map((g) => ({
+    ...g,
+    href: `/${wsId}/users/groups/${g.id}`,
+  }));
+
   return (
     <DataTable
-      data={data}
+      data={groups}
       columnGenerator={getUserGroupColumns}
       namespace="user-group-data-table"
       count={count}

@@ -1,4 +1,5 @@
 import { Navigation, NavLink } from '@/components/navigation';
+import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
 import React from 'react';
 
@@ -15,6 +16,12 @@ export default async function Layout({
 }: LayoutProps) {
   const { t } = useTranslation('workspace-finance-tabs');
 
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_INVOICES'],
+    forceAdmin: true,
+  });
+
   const navLinks: NavLink[] = [
     {
       name: t('overview'),
@@ -22,13 +29,13 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('wallets'),
-      href: `/${wsId}/finance/wallets`,
-    },
-    {
       name: t('transactions'),
       href: `/${wsId}/finance/transactions`,
       matchExact: true,
+    },
+    {
+      name: t('wallets'),
+      href: `/${wsId}/finance/wallets`,
     },
     {
       name: t('categories'),
@@ -37,7 +44,7 @@ export default async function Layout({
     {
       name: t('invoices'),
       href: `/${wsId}/finance/invoices`,
-      requireRootWorkspace: true,
+      disabled: !verifySecret('ENABLE_INVOICES', 'true', secrets),
     },
     {
       name: t('settings'),

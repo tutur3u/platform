@@ -5,6 +5,7 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { getReportsCount } from '../users/reports/core';
+import { notFound } from 'next/navigation';
 
 interface Props {
   params: {
@@ -18,7 +19,9 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const supabase = createServerComponentClient({ cookies });
 
   const { t } = useTranslation('ws-home');
-  const ws = await getWorkspace(wsId);
+
+  const workspace = await getWorkspace(wsId);
+  if (!workspace) notFound();
 
   const secrets = await getSecrets({
     wsId,
@@ -31,8 +34,6 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const enableUsers = verifySecret('ENABLE_USERS', 'true');
   const enableInventory = verifySecret('ENABLE_INVENTORY', 'true');
   const enableFinance = true;
-
-  const homeLabel = t('home');
 
   const { data: income } = enableFinance
     ? await supabase.rpc('get_workspace_wallets_income', {
@@ -221,33 +222,9 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   return (
     <>
-      <div className="bg-foreground/5 rounded-lg border p-4">
-        <h1 className="text-2xl font-bold">{homeLabel}</h1>
-        <p className="text-foreground/80">
-          {t('description_p1')}{' '}
-          <span className="text-foreground font-semibold">
-            {ws?.name || 'Unnamed Workspace'}
-          </span>{' '}
-          {t('description_p2')}
-        </p>
-      </div>
-
-      {/* <div className="bg-foreground/5 mt-4 rounded-lg border p-4">
-        <div className="text-2xl font-bold">{t('latest_announcement')}</div>
-        <Separator className="my-2" />
-        <div className="text-foreground/80 whitespace-pre-line">
-          {t('ai_chat_playground_discontinued_p1')}{' '}
-          <span className="text-foreground font-semibold">
-            {t('ai_chat_playground_experiment')}
-          </span>{' '}
-          {t('ai_chat_playground_discontinued_p2')}
-        </div>
-      </div> */}
-
       {enableFinance && (
         <>
-          <Separator className="my-4" />
-          <div className="mb-2 text-2xl font-semibold">
+          <div className="my-2 text-2xl font-semibold">
             {t('sidebar-tabs:finance')}
           </div>
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
