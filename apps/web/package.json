@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 7803",
     "devx": "pnpm supabase stop && pnpm i && pnpm supabase start && next dev -p 7803",
-    "devrs": "pnpm supabase stop --no-backup && pnpm i && pnpm supabase start && next dev -p 7803",
+    "devrs": "pnpm supabase stop --no-backup && pnpm i && pnpm supabase start && pnpm supabase db reset && next dev -p 7803",
     "build": "next build",
     "start": "next start",
     "preview": "next build && next start -p 7803",
@@ -174,5 +174,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@9.1.3"
+  "packageManager": "pnpm@9.1.4"
 }
