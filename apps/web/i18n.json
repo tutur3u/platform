@@ -285,7 +285,9 @@
       "user-field-data-table"
     ],
     "/[lang]/(dashboard)/[wsId]/users/database/[userId]": [
-      "user-data-table"
+      "search",
+      "user-data-table",
+      "invoice-data-table"
     ],
     "/[lang]/(dashboard)/[wsId]/attendance": [
       "sidebar-tabs"

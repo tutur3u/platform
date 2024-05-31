@@ -1,10 +1,11 @@
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '@/components/ui/separator';
-import { getSecret, getSecrets } from '@/lib/workspace-helper';
+import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { getReportsCount } from '../users/reports/core';
+import { notFound } from 'next/navigation';
 
 interface Props {
   params: {
@@ -18,6 +19,9 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const supabase = createServerComponentClient({ cookies });
 
   const { t } = useTranslation('ws-home');
+
+  const workspace = await getWorkspace(wsId);
+  if (!workspace) notFound();
 
   const secrets = await getSecrets({
     wsId,

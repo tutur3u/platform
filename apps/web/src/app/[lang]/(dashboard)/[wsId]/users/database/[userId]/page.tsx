@@ -1,5 +1,4 @@
 import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
 import { Separator } from '@/components/ui/separator';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -113,15 +112,21 @@ export default async function WorkspaceUserDetailsPage({
             </div>
             <Separator />
             <div className="grid gap-2">
-              {coupons?.map((coupon) => (
-                <div
-                  key={coupon.id}
-                  className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
-                >
-                  <TicketCheck className="inline-block h-6 w-6" />
-                  {coupon.name}
+              {coupons && coupons.length ? (
+                coupons.map((coupon) => (
+                  <div
+                    key={coupon.id}
+                    className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
+                  >
+                    <TicketCheck className="inline-block h-6 w-6" />
+                    {coupon.name}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-opacity-60">
+                  {t('no_coupons')}.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -133,20 +138,26 @@ export default async function WorkspaceUserDetailsPage({
             </div>
             <Separator />
             <div className="grid gap-2 2xl:grid-cols-2">
-              {groups?.map((group) => (
-                <div
-                  key={group.id}
-                  className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
-                >
-                  <Users className="inline-block h-6 w-6" />
-                  {group.name}
+              {groups && groups.length ? (
+                groups.map((group) => (
+                  <div
+                    key={group.id}
+                    className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
+                  >
+                    <Users className="inline-block h-6 w-6" />
+                    {group.name}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-opacity-60">
+                  {t('no_groups')}.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
-        <div className="col-span-full h-fit rounded-lg border p-4">
+        <div className="col-span-full mb-96 h-fit rounded-lg border p-4">
           <div className="grid gap-2">
             <div className="text-lg font-semibold">
               Hoá đơn ({invoiceCount})
@@ -169,8 +180,6 @@ export default async function WorkspaceUserDetailsPage({
             />
           </div>
         </div>
-
-        <DataTablePagination className="pointer-events-none hidden opacity-0 lg:block" />
       </div>
     </div>
   );
