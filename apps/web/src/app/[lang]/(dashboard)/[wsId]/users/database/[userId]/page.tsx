@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { Separator } from '@/components/ui/separator';
 import { invoiceColumns } from '@/data/columns/invoices';
@@ -11,6 +12,7 @@ import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Props {
   params: {
@@ -140,13 +142,18 @@ export default async function WorkspaceUserDetailsPage({
             <div className="grid gap-2 2xl:grid-cols-2">
               {groups && groups.length ? (
                 groups.map((group) => (
-                  <div
+                  <Link
                     key={group.id}
-                    className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
+                    href={`/${wsId}/users/groups/${group.id}`}
                   >
-                    <Users className="inline-block h-6 w-6" />
-                    {group.name}
-                  </div>
+                    <Button
+                      className="flex w-full items-center gap-2"
+                      variant="secondary"
+                    >
+                      <Users className="inline-block h-6 w-6" />
+                      {group.name}
+                    </Button>
+                  </Link>
                 ))
               ) : (
                 <div className="text-center text-opacity-60">

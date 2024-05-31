@@ -28,33 +28,13 @@ export default async function WorkspaceUsersPage({
   const { data, count } = await getData(wsId, searchParams);
   const { data: extraFields } = await getUserFields(wsId);
 
-  const users = data.map((u) => ({ ...u, href: `/${wsId}/users/database/${u.id}` }));
+  const users = data.map((u) => ({
+    ...u,
+    href: `/${wsId}/users/database/${u.id}`,
+  }));
 
   return (
     <>
-      {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('users')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <SecretEditDialog
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create_user')}
-              </Button>
-            }
-            submitLabel={t('create_secret')}
-          />
-        </div>
-      </div>
-      <Separator className="my-4" /> */}
-
       <DataTable
         data={users}
         namespace="user-data-table"

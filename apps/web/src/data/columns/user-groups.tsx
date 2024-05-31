@@ -7,6 +7,7 @@ import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { Translate } from 'next-translate';
 import { Check, X } from 'lucide-react';
+import Link from 'next/link';
 
 export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
   // {
@@ -42,7 +43,11 @@ export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+        {row.getValue('name') || '-'}
+      </Link>
+    ),
   },
   {
     accessorKey: 'amount',
