@@ -103,7 +103,7 @@ export async function generateStaticParams() {
 
 export default async function RootLayout({ children, params }: Props) {
   return (
-    <html lang={params.lang}>
+    <html lang={params.lang} className="dark">
       <body
         className={cn(
           'bg-background min-h-screen font-sans antialiased',

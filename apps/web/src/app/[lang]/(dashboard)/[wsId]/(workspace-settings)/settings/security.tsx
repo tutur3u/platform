@@ -25,8 +25,8 @@ export default function Security({ workspace }: Props) {
 
     await deleteWorkspace(workspace.id, {
       onSuccess: () => {
-        router.refresh();
         router.push('/onboarding');
+        router.refresh();
       },
       onError: () => setIsDeleting(false),
     });
@@ -42,14 +42,14 @@ export default function Security({ workspace }: Props) {
       <div className="grid h-full items-end gap-4 text-center xl:grid-cols-2">
         <Button
           onClick={handleDelete}
-          disabled={!workspace || isSystemWs}
           className={`${
             isSystemWs
               ? 'cursor-not-allowed opacity-50'
               : 'hover:border-red-500/30 hover:bg-red-500/20 dark:hover:border-red-300/30 dark:hover:bg-red-300/20'
           } col-span-full mt-2 flex w-full items-center justify-center rounded border border-red-300/20 bg-red-300/10 p-2 font-semibold text-red-600 transition dark:text-red-300`}
+          disabled={!workspace || isSystemWs || isDeleting}
         >
-          {isDeleting ? t('deleting') : t('delete')}
+          {isDeleting ? `${t('deleting')}...` : t('delete')}
         </Button>
       </div>
     </div>
