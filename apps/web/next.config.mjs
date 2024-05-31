@@ -6,7 +6,7 @@ const nextConfig = nextTranslate({
   poweredByHeader: false,
   experimental: {
     ppr: true,
-    reactCompiler: true,
+    // reactCompiler: true,
   },
   images: {
     remotePatterns: [
