@@ -222,8 +222,8 @@ importers:
         specifier: ^0.1.15
         version: 0.1.15(next@15.0.0-canary.0(@babel/core@7.24.6)(babel-plugin-react-compiler@0.0.0-experimental-487cb0e-20240529)(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)(vite@5.2.12(@types/node@20.12.13))
       ai:
-        specifier: ^3.1.21
-        version: 3.1.21(openai@4.47.2(encoding@0.1.13))(react@19.0.0-rc-935180c7e0-20240524)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
+        specifier: ^3.1.22
+        version: 3.1.22(openai@4.47.2(encoding@0.1.13))(react@19.0.0-rc-935180c7e0-20240524)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-487cb0e-20240529
         version: 0.0.0-experimental-487cb0e-20240529
@@ -2600,8 +2600,8 @@ packages:
     resolution: {integrity: sha512-5GG/5IbQQpC9FpkRGsSvZI5QYeSCzlJHdpBQntCsuTOxhKD8lqKhrleg2Yi7yvMIf82Ycmmqln9U8V9qwEiJew==}
     engines: {node: '>= 8.0.0'}
 
-  ai@3.1.21:
-    resolution: {integrity: sha512-s/3L2pqbeC1EwFS0u5kyw1amtC3KOXPWzRCmEcXAK23xdv5RLlxxK8juuvdIDgGplb/AgfkJ7BjIlbmPQTYu9g==}
+  ai@3.1.22:
+    resolution: {integrity: sha512-Vgy490Q6p6pZ39VrRzL9ovr2N1YPsR+KvWNs+n73VAQoGBZtU/vwiiWrFU9LHXGhB9X+EBfQD0vixnTDS2dJWA==}
     engines: {node: '>=18'}
     peerDependencies:
       openai: ^4.42.0
@@ -8212,7 +8212,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.1.21(openai@4.47.2(encoding@0.1.13))(react@19.0.0-rc-935180c7e0-20240524)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
+  ai@3.1.22(openai@4.47.2(encoding@0.1.13))(react@19.0.0-rc-935180c7e0-20240524)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.8
       '@ai-sdk/provider-utils': 0.0.11(zod@3.23.8)
