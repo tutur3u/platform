@@ -26,7 +26,7 @@ interface MonthPickerProps {
 }
 
 export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation('common');
   const query = useQuery();
 
   const updateQuery = debounce((month: string) => {
@@ -64,7 +64,7 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className="grid w-fit items-center gap-1.5">
-          <Label>Month</Label>
+          <Label>{t('month')}</Label>
           <Button variant="outline">
             {currentMonth.toLocaleString(lang, {
               month: '2-digit',
@@ -131,7 +131,7 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
                 onClick={() => updateQuery(format(month, 'yyyy-MM'))}
               >
                 <time dateTime={format(month, 'yyyy-MM-dd')}>
-                  {format(month, 'MMM')}
+                  {month.toLocaleString(lang, { month: 'short' })}
                 </time>
               </Button>
             </div>

@@ -1,0 +1,128 @@
+'use client';
+
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Fragment, useMemo } from 'react';
+import useTranslation from 'next-translate/useTranslation';
+import { Button } from '@/components/ui/button';
+import useQuery from '@/hooks/useQuery';
+import { format, parse } from 'date-fns';
+
+export default function UserMonthAttendanceSkeleton() {
+  const { lang } = useTranslation();
+  const query = useQuery();
+
+  const currentYYYYMM = useMemo(
+    () => query.get('month') || format(new Date(), 'yyyy-MM'),
+    [query]
+  );
+
+  const currentMonth = useMemo(
+    () => parse(currentYYYYMM, 'yyyy-MM', new Date()),
+    [currentYYYYMM]
+  );
+
+  const thisYear = currentMonth.getFullYear();
+  const thisMonth = currentMonth.toLocaleString(lang, { month: '2-digit' });
+
+  // includes all days of the week, starting from monday to sunday
+  const days = Array.from({ length: 7 }, (_, i) => {
+    let newDay = new Date(currentMonth);
+    newDay.setDate(currentMonth.getDate() - currentMonth.getDay() + i + 1);
+    return newDay.toLocaleString(lang, { weekday: 'narrow' });
+  });
+
+  // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
+  const daysInMonth = Array.from({ length: 42 }, (_, i) => {
+    let newDay = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      1
+    );
+    let dayOfWeek = newDay.getDay();
+    let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    newDay.setDate(newDay.getDate() - adjustment + i);
+    return newDay;
+  });
+
+  const isCurrentMonth = (date: Date) =>
+    date.getMonth() === currentMonth.getMonth() &&
+    date.getFullYear() === currentMonth.getFullYear();
+
+  return (
+    <div className="animate-pulse rounded-lg border p-4 opacity-50">
+      <div className="mb-2 flex w-full items-center border-b pb-2">
+        <div className="aspect-square h-10 w-10 rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="ml-2 w-full">
+          <div className="flex items-center justify-between gap-1">
+            <div className="bg-foreground/5 line-clamp-1 h-6 w-32 rounded font-semibold text-zinc-900 hover:underline dark:text-zinc-200" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="grid h-full gap-8">
+          <div key={2024} className="flex h-full flex-col">
+            <div className="mb-4 flex items-center justify-between gap-4 text-2xl font-bold">
+              <div className="flex items-center gap-1">
+                {thisYear}
+                <div className="bg-foreground/20 mx-2 hidden h-4 w-[1px] rotate-[30deg] md:block" />
+                <span className="text-xl font-semibold">{thisMonth}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="bg-foreground/5 rounded border px-2 py-0.5 text-xs opacity-50">
+                  <span className="text-green-500 dark:text-green-300">?</span>{' '}
+                  + <span className="text-red-500 dark:text-red-300">?</span> ={' '}
+                  <span className="text-blue-500 dark:text-blue-300">?</span>
+                </div>
+
+                <Button size="xs" variant="secondary">
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  disabled={
+                    currentMonth.getMonth() === new Date().getMonth() &&
+                    currentMonth.getFullYear() === new Date().getFullYear()
+                  }
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative grid gap-2">
+              <div className="grid grid-cols-7 gap-2">
+                {days.map((day, idx) => (
+                  <div
+                    key={`day-${idx}`}
+                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded-lg p-2 font-semibold transition duration-300"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-2">
+                {daysInMonth.map((day, idx) => (
+                  <Fragment key={`day-${idx}`}>
+                    <div
+                      className={`flex flex-none cursor-default justify-center rounded-lg border p-2 font-semibold transition duration-300 ${
+                        !isCurrentMonth(day)
+                          ? 'text-foreground/20 border-transparent'
+                          : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
+                      }`}
+                    >
+                      {day.getDate()}
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

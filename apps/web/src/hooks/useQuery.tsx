@@ -27,6 +27,7 @@ const useQuery = () => {
       });
 
       router.push(`${pathname}?${params.toString()}`);
+      router.refresh();
     },
     [pathname, router, searchParams]
   );
