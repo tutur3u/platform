@@ -10,7 +10,7 @@ interface Props {
 export default function NavbarPadding({ children }: Props) {
   const pathname = usePathname();
 
-  const defaultHeight = 72;
+  const defaultHeight = 56;
   const [navbarHeight, setNavbarHeight] = useState(defaultHeight);
 
   useEffect(() => {

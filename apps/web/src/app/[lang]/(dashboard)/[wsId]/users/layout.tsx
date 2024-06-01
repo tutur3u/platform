@@ -32,6 +32,10 @@ export default async function Layout({
       href: `/${wsId}/users/groups`,
     },
     {
+      name: t('attendance'),
+      href: `/${wsId}/users/attendance`,
+    },
+    {
       name: t('reports'),
       href: `/${wsId}/users/reports`,
       disabled: true,
