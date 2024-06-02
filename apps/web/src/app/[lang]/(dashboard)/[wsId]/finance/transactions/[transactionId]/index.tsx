@@ -90,7 +90,7 @@ export default function TransactionDetailsPage() {
   const { lang } = useTranslation();
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="col-span-full">
           <div className="text-2xl font-semibold">{t('basic-info')}</div>

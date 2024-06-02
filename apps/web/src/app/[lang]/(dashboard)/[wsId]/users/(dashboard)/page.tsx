@@ -24,7 +24,7 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
   const reports = await getReportsCount(wsId);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatisticCard
           title={usersLabel}

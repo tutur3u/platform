@@ -23,7 +23,7 @@ const DocumentCard = ({ wsId, document }: Props) => {
     <Link
       href={href}
       key={`doc-${id}`}
-      className="border-border relative flex flex items-center justify-between gap-4 rounded-lg border bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
+      className="border-border relative flex items-center justify-between gap-4 rounded-lg border bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">

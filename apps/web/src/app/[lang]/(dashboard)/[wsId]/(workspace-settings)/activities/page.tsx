@@ -25,7 +25,7 @@ export default async function WorkspaceActivitiesPage({
 
   return (
     <>
-      <div className="flex min-h-full w-full flex-col ">
+      <div className="flex min-h-full w-full flex-col">
         <LogList logs={logs} />
       </div>
     </>

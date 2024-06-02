@@ -48,7 +48,7 @@ export default async function HealthcareOverviewPage({
     .eq('ws_id', wsId);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatisticCard
           title="Kiểm tra sức khoẻ"

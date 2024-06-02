@@ -51,7 +51,7 @@ export default function UserActivitiesPage() {
         </>
       )}
 
-      <div className="flex min-h-full w-full flex-col ">
+      <div className="flex min-h-full w-full flex-col">
         <Divider className="mt-4" variant="dashed" />
         {/* <PaginationIndicator
           activePage={activePage}

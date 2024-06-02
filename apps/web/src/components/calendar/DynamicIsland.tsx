@@ -237,7 +237,7 @@ const DynamicIsland = () => {
             onClick={startTimer}
             className={`aspect-square h-fit justify-self-end rounded-lg border border-opacity-10 p-1 ${getCardColor(
               color
-            )} transition hover:border-opacity-30 `}
+            )} transition hover:border-opacity-30`}
           >
             {startAt ? (
               <StopIcon className="h-6 w-6" />
