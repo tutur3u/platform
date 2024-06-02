@@ -38,7 +38,6 @@ export default async function Layout({
     {
       name: t('reports'),
       href: `/${wsId}/users/reports`,
-      disabled: true,
     },
     {
       name: t('fields'),
