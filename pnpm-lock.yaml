@@ -163,7 +163,7 @@ importers:
         version: 1.0.7(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)
       '@react-three/fiber':
         specifier: ^8.16.6
-        version: 8.16.6(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)(three@0.165.0)
+        version: 8.16.7(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)(three@0.165.0)
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.10.0
         version: 0.10.0(@supabase/supabase-js@2.43.4)
@@ -1775,8 +1775,8 @@ packages:
   '@radix-ui/rect@1.0.1':
     resolution: {integrity: sha512-fyrgCaedtvMg9NK3en0pnOYJdtfwxUcNolezkNPUsoX57X8oQk+NkqcvzHXD2uKNij6GXmWU9NDru2IWjrO4BQ==}
 
-  '@react-three/fiber@8.16.6':
-    resolution: {integrity: sha512-sKEqocYKRI3deW7z9CAVjedDID1an2i8FwxQVv2reMJxzIxIlyxCYXMIAqXBCgHTFtVX2hWGTZYhLL5nyne8kA==}
+  '@react-three/fiber@8.16.7':
+    resolution: {integrity: sha512-D9z/HmTupS/Z3YqBK+rxPgm3Ou7VvOB8J57+AW7JG2FmhCY4u65Gd6r8i8y61BR/paCk0DCPyyJ5w7FiUEHXgA==}
     peerDependencies:
       expo: '>=43.0'
       expo-asset: '>=8.4'
@@ -7296,7 +7296,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.6
 
-  '@react-three/fiber@8.16.6(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)(three@0.165.0)':
+  '@react-three/fiber@8.16.7(react-dom@19.0.0-rc-935180c7e0-20240524(react@19.0.0-rc-935180c7e0-20240524))(react@19.0.0-rc-935180c7e0-20240524)(three@0.165.0)':
     dependencies:
       '@babel/runtime': 7.24.6
       '@types/react-reconciler': 0.26.7
