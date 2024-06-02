@@ -4,7 +4,6 @@ import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { getReportsCount } from '../users/reports/core';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -215,7 +214,15 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  const reports = enableUsers ? await getReportsCount(wsId) : 0;
+  const { count: reports } = enableUsers
+    ? await supabase
+        .from('external_user_monthly_reports')
+        .select('*, user:workspace_users!user_id!inner(ws_id)', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('user.ws_id', wsId)
+    : { count: 0 };
 
   const usersLabel = t('sidebar-tabs:users');
   const sum = (income || 0) + (expense || 0);
