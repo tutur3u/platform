@@ -24,9 +24,15 @@ export default async function WorkspaceUserReportsPage({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
+  const reports =
+    data?.map((rp) => ({
+      ...rp,
+      href: `/${wsId}/users/reports/${rp.id}`,
+    })) ?? [];
+
   return (
     <DataTable
-      data={data}
+      data={reports}
       columnGenerator={getUserReportColumns}
       namespace="user-report-data-table"
       count={count ?? undefined}
@@ -61,7 +67,7 @@ async function getData(
     .eq('workspace_users.ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('full_name', `%${q}%`);
+  if (q) queryBuilder.ilike('user.full_name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

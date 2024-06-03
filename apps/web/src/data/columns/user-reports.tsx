@@ -6,6 +6,7 @@ import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-
 import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { Translate } from 'next-translate';
+import Link from 'next/link';
 
 export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
   // {
@@ -60,7 +61,12 @@ export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
       <DataTableColumnHeader column={column} title={t('title')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('title') || '-'}</div>
+      <Link
+        href={row.original.href || '#'}
+        className="min-w-[8rem] hover:underline"
+      >
+        {row.getValue('title') || '-'}
+      </Link>
     ),
   },
   {

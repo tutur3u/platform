@@ -20,5 +20,14 @@
   "created_at": "Ngày tạo",
   "updated_at": "Ngày cập nhật cuối",
   "no_coupons": "Chưa có liên kết nào",
-  "no_groups": "Không thuộc nhóm nào"
+  "no_groups": "Không thuộc nhóm nào",
+  "group_count": "Số nhóm",
+  "included_groups": "Nhóm đã bao gồm",
+  "excluded_groups": "Nhóm đã loại trừ",
+  "select_all": "Chọn tất cả",
+  "clear_selection": "Bỏ chọn tất cả",
+  "revert_changes": "Hoàn tác",
+  "apply_changes": "Áp dụng",
+  "applying": "Đang áp dụng...",
+  "selected": "nhóm"
 }

@@ -34,7 +34,10 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
   }, 300);
 
   const currentYYYYMM = query.get('month') || format(new Date(), 'yyyy-MM');
-  const currentMonth = parse(currentYYYYMM, 'yyyy-MM', new Date());
+  const currentMonth =
+    typeof currentYYYYMM === 'string'
+      ? parse(currentYYYYMM, 'yyyy-MM', new Date())
+      : new Date();
 
   const [open, setOpen] = useState(false);
   const [previewDate, setPreviewDate] = useState(currentMonth);

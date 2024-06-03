@@ -17,7 +17,10 @@ export default function UserMonthAttendanceSkeleton() {
   );
 
   const currentMonth = useMemo(
-    () => parse(currentYYYYMM, 'yyyy-MM', new Date()),
+    () =>
+      typeof currentYYYYMM === 'string'
+        ? parse(currentYYYYMM, 'yyyy-MM', new Date())
+        : new Date(),
     [currentYYYYMM]
   );
 
