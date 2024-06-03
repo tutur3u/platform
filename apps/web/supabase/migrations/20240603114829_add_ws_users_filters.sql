@@ -1,4 +1,3 @@
-DROP VIEW workspace_users_with_groups;
 CREATE VIEW workspace_users_with_groups AS
 SELECT
     wu.*,
