@@ -20,5 +20,14 @@
   "created_at": "Created At",
   "updated_at": "Updated At",
   "no_coupons": "No linked coupons",
-  "no_groups": "Not in any group"
+  "no_groups": "Not in any group",
+  "group_count": "Group Count",
+  "included_groups": "Included Groups",
+  "excluded_groups": "Excluded Groups",
+  "select_all": "Select All",
+  "clear_selection": "Clear Selection",
+  "revert_changes": "Revert Changes",
+  "apply_changes": "Apply Changes",
+  "applying": "Applying...",
+  "selected": "Selected"
 }

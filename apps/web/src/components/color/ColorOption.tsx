@@ -148,7 +148,7 @@ const ColorOption = ({
           className={`h-full w-full ${
             isSelected || 'opacity-50 hover:opacity-80'
           } ${
-            variant === 'default' ? 'rounded-full' : ' rounded-sm'
+            variant === 'default' ? 'rounded-full' : 'rounded-sm'
           } ${getBackgroundColor()} transition`}
         />
       </button>

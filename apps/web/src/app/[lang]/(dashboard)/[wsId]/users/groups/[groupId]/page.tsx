@@ -5,17 +5,24 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { UserDatabaseFilter } from '../../filters';
+import { MinusCircledIcon } from '@radix-ui/react-icons';
+import { UserGroup } from '@/types/primitives/UserGroup';
+import useTranslation from 'next-translate/useTranslation';
+
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  excludedGroups?: string | string[];
+}
 
 interface Props {
   params: {
     wsId: string;
     groupId: string;
   };
-  searchParams: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-  };
+  searchParams: SearchParams;
 }
 
 export default async function UserGroupDetailsPage({
@@ -23,6 +30,7 @@ export default async function UserGroupDetailsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
+  const { t } = useTranslation('user-data-table');
 
   const group = await getData(wsId, groupId);
 
@@ -31,7 +39,13 @@ export default async function UserGroupDetailsPage({
     groupId,
     searchParams
   );
+
   const { data: extraFields } = await getUserFields(wsId);
+
+  const { data: excludedUserGroups } = await getExcludedUserGroups(
+    wsId,
+    groupId
+  );
 
   const users = rawUsers.map((u) => ({
     ...u,
@@ -50,6 +64,19 @@ export default async function UserGroupDetailsPage({
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
         count={usersCount}
+        filters={[
+          <UserDatabaseFilter
+            key="excluded-user-groups-filter"
+            tag="excludedGroups"
+            title={t('excluded_groups')}
+            icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+            options={excludedUserGroups.map((group) => ({
+              label: group.name || 'No name',
+              value: group.id,
+              count: group.amount,
+            }))}
+          />,
+        ]}
         defaultVisibility={{
           id: false,
           gender: false,
@@ -61,6 +88,7 @@ export default async function UserGroupDetailsPage({
           national_id: false,
           note: false,
           linked_users: false,
+          group_count: false,
           created_at: false,
           updated_at: false,
 
@@ -94,25 +122,29 @@ async function getUserData(
     q,
     page = '1',
     pageSize = '10',
+    excludedGroups = [],
     retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean }
+  }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = createServerComponentClient({ cookies });
 
   const queryBuilder = supabase
-    .from('workspace_users')
-    .select(
-      '*, linked_users:workspace_user_linked_users(platform_user_id, users(display_name, workspace_members!inner(user_id, ws_id))), workspace_user_groups_users!inner(group_id)',
+    .rpc(
+      'get_workspace_users',
+      {
+        _ws_id: wsId,
+        included_groups: [groupId],
+        excluded_groups: Array.isArray(excludedGroups)
+          ? excludedGroups
+          : [excludedGroups],
+        search_query: q || null,
+      },
       {
         count: 'exact',
       }
     )
-    .eq('ws_id', wsId)
-    .eq('workspace_user_groups_users.group_id', groupId)
-    .eq('linked_users.users.workspace_members.ws_id', wsId)
+    .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
-
-  if (q) queryBuilder.ilike('full_name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -122,32 +154,17 @@ async function getUserData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
+  const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getUserData(wsId, groupId, { q, pageSize, retry: false });
+    return getUserData(wsId, groupId, {
+      q,
+      pageSize,
+      excludedGroups,
+      retry: false,
+    });
   }
-
-  const data = rawData.map(({ linked_users, ...rest }) => ({
-    ...rest,
-    linked_users: linked_users
-      .map(
-        ({
-          platform_user_id,
-          users,
-        }: {
-          platform_user_id: string;
-          users: {
-            display_name: string;
-          } | null;
-        }) =>
-          users
-            ? { id: platform_user_id, display_name: users.display_name }
-            : null
-      )
-      .filter((v: WorkspaceUser | null) => v),
-  }));
 
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }
@@ -167,4 +184,27 @@ async function getUserFields(wsId: string) {
   if (error) throw error;
 
   return { data, count } as { data: WorkspaceUserField[]; count: number };
+}
+
+async function getExcludedUserGroups(wsId: string, groupId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const queryBuilder = supabase
+    .rpc(
+      'get_possible_excluded_groups',
+      {
+        _ws_id: wsId,
+        included_groups: [groupId],
+      },
+      {
+        count: 'exact',
+      }
+    )
+    .select('id, name, amount')
+    .order('name');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: UserGroup[]; count: number };
 }

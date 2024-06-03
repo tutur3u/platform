@@ -255,6 +255,17 @@ export const getUserColumns = (
     ),
   },
   {
+    accessorKey: 'group_count',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('group_count')} />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[8rem]">
+        {row.getValue('group_count') || '-'}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'linked_users',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('linked_users')} />

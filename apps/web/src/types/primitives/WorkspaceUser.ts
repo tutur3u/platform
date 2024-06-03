@@ -21,5 +21,6 @@ export interface WorkspaceUser {
     display_name: string;
   }[];
   href?: string;
+  attendance?: { date: string; status: string }[];
   created_at?: string;
 }

@@ -2,7 +2,6 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
-import { getReportsCount } from '../reports/core';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +23,7 @@ export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
   const reports = await getReportsCount(wsId);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatisticCard
           title={usersLabel}
@@ -70,6 +69,20 @@ async function getGroupsCount(wsId: string) {
       head: true,
     })
     .eq('ws_id', wsId);
+
+  return count;
+}
+
+async function getReportsCount(wsId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { count } = await supabase
+    .from('external_user_monthly_reports')
+    .select('*, user:workspace_users!user_id!inner(ws_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('user.ws_id', wsId);
 
   return count;
 }

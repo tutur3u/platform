@@ -85,7 +85,7 @@ export default async function WorkspaceFinancePage({
   const sum = (income || 0) + (expense || 0);
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       {/* <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DateRangePicker
           defaultUnit="month"

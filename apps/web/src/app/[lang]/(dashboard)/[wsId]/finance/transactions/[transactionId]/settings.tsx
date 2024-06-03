@@ -132,7 +132,7 @@ export default function TransactionSettingsPage() {
   const { lang } = useTranslation();
 
   return (
-    <div className="flex min-h-full w-full flex-col ">
+    <div className="flex min-h-full w-full flex-col">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
         <div className="flex items-end justify-end gap-2">
           <button

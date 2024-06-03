@@ -63,7 +63,7 @@ export function DataTableViewOptions<TData>({
                   {extraColumns?.length &&
                   extraColumns[0].id === column.id &&
                   idx !== 0 ? (
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator key={`${column.id}-separator`} />
                   ) : null}
 
                   <DropdownMenuCheckboxItem

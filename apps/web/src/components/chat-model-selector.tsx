@@ -63,37 +63,42 @@ export function ChatModelSelector({
           <ScrollArea className="h-48 md:h-64">
             <CommandEmpty>No model found.</CommandEmpty>
             <CommandList>
-            {providers.map((provider) => (
-              <CommandGroup key={provider} heading={provider}>
-                {models
-                  .filter((m) => m.provider === provider)
-                  .map((m) => (
-                    <CommandItem
-                      key={m.value}
-                      value={m.value}
-                      onSelect={(currentValue) => {
-                        onChange(
-                          models.find((m) => m.value === currentValue) as Model
-                        );
+              {providers.map((provider) => (
+                <CommandGroup key={provider} heading={provider}>
+                  {models
+                    .filter((m) => m.provider === provider)
+                    .map((m) => (
+                      <CommandItem
+                        key={m.value}
+                        value={m.value}
+                        onSelect={(currentValue) => {
+                          onChange(
+                            models.find(
+                              (m) => m.value === currentValue
+                            ) as Model
+                          );
 
-                        setOpen(false);
-                      }}
-                      onMouseOver={() => setPreviewModel(m)}
-                      disabled={m.disabled}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          model.value === m.value ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      <div className="bg-foreground text-background rounded-full px-2 py-0.5">
-                        {m.label}
-                      </div>
-                    </CommandItem>
-                  ))}
-              </CommandGroup>
-            ))}</CommandList>
+                          setOpen(false);
+                        }}
+                        onMouseOver={() => setPreviewModel(m)}
+                        disabled={m.disabled}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            model.value === m.value
+                              ? 'opacity-100'
+                              : 'opacity-0'
+                          )}
+                        />
+                        <div className="bg-foreground text-background rounded-full px-2 py-0.5">
+                          {m.label}
+                        </div>
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              ))}
+            </CommandList>
           </ScrollArea>
         </Command>
 

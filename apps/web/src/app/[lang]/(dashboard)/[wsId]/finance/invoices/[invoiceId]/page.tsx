@@ -159,7 +159,7 @@ export default function InvoiceDetailsPage({
   const { lang } = useTranslation();
 
   return (
-    <div className="mt-2 flex min-h-full w-full flex-col ">
+    <div className="mt-2 flex min-h-full w-full flex-col">
       <div className="grid gap-x-8 gap-y-4 xl:grid-cols-2 xl:gap-x-16">
         <button
           className={`w-fit rounded border px-4 py-1 font-semibold transition ${
