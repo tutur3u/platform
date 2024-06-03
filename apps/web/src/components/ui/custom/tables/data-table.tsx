@@ -36,6 +36,7 @@ interface DataTableProps<TData, TValue> {
     t: Translate,
     extraColumns?: any[]
   ) => ColumnDef<TData, TValue>[];
+  filters?: ReactNode[];
   extraColumns?: any[];
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -49,6 +50,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   columnGenerator,
+  filters,
   extraColumns,
   newObjectTitle,
   editContent,
@@ -107,6 +109,7 @@ export function DataTable<TData, TValue>({
         table={table}
         newObjectTitle={newObjectTitle}
         editContent={editContent}
+        filters={filters}
         extraColumns={extraColumns}
       />
       <div className="rounded-md border">

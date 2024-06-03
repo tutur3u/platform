@@ -84,7 +84,7 @@ export default function WalletDetailsPage({
   };
 
   return (
-    <div className="mt-2 flex min-h-full w-full flex-col ">
+    <div className="mt-2 flex min-h-full w-full flex-col">
       <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div
           className={`rounded border border-orange-500/10 bg-orange-500/10 p-4 text-orange-600 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300 ${

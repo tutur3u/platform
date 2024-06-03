@@ -264,6 +264,7 @@
       "search",
       "view-mode",
       "pagination",
+      "user-data-table",
       "ws-users-list-configs",
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"

@@ -378,7 +378,7 @@ export default function MigrationDashboard() {
   };
 
   return (
-    <div className="flex flex-col gap-4 ">
+    <div className="flex flex-col gap-4">
       <div className="flex h-full flex-col gap-2">
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <div className="grid w-full items-center gap-1.5">

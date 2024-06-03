@@ -115,7 +115,7 @@ export default async function Layout({
 
   return (
     <>
-      <div className="px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div className="px-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="scrollbar-none flex gap-1 overflow-x-auto">
           <Navigation currentWsId={wsId} navLinks={navLinks} />
         </div>

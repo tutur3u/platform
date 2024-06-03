@@ -63,7 +63,7 @@ export default function WalletSettingsPage({
   const hasRequiredFields = () => name.length > 0;
 
   return (
-    <div className="mt-2 flex min-h-full w-full flex-col ">
+    <div className="mt-2 flex min-h-full w-full flex-col">
       <div className="grid gap-x-8 gap-y-4 xl:gap-x-16">
         <div className="flex items-end justify-end gap-2">
           <button
