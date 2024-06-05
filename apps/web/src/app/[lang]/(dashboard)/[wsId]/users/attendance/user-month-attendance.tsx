@@ -27,56 +27,75 @@ export default function UserMonthAttendance({
     : queryMonth || format(new Date(), 'yyyy-MM');
 
   const currentMonth = useMemo(
-    () =>
-      typeof currentYYYYMM === 'string'
-        ? parse(currentYYYYMM, 'yyyy-MM', new Date())
-        : new Date(),
+    () => parse(currentYYYYMM, 'yyyy-MM', new Date()),
     [currentYYYYMM]
   );
 
+  const queryIncludedGroups = useMemo(
+    () => query.get('includedGroups'),
+    [query]
+  );
+
+  const currentIncludedGroups = useMemo(
+    () =>
+      typeof queryIncludedGroups === 'string'
+        ? [queryIncludedGroups]
+        : queryIncludedGroups ?? [],
+    [queryIncludedGroups]
+  );
+
+  const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(currentMonth);
   const [currentUserData, setCurrentUserData] = useState(initialUser);
+  const [currentUserGroups] = useState<string[]>(currentIncludedGroups);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (includedGroups?: string[]) => {
       setCurrentDate(currentMonth);
+      setLoading(true);
 
       const { data } = await getData(
         wsId,
         initialUser.id,
-        format(new Date(currentMonth), 'yyyy-MM')
+        format(new Date(currentMonth), 'yyyy-MM'),
+        includedGroups
       );
 
       setCurrentUserData({ ...initialUser, ...data });
+      setLoading(false);
     };
 
-    fetchData();
-  }, [wsId, currentMonth, initialUser]);
+    fetchData(currentUserGroups);
+  }, [wsId, currentMonth, initialUser, currentUserGroups]);
 
   const handlePrev = async () => {
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));
-    setCurrentUserData({ ...currentUserData, attendance: [] });
+    setLoading(true);
 
     const { data } = await getData(
       wsId,
       initialUser.id,
-      format(new Date(currentDate), 'yyyy-MM')
+      format(new Date(currentDate), 'yyyy-MM'),
+      currentIncludedGroups
     );
 
     setCurrentUserData({ ...currentUserData, ...data });
+    setLoading(false);
   };
 
   const handleNext = async () => {
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)));
-    setCurrentUserData({ ...currentUserData, attendance: [] });
+    setLoading(true);
 
     const { data } = await getData(
       wsId,
       initialUser.id,
-      format(new Date(currentDate), 'yyyy-MM')
+      format(new Date(currentDate), 'yyyy-MM'),
+      currentIncludedGroups
     );
 
     setCurrentUserData({ ...currentUserData, ...data });
+    setLoading(false);
   };
 
   const thisYear = currentDate.getFullYear();
@@ -153,7 +172,7 @@ export default function UserMonthAttendance({
                 {currentUserData.attendance && (
                   <div
                     className={`bg-foreground/5 rounded border px-2 py-0.5 text-xs ${
-                      currentUserData.attendance.length === 0
+                      currentUserData.attendance.length === 0 || loading
                         ? 'opacity-50'
                         : ''
                     }`}
@@ -215,7 +234,7 @@ export default function UserMonthAttendance({
                   <Fragment key={`day-${idx}`}>
                     <div
                       className={`flex flex-none cursor-default justify-center rounded-lg border p-2 font-semibold transition duration-300 ${
-                        !isCurrentMonth(day)
+                        !isCurrentMonth(day) || loading
                           ? 'text-foreground/20 border-transparent'
                           : isDateAttended(currentUserData, day)
                             ? 'border-transparent bg-green-500 text-white dark:bg-green-300/20 dark:text-green-300'
@@ -237,7 +256,12 @@ export default function UserMonthAttendance({
   );
 }
 
-async function getData(wsId: string, userId: string, month: string) {
+async function getData(
+  wsId: string,
+  userId: string,
+  month: string,
+  includedGroups?: string[]
+) {
   const supabase = createClientComponentClient();
 
   const startDate = new Date(month);
@@ -252,10 +276,15 @@ async function getData(wsId: string, userId: string, month: string) {
     .gte('user_group_attendance.date', startDate.toISOString())
     .lt('user_group_attendance.date', endDate.toISOString())
     .order('full_name', { ascending: true, nullsFirst: false })
-    .eq('id', userId)
-    .single();
+    .eq('id', userId);
 
-  const { data: rawData, error } = await queryBuilder;
+  if (includedGroups) {
+    if (Array.isArray(includedGroups))
+      queryBuilder.in('user_group_attendance.group_id', includedGroups);
+    else queryBuilder.eq('user_group_attendance.group_id', includedGroups);
+  }
+
+  const { data: rawData, error } = await queryBuilder.single();
 
   const data = {
     ...rawData,
