@@ -14,6 +14,9 @@ interface SearchParams {
   excludedGroups?: string | string[];
 }
 
+const DEFAULT_PAGE = '1';
+const DEFAULT_PAGE_SIZE = '3';
+
 export default async function UserAttendances({
   wsId,
   searchParams,
@@ -27,9 +30,9 @@ export default async function UserAttendances({
   return (
     <>
       <DataTablePagination
-        pageCount={Math.ceil(count / parseInt(pageSize ?? '3'))}
-        pageIndex={parseInt(page ?? '1') - 1}
-        pageSize={parseInt(pageSize ?? '3')}
+        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
+        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
+        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
         additionalSizes={[3, 6, 12, 24, 48]}
         count={count}
       />
@@ -46,9 +49,9 @@ export default async function UserAttendances({
       </div>
 
       <DataTablePagination
-        pageCount={Math.ceil(count / parseInt(pageSize ?? '3'))}
-        pageIndex={parseInt(page ?? '1') - 1}
-        pageSize={parseInt(pageSize ?? '3')}
+        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
+        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
+        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
         additionalSizes={[3, 6, 12, 24, 48]}
         count={count}
       />
@@ -60,8 +63,8 @@ async function getData(
   wsId: string,
   {
     q,
-    page = '1',
-    pageSize = '10',
+    page = DEFAULT_PAGE,
+    pageSize = DEFAULT_PAGE_SIZE,
     includedGroups = [],
     excludedGroups = [],
     retry = true,
