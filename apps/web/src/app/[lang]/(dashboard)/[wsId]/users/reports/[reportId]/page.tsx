@@ -49,8 +49,8 @@ export default async function WorkspaceUserDetailsPage({
       : { data: [] };
 
   const { data: reports } =
-    (!groupId && !userId && report.user_id) ||
-    (userId && groupId && users.map((user) => user.id).includes(userId))
+    (report.user_id && !groupId && !userId) ||
+    (userId && users.map((user) => user.id).includes(userId))
       ? await getReports(
           wsId,
           groupId || report.group_id,
