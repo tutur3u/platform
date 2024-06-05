@@ -53,8 +53,9 @@ export function UserDatabaseFilter({
 
   const oldValues: Set<string> = useMemo(
     () =>
-      new Set(multiple ? query.get(tag) : query.get(tag)?.slice(0, 1)) ||
-      new Set<string>(),
+      !multiple && Array.isArray(query.get(tag))
+        ? new Set(query.get(tag)?.slice(0, 1))
+        : new Set(query.get(tag)),
     [multiple, query, tag]
   );
 

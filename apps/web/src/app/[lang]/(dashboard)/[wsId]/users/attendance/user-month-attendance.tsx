@@ -23,7 +23,7 @@ export default function UserMonthAttendance({
   const queryMonth = query.get('month');
 
   const currentYYYYMM = Array.isArray(queryMonth)
-    ? queryMonth[0]
+    ? queryMonth[0] || format(new Date(), 'yyyy-MM')
     : queryMonth || format(new Date(), 'yyyy-MM');
 
   const currentMonth = useMemo(
