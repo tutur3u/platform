@@ -13,9 +13,11 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 export default function UserMonthAttendance({
   wsId,
   user: initialUser,
+  defaultIncludedGroups,
 }: {
   wsId: string;
   user: WorkspaceUser & { href: string };
+  defaultIncludedGroups?: string[];
 }) {
   const { lang } = useTranslation();
   const query = useQuery();
@@ -38,10 +40,12 @@ export default function UserMonthAttendance({
 
   const currentIncludedGroups = useMemo(
     () =>
-      typeof queryIncludedGroups === 'string'
-        ? [queryIncludedGroups]
-        : queryIncludedGroups ?? [],
-    [queryIncludedGroups]
+      defaultIncludedGroups
+        ? defaultIncludedGroups
+        : typeof queryIncludedGroups === 'string'
+          ? [queryIncludedGroups]
+          : queryIncludedGroups ?? [],
+    [defaultIncludedGroups, queryIncludedGroups]
   );
 
   const [loading, setLoading] = useState(true);
@@ -143,10 +147,18 @@ export default function UserMonthAttendance({
       );
     });
 
+  const differentGroups = currentUserData.attendance
+    ?.reduce((acc: { id: string; name: string }[], attendance) => {
+      return acc.concat(attendance.groups);
+    }, [])
+    .filter(
+      (group, idx, arr) => arr.findIndex((g) => g.id === group.id) === idx
+    );
+
   return (
     <div className="rounded-lg border p-4">
       <div className="mb-2 flex w-full items-center border-b pb-2">
-        <div className="aspect-square h-10 w-10 rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="ml-2 w-full">
           <div className="flex items-center justify-between gap-1">
             <Link
@@ -155,6 +167,16 @@ export default function UserMonthAttendance({
             >
               {currentUserData?.full_name || '-'}
             </Link>
+          </div>
+          <div>
+            {differentGroups?.map((group) => (
+              <span
+                key={group.id}
+                className="bg-foreground/5 dark:bg-foreground/10 rounded border px-2 py-0.5 text-xs font-semibold"
+              >
+                {group.name}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -273,25 +295,20 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_users')
-    .select('user_group_attendance(date, status)')
+    .select(
+      'attendance:user_group_attendance(date, status, groups:workspace_user_groups(id, name))'
+    )
     .eq('ws_id', wsId)
-    .gte('user_group_attendance.date', startDate.toISOString())
-    .lt('user_group_attendance.date', endDate.toISOString())
+    .gte('attendance.date', startDate.toISOString())
+    .lt('attendance.date', endDate.toISOString())
     .order('full_name', { ascending: true, nullsFirst: false })
     .eq('id', userId);
 
-  if (includedGroups) {
-    if (Array.isArray(includedGroups))
-      queryBuilder.in('user_group_attendance.group_id', includedGroups);
-    else queryBuilder.eq('user_group_attendance.group_id', includedGroups);
+  if (includedGroups && includedGroups.length > 0) {
+    queryBuilder.in('attendance.group_id', includedGroups);
   }
 
-  const { data: rawData, error } = await queryBuilder.single();
-
-  const data = {
-    ...rawData,
-    attendance: rawData?.user_group_attendance,
-  } as WorkspaceUser;
+  const { data, error } = await queryBuilder.single();
 
   if (error) throw error;
   return { data } as { data: WorkspaceUser };
