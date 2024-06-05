@@ -35,9 +35,12 @@ export function Navigation({
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
-  useEffect(() => {
+  const scrollActiveLinksIntoView = () => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
+
+    const isActiveWorkspaceLinkInView =
+      (activeWorkspaceLink?.getBoundingClientRect()?.top ?? -9999) >= 0;
 
     if (activeWorkspaceLink) {
       activeWorkspaceLink.scrollIntoView({
@@ -48,7 +51,9 @@ export function Navigation({
     }
 
     if (activeLink) {
-      new Promise((resolve) => setTimeout(resolve, 500)).then(() =>
+      new Promise((resolve) =>
+        setTimeout(resolve, isActiveWorkspaceLinkInView ? 500 : 0)
+      ).then(() =>
         activeLink.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
@@ -56,6 +61,10 @@ export function Navigation({
         })
       );
     }
+  };
+
+  useEffect(() => {
+    scrollActiveLinksIntoView();
   }, [pathname]);
 
   return (
@@ -123,6 +132,7 @@ export function Navigation({
                 ? 'underline decoration-dashed underline-offset-4'
                 : ''
             } flex-none rounded-full border px-3 py-1 transition duration-300`}
+            onClick={isActive ? scrollActiveLinksIntoView : undefined}
             href={link.href}
             key={link.name}
           >

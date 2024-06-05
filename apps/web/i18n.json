@@ -296,7 +296,9 @@
       "user-data-table",
       "invoice-data-table"
     ],
-    "/[lang]/(dashboard)/[wsId]/attendance": [
+    "/[lang]/(dashboard)/[wsId]/users/attendance": [
+      "search",
+      "user-data-table",
       "sidebar-tabs"
     ],
     "/[lang]/(dashboard)/[wsId]/healthcare": [

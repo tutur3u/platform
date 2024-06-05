@@ -110,7 +110,12 @@ export function UserDatabaseFilter({
     return selected.concat(unselected);
   }, [sortCheckedFirst, options, oldValues]);
 
-  const isMobile = window.innerWidth <= 640;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const isMobile = window && window.innerWidth <= 640;
+    setIsMobile(isMobile);
+  }, []);
 
   return (
     <Popover
