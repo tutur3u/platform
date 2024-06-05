@@ -15,25 +15,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
 import useTranslation from 'next-translate/useTranslation';
 import useQuery from '@/hooks/useQuery';
 import { debounce } from 'lodash';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface MonthPickerProps {
   resetPage?: boolean;
 }
 
 export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
-  const { t, lang } = useTranslation('common');
+  const { lang } = useTranslation('common');
   const query = useQuery();
 
-  const updateQuery = debounce((month: string) => {
-    query.set({ month, page: resetPage ? '1' : undefined });
-  }, 300);
+  const queryMonth = query.get('month');
 
-  const currentYYYYMM = query.get('month') || format(new Date(), 'yyyy-MM');
+  const currentYYYYMM = Array.isArray(queryMonth)
+    ? queryMonth[0]
+    : queryMonth || format(new Date(), 'yyyy-MM');
+
   const currentMonth =
     typeof currentYYYYMM === 'string'
       ? parse(currentYYYYMM, 'yyyy-MM', new Date())
@@ -42,9 +42,10 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
   const [open, setOpen] = useState(false);
   const [previewDate, setPreviewDate] = useState(currentMonth);
 
-  useEffect(() => {
+  const updateQuery = debounce((month: string) => {
+    query.set({ month, page: resetPage ? '1' : undefined });
     setOpen(false);
-  }, [currentYYYYMM]);
+  }, 300);
 
   const firstDayCurrentYear = new Date(previewDate.getFullYear(), 0, 1);
 
@@ -67,8 +68,16 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className="grid w-fit items-center gap-1.5">
-          <Label>{t('month')}</Label>
-          <Button variant="outline">
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() =>
+              setOpen((prev) => {
+                console.log(prev);
+                return !prev;
+              })
+            }
+          >
             {currentMonth.toLocaleString(lang, {
               month: '2-digit',
               year: 'numeric',

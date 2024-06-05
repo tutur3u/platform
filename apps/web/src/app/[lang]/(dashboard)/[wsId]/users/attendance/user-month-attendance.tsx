@@ -20,10 +20,11 @@ export default function UserMonthAttendance({
   const { lang } = useTranslation();
   const query = useQuery();
 
-  const currentYYYYMM = useMemo(
-    () => query.get('month') || format(new Date(), 'yyyy-MM'),
-    [query]
-  );
+  const queryMonth = query.get('month');
+
+  const currentYYYYMM = Array.isArray(queryMonth)
+    ? queryMonth[0]
+    : queryMonth || format(new Date(), 'yyyy-MM');
 
   const currentMonth = useMemo(
     () =>

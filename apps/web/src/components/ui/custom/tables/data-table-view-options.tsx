@@ -15,6 +15,7 @@ import {
 import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from '../../scroll-area';
 import { UserCog } from 'lucide-react';
+import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   namespace: string;
@@ -57,7 +58,7 @@ export function DataTableViewOptions<TData>({
             )
             .map((column, idx) => {
               return (
-                <>
+                <Fragment key={column.id}>
                   {/* If this item is the last system column before the extra
                   columns start (if there is any), add a separator */}
                   {extraColumns?.length &&
@@ -67,7 +68,7 @@ export function DataTableViewOptions<TData>({
                   ) : null}
 
                   <DropdownMenuCheckboxItem
-                    key={column.id}
+                    key={`${column.id}-checkbox`}
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) => column.toggleVisibility(value)}
                   >
@@ -81,7 +82,7 @@ export function DataTableViewOptions<TData>({
                       (extraColumn) => extraColumn.id === column.id
                     )?.name || t(column.id)}
                   </DropdownMenuCheckboxItem>
-                </>
+                </Fragment>
               );
             })}
         </ScrollArea>
