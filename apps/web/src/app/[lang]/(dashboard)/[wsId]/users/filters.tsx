@@ -37,6 +37,7 @@ interface UserDatabaseFilterProps {
     icon?: ComponentType<{ className?: string }>;
   }[];
   multiple?: boolean;
+  disabled?: boolean;
 }
 
 export function UserDatabaseFilter({
@@ -45,6 +46,7 @@ export function UserDatabaseFilter({
   title,
   options,
   multiple = true,
+  disabled,
 }: UserDatabaseFilterProps) {
   const { t } = useTranslation('user-data-table');
   const query = useQuery();
@@ -93,8 +95,12 @@ export function UserDatabaseFilter({
         setOpen(isOpen);
       }}
     >
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="h-8 border-dashed">
+      <PopoverTrigger disabled={disabled} asChild>
+        <Button
+          variant="outline"
+          className="h-8 border-dashed"
+          disabled={disabled}
+        >
           {icon}
           {title}
           {selectedSize > 0 && (
