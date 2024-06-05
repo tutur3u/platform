@@ -109,6 +109,8 @@ export function UserDatabaseFilter({
     return selected.concat(unselected);
   }, [sortCheckedFirst, options, oldValues]);
 
+  const isMobile = window.innerWidth <= 640;
+
   return (
     <Popover
       open={open}
@@ -169,7 +171,7 @@ export function UserDatabaseFilter({
       </PopoverTrigger>
       <PopoverContent
         className="w-[min(calc(100vw-1rem),24rem)] p-0"
-        align="center"
+        align={isMobile ? 'center' : 'start'}
       >
         <Command>
           <CommandInput placeholder={title} />
