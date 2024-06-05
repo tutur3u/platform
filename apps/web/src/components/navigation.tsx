@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { User } from '@/types/primitives/User';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export interface NavLink {
   name: string;
@@ -33,6 +34,29 @@ export function Navigation({
 }: Props) {
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
+
+  useEffect(() => {
+    const activeWorkspaceLink = document.getElementById('active-ws-navlink');
+    const activeLink = document.getElementById('active-navlink');
+
+    if (activeWorkspaceLink) {
+      activeWorkspaceLink.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+
+    if (activeLink) {
+      new Promise((resolve) => setTimeout(resolve, 500)).then(() =>
+        activeLink.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest',
+        })
+      );
+    }
+  }, [pathname]);
 
   return (
     <>
@@ -83,6 +107,13 @@ export function Navigation({
 
         return (
           <Link
+            id={
+              isActive && currentWsId
+                ? 'active-ws-navlink'
+                : isActive
+                  ? 'active-navlink'
+                  : undefined
+            }
             className={`text-sm md:text-base ${
               isActive
                 ? 'text-foreground border-border bg-foreground/[0.025] dark:bg-foreground/5'

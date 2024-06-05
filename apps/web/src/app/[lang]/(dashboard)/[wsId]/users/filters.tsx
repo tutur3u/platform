@@ -80,6 +80,7 @@ export function UserDatabaseFilter({
     [defaultValues, multiple, query, tag]
   );
 
+  const [searchQuery, setSearchQuery] = useState('' as string);
   const [selectedValues, setSelectedValues] = useState(oldValues);
   const selectedSize = selectedValues.size;
 
@@ -173,69 +174,81 @@ export function UserDatabaseFilter({
         className="w-[min(calc(100vw-1rem),24rem)] p-0"
         align={isMobile ? 'center' : 'start'}
       >
-        <Command>
-          <CommandInput placeholder={title} />
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={title}
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <ScrollArea className="h-32 md:h-64">
               <CommandGroup>
-                {sortedOptions.map((option) => {
-                  const isSelected = selectedValues.has(option.value);
-                  return (
-                    <CommandItem
-                      key={option.value}
-                      onSelect={() => {
-                        if (!multiple) selectedValues.clear();
+                {sortedOptions
+                  .filter((option) =>
+                    option.label
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase())
+                  )
+                  .map((option) => {
+                    const isSelected = selectedValues.has(option.value);
+                    return (
+                      <CommandItem
+                        key={option.value}
+                        onSelect={() => {
+                          if (!multiple) selectedValues.clear();
 
-                        if (isSelected && multiple) {
-                          selectedValues.delete(option.value);
-                        } else {
-                          selectedValues.add(option.value);
-                        }
+                          if (isSelected && multiple) {
+                            selectedValues.delete(option.value);
+                          } else {
+                            selectedValues.add(option.value);
+                          }
 
-                        setSelectedValues(new Set(selectedValues));
-                      }}
-                      disabled={applying}
-                    >
-                      <div
-                        className={cn(
-                          'border-primary mr-2 flex h-4 w-4 items-center justify-center border',
-                          multiple ? 'rounded-sm' : 'rounded-full',
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'opacity-50 [&_svg]:invisible'
-                        )}
+                          setSelectedValues(new Set(selectedValues));
+                        }}
+                        disabled={applying}
                       >
-                        <CheckIcon className={cn('h-4 w-4')} />
-                      </div>
-                      {option.icon && (
-                        <option.icon className="text-muted-foreground mr-2 h-4 w-4" />
-                      )}
-                      <span>{option.label}</span>
-                      {option.count !== undefined && (
-                        <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
-                          {option.count}
-                        </span>
-                      )}
-                    </CommandItem>
-                  );
-                })}
+                        <div
+                          className={cn(
+                            'border-primary mr-2 flex h-4 w-4 items-center justify-center border',
+                            multiple ? 'rounded-sm' : 'rounded-full',
+                            isSelected
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible'
+                          )}
+                        >
+                          <CheckIcon className={cn('h-4 w-4')} />
+                        </div>
+                        {option.icon && (
+                          <option.icon className="text-muted-foreground mr-2 h-4 w-4" />
+                        )}
+                        <span>{option.label}</span>
+                        {option.count !== undefined && (
+                          <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                            {option.count}
+                          </span>
+                        )}
+                      </CommandItem>
+                    );
+                  })}
               </CommandGroup>
             </ScrollArea>
 
-            <CommandSeparator />
+            <CommandSeparator alwaysRender />
             <CommandGroup>
-              <div className="flex items-center gap-1">
+              <div className="grid items-center gap-1 md:flex">
                 <CommandItem
-                  onSelect={() =>
-                    selectedSize === 0 && multiple
-                      ? setSelectedValues(
-                          new Set(options.map((option) => option.value))
-                        )
-                      : hasChanges
-                        ? setSelectedValues(oldValues)
-                        : setSelectedValues(new Set())
-                  }
+                  onSelect={() => {
+                    if (selectedSize === 0 && multiple)
+                      return setSelectedValues(
+                        new Set(options.map((option) => option.value))
+                      );
+
+                    if (hasChanges) return setSelectedValues(oldValues);
+
+                    setSelectedValues(new Set());
+                    setSearchQuery('');
+                  }}
                   className="w-full justify-center text-center"
                   disabled={
                     applying ||
@@ -263,6 +276,7 @@ export function UserDatabaseFilter({
                     </>
                   )}
                 </CommandItem>
+                <CommandSeparator className="md:hidden" alwaysRender />
                 <CommandItem
                   onSelect={() => {
                     setApplying(true);
