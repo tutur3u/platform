@@ -36,6 +36,7 @@ interface UserDatabaseFilterProps {
     count?: number;
     icon?: ComponentType<{ className?: string }>;
   }[];
+  multiple?: boolean;
 }
 
 export function UserDatabaseFilter({
@@ -43,13 +44,16 @@ export function UserDatabaseFilter({
   icon,
   title,
   options,
+  multiple = true,
 }: UserDatabaseFilterProps) {
   const { t } = useTranslation('user-data-table');
   const query = useQuery();
 
   const oldValues: Set<string> = useMemo(
-    () => new Set(query.get(tag)) || new Set<string>(),
-    [query, tag]
+    () =>
+      new Set(multiple ? query.get(tag) : query.get(tag)?.slice(0, 1)) ||
+      new Set<string>(),
+    [multiple, query, tag]
   );
 
   const [selectedValues, setSelectedValues] = useState(oldValues);
@@ -103,7 +107,7 @@ export function UserDatabaseFilter({
                 {selectedSize}
               </Badge>
               <div className="hidden space-x-1 lg:flex">
-                {selectedSize > 2 ? (
+                {multiple && selectedSize > 2 ? (
                   <Badge
                     variant="secondary"
                     className="rounded-sm px-1 font-normal"
@@ -113,6 +117,7 @@ export function UserDatabaseFilter({
                 ) : (
                   options
                     .filter((option) => selectedValues.has(option.value))
+                    .slice(0, multiple ? 2 : 1)
                     .map((option) => (
                       <Badge
                         variant="secondary"
@@ -141,7 +146,9 @@ export function UserDatabaseFilter({
                     <CommandItem
                       key={option.value}
                       onSelect={() => {
-                        if (isSelected) {
+                        if (!multiple) selectedValues.clear();
+
+                        if (isSelected && multiple) {
                           selectedValues.delete(option.value);
                         } else {
                           selectedValues.add(option.value);
@@ -153,7 +160,8 @@ export function UserDatabaseFilter({
                     >
                       <div
                         className={cn(
-                          'border-primary mr-2 flex h-4 w-4 items-center justify-center rounded-sm border',
+                          'border-primary mr-2 flex h-4 w-4 items-center justify-center border',
+                          multiple ? 'rounded-sm' : 'rounded-full',
                           isSelected
                             ? 'bg-primary text-primary-foreground'
                             : 'opacity-50 [&_svg]:invisible'
@@ -181,7 +189,7 @@ export function UserDatabaseFilter({
               <div className="flex items-center gap-1">
                 <CommandItem
                   onSelect={() =>
-                    selectedSize === 0
+                    selectedSize === 0 && multiple
                       ? setSelectedValues(
                           new Set(options.map((option) => option.value))
                         )
@@ -190,9 +198,12 @@ export function UserDatabaseFilter({
                         : setSelectedValues(new Set())
                   }
                   className="w-full justify-center text-center"
-                  disabled={applying}
+                  disabled={
+                    applying ||
+                    (!multiple && oldValues.size === 0 && selectedSize === 0)
+                  }
                 >
-                  {selectedSize === 0 ? (
+                  {selectedSize === 0 && multiple ? (
                     <>
                       <CheckCheck className="mr-2 h-4 w-4" />
                       {t('select_all')}
