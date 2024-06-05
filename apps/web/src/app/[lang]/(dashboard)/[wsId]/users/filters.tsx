@@ -25,6 +25,7 @@ import useQuery from '@/hooks/useQuery';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
 
 interface UserDatabaseFilterProps {
   tag: string;
@@ -36,6 +37,10 @@ interface UserDatabaseFilterProps {
     count?: number;
     icon?: ComponentType<{ className?: string }>;
   }[];
+  href?: string;
+  resetSignals?: string[];
+  defaultValues?: string[];
+  sortCheckedFirst?: boolean;
   multiple?: boolean;
   disabled?: boolean;
 }
@@ -45,18 +50,42 @@ export function UserDatabaseFilter({
   icon,
   title,
   options,
+  href,
+  // resetSignals,
+  defaultValues,
+  sortCheckedFirst = true,
   multiple = true,
   disabled,
 }: UserDatabaseFilterProps) {
   const { t } = useTranslation('user-data-table');
+
+  const router = useRouter();
   const query = useQuery();
+
+  // useEffect(() => {
+  //   // watch query changes, if resetSignals are provided
+  //   if (resetSignals) {
+  //     const signal = resetSignals.find((signal) => query.has(signal));
+  //     if (signal) {
+  //       query.set({ [tag]: undefined });
+  //     }
+  //   }
+  // }, [query, resetSignals, tag]);
 
   const oldValues: Set<string> = useMemo(
     () =>
-      !multiple && Array.isArray(query.get(tag))
-        ? new Set(query.get(tag)?.slice(0, 1))
-        : new Set(query.get(tag)),
-    [multiple, query, tag]
+      defaultValues !== undefined
+        ? !multiple
+          ? new Set(defaultValues.slice(0, 1))
+          : new Set(defaultValues)
+        : !multiple && Array.isArray(query.get(tag))
+          ? new Set(query.get(tag)?.slice(0, 1) as string)
+          : new Set(
+              Array.isArray(query.get(tag))
+                ? (query.get(tag) as string[])
+                : [query.get(tag) as string]
+            ),
+    [defaultValues, multiple, query, tag]
   );
 
   const [selectedValues, setSelectedValues] = useState(oldValues);
@@ -65,6 +94,7 @@ export function UserDatabaseFilter({
   const hasChanges = useMemo(
     () =>
       Array.from(selectedValues).some((value) => !oldValues.has(value)) ||
+      Array.from(oldValues).some((value) => !selectedValues.has(value)) ||
       oldValues.size !== selectedValues.size,
     [oldValues, selectedValues]
   );
@@ -80,10 +110,12 @@ export function UserDatabaseFilter({
   }, [applying, hasChanges]);
 
   const sortedOptions = useMemo(() => {
+    if (!sortCheckedFirst) return options;
+
     const selected = options.filter((option) => oldValues.has(option.value));
     const unselected = options.filter((option) => !oldValues.has(option.value));
     return selected.concat(unselected);
-  }, [options, oldValues]);
+  }, [sortCheckedFirst, options, oldValues]);
 
   return (
     <Popover
@@ -99,14 +131,14 @@ export function UserDatabaseFilter({
       <PopoverTrigger disabled={disabled} asChild>
         <Button
           variant="outline"
-          className="h-8 border-dashed"
+          className="h-8 border-dashed px-1"
           disabled={disabled}
         >
           {icon}
           {title}
           {selectedSize > 0 && (
             <>
-              <Separator orientation="vertical" className="mx-2 h-4" />
+              <Separator orientation="vertical" className="mx-1 h-4" />
               <Badge
                 variant="secondary"
                 className="rounded-sm px-1 font-normal lg:hidden"
@@ -230,9 +262,12 @@ export function UserDatabaseFilter({
                 <CommandItem
                   onSelect={() => {
                     setApplying(true);
-                    query.set({
-                      [tag]: Array.from(selectedValues),
-                    });
+                    if (!multiple && href)
+                      router.push(`${href}/${Array.from(selectedValues)[0]}`);
+                    else
+                      query.set({
+                        [tag]: Array.from(selectedValues),
+                      });
                   }}
                   className="w-full justify-center text-center"
                   disabled={!hasChanges || applying}

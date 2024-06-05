@@ -6,6 +6,11 @@ const useQuery = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams()!;
 
+  const has = useCallback(
+    (key: string) => searchParams.has(key),
+    [searchParams]
+  );
+
   const get = useCallback(
     (data: { key: string; fallbackValue?: string | string[] } | string) => {
       if (typeof data === 'string') return searchParams.getAll(data) || '';
@@ -53,7 +58,7 @@ const useQuery = () => {
 
   const isEmpty = searchParams.toString().length === 0;
 
-  return { isEmpty, get, set, reset };
+  return { isEmpty, has, get, set, reset };
 };
 
 export default useQuery;

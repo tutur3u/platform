@@ -11,6 +11,7 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { User } from 'lucide-react';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserReport } from '@/types/db';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -35,17 +36,27 @@ export default async function WorkspaceUserDetailsPage({
 
   const { t } = useTranslation('user-data-table');
 
-  const report = await getData({ wsId, reportId });
+  const report =
+    reportId === 'new'
+      ? { created_at: new Date() }
+      : await getData({ wsId, reportId });
 
   const { data: userGroups } = await getUserGroups(wsId);
 
-  const { data: users } = groupId
-    ? await getUsers(wsId, groupId)
-    : { data: [] };
+  const { data: users } =
+    groupId || report.group_id
+      ? await getUsers(wsId, groupId || report.group_id)
+      : { data: [] };
 
-  const { data: reports } = userId
-    ? await getReports(wsId, userId)
-    : { data: [] };
+  const { data: reports } =
+    userId || report.user_id
+      ? await getReports(
+          wsId,
+          groupId || report.group_id,
+          userId || report.user_id,
+          reportId !== 'new' && !!userId && report.user_id !== userId
+        )
+      : { data: [] };
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -55,6 +66,7 @@ export default async function WorkspaceUserDetailsPage({
           tag="groupId"
           title={t('group')}
           icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          defaultValues={[report.group_id || groupId]}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -62,30 +74,41 @@ export default async function WorkspaceUserDetailsPage({
           }))}
           multiple={false}
         />
+
         <UserDatabaseFilter
           key="user-filter"
           tag="userId"
           title={t('user')}
           icon={<User className="mr-2 h-4 w-4" />}
+          defaultValues={[report.user_id || userId]}
           options={users.map((user) => ({
             label: user.full_name || 'No name',
             value: user.id,
           }))}
+          disabled={!groupId && !report.group_id}
+          resetSignals={['groupId']}
+          sortCheckedFirst={false}
           multiple={false}
-          disabled={!groupId}
         />
-        <UserDatabaseFilter
-          key="report-filter"
-          tag="reportId"
-          title={t('report')}
-          icon={<User className="mr-2 h-4 w-4" />}
-          options={reports.map((report) => ({
-            label: report.title || 'No title',
-            value: report.id,
-          }))}
-          multiple={false}
-          disabled={!userId}
-        />
+
+        {reports.length > 0 && (
+          <UserDatabaseFilter
+            key="report-filter"
+            tag="reportId"
+            title={t('report')}
+            icon={<User className="mr-2 h-4 w-4" />}
+            defaultValues={[reportId]}
+            options={reports.map((report) => ({
+              label: report.title || 'No title',
+              value: report.id,
+            }))}
+            href={`/${wsId}/users/reports`}
+            disabled={!userId && !report.user_id}
+            resetSignals={['groupId', 'userId']}
+            sortCheckedFirst={false}
+            multiple={false}
+          />
+        )}
       </div>
 
       <div className="grid h-fit gap-4 2xl:grid-cols-2">
@@ -204,7 +227,12 @@ async function getUsers(wsId: string, groupId: string) {
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }
 
-async function getReports(wsId: string, userId: string) {
+async function getReports(
+  wsId: string,
+  groupId: string,
+  userId: string,
+  forceRedirect = false
+) {
   const supabase = createServerComponentClient({ cookies });
 
   const queryBuilder = supabase
@@ -227,6 +255,12 @@ async function getReports(wsId: string, userId: string) {
     creator_name: rawData.creator.full_name,
     ...rawData,
   }));
+
+  if (forceRedirect) {
+    redirect(
+      `/${wsId}/users/reports/${data?.[0]?.id || `new?groupId=${groupId}&userId=${userId}`}`
+    );
+  }
 
   return { data, count } as { data: WorkspaceUserReport[]; count: number };
 }
