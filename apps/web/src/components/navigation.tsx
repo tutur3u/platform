@@ -83,7 +83,7 @@ export function Navigation({
 
         return (
           <Link
-            className={`${
+            className={`text-sm md:text-base ${
               isActive
                 ? 'text-foreground border-border bg-foreground/[0.025] dark:bg-foreground/5'
                 : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'

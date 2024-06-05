@@ -245,7 +245,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
 
   return (
     <>
-      <div className="bg-foreground/20 mx-2 hidden h-4 w-[1px] rotate-[30deg] md:block" />
+      <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
       <Dialog
         open={showNewWorkspaceDialog}
         onOpenChange={(open) => {
@@ -260,7 +260,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
               role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
-              className={cn('w-full max-w-[16rem] justify-between')}
+              className={cn('w-full justify-between md:max-w-[16rem]')}
             >
               <Avatar className="mr-2 h-5 w-5">
                 <AvatarImage
@@ -269,7 +269,9 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
                 />
                 <AvatarFallback>{getInitials(workspace.name)}</AvatarFallback>
               </Avatar>
-              <span className="line-clamp-1">{workspace.name}</span>
+              <span className="line-clamp-1 hidden md:block">
+                {workspace.name}
+              </span>
               <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -433,7 +435,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
           <Button
             variant="outline"
             aria-label="Online users"
-            className="flex items-center gap-1 px-2"
+            className="flex flex-none items-center gap-1 px-2"
             disabled={!onlineUsers}
           >
             {onlineUsers && (onlineUsers?.length || 0) > 0 ? (

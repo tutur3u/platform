@@ -22,9 +22,13 @@ import { useState } from 'react';
 
 interface MonthPickerProps {
   resetPage?: boolean;
+  className?: string;
 }
 
-export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
+export default function MonthPicker({
+  resetPage = true,
+  className,
+}: MonthPickerProps) {
   const { lang } = useTranslation('common');
   const query = useQuery();
 
@@ -67,23 +71,22 @@ export default function MonthPicker({ resetPage = true }: MonthPickerProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="grid w-fit items-center gap-1.5">
-          <Button
-            size="xs"
-            variant="outline"
-            onClick={() =>
-              setOpen((prev) => {
-                console.log(prev);
-                return !prev;
-              })
-            }
-          >
-            {currentMonth.toLocaleString(lang, {
-              month: '2-digit',
-              year: 'numeric',
-            })}
-          </Button>
-        </div>
+        <Button
+          size="xs"
+          variant="outline"
+          onClick={() =>
+            setOpen((prev) => {
+              console.log(prev);
+              return !prev;
+            })
+          }
+          className={className}
+        >
+          {currentMonth.toLocaleString(lang, {
+            month: '2-digit',
+            year: 'numeric',
+          })}
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="flex items-center justify-between pb-2">

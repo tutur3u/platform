@@ -61,7 +61,7 @@ export default async function WorkspaceUserDetailsPage({
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <div className="mb-4 flex flex-wrap items-start gap-2">
+      <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <UserDatabaseFilter
           key="group-filter"
           tag="groupId"

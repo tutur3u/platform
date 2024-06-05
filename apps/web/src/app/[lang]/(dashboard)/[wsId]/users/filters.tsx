@@ -167,12 +167,15 @@ export function UserDatabaseFilter({
             )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="start">
+      <PopoverContent
+        className="w-[min(calc(100vw-1rem),24rem)] p-0"
+        align="center"
+      >
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
-            <ScrollArea className="h-64">
+            <ScrollArea className="h-32 md:h-64">
               <CommandGroup>
                 {sortedOptions.map((option) => {
                   const isSelected = selectedValues.has(option.value);
@@ -240,17 +243,21 @@ export function UserDatabaseFilter({
                   {selectedSize === 0 && multiple ? (
                     <>
                       <CheckCheck className="mr-2 h-4 w-4" />
-                      {t('select_all')}
+                      <span className="line-clamp-1">{t('select_all')}</span>
                     </>
                   ) : hasChanges && oldValues.size > 0 ? (
                     <>
                       <Undo className="mr-2 h-4 w-4" />
-                      {t('revert_changes')}
+                      <span className="line-clamp-1">
+                        {t('revert_changes')}
+                      </span>
                     </>
                   ) : (
                     <>
                       <Trash className="mr-2 h-4 w-4" />
-                      {t('clear_selection')}
+                      <span className="line-clamp-1">
+                        {t('clear_selection')}
+                      </span>
                     </>
                   )}
                 </CommandItem>
@@ -270,7 +277,9 @@ export function UserDatabaseFilter({
                   disabled={!hasChanges || applying}
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  {applying ? t('applying') : t('apply_changes')}
+                  <span className="line-clamp-1">
+                    {applying ? t('applying') : t('apply_changes')}
+                  </span>
                 </CommandItem>
               </div>
             </CommandGroup>

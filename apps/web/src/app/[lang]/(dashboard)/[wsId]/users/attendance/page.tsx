@@ -45,9 +45,9 @@ export default async function WorkspaceUsersPage({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-start gap-2">
+      <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
-        <MonthPicker />
+        <MonthPicker className="col-span-full md:col-span-1" />
         <UserDatabaseFilter
           key="included-user-groups-filter"
           tag="includedGroups"
