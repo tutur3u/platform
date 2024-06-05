@@ -38,9 +38,20 @@ export default function UserMonthAttendance({
   const [currentUserData, setCurrentUserData] = useState(initialUser);
 
   useEffect(() => {
-    setCurrentDate(currentMonth);
-    setCurrentUserData(initialUser);
-  }, [currentMonth, initialUser]);
+    const fetchData = async () => {
+      setCurrentDate(currentMonth);
+
+      const { data } = await getData(
+        wsId,
+        initialUser.id,
+        format(new Date(currentMonth), 'yyyy-MM')
+      );
+
+      setCurrentUserData({ ...initialUser, ...data });
+    };
+
+    fetchData();
+  }, [wsId, currentMonth, initialUser]);
 
   const handlePrev = async () => {
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));

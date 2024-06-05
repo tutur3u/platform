@@ -9,6 +9,9 @@ interface SearchParams {
   page?: string;
   pageSize?: string;
   month?: string; // yyyy-MM
+
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
 }
 
 export default async function UserAttendances({
@@ -58,29 +61,33 @@ async function getData(
   {
     q,
     page = '1',
-    pageSize = '3',
-    month = new Date().toISOString().slice(0, 7),
+    pageSize = '10',
+    includedGroups = [],
+    excludedGroups = [],
     retry = true,
-  }: SearchParams & { retry?: boolean }
+  }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = createServerComponentClient({ cookies });
 
-  const startDate = new Date(month);
-  const endDate = new Date(
-    new Date(startDate).setMonth(startDate.getMonth() + 1)
-  );
-
   const queryBuilder = supabase
-    .from('workspace_users')
-    .select('*, user_group_attendance(date, status)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .gte('user_group_attendance.date', startDate.toISOString())
-    .lt('user_group_attendance.date', endDate.toISOString())
+    .rpc(
+      'get_workspace_users',
+      {
+        _ws_id: wsId,
+        included_groups: Array.isArray(includedGroups)
+          ? includedGroups
+          : [includedGroups],
+        excluded_groups: Array.isArray(excludedGroups)
+          ? excludedGroups
+          : [excludedGroups],
+        search_query: q || null,
+      },
+      {
+        count: 'exact',
+      }
+    )
+    .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
-
-  if (q) queryBuilder.ilike('full_name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -90,12 +97,7 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
-
-  const data = rawData?.map((u) => ({
-    ...u,
-    attendance: u.user_group_attendance,
-  })) as WorkspaceUser[];
+  const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
