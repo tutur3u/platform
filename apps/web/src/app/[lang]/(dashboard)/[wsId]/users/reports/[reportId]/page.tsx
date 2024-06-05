@@ -49,7 +49,8 @@ export default async function WorkspaceUserDetailsPage({
       : { data: [] };
 
   const { data: reports } =
-    userId || report.user_id
+    (!groupId && !userId && report.user_id) ||
+    (userId && groupId && users.map((user) => user.id).includes(userId))
       ? await getReports(
           wsId,
           groupId || report.group_id,
@@ -66,7 +67,8 @@ export default async function WorkspaceUserDetailsPage({
           tag="groupId"
           title={t('group')}
           icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-          defaultValues={[report.group_id || groupId]}
+          defaultValues={[groupId || report.group_id]}
+          extraQueryOnSet={{ userId: undefined }}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -80,7 +82,13 @@ export default async function WorkspaceUserDetailsPage({
           tag="userId"
           title={t('user')}
           icon={<User className="mr-2 h-4 w-4" />}
-          defaultValues={[report.user_id || userId]}
+          defaultValues={
+            groupId
+              ? userId && users.map((user) => user.id).includes(userId)
+                ? [userId]
+                : []
+              : [userId || report.user_id]
+          }
           options={users.map((user) => ({
             label: user.full_name || 'No name',
             value: user.id,
@@ -97,7 +105,7 @@ export default async function WorkspaceUserDetailsPage({
             tag="reportId"
             title={t('report')}
             icon={<User className="mr-2 h-4 w-4" />}
-            defaultValues={[reportId]}
+            defaultValues={!groupId && !userId ? [reportId] : []}
             options={reports.map((report) => ({
               label: report.title || 'No title',
               value: report.id,

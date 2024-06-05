@@ -40,6 +40,7 @@ interface UserDatabaseFilterProps {
   href?: string;
   resetSignals?: string[];
   defaultValues?: string[];
+  extraQueryOnSet?: Record<string, undefined | string | string[]>;
   sortCheckedFirst?: boolean;
   multiple?: boolean;
   disabled?: boolean;
@@ -53,6 +54,7 @@ export function UserDatabaseFilter({
   href,
   // resetSignals,
   defaultValues,
+  extraQueryOnSet,
   sortCheckedFirst = true,
   multiple = true,
   disabled,
@@ -61,16 +63,6 @@ export function UserDatabaseFilter({
 
   const router = useRouter();
   const query = useQuery();
-
-  // useEffect(() => {
-  //   // watch query changes, if resetSignals are provided
-  //   if (resetSignals) {
-  //     const signal = resetSignals.find((signal) => query.has(signal));
-  //     if (signal) {
-  //       query.set({ [tag]: undefined });
-  //     }
-  //   }
-  // }, [query, resetSignals, tag]);
 
   const oldValues: Set<string> = useMemo(
     () =>
@@ -136,40 +128,43 @@ export function UserDatabaseFilter({
         >
           {icon}
           {title}
-          {selectedSize > 0 && (
-            <>
-              <Separator orientation="vertical" className="mx-1 h-4" />
-              <Badge
-                variant="secondary"
-                className="rounded-sm px-1 font-normal lg:hidden"
-              >
-                {selectedSize}
-              </Badge>
-              <div className="hidden space-x-1 lg:flex">
-                {multiple && selectedSize > 2 ? (
-                  <Badge
-                    variant="secondary"
-                    className="rounded-sm px-1 font-normal"
-                  >
-                    {selectedSize} {t('selected')}
-                  </Badge>
-                ) : (
-                  options
-                    .filter((option) => selectedValues.has(option.value))
-                    .slice(0, multiple ? 2 : 1)
-                    .map((option) => (
-                      <Badge
-                        variant="secondary"
-                        key={option.value}
-                        className="rounded-sm px-1 font-normal"
-                      >
-                        {option.label}
-                      </Badge>
-                    ))
-                )}
-              </div>
-            </>
-          )}
+          {selectedSize > 0 &&
+            options
+              .map((option) => option.value)
+              .some((value) => selectedValues.has(value)) && (
+              <>
+                <Separator orientation="vertical" className="mx-1 h-4" />
+                <Badge
+                  variant="secondary"
+                  className="rounded-sm px-1 font-normal lg:hidden"
+                >
+                  {selectedSize}
+                </Badge>
+                <div className="hidden space-x-1 lg:flex">
+                  {multiple && selectedSize > 2 ? (
+                    <Badge
+                      variant="secondary"
+                      className="rounded-sm px-1 font-normal"
+                    >
+                      {selectedSize} {t('selected')}
+                    </Badge>
+                  ) : (
+                    options
+                      .filter((option) => selectedValues.has(option.value))
+                      .slice(0, multiple ? 2 : 1)
+                      .map((option) => (
+                        <Badge
+                          variant="secondary"
+                          key={option.value}
+                          className="rounded-sm px-1 font-normal"
+                        >
+                          {option.label}
+                        </Badge>
+                      ))
+                  )}
+                </div>
+              </>
+            )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="start">
@@ -264,10 +259,12 @@ export function UserDatabaseFilter({
                     setApplying(true);
                     if (!multiple && href)
                       router.push(`${href}/${Array.from(selectedValues)[0]}`);
-                    else
+                    else {
+                      if (extraQueryOnSet) query.set(extraQueryOnSet, false);
                       query.set({
                         [tag]: Array.from(selectedValues),
                       });
+                    }
                   }}
                   className="w-full justify-center text-center"
                   disabled={!hasChanges || applying}
