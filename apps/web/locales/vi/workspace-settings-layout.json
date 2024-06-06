@@ -2,6 +2,7 @@
   "workspace": "Không gian làm việc",
   "members": "Thành viên",
   "teams": "Nhóm",
+  "reports": "Báo cáo",
   "api_keys": "Khóa API",
   "secrets": "Mã bí mật",
   "infrastructure": "Cơ sở hạ tầng",

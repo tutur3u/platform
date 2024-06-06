@@ -37,12 +37,12 @@ export function DataTableToolbar<TData>({
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
-      <div className="flex w-full flex-1 items-center gap-2">
-        <GeneralSearchBar className="w-full md:max-w-xs" />
+      <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
+        <GeneralSearchBar className="col-span-full w-full md:col-span-1 md:max-w-xs" />
         {filters}
         {isFiltered && (
           <Button
-            variant="outline"
+            variant="destructive"
             onClick={() => {
               table.resetColumnFilters();
               query.reset();

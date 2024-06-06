@@ -53,12 +53,12 @@ export default async function Navbar() {
 
           <Navlinks />
 
-          <div className="flex items-center gap-2">
-            <Suspense
-              fallback={
-                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
-              }
-            >
+          <Suspense
+            fallback={
+              <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            }
+          >
+            <div className="flex items-center gap-2">
               {sbUser ? (
                 <>
                   <NotificationPopover />
@@ -70,8 +70,8 @@ export default async function Navbar() {
                   <ThemeToggle />
                 </>
               )}
-            </Suspense>
-          </div>
+            </div>
+          </Suspense>
         </div>
       </div>
       <NavbarSeparator />

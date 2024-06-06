@@ -14,6 +14,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from '@/components/ui/input-otp';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useEffect, useState } from 'react';
@@ -161,11 +166,18 @@ export default function LoginForm() {
               <FormLabel>{t('otp_code')}</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-2 md:flex-row">
-                  <Input placeholder="••••••" {...field} disabled={loading} />
+                  <InputOTP maxLength={6} {...field} disabled={loading}>
+                    <InputOTPGroup className="w-full justify-center">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <InputOTPSlot key={index} index={index} />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+
                   <Button
                     onClick={() => sendOtp({ email: form.getValues('email') })}
                     disabled={loading || resendCooldown > 0}
-                    className="md:w-40"
+                    className="md:w-full"
                     variant="secondary"
                     type="button"
                   >
