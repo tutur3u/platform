@@ -100,7 +100,7 @@
     "eventsource-parser": "^1.1.2",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.383.0",
+    "lucide-react": "^0.390.0",
     "moment": "^2.30.1",
     "nanoid": "^5.0.7",
     "negotiator": "^0.6.3",
