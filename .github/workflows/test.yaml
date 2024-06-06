@@ -2,9 +2,6 @@ name: Test
 
 on:
   push:
-    branches: ['main', 'staging', 'production']
-  pull_request:
-    types: [opened, synchronize]
 
 jobs:
   build:
@@ -32,8 +29,6 @@ jobs:
           fetch-depth: 2
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9.2.0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

@@ -40,6 +40,7 @@
     "node": ">=20.0.0"
   },
   "packageManager": "pnpm@9.2.0",
+  "package-manager-strict": false,
   "workspaces": {
     "packages": [
       "apps/*",
