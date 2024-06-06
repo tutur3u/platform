@@ -16,6 +16,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { UserRowActions } from '@/components/row-actions/users';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { Fragment } from 'react';
 
 export const getUserColumns = (
   t: Translate,
@@ -93,17 +94,17 @@ export const getUserColumns = (
                   {row
                     .getValue<WorkspaceUser[]>('linked_users')
                     .map((u, idx) => (
-                      <>
+                      <Fragment key={u.id}>
                         <span
-                          key={u.id}
+                          key={`${u.id}-name`}
                           className="font-semibold hover:underline"
                         >
                           {u.display_name}
                         </span>
                         {idx !==
                           row.getValue<WorkspaceUser[]>('linked_users').length -
-                            1 && <span>, </span>}
-                      </>
+                            1 && <span key={`${u.id}-separator`}>, </span>}
+                      </Fragment>
                     ))}
                 </div>
               </TooltipContent>

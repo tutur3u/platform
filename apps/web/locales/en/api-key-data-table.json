@@ -2,5 +2,6 @@
   "id": "ID",
   "name": "Name",
   "value": "Value",
+  "updated_at": "Updated at",
   "created_at": "Created at"
 }

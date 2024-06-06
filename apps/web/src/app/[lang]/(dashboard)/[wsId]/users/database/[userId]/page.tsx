@@ -13,6 +13,8 @@ import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
+import { WorkspaceUserReport } from '@/types/db';
 
 interface Props {
   params: {
@@ -37,6 +39,11 @@ export default async function WorkspaceUserDetailsPage({
   const data = await getData({ wsId, userId });
 
   const { data: groups, count: groupCount } = await getGroupData({
+    wsId,
+    userId,
+  });
+
+  const { data: reports, count: reportCount } = await getReportData({
     wsId,
     userId,
   });
@@ -108,86 +115,124 @@ export default async function WorkspaceUserDetailsPage({
             </div>
           </div>
 
-          <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
-              Mã giảm giá liên kết ({couponCount})
-            </div>
-            <Separator />
+          <UserMonthAttendance
+            wsId={wsId}
+            user={{
+              id: data.id,
+              full_name: data.full_name,
+              href: `/${wsId}/users/database/${data.id}`,
+            }}
+          />
+        </div>
+
+        <div className="grid gap-4">
+          <div className="h-full rounded-lg border p-4">
             <div className="grid gap-2">
-              {coupons && coupons.length ? (
-                coupons.map((coupon) => (
-                  <div
-                    key={coupon.id}
-                    className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
-                  >
-                    <TicketCheck className="inline-block h-6 w-6" />
-                    {coupon.name}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-opacity-60">
-                  {t('no_coupons')}.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="h-full rounded-lg border p-4">
-          <div className="grid gap-2">
-            <div className="text-lg font-semibold">
-              Nhóm đã tham gia ({groupCount})
-            </div>
-            <Separator />
-            <div className="grid gap-2 2xl:grid-cols-2">
-              {groups && groups.length ? (
-                groups.map((group) => (
-                  <Link
-                    key={group.id}
-                    href={`/${wsId}/users/groups/${group.id}`}
-                  >
-                    <Button
-                      className="flex w-full items-center gap-2"
-                      variant="secondary"
+              <div className="text-lg font-semibold">
+                Nhóm đã tham gia ({groupCount})
+              </div>
+              <Separator />
+              <div className="grid gap-2 2xl:grid-cols-2">
+                {groups && groups.length ? (
+                  groups.map((group) => (
+                    <Link
+                      key={group.id}
+                      href={`/${wsId}/users/groups/${group.id}`}
                     >
-                      <Users className="inline-block h-6 w-6" />
-                      {group.name}
-                    </Button>
-                  </Link>
-                ))
-              ) : (
-                <div className="text-center text-opacity-60">
-                  {t('no_groups')}.
-                </div>
-              )}
+                      <Button
+                        className="flex w-full items-center gap-2"
+                        variant="secondary"
+                      >
+                        <Users className="inline-block h-6 w-6" />
+                        {group.name}
+                      </Button>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center text-opacity-60">
+                    {t('no_groups')}.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="col-span-full mb-96 h-fit rounded-lg border p-4">
-          <div className="grid gap-2">
-            <div className="text-lg font-semibold">
-              Hoá đơn ({invoiceCount})
+          <div className="h-full rounded-lg border p-4">
+            <div className="grid gap-2">
+              <div className="text-lg font-semibold">
+                Báo cáo ({reportCount})
+              </div>
+              <Separator />
+              <div className="grid gap-2 2xl:grid-cols-2">
+                {reports && reports.length ? (
+                  reports.map((report) => (
+                    <Link
+                      key={report.id}
+                      href={`/${wsId}/users/reports/${report.id}`}
+                    >
+                      <Button
+                        className="flex w-full items-center gap-2"
+                        variant="secondary"
+                      >
+                        <Users className="inline-block h-6 w-6" />
+                        {report.title}
+                      </Button>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center text-opacity-60">
+                    {t('no_reports')}.
+                  </div>
+                )}
+              </div>
             </div>
-            <Separator />
-            <DataTable
-              data={invoiceData}
-              columnGenerator={invoiceColumns}
-              namespace="invoice-data-table"
-              count={invoiceCount}
-              defaultVisibility={{
-                id: false,
-                customer: false,
-                customer_id: false,
-                price: false,
-                total_diff: false,
-                note: false,
-              }}
-              noBottomPadding
-            />
+          </div>
+
+          <div className="h-full rounded-lg border p-4">
+            <div className="grid gap-2">
+              <div className="text-lg font-semibold">
+                Mã giảm giá liên kết ({couponCount})
+              </div>
+              <Separator />
+              <div className="grid gap-2">
+                {coupons && coupons.length ? (
+                  coupons.map((coupon) => (
+                    <div
+                      key={coupon.id}
+                      className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
+                    >
+                      <TicketCheck className="inline-block h-6 w-6" />
+                      {coupon.name}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-opacity-60">
+                    {t('no_coupons')}.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <div className="mb-2 mt-4 text-lg font-semibold">
+        Hoá đơn ({invoiceCount})
+      </div>
+      <DataTable
+        data={invoiceData}
+        columnGenerator={invoiceColumns}
+        namespace="invoice-data-table"
+        count={invoiceCount}
+        defaultVisibility={{
+          id: false,
+          customer: false,
+          customer_id: false,
+          price: false,
+          total_diff: false,
+          note: false,
+        }}
+      />
     </div>
   );
 }
@@ -252,6 +297,42 @@ async function getGroupData({
   if (error) throw error;
 
   return { data, count };
+}
+
+async function getReportData({
+  wsId,
+  userId,
+}: {
+  wsId: string;
+  userId: string;
+}) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase
+    .from('external_user_monthly_reports')
+    .select('*, user:workspace_users!user_id!inner(ws_id)', {
+      count: 'exact',
+    })
+    .eq('user_id', userId)
+    .eq('user.ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  const { data: rawData, count, error } = await queryBuilder;
+  if (error) throw error;
+
+  const data = rawData.map((rowData) => {
+    const preprocessedData: {
+      user?: any;
+      [key: string]: any;
+    } = {
+      ...rowData,
+    };
+
+    delete preprocessedData.user;
+    return preprocessedData as WorkspaceUserReport;
+  });
+
+  return { data, count } as { data: WorkspaceUserReport[]; count: number };
 }
 
 async function getCouponData({

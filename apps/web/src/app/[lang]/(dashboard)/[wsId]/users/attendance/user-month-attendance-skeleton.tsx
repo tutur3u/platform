@@ -65,11 +65,13 @@ export default function UserMonthAttendanceSkeleton() {
       <div>
         <div className="grid h-full gap-8">
           <div key={2024} className="flex h-full flex-col">
-            <div className="mb-4 flex items-center justify-between gap-4 text-2xl font-bold">
+            <div className="mb-4 flex items-center justify-between gap-4 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 hidden h-4 w-[1px] rotate-[30deg] md:block" />
-                <span className="text-xl font-semibold">{thisMonth}</span>
+                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <span className="text-lg font-semibold md:text-xl">
+                  {thisMonth}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="bg-foreground/5 rounded border px-2 py-0.5 text-xs opacity-50">
@@ -95,23 +97,23 @@ export default function UserMonthAttendanceSkeleton() {
               </div>
             </div>
 
-            <div className="relative grid gap-2">
-              <div className="grid grid-cols-7 gap-2">
+            <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
+              <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded-lg p-2 font-semibold transition duration-300"
+                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded md:rounded-lg p-2 font-semibold transition duration-300"
                   >
                     {day}
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {daysInMonth.map((day, idx) => (
                   <Fragment key={`day-${idx}`}>
                     <div
-                      className={`flex flex-none cursor-default justify-center rounded-lg border p-2 font-semibold transition duration-300 ${
+                      className={`flex flex-none cursor-default justify-center rounded md:rounded-lg border p-2 font-semibold transition duration-300 ${
                         !isCurrentMonth(day)
                           ? 'text-foreground/20 border-transparent'
                           : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'

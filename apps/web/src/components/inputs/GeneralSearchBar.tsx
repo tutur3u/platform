@@ -26,7 +26,7 @@ const GeneralSearchBar = ({ resetPage = true, className }: Props) => {
       placeholder={searchPlaceholder}
       defaultValue={query.get('q') || ''}
       onChange={(e) => updateQuery(e.target.value)}
-      className={cn('placeholder:text-foreground/60 h-8', className)}
+      className={cn('placeholder:text-foreground/60 h-8 min-w-64', className)}
     />
   );
 };
