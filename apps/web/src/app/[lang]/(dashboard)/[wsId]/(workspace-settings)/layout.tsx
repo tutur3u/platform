@@ -38,6 +38,10 @@ export default async function Layout({
       disabled: true,
     },
     {
+      name: t('reports'),
+      href: `/${wsId}/settings/reports`,
+    },
+    {
       name: t('api_keys'),
       href: `/${wsId}/api-keys`,
       allowedRoles: ['ADMIN', 'OWNER'],

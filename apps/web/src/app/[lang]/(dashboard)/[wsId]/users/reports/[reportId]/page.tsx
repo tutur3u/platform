@@ -1,8 +1,6 @@
-import { Separator } from '@/components/ui/separator';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import { UserDatabaseFilter } from '../../filters';
@@ -12,6 +10,9 @@ import { User } from 'lucide-react';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserReport } from '@/types/db';
 import { redirect } from 'next/navigation';
+import EditableReportPreview from './editable-report-preview';
+import { availableConfigs } from '@/constants/configs/reports';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 
 interface Props {
   params: {
@@ -38,14 +39,18 @@ export default async function WorkspaceUserDetailsPage({
 
   const report =
     reportId === 'new'
-      ? { created_at: new Date() }
+      ? {
+          user_id: userId,
+          group_id: groupId,
+          created_at: new Date().toISOString(),
+        }
       : await getData({ wsId, reportId });
 
   const { data: userGroups } = await getUserGroups(wsId);
 
   const { data: users } =
     groupId || report.group_id
-      ? await getUsers(wsId, groupId || report.group_id)
+      ? await getUsers(wsId, groupId || report.group_id!)
       : { data: [] };
 
   const { data: reports } =
@@ -53,11 +58,13 @@ export default async function WorkspaceUserDetailsPage({
     (userId && users.map((user) => user.id).includes(userId))
       ? await getReports(
           wsId,
-          groupId || report.group_id,
-          userId || report.user_id,
+          groupId || report.group_id!,
+          userId || report.user_id!,
           reportId !== 'new' && !!userId && report.user_id !== userId
         )
       : { data: [] };
+
+  const { data: configs } = await getConfigs(wsId);
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -67,7 +74,7 @@ export default async function WorkspaceUserDetailsPage({
           tag="groupId"
           title={t('group')}
           icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-          defaultValues={[groupId || report.group_id]}
+          defaultValues={[groupId || report.group_id!]}
           extraQueryOnSet={{ userId: undefined }}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
@@ -87,7 +94,7 @@ export default async function WorkspaceUserDetailsPage({
               ? userId && users.map((user) => user.id).includes(userId)
                 ? [userId]
                 : []
-              : [userId || report.user_id]
+              : [userId || report.user_id!]
           }
           options={users.map((user) => ({
             label: user.full_name || 'No name',
@@ -119,33 +126,7 @@ export default async function WorkspaceUserDetailsPage({
         )}
       </div>
 
-      <div className="grid h-fit gap-4 2xl:grid-cols-2">
-        <div className="grid h-fit gap-2 rounded-lg border p-4">
-          <div className="text-lg font-semibold">Thông tin cơ bản</div>
-          <Separator />
-
-          <div className="flex gap-1">
-            <span className="opacity-60">{t('created_at')}:</span>{' '}
-            {report.created_at
-              ? moment(report.created_at).format('DD/MM/YYYY, HH:mm:ss')
-              : '-'}
-          </div>
-        </div>
-
-        {/* <div className="grid h-fit gap-2 rounded-lg border p-4">
-          <div className="text-lg font-semibold">JSON Data</div>
-          <Separator />
-
-          <pre className="overflow-auto">{JSON.stringify(report, null, 2)}</pre>
-
-          <div className="flex gap-1">
-            <span className="opacity-60">{t('created_at')}:</span>{' '}
-            {report.created_at
-              ? moment(report.created_at).format('DD/MM/YYYY, HH:mm:ss')
-              : '-'}
-          </div>
-        </div> */}
-      </div>
+      <EditableReportPreview wsId={wsId} report={report} configs={configs} />
     </div>
   );
 }
@@ -190,7 +171,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   delete data.user;
   delete data.creator;
 
-  return data;
+  return data as WorkspaceUserReport;
 }
 
 async function getUserGroups(wsId: string) {
@@ -271,4 +252,51 @@ async function getReports(
   }
 
   return { data, count } as { data: WorkspaceUserReport[]; count: number };
+}
+
+async function getConfigs(wsId: string) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase
+    .from('workspace_configs')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  queryBuilder.in(
+    'id',
+    availableConfigs.map(({ id }) => id)
+  );
+
+  const { data: rawData, error } = await queryBuilder;
+  if (error) throw error;
+
+  // Create a copy of availableConfigs to include in the response
+  let configs = [
+    ...availableConfigs.map(({ defaultValue, ...rest }) => ({
+      ...rest,
+      value: defaultValue,
+    })),
+  ];
+
+  // If rawData is not empty, merge it with availableConfigs
+  if (rawData && rawData.length) {
+    rawData.forEach((config) => {
+      const index = configs.findIndex((c) => c.id === config.id);
+      if (index !== -1) {
+        // Replace the default config with the one from the database
+        configs[index] = { ...configs[index], ...config };
+      } else {
+        // If the config does not exist in availableConfigs, add it
+        configs.push(config);
+      }
+    });
+  }
+
+  const count = configs.length;
+
+  return { data: configs, count } as {
+    data: WorkspaceConfig[];
+    count: number;
+  };
 }

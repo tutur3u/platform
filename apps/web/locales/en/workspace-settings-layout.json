@@ -2,6 +2,7 @@
   "workspace": "Workspace",
   "members": "Members",
   "teams": "Teams",
+  "reports": "Reports",
   "api_keys": "API Keys",
   "secrets": "Secrets",
   "infrastructure": "Infrastructure",

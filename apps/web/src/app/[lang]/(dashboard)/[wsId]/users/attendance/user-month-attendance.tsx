@@ -261,9 +261,9 @@ export default function UserMonthAttendance({
                         !isCurrentMonth(day) || loading
                           ? 'text-foreground/20 border-transparent'
                           : isDateAttended(currentUserData, day)
-                            ? 'border-transparent bg-green-500 text-white dark:bg-green-300/20 dark:text-green-300'
+                            ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
                             : isDateAbsent(currentUserData, day)
-                              ? 'border-transparent bg-red-500 text-white dark:bg-red-300/20 dark:text-red-300'
+                              ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
                               : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
                       }`}
                     >

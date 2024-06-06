@@ -39,9 +39,6 @@ export function Navigation({
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
-    const isActiveWorkspaceLinkInView =
-      (activeWorkspaceLink?.getBoundingClientRect()?.top ?? -9999) >= 0;
-
     if (activeWorkspaceLink) {
       activeWorkspaceLink.scrollIntoView({
         behavior: 'smooth',
@@ -51,9 +48,7 @@ export function Navigation({
     }
 
     if (activeLink) {
-      new Promise((resolve) =>
-        setTimeout(resolve, isActiveWorkspaceLinkInView ? 500 : 0)
-      ).then(() =>
+      new Promise((resolve) => setTimeout(resolve, 500)).then(() =>
         activeLink.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',

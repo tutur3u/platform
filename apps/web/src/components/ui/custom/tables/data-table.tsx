@@ -164,17 +164,19 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      {noBottomPadding || (
+      {noBottomPadding || count === undefined || (
         <DataTablePagination
           table={table}
           className="pointer-events-none hidden opacity-0 lg:block"
         />
       )}
-      <DataTablePagination
-        table={table}
-        count={count}
-        className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"
-      />
+      {count !== undefined && (
+        <DataTablePagination
+          table={table}
+          count={count}
+          className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"
+        />
+      )}
     </div>
   );
 }

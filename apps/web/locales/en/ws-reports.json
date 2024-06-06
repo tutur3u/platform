@@ -1,0 +1,22 @@
+{
+    "report": "Report",
+    "reports": "Reports",
+    "description": "Configure your report settings.",
+    "name": "Name",
+    "value": "Value",
+    "edit_value": "Edit value",
+    "reset_value": "Reset value",
+    "edit_existing_value": "Edit existing value",
+    "brand_logo_url": "Brand logo URL",
+    "brand_name": "Brand name",
+    "brand_location": "Brand location",
+    "brand_phone_number": "Brand phone number",
+    "report_title_prefix": "Report title prefix",
+    "report_title_suffix": "Report title suffix",
+    "report_intro": "Report introduction",
+    "report_content_text": "Text displayed for report content header",
+    "report_score_text": "Text displayed for report score header",
+    "report_feedback_text": "Text displayed for report feedback header",
+    "report_conclusion": "Report conclusion",
+    "report_closing": "Report closing"
+}

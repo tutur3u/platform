@@ -147,6 +147,12 @@
       "workspace-settings-layout",
       "ws-settings"
     ],
+    "/[lang]/(dashboard)/[wsId]/(workspace-settings)/settings/reports": [
+      "sidebar-tabs",
+      "workspace-settings-layout",
+      "api-key-data-table",
+      "ws-reports"
+    ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/api-keys": [
       "sidebar-tabs",
       "api-key-data-table",
