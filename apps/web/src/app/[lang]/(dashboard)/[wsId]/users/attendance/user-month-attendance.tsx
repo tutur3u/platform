@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import useSearchParams from '@/hooks/useSearchParams';
 import { format, parse } from 'date-fns';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   Tooltip,
   TooltipContent,
@@ -48,6 +48,8 @@ export default function UserMonthAttendance({
     setCurrentDate(currentMonth);
   }, [currentMonth]);
 
+  const month = format(new Date(currentDate), 'yyyy-MM');
+
   const {
     isPending,
     isError,
@@ -60,11 +62,11 @@ export default function UserMonthAttendance({
       initialUser.id,
       'attendance',
       {
-        month: format(new Date(currentDate), 'yyyy-MM'),
-      }, // 5
+        month,
+      },
     ],
-    queryFn: () =>
-      getData(wsId, initialUser.id, format(new Date(currentDate), 'yyyy-MM')),
+    queryFn: () => getData(wsId, initialUser.id, month),
+    placeholderData: keepPreviousData,
   });
 
   const data = {
