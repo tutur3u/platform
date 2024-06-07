@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "pnpm i && turbo run build",
+    "buildx": "pnpm i && turbo test lint build",
     "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
@@ -32,7 +32,7 @@
     "prettier": "^3.3.1",
     "prettier-plugin-tailwindcss": "^0.6.1",
     "tsconfig": "workspace:*",
-    "turbo": "^2.0.1",
+    "turbo": "^2.0.3",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
