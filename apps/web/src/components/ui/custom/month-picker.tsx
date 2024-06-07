@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import useTranslation from 'next-translate/useTranslation';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import { debounce } from 'lodash';
 import { useState } from 'react';
 
@@ -30,9 +30,9 @@ export default function MonthPicker({
   className,
 }: MonthPickerProps) {
   const { lang } = useTranslation('common');
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
-  const queryMonth = query.get('month');
+  const queryMonth = searchParams.get('month');
 
   const currentYYYYMM = Array.isArray(queryMonth)
     ? queryMonth[0]
@@ -47,7 +47,7 @@ export default function MonthPicker({
   const [previewDate, setPreviewDate] = useState(currentMonth);
 
   const updateQuery = debounce((month: string) => {
-    query.set({ month, page: resetPage ? '1' : undefined });
+    searchParams.set({ month, page: resetPage ? '1' : undefined });
     setOpen(false);
   }, 300);
 

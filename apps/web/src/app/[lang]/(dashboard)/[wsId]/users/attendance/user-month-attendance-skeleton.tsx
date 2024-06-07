@@ -4,16 +4,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Fragment, useMemo } from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import { Button } from '@/components/ui/button';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import { format, parse } from 'date-fns';
 
 export default function UserMonthAttendanceSkeleton() {
   const { lang } = useTranslation();
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
   const currentYYYYMM = useMemo(
-    () => query.get('month') || format(new Date(), 'yyyy-MM'),
-    [query]
+    () => searchParams.get('month') || format(new Date(), 'yyyy-MM'),
+    [searchParams]
   );
 
   const currentMonth = useMemo(
@@ -102,7 +102,7 @@ export default function UserMonthAttendanceSkeleton() {
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded md:rounded-lg p-2 font-semibold transition duration-300"
+                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -113,7 +113,7 @@ export default function UserMonthAttendanceSkeleton() {
                 {daysInMonth.map((day, idx) => (
                   <Fragment key={`day-${idx}`}>
                     <div
-                      className={`flex flex-none cursor-default justify-center rounded md:rounded-lg border p-2 font-semibold transition duration-300 ${
+                      className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
                         !isCurrentMonth(day)
                           ? 'text-foreground/20 border-transparent'
                           : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'

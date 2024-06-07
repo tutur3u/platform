@@ -6,7 +6,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import useTranslation from 'next-translate/useTranslation';
 import { Button } from '@/components/ui/button';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import { format, parse } from 'date-fns';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
@@ -20,9 +20,9 @@ export default function UserMonthAttendance({
   defaultIncludedGroups?: string[];
 }) {
   const { lang } = useTranslation();
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
-  const queryMonth = query.get('month');
+  const queryMonth = searchParams.get('month');
 
   const currentYYYYMM = Array.isArray(queryMonth)
     ? queryMonth[0] || format(new Date(), 'yyyy-MM')
@@ -34,8 +34,8 @@ export default function UserMonthAttendance({
   );
 
   const queryIncludedGroups = useMemo(
-    () => query.get('includedGroups'),
-    [query]
+    () => searchParams.get('includedGroups'),
+    [searchParams]
   );
 
   const currentIncludedGroups = useMemo(

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
@@ -61,8 +61,8 @@ export function UserDatabaseFilter({
 }: UserDatabaseFilterProps) {
   const { t } = useTranslation('user-data-table');
 
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const query = useQuery();
 
   const oldValues: Set<string> = useMemo(
     () =>
@@ -70,14 +70,14 @@ export function UserDatabaseFilter({
         ? !multiple
           ? new Set(defaultValues.slice(0, 1))
           : new Set(defaultValues)
-        : !multiple && Array.isArray(query.get(tag))
-          ? new Set(query.get(tag)?.slice(0, 1) as string)
+        : !multiple && Array.isArray(searchParams.get(tag))
+          ? new Set(searchParams.get(tag)?.slice(0, 1) as string)
           : new Set(
-              Array.isArray(query.get(tag))
-                ? (query.get(tag) as string[])
-                : [query.get(tag) as string]
+              Array.isArray(searchParams.get(tag))
+                ? (searchParams.get(tag) as string[])
+                : [searchParams.get(tag) as string]
             ),
-    [defaultValues, multiple, query, tag]
+    [searchParams, defaultValues, multiple, tag]
   );
 
   const [searchQuery, setSearchQuery] = useState('' as string);
@@ -288,8 +288,9 @@ export function UserDatabaseFilter({
                     if (!multiple && href)
                       router.push(`${href}/${Array.from(selectedValues)[0]}`);
                     else {
-                      if (extraQueryOnSet) query.set(extraQueryOnSet, false);
-                      query.set({
+                      if (extraQueryOnSet)
+                        searchParams.set(extraQueryOnSet, false);
+                      searchParams.set({
                         [tag]: Array.from(selectedValues),
                       });
                     }

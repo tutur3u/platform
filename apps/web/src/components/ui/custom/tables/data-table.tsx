@@ -26,7 +26,7 @@ import {
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
 import { ReactNode, useState } from 'react';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import useTranslation from 'next-translate/useTranslation';
 import { Translate } from 'next-translate';
 
@@ -61,7 +61,7 @@ export function DataTable<TData, TValue>({
   noBottomPadding,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation(namespace);
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -69,8 +69,8 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const pageIndex = (Number(query.get('page')) || 1) - 1;
-  const pageSize = Number(query.get('pageSize')) || 10;
+  const pageIndex = (Number(searchParams.get('page')) || 1) - 1;
+  const pageSize = Number(searchParams.get('pageSize')) || 10;
 
   const table = useReactTable({
     data: data || [],

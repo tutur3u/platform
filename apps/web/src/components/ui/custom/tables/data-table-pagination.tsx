@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
 import useTranslation from 'next-translate/useTranslation';
 import { Separator } from '../../separator';
@@ -41,7 +41,7 @@ export function DataTablePagination<TData>({
   additionalSizes,
 }: DataTablePaginationProps<TData>) {
   const { t } = useTranslation('common');
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
   // filter duplicate and sort sizes
   const sizes = [
@@ -104,7 +104,7 @@ export function DataTablePagination<TData>({
                 table.setPageSize(Number(value));
               }
 
-              query.set({ page: 1, pageSize: value });
+              searchParams.set({ page: 1, pageSize: value });
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
@@ -145,7 +145,7 @@ export function DataTablePagination<TData>({
                 table.setPageIndex(0);
               }
 
-              query.set({ page: 1 });
+              searchParams.set({ page: 1 });
             }}
             disabled={
               (pageIndex !== undefined
@@ -165,7 +165,7 @@ export function DataTablePagination<TData>({
                 table.previousPage();
               }
 
-              query.set({
+              searchParams.set({
                 page: pageIndex ?? table?.getState().pagination.pageIndex ?? 0,
               });
             }}
@@ -187,7 +187,7 @@ export function DataTablePagination<TData>({
                 table.nextPage();
               }
 
-              query.set({
+              searchParams.set({
                 page: isPageOutOfRange
                   ? 2
                   : (pageIndex ?? table?.getState().pagination.pageIndex ?? 0) +
@@ -212,7 +212,9 @@ export function DataTablePagination<TData>({
                 table.setPageIndex(table.getPageCount() - 1);
               }
 
-              query.set({ page: pageCount ?? table?.getPageCount() ?? 1 });
+              searchParams.set({
+                page: pageCount ?? table?.getPageCount() ?? 1,
+              });
             }}
             disabled={
               (pageIndex !== undefined

@@ -9,7 +9,7 @@ import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableCreateButton } from './data-table-create-button';
 import { ReactNode } from 'react';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 import useTranslation from 'next-translate/useTranslation';
 
 interface DataTableToolbarProps<TData> {
@@ -30,10 +30,10 @@ export function DataTableToolbar<TData>({
   extraColumns,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation(namespace);
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
   const isFiltered =
-    table.getState().columnFilters.length > 0 || !query.isEmpty;
+    table.getState().columnFilters.length > 0 || !searchParams.isEmpty;
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
@@ -45,7 +45,7 @@ export function DataTableToolbar<TData>({
             variant="destructive"
             onClick={() => {
               table.resetColumnFilters();
-              query.reset();
+              searchParams.reset();
             }}
             className="h-8 px-2 lg:px-3"
           >
