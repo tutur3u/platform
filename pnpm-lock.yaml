@@ -223,7 +223,7 @@ importers:
         version: 0.1.15(next@15.0.0-canary.14(@babel/core@7.24.6)(babel-plugin-react-compiler@0.0.0-experimental-938cd9a-20240601)(react-dom@19.0.0-rc-f994737d14-20240522(react@19.0.0-rc-f994737d14-20240522))(react@19.0.0-rc-f994737d14-20240522))(react@19.0.0-rc-f994737d14-20240522)(vite@5.2.12(@types/node@20.14.2))
       ai:
         specifier: ^3.1.29
-        version: 3.1.29(openai@4.48.2(encoding@0.1.13))(react@19.0.0-rc-f994737d14-20240522)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
+        version: 3.1.29(openai@4.49.0(encoding@0.1.13))(react@19.0.0-rc-f994737d14-20240522)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-938cd9a-20240601
         version: 0.0.0-experimental-938cd9a-20240601
@@ -276,8 +276,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@15.0.0-canary.14(@babel/core@7.24.6)(babel-plugin-react-compiler@0.0.0-experimental-938cd9a-20240601)(react-dom@19.0.0-rc-f994737d14-20240522(react@19.0.0-rc-f994737d14-20240522))(react@19.0.0-rc-f994737d14-20240522))(react@19.0.0-rc-f994737d14-20240522)
       openai:
-        specifier: ^4.48.2
-        version: 4.48.2(encoding@0.1.13)
+        specifier: ^4.49.0
+        version: 4.49.0(encoding@0.1.13)
       react:
         specifier: 19.0.0-rc-f994737d14-20240522
         version: 19.0.0-rc-f994737d14-20240522
@@ -4497,8 +4497,8 @@ packages:
     resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
     engines: {node: '>=12'}
 
-  openai@4.48.2:
-    resolution: {integrity: sha512-3z4JEipIzwFtLvDC3KigZEWH4ALWDHPr6XCq/xYi8O1AQ5lAtu6Ib6FO8KeQ8RdjwfIqHWOWk/zopW5g780s/w==}
+  openai@4.49.0:
+    resolution: {integrity: sha512-/UkrBSej5ejZ4vnOFoeFefX7erjp4k3+xoLKkswjLEvgBU9QtCnOUgsfpvHkzTzgDXpqPMCzyQHQXWsgiq2xPw==}
     hasBin: true
 
   opener@1.5.2:
@@ -8231,7 +8231,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.1.29(openai@4.48.2(encoding@0.1.13))(react@19.0.0-rc-f994737d14-20240522)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
+  ai@3.1.29(openai@4.49.0(encoding@0.1.13))(react@19.0.0-rc-f994737d14-20240522)(solid-js@1.8.17)(svelte@4.2.17)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.10
       '@ai-sdk/provider-utils': 0.0.13(zod@3.23.8)
@@ -8247,7 +8247,7 @@ snapshots:
       swrv: 1.0.4(vue@3.4.27(typescript@5.4.5))
       zod-to-json-schema: 3.22.5(zod@3.23.8)
     optionalDependencies:
-      openai: 4.48.2(encoding@0.1.13)
+      openai: 4.49.0(encoding@0.1.13)
       react: 19.0.0-rc-f994737d14-20240522
       solid-js: 1.8.17
       svelte: 4.2.17
@@ -10557,7 +10557,7 @@ snapshots:
     dependencies:
       mimic-fn: 4.0.0
 
-  openai@4.48.2(encoding@0.1.13):
+  openai@4.49.0(encoding@0.1.13):
     dependencies:
       '@types/node': 18.19.34
       '@types/node-fetch': 2.6.11
