@@ -1,20 +1,29 @@
+import { UserDatabaseFilter } from '../filters';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { User } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
+
+interface SearchParams {
+  page?: string;
+  pageSize?: string;
+  groupId?: string;
+  userId?: string;
+}
 
 interface Props {
   params: {
     wsId: string;
   };
-  searchParams: {
-    q: string;
-    page: string;
-    pageSize: string;
-  };
+  searchParams: SearchParams;
 }
 
 export default async function WorkspaceUserReportsPage({
@@ -22,7 +31,13 @@ export default async function WorkspaceUserReportsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
+  const { t } = useTranslation('user-data-table');
+
   const { data, count } = await getData(wsId, searchParams);
+  const { data: userGroups } = await getUserGroups(wsId);
+  const { data: users } = searchParams.groupId
+    ? await getUsers(wsId, searchParams.groupId)
+    : { data: [] };
 
   const reports =
     data?.map((rp) => ({
@@ -41,6 +56,47 @@ export default async function WorkspaceUserReportsPage({
         user_id: false,
         created_at: false,
       }}
+      filters={[
+        <UserDatabaseFilter
+          key="group-filter"
+          tag="groupId"
+          title={t('group')}
+          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          defaultValues={searchParams.groupId ? [searchParams.groupId] : []}
+          extraQueryOnSet={{ userId: undefined }}
+          options={userGroups.map((group) => ({
+            label: group.name || 'No name',
+            value: group.id,
+            count: group.amount,
+          }))}
+          multiple={false}
+        />,
+        <UserDatabaseFilter
+          key="user-filter"
+          tag="userId"
+          title={t('user')}
+          icon={<User className="mr-2 h-4 w-4" />}
+          defaultValues={
+            searchParams.groupId
+              ? searchParams.userId &&
+                users.map((user) => user.id).includes(searchParams.userId)
+                ? [searchParams.userId]
+                : []
+              : searchParams.userId
+                ? [searchParams.userId]
+                : []
+          }
+          options={users.map((user) => ({
+            label: user.full_name || 'No name',
+            value: user.id,
+          }))}
+          disabled={!searchParams.groupId}
+          resetSignals={['groupId']}
+          sortCheckedFirst={false}
+          multiple={false}
+        />,
+      ]}
+      disableSearch
     />
   );
 }
@@ -48,11 +104,12 @@ export default async function WorkspaceUserReportsPage({
 async function getData(
   wsId: string,
   {
-    q,
     page = '1',
     pageSize = '10',
+    groupId,
+    userId,
     retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean }
+  }: SearchParams & { retry?: boolean }
 ) {
   const supabase = createServerComponentClient({ cookies });
 
@@ -67,7 +124,13 @@ async function getData(
     .eq('workspace_users.ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('user.full_name', `%${q}%`);
+  if (groupId) {
+    queryBuilder.eq('group_id', groupId);
+  }
+
+  if (userId) {
+    queryBuilder.eq('user_id', userId);
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -87,8 +150,50 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { pageSize, groupId, userId, retry: false });
   }
 
   return { data, count };
+}
+
+async function getUserGroups(wsId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const queryBuilder = supabase
+    .from('workspace_user_groups_with_amount')
+    .select('id, name, amount', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .order('name');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: UserGroup[]; count: number };
+}
+
+async function getUsers(wsId: string, groupId: string) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const queryBuilder = supabase
+    .rpc(
+      'get_workspace_users',
+      {
+        _ws_id: wsId,
+        included_groups: [groupId],
+        excluded_groups: [],
+        search_query: null,
+      },
+      {
+        count: 'exact',
+      }
+    )
+    .select('id, full_name')
+    .order('full_name', { ascending: true, nullsFirst: false });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: WorkspaceUser[]; count: number };
 }

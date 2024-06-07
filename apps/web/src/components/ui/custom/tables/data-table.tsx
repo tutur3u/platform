@@ -43,6 +43,7 @@ interface DataTableProps<TData, TValue> {
   count?: number;
   defaultVisibility?: VisibilityState;
   noBottomPadding?: boolean;
+  disableSearch?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -57,6 +58,7 @@ export function DataTable<TData, TValue>({
   count,
   defaultVisibility = {},
   noBottomPadding,
+  disableSearch,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation(namespace);
   const searchParams = useSearchParams();
@@ -109,6 +111,7 @@ export function DataTable<TData, TValue>({
         editContent={editContent}
         filters={filters}
         extraColumns={extraColumns}
+        disableSearch={disableSearch}
       />
       <div className="rounded-md border">
         <Table>

@@ -114,8 +114,12 @@ export default function EditableReportPreview({
                 <div className="flex flex-wrap gap-1">
                   <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
                     {(
-                      (report?.scores?.reduce((a, b) => a + b, 0) ?? 0) /
-                      (report?.scores?.length ?? 1)
+                      (report?.scores
+                        ?.filter((s) => s !== null && s !== undefined)
+                        ?.reduce((a, b) => a + b, 0) ?? 0) /
+                      (report?.scores?.filter(
+                        (s) => s !== null && s !== undefined
+                      )?.length ?? 1)
                     )?.toPrecision(2) || '-'}
                   </div>
                 </div>

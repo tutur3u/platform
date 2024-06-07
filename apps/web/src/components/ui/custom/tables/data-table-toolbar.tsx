@@ -18,6 +18,7 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   filters?: ReactNode[];
   extraColumns?: any[];
+  disableSearch?: boolean;
 }
 
 export function DataTableToolbar<TData>({
@@ -27,6 +28,7 @@ export function DataTableToolbar<TData>({
   table,
   filters,
   extraColumns,
+  disableSearch = false,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation(namespace);
   const searchParams = useSearchParams();
@@ -37,11 +39,13 @@ export function DataTableToolbar<TData>({
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
-        <GeneralSearchBar className="col-span-full w-full md:col-span-1 md:max-w-xs" />
+        {disableSearch || (
+          <GeneralSearchBar className="col-span-full w-full md:col-span-1 md:max-w-xs" />
+        )}
         {filters}
         {isFiltered && (
           <Button
-            variant="destructive"
+            variant="secondary"
             onClick={() => {
               table.resetColumnFilters();
               searchParams.reset();

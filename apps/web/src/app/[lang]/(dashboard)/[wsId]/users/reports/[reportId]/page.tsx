@@ -34,7 +34,6 @@ export default async function WorkspaceUserDetailsPage({
   searchParams: { groupId, userId },
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-
   const { t } = useTranslation('user-data-table');
 
   const report =

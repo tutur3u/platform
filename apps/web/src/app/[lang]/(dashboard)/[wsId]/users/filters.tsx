@@ -83,6 +83,10 @@ export function UserDatabaseFilter({
   const [selectedValues, setSelectedValues] = useState(oldValues);
   const selectedSize = selectedValues.size;
 
+  useEffect(() => {
+    if (searchParams.isEmpty) setSelectedValues(new Set(defaultValues || []));
+  }, [searchParams.isEmpty, defaultValues]);
+
   const hasChanges = useMemo(
     () =>
       Array.from(selectedValues).some((value) => !oldValues.has(value)) ||
@@ -210,7 +214,7 @@ export function UserDatabaseFilter({
 
                           setSelectedValues(new Set(selectedValues));
                         }}
-                        disabled={applying}
+                        disabled={applying || option.count === 0}
                       >
                         <div
                           className={cn(

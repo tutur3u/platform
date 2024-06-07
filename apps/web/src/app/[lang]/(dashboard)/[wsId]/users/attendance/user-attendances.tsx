@@ -48,13 +48,15 @@ export default async function UserAttendances({
           ))}
       </div>
 
-      <DataTablePagination
-        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
-        additionalSizes={[3, 6, 12, 24, 48]}
-        count={count}
-      />
+      {count > 0 && (
+        <DataTablePagination
+          pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
+          pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
+          pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
+          additionalSizes={[3, 6, 12, 24, 48]}
+          count={count}
+        />
+      )}
     </>
   );
 }

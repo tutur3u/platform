@@ -128,103 +128,113 @@ export function DataTablePagination<TData>({
             {isPageOutOfRange
               ? 1
               : (pageIndex ?? table?.getState().pagination.pageIndex ?? 0) + 1}
-          </span>{' '}
-          {t('of')}{' '}
-          <span className="text-primary font-semibold">
-            {pageCount ?? table?.getPageCount() ?? 1}
           </span>
+          {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
+            <>
+              {' '}
+              {t('of')}{' '}
+              <span className="text-primary font-semibold">
+                {pageCount ?? table?.getPageCount() ?? 1}
+              </span>
+            </>
+          )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => {
-              if (table) {
-                table.resetRowSelection();
-                table.setPageIndex(0);
-              }
 
-              searchParams.set({ page: 1 });
-            }}
-            disabled={
-              (pageIndex !== undefined
-                ? pageIndex <= 0
-                : table && !table.getCanPreviousPage()) || isPageOutOfRange
-            }
-          >
-            <span className="sr-only">Go to first page</span>
-            <DoubleArrowLeftIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              if (table) {
-                table.resetRowSelection();
-                table.previousPage();
-              }
+        {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="hidden h-8 w-8 p-0 lg:flex"
+              onClick={() => {
+                if (table) {
+                  table.resetRowSelection();
+                  table.setPageIndex(0);
+                }
 
-              searchParams.set({
-                page: pageIndex ?? table?.getState().pagination.pageIndex ?? 0,
-              });
-            }}
-            disabled={
-              (pageIndex !== undefined
-                ? pageIndex <= 0
-                : table && !table.getCanPreviousPage()) || isPageOutOfRange
-            }
-          >
-            <span className="sr-only">Go to previous page</span>
-            <ChevronLeftIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              if (table) {
-                table.resetRowSelection();
-                table.nextPage();
+                searchParams.set({ page: 1 });
+              }}
+              disabled={
+                (pageIndex !== undefined
+                  ? pageIndex <= 0
+                  : table && !table.getCanPreviousPage()) || isPageOutOfRange
               }
+            >
+              <span className="sr-only">Go to first page</span>
+              <DoubleArrowLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                if (table) {
+                  table.resetRowSelection();
+                  table.previousPage();
+                }
 
-              searchParams.set({
-                page: isPageOutOfRange
-                  ? 2
-                  : (pageIndex ?? table?.getState().pagination.pageIndex ?? 0) +
-                    2,
-              });
-            }}
-            disabled={
-              (pageIndex !== undefined
-                ? pageIndex >= (pageCount ?? 0) - 1
-                : table && !table.getCanNextPage()) && !isPageOutOfRange
-            }
-          >
-            <span className="sr-only">Go to next page</span>
-            <ChevronRightIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => {
-              if (table) {
-                table.resetRowSelection();
-                table.setPageIndex(table.getPageCount() - 1);
+                searchParams.set({
+                  page:
+                    pageIndex ?? table?.getState().pagination.pageIndex ?? 0,
+                });
+              }}
+              disabled={
+                (pageIndex !== undefined
+                  ? pageIndex <= 0
+                  : table && !table.getCanPreviousPage()) || isPageOutOfRange
               }
+            >
+              <span className="sr-only">Go to previous page</span>
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                if (table) {
+                  table.resetRowSelection();
+                  table.nextPage();
+                }
 
-              searchParams.set({
-                page: pageCount ?? table?.getPageCount() ?? 1,
-              });
-            }}
-            disabled={
-              (pageIndex !== undefined
-                ? pageIndex >= (pageCount ?? 0) - 1
-                : table && !table.getCanNextPage()) && !isPageOutOfRange
-            }
-          >
-            <span className="sr-only">Go to last page</span>
-            <DoubleArrowRightIcon className="h-4 w-4" />
-          </Button>
-        </div>
+                searchParams.set({
+                  page: isPageOutOfRange
+                    ? 2
+                    : (pageIndex ??
+                        table?.getState().pagination.pageIndex ??
+                        0) + 2,
+                });
+              }}
+              disabled={
+                (pageIndex !== undefined
+                  ? pageIndex >= (pageCount ?? 0) - 1
+                  : table && !table.getCanNextPage()) && !isPageOutOfRange
+              }
+            >
+              <span className="sr-only">Go to next page</span>
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="hidden h-8 w-8 p-0 lg:flex"
+              onClick={() => {
+                if (table) {
+                  table.resetRowSelection();
+                  table.setPageIndex(table.getPageCount() - 1);
+                }
+
+                searchParams.set({
+                  page: pageCount ?? table?.getPageCount() ?? 1,
+                });
+              }}
+              disabled={
+                (pageIndex !== undefined
+                  ? pageIndex >= (pageCount ?? 0) - 1
+                  : table && !table.getCanNextPage()) && !isPageOutOfRange
+              }
+            >
+              <span className="sr-only">Go to last page</span>
+              <DoubleArrowRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
