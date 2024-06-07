@@ -168,11 +168,11 @@ export default function UserMonthAttendance({
               {currentUserData?.full_name || '-'}
             </Link>
           </div>
-          <div>
+          <div className="flex flex-wrap gap-1">
             {differentGroups?.map((group) => (
               <span
                 key={group.id}
-                className="bg-foreground/5 dark:bg-foreground/10 rounded border px-2 py-0.5 text-xs font-semibold"
+                className="bg-foreground/5 dark:bg-foreground/10 overflow-ellipsis rounded border px-2 py-0.5 text-xs font-semibold"
               >
                 {group.name}
               </span>
@@ -184,7 +184,7 @@ export default function UserMonthAttendance({
       <div>
         <div className="grid h-full gap-8">
           <div key={2024} className="flex h-full flex-col">
-            <div className="mb-4 flex items-center justify-between gap-4 text-xl font-bold md:text-2xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
                 <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
