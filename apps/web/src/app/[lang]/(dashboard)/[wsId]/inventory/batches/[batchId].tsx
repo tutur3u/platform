@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import useSWR from 'swr';
-import { Divider, NumberInput } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
-import { Product } from '@/types/primitives/Product';
-import { ProductBatch } from '@/types/primitives/ProductBatch';
-import { useRouter } from 'next/router';
+import BatchProductInput from '../../../../../../components/inputs/BatchProductInput';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import BatchProductInput from '../../../../../../components/inputs/BatchProductInput';
+import { Product } from '@/types/primitives/Product';
+import { ProductBatch } from '@/types/primitives/ProductBatch';
+import { Divider, NumberInput } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 export default function BatchDetailsPage() {
   const router = useRouter();

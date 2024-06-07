@@ -1,10 +1,10 @@
-import Link from 'next/link';
-import { Document } from '@/types/primitives/Document';
-import moment from 'moment';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
-import useTranslation from 'next-translate/useTranslation';
-import 'moment/locale/vi';
 import { Separator } from '@/components/ui/separator';
+import { Document } from '@/types/primitives/Document';
+import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import moment from 'moment';
+import 'moment/locale/vi';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
 
 interface Props {
   wsId: string;

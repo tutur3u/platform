@@ -1,8 +1,10 @@
+import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { Separator } from '@/components/ui/separator';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { WorkspaceUserReport } from '@/types/db';
 import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Database } from '@/types/supabase';
@@ -13,8 +15,6 @@ import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import { WorkspaceUserReport } from '@/types/db';
 
 interface Props {
   params: {

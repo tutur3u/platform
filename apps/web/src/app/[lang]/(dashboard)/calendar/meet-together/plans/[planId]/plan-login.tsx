@@ -1,19 +1,8 @@
 'use client';
 
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import AvailabilityPlanner from './availability-planner';
+import { useTimeBlocking } from './time-blocking-provider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import {
   Dialog,
   DialogContent,
@@ -23,14 +12,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import useTranslation from 'next-translate/useTranslation';
-import { useState } from 'react';
-import AvailabilityPlanner from './availability-planner';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { useTimeBlocking } from './time-blocking-provider';
-import { User } from '@/types/primitives/User';
-import { usePathname, useRouter } from 'next/navigation';
 import { Timeblock } from '@/types/primitives/Timeblock';
+import { User } from '@/types/primitives/User';
+import { zodResolver } from '@hookform/resolvers/zod';
+import useTranslation from 'next-translate/useTranslation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),

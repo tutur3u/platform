@@ -1,9 +1,6 @@
 'use client';
 
-import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import { MixerHorizontalIcon } from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
-
+import { ScrollArea } from '../../scroll-area';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,9 +9,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import useTranslation from 'next-translate/useTranslation';
-import { ScrollArea } from '../../scroll-area';
+import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { MixerHorizontalIcon } from '@radix-ui/react-icons';
+import { Table } from '@tanstack/react-table';
 import { UserCog } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {

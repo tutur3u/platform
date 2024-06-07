@@ -1,6 +1,6 @@
-import moment from 'moment';
-import { Workspace } from '@/types/primitives/Workspace';
 import { Separator } from '../ui/separator';
+import { Workspace } from '@/types/primitives/Workspace';
+import moment from 'moment';
 
 interface Props {
   ws: Workspace;

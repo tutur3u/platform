@@ -1,4 +1,3 @@
-import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -8,6 +7,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { FormControl, FormLabel } from '@/components/ui/form';
 import {
   Popover,
   PopoverContent,
@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { fetcher } from '@/utils/fetcher';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
-import { FormControl, FormLabel } from '@/components/ui/form';
+import useSWR from 'swr';
 
 export default function AIModelSelector({
   open,

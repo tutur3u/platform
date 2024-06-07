@@ -1,8 +1,5 @@
 'use client';
 
-import { CheckIcon } from '@radix-ui/react-icons';
-
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,13 +16,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import useSearchParams from '@/hooks/useSearchParams';
+import { cn } from '@/lib/utils';
+import { CheckIcon } from '@radix-ui/react-icons';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
+import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface UserDatabaseFilterProps {
   tag: string;

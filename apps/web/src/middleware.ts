@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { match } from '@formatjs/intl-localematcher';
-import Negotiator from 'negotiator';
-import type { User } from '@supabase/auth-helpers-nextjs';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import type { Database } from '@/types/supabase';
+import { match } from '@formatjs/intl-localematcher';
+import type { User } from '@supabase/auth-helpers-nextjs';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import Negotiator from 'negotiator';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { res, user } = await handleSupabaseAuth({ req });

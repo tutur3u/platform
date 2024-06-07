@@ -1,7 +1,7 @@
-import { isValidURL } from '@/utils/url-helper';
-import Image from 'next/image';
 import { Separator } from '../separator';
+import { isValidURL } from '@/utils/url-helper';
 import { Translate } from 'next-translate';
+import Image from 'next/image';
 import { ReactNode } from 'react';
 
 export default function ReportPreview({

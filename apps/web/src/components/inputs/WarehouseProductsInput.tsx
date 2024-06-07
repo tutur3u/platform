@@ -1,8 +1,8 @@
-import { Divider } from '@mantine/core';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import ProductPriceInput from './ProductPriceInput';
-import { useEffect, useState } from 'react';
 import { ProductPrice } from '@/types/primitives/ProductPrice';
+import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
+import { Divider } from '@mantine/core';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 interface Props {

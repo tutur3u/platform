@@ -1,9 +1,9 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
 import { Entity } from '@/types/primitives/Entity';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
 import { Translate } from 'next-translate';
 
 export const basicColumns = (t: Translate): ColumnDef<Entity>[] => [

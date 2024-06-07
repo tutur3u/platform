@@ -1,11 +1,11 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import StorageObjectsTable from './table';
+import { Separator } from '@/components/ui/separator';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { StorageObject } from '@/types/primitives/StorageObject';
-import StorageObjectsTable from './table';
-import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '@/components/ui/separator';
 import { formatBytes } from '@/utils/file-helper';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {

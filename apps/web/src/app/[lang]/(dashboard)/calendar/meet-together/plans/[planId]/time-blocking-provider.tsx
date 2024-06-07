@@ -1,26 +1,25 @@
 'use client';
 
-import {
-  createContext,
-  ReactNode,
-  Touch,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
-
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import minMax from 'dayjs/plugin/minMax';
-import { User as PlatformUser } from '@/types/primitives/User';
-import { Timeblock } from '@/types/primitives/Timeblock';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@/types/primitives/Timeblock';
+import { User as PlatformUser } from '@/types/primitives/User';
 import {
   addTimeblocks,
   durationToTimeblocks,
   removeTimeblocks,
 } from '@/utils/timeblock-helper';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import minMax from 'dayjs/plugin/minMax';
 import { useRouter } from 'next/navigation';
+import {
+  ReactNode,
+  Touch,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);

@@ -1,11 +1,11 @@
-import { notFound, redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Workspace } from '@/types/primitives/Workspace';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { Database } from '@/types/supabase';
+import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/utils/supabase/client';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
 
 export async function getWorkspace(id?: string) {
   if (!id) return null;

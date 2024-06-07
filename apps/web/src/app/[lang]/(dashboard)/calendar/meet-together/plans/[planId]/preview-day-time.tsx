@@ -1,16 +1,16 @@
-import { Timeblock } from '@/types/primitives/Timeblock';
+import { useTimeBlocking } from './time-blocking-provider';
+import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useTimeBlocking } from './time-blocking-provider';
+import { Timeblock } from '@/types/primitives/Timeblock';
 import { timetzToTime } from '@/utils/date-helper';
 import dayjs from 'dayjs';
-import { Separator } from '@/components/ui/separator';
-import { useTheme } from 'next-themes';
 import { ShieldCheck, ShieldMinus } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,

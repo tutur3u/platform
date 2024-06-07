@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
+import { useEffect } from 'react';
 
 const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   // On mount, scroll to current time

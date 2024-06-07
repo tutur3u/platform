@@ -1,10 +1,10 @@
 'use client';
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { useAtTop } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { IconArrowDown } from '@/components/ui/icons';
+import { useAtTop } from '@/lib/hooks/use-at-bottom';
+import { cn } from '@/lib/utils';
+import * as React from 'react';
 
 export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   const isAtTop = useAtTop();

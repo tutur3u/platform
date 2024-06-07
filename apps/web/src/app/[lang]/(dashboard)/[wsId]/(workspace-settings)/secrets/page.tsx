@@ -1,14 +1,14 @@
-import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '@/components/ui/separator';
-import { secretColumns } from '@/data/columns/secrets';
 import SecretEditDialog from './_components/secret-edit-dialog';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Separator } from '@/components/ui/separator';
+import { secretColumns } from '@/data/columns/secrets';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Plus } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 

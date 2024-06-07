@@ -1,27 +1,10 @@
 'use client';
 
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
-import { zodResolver } from '@hookform/resolvers/zod';
-import useTranslation from 'next-translate/useTranslation';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import * as z from 'zod';
-import { getInitials } from '@/utils/name-helper';
-import { SelectField } from '@/components/ui/custom/select-field';
-import { User as UserIcon } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { toast } from '../ui/use-toast';
+import { DatePicker } from './users/date-picker';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { SelectField } from '@/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -39,10 +28,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { DatePicker } from './users/date-picker';
+import { getInitials } from '@/utils/name-helper';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
+import { User as UserIcon } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface UserRowActionsProps {
   row: Row<WorkspaceUser>;

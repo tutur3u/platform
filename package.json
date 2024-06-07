@@ -27,6 +27,7 @@
     "ui:diff": "pnpm --filter ui ui:diff"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "8.57.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.3.1",

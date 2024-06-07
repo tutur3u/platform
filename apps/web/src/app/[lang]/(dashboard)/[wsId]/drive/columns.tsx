@@ -1,13 +1,12 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
-import { StorageObject } from '@/types/primitives/StorageObject';
-import { Translate } from 'next-translate';
 import { StorageObjectRowActions } from './row-actions';
+import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
+import { Translate } from 'next-translate';
 
 export const storageObjectsColumns = (
   t: Translate,

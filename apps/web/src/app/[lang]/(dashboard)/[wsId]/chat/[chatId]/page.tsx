@@ -1,11 +1,11 @@
-import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
+import Chat from '../chat';
+import { getChats } from '../helper';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { AIChat } from '@/types/primitives/ai-chat';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Message } from 'ai';
-import Chat from '../chat';
-import { AIChat } from '@/types/primitives/ai-chat';
-import { getChats } from '../helper';
+import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 

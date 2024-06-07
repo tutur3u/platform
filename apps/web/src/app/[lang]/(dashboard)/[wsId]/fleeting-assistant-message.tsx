@@ -1,23 +1,22 @@
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-
+import { ChatMessageActions } from '@/components/chat-message-actions';
+import { MemoizedReactMarkdown } from '@/components/markdown';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CodeBlock } from '@/components/ui/codeblock';
+import { IconUser } from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
 import { Message } from 'ai';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'katex/dist/katex.min.css';
+import { useTheme } from 'next-themes';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import { cn } from '@/lib/utils';
-import { CodeBlock } from '@/components/ui/codeblock';
-import { MemoizedReactMarkdown } from '@/components/markdown';
-import { IconUser } from '@/components/ui/icons';
-import { ChatMessageActions } from '@/components/chat-message-actions';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import useTranslation from 'next-translate/useTranslation';
-import 'katex/dist/katex.min.css';
-import 'dayjs/locale/vi';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };

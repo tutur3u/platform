@@ -1,8 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import UserMonthAttendance from './user-month-attendance';
-import { cookies } from 'next/headers';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface SearchParams {
   q?: string;

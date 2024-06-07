@@ -1,8 +1,8 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import Slogan from './slogan';
 import { Separator } from '@/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import Slogan from './slogan';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default async function Footer() {
   const { t } = useTranslation('common');

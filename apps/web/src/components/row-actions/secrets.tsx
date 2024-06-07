@@ -1,8 +1,7 @@
 'use client';
 
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
-
+import { toast } from '../ui/use-toast';
+import SecretEditDialog from '@/app/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,12 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from '../ui/use-toast';
-import { useRouter } from 'next/navigation';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import SecretEditDialog from '@/app/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
-import { useState } from 'react';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Row } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface SecretRowActionsProps {
   row: Row<WorkspaceSecret>;

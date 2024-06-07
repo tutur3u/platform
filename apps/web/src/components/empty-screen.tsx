@@ -1,18 +1,18 @@
-import { UseChatHelpers } from 'ai/react';
+import { ChatList } from './chat-list';
+import { Separator } from './ui/separator';
 import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@/components/ui/icons';
+import { capitalize } from '@/lib/utils';
 import { AIChat } from '@/types/primitives/ai-chat';
-import Link from 'next/link';
+import { Message } from 'ai';
+import { UseChatHelpers } from 'ai/react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Message } from 'ai';
-import { ChatList } from './chat-list';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import useTranslation from 'next-translate/useTranslation';
-import { Separator } from './ui/separator';
-import { capitalize } from '@/lib/utils';
-import 'dayjs/locale/vi';
+import Link from 'next/link';
 
 export function EmptyScreen({
   wsId,

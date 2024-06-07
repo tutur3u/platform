@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Divider, TextInput } from '@mantine/core';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Divider, TextInput } from '@mantine/core';
+import { useEffect, useState } from 'react';
 
 export default function NewVitalPage() {
   const { setRootSegment } = useSegments();

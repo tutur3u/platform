@@ -1,9 +1,9 @@
-import { redirect } from 'next/navigation';
-import useTranslation from 'next-translate/useTranslation';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
 import { Separator } from '@/components/ui/separator';
 import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
+import useTranslation from 'next-translate/useTranslation';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';

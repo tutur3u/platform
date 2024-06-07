@@ -1,9 +1,8 @@
-import { Navigation, NavLink } from '@/components/navigation';
+import FleetingNavigator from './fleeting-navigator';
+import { NavLink, Navigation } from '@/components/navigation';
 import { Separator } from '@/components/ui/separator';
 import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
-import FleetingNavigator from './fleeting-navigator';
-
 import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';

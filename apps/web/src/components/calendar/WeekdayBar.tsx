@@ -1,5 +1,5 @@
-import useTranslation from 'next-translate/useTranslation';
 import DayTitle from './DayTitle';
+import useTranslation from 'next-translate/useTranslation';
 
 const WeekdayBar = ({
   view,

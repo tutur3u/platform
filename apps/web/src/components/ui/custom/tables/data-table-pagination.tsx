@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DoubleArrowLeftIcon,
-  DoubleArrowRightIcon,
-} from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
-
+import { Separator } from '../../separator';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -18,8 +11,14 @@ import {
 } from '@/components/ui/select';
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon,
+} from '@radix-ui/react-icons';
+import { Table } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '../../separator';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;

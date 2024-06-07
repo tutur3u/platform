@@ -1,14 +1,14 @@
-import { Separator } from '@/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
 import InviteMemberButton from './_components/invite-member-button';
-import MemberTabs from './_components/member-tabs';
 import MemberList from './_components/member-list';
-import { getWorkspace } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import MemberTabs from './_components/member-tabs';
+import { Separator } from '@/components/ui/separator';
 import { getCurrentUser } from '@/lib/user-helper';
+import { getWorkspace } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient } from '@/utils/supabase/client';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';

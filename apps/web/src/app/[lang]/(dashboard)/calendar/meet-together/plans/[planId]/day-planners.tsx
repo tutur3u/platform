@@ -1,7 +1,7 @@
-import { Timeblock } from '@/types/primitives/Timeblock';
 import DayPlanner from './day-planner';
-import { useEffect } from 'react';
 import { useTimeBlocking } from './time-blocking-provider';
+import { Timeblock } from '@/types/primitives/Timeblock';
+import { useEffect } from 'react';
 
 export default function DayPlanners({
   timeblocks,

@@ -1,21 +1,20 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
+import { UserRowActions } from '@/components/row-actions/users';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import moment from 'moment';
-import { Translate } from 'next-translate';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
+import { Translate } from 'next-translate';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserRowActions } from '@/components/row-actions/users';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { Fragment } from 'react';
 
 export const getUserColumns = (

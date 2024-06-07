@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { NotificationAction as Action } from './notification-action-list';
+import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 interface Props {

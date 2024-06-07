@@ -1,6 +1,3 @@
-import { UseChatHelpers } from 'ai/react';
-import Textarea from 'react-textarea-autosize';
-
 import { Button } from '@/components/ui/button';
 import { IconArrowElbow } from '@/components/ui/icons';
 import {
@@ -9,7 +6,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { UseChatHelpers } from 'ai/react';
 import React from 'react';
+import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {

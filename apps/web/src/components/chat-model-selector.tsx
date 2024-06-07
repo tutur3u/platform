@@ -1,6 +1,5 @@
-import { Check, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import { ScrollArea } from './ui/scroll-area';
+import { Separator } from './ui/separator';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -15,10 +14,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useState } from 'react';
-import { ScrollArea } from './ui/scroll-area';
 import { Model, models, providers } from '@/data/models';
-import { Separator } from './ui/separator';
+import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
 
 export function ChatModelSelector({
   model,

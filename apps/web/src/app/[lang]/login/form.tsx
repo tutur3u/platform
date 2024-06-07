@@ -1,9 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,20 +10,23 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import useTranslation from 'next-translate/useTranslation';
 import { DEV_MODE } from '@/constants/common';
-import Link from 'next/link';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 const FormSchema = z.object({
   email: z.string().email(),

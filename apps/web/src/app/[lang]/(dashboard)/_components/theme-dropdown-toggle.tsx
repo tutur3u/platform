@@ -1,12 +1,11 @@
-import { Moon, Sun } from 'lucide-react';
-
+import { ThemeDropdownItems } from './theme-dropdown-items';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ThemeDropdownItems } from './theme-dropdown-items';
+import { Moon, Sun } from 'lucide-react';
 
 export function ThemeDropdownToggle() {
   return (

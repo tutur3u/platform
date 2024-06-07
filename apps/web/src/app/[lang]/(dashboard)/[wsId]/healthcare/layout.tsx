@@ -1,4 +1,4 @@
-import { Navigation, NavLink } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 import React from 'react';
 
 interface LayoutProps {

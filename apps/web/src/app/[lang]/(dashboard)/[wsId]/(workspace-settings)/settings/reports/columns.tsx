@@ -1,12 +1,11 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
+import { ConfigRowActions } from './row-actions';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';
-import { ConfigRowActions } from './row-actions';
 
 export const configColumns = (t: Translate): ColumnDef<WorkspaceConfig>[] => [
   // {

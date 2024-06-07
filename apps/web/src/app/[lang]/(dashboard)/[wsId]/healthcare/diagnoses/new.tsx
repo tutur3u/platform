@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Divider, TextInput, Textarea } from '@mantine/core';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Divider, TextInput, Textarea } from '@mantine/core';
+import { useEffect, useState } from 'react';
 
 export default function NewDiagnosisPage() {
   const { setRootSegment } = useSegments();

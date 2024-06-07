@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef, ReactElement } from 'react';
-import type { NextPage } from 'next';
-import { nanoid } from 'nanoid';
-import { cloneDeep, throttle } from 'lodash';
+import Cursor from './Cursor';
+import {
+  getRandomColor,
+  getRandomColors,
+  getRandomUniqueColor,
+} from './random-colors';
+import { Coordinates, Message, Payload, User } from './types';
+import { removeFirst } from './utils';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import {
   PostgrestResponse,
   REALTIME_LISTEN_TYPES,
@@ -13,16 +18,11 @@ import {
   RealtimeChannel,
   RealtimePostgresInsertPayload,
 } from '@supabase/supabase-js';
+import { cloneDeep, throttle } from 'lodash';
 import { Loader } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import {
-  getRandomColor,
-  getRandomColors,
-  getRandomUniqueColor,
-} from './random-colors';
-import { Coordinates, Message, Payload, User } from './types';
-import { removeFirst } from './utils';
-import Cursor from './Cursor';
+import { nanoid } from 'nanoid';
+import type { NextPage } from 'next';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 
 const MAX_ROOM_USERS = 50;
 const MAX_DISPLAY_MESSAGES = 50;

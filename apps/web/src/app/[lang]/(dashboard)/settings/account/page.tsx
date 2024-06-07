@@ -1,8 +1,8 @@
-import useTranslation from 'next-translate/useTranslation';
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
-import { getCurrentUser } from '@/lib/user-helper';
 import DisplayNameInput from './display-name-input';
 import EmailInput from './email-input';
+import { getCurrentUser } from '@/lib/user-helper';
+import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 
 export default async function AccountSettingsPage() {

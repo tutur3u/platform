@@ -1,3 +1,14 @@
+import { useUser } from '@/hooks/useUser';
+import { Priority } from '@/types/primitives/Priority';
+import { Task } from '@/types/primitives/Task';
+import { User } from '@/types/primitives/User';
+import { getInitials } from '@/utils/name-helper';
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/solid';
 import {
   ActionIcon,
   Autocomplete,
@@ -8,28 +19,17 @@ import {
   Loader,
   Tabs,
   Text,
-  Textarea,
   TextInput,
+  Textarea,
 } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { Task } from '@/types/primitives/Task';
 import { DateTimePicker } from '@mantine/dates';
-import moment from 'moment';
-import { Priority } from '@/types/primitives/Priority';
 import { useDebouncedValue } from '@mantine/hooks';
+import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
-import useSWR, { mutate } from 'swr';
-import { getInitials } from '@/utils/name-helper';
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/solid';
+import moment from 'moment';
 import Link from 'next/link';
-import { User } from '@/types/primitives/User';
-import { useUser } from '@/hooks/useUser';
+import React, { ChangeEvent, useEffect, useState } from 'react';
+import useSWR, { mutate } from 'swr';
 
 interface TaskEditFormProps {
   task?: Task;

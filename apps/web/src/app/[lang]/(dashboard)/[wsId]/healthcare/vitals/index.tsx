@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useLocalStorage } from '@mantine/hooks';
-import { Divider, Switch } from '@mantine/core';
-import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
-import { Vital } from '@/types/primitives/Vital';
-import useSWR from 'swr';
+import PlusCardButton from '../../../../../../components/common/PlusCardButton';
+import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
+import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
-import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
+import { Vital } from '@/types/primitives/Vital';
+import { Divider, Switch } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 export default function MiscVitalsPage() {
   const { setRootSegment } = useSegments();

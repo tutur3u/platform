@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Workspace } from '@/types/primitives/Workspace';
+import Link from 'next/link';
 
 interface Props {
   ws: Workspace;

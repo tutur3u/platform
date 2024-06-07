@@ -1,11 +1,11 @@
 'use client';
 
+import { Document } from '@/types/primitives/Document';
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
+import useTranslation from 'next-translate/useTranslation';
 import React, { useState } from 'react';
 import { ChangeEvent } from 'react';
-import { Document } from '@/types/primitives/Document';
-import useTranslation from 'next-translate/useTranslation';
 
 interface DocumentEditFormProps {
   doc?: Document;

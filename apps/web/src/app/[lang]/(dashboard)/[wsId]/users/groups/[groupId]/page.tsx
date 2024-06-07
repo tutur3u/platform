@@ -1,14 +1,14 @@
+import { UserDatabaseFilter } from '../../filters';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { getUserColumns } from '@/data/columns/users';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { UserDatabaseFilter } from '../../filters';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
 
 interface SearchParams {
   q?: string;

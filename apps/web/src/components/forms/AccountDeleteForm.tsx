@@ -1,7 +1,7 @@
-import { Button, TextInput } from '@mantine/core';
 import { User } from '@/types/primitives/User';
-import { useEffect, useState } from 'react';
+import { Button, TextInput } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { useEffect, useState } from 'react';
 
 interface Props {
   user: User;

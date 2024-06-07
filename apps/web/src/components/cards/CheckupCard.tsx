@@ -1,13 +1,13 @@
-import { Divider } from '@mantine/core';
-import Link from 'next/link';
-import { Checkup } from '@/types/primitives/Checkup';
-import moment from 'moment';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import useSWR from 'swr';
-import { getGender } from '@/utils/gender-helper';
-import { User } from '@/types/primitives/User';
-import { Diagnosis } from '@/types/primitives/Diagnosis';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Checkup } from '@/types/primitives/Checkup';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
+import { User } from '@/types/primitives/User';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { getGender } from '@/utils/gender-helper';
+import { Divider } from '@mantine/core';
+import moment from 'moment';
+import Link from 'next/link';
+import useSWR from 'swr';
 
 interface Props {
   checkup: Checkup;

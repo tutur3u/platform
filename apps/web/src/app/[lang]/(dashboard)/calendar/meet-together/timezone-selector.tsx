@@ -1,3 +1,4 @@
+import timezones from '../../../../../data/timezones.json';
 import {
   Select,
   SelectContent,
@@ -5,10 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-import timezones from '../../../../../data/timezones.json';
-import useTranslation from 'next-translate/useTranslation';
 import { Timezone } from '@/types/primitives/Timezone';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   value: Timezone | undefined;

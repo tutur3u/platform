@@ -1,5 +1,6 @@
 'use client';
 
+import TimezoneForm, { ApiConfigFormSchema } from './form';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +9,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
+import { Timezone } from '@/types/primitives/Timezone';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import TimezoneForm, { ApiConfigFormSchema } from './form';
-import useTranslation from 'next-translate/useTranslation';
-import { Timezone } from '@/types/primitives/Timezone';
+import * as z from 'zod';
 
 interface Props {
   data: Timezone;

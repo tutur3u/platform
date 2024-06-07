@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Workspace } from '@/types/primitives/Workspace';
 import { StrictModeDroppable } from '@/components/dnd/StrictModeDroppable';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Workspace } from '@/types/primitives/Workspace';
 import { EyeIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
-import { mutate } from 'swr';
 import { showNotification } from '@mantine/notifications';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { DragDropContext, Draggable, DropResult } from 'react-beautiful-dnd';
+import { mutate } from 'swr';
 
 export default function WorkspacesSettingPage() {
   const { workspaces: wss } = useWorkspaces();
