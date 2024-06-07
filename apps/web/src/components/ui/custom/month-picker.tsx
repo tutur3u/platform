@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/popover';
 import useTranslation from 'next-translate/useTranslation';
 import useSearchParams from '@/hooks/useSearchParams';
-import { debounce } from 'lodash';
 import { useState } from 'react';
 
 interface MonthPickerProps {
@@ -46,10 +45,10 @@ export default function MonthPicker({
   const [open, setOpen] = useState(false);
   const [previewDate, setPreviewDate] = useState(currentMonth);
 
-  const updateQuery = debounce((month: string) => {
-    searchParams.set({ month, page: resetPage ? '1' : undefined });
+  const updateQuery = (month: string) => {
+    searchParams.set({ month, page: resetPage ? '1' : undefined }, false);
     setOpen(false);
-  }, 300);
+  };
 
   const firstDayCurrentYear = new Date(previewDate.getFullYear(), 0, 1);
 
@@ -74,12 +73,7 @@ export default function MonthPicker({
         <Button
           size="xs"
           variant="outline"
-          onClick={() =>
-            setOpen((prev) => {
-              console.log(prev);
-              return !prev;
-            })
-          }
+          onClick={() => setOpen((prev) => !prev)}
           className={className}
         >
           {currentMonth.toLocaleString(lang, {

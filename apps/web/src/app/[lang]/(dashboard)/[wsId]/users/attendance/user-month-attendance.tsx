@@ -1,6 +1,9 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import {
+  WorkspaceUser,
+  WorkspaceUserAttendance,
+} from '@/types/primitives/WorkspaceUser';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -9,11 +12,17 @@ import { Button } from '@/components/ui/button';
 import useSearchParams from '@/hooks/useSearchParams';
 import { format, parse } from 'date-fns';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function UserMonthAttendance({
   wsId,
   user: initialUser,
-  defaultIncludedGroups,
 }: {
   wsId: string;
   user: WorkspaceUser & { href: string };
@@ -33,74 +42,41 @@ export default function UserMonthAttendance({
     [currentYYYYMM]
   );
 
-  const queryIncludedGroups = useMemo(
-    () => searchParams.get('includedGroups'),
-    [searchParams]
-  );
-
-  const currentIncludedGroups = useMemo(
-    () =>
-      defaultIncludedGroups
-        ? defaultIncludedGroups
-        : typeof queryIncludedGroups === 'string'
-          ? [queryIncludedGroups]
-          : queryIncludedGroups ?? [],
-    [defaultIncludedGroups, queryIncludedGroups]
-  );
-
-  const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(currentMonth);
-  const [currentUserData, setCurrentUserData] = useState(initialUser);
-  const [currentUserGroups] = useState<string[]>(currentIncludedGroups);
 
   useEffect(() => {
-    const fetchData = async (includedGroups?: string[]) => {
-      setCurrentDate(currentMonth);
-      setLoading(true);
+    setCurrentDate(currentMonth);
+  }, [currentMonth]);
 
-      const { data } = await getData(
-        wsId,
-        initialUser.id,
-        format(new Date(currentMonth), 'yyyy-MM'),
-        includedGroups
-      );
+  const {
+    isPending,
+    isError,
+    data: queryData,
+  } = useQuery({
+    queryKey: [
+      'workspaces',
+      wsId,
+      'users',
+      initialUser.id,
+      'attendance',
+      {
+        month: format(new Date(currentDate), 'yyyy-MM'),
+      }, // 5
+    ],
+    queryFn: () =>
+      getData(wsId, initialUser.id, format(new Date(currentDate), 'yyyy-MM')),
+  });
 
-      setCurrentUserData({ ...initialUser, ...data });
-      setLoading(false);
-    };
+  const data = {
+    ...initialUser,
+    ...queryData?.data,
+  };
 
-    fetchData(currentUserGroups);
-  }, [wsId, currentMonth, initialUser, currentUserGroups]);
-
-  const handlePrev = async () => {
+  const handlePrev = async () =>
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));
-    setLoading(true);
 
-    const { data } = await getData(
-      wsId,
-      initialUser.id,
-      format(new Date(currentDate), 'yyyy-MM'),
-      currentIncludedGroups
-    );
-
-    setCurrentUserData({ ...currentUserData, ...data });
-    setLoading(false);
-  };
-
-  const handleNext = async () => {
+  const handleNext = async () =>
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)));
-    setLoading(true);
-
-    const { data } = await getData(
-      wsId,
-      initialUser.id,
-      format(new Date(currentDate), 'yyyy-MM'),
-      currentIncludedGroups
-    );
-
-    setCurrentUserData({ ...currentUserData, ...data });
-    setLoading(false);
-  };
 
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(lang, { month: '2-digit' });
@@ -125,7 +101,7 @@ export default function UserMonthAttendance({
     date.getMonth() === currentDate.getMonth() &&
     date.getFullYear() === currentDate.getFullYear();
 
-  const isDateAttended = (user: WorkspaceUser, currentDate: Date) =>
+  const isDateAttended = (user: Partial<WorkspaceUser>, currentDate: Date) =>
     user.attendance?.some((attendance) => {
       const attendanceDate = new Date(attendance.date);
       return (
@@ -136,7 +112,7 @@ export default function UserMonthAttendance({
       );
     });
 
-  const isDateAbsent = (user: WorkspaceUser, currentDate: Date) =>
+  const isDateAbsent = (user: Partial<WorkspaceUser>, currentDate: Date) =>
     user.attendance?.some((attendance) => {
       const attendanceDate = new Date(attendance.date);
       return (
@@ -147,8 +123,42 @@ export default function UserMonthAttendance({
       );
     });
 
-  const differentGroups = currentUserData.attendance
+  function getAttendanceGroupNames(
+    date: Date,
+    attendanceData: WorkspaceUserAttendance[]
+  ): string[] {
+    if (!attendanceData) return [];
+
+    const filteredAttendance = attendanceData.filter((attendance) => {
+      const attendanceDate = new Date(attendance.date);
+      return (
+        attendanceDate.getDate() === date.getDate() &&
+        attendanceDate.getMonth() === date.getMonth() &&
+        attendanceDate.getFullYear() === date.getFullYear()
+      );
+    });
+
+    const uniqueGroups = filteredAttendance.reduce(
+      (acc, curr) => {
+        Array.isArray(curr.groups)
+          ? curr.groups.forEach((group) => {
+              if (!acc.some((g) => g.id === group.id)) {
+                acc.push(group);
+              }
+            })
+          : curr.groups && acc.push(curr.groups);
+
+        return acc;
+      },
+      [] as { id: string; name: string }[]
+    );
+
+    return uniqueGroups.map((group) => group.name);
+  }
+
+  const differentGroups = data?.attendance
     ?.reduce((acc: { id: string; name: string }[], attendance) => {
+      if (!attendance.groups) return acc;
       return acc.concat(attendance.groups);
     }, [])
     .filter(
@@ -159,23 +169,23 @@ export default function UserMonthAttendance({
     <div className="rounded-lg border p-4">
       <div className="mb-2 flex w-full items-center border-b pb-2">
         <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
-        <div className="ml-2 w-full">
+        <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
           <div className="flex items-center justify-between gap-1">
             <Link
-              href={currentUserData.href}
+              href={data.href}
               className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
             >
-              {currentUserData?.full_name || '-'}
+              {data?.full_name || '-'}
             </Link>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {differentGroups?.map((group) => (
-              <span
-                key={group.id}
-                className="bg-foreground/5 dark:bg-foreground/10 overflow-ellipsis rounded border px-2 py-0.5 text-xs font-semibold"
+          <div className="scrollbar-none flex items-center gap-1 overflow-auto">
+            {differentGroups?.map((group, idx) => (
+              <div
+                key={group.id + idx}
+                className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
               >
                 {group.name}
-              </span>
+              </div>
             ))}
           </div>
         </div>
@@ -193,17 +203,17 @@ export default function UserMonthAttendance({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                {currentUserData.attendance && (
+                {data.attendance && (
                   <div
                     className={`bg-foreground/5 rounded border px-2 py-0.5 text-xs ${
-                      currentUserData.attendance.length === 0 || loading
+                      data.attendance.length === 0 || isPending || isError
                         ? 'opacity-50'
                         : ''
                     }`}
                   >
                     <span className="text-green-500 dark:text-green-300">
                       {
-                        currentUserData.attendance.filter(
+                        data.attendance.filter(
                           (attendance) => attendance.status === 'PRESENT'
                         ).length
                       }
@@ -211,14 +221,14 @@ export default function UserMonthAttendance({
                     +{' '}
                     <span className="text-red-500 dark:text-red-300">
                       {
-                        currentUserData.attendance.filter(
+                        data.attendance.filter(
                           (attendance) => attendance.status === 'ABSENT'
                         ).length
                       }
                     </span>{' '}
                     ={' '}
                     <span className="text-blue-500 dark:text-blue-300">
-                      {currentUserData.attendance.length}
+                      {data.attendance.length}
                     </span>
                   </div>
                 )}
@@ -254,23 +264,71 @@ export default function UserMonthAttendance({
               </div>
 
               <div className="grid grid-cols-7 gap-1 md:gap-2">
-                {daysInMonth.map((day, idx) => (
-                  <Fragment key={`day-${idx}`}>
-                    <div
-                      className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
-                        !isCurrentMonth(day) || loading
-                          ? 'text-foreground/20 border-transparent'
-                          : isDateAttended(currentUserData, day)
-                            ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
-                            : isDateAbsent(currentUserData, day)
-                              ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
-                              : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
-                      }`}
-                    >
-                      {day.getDate()}
-                    </div>
-                  </Fragment>
-                ))}
+                <TooltipProvider delayDuration={0}>
+                  {daysInMonth.map((day, idx) => {
+                    if (isError || !isCurrentMonth(day))
+                      return (
+                        <div
+                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                          className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg"
+                        >
+                          {day.getDate()}
+                        </div>
+                      );
+
+                    if (!isDateAttended(data, day) && !isDateAbsent(data, day))
+                      return (
+                        <div
+                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg"
+                        >
+                          {day.getDate()}
+                        </div>
+                      );
+
+                    return (
+                      <Fragment
+                        key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger
+                            disabled={isError || !isCurrentMonth(day)}
+                            asChild
+                          >
+                            <div
+                              className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
+                                isDateAttended(data, day)
+                                  ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
+                                  : isDateAbsent(data, day)
+                                    ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
+                                    : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
+                              }`}
+                            >
+                              {day.getDate()}
+                            </div>
+                          </TooltipTrigger>
+
+                          <TooltipContent>
+                            {/* Display group name for current day */}
+                            {getAttendanceGroupNames(
+                              day,
+                              data.attendance || []
+                            ).map((groupName, idx) => (
+                              <div
+                                key={groupName + idx}
+                                className="flex items-center gap-1"
+                              >
+                                <span className="text-xs font-semibold">
+                                  {groupName}
+                                </span>
+                              </div>
+                            ))}
+                          </TooltipContent>
+                        </Tooltip>
+                      </Fragment>
+                    );
+                  })}
+                </TooltipProvider>
               </div>
             </div>
           </div>
@@ -280,12 +338,7 @@ export default function UserMonthAttendance({
   );
 }
 
-async function getData(
-  wsId: string,
-  userId: string,
-  month: string,
-  includedGroups?: string[]
-) {
+async function getData(wsId: string, userId: string, month: string) {
   const supabase = createClientComponentClient();
 
   const startDate = new Date(month);
@@ -303,10 +356,6 @@ async function getData(
     .lt('attendance.date', endDate.toISOString())
     .order('full_name', { ascending: true, nullsFirst: false })
     .eq('id', userId);
-
-  if (includedGroups && includedGroups.length > 0) {
-    queryBuilder.in('attendance.group_id', includedGroups);
-  }
 
   const { data, error } = await queryBuilder.single();
 
