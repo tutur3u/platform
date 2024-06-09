@@ -1,5 +1,5 @@
-import { FC } from 'react';
 import { User } from './types';
+import { FC } from 'react';
 
 interface Props {
   users: Record<string, User>;

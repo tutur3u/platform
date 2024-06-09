@@ -1,0 +1,11 @@
+{
+    "group_tag": "Gắn thẻ nhóm",
+    "group_tags": "Gắn thẻ nhóm",
+    "description": "Gom các nhóm người dùng lại với nhau để quản lý dễ dàng hơn.",
+    "name": "Tên",
+    "value": "Giá trị",
+    "create_tag": "Tạo gắn thẻ",
+    "edit_tag": "Sửa gắn thẻ",
+    "add_new_group_tag": "Thêm một gắn thẻ nhóm mới",
+    "edit_existing_group_tag": "Sửa gắn thẻ nhóm"
+}

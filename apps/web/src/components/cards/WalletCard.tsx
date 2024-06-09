@@ -1,8 +1,8 @@
 'use client';
 
+import { Wallet } from '@/types/primitives/Wallet';
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Wallet } from '@/types/primitives/Wallet';
 
 interface Props {
   wallet: Wallet;

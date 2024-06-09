@@ -1,8 +1,8 @@
-import Link from 'next/link';
+import { Separator } from '../ui/separator';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getGender } from '@/utils/gender-helper';
 import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '../ui/separator';
+import Link from 'next/link';
 
 interface Props {
   wsId: string;

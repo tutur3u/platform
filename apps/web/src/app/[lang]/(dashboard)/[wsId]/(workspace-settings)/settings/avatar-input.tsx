@@ -3,15 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-
-import { v4 as UUIDv4 } from 'uuid';
+import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
+import { Workspace } from '@/types/primitives/Workspace';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Check, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Workspace } from '@/types/primitives/Workspace';
-import Image from 'next/image';
-import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
+import { v4 as UUIDv4 } from 'uuid';
 
 interface Props {
   workspace: Workspace;

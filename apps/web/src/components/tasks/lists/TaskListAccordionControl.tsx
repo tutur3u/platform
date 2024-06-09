@@ -1,3 +1,6 @@
+import TaskListEditForm from '../../forms/TaskListEditForm';
+import { TaskList } from '@/types/primitives/TaskList';
+import { Workspace } from '@/types/primitives/Workspace';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Accordion,
@@ -7,9 +10,6 @@ import {
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import { mutate } from 'swr';
-import { TaskList } from '@/types/primitives/TaskList';
-import TaskListEditForm from '../../forms/TaskListEditForm';
-import { Workspace } from '@/types/primitives/Workspace';
 
 const TaskListAccordionControl = (
   props: AccordionControlProps & {

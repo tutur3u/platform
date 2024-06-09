@@ -1,10 +1,9 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
 import { Product } from '@/types/primitives/Product';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
 import { Translate } from 'next-translate';
 
 export const productColumns = (t: Translate): ColumnDef<Product>[] => [

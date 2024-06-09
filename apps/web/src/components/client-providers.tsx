@@ -1,8 +1,8 @@
 'use client';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { ReactNode } from 'react';
 
 const queryClient = new QueryClient();

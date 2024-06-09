@@ -1,9 +1,9 @@
+import AIPromptsTable from './table';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { AIPrompt } from '@/types/db';
+import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
-import AIPromptsTable from './table';
-import { Database } from '@/types/supabase';
-import { AIPrompt } from '@/types/db';
 
 interface Props {
   params: {

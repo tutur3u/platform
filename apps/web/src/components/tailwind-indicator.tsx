@@ -1,4 +1,4 @@
-import { SHOW_TAILWIND_INDICATOR, PROD_MODE } from '@/constants/common';
+import { PROD_MODE, SHOW_TAILWIND_INDICATOR } from '@/constants/common';
 
 export function TailwindIndicator() {
   if (!SHOW_TAILWIND_INDICATOR || PROD_MODE) return null;

@@ -55,7 +55,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

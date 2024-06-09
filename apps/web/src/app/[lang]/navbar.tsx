@@ -1,18 +1,18 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { UserNav } from './user-nav';
+import LogoTitle from './logo-title';
+import NavbarSeparator from './navbar-separator';
+import Navlinks from './navlinks';
 import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
+import { UserNav } from './user-nav';
+import WorkspaceSelect from './workspace-select';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
+import { getCurrentUser } from '@/lib/user-helper';
+import { getWorkspaces } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import WorkspaceSelect from './workspace-select';
-import LogoTitle from './logo-title';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Suspense } from 'react';
-import { getWorkspaces } from '@/lib/workspace-helper';
-import { getCurrentUser } from '@/lib/user-helper';
-import Navlinks from './navlinks';
-import NavbarSeparator from './navbar-separator';
 
 export default async function Navbar() {
   const supabase = createServerComponentClient({ cookies });

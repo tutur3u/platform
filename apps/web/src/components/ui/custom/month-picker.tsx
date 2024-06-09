@@ -1,5 +1,12 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import useSearchParams from '@/hooks/useSearchParams';
 import {
   add,
   eachMonthOfInterval,
@@ -9,15 +16,7 @@ import {
   parse,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import useTranslation from 'next-translate/useTranslation';
-import useQuery from '@/hooks/useQuery';
-import { debounce } from 'lodash';
 import { useState } from 'react';
 
 interface MonthPickerProps {
@@ -30,9 +29,9 @@ export default function MonthPicker({
   className,
 }: MonthPickerProps) {
   const { lang } = useTranslation('common');
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
-  const queryMonth = query.get('month');
+  const queryMonth = searchParams.get('month');
 
   const currentYYYYMM = Array.isArray(queryMonth)
     ? queryMonth[0]
@@ -46,10 +45,10 @@ export default function MonthPicker({
   const [open, setOpen] = useState(false);
   const [previewDate, setPreviewDate] = useState(currentMonth);
 
-  const updateQuery = debounce((month: string) => {
-    query.set({ month, page: resetPage ? '1' : undefined });
+  const updateQuery = (month: string) => {
+    searchParams.set({ month, page: resetPage ? '1' : undefined }, false);
     setOpen(false);
-  }, 300);
+  };
 
   const firstDayCurrentYear = new Date(previewDate.getFullYear(), 0, 1);
 
@@ -74,12 +73,7 @@ export default function MonthPicker({
         <Button
           size="xs"
           variant="outline"
-          onClick={() =>
-            setOpen((prev) => {
-              console.log(prev);
-              return !prev;
-            })
-          }
+          onClick={() => setOpen((prev) => !prev)}
           className={className}
         >
           {currentMonth.toLocaleString(lang, {

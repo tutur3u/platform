@@ -1,13 +1,13 @@
 'use client';
 
-import { Divider } from '@mantine/core';
-import Link from 'next/link';
-import { Transaction } from '@/types/primitives/Transaction';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import moment from 'moment';
+import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
-import useSWR from 'swr';
+import { Divider } from '@mantine/core';
+import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import useSWR from 'swr';
 
 interface Props {
   wsId?: string;

@@ -1,15 +1,15 @@
 'use client';
 
+import { AmbientPopover } from './ambient-popover';
+import { CameraController } from './camera-controller';
+import { CameraPopover } from './camera-popover';
+import { Cube } from './cube';
+import { CubePopover } from './cube-popover';
+import { LightBulb } from './light-bulb';
+import ResetButton from './reset-button';
+import { Size } from './types';
 import { Canvas } from '@react-three/fiber';
 import { useState } from 'react';
-import { CubePopover } from './cube-popover';
-import { Size } from './types';
-import { Cube } from './cube';
-import { CameraPopover } from './camera-popover';
-import { CameraController } from './camera-controller';
-import { LightBulb } from './light-bulb';
-import { AmbientPopover } from './ambient-popover';
-import ResetButton from './reset-button';
 
 const defaultSize: Size = {
   x: 100,

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { EventParticipant } from '@/types/primitives/EventParticipant';
-import { Accordion, Button, Divider, Loader } from '@mantine/core';
-import useSWR, { mutate } from 'swr';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import EventParticipantCard from './EventParticipantCard';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { EventParticipant } from '@/types/primitives/EventParticipant';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { Accordion, Button, Divider, Loader } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
+import useSWR, { mutate } from 'swr';
 
 interface Props {
   wsId: string;

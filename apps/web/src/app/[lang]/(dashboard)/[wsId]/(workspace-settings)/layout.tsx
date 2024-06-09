@@ -1,4 +1,4 @@
-import { Navigation, NavLink } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';

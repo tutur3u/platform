@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import FleetingAssistant from './fleeting-assistant';
-import { usePathname } from 'next/navigation';
+import FleetingNavigatorMenu from './fleeting-navigator-menu';
+import { toast } from '@/components/ui/use-toast';
+import { AIChat } from '@/types/primitives/ai-chat';
 import { useClickOutside } from '@mantine/hooks';
 import { useChat } from 'ai/react';
-import { AIChat } from '@/types/primitives/ai-chat';
-import { toast } from '@/components/ui/use-toast';
 import useTranslation from 'next-translate/useTranslation';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const disabledPaths = [`/${wsId}/chat`, `/${wsId}/ai/playground`];

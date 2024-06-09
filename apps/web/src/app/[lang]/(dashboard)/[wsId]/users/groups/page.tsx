@@ -1,10 +1,10 @@
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
-import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { UserGroup } from '@/types/primitives/UserGroup';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 

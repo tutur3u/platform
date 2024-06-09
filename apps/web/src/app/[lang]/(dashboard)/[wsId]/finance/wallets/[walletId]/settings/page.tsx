@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import SettingItemCard from '../../../../../../../../components/settings/SettingItemCard';
+import { Wallet } from '@/types/primitives/Wallet';
 import {
   Checkbox,
   Divider,
@@ -9,11 +10,10 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import SettingItemCard from '../../../../../../../../components/settings/SettingItemCard';
-import { useRouter } from 'next/navigation';
-import { Wallet } from '@/types/primitives/Wallet';
-import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 interface Props {
   params: {

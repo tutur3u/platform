@@ -1,12 +1,12 @@
 'use client';
 
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { StorageObject } from '@/types/primitives/StorageObject';
-import { useState } from 'react';
-import { Dialog } from '@/components/ui/dialog';
 import { storageObjectsColumns } from './columns';
-import useTranslation from 'next-translate/useTranslation';
 import { StorageObjectForm } from './form';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Dialog } from '@/components/ui/dialog';
+import { StorageObject } from '@/types/primitives/StorageObject';
+import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;

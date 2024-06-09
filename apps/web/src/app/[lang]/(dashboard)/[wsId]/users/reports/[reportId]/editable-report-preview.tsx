@@ -1,16 +1,16 @@
 'use client';
 
-import { WorkspaceUserReport } from '@/types/db';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import UserReportForm from './form';
-import * as z from 'zod';
-import { Separator } from '@/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import UserReportForm from './form';
 import ReportPreview from '@/components/ui/custom/report-preview';
-import { ReactNode } from 'react';
+import { Separator } from '@/components/ui/separator';
+import { WorkspaceUserReport } from '@/types/db';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { zodResolver } from '@hookform/resolvers/zod';
+import useTranslation from 'next-translate/useTranslation';
+import { ReactNode } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 export const UserReportFormSchema = z.object({
   title: z.string(),
@@ -114,8 +114,12 @@ export default function EditableReportPreview({
                 <div className="flex flex-wrap gap-1">
                   <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
                     {(
-                      (report?.scores?.reduce((a, b) => a + b, 0) ?? 0) /
-                      (report?.scores?.length ?? 1)
+                      (report?.scores
+                        ?.filter((s) => s !== null && s !== undefined)
+                        ?.reduce((a, b) => a + b, 0) ?? 0) /
+                      (report?.scores?.filter(
+                        (s) => s !== null && s !== undefined
+                      )?.length ?? 1)
                     )?.toPrecision(2) || '-'}
                   </div>
                 </div>

@@ -1,11 +1,11 @@
-import { User } from '@/types/primitives/User';
 import UserCard from '../../../../../../../components/cards/UserCard';
 import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
-import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 import { Separator } from '@/components/ui/separator';
+import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import { User } from '@/types/primitives/User';
 import { createAdminClient } from '@/utils/supabase/client';
 import { notFound } from 'next/navigation';
-import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 
 interface Props {
   params: {

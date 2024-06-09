@@ -1,4 +1,9 @@
-import { useEffect } from 'react';
+import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Transaction } from '@/types/primitives/Transaction';
+import { Wallet } from '@/types/primitives/Wallet';
+import { EyeIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Checkbox,
@@ -7,18 +12,13 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { useSegments } from '@/hooks/useSegments';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { Wallet } from '@/types/primitives/Wallet';
-import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import { useRouter } from 'next/router';
-import { Transaction } from '@/types/primitives/Transaction';
-import useSWR from 'swr';
 import { DateTimePicker } from '@mantine/dates';
-import useTranslation from 'next-translate/useTranslation';
-import { EyeIcon } from '@heroicons/react/24/outline';
 import 'dayjs/locale/vi';
 import moment from 'moment';
+import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import useSWR from 'swr';
 
 export default function TransactionDetailsPage() {
   const { setRootSegment } = useSegments();

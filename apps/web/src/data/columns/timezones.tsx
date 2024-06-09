@@ -1,13 +1,12 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
+import { TimezoneRowActions } from '@/components/row-actions/timezones';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { Timezone, TimezoneStatus } from '@/types/primitives/Timezone';
+import { ColumnDef } from '@tanstack/react-table';
+import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';
 import moment from 'moment';
 import { Translate } from 'next-translate';
-import { Timezone, TimezoneStatus } from '@/types/primitives/Timezone';
-import { TimezoneRowActions } from '@/components/row-actions/timezones';
-import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';
 
 export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   // {

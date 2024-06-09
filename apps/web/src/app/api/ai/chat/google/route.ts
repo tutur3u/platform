@@ -1,8 +1,8 @@
 import { createAdminClient } from '@/utils/supabase/client';
 import {
   GoogleGenerativeAI,
-  HarmCategory,
   HarmBlockThreshold,
+  HarmCategory,
 } from '@google/generative-ai';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';

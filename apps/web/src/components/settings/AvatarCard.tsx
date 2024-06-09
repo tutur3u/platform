@@ -1,5 +1,5 @@
 import { Cog6ToothIcon } from '@heroicons/react/24/solid';
-import { Menu, ActionIcon, FileButton, Button, Avatar } from '@mantine/core';
+import { ActionIcon, Avatar, Button, FileButton, Menu } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 

@@ -1,12 +1,12 @@
 'use client';
 
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Transaction } from '@/types/primitives/Transaction';
-import { useState } from 'react';
-import { Dialog } from '@/components/ui/dialog';
 import { transactionColumns } from './columns';
-import useTranslation from 'next-translate/useTranslation';
 import { TransactionForm } from './form';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Dialog } from '@/components/ui/dialog';
+import { Transaction } from '@/types/primitives/Transaction';
+import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;

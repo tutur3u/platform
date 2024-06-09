@@ -1,10 +1,10 @@
+import { useCalendar } from '@/hooks/useCalendar';
+import { getCardColor } from '@/utils/color-helper';
 import { PlayIcon, StopIcon } from '@heroicons/react/24/solid';
 import { Divider } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { useCalendar } from '@/hooks/useCalendar';
-import { getCardColor } from '@/utils/color-helper';
 
 const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();

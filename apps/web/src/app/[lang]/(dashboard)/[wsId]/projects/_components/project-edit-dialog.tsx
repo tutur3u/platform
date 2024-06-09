@@ -1,5 +1,6 @@
 'use client';
 
+import ProjectForm, { ApiConfigFormSchema } from './project-form';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +9,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import ProjectForm, { ApiConfigFormSchema } from './project-form';
-import useTranslation from 'next-translate/useTranslation';
-import { TaskBoard } from '@/types/primitives/TaskBoard';
+import * as z from 'zod';
 
 interface Props {
   data?: TaskBoard;

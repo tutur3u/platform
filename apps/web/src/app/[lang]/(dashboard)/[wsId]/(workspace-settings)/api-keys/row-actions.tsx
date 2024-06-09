@@ -1,8 +1,6 @@
 'use client';
 
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
-
+import ApiKeyEditDialog from './edit-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,12 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from '@/components/ui/use-toast';
+import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Row } from '@tanstack/react-table';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { toast } from '@/components/ui/use-toast';
-import ApiKeyEditDialog from './edit-dialog';
 
 interface ApiKeyRowActionsProps {
   row: Row<WorkspaceApiKey>;

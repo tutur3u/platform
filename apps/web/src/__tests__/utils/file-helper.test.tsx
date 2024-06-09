@@ -1,5 +1,5 @@
 import { formatBytes } from '@/utils/file-helper';
-import { expect, describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('formatBytes', () => {
   it('should format bytes to KB with 3 decimals when bytes is less than 1024', () => {

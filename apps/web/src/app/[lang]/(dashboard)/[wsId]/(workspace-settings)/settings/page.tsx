@@ -1,15 +1,15 @@
-import useTranslation from 'next-translate/useTranslation';
+import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
+import WorkspaceLogoSettings from './logo';
 import Security from './security';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspace } from '@/lib/workspace-helper';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { getWorkspace } from '@/lib/workspace-helper';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
-import WorkspaceLogoSettings from './logo';
-import WorkspaceAvatarSettings from './avatar';
 
 export const dynamic = 'force-dynamic';
 

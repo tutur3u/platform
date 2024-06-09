@@ -1,18 +1,17 @@
 'use client';
 
-import useSWR, { mutate } from 'swr';
-
-import {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-} from 'react';
+import { Team } from '@/types/primitives/Team';
 import { Workspace } from '@/types/primitives/Workspace';
 import { useUser } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
-import { Team } from '@/types/primitives/Team';
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+import useSWR, { mutate } from 'swr';
 
 const WorkspaceContext = createContext({
   workspaces: undefined as Workspace[] | undefined,

@@ -1,10 +1,10 @@
 'use client';
 
 import DatePlanner from './date-planner';
-import useTranslation from 'next-translate/useTranslation';
+import { useTimeBlocking } from './time-blocking-provider';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@/types/primitives/Timeblock';
-import { useTimeBlocking } from './time-blocking-provider';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function AllAvailabilities({
   plan,

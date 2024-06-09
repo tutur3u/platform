@@ -1,6 +1,6 @@
-import { Divider, NumberInput } from '@mantine/core';
-import { XMarkIcon } from '@heroicons/react/24/solid';
 import { ProductPrice } from '@/types/primitives/ProductPrice';
+import { XMarkIcon } from '@heroicons/react/24/solid';
+import { Divider, NumberInput } from '@mantine/core';
 
 interface Props {
   price: ProductPrice;

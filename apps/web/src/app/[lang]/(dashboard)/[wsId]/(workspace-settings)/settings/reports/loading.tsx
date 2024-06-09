@@ -1,5 +1,5 @@
-import { Separator } from '@/components/ui/separator';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Separator } from '@/components/ui/separator';
 
 export default function Loading() {
   return (

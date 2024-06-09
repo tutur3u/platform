@@ -1,6 +1,6 @@
+import { Size } from './types';
 import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
-import { Size } from './types';
 
 export function CameraController({
   position,

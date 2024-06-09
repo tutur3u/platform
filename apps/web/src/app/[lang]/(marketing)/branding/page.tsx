@@ -1,6 +1,6 @@
-import useTranslation from 'next-translate/useTranslation';
 import LogoTab from '@/components/branding/LogoTab';
 import { Separator } from '@/components/ui/separator';
+import useTranslation from 'next-translate/useTranslation';
 
 const LandingPage = () => {
   const { t } = useTranslation('branding');

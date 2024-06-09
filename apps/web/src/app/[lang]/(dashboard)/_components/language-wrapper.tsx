@@ -1,6 +1,6 @@
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { LanguageDropdownItem } from './language-dropdown-item';
 import i18n from '../../../../../i18n.json';
+import { LanguageDropdownItem } from './language-dropdown-item';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { cookies as c } from 'next/headers';
 
 interface Props {

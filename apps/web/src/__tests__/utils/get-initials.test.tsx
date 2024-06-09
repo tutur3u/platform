@@ -1,5 +1,5 @@
 import { getInitials } from '@/utils/name-helper';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('getInitials', () => {
   it('should return an empty string if the name is undefined', () => {

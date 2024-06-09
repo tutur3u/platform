@@ -1,9 +1,9 @@
-import useTranslation from 'next-translate/useTranslation';
-import { useTimeBlocking } from './time-blocking-provider';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { User as PlatformUser } from '@/types/primitives/User';
 import AccountBadge from './account-badge';
+import { useTimeBlocking } from './time-blocking-provider';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { User as PlatformUser } from '@/types/primitives/User';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function LoggedInAsButton({
   platformUser,

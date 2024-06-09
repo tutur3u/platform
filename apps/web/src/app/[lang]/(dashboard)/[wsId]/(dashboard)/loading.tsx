@@ -1,5 +1,5 @@
-import { Separator } from '@/components/ui/separator';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { Separator } from '@/components/ui/separator';
 
 export default function Loading() {
   return (

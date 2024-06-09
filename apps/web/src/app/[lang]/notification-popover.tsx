@@ -1,20 +1,20 @@
+import NotificationActionList, {
+  NotificationAction,
+} from './notification-action-list';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Bell } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { getWorkspaceInvites } from '@/lib/workspace-helper';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import NotificationActionList, {
-  NotificationAction,
-} from './notification-action-list';
-import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { Bell } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 
 export default async function NotificationPopover() {
   const { t, lang: locale } = useTranslation('notifications');

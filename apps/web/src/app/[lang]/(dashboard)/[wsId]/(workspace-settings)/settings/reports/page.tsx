@@ -1,14 +1,14 @@
-import useTranslation from 'next-translate/useTranslation';
-import { Separator } from '@/components/ui/separator';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { configColumns } from './columns';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { ReactNode } from 'react';
 import ReportPreview from '@/components/ui/custom/report-preview';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Separator } from '@/components/ui/separator';
 import { availableConfigs } from '@/constants/configs/reports';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import useTranslation from 'next-translate/useTranslation';
+import { cookies } from 'next/headers';
+import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
 

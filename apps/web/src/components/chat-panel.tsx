@@ -1,23 +1,23 @@
-import { type UseChatHelpers } from 'ai/react';
-import { Button } from '@/components/ui/button';
+import { ChatModelSelector } from './chat-model-selector';
+import { ScrollToTopButton } from './scroll-to-top-button';
+import { ScrollArea } from './ui/scroll-area';
+import { Separator } from './ui/separator';
 import { PromptForm } from '@/components/prompt-form';
 import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
-import { Separator } from './ui/separator';
-import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Model } from '@/data/models';
+import { AIChat } from '@/types/primitives/ai-chat';
+import { Message } from 'ai';
+import { type UseChatHelpers } from 'ai/react';
 import {
   ArrowDownFromLine,
   ArrowLeftToLine,
   ArrowUpFromLine,
   FolderOpen,
 } from 'lucide-react';
-import { AIChat } from '@/types/primitives/ai-chat';
 import useTranslation from 'next-translate/useTranslation';
-import { ScrollArea } from './ui/scroll-area';
-import { Message } from 'ai';
+import Link from 'next/link';
 import React, { useState } from 'react';
-import { ScrollToTopButton } from './scroll-to-top-button';
-import { ChatModelSelector } from './chat-model-selector';
-import { Model } from '@/data/models';
 
 export interface ChatPanelProps
   extends Pick<

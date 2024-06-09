@@ -1,12 +1,12 @@
+import { User } from '@/types/primitives/User';
 import { showNotification } from '@mantine/notifications';
-import React, { createContext, useContext, useEffect } from 'react';
-import useSWR, { mutate } from 'swr';
 import {
   SupabaseClient,
   useUser as useSupabaseUser,
 } from '@supabase/auth-helpers-react';
-import { User } from '@/types/primitives/User';
 import { useRouter } from 'next/router';
+import React, { createContext, useContext, useEffect } from 'react';
+import useSWR, { mutate } from 'swr';
 import { v4 as uuidv4 } from 'uuid';
 
 const UserDataContext = createContext({

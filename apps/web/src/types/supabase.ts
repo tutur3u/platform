@@ -3186,6 +3186,38 @@ export type Database = {
           },
         ];
       };
+      workspace_user_group_tags: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          id: string;
+          tag: string;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          tag: string;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          tag?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_user_group_tags_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_user_groups: {
         Row: {
           archived: boolean;

@@ -1,14 +1,14 @@
 'use client';
 
-import { Divider } from '@mantine/core';
-import Link from 'next/link';
-import moment from 'moment';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import useSWR from 'swr';
-import { getGender } from '@/utils/gender-helper';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Invoice } from '@/types/primitives/Invoice';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { getGender } from '@/utils/gender-helper';
+import { Divider } from '@mantine/core';
+import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import useSWR from 'swr';
 
 interface Props {
   invoice: Invoice;

@@ -1,3 +1,4 @@
+import { Size } from './types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -6,7 +7,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
-import { Size } from './types';
 import { SettingsIcon } from 'lucide-react';
 
 export function CubePopover({

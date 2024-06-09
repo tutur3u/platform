@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { SelectField } from '@/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,16 +19,16 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { UserPlus } from 'lucide-react';
-import { useState } from 'react';
-import { User } from '@/types/primitives/User';
-import { SelectField } from '@/components/ui/custom/select-field';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
+import { User } from '@/types/primitives/User';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface Props {
   wsId: string;

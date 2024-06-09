@@ -1,7 +1,7 @@
-import useTranslation from 'next-translate/useTranslation';
 import DatePlanner from './date-planner';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@/types/primitives/Timeblock';
+import useTranslation from 'next-translate/useTranslation';
 
 export default function AvailabilityPlanner({
   plan,

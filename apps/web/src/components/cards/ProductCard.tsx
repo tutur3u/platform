@@ -1,7 +1,7 @@
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Product } from '@/types/primitives/Product';
 import { Divider } from '@mantine/core';
 import Link from 'next/link';
-import { Product } from '@/types/primitives/Product';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
 
 interface Props {
   product: Product;

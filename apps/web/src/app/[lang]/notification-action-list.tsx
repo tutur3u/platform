@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
 import NotificationAction from './notification-action';
+import { ReactNode, useState } from 'react';
 
 export enum NotificationActionType {
   WORKSPACE_INVITE_ACCEPT = 'WORKSPACE_INVITE_ACCEPT',

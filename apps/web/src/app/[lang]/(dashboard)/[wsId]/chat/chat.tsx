@@ -1,11 +1,10 @@
 'use client';
 
-import { useChat } from 'ai/react';
+import { ChatList } from '@/components/chat-list';
+import { ChatPanel } from '@/components/chat-panel';
+import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
+import { EmptyScreen } from '@/components/empty-screen';
 import { Button } from '@/components/ui/button';
-import React, { useEffect, useRef, useState } from 'react';
-import { Message } from 'ai';
-import { useLocalStorage } from '@mantine/hooks';
-import { toast } from '@/components/ui/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -15,15 +14,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { ChatList } from '@/components/chat-list';
-import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
-import { EmptyScreen } from '@/components/empty-screen';
-import { ChatPanel } from '@/components/chat-panel';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { AIChat } from '@/types/primitives/ai-chat';
-import useTranslation from 'next-translate/useTranslation';
+import { toast } from '@/components/ui/use-toast';
 import { Model, defaultModel } from '@/data/models';
+import { cn } from '@/lib/utils';
+import { AIChat } from '@/types/primitives/ai-chat';
+import { useLocalStorage } from '@mantine/hooks';
+import { Message } from 'ai';
+import { useChat } from 'ai/react';
+import useTranslation from 'next-translate/useTranslation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: AIChat;

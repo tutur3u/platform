@@ -1,10 +1,9 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
 import { Translate } from 'next-translate';
 import Link from 'next/link';
 
@@ -52,7 +51,9 @@ export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
       <DataTableColumnHeader column={column} title={t('user_name')} />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('user_name') || '-'}</div>
+      <div className="min-w-[8rem] max-w-[24rem] line-clamp-2">
+        {row.getValue('user_name') || '-'}
+      </div>
     ),
   },
   {
@@ -63,7 +64,7 @@ export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="min-w-[8rem] hover:underline"
+        className="min-w-[8rem] max-w-[24rem] line-clamp-2 hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>

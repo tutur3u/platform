@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import LoginForm from './form';
 import { Separator } from '@/components/ui/separator';
-import Image from 'next/image';
 import useTranslation from 'next-translate/useTranslation';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default async function Login() {
   const { t } = useTranslation('auth');

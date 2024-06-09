@@ -1,6 +1,6 @@
-import { Timeblock } from '@/types/primitives/Timeblock';
-import SelectableDayTime from './selectable-day-time';
 import PreviewDayTime from './preview-day-time';
+import SelectableDayTime from './selectable-day-time';
+import { Timeblock } from '@/types/primitives/Timeblock';
 
 export default function DayTime({
   editable,

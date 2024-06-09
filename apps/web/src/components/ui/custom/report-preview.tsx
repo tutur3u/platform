@@ -1,7 +1,7 @@
-import { isValidURL } from '@/utils/url-helper';
-import Image from 'next/image';
 import { Separator } from '../separator';
+import { isValidURL } from '@/utils/url-helper';
 import { Translate } from 'next-translate';
+import Image from 'next/image';
 import { ReactNode } from 'react';
 
 export default function ReportPreview({
@@ -28,8 +28,8 @@ export default function ReportPreview({
         id="printable-area"
         className="dark:bg-foreground/10 h-fit w-full flex-none rounded-xl print:p-4"
       >
-        <div className="text-foreground h-full rounded-lg border p-12">
-          <div className="flex items-center justify-between gap-8">
+        <div className="text-foreground h-full rounded-lg border p-4 md:p-12">
+          <div className="flex flex-wrap items-center justify-between gap-8">
             {isValidURL(getConfig('BRAND_LOGO_URL') || '') && (
               <Image
                 src={getConfig('BRAND_LOGO_URL')!}
@@ -88,9 +88,9 @@ export default function ReportPreview({
           {(!!getConfig('REPORT_CONTENT_TEXT') ||
             !!getConfig('REPORT_SCORE_TEXT') ||
             !!getConfig('REPORT_FEEDBACK_TEXT')) && (
-            <div className="border-foreground/50 my-4 flex justify-stretch rounded border-2 text-sm">
+            <div className="border-foreground/50 my-4 flex flex-col justify-stretch rounded border-2 text-sm md:flex-row">
               {getConfig('REPORT_CONTENT_TEXT') && (
-                <div className="flex-[2]">
+                <div className="md:flex-[2]">
                   <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-center text-sm font-bold">
                     {getConfig('REPORT_CONTENT_TEXT')}
                   </div>
@@ -108,7 +108,7 @@ export default function ReportPreview({
 
               {getConfig('REPORT_CONTENT_TEXT') &&
                 getConfig('REPORT_SCORE_TEXT') && (
-                  <div className="bg-foreground/50 h-auto min-h-full w-[2px] shrink-0" />
+                  <div className="bg-foreground/50 h-[2px] min-h-full w-auto shrink-0 md:h-auto md:w-[2px]" />
                 )}
 
               {getConfig('REPORT_SCORE_TEXT') && (
@@ -133,7 +133,7 @@ export default function ReportPreview({
               {(getConfig('REPORT_SCORE_TEXT') ||
                 getConfig('REPORT_CONTENT_TEXT')) &&
                 getConfig('REPORT_FEEDBACK_TEXT') && (
-                  <div className="bg-foreground/50 h-auto min-h-full w-[2px] shrink-0" />
+                  <div className="bg-foreground/50 h-[2px] min-h-full w-auto shrink-0 md:h-auto md:w-[2px]" />
                 )}
 
               {getConfig('REPORT_FEEDBACK_TEXT') && (
