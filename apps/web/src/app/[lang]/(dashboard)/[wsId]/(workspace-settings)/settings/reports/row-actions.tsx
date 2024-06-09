@@ -1,7 +1,6 @@
 'use client';
 
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
+import ConfigEditDialog from './edit-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,10 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import ConfigEditDialog from './edit-dialog';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Row } from '@tanstack/react-table';
+import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface ConfigRowActionsProps {
   row: Row<WorkspaceConfig>;

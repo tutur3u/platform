@@ -1,8 +1,8 @@
+import LogList from './log-list';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AuditLog } from '@/types/primitives/audit-log';
-import LogList from './log-list';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export const dynamic = 'force-dynamic';
 

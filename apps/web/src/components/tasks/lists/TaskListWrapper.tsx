@@ -1,13 +1,13 @@
-import { Accordion, Button, Loader } from '@mantine/core';
-import { TaskList } from '@/types/primitives/TaskList';
-import React from 'react';
-import TaskListAccordionControl from './TaskListAccordionControl';
-import { Task } from '@/types/primitives/Task';
-import useSWR, { mutate } from 'swr';
-import { openModal } from '@mantine/modals';
 import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
+import TaskListAccordionControl from './TaskListAccordionControl';
+import { Task } from '@/types/primitives/Task';
+import { TaskList } from '@/types/primitives/TaskList';
 import { Workspace } from '@/types/primitives/Workspace';
+import { Accordion, Button, Loader } from '@mantine/core';
+import { openModal } from '@mantine/modals';
+import React from 'react';
+import useSWR, { mutate } from 'swr';
 
 export interface TaskListWrapperProps {
   ws: Workspace;

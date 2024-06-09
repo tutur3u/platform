@@ -1,6 +1,6 @@
-import { FC, RefObject } from 'react';
 import { Message } from './types';
 import { Loader } from 'lucide-react';
+import { FC, RefObject } from 'react';
 
 interface Props {
   messages: Message[];

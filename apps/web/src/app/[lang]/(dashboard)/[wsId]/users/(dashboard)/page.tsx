@@ -1,8 +1,8 @@
 import StatisticCard from '@/components/cards/StatisticCard';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 
 export const dynamic = 'force-dynamic';
 

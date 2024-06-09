@@ -1,13 +1,13 @@
-import { cookies } from 'next/headers';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/utils/name-helper';
 import {
   SupabaseClient,
   createServerComponentClient,
 } from '@supabase/auth-helpers-nextjs';
-import Image from 'next/image';
-import { getInitials } from '@/utils/name-helper';
-import { redirect } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
+import { cookies } from 'next/headers';
+import Image from 'next/image';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 

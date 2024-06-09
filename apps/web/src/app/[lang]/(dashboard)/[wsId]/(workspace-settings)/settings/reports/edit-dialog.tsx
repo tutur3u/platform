@@ -1,5 +1,6 @@
 'use client';
 
+import ConfigForm, { ConfigFormSchema } from './form';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +8,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import ConfigForm, { ConfigFormSchema } from './form';
+import * as z from 'zod';
 
 interface Props {
   data: WorkspaceConfig;

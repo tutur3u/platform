@@ -1,8 +1,7 @@
 'use client';
 
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
-
+import { toast } from '../ui/use-toast';
+import ProjectEditDialog from '@/app/[lang]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,12 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from '../ui/use-toast';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Row } from '@tanstack/react-table';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import { TaskBoard } from '@/types/primitives/TaskBoard';
-import ProjectEditDialog from '@/app/[lang]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 
 interface ProjectRowActionsProps {
   row: Row<TaskBoard>;

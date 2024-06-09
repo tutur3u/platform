@@ -1,12 +1,12 @@
 'use client';
 
-import { Divider } from '@mantine/core';
-import { Wallet } from '@/types/primitives/Wallet';
-import useSWR from 'swr';
 import MiniPlusButton from '../../../../../../../components/common/MiniPlusButton';
 import { Transaction } from '@/types/primitives/Transaction';
+import { Wallet } from '@/types/primitives/Wallet';
+import { Divider } from '@mantine/core';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
+import useSWR from 'swr';
 
 interface Props {
   params: {

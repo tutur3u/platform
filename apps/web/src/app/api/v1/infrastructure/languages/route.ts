@@ -1,6 +1,6 @@
+import i18n from '../../../../../../i18n.json';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { cookies as c } from 'next/headers';
-import i18n from '../../../../../../i18n.json';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';

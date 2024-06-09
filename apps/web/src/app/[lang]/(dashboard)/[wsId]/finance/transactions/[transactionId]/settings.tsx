@@ -1,4 +1,11 @@
-import { useEffect, useState } from 'react';
+import ThousandMultiplierChips from '../../../../../../../components/chips/ThousandMultiplierChips';
+import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
+import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Transaction } from '@/types/primitives/Transaction';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { Wallet } from '@/types/primitives/Wallet';
+import { EyeIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Checkbox,
@@ -7,20 +14,13 @@ import {
   Select,
   TextInput,
 } from '@mantine/core';
-import { useSegments } from '@/hooks/useSegments';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { Wallet } from '@/types/primitives/Wallet';
-import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { useRouter } from 'next/router';
-import { Transaction } from '@/types/primitives/Transaction';
-import useSWR from 'swr';
 import { DateTimePicker } from '@mantine/dates';
-import useTranslation from 'next-translate/useTranslation';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { EyeIcon } from '@heroicons/react/24/outline';
-import ThousandMultiplierChips from '../../../../../../../components/chips/ThousandMultiplierChips';
+import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 export default function TransactionSettingsPage() {
   const router = useRouter();

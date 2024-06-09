@@ -1,7 +1,7 @@
+import { getPlan } from './helpers';
 import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
 import { ReactNode } from 'react';
-import { getPlan } from './helpers';
 
 interface Props {
   params: {

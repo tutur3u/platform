@@ -1,9 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,12 +10,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Trash } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Check, Trash } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface Props {
   wsId: string;

@@ -1,9 +1,9 @@
-import { TrashIcon } from '@heroicons/react/24/solid';
-import { Product } from '@/types/primitives/Product';
-import { NumberInput } from '@mantine/core';
-import { useEffect } from 'react';
 import SettingItemCard from '../settings/SettingItemCard';
+import { Product } from '@/types/primitives/Product';
+import { TrashIcon } from '@heroicons/react/24/solid';
+import { NumberInput } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { useEffect } from 'react';
 
 interface Props {
   wsId: string;

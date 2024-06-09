@@ -18,6 +18,10 @@ const nextConfig = nextTranslate({
         protocol: 'https',
         hostname: 'yjbjpmwbfimjcdsjxfst.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'nzamlzqfdwaaxdefwraj.supabase.co',
+      },
     ],
   },
 

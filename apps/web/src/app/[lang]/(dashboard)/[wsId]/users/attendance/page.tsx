@@ -1,15 +1,15 @@
-import { verifyHasSecrets } from '@/lib/workspace-helper';
-import MonthPicker from '@/components/ui/custom/month-picker';
-import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import { Suspense } from 'react';
+import { UserDatabaseFilter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
-import { UserDatabaseFilter } from '../filters';
+import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
+import MonthPicker from '@/components/ui/custom/month-picker';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import useTranslation from 'next-translate/useTranslation';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { cookies } from 'next/headers';
+import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,5 +1,5 @@
-import useTranslation from 'next-translate/useTranslation';
 import { getWorkspace } from '@/lib/workspace-helper';
+import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   params: {

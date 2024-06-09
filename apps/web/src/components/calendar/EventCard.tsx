@@ -1,10 +1,10 @@
+import CalendarEventEditForm from '../forms/CalendarEventEditForm';
+import { useCalendar } from '@/hooks/useCalendar';
+import { CalendarEvent } from '@/types/primitives/calendar-event';
 import { Popover } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
-import { useEffect, useRef, useState } from 'react';
-import { useCalendar } from '@/hooks/useCalendar';
-import CalendarEventEditForm from '../forms/CalendarEventEditForm';
-import { CalendarEvent } from '@/types/primitives/calendar-event';
 import moment from 'moment';
+import { useEffect, useRef, useState } from 'react';
 
 interface EventCardProps {
   dates: Date[];

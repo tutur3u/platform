@@ -1,13 +1,12 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
-import { Wallet } from '@/types/primitives/Wallet';
-import { Check, X } from 'lucide-react';
-import { Translate } from 'next-translate';
 import { WalletRowActions } from './row-actions';
+import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { Wallet } from '@/types/primitives/Wallet';
+import { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from 'lucide-react';
+import moment from 'moment';
+import { Translate } from 'next-translate';
 
 export const walletColumns = (
   t: Translate,

@@ -1,11 +1,11 @@
 'use client';
 
+import { User, UserRole } from '@/types/primitives/User';
+import { getInitials } from '@/utils/name-helper';
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { ChangeEvent, useState } from 'react';
-import { User, UserRole } from '@/types/primitives/User';
 import useTranslation from 'next-translate/useTranslation';
-import { getInitials } from '@/utils/name-helper';
+import React, { ChangeEvent, useState } from 'react';
 
 interface Props {
   currentRole: UserRole;

@@ -1,12 +1,11 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
+import { AIPromptRowActions } from './row-actions';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { AIPrompt } from '@/types/db';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';
-import { AIPromptRowActions } from './row-actions';
-import { AIPrompt } from '@/types/db';
 
 export const aiPromptsColumns = (
   t: Translate,

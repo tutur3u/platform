@@ -1,10 +1,10 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { promotionColumns } from '@/data/columns/promotions';
-import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { ProductPromotion } from '@/types/primitives/ProductPromotion';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {

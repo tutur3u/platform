@@ -1,5 +1,6 @@
-'use client'; // Error components must be Client Components
+'use client';
 
+// Error components must be Client Components
 import { Button } from '@/components/ui/button';
 
 export default function Error({

@@ -1,5 +1,5 @@
-import useTranslation from 'next-translate/useTranslation';
 import GradientHeadline from '../gradient-headline';
+import useTranslation from 'next-translate/useTranslation';
 
 export default async function PrivacyPage() {
   const { t } = useTranslation('common');

@@ -1,21 +1,21 @@
-import { Button } from '@/components/ui/button';
-import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import AssistantGradientName from './assistant-gradient-name';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import { toast } from '@/components/ui/use-toast';
+import { FleetingAssistantMessage } from './fleeting-assistant-message';
+import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
+import { AIChat } from '@/types/primitives/ai-chat';
+import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Message } from 'ai';
+import { useChat } from 'ai/react';
+import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { AIChat } from '@/types/primitives/ai-chat';
-import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
-import { Message } from 'ai';
-import Link from 'next/link';
-import { useChat } from 'ai/react';
 
 const FormSchema = z.object({
   prompt: z.string().min(1),

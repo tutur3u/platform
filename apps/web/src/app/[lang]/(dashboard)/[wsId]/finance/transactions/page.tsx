@@ -1,8 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
-import { Transaction } from '@/types/primitives/Transaction';
 import TransactionsTable from './table';
+import { Transaction } from '@/types/primitives/Transaction';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {

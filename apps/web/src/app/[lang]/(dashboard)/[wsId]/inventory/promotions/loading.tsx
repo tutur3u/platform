@@ -1,5 +1,5 @@
-import { promotionColumns } from '@/data/columns/promotions';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { promotionColumns } from '@/data/columns/promotions';
 
 export default function Loading() {
   return (

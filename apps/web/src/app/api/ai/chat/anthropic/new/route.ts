@@ -1,8 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import Anthropic, { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Message } from 'ai';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

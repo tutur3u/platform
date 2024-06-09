@@ -1,9 +1,9 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { Message } from 'ai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Message } from 'ai';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

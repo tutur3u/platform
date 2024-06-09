@@ -1,6 +1,6 @@
-import { Tooltip } from '@mantine/core';
-import { useAppearance } from '@/hooks/useAppearance';
 import { DEV_MODE } from '@/constants/common';
+import { useAppearance } from '@/hooks/useAppearance';
+import { Tooltip } from '@mantine/core';
 import React from 'react';
 
 interface SidebarButtonProps {

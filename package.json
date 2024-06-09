@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "pnpm i && turbo run build",
+    "buildx": "pnpm i && turbo test lint build",
     "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/web && pnpm devx",
@@ -27,19 +27,20 @@
     "ui:diff": "pnpm --filter ui ui:diff"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "8.57.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^3.3.1",
-    "prettier-plugin-tailwindcss": "^0.6.1",
+    "prettier-plugin-tailwindcss": "^0.6.2",
     "tsconfig": "workspace:*",
-    "turbo": "^2.0.1",
+    "turbo": "^2.0.3",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@9.1.4",
+  "packageManager": "pnpm@9.2.0",
   "workspaces": {
     "packages": [
       "apps/*",

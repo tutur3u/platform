@@ -1,10 +1,7 @@
 'use client';
 
-import { InputField } from '@/components/ui/custom/input-field';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import { Button } from '@/components/ui/button';
+import { InputField } from '@/components/ui/custom/input-field';
 import {
   Form,
   FormControl,
@@ -14,10 +11,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from '@/components/ui/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Loader2 } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface Props {
   oldEmail?: string;

@@ -1,10 +1,14 @@
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  useSearchParams as useDefaultSearchParams,
+  usePathname,
+  useRouter,
+} from 'next/navigation';
 import { useCallback } from 'react';
 
-const useQuery = () => {
-  const router = useRouter();
+const useSearchParams = () => {
+  const searchParams = useDefaultSearchParams();
   const pathname = usePathname();
-  const searchParams = useSearchParams()!;
+  const router = useRouter();
 
   const has = useCallback(
     (key: string) => searchParams.has(key),
@@ -48,6 +52,30 @@ const useQuery = () => {
     [pathname, router, searchParams]
   );
 
+  const add = useCallback(
+    (key: string, value: string | string[], refresh = true) => {
+      const params = new URLSearchParams(searchParams);
+      if (Array.isArray(value)) {
+        value.forEach((item) => params.append(key, item));
+      } else {
+        params.append(key, value);
+      }
+      router.push(`${pathname}?${params.toString()}`);
+      if (refresh) router.refresh();
+    },
+    [pathname, router, searchParams]
+  );
+
+  const remove = useCallback(
+    (key: string, refresh = true) => {
+      const params = new URLSearchParams(searchParams);
+      params.delete(key);
+      router.push(`${pathname}?${params.toString()}`);
+      if (refresh) router.refresh();
+    },
+    [pathname, router, searchParams]
+  );
+
   const reset = useCallback(
     (refresh = true) => {
       router.push(pathname);
@@ -58,7 +86,7 @@ const useQuery = () => {
 
   const isEmpty = searchParams.toString().length === 0;
 
-  return { isEmpty, has, get, set, reset };
+  return { isEmpty, has, get, set, add, remove, reset, clear: reset };
 };
 
-export default useQuery;
+export default useSearchParams;

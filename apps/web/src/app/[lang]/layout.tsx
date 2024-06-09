@@ -1,18 +1,17 @@
 import '../../styles/globals.css';
-import { ReactNode } from 'react';
-
-import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
-import { TailwindIndicator } from '@/components/tailwind-indicator';
+import Navbar from './navbar';
+import NavbarPadding from './navbar-padding';
+import { StaffToolbar } from './staff-toolbar';
 import { Providers } from '@/components/providers';
+import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { Toaster } from '@/components/ui/toaster';
 import { siteConfig } from '@/constants/configs';
-import { StaffToolbar } from './staff-toolbar';
-import NavbarPadding from './navbar-padding';
+import { cn } from '@/lib/utils';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { cn } from '@/lib/utils';
-import Navbar from './navbar';
+import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
 

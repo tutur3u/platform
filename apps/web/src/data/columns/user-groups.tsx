@@ -1,12 +1,11 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
 import { UserGroup } from '@/types/primitives/UserGroup';
-import { Translate } from 'next-translate';
+import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
+import moment from 'moment';
+import { Translate } from 'next-translate';
 import Link from 'next/link';
 
 export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [

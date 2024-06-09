@@ -1,5 +1,5 @@
-import { BoxGeometry } from 'three';
 import { Size } from './types';
+import { BoxGeometry } from 'three';
 
 export function Cube({ size }: { size: Size }) {
   return (

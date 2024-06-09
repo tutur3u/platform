@@ -1,8 +1,7 @@
-import { mutate } from 'swr';
-
-import { createContext, ReactNode, useContext } from 'react';
 import { Document } from '@/types/primitives/Document';
 import { showNotification } from '@mantine/notifications';
+import { ReactNode, createContext, useContext } from 'react';
+import { mutate } from 'swr';
 
 const DocumentContext = createContext({
   createDocument: (wsId: string, document: Document) =>

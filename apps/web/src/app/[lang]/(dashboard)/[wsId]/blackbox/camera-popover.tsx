@@ -1,3 +1,4 @@
+import { Size } from './types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -5,10 +6,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Camera } from 'lucide-react';
-import { Size } from './types';
-import { Separator } from '@/components/ui/separator';
 
 export function CameraPopover({
   position,

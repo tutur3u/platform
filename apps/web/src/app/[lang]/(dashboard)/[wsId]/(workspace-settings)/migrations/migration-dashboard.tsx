@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { MigrationModule, ModulePackage, generateModules } from './modules';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconGitMerge } from '@tabler/icons-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
-import { MigrationModule, ModulePackage, generateModules } from './modules';
+import { useState } from 'react';
 
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({

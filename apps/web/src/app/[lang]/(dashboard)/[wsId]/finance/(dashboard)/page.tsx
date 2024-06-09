@@ -1,6 +1,6 @@
-import useTranslation from 'next-translate/useTranslation';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 
 interface Props {

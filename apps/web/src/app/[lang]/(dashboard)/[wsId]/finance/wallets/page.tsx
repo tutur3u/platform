@@ -1,8 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
-import { Wallet } from '@/types/primitives/Wallet';
 import WalletsTable from './table';
+import { Wallet } from '@/types/primitives/Wallet';
+import { Database } from '@/types/supabase';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: {

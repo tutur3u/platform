@@ -1,12 +1,12 @@
 'use client';
 
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import CopyLinkButton from './copy-link-button';
 import EmailButton from './email-button';
+import LoggedInAsButton from './logged-in-as-button';
+import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { User } from '@/types/primitives/User';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import LoggedInAsButton from './logged-in-as-button';
-import { User } from '@/types/primitives/User';
 
 export default function UtilityButtons({
   plan,

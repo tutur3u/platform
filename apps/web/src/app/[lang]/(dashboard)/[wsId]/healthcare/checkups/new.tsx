@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { Vital } from '@/types/primitives/Vital';
-import { VitalGroup } from '@/types/primitives/VitalGroup';
-import { DateTimePicker } from '@mantine/dates';
 import CheckupVitalGroupInput from '../../../../../../components/inputs/CheckupVitalGroupInput';
 import CheckupVitalInput from '../../../../../../components/inputs/CheckupVitalInput';
-import { Diagnosis } from '@/types/primitives/Diagnosis';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSegments } from '@/hooks/useSegments';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Diagnosis } from '@/types/primitives/Diagnosis';
+import { Vital } from '@/types/primitives/Vital';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
+import { Checkbox, Divider, Textarea } from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function NewCheckupPage() {
   const { setRootSegment } = useSegments();

@@ -1,7 +1,7 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { Wallet } from '@/types/primitives/Wallet';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 

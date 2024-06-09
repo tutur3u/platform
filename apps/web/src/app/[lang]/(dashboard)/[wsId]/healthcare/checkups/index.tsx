@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useLocalStorage } from '@mantine/hooks';
-import { Divider, Switch } from '@mantine/core';
-import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import CheckupCard from '../../../../../../components/cards/CheckupCard';
-import { Checkup } from '@/types/primitives/Checkup';
-import useSWR from 'swr';
+import PlusCardButton from '../../../../../../components/common/PlusCardButton';
+import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
+import { Checkup } from '@/types/primitives/Checkup';
+import { Divider, Switch } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 export default function MiscExaminationPage() {
   const { setRootSegment } = useSegments();

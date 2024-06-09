@@ -1,5 +1,5 @@
-import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
 import UserMonthAttendanceSkeleton from './user-month-attendance-skeleton';
+import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
 
 interface SearchParams {
   q?: string;

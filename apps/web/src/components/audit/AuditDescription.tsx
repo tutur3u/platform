@@ -1,9 +1,9 @@
-import { JsonInput, Tabs } from '@mantine/core';
-import { useState } from 'react';
-import { AuditLog } from '@/types/primitives/audit-log';
-import { DEV_MODE } from '@/constants/common';
 import AuditSmartContent from './AuditSmartContent';
+import { DEV_MODE } from '@/constants/common';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { JsonInput, Tabs } from '@mantine/core';
 import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface Props {
   data: AuditLog;

@@ -1,12 +1,12 @@
 'use client';
 
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { AIPromptForm } from './form';
-import { useState } from 'react';
-import { Dialog } from '@/components/ui/dialog';
 import { aiPromptsColumns } from './columns';
-import useTranslation from 'next-translate/useTranslation';
+import { AIPromptForm } from './form';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Dialog } from '@/components/ui/dialog';
 import { AIPrompt } from '@/types/db';
+import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;

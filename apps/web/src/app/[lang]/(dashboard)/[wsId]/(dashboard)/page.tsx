@@ -1,8 +1,8 @@
-import useTranslation from 'next-translate/useTranslation';
+import StatisticCard from '@/components/cards/StatisticCard';
 import { Separator } from '@/components/ui/separator';
 import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
-import StatisticCard from '@/components/cards/StatisticCard';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 

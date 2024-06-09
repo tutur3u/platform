@@ -1,12 +1,12 @@
 'use client';
 
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { WalletForm } from './form';
-import { Wallet } from '@/types/primitives/Wallet';
-import { useState } from 'react';
-import { Dialog } from '@/components/ui/dialog';
 import { walletColumns } from './columns';
+import { WalletForm } from './form';
+import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { Dialog } from '@/components/ui/dialog';
+import { Wallet } from '@/types/primitives/Wallet';
 import useTranslation from 'next-translate/useTranslation';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;

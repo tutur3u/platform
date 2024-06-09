@@ -1,0 +1,11 @@
+{
+    "group_tag": "Group Tag",
+    "group_tags": "Group Tags",
+    "description": "Organize user groups together for easier management.",
+    "name": "Name",
+    "value": "Value",
+    "create_tag": "Create Tag",
+    "edit_tag": "Edit Tag",
+    "add_new_group_tag": "Add a new group tag",
+    "edit_existing_group_tag": "Edit an existing group tag"
+}

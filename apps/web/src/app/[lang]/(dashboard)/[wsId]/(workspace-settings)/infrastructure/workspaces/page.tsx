@@ -1,9 +1,9 @@
-import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
-import { Workspace } from '@/types/primitives/Workspace';
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
 import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
-import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
 import { Separator } from '@/components/ui/separator';
+import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
+import { Workspace } from '@/types/primitives/Workspace';
 import { createAdminClient } from '@/utils/supabase/client';
 import { notFound } from 'next/navigation';
 

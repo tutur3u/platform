@@ -1,5 +1,5 @@
-import { productColumns } from '@/data/columns/products';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { productColumns } from '@/data/columns/products';
 
 export default function Loading() {
   return (

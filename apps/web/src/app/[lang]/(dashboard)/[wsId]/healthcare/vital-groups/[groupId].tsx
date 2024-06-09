@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Divider, TextInput, Textarea } from '@mantine/core';
-import { Vital } from '@/types/primitives/Vital';
-import 'dayjs/locale/vi';
-import { useRouter } from 'next/router';
-import { VitalGroup } from '@/types/primitives/VitalGroup';
-import useSWR from 'swr';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { Vital } from '@/types/primitives/Vital';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
+import { TrashIcon } from '@heroicons/react/24/solid';
+import { Divider, TextInput, Textarea } from '@mantine/core';
+import 'dayjs/locale/vi';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 export default function VitalGroupDetailsPage() {
   const { setRootSegment } = useSegments();

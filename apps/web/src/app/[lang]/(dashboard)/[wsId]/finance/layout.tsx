@@ -1,4 +1,4 @@
-import { Navigation, NavLink } from '@/components/navigation';
+import { NavLink, Navigation } from '@/components/navigation';
 import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
 import React from 'react';

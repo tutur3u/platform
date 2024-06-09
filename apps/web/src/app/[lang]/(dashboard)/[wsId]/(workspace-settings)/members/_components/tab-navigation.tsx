@@ -1,7 +1,7 @@
 'use client';
 
 import { TabsTrigger } from '@/components/ui/tabs';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
 
 interface Props {
   value: string;
@@ -9,12 +9,12 @@ interface Props {
 }
 
 export default function TabNavigation({ value, label }: Props) {
-  const query = useQuery();
+  const searchParams = useSearchParams();
 
   return (
     <TabsTrigger
       value={value}
-      onClick={() => query.set({ status: value === 'all' ? '' : value })}
+      onClick={() => searchParams.set({ status: value === 'all' ? '' : value })}
     >
       {label}
     </TabsTrigger>

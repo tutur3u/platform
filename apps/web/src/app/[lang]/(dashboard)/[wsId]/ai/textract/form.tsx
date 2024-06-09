@@ -1,9 +1,12 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
+import AIModelSelector from './model-selector';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,20 +17,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import { AIPrompt } from '@/types/db';
-import AIModelSelector from './model-selector';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { toast } from '@/components/ui/use-toast';
+import { AIPrompt } from '@/types/db';
+import { zodResolver } from '@hookform/resolvers/zod';
+import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface Props {
   wsId: string;

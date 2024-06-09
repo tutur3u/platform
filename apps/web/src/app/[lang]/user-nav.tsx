@@ -1,3 +1,10 @@
+import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
+import DashboardMenuItem from './dashboard-menu-item';
+import InviteMembersMenuItem from './invite-members-menu-item';
+import MeetTogetherMenuItem from './meet-together-menu-item';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -13,19 +20,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser } from '@/lib/user-helper';
+import { getWorkspaces } from '@/lib/workspace-helper';
 import { getInitials } from '@/utils/name-helper';
 import { Globe, Palette, Settings, User } from 'lucide-react';
-import { Suspense } from 'react';
-import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
-import Link from 'next/link';
-import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
-import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import useTranslation from 'next-translate/useTranslation';
-import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
-import DashboardMenuItem from './dashboard-menu-item';
-import { getWorkspaces } from '@/lib/workspace-helper';
-import InviteMembersMenuItem from './invite-members-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
+import Link from 'next/link';
+import { Suspense } from 'react';
 
 export async function UserNav() {
   const { t } = useTranslation('common');
