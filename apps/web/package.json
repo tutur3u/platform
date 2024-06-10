@@ -92,7 +92,6 @@
     "@vercel/speed-insights": "^1.0.11",
     "@vercel/toolbar": "^0.1.15",
     "ai": "^3.1.30",
-    "babel-plugin-react-compiler": "0.0.0-experimental-938cd9a-20240601",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
