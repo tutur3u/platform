@@ -14,8 +14,11 @@ export default async function ProductCategoriesStatistics({
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'],
-    redirect ? `/${wsId}` : undefined);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_INVENTORY'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { count: categories } = enabled
     ? await supabase

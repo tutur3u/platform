@@ -14,8 +14,11 @@ export default async function InventoryProductsStatistics({
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'],
-    redirect ? `/${wsId}` : undefined);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_INVENTORY'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { data: inventoryProducts } = enabled
     ? await supabase.rpc('get_inventory_products_count', {

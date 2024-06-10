@@ -14,8 +14,11 @@ export default async function BatchesStatistics({
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'],
-    redirect ? `/${wsId}` : undefined);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_INVENTORY'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { count: batches } = enabled
     ? await supabase
