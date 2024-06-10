@@ -4,11 +4,21 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 
-export default async function ProductsStatistics({ wsId }: { wsId: string }) {
+export default async function ProductsStatistics({
+  wsId,
+  redirect = false,
+}: {
+  wsId: string;
+  redirect?: boolean;
+}) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY']);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_INVENTORY'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { data: workspaceProducts } = enabled
     ? await supabase.rpc('get_workspace_products_count', {

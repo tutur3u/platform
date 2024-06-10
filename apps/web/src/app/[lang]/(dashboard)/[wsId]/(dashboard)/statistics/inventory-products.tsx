@@ -6,13 +6,16 @@ import { cookies } from 'next/headers';
 
 export default async function InventoryProductsStatistics({
   wsId,
+  redirect = false,
 }: {
   wsId: string;
+  redirect?: boolean;
 }) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY']);
+  const enabled = await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'],
+    redirect ? `/${wsId}` : undefined);
 
   const { data: inventoryProducts } = enabled
     ? await supabase.rpc('get_inventory_products_count', {
