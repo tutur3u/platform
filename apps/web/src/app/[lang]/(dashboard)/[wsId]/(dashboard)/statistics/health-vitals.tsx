@@ -1,0 +1,34 @@
+import StatisticCard from '@/components/cards/StatisticCard';
+import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+
+export default async function HealthVitalsStatistics({
+  wsId,
+}: {
+  wsId: string;
+}) {
+  const supabase = createServerComponentClient({ cookies });
+
+  const enabled = await verifyHasSecrets(wsId, ['ENABLE_HEALTHCARE']);
+
+  const { count: vitals } = enabled
+    ? await supabase
+        .from('healthcare_vitals')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('ws_id', wsId)
+    : { count: 0 };
+
+  if (!enabled) return null;
+
+  return (
+    <StatisticCard
+      title="Chỉ số"
+      value={vitals}
+      href={`/${wsId}/healthcare/vitals`}
+    />
+  );
+}

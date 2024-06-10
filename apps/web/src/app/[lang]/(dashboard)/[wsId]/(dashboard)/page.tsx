@@ -1,10 +1,37 @@
-import StatisticCard from '@/components/cards/StatisticCard';
-import { Separator } from '@/components/ui/separator';
-import { getSecret, getSecrets, getWorkspace } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
+import {
+  FinanceCategoryStatistics,
+  HealthcareCategoryStatistics,
+  InventoryCategoryStatistics,
+  UsersCategoryStatistics,
+} from './categories';
+import {
+  BatchesStatistics,
+  ExpenseStatistics,
+  HealthCheckupsStatistics,
+  HealthDiagnosesStatistics,
+  HealthVitalGroupsStatistics,
+  HealthVitalsStatistics,
+  IncomeStatistics,
+  InventoryProductsStatistics,
+  InvoicesStatistics,
+  ProductCategoriesStatistics,
+  ProductsStatistics,
+  PromotionsStatistics,
+  SuppliersStatistics,
+  TotalBalanceStatistics,
+  TransactionCategoriesStatistics,
+  TransactionsStatistics,
+  UnitsStatistics,
+  UserGroupsStatistics,
+  UserReportsStatistics,
+  UsersStatistics,
+  WalletsStatistics,
+  WarehousesStatistics,
+} from './statistics';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { getWorkspace } from '@/lib/workspace-helper';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 interface Props {
   params: {
@@ -12,402 +39,112 @@ interface Props {
   };
 }
 
-export const dynamic = 'force-dynamic';
-
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
-  const supabase = createServerComponentClient({ cookies });
-
-  const { t } = useTranslation('ws-home');
-
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
 
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: ['ENABLE_USERS', 'ENABLE_INVENTORY'],
-  });
-
-  const verifySecret = (secret: string, value: string) =>
-    getSecret(secret, secrets)?.value === value;
-
-  const enableUsers = verifySecret('ENABLE_USERS', 'true');
-  const enableInventory = verifySecret('ENABLE_INVENTORY', 'true');
-  const enableFinance = true;
-
-  const { data: income } = enableFinance
-    ? await supabase.rpc('get_workspace_wallets_income', {
-        ws_id: wsId,
-        start_date: null,
-        end_date: null,
-      })
-    : { data: 0 };
-
-  const { data: expense } = enableFinance
-    ? await supabase.rpc('get_workspace_wallets_expense', {
-        ws_id: wsId,
-        start_date: null,
-        end_date: null,
-      })
-    : { data: 0 };
-
-  const { count: walletsCount } = enableFinance
-    ? await supabase
-        .from('workspace_wallets')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: categoriesCount } = enableFinance
-    ? await supabase
-        .from('transaction_categories')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: transactionsCount } = enableFinance
-    ? await supabase
-        .from('wallet_transactions')
-        .select('*, workspace_wallets!inner(ws_id)', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('workspace_wallets.ws_id', wsId)
-    : { count: 0 };
-
-  const { count: invoicesCount } = enableFinance
-    ? await supabase
-        .from('finance_invoices')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  // const { count: checkups } = await supabase
-  //   .from('healthcare_checkups')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
-
-  // const { count: diagnoses } = await supabase
-  //   .from('healthcare_diagnoses')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
-
-  // const { count: vitals } = await supabase
-  //   .from('healthcare_vitals')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
-
-  // const { count: groups } = await supabase
-  //   .from('healthcare_vital_groups')
-  //   .select('*', {
-  //     count: 'exact',
-  //     head: true,
-  //   })
-  //   .eq('ws_id', wsId);
-
-  const { data: workspaceProducts } = enableInventory
-    ? await supabase.rpc('get_workspace_products_count', {
-        ws_id: wsId,
-      })
-    : { data: 0 };
-
-  const { data: inventoryProducts } = enableInventory
-    ? await supabase.rpc('get_inventory_products_count', {
-        ws_id: wsId,
-      })
-    : { data: 0 };
-
-  const { count: categories } = enableInventory
-    ? await supabase
-        .from('product_categories')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: batches } = enableInventory
-    ? await supabase
-        .from('inventory_batches')
-        .select('*, inventory_warehouses!inner(ws_id)', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('inventory_warehouses.ws_id', wsId)
-    : { count: 0 };
-
-  const { count: warehouses } = enableInventory
-    ? await supabase
-        .from('inventory_warehouses')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: units } = enableInventory
-    ? await supabase
-        .from('inventory_units')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: suppliers } = enableInventory
-    ? await supabase
-        .from('inventory_suppliers')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: promotions } = enableInventory
-    ? await supabase
-        .from('workspace_promotions')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: users } = enableUsers
-    ? await supabase
-        .from('workspace_users')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: userGroups } = enableUsers
-    ? await supabase
-        .from('workspace_user_groups')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { count: reports } = enableUsers
-    ? await supabase
-        .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(ws_id)', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('user.ws_id', wsId)
-    : { count: 0 };
-
-  const usersLabel = t('sidebar-tabs:users');
-  const sum = (income || 0) + (expense || 0);
-
   return (
     <>
-      {enableFinance && (
-        <>
-          <div className="my-2 text-2xl font-semibold">
-            {t('sidebar-tabs:finance')}
-          </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatisticCard
-              title={t('finance-overview:total-balance')}
-              value={Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(sum || 0)}
-              className="md:col-span-2"
-            />
+      <FinanceCategoryStatistics wsId={wsId} />
 
-            <StatisticCard
-              title={t('finance-overview:total-income')}
-              value={Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-                signDisplay: 'exceptZero',
-              }).format(income || 0)}
-            />
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
+          <TotalBalanceStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('finance-overview:total-expense')}
-              value={Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-                signDisplay: 'exceptZero',
-              }).format(expense || 0)}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <IncomeStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-finance-tabs:wallets')}
-              value={walletsCount}
-              href={`/${wsId}/finance/wallets`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <ExpenseStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-finance-tabs:categories')}
-              value={categoriesCount}
-              href={`/${wsId}/finance/transactions/categories`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <WalletsStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-finance-tabs:transactions')}
-              value={transactionsCount}
-              href={`/${wsId}/finance/transactions`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <TransactionCategoriesStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-finance-tabs:invoices')}
-              value={invoicesCount}
-              href={`/${wsId}/finance/invoices`}
-            />
-          </div>
-        </>
-      )}
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <TransactionsStatistics wsId={wsId} />
+        </Suspense>
 
-      {/* {(ws.preset === 'ALL' || ws.preset === 'PHARMACY') && (
-        <>
-          <Separator className="mb-8 mt-4" />
-          <div className="mb-2 text-2xl font-semibold">
-            {t('sidebar-tabs:healthcare')}
-          </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatisticCard
-              title="Kiểm tra sức khoẻ"
-              value={checkups}
-              href={`/${wsId}/healthcare/checkups`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <InvoicesStatistics wsId={wsId} />
+        </Suspense>
+      </div>
 
-            <StatisticCard
-              title="Chẩn đoán"
-              value={diagnoses}
-              href={`/${wsId}/healthcare/diagnoses`}
-            />
+      <HealthcareCategoryStatistics wsId={wsId} />
 
-            <StatisticCard
-              title="Chỉ số"
-              value={vitals}
-              href={`/${wsId}/healthcare/vitals`}
-            />
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <HealthCheckupsStatistics wsId={wsId} />
+        </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <HealthDiagnosesStatistics wsId={wsId} />
+        </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <HealthVitalsStatistics wsId={wsId} />
+        </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <HealthVitalGroupsStatistics wsId={wsId} />
+        </Suspense>
+      </div>
 
-            <StatisticCard
-              title="Nhóm chỉ số"
-              value={groups}
-              href={`/${wsId}/healthcare/vital-groups`}
-            />
-          </div>
-        </>
-      )} */}
+      <InventoryCategoryStatistics wsId={wsId} />
 
-      {enableInventory && (
-        <>
-          <Separator className="mb-8 mt-4" />
-          <div className="mb-2 text-2xl font-semibold">
-            {t('sidebar-tabs:inventory')}
-          </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatisticCard
-              title={t('workspace-inventory-tabs:products')}
-              value={workspaceProducts}
-              href={`/${wsId}/inventory/products`}
-            />
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <ProductsStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('inventory-overview:products-with-prices')}
-              value={inventoryProducts}
-              href={`/${wsId}/inventory/products`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <InventoryProductsStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:categories')}
-              value={categories}
-              href={`/${wsId}/inventory/categories`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <ProductCategoriesStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:batches')}
-              value={batches}
-              href={`/${wsId}/inventory/batches`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <BatchesStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:warehouses')}
-              value={warehouses}
-              href={`/${wsId}/inventory/warehouses`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <WarehousesStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:units')}
-              value={units}
-              href={`/${wsId}/inventory/units`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UnitsStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:suppliers')}
-              value={suppliers}
-              href={`/${wsId}/inventory/suppliers`}
-            />
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <SuppliersStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-inventory-tabs:promotions')}
-              value={promotions}
-              href={`/${wsId}/inventory/promotions`}
-            />
-          </div>
-        </>
-      )}
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <PromotionsStatistics wsId={wsId} />
+        </Suspense>
+      </div>
 
-      {enableUsers && (
-        <>
-          <Separator className="mb-8 mt-4" />
-          <div className="mb-2 text-2xl font-semibold">
-            {t('sidebar-tabs:users')}
-          </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatisticCard
-              title={usersLabel}
-              value={users}
-              href={`/${wsId}/users/list`}
-            />
+      <UsersCategoryStatistics wsId={wsId} />
 
-            <StatisticCard
-              title={t('workspace-users-tabs:groups')}
-              value={userGroups}
-              href={`/${wsId}/users/groups`}
-            />
+      <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UsersStatistics wsId={wsId} />
+        </Suspense>
 
-            <StatisticCard
-              title={t('workspace-users-tabs:reports')}
-              value={reports}
-              href={`/${wsId}/users/reports`}
-            />
-          </div>
-        </>
-      )}
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserGroupsStatistics wsId={wsId} />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserReportsStatistics wsId={wsId} />
+        </Suspense>
+      </div>
     </>
   );
 }
