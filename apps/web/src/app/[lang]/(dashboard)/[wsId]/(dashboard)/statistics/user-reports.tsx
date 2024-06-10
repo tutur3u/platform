@@ -6,13 +6,19 @@ import { cookies } from 'next/headers';
 
 export default async function UserReportsStatistics({
   wsId,
+  redirect = false,
 }: {
   wsId: string;
+  redirect?: boolean;
 }) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_USERS']);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_USERS'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { count: reports } = enabled
     ? await supabase

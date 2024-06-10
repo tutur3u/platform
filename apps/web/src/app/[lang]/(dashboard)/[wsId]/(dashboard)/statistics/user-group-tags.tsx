@@ -4,7 +4,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 
-export default async function UserGroupsStatistics({
+export default async function UserGroupTagsStatistics({
   wsId,
   redirect = false,
 }: {
@@ -22,7 +22,7 @@ export default async function UserGroupsStatistics({
 
   const { count: userGroups } = enabled
     ? await supabase
-        .from('workspace_user_groups')
+        .from('workspace_user_group_tags')
         .select('*', {
           count: 'exact',
           head: true,
@@ -34,9 +34,9 @@ export default async function UserGroupsStatistics({
 
   return (
     <StatisticCard
-      title={t('workspace-users-tabs:groups')}
+      title={t('workspace-users-tabs:group_tags')}
       value={userGroups}
-      href={`/${wsId}/users/groups`}
+      href={`/${wsId}/users/group-tags`}
     />
   );
 }

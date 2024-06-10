@@ -22,6 +22,7 @@ import {
   TransactionCategoriesStatistics,
   TransactionsStatistics,
   UnitsStatistics,
+  UserGroupTagsStatistics,
   UserGroupsStatistics,
   UserReportsStatistics,
   UsersStatistics,
@@ -132,13 +133,17 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
       <UsersCategoryStatistics wsId={wsId} />
 
-      <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard />}>
           <UsersStatistics wsId={wsId} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
           <UserGroupsStatistics wsId={wsId} />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserGroupTagsStatistics wsId={wsId} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
