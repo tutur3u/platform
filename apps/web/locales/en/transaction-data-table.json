@@ -6,5 +6,7 @@
   "description": "Description",
   "report_opt_in": "Show in reports",
   "taken_at": "Taken at",
-  "created_at": "Created at"
+  "created_at": "Created at",
+  "income": "Income",
+  "expense": "Expense"
 }

@@ -1,3 +1,4 @@
+import { DailyTotalChart } from './charts';
 import TransactionsTable from './table';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Database } from '@/types/supabase';
@@ -20,10 +21,11 @@ export default async function WorkspaceTransactionsPage({
   searchParams,
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
-  const { data: _ } = await getDailyData(wsId);
+  const { data: dailyData } = await getDailyData(wsId);
 
   return (
     <>
+      <DailyTotalChart data={dailyData} />
       <TransactionsTable
         wsId={wsId}
         data={data.map((t) => ({
