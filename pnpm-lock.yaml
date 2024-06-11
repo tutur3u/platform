@@ -315,8 +315,8 @@ importers:
         specifier: ^9.10.3
         version: 9.10.3(react-dom@19.0.0-rc-6230622a1a-20240610(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610)
       react-is:
-        specifier: 19.0.0-rc-6230622a1a-20240610
-        version: 19.0.0-rc-6230622a1a-20240610
+        specifier: 19.0.0-rc.0
+        version: 19.0.0-rc.0
       react-markdown:
         specifier: ^9.0.1
         version: 9.0.1(@types/react@18.3.3)(react@19.0.0-rc-6230622a1a-20240610)
@@ -5124,8 +5124,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
-  react-is@19.0.0-rc-6230622a1a-20240610:
-    resolution: {integrity: sha512-6BH4F/xpoTJ+BTcb2AmZAzWXInEPUNKgL4u4C1BssZmFkGsvUpZmllLgCEVa105omvex85ZWwKHCy22KftGwDw==}
+  react-is@19.0.0-rc.0:
+    resolution: {integrity: sha512-Du6/ueMEZSgY66ssdMBnJFXvJ9ViCUKvRi0sBjxpxcyxlw/dcgSbIl0ahwCsyBEE5TECnymWrMGQ48Dc6VkvUQ==}
 
   react-markdown@9.0.1:
     resolution: {integrity: sha512-186Gw/vF1uRkydbsOIkcGXw7aHq0sZOCRFFjGrr7b9+nVZg4UfA4enXCaxm4fUzecU38sWfrNDitGhshuU7rdg==}
@@ -11481,7 +11481,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-is@19.0.0-rc-6230622a1a-20240610: {}
+  react-is@19.0.0-rc.0: {}
 
   react-markdown@9.0.1(@types/react@18.3.3)(react@19.0.0-rc-6230622a1a-20240610):
     dependencies:

@@ -121,7 +121,7 @@
     "react-dom": "19.0.0-rc-6230622a1a-20240610",
     "react-hook-form": "^7.51.5",
     "react-intersection-observer": "^9.10.3",
-    "react-is": "19.0.0-rc-6230622a1a-20240610",
+    "react-is": "19.0.0-rc.0",
     "react-markdown": "^9.0.1",
     "react-resizable": "^3.0.5",
     "react-resizable-panels": "^2.0.19",
