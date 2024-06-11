@@ -40,6 +40,7 @@ export default async function WorkspaceUserGroupTagsPage({
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
           <ApiKeyEditDialog
+            wsId={wsId}
             data={{
               ws_id: wsId,
             }}
@@ -80,7 +81,7 @@ async function getGroupTags(
 
   const queryBuilder = supabase
     .from('workspace_user_group_tags')
-    .select('*', {
+    .select('*, group_ids:workspace_user_group_tag_groups(group_id)', {
       count: 'exact',
     })
     .eq('ws_id', wsId)
@@ -99,5 +100,12 @@ async function getGroupTags(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceApiKey[]; count: number };
+  return {
+    data: data.map(({ group_ids, ...tag }) => ({
+      ...tag,
+      // @ts-expect-error
+      group_ids: group_ids.map((group) => group.group_id),
+    })),
+    count,
+  } as { data: WorkspaceApiKey[]; count: number };
 }

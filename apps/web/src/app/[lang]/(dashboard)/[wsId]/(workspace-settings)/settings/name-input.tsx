@@ -9,6 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Loader2 } from 'lucide-react';
@@ -75,12 +76,13 @@ export default function NameInput({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <div className="flex items-start gap-2">
+        <div className="flex items-end gap-2">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem className="w-full">
+                <Label htmlFor="workspace-name">{t('name')}</Label>
                 <FormControl>
                   <Input
                     id="workspace-name"

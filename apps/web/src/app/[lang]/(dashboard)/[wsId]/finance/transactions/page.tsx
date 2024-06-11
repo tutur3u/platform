@@ -20,16 +20,19 @@ export default async function WorkspaceTransactionsPage({
   searchParams,
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
+  const { data: _ } = await getDailyData(wsId);
 
   return (
-    <TransactionsTable
-      wsId={wsId}
-      data={data.map((t) => ({
-        ...t,
-        ws_id: wsId,
-      }))}
-      count={count}
-    />
+    <>
+      <TransactionsTable
+        wsId={wsId}
+        data={data.map((t) => ({
+          ...t,
+          ws_id: wsId,
+        }))}
+        count={count}
+      />
+    </>
   );
 }
 
@@ -79,4 +82,17 @@ async function getData(
     data: Transaction[];
     count: number;
   };
+}
+
+async function getDailyData(wsId: string) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase.rpc('get_daily_income_expense', {
+    _ws_id: wsId,
+  });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
 }

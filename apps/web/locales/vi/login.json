@@ -12,6 +12,7 @@
   "otp_verified": "Địa chỉ email của bạn đã được xác thực.",
   "failed_to_send": "Không thể gửi mã xác thực.",
   "failed_to_verify": "Không thể xác thực địa chỉ email của bạn.",
+  "invalid_verification_code": "Mã xác thực không hợp lệ.",
   "resend": "Gửi lại",
   "processing": "Đang xử lý...",
   "continue": "Tiếp tục"

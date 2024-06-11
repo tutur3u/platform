@@ -1,6 +1,7 @@
 'use client';
 
 import { ApiKeyRowActions } from './row-actions';
+import { ColorPicker } from '@/components/ui/color-picker';
 import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { ColumnDef } from '@tanstack/react-table';
@@ -58,7 +59,15 @@ export const groupTagColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('color') || '-'}
+        {row.getValue('color') ? (
+          <ColorPicker
+            text={row.getValue('name')}
+            value={row.getValue('color')}
+            className="w-full line-clamp-1 cursor-default"
+          />
+        ) : (
+          '-'
+        )}
       </div>
     ),
   },

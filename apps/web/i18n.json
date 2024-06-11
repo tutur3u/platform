@@ -283,6 +283,7 @@
     "/[lang]/(dashboard)/[wsId]/users/group-tags": [
       "sidebar-tabs",
       "search",
+      "user-data-table",
       "user-group-tag-data-table",
       "view-mode",
       "pagination",

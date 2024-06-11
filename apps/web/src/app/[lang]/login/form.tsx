@@ -53,6 +53,8 @@ export default function LoginForm() {
   const cooldown = 60;
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  const maxOTPLength = 6;
+
   // Update resend cooldown OTP is sent
   useEffect(() => {
     if (otpSent) setResendCooldown(cooldown);
@@ -85,7 +87,12 @@ export default function LoginForm() {
       });
 
       // OTP has been sent
+      form.setValue('otp', '');
+      form.clearErrors('otp');
       setOtpSent(true);
+
+      // Reset cooldown
+      setResendCooldown(cooldown);
     } else {
       toast({
         title: t('failed'),
@@ -110,6 +117,10 @@ export default function LoginForm() {
       router.refresh();
     } else {
       setLoading(false);
+
+      form.setError('otp', { message: t('invalid_verification_code') });
+      form.setValue('otp', '');
+
       toast({
         title: t('failed'),
         description: t('failed_to_verify'),
@@ -165,9 +176,18 @@ export default function LoginForm() {
               <FormLabel>{t('otp_code')}</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-2 md:flex-row">
-                  <InputOTP maxLength={6} {...field} disabled={loading}>
+                  <InputOTP
+                    maxLength={maxOTPLength}
+                    {...field}
+                    onChange={(value) => {
+                      form.setValue('otp', value);
+                      if (value.length === maxOTPLength)
+                        form.handleSubmit(onSubmit)();
+                    }}
+                    disabled={loading}
+                  >
                     <InputOTPGroup className="w-full justify-center">
-                      {Array.from({ length: 6 }).map((_, index) => (
+                      {Array.from({ length: maxOTPLength }).map((_, index) => (
                         <InputOTPSlot key={index} index={index} />
                       ))}
                     </InputOTPGroup>
@@ -186,8 +206,10 @@ export default function LoginForm() {
                   </Button>
                 </div>
               </FormControl>
+              {form.formState.errors.otp && (
+                <FormMessage>{form.formState.errors.otp.message}</FormMessage>
+              )}
               <FormDescription>{t('otp_description')}</FormDescription>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -199,8 +221,14 @@ export default function LoginForm() {
                 href="http://localhost:8004/monitor"
                 target="_blank"
                 className="col-span-full"
+                aria-disabled={loading}
               >
-                <Button type="button" className="w-full" variant="outline">
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  disabled={loading}
+                >
                   <Mail size={18} className="mr-1" />
                   {t('open_inbucket')}
                 </Button>
@@ -210,8 +238,14 @@ export default function LoginForm() {
                 <Link
                   href="https://mail.google.com/mail/u/0/#inbox"
                   target="_blank"
+                  aria-disabled={loading}
                 >
-                  <Button type="button" className="w-full" variant="outline">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="outline"
+                    disabled={loading}
+                  >
                     <IconBrandGmail size={18} className="mr-1" />
                     {t('open_gmail')}
                   </Button>
@@ -220,8 +254,14 @@ export default function LoginForm() {
                 <Link
                   href="https://outlook.live.com/mail/inbox"
                   target="_blank"
+                  aria-disabled={loading}
                 >
-                  <Button type="button" className="w-full" variant="outline">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="outline"
+                    disabled={loading}
+                  >
                     <IconBrandWindows size={18} className="mr-1" />
                     {t('open_outlook')}
                   </Button>

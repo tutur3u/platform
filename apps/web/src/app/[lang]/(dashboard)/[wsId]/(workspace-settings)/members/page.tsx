@@ -3,7 +3,7 @@ import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
 import { Separator } from '@/components/ui/separator';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient } from '@/utils/supabase/client';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -33,14 +33,15 @@ export default async function WorkspaceMembersPage({
 
   const { t } = useTranslation('ws-members');
 
-  const membersLabel = t('workspace-settings-layout:members');
-  const inviteLabel = t('invite_member');
+  const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   return (
     <>
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold">{membersLabel}</h1>
+          <h1 className="text-2xl font-bold">
+            {t('workspace-settings-layout:members')}
+          </h1>
           <p className="text-foreground/80">{t('description')}</p>
         </div>
 
@@ -53,7 +54,7 @@ export default async function WorkspaceMembersPage({
                   id: '',
                   role: 'MEMBER',
                 }}
-                label={inviteLabel}
+                label={t('invite_member')}
                 disabled
               />
             }
@@ -64,7 +65,10 @@ export default async function WorkspaceMembersPage({
                 ...user!,
                 role: ws?.role,
               }}
-              label={inviteLabel}
+              label={
+                disableInvite ? t('invite_member_disabled') : t('invite_member')
+              }
+              disabled={disableInvite}
             />
           </Suspense>
           <MemberTabs value={searchParams?.status || 'all'} />

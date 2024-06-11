@@ -10,21 +10,23 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { UserGroupTag } from '@/types/primitives/user-group-tag';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
-  data: WorkspaceApiKey;
+  wsId: string;
+  data: UserGroupTag;
   trigger?: React.ReactNode;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   submitLabel?: string;
 }
 
-export default function ApiKeyEditDialog({
+export default function GroupTagEditDialog({
+  wsId,
   data,
   trigger,
   open: externalOpen,
@@ -83,6 +85,7 @@ export default function ApiKeyEditDialog({
         </DialogHeader>
 
         <GroupTagForm
+          wsId={wsId}
           data={data}
           onSubmit={handleSubmit}
           submitLabel={submitLabel}
