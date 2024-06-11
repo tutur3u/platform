@@ -1,6 +1,7 @@
 {
   "description": "Manage members of your workspace.",
   "invite_member": "Invite member",
+  "invite_member_disabled": "Invite member disabled",
   "enter_email_or_username": "Enter an email or username",
   "member_since": "Member since",
   "pending_invitations": "Pending invitations",

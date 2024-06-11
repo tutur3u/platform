@@ -6,6 +6,7 @@
   "workspace_logo_description": "Quản lý logo của không gian làm việc để sử dụng trong báo cáo.",
   "workspace_avatar": "Ảnh đại diện",
   "workspace_avatar_description": "Tất cả mọi người trong không gian làm việc của bạn sẽ thấy ảnh đại diện này.",
+  "id": "ID không gian làm việc",
   "name": "Tên không gian làm việc",
   "name_placeholder": "Nhập tên không gian làm việc",
   "created_at": "Không gian làm việc này được tạo lúc ",

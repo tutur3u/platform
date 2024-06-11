@@ -1,5 +1,6 @@
 'use client';
 
+import WorkspaceIDCopy from './id-copy';
 import NameInput from './name-input';
 import { Workspace } from '@/types/primitives/Workspace';
 import useTranslation from 'next-translate/useTranslation';
@@ -21,11 +22,15 @@ export default function BasicInfo({ workspace, allowEdit }: Props) {
         {t('basic_info_description')}
       </div>
 
-      <NameInput
-        wsId={workspace.id}
-        defaultValue={workspace.name}
-        disabled={!workspace || !allowEdit}
-      />
+      <div className="grid gap-4">
+        <NameInput
+          wsId={workspace.id}
+          defaultValue={workspace.name}
+          disabled={!workspace || !allowEdit}
+        />
+
+        <WorkspaceIDCopy wsId={workspace.id} />
+      </div>
     </div>
   );
 }

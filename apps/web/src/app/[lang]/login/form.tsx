@@ -221,8 +221,14 @@ export default function LoginForm() {
                 href="http://localhost:8004/monitor"
                 target="_blank"
                 className="col-span-full"
+                aria-disabled={loading}
               >
-                <Button type="button" className="w-full" variant="outline">
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  disabled={loading}
+                >
                   <Mail size={18} className="mr-1" />
                   {t('open_inbucket')}
                 </Button>
@@ -232,8 +238,14 @@ export default function LoginForm() {
                 <Link
                   href="https://mail.google.com/mail/u/0/#inbox"
                   target="_blank"
+                  aria-disabled={loading}
                 >
-                  <Button type="button" className="w-full" variant="outline">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="outline"
+                    disabled={loading}
+                  >
                     <IconBrandGmail size={18} className="mr-1" />
                     {t('open_gmail')}
                   </Button>
@@ -242,8 +254,14 @@ export default function LoginForm() {
                 <Link
                   href="https://outlook.live.com/mail/inbox"
                   target="_blank"
+                  aria-disabled={loading}
                 >
-                  <Button type="button" className="w-full" variant="outline">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="outline"
+                    disabled={loading}
+                  >
                     <IconBrandWindows size={18} className="mr-1" />
                     {t('open_outlook')}
                   </Button>
