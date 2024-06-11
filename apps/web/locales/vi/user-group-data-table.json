@@ -3,5 +3,7 @@
   "name": "Tên",
   "amount": "Số thành viên",
   "locked": "Bị khoá",
-  "created_at": "Tạo lúc"
+  "created_at": "Tạo lúc",
+  "included_tags": "Gắn thẻ đã bao gồm",
+  "excluded_tags": "Gắn thẻ đã loại trừ"
 }

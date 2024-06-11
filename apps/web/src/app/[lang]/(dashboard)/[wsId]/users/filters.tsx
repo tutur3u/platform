@@ -27,7 +27,7 @@ import { useRouter } from 'next/navigation';
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface UserDatabaseFilterProps {
-  tag: string;
+  tag?: string;
   icon?: ReactNode;
   title: string;
   options: {
@@ -37,12 +37,16 @@ interface UserDatabaseFilterProps {
     icon?: ComponentType<{ className?: string }>;
   }[];
   href?: string;
+  align?: 'start' | 'center' | 'end';
   resetSignals?: string[];
   defaultValues?: string[];
+  alwaysShowNumber?: boolean;
+  alwaysEnableZero?: boolean;
   extraQueryOnSet?: Record<string, undefined | string | string[]>;
   sortCheckedFirst?: boolean;
   multiple?: boolean;
   disabled?: boolean;
+  onSet?: (values: string[]) => void;
 }
 
 export function UserDatabaseFilter({
@@ -51,12 +55,16 @@ export function UserDatabaseFilter({
   title,
   options,
   href,
+  align,
   // resetSignals,
   defaultValues,
+  alwaysShowNumber = false,
+  alwaysEnableZero = false,
   extraQueryOnSet,
   sortCheckedFirst = true,
   multiple = true,
   disabled,
+  onSet,
 }: UserDatabaseFilterProps) {
   const { t } = useTranslation('user-data-table');
 
@@ -69,13 +77,15 @@ export function UserDatabaseFilter({
         ? !multiple
           ? new Set(defaultValues.slice(0, 1))
           : new Set(defaultValues)
-        : !multiple && Array.isArray(searchParams.get(tag))
-          ? new Set(searchParams.get(tag)?.slice(0, 1) as string)
-          : new Set(
-              Array.isArray(searchParams.get(tag))
-                ? (searchParams.get(tag) as string[])
-                : [searchParams.get(tag) as string]
-            ),
+        : tag
+          ? !multiple && Array.isArray(searchParams.get(tag))
+            ? new Set(searchParams.get(tag)?.slice(0, 1) as string)
+            : new Set(
+                Array.isArray(searchParams.get(tag))
+                  ? (searchParams.get(tag) as string[])
+                  : [searchParams.get(tag) as string]
+              )
+          : new Set(),
     [searchParams, defaultValues, multiple, tag]
   );
 
@@ -100,6 +110,7 @@ export function UserDatabaseFilter({
 
   useEffect(() => {
     if (applying && !hasChanges) {
+      setSearchQuery('');
       setApplying(false);
       setOpen(false);
     }
@@ -125,11 +136,13 @@ export function UserDatabaseFilter({
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) {
+          setSearchQuery('');
           setSelectedValues(oldValues);
         }
 
         setOpen(isOpen);
       }}
+      modal={true}
     >
       <PopoverTrigger disabled={disabled} asChild>
         <Button
@@ -152,7 +165,7 @@ export function UserDatabaseFilter({
                   {selectedSize}
                 </Badge>
                 <div className="hidden space-x-1 lg:flex">
-                  {multiple && selectedSize > 2 ? (
+                  {(multiple && selectedSize > 2) || alwaysShowNumber ? (
                     <Badge
                       variant="secondary"
                       className="rounded-sm px-1 font-normal"
@@ -180,7 +193,7 @@ export function UserDatabaseFilter({
       </PopoverTrigger>
       <PopoverContent
         className="w-[min(calc(100vw-1rem),24rem)] p-0"
-        align={isMobile ? 'center' : 'start'}
+        align={align ?? isMobile ? 'center' : 'start'}
       >
         <Command shouldFilter={false}>
           <CommandInput
@@ -214,7 +227,9 @@ export function UserDatabaseFilter({
 
                           setSelectedValues(new Set(selectedValues));
                         }}
-                        disabled={applying || option.count === 0}
+                        disabled={
+                          applying || (!alwaysEnableZero && option.count === 0)
+                        }
                       >
                         <div
                           className={cn(
@@ -288,9 +303,17 @@ export function UserDatabaseFilter({
                 <CommandItem
                   onSelect={() => {
                     setApplying(true);
+
+                    if (onSet) {
+                      onSet(Array.from(selectedValues));
+                      setApplying(false);
+                      setOpen(false);
+                      return;
+                    }
+
                     if (!multiple && href)
                       router.push(`${href}/${Array.from(selectedValues)[0]}`);
-                    else {
+                    else if (tag) {
                       if (extraQueryOnSet)
                         searchParams.set(extraQueryOnSet, false);
                       searchParams.set({
