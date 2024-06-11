@@ -1,6 +1,7 @@
 {
   "description": "Quản lý thành viên trong không gian làm việc.",
   "invite_member": "Mời thành viên",
+  "invite_member_disabled": "Mời thành viên đã bị vô hiệu hóa",
   "enter_email_or_username": "Nhập email hoặc tên người dùng",
   "member_since": "Đã tham gia",
   "pending_invitations": "Lời mời đang chờ",

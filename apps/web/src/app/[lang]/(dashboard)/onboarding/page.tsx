@@ -1,25 +1,11 @@
+import WorkspaceInvites from './workspace-invites';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
 import { Separator } from '@/components/ui/separator';
-import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
 import useTranslation from 'next-translate/useTranslation';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 export default async function OnboardingPage() {
-  const workspaces = await getWorkspaces();
-  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
-
-  const workspaceInvites = await getWorkspaceInvites();
-
   const { t } = useTranslation('onboarding');
-
-  const justAMoment = t('just-a-moment');
-  const justAMomentDesc = t('just-a-moment-desc');
-
-  const noInvites = t('no-invites');
 
   return (
     <div className="inset-0 flex h-full items-center justify-center p-4 lg:px-32">
@@ -33,27 +19,16 @@ export default async function OnboardingPage() {
         >
           <div className="text-center">
             <div className="bg-gradient-to-br from-yellow-500 via-green-500 to-blue-600 bg-clip-text py-2 text-2xl font-semibold text-transparent md:text-3xl lg:text-5xl dark:from-yellow-500 dark:via-green-200 dark:to-green-300">
-              {justAMoment}
+              {t('just-a-moment')}
             </div>
 
             <div className="text-foreground/80 text-lg font-semibold md:text-xl">
-              {justAMomentDesc}
+              {t('just-a-moment-desc')}
             </div>
           </div>
 
           <Separator />
-
-          <div className="scrollbar-none grid h-full w-full gap-4 overflow-y-auto">
-            {workspaceInvites.length ? (
-              workspaceInvites.map((ws) => (
-                <WorkspaceInviteSnippet key={ws.id} ws={ws} />
-              ))
-            ) : (
-              <div className="text-foreground/60 flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold md:text-2xl">
-                {noInvites}
-              </div>
-            )}
-          </div>
+          <WorkspaceInvites />
         </Suspense>
       </div>
     </div>

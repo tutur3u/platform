@@ -1,8 +1,11 @@
-import StatisticCard from '@/components/cards/StatisticCard';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
+import {
+  UserGroupTagsStatistics,
+  UserGroupsStatistics,
+  UserReportsStatistics,
+  UsersStatistics,
+} from '../../(dashboard)/statistics';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,76 +16,25 @@ interface Props {
 }
 
 export default async function WorkspaceUsersPage({ params: { wsId } }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-
-  const { t } = useTranslation();
-  const usersLabel = t('sidebar-tabs:users');
-
-  const users = await getUsersCount(wsId);
-  const groups = await getGroupsCount(wsId);
-  const reports = await getReportsCount(wsId);
-
   return (
     <div className="flex min-h-full w-full flex-col">
-      <div className="grid items-end gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatisticCard
-          title={usersLabel}
-          value={users}
-          href={`/${wsId}/users/database`}
-        />
-        <StatisticCard
-          title={t('workspace-users-tabs:groups')}
-          value={groups}
-          href={`/${wsId}/users/groups`}
-        />
-        <StatisticCard
-          title={t('workspace-users-tabs:reports')}
-          value={reports}
-          href={`/${wsId}/users/reports`}
-        />
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UsersStatistics wsId={wsId} redirect />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserGroupsStatistics wsId={wsId} redirect />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserGroupTagsStatistics wsId={wsId} redirect />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <UserReportsStatistics wsId={wsId} redirect />
+        </Suspense>
       </div>
     </div>
   );
-}
-
-async function getUsersCount(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
-
-  const { count } = await supabase
-    .from('workspace_users')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
-
-  return count;
-}
-
-async function getGroupsCount(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
-
-  const { count } = await supabase
-    .from('workspace_user_groups')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ws_id', wsId);
-
-  return count;
-}
-
-async function getReportsCount(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
-
-  const { count } = await supabase
-    .from('external_user_monthly_reports')
-    .select('*, user:workspace_users!user_id!inner(ws_id)', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('user.ws_id', wsId);
-
-  return count;
 }

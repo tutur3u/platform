@@ -3,5 +3,7 @@
   "name": "Name",
   "amount": "Amount",
   "locked": "Locked",
-  "created_at": "Created At"
+  "created_at": "Created At",
+  "included_tags": "Included Tags",
+  "excluded_tags": "Excluded Tags"
 }

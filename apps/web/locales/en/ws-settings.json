@@ -6,6 +6,7 @@
   "workspace_logo_description": "Manage the logo of your workspace to use in reports.",
   "workspace_avatar": "Workspace Avatar",
   "workspace_avatar_description": "Everyone in your workspace will see this avatar.",
+  "id": "Workspace ID",
   "name": "Workspace Name",
   "name_placeholder": "Enter workspace name",
   "created_at": "This workspace was created ",

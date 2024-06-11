@@ -71,10 +71,11 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
       <ApiKeyEditDialog
+        wsId={groupTag.ws_id}
         data={groupTag}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_key')}
+        submitLabel={t('edit_tag')}
       />
     </>
   );

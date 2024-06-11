@@ -3191,21 +3191,21 @@ export type Database = {
           color: string | null;
           created_at: string;
           id: string;
-          tag: string;
+          name: string;
           ws_id: string;
         };
         Insert: {
           color?: string | null;
           created_at?: string;
           id?: string;
-          tag: string;
+          name: string;
           ws_id: string;
         };
         Update: {
           color?: string | null;
           created_at?: string;
           id?: string;
-          tag?: string;
+          name?: string;
           ws_id?: string;
         };
         Relationships: [
@@ -3964,6 +3964,17 @@ export type Database = {
           model: string;
         };
         Returns: string;
+      };
+      get_daily_income_expense: {
+        Args: {
+          _ws_id: string;
+          past_days?: number;
+        };
+        Returns: {
+          day: string;
+          total_income: number;
+          total_expense: number;
+        }[];
       };
       get_finance_invoices_count: {
         Args: {

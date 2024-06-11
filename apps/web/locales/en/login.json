@@ -12,6 +12,7 @@
   "otp_verified": "Your email address has been verified.",
   "failed_to_send": "Failed to send verification code.",
   "failed_to_verify": "Failed to verify your email address.",
+  "invalid_verification_code": "Invalid verification code.",
   "resend": "Resend",
   "processing": "Processing...",
   "continue": "Continue"

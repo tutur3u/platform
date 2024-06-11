@@ -13,11 +13,17 @@ interface Params {
 export async function PUT(req: Request, { params: { tagId: id } }: Params) {
   const supabase = createRouteHandlerClient({ cookies });
 
-  const data = await req.json();
+  const data = (await req.json()) as {
+    name: string;
+    color: string;
+    group_ids: string[];
+  };
+
+  const { group_ids: _, ...coreData } = data;
 
   const { error } = await supabase
     .from('workspace_user_group_tags')
-    .update(data)
+    .update(coreData)
     .eq('id', id);
 
   if (error) {
