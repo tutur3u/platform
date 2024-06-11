@@ -169,7 +169,7 @@
     "eslint": "8.57.0",
     "eslint-config-custom": "workspace:*",
     "jsdom": "^24.1.0",
-    "lint-staged": "^15.2.5",
+    "lint-staged": "^15.2.6",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.38",
     "supabase": "^1.176.4",
