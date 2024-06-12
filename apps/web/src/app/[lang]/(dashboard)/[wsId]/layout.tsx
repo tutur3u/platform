@@ -23,6 +23,7 @@ export default async function Layout({
   const secrets = await getSecrets({
     wsId,
     requiredSecrets: [
+      'ENABLE_X',
       'ENABLE_AI',
       'ENABLE_CHAT',
       'ENABLE_CALENDAR',
@@ -37,6 +38,13 @@ export default async function Layout({
   });
 
   const navLinks: NavLink[] = [
+    {
+      name: t('x'),
+      href: `/${wsId}/x`,
+      disabled: !verifySecret('ENABLE_X', 'true', secrets),
+      requireRootMember: true,
+      requireRootWorkspace: true,
+    },
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
