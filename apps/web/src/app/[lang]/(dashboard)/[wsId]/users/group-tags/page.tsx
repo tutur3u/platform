@@ -103,7 +103,6 @@ async function getGroupTags(
   return {
     data: data.map(({ group_ids, ...tag }) => ({
       ...tag,
-      // @ts-expect-error
       group_ids: group_ids.map((group) => group.group_id),
     })),
     count,
