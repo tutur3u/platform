@@ -3186,6 +3186,46 @@ export type Database = {
           },
         ];
       };
+      workspace_user_group_tag_groups: {
+        Row: {
+          created_at: string;
+          group_id: string;
+          tag_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          group_id: string;
+          tag_id: string;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string;
+          tag_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_user_group_tag_groups_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_tags';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_user_group_tags: {
         Row: {
           color: string | null;
@@ -4061,6 +4101,17 @@ export type Database = {
           ws_id: string;
         };
         Returns: number;
+      };
+      get_monthly_income_expense: {
+        Args: {
+          _ws_id: string;
+          past_months?: number;
+        };
+        Returns: {
+          month: string;
+          total_income: number;
+          total_expense: number;
+        }[];
       };
       get_pending_event_participants: {
         Args: {
