@@ -6,5 +6,9 @@
   "description": "Mô tả",
   "report_opt_in": "Hiển thị trong báo cáo",
   "taken_at": "Thực hiện lúc",
-  "created_at": "Tạo lúc"
+  "created_at": "Tạo lúc",
+  "income": "Thu nhập",
+  "expense": "Chi tiêu",
+  "daily_total_from_14_recent_days": "Tổng số tiền hàng ngày từ 14 ngày gần nhất",
+  "monthly_total_from_12_recent_months": "Tổng số tiền hàng tháng từ 12 tháng gần nhất"
 }

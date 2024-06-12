@@ -142,20 +142,74 @@ export function TransactionForm({
       >
         <FormField
           control={form.control}
-          name="amount"
-          disabled={loading}
+          name="origin_wallet_id"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  {...field}
-                  value={Math.abs(field.value)}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                />
-              </FormControl>
+            <FormItem className="flex flex-col">
+              <FormLabel>Wallet</FormLabel>
+              <Popover open={showWallets} onOpenChange={setShowWallets}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        'justify-between',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                      // disabled={walletsLoading}
+                      disabled
+                    >
+                      {field.value
+                        ? wallets?.find((c) => c.id === field.value)?.name
+                        : walletsLoading
+                          ? 'Fetching...'
+                          : 'Select wallet'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command
+                    filter={(value, search) => {
+                      if (value.includes(search)) return 1;
+                      return 0;
+                    }}
+                  >
+                    <CommandInput
+                      placeholder="Search wallet..."
+                      disabled={walletsLoading}
+                    />
+                    <CommandEmpty>No wallet found.</CommandEmpty>
+                    <CommandGroup>
+                      {(wallets?.length || 0) > 0
+                        ? wallets?.map((wallet) => (
+                            <CommandItem
+                              key={wallet.id}
+                              value={wallet.name}
+                              onSelect={() => {
+                                form.setValue(
+                                  'origin_wallet_id',
+                                  wallet?.id || ''
+                                );
+                                setShowWallets(false);
+                              }}
+                            >
+                              <CheckIcon
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  wallet.id === field.value
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {wallet.name}
+                            </CommandItem>
+                          ))
+                        : null}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
@@ -243,73 +297,20 @@ export function TransactionForm({
 
         <FormField
           control={form.control}
-          name="origin_wallet_id"
+          name="amount"
+          disabled={loading}
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Wallet</FormLabel>
-              <Popover open={showWallets} onOpenChange={setShowWallets}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                      disabled={walletsLoading}
-                    >
-                      {field.value
-                        ? wallets?.find((c) => c.id === field.value)?.name
-                        : walletsLoading
-                          ? 'Fetching...'
-                          : 'Select wallet'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command
-                    filter={(value, search) => {
-                      if (value.includes(search)) return 1;
-                      return 0;
-                    }}
-                  >
-                    <CommandInput
-                      placeholder="Search wallet..."
-                      disabled={walletsLoading}
-                    />
-                    <CommandEmpty>No wallet found.</CommandEmpty>
-                    <CommandGroup>
-                      {(wallets?.length || 0) > 0
-                        ? wallets?.map((wallet) => (
-                            <CommandItem
-                              key={wallet.id}
-                              value={wallet.name}
-                              onSelect={() => {
-                                form.setValue(
-                                  'origin_wallet_id',
-                                  wallet?.id || ''
-                                );
-                                setShowWallets(false);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  wallet.id === field.value
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              {wallet.name}
-                            </CommandItem>
-                          ))
-                        : null}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  value={Math.abs(field.value)}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -329,6 +330,10 @@ export function TransactionForm({
             </FormItem>
           )}
         />
+
+        <div className="h-2" />
+        <Separator />
+        <div className="h-2" />
 
         <FormField
           control={form.control}
