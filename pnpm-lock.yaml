@@ -237,8 +237,8 @@ importers:
         specifier: ^0.1.15
         version: 0.1.15(next@15.0.0-canary.25(@babel/core@7.24.7)(react-dom@19.0.0-rc-6230622a1a-20240610(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610)(vite@5.2.13(@types/node@20.14.2))
       ai:
-        specifier: ^3.1.32
-        version: 3.1.32(openai@4.50.0(encoding@0.1.13))(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
+        specifier: ^3.1.33
+        version: 3.1.33(openai@4.50.0(encoding@0.1.13))(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -2790,8 +2790,8 @@ packages:
     resolution: {integrity: sha512-5GG/5IbQQpC9FpkRGsSvZI5QYeSCzlJHdpBQntCsuTOxhKD8lqKhrleg2Yi7yvMIf82Ycmmqln9U8V9qwEiJew==}
     engines: {node: '>= 8.0.0'}
 
-  ai@3.1.32:
-    resolution: {integrity: sha512-+2dycoLQE3xN2BnfpWwTQYjMiwB3y1M9yLZxoODhzGCT/R/0JJjOFvqUHOvpx1K6hkWgIlHWTFfsK2VK/fRG7A==}
+  ai@3.1.33:
+    resolution: {integrity: sha512-JXiWKvkfRFhzUgqqVRByhovP8BOsv0LdA92lEtwm4opxM7EsKqSvCz3Yb5abp4GRUz7NS3ukBbGCjvRlymgQIw==}
     engines: {node: '>=18'}
     peerDependencies:
       openai: ^4.42.0
@@ -8702,7 +8702,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.1.32(openai@4.50.0(encoding@0.1.13))(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
+  ai@3.1.33(openai@4.50.0(encoding@0.1.13))(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.10
       '@ai-sdk/provider-utils': 0.0.13(zod@3.23.8)
