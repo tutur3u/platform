@@ -6,5 +6,9 @@
   "description": "Description",
   "report_opt_in": "Show in reports",
   "taken_at": "Taken at",
-  "created_at": "Created at"
+  "created_at": "Created at",
+  "income": "Income",
+  "expense": "Expense",
+  "daily_total_from_14_recent_days": "Daily total from 14 most recent days",
+  "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months"
 }

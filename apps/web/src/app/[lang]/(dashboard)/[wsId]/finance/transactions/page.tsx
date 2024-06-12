@@ -1,4 +1,6 @@
+import { DailyTotalChart, MonthlyTotalChart } from './charts';
 import TransactionsTable from './table';
+import { Separator } from '@/components/ui/separator';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -20,10 +22,16 @@ export default async function WorkspaceTransactionsPage({
   searchParams,
 }: Props) {
   const { data, count } = await getData(wsId, searchParams);
-  const { data: _ } = await getDailyData(wsId);
+
+  const { data: dailyData } = await getDailyData(wsId);
+  const { data: monthlyData } = await getMonthlyData(wsId);
 
   return (
     <>
+      <DailyTotalChart data={dailyData} />
+      <Separator className="my-4" />
+      <MonthlyTotalChart data={monthlyData} />
+      <Separator className="my-4" />
       <TransactionsTable
         wsId={wsId}
         data={data.map((t) => ({
@@ -88,6 +96,19 @@ async function getDailyData(wsId: string) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const queryBuilder = supabase.rpc('get_daily_income_expense', {
+    _ws_id: wsId,
+  });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
+}
+
+async function getMonthlyData(wsId: string) {
+  const supabase = createServerComponentClient<Database>({ cookies });
+
+  const queryBuilder = supabase.rpc('get_monthly_income_expense', {
     _ws_id: wsId,
   });
 
