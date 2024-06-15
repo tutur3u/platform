@@ -1,15 +1,15 @@
 import NotificationActionList, {
   NotificationAction,
 } from './notification-action-list';
-import { Button } from '@/components/ui/button';
+import { getWorkspaceInvites } from '@/lib/workspace-helper';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { getWorkspaceInvites } from '@/lib/workspace-helper';
+} from '@repo/ui/components/ui/popover';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Separator } from '@repo/ui/components/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

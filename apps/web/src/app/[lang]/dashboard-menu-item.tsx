@@ -1,11 +1,11 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { DEV_MODE } from '@/constants/common';
+} from '@repo/ui/components/ui/dropdown-menu';
 import { ActivitySquare, Database } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';

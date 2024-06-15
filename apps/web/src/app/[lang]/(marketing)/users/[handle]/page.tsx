@@ -1,6 +1,10 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/name-helper';
 import { createClient } from '@/utils/supabase/server';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { User } from 'lucide-react';
 import Image from 'next/image';

@@ -1,11 +1,11 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 

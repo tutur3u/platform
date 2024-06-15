@@ -1,7 +1,7 @@
 import UserMonthAttendance from './user-month-attendance';
-import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
+import { DataTablePagination } from '@repo/ui/components/ui/custom/tables/data-table-pagination';
 
 interface SearchParams {
   q?: string;

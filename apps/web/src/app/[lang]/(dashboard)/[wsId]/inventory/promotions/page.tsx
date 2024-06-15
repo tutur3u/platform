@@ -1,8 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { promotionColumns } from '@/data/columns/promotions';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {

@@ -1,24 +1,32 @@
 'use client';
 
-import { toast } from '../ui/use-toast';
 import { DatePicker } from './users/date-picker';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { SelectField } from '@/components/ui/custom/select-field';
+import { toast } from '.@repo/ui/components/ui/use-toast';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { getInitials } from '@/utils/name-helper';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { Button } from '@repo/ui/components/ui/button';
+import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@repo/ui/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -27,13 +35,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import { User as UserIcon } from 'lucide-react';

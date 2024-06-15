@@ -1,10 +1,10 @@
 import { configColumns } from './columns';
-import ReportPreview from '@/components/ui/custom/report-preview';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
 import { availableConfigs } from '@/constants/configs/reports';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
+import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 

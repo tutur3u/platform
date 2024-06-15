@@ -2,9 +2,9 @@
 
 import { transactionColumns } from './columns';
 import { TransactionForm } from './form';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Dialog } from '@/components/ui/dialog';
 import { Transaction } from '@/types/primitives/Transaction';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Dialog } from '@repo/ui/components/ui/dialog';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 

@@ -1,8 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { batchColumns } from '@/data/columns/batches';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { createClient } from '@/utils/supabase/server';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {

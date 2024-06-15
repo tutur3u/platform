@@ -1,5 +1,5 @@
 import { ChatMessage } from '@/components/chat-message';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { type Message } from 'ai';
 
 export interface ChatList {

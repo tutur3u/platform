@@ -2,11 +2,11 @@ import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
-import { Separator } from '@/components/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';

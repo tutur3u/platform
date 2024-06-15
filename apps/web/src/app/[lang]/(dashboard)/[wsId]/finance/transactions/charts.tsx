@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@repo/ui/lib/utils';
 import useTranslation from 'next-translate/useTranslation';
 import { useEffect } from 'react';
 import {

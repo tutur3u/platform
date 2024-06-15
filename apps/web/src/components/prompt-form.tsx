@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button';
-import { IconArrowElbow } from '@/components/ui/icons';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { Button } from '@repo/ui/components/ui/button';
+import { IconArrowElbow } from '@repo/ui/components/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+} from '@repo/ui/components/ui/tooltip';
 import { UseChatHelpers } from 'ai/react';
 import React from 'react';
 import Textarea from 'react-textarea-autosize';

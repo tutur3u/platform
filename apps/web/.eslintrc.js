@@ -1,5 +1,12 @@
 module.exports = {
-  extends: ['custom', 'plugin:@tanstack/eslint-plugin-query/recommended'],
+  extends: [
+    '@repo/eslint-config-custom/next.js',
+    'plugin:@tanstack/eslint-plugin-query/recommended',
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: true,
+  },
   rules: {
     '@tanstack/query/exhaustive-deps': 'error',
     '@tanstack/query/no-rest-destructuring': 'warn',

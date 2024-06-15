@@ -1,4 +1,4 @@
-import { Separator } from '../ui/separator';
+import { Separator } from '.@repo/ui/components/ui/separator';
 import { User } from '@/types/primitives/User';
 import moment from 'moment';
 import Link from 'next/link';

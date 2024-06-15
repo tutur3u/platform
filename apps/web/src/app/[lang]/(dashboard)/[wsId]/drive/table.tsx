@@ -2,9 +2,9 @@
 
 import { storageObjectsColumns } from './columns';
 import { StorageObjectForm } from './form';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Dialog } from '@/components/ui/dialog';
 import { StorageObject } from '@/types/primitives/StorageObject';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Dialog } from '@repo/ui/components/ui/dialog';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 

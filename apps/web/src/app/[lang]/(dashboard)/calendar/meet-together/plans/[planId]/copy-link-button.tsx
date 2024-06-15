@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 import { Check, LinkIcon } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useEffect, useState } from 'react';

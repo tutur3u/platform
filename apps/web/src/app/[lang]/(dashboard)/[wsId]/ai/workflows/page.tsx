@@ -1,10 +1,10 @@
 import ProjectEditDialog from '../../projects/_components/project-edit-dialog';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
 import { projectColumns } from '@/data/columns/projects';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 

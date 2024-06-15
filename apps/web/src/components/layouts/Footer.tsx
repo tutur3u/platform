@@ -1,5 +1,5 @@
 import Slogan from './slogan';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import Image from 'next/image';
 import Link from 'next/link';

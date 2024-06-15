@@ -1,5 +1,4 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { getUserColumns } from '@/data/columns/users';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -7,6 +6,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';

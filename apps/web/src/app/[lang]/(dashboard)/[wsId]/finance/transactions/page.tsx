@@ -1,8 +1,8 @@
 import { DailyTotalChart, MonthlyTotalChart } from './charts';
 import TransactionsTable from './table';
-import { Separator } from '@/components/ui/separator';
 import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 
 interface Props {
   params: {

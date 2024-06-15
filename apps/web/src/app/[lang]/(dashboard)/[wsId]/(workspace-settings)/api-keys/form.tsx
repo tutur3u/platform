@@ -1,4 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
   FormControl,
@@ -6,10 +8,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import useTranslation from 'next-translate/useTranslation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

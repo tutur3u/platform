@@ -2,11 +2,11 @@
 
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
-import ReportPreview from '@/components/ui/custom/report-preview';
-import { Separator } from '@/components/ui/separator';
 import { WorkspaceUserReport } from '@/types/db';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { zodResolver } from '@hookform/resolvers/zod';
+import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';

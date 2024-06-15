@@ -2,11 +2,11 @@ import { UserDatabaseFilter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import MonthPicker from '@/components/ui/custom/month-picker';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import MonthPicker from '@repo/ui/components/ui/custom/month-picker';
 import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 

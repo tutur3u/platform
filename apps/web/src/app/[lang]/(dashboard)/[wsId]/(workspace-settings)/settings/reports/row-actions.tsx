@@ -1,16 +1,16 @@
 'use client';
 
 import ConfigEditDialog from './edit-dialog';
-import { Button } from '@/components/ui/button';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+} from '@repo/ui/components/ui/dropdown-menu';
 import { Row } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';

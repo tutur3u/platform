@@ -1,4 +1,5 @@
-import { Button } from '@/components/ui/button';
+import { fetcher } from '@/utils/fetcher';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -6,15 +7,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { FormControl, FormLabel } from '@/components/ui/form';
+} from '@repo/ui/components/ui/command';
+import { FormControl, FormLabel } from '@repo/ui/components/ui/form';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { fetcher } from '@/utils/fetcher';
+} from '@repo/ui/components/ui/popover';
+import { cn } from '@repo/ui/lib/utils';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
 

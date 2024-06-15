@@ -1,6 +1,6 @@
 'use client';
 
-import { toast } from '../ui/use-toast';
+import { toast } from '.@repo/ui/components/ui/use-toast';
 import { Workspace } from '@/types/primitives/Workspace';
 import moment from 'moment';
 import 'moment/locale/vi';

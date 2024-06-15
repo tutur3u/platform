@@ -1,4 +1,4 @@
-import { Separator } from '../ui/separator';
+import { Separator } from '.@repo/ui/components/ui/separator';
 import { Workspace } from '@/types/primitives/Workspace';
 import moment from 'moment';
 

@@ -1,8 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
 import timezones from '@/data/timezones.json';
 import { Timezone } from '@/types/primitives/Timezone';
 import { createAdminClient } from '@/utils/supabase/client';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';

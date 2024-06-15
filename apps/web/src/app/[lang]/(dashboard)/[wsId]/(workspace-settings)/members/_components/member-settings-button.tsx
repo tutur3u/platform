@@ -1,8 +1,17 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { SelectField } from '@/components/ui/custom/select-field';
+import { User } from '@/types/primitives/User';
+import { Workspace } from '@/types/primitives/Workspace';
+import { getInitials } from '@/utils/name-helper';
+import { Cog6ToothIcon } from '@heroicons/react/24/solid';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { Button } from '@repo/ui/components/ui/button';
+import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -19,15 +28,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { getInitials } from '@/utils/name-helper';
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { User as UserIcon } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';

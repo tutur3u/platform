@@ -1,7 +1,7 @@
 import FleetingNavigator from './fleeting-navigator';
 import { NavLink, Navigation } from '@/components/navigation';
-import { Separator } from '@/components/ui/separator';
 import { getSecrets, verifySecret } from '@/lib/workspace-helper';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 

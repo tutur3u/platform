@@ -1,8 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {

@@ -1,8 +1,18 @@
 'use client';
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { User } from '@/types/primitives/User';
+import { Workspace } from '@/types/primitives/Workspace';
+import { getInitials } from '@/utils/name-helper';
+import { createClient } from '@/utils/supabase/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,7 +21,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/components/ui/command';
+} from '@repo/ui/components/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -28,29 +38,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@repo/ui/components/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+} from '@repo/ui/components/ui/select';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
+import { cn } from '@repo/ui/lib/utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';

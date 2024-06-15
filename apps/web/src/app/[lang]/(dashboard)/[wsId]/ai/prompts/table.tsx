@@ -2,9 +2,9 @@
 
 import { aiPromptsColumns } from './columns';
 import { AIPromptForm } from './form';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Dialog } from '@/components/ui/dialog';
 import { AIPrompt } from '@/types/db';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Dialog } from '@repo/ui/components/ui/dialog';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 

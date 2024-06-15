@@ -1,10 +1,10 @@
 import SecretEditDialog from './_components/secret-edit-dialog';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
 import { secretColumns } from '@/data/columns/secrets';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 

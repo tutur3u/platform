@@ -1,7 +1,7 @@
 'use client';
 
 import { useTimeBlocking } from './time-blocking-provider';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { ShieldCheck } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 

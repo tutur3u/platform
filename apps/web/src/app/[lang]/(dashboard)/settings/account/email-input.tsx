@@ -1,7 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { InputField } from '@/components/ui/custom/input-field';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { InputField } from '@repo/ui/components/ui/custom/input-field';
 import {
   Form,
   FormControl,
@@ -9,9 +10,8 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from '@/components/ui/form';
-import { toast } from '@/components/ui/use-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';

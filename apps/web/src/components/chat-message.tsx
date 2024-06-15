@@ -2,12 +2,16 @@
 
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
-import { CodeBlock } from '@/components/ui/codeblock';
-import { IconUser } from '@/components/ui/icons';
 import { capitalize, cn } from '@/lib/utils';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { CodeBlock } from '@repo/ui/components/ui/codeblock';
+import { IconUser } from '@repo/ui/components/ui/icons';
 import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
