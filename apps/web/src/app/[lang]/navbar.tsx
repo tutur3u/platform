@@ -8,14 +8,13 @@ import WorkspaceSelect from './workspace-select';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspaces } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 export default async function Navbar() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user: sbUser },

@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/use-toast';
 import { StorageObject } from '@/types/primitives/StorageObject';
+import { createClient } from '@/utils/supabase/client';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Row } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function StorageObjectRowActions(props: Props) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const { t } = useTranslation();
 
   const router = useRouter();

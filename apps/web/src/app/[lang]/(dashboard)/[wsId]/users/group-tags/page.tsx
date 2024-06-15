@@ -4,11 +4,9 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { Separator } from '@/components/ui/separator';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,7 +75,7 @@ async function getGroupTags(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_group_tags')

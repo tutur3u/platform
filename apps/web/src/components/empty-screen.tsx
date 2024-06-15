@@ -3,7 +3,7 @@ import { Separator } from './ui/separator';
 import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@/components/ui/icons';
 import { capitalize } from '@/lib/utils';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { Message } from 'ai';
 import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';

@@ -39,7 +39,7 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('x'),
+      name: t('X'),
       href: `/${wsId}/x`,
       disabled: !verifySecret('ENABLE_X', 'true', secrets),
       requireRootMember: true,

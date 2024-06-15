@@ -1,8 +1,7 @@
 import { createAdminClient } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/server';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
-import { cookies } from 'next/headers';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -33,10 +32,7 @@ export async function POST(req: Request) {
     const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({
-      cookies: () => cookieStore,
-    });
+    const supabase = createClient();
 
     const {
       data: { user },

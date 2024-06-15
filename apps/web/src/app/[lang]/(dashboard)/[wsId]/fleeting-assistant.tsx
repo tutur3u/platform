@@ -5,7 +5,7 @@ import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Message } from 'ai';
@@ -31,12 +31,12 @@ export default function FleetingAssistant({
   onSubmit: createChat,
 }: {
   wsId: string;
-  chat?: AIChat;
+  chat?: Partial<AIChat>;
   model: 'google' | 'anthropic';
   messages: Message[];
   onBack: () => void;
   onReset: () => void;
-  onSubmit: (prompt: string) => Promise<AIChat | undefined>;
+  onSubmit: (prompt: string) => Promise<Partial<AIChat> | undefined>;
 }) {
   const { t } = useTranslation('ai-chat');
 

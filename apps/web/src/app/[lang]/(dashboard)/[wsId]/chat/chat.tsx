@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Model, defaultModel } from '@/data/models';
 import { cn } from '@/lib/utils';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { useLocalStorage } from '@mantine/hooks';
 import { Message } from 'ai';
 import { useChat } from 'ai/react';
@@ -26,7 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  defaultChat?: AIChat;
+  defaultChat?: Partial<AIChat>;
   wsId: string;
   initialMessages?: Message[];
   previousMessages?: Message[];
@@ -66,7 +66,7 @@ const Chat = ({
     setPreviewTokenDialog(!hasKeys && !previewToken);
   }, [hasKeys, previewToken]);
 
-  const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
+  const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model>(defaultModel);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
@@ -154,7 +154,7 @@ const Chat = ({
       return;
     }
 
-    const { id, title } = await res.json();
+    const { id, title } = (await res.json()) as AIChat;
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });

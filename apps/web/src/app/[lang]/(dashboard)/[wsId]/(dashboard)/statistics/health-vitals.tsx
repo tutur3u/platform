@@ -1,14 +1,13 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 export default async function HealthVitalsStatistics({
   wsId,
 }: {
   wsId: string;
 }) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const enabled = await verifyHasSecrets(wsId, ['ENABLE_HEALTHCARE']);
 

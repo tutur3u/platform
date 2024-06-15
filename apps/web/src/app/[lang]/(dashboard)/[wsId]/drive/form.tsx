@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Check, Trash } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
@@ -40,7 +40,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
   const { t } = useTranslation('common');
 
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
 

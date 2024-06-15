@@ -1,6 +1,4 @@
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +10,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
@@ -31,9 +29,9 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
 }
 
 export async function POST(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
-  const data: TransactionCategory = await req.json();
+  const data = await req.json();
 
   const { error } = await supabase
     .from('transaction_categories')

@@ -20,7 +20,7 @@ import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
-  model?: string;
+  model?: string | null;
 }
 
 export function FleetingAssistantMessage({

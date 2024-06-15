@@ -6,10 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +98,7 @@ export default async function WorkspaceSettingsPage({
 }
 
 async function getSecrets(wsId: string) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_secrets')

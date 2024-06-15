@@ -3,7 +3,7 @@
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import { toast } from '@/components/ui/use-toast';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { useClickOutside } from '@mantine/hooks';
 import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
@@ -20,7 +20,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     'assistant' | 'search' | 'settings'
   >();
 
-  const [chat, setChat] = useState<AIChat | undefined>();
+  const [chat, setChat] = useState<Partial<AIChat> | undefined>();
   const [model] = useState<'google' | 'anthropic'>('google');
 
   const { messages, setMessages } = useChat({
@@ -77,7 +77,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       return;
     }
 
-    const { id, title } = await res.json();
+    const { id, title } = (await res.json()) as AIChat;
     if (id) setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
 
     return { id, title, model: 'GOOGLE-GEMINI-PRO' } as AIChat;

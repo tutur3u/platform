@@ -1,5 +1,5 @@
 import { Separator } from '@/components/ui/separator';
-import { Document } from '@/types/primitives/Document';
+import { WorkspaceDocument } from '@/types/db';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 interface Props {
   wsId: string;
-  document: Document;
+  document: Partial<WorkspaceDocument>;
 }
 
 const DocumentCard = ({ wsId, document }: Props) => {

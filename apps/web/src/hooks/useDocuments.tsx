@@ -1,19 +1,19 @@
-import { Document } from '@/types/primitives/Document';
+import { WorkspaceDocument } from '@/types/db';
 import { showNotification } from '@mantine/notifications';
 import { ReactNode, createContext, useContext } from 'react';
 import { mutate } from 'swr';
 
 const DocumentContext = createContext({
-  createDocument: (wsId: string, document: Document) =>
+  createDocument: (wsId: string, document: WorkspaceDocument) =>
     console.log(wsId, document),
-  updateDocument: (wsId: string, document: Document) =>
+  updateDocument: (wsId: string, document: WorkspaceDocument) =>
     console.log(wsId, document),
-  deleteDocument: (wsId: string, document: Document) =>
+  deleteDocument: (wsId: string, document: WorkspaceDocument) =>
     console.log(wsId, document),
 });
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
-  const createDocument = async (wsId: string, document: Document) => {
+  const createDocument = async (wsId: string, document: WorkspaceDocument) => {
     try {
       const res = await fetch(`/api/workspaces/${wsId}/documents`, {
         method: 'POST',
@@ -34,7 +34,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateDocument = async (wsId: string, document: Document) => {
+  const updateDocument = async (wsId: string, document: WorkspaceDocument) => {
     try {
       const res = await fetch(
         `/api/workspaces/${wsId}/documents/${document.id}`,
@@ -58,7 +58,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteDocument = async (wsId: string, document: Document) => {
+  const deleteDocument = async (wsId: string, document: WorkspaceDocument) => {
     try {
       const res = await fetch(
         `/api/workspaces/${wsId}/documents/${document.id}`,

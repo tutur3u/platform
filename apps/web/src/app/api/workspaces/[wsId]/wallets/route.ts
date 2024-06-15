@@ -1,6 +1,5 @@
 import { Wallet } from '@/types/primitives/Wallet';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +11,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_wallets')
@@ -34,9 +33,12 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
 }
 
 export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data: Wallet = await req.json();
+
+  if (!data.id)
+    return NextResponse.json({ message: 'Invalid wallet ID' }, { status: 400 });
 
   const { error } = await supabase
     .from('workspace_wallets')

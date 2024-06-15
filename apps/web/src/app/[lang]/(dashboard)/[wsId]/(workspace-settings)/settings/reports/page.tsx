@@ -4,10 +4,8 @@ import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { Separator } from '@/components/ui/separator';
 import { availableConfigs } from '@/constants/configs/reports';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -97,7 +95,7 @@ export default async function WorkspaceReportsSettingsPage({
 }
 
 async function getConfigs(wsId: string, { q }: SearchParams) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

@@ -6,7 +6,7 @@ import { PromptForm } from '@/components/prompt-form';
 import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { Button } from '@/components/ui/button';
 import { Model } from '@/data/models';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {

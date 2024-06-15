@@ -1,8 +1,7 @@
 import UserMonthAttendance from './user-month-attendance';
 import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface SearchParams {
   q?: string;
@@ -72,7 +71,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -85,7 +84,7 @@ async function getData(
         excluded_groups: Array.isArray(excludedGroups)
           ? excludedGroups
           : [excludedGroups],
-        search_query: q || null,
+        search_query: q || '',
       },
       {
         count: 'exact',
@@ -109,5 +108,5 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }

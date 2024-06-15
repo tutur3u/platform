@@ -25,10 +25,10 @@ dayjs.extend(isBetween);
 dayjs.extend(minMax);
 
 interface GuestUser {
-  id: string;
-  display_name?: string;
+  id?: string | null;
+  display_name?: string | null;
   password_hash?: string;
-  is_guest?: boolean;
+  is_guest?: boolean | null;
 }
 
 interface EditingParams {
@@ -112,15 +112,19 @@ const TimeBlockingProvider = ({
 
       const allUsers = planUsers.filter(
         (user) =>
-          filteredUserIds.length === 0 || filteredUserIds.includes(user.id)
+          filteredUserIds.length === 0 ||
+          !user?.id ||
+          filteredUserIds.includes(user.id)
       );
 
       const uniqueUserIds = Array.from(new Set(previewUserIds));
 
       return {
-        available: allUsers.filter((user) => uniqueUserIds.includes(user.id)),
+        available: allUsers.filter(
+          (user) => !user?.id || uniqueUserIds.includes(user.id)
+        ),
         unavailable: allUsers.filter(
-          (user) => !uniqueUserIds.includes(user.id)
+          (user) => user.id && !uniqueUserIds.includes(user.id)
         ),
       };
     },

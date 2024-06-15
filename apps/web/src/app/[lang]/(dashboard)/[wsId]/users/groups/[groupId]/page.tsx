@@ -5,10 +5,9 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 interface SearchParams {
   q?: string;
@@ -101,7 +100,7 @@ export default async function UserGroupDetailsPage({
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -126,7 +125,7 @@ async function getUserData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -137,7 +136,7 @@ async function getUserData(
         excluded_groups: Array.isArray(excludedGroups)
           ? excludedGroups
           : [excludedGroups],
-        search_query: q || null,
+        search_query: q || '',
       },
       {
         count: 'exact',
@@ -166,11 +165,11 @@ async function getUserData(
     });
   }
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')
@@ -187,7 +186,7 @@ async function getUserFields(wsId: string) {
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(

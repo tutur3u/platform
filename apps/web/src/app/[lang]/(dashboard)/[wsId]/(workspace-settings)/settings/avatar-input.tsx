@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
 import { Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,7 @@ export default function AvatarInput({ workspace, disabled }: Props) {
   const bucket = 'avatars';
 
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const [file, setFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);

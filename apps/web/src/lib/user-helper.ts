@@ -1,11 +1,9 @@
 import { User } from '@/types/primitives/User';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },
@@ -15,7 +13,7 @@ export async function getCurrentSupabaseUser() {
 }
 
 export async function getCurrentUser(noRedirect?: boolean) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },

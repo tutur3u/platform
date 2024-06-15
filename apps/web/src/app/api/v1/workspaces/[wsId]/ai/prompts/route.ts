@@ -1,11 +1,10 @@
 import { AIPrompt } from '@/types/db';
+import { createClient } from '@/utils/supabase/server';
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +16,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_ai_prompts')
@@ -70,7 +69,7 @@ const safetySettings = [
 ];
 
 export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const data: AIPrompt = await req.json();
 
   if (!data) {

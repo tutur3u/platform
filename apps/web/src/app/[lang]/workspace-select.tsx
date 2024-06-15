@@ -48,9 +48,9 @@ import { cn } from '@/lib/utils';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -216,7 +216,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
         });
     }
 
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const channel = wsId
       ? supabase.channel(
           `workspace:${wsId}`,

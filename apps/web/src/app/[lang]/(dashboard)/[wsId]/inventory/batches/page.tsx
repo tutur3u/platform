@@ -2,9 +2,7 @@ import { DataTable } from '@/components/ui/custom/tables/data-table';
 import { batchColumns } from '@/data/columns/batches';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -46,7 +44,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('inventory_batches')

@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { type Message } from 'ai';
 
 export interface ChatList {
-  title?: string;
+  title?: string | null;
   titleLoading?: boolean;
   messages: (Message & {
     chat_id?: string;
@@ -13,7 +13,7 @@ export interface ChatList {
   setInput: (input: string) => void;
   embeddedUrl?: string;
   locale: string;
-  model?: string;
+  model?: string | null;
 }
 
 export function ChatList({

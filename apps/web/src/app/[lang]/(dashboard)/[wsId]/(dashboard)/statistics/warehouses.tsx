@@ -1,8 +1,7 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export default async function WarehousesStatistics({
   wsId,
@@ -11,7 +10,7 @@ export default async function WarehousesStatistics({
   wsId: string;
   redirect?: boolean;
 }) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
   const { t } = useTranslation();
 
   const enabled = await verifyHasSecrets(

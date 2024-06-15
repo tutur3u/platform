@@ -1,4 +1,3 @@
-import { useUser } from '@/hooks/useUser';
 import { Priority } from '@/types/primitives/Priority';
 import { Task } from '@/types/primitives/Task';
 import { User } from '@/types/primitives/User';
@@ -28,7 +27,7 @@ import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import moment from 'moment';
 import Link from 'next/link';
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 
 interface TaskEditFormProps {
@@ -167,7 +166,8 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     }
   };
 
-  const { user, isLoading: isUserLoading } = useUser();
+  const user = { id: 'TO-BE-REFACTORED' };
+  const isUserLoading = true;
 
   const { data: creatorData, error: creatorError } = useSWR(
     task?.id ? `/api/tasks/${task.id}/activities` : null
@@ -238,7 +238,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
   const handleSave = async () => {
     if (task?.id && candidateAssignees && candidateAssignees.length > 0) {
       const promises = candidateAssignees.map((assignee) =>
-        handleAssignUser(assignee.id)
+        assignee.id ? handleAssignUser(assignee.id) : null
       );
 
       await Promise.all(promises);
@@ -506,45 +506,47 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                   Assignees
                 </h3>
                 <div className="grid gap-2 lg:grid-cols-2">
-                  {getAllAssignees().map((assignee) => (
-                    <Group
-                      key={assignee.id}
-                      className={`relative w-full rounded-lg border p-4 ${
-                        isAssigneeAdded(assignee.id)
-                          ? 'border-blue-300/20 bg-blue-300/10'
-                          : 'border-dashed border-zinc-300/20 bg-zinc-800'
-                      }`}
-                    >
-                      <Link
-                        href={`/${assignee.handle}`}
-                        onClick={() => closeAllModals()}
+                  {getAllAssignees().map((assignee) =>
+                    assignee.id ? (
+                      <Group
+                        key={assignee.id}
+                        className={`relative w-full rounded-lg border p-4 ${
+                          isAssigneeAdded(assignee.id)
+                            ? 'border-blue-300/20 bg-blue-300/10'
+                            : 'border-dashed border-zinc-300/20 bg-zinc-800'
+                        }`}
                       >
-                        <Avatar
-                          color="blue"
-                          radius="xl"
-                          size="lg"
-                          src={assignee?.avatar_url}
+                        <Link
+                          href={`/${assignee.handle}`}
+                          onClick={() => closeAllModals()}
                         >
-                          {getInitials(assignee?.display_name || 'Unknown')}
-                        </Avatar>
-                      </Link>
-                      <div>
-                        <Text className="text-blue-200">
-                          {assignee.display_name}
-                        </Text>
-                        <Text className="text-blue-100">
-                          @{assignee.handle}
-                        </Text>
-                      </div>
+                          <Avatar
+                            color="blue"
+                            radius="xl"
+                            size="lg"
+                            src={assignee.avatar_url}
+                          >
+                            {getInitials(assignee?.display_name || 'Unknown')}
+                          </Avatar>
+                        </Link>
+                        <div>
+                          <Text className="text-blue-200">
+                            {assignee.display_name}
+                          </Text>
+                          <Text className="text-blue-100">
+                            @{assignee.handle}
+                          </Text>
+                        </div>
 
-                      <button
-                        className="absolute right-1 top-1"
-                        onClick={() => handleUnassignUser(assignee.id)}
-                      >
-                        <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
-                      </button>
-                    </Group>
-                  ))}
+                        <button
+                          className="absolute right-1 top-1"
+                          onClick={() => handleUnassignUser(assignee.id!)}
+                        >
+                          <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                        </button>
+                      </Group>
+                    ) : null
+                  )}
                 </div>
               </>
             )}

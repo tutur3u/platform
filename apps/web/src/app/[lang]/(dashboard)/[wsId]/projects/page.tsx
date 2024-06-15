@@ -5,11 +5,9 @@ import { Separator } from '@/components/ui/separator';
 import { projectColumns } from '@/data/columns/projects';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +77,7 @@ async function getProjects(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_boards')

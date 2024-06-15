@@ -1,12 +1,11 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 const enabled = true;
 
 export default async function WalletsStatistics({ wsId }: { wsId: string }) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
   const { t } = useTranslation();
 
   const { count: walletsCount } = enabled

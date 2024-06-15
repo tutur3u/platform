@@ -14,8 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/user-group-tag';
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
@@ -157,7 +157,7 @@ export default function GroupTagForm({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')

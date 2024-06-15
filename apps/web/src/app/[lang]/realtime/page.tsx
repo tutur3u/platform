@@ -8,7 +8,7 @@ import {
 } from './random-colors';
 import { Coordinates, Message, Payload, User } from './types';
 import { removeFirst } from './utils';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createDynamicClient } from '@/utils/supabase/client';
 import {
   PostgrestResponse,
   REALTIME_LISTEN_TYPES,
@@ -34,8 +34,7 @@ const Y_THRESHOLD = 35;
 const userId = nanoid();
 
 const Room: NextPage = () => {
-  const supabase = createClientComponentClient();
-
+  const supabase = createDynamicClient();
   const localColorBackup = getRandomColor();
 
   const chatboxRef = useRef<any>();

@@ -19,7 +19,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  defaultValue?: string;
+  defaultValue?: string | null;
   disabled?: boolean;
 }
 
@@ -39,7 +39,7 @@ export default function DisplayNameInput({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: defaultValue,
+      name: defaultValue || '',
     },
   });
 

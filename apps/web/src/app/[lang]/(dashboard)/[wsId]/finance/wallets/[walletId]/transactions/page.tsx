@@ -4,12 +4,10 @@ import PlusCardButton from '@/components/common/PlusCardButton';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { Separator } from '@/components/ui/separator';
 import { Transaction } from '@/types/primitives/Transaction';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import moment from 'moment';
 import 'moment/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -160,7 +158,7 @@ async function getTransactions(
   walletId: string,
   { q, from, to }: { q: string; from: string; to: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('wallet_transactions')
