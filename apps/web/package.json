@@ -29,7 +29,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.22.0",
+    "@anthropic-ai/sdk": "^0.23.0",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
@@ -109,7 +109,7 @@
     "moment": "^2.30.1",
     "nanoid": "^5.0.7",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.29",
+    "next": "15.0.0-canary.32",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
     "openai": "^4.51.0",
@@ -141,8 +141,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.29",
-    "@next/eslint-plugin-next": "15.0.0-canary.29",
+    "@next/bundle-analyzer": "15.0.0-canary.32",
+    "@next/eslint-plugin-next": "15.0.0-canary.32",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.13",
     "@tanstack/eslint-plugin-query": "^5.43.1",
