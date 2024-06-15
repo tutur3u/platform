@@ -1,6 +1,5 @@
 'use client';
 
-import { toast } from '../.@repo/ui/components/ui/use-toast';
 import TimezoneEditDialog from './edit-dialog';
 import { Timezone } from '@/types/primitives/Timezone';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';

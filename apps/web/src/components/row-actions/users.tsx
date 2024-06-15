@@ -1,11 +1,10 @@
 'use client';
 
 import { DatePicker } from './users/date-picker';
-import { toast } from '.@repo/ui/components/ui/use-toast';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
+import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   Avatar,
   AvatarFallback,
@@ -38,6 +37,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import { User as UserIcon } from 'lucide-react';
@@ -470,7 +470,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <EllipsisHorizontalIcon className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>

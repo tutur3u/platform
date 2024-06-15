@@ -1,6 +1,5 @@
 'use client';
 
-import { toast } from '.@repo/ui/components/ui/use-toast';
 import ProjectEditDialog from '@/app/[lang]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
