@@ -7,7 +7,7 @@
         "*"
       ]
     },
-    "module": "NodeNext",
+    "module": "ESNext",
     "plugins": [
       {
         "name": "next"
