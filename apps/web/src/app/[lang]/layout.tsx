@@ -13,6 +13,8 @@ import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   children: ReactNode;
   params: {
