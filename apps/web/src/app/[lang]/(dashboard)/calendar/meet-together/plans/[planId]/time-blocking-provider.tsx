@@ -264,7 +264,6 @@ const TimeBlockingProvider = ({
 
   useEffect(() => {
     const addTimeBlock = async (timeblock: Timeblock) => {
-      console.log(plan.id);
       if (plan.id !== selectedTimeBlocks.planId) return;
 
       const data = {
@@ -280,7 +279,6 @@ const TimeBlockingProvider = ({
     };
 
     const removeTimeBlock = async (timeblock: Timeblock) => {
-      console.log(plan.id);
       if (plan.id !== selectedTimeBlocks.planId) return;
 
       const data = {
@@ -319,6 +317,46 @@ const TimeBlockingProvider = ({
       if (!serverTimeblocks || !localTimeblocks) return;
       if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
 
+      // If server timeblocks are empty and local timeblocks are not,
+      // add all local timeblocks to server
+      if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
+        await Promise.all(
+          localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
+        );
+        return;
+      }
+
+      // If local timeblocks are empty, remove all server timeblocks
+      if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
+        await Promise.all(
+          serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
+        );
+        return;
+      }
+
+      // If there are no timeblocks to sync (both local and server have
+      // the same timeblocks), return early
+      if (
+        serverTimeblocks.every((serverTimeblock: Timeblock) =>
+          localTimeblocks.some(
+            (localTimeblock: Timeblock) =>
+              localTimeblock.date === serverTimeblock.date &&
+              localTimeblock.start_time === serverTimeblock.start_time &&
+              localTimeblock.end_time === serverTimeblock.end_time
+          )
+        ) &&
+        localTimeblocks.every((localTimeblock: Timeblock) =>
+          serverTimeblocks.some(
+            (serverTimeblock: Timeblock) =>
+              serverTimeblock.date === localTimeblock.date &&
+              serverTimeblock.start_time === localTimeblock.start_time &&
+              serverTimeblock.end_time === localTimeblock.end_time
+          )
+        ) &&
+        serverTimeblocks.length === localTimeblocks.length
+      )
+        return;
+
       // For each time block, remove timeblocks that are not on local
       // and add timeblocks that are not on server
       const timeblocksToRemove = serverTimeblocks?.filter(
@@ -350,8 +388,6 @@ const TimeBlockingProvider = ({
       await Promise.all(
         timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
       );
-
-      router.refresh();
     };
 
     if (editing.enabled) return;

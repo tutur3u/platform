@@ -149,13 +149,13 @@ export default function PreviewDayTime({
                 </TooltipTrigger>
                 {isSelectable && previewDate && (
                   <TooltipContent className="pointer-events-none">
-                    <p className="font-bold">
+                    <div className="font-bold">
                       {dayjs(previewDate).format('HH:mm')} -{' '}
                       {dayjs(previewDate).add(15, 'minutes').format('HH:mm')} (
                       {dayjs(previewDate).format('DD/MM/YYYY')})
-                    </p>
+                    </div>
                     <Separator className="my-1" />
-                    <p
+                    <div
                       className={`font-semibold ${isDark ? 'text-green-300' : 'text-green-700 dark:text-green-300'}`}
                     >
                       {getPreviewUsers(timeblocks).available.map((user) => (
@@ -171,8 +171,8 @@ export default function PreviewDayTime({
                           )}
                         </div>
                       ))}
-                    </p>
-                    <p
+                    </div>
+                    <div
                       className={`font-semibold ${isDark ? 'text-red-300' : 'text-red-700 dark:text-red-300'}`}
                     >
                       {getPreviewUsers(timeblocks).unavailable.map((user) => (
@@ -188,7 +188,7 @@ export default function PreviewDayTime({
                           )}
                         </div>
                       ))}
-                    </p>
+                    </div>
                   </TooltipContent>
                 )}
               </Tooltip>
