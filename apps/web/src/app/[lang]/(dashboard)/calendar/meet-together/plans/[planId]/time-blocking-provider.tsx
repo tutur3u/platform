@@ -314,13 +314,13 @@ const TimeBlockingProvider = ({
       if (!plan.id || !user) return;
 
       const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      console.log('Server timeblocks', serverTimeblocks);
+      const localTimeblocks = selectedTimeBlocks.data;
+
+      if (!serverTimeblocks || !localTimeblocks) return;
+      if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
 
       // For each time block, remove timeblocks that are not on local
       // and add timeblocks that are not on server
-      const localTimeblocks = selectedTimeBlocks.data;
-      console.log('Local timeblocks', localTimeblocks);
-
       const timeblocksToRemove = serverTimeblocks?.filter(
         (serverTimeblock: Timeblock) =>
           !localTimeblocks.some(
