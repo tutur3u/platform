@@ -11,7 +11,6 @@ import {
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
-import { useRouter } from 'next/navigation';
 import {
   ReactNode,
   Touch,
@@ -88,8 +87,6 @@ const TimeBlockingProvider = ({
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
-  const router = useRouter();
-
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
 
@@ -309,7 +306,7 @@ const TimeBlockingProvider = ({
     };
 
     const syncTimeBlocks = async () => {
-      if (!plan.id || !user) return;
+      if (!plan.id || !user?.id) return;
 
       const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       const localTimeblocks = selectedTimeBlocks.data;
@@ -359,7 +356,7 @@ const TimeBlockingProvider = ({
 
       // For each time block, remove timeblocks that are not on local
       // and add timeblocks that are not on server
-      const timeblocksToRemove = serverTimeblocks?.filter(
+      const timeblocksToRemove = serverTimeblocks.filter(
         (serverTimeblock: Timeblock) =>
           !localTimeblocks.some(
             (localTimeblock: Timeblock) =>
@@ -369,7 +366,7 @@ const TimeBlockingProvider = ({
           )
       );
 
-      const timeblocksToAdd = localTimeblocks?.filter(
+      const timeblocksToAdd = localTimeblocks.filter(
         (localTimeblock: Timeblock) =>
           !serverTimeblocks?.some(
             (serverTimeblock: Timeblock) =>
@@ -379,20 +376,31 @@ const TimeBlockingProvider = ({
           )
       );
 
-      await Promise.all(
-        timeblocksToRemove?.map((timeblock) =>
-          timeblock.id ? removeTimeBlock(timeblock) : null
-        )
-      );
+      if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0)
+        return;
 
-      await Promise.all(
-        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-      );
+      if (timeblocksToRemove.length > 0)
+        await Promise.all(
+          timeblocksToRemove.map((timeblock) =>
+            timeblock.id ? removeTimeBlock(timeblock) : null
+          )
+        );
+
+      if (timeblocksToAdd.length > 0)
+        await Promise.all(
+          timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
+        );
+
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
     };
 
     if (editing.enabled) return;
     syncTimeBlocks();
-  }, [router, plan.id, user, selectedTimeBlocks, editing.enabled]);
+  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   return (
     <TimeBlockContext.Provider
