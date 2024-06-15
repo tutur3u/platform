@@ -63,7 +63,7 @@ export default async function MeetTogetherPage({
                   /-/g,
                   ''
                 )}`}
-                key={plan.name}
+                key={plan.id}
                 className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
               >
                 <div className="flex w-full items-center justify-between gap-2">
