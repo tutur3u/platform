@@ -216,6 +216,17 @@ export function TransactionForm({
           )}
         />
 
+        {/* <Combobox
+          mode="single" //single or multiple
+          options={[
+            { value: 'income', label: 'Income' },
+            { value: 'expense', label: 'Expense' },
+          ]}
+          placeholder="Select option..."
+          selected={'income'} //selected value
+          onChange={(value) => console.log(value)}
+        /> */}
+
         <FormField
           control={form.control}
           name="category_id"
