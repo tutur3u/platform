@@ -3,6 +3,8 @@ import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
 import { ReactNode } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     lang: string;
