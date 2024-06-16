@@ -182,7 +182,8 @@ export async function POST(req: Request) {
         .generateContent(prompt);
 
       const completion =
-        geminiRes.response.candidates?.[0].content.parts[0].text;
+        geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+
       if (!completion) return new Response('No content found', { status: 404 });
 
       const { error } = await sbAdmin.from('ai_chat_messages').insert({

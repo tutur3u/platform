@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
@@ -23,7 +23,7 @@ export default async function WorkspaceBatchesPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={batchColumns}
       namespace="batch-data-table"

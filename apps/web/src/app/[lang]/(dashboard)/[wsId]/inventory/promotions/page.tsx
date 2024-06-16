@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
@@ -34,7 +34,7 @@ export default async function WorkspacePromotionsPage({
   }));
 
   return (
-    <DataTable
+    <CustomDataTable
       data={promotions}
       columnGenerator={promotionColumns}
       namespace="promotion-data-table"

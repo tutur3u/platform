@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { basicColumns } from '@/data/columns/basic';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
@@ -23,7 +23,7 @@ export default async function WorkspaceWarehousesPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={basicColumns}
       namespace="basic-data-table"

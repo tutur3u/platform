@@ -1,7 +1,8 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import useSearchParams from '@/hooks/useSearchParams';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -10,17 +11,15 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/components/ui/command';
+} from '@repo/ui/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import useSearchParams from '@/hooks/useSearchParams';
-import { cn } from '@/lib/utils';
-import { CheckIcon } from '@radix-ui/react-icons';
+} from '@repo/ui/components/ui/popover';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { cn } from '@repo/ui/lib/utils';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
@@ -240,7 +239,7 @@ export function UserDatabaseFilter({
                               : 'opacity-50 [&_svg]:invisible'
                           )}
                         >
-                          <CheckIcon className={cn('h-4 w-4')} />
+                          <Check className={cn('h-4 w-4')} />
                         </div>
                         {option.icon && (
                           <option.icon className="text-muted-foreground mr-2 h-4 w-4" />

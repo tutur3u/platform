@@ -31,7 +31,11 @@
         "!.next/cache/**"
       ]
     },
-    "lint": {},
+    "lint": {
+      "dependsOn": [
+        "^lint"
+      ]
+    },
     "test": {},
     "test:watch": {
       "cache": false

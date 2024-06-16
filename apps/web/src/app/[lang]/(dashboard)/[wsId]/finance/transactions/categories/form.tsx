@@ -1,7 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { SelectField } from '@/components/ui/custom/select-field';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -9,11 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

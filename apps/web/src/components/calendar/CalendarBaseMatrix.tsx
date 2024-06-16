@@ -6,7 +6,7 @@ const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
       {dates.map((_, index) => (
         <CalendarColumn
           key={`cal-col-${index}`}
-          date={dates[index].toISOString().split('T')[0]}
+          date={dates[index]!.toISOString().split('T')[0] as string}
         />
       ))}
     </>

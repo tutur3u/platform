@@ -135,9 +135,19 @@ export function _experimentalAddTimeblocks(
 
     // If nextTBs is empty, add the current timeblock
     if (nextTBs.length === 0) {
-      nextTBs.push(currTB);
+      nextTBs.push(currTB!);
       continue;
     }
+
+    if (
+      !currTB?.date ||
+      !currTB?.start_time ||
+      !currTB?.end_time ||
+      !lastTB?.date ||
+      !lastTB?.start_time ||
+      !lastTB?.end_time
+    )
+      continue;
 
     // If currTB is in the middle of lastTB,
     // skip the current timeblock
@@ -320,9 +330,19 @@ export function addTimeblocks(
 
     // If nextTBs is empty, add the current timeblock
     if (nextTBs.length === 0) {
-      nextTBs.push(currTB);
+      nextTBs.push(currTB!);
       continue;
     }
+
+    if (
+      !currTB?.date ||
+      !currTB?.start_time ||
+      !currTB?.end_time ||
+      !lastTB?.date ||
+      !lastTB?.start_time ||
+      !lastTB?.end_time
+    )
+      continue;
 
     // If currTB is in the middle of lastTB,
     // skip the current timeblock

@@ -1,13 +1,13 @@
 import { useTimeBlocking } from './time-blocking-provider';
-import { Separator } from '@/components/ui/separator';
+import { Timeblock } from '@/types/primitives/Timeblock';
+import { timetzToTime } from '@/utils/date-helper';
+import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Timeblock } from '@/types/primitives/Timeblock';
-import { timetzToTime } from '@/utils/date-helper';
+} from '@repo/ui/components/ui/tooltip';
 import dayjs from 'dayjs';
 import { ShieldCheck, ShieldMinus } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -63,8 +63,10 @@ export default function PreviewDayTime({
         .map((v) => Number(v) - start);
 
       const startBlock =
-        Math.floor(startHour * hourSplits + startMinute / 15) + 1;
-      const endBlock = Math.floor(endHour * hourSplits + endMinute / 15);
+        Math.floor((startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15) + 1;
+      const endBlock = Math.floor(
+        (endHour ?? 0) * hourSplits + (endMinute ?? 0) / 15
+      );
 
       return i >= startBlock && i <= endBlock;
     });

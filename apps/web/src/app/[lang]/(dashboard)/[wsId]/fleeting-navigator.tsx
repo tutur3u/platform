@@ -2,9 +2,9 @@
 
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
-import { toast } from '@/components/ui/use-toast';
 import { AIChat } from '@/types/db';
 import { useClickOutside } from '@mantine/hooks';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
 import { usePathname } from 'next/navigation';

@@ -1,5 +1,5 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from '@/data/columns/users';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -49,7 +49,7 @@ export default async function WorkspaceUsersPage({
 
   return (
     <>
-      <DataTable
+      <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}

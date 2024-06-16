@@ -1,6 +1,7 @@
 'use client';
 
 import GroupTagForm, { GroupTagFormSchema } from './form';
+import { UserGroupTag } from '@/types/primitives/user-group-tag';
 import {
   Dialog,
   DialogContent,
@@ -8,9 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
-import { UserGroupTag } from '@/types/primitives/user-group-tag';
+} from '@repo/ui/components/ui/dialog';
+import { toast } from '@repo/ui/hooks/use-toast';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

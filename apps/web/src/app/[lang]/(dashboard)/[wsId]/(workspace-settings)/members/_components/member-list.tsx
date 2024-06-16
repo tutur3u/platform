@@ -1,11 +1,15 @@
 import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getCurrentUser } from '@/lib/user-helper';
-import { cn } from '@/lib/utils';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { cn } from '@repo/ui/lib/utils';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';

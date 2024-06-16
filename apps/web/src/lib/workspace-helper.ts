@@ -30,7 +30,7 @@ export async function getWorkspace(id?: string) {
 
   const ws = {
     ...rest,
-    role: workspace_members[0].role,
+    role: workspace_members[0]?.role,
   };
 
   return ws as Workspace;

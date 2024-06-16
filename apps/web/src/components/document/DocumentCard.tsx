@@ -1,6 +1,6 @@
-import { Separator } from '@/components/ui/separator';
 import { WorkspaceDocument } from '@/types/db';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 import 'moment/locale/vi';
 import useTranslation from 'next-translate/useTranslation';

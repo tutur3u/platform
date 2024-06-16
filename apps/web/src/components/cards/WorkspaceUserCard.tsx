@@ -1,6 +1,6 @@
-import { Separator } from '../ui/separator';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getGender } from '@/utils/gender-helper';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 

@@ -1,5 +1,8 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { Button } from '@/components/ui/button';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { fetcher } from '@/utils/fetcher';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from '@repo/ui/components/ui/command';
 import {
   Form,
   FormControl,
@@ -16,20 +19,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/popover';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { cn } from '@repo/ui/lib/utils';
 import dayjs from 'dayjs';
 import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';

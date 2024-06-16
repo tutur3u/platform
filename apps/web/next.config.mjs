@@ -8,6 +8,7 @@ const nextConfig = nextTranslate({
     ppr: true,
     // reactCompiler: true,
   },
+  transpilePackages: ['@repo/ui'],
   images: {
     remotePatterns: [
       {

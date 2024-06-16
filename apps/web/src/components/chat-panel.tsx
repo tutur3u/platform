@@ -1,12 +1,12 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { ScrollToTopButton } from './scroll-to-top-button';
-import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
 import { PromptForm } from '@/components/prompt-form';
 import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
-import { Button } from '@/components/ui/button';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {
@@ -35,7 +35,7 @@ export interface ChatPanelProps
   count: number | null;
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
-  model: Model;
+  model?: Model;
   setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
   clearChat: () => void;

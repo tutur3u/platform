@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Invoice } from '@/types/primitives/Invoice';
@@ -23,7 +23,7 @@ export default async function WorkspaceInvoicesPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={invoiceColumns}
       namespace="invoice-data-table"

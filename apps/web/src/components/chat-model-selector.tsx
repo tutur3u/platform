@@ -1,6 +1,5 @@
-import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
-import { Button } from '@/components/ui/button';
+import { Model, models, providers } from '@/data/models';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -8,14 +7,15 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from '@repo/ui/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Model, models, providers } from '@/data/models';
-import { cn } from '@/lib/utils';
+} from '@repo/ui/components/ui/popover';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { cn } from '@repo/ui/lib/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,14 +24,16 @@ export function ChatModelSelector({
   onChange,
   className,
 }: {
-  model: Model;
+  model?: Model;
   onChange: (value: Model) => void;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [previewModel, setPreviewModel] = useState<Model>(model);
+  const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
 
-  const currentModel = models.find((m) => m.value === model.value);
+  const currentModel = model
+    ? models.find((m) => m.value === model.value)
+    : undefined;
 
   return (
     <Popover
@@ -85,7 +87,7 @@ export function ChatModelSelector({
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            model.value === m.value
+                            model?.value === m.value
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}

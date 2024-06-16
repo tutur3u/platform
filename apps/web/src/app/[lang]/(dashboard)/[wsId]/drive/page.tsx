@@ -1,9 +1,9 @@
 import StorageObjectsTable from './table';
-import { Separator } from '@/components/ui/separator';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {

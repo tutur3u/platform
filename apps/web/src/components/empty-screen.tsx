@@ -1,9 +1,9 @@
 import { ChatList } from './chat-list';
-import { Separator } from './ui/separator';
-import { Button } from '@/components/ui/button';
-import { IconArrowRight } from '@/components/ui/icons';
 import { capitalize } from '@/lib/utils';
 import { AIChat } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
+import { IconArrowRight } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
 import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';

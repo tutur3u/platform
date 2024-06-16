@@ -1,7 +1,8 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
@@ -45,7 +46,7 @@ export default async function WorkspaceUserReportsPage({
     })) ?? [];
 
   return (
-    <DataTable
+    <CustomDataTable
       data={reports}
       columnGenerator={getUserReportColumns}
       namespace="user-report-data-table"
@@ -154,7 +155,7 @@ async function getData(
     return getData(wsId, { pageSize, groupId, userId, retry: false });
   }
 
-  return { data, count };
+  return { data, count } as { data: WorkspaceUserReport[]; count: number };
 }
 
 async function getUserGroups(wsId: string) {

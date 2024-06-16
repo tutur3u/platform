@@ -1,6 +1,6 @@
 import WorkspaceInvites from './workspace-invites';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 

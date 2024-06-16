@@ -88,7 +88,7 @@ export async function POST(req: Request, { params: { wsId } }: Params) {
     })
     .generateContent(data?.input);
 
-  const completion = geminiRes.response.candidates?.[0].content.parts[0].text;
+  const completion = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
   if (!completion)
     return new Response('Internal Server Error', { status: 500 });
 

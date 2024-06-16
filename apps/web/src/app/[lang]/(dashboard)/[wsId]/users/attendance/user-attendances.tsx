@@ -1,5 +1,4 @@
-import UserMonthAttendance from './user-month-attendance';
-import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
+import ClientUserAttendances from './client-user-attendances';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 
@@ -24,39 +23,14 @@ export default async function UserAttendances({
   searchParams: SearchParams;
 }) {
   const { data, count } = await getData(wsId, searchParams);
-  const { page, pageSize } = searchParams;
 
   return (
-    <>
-      <DataTablePagination
-        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
-        additionalSizes={[3, 6, 12, 24, 48]}
-        count={count}
-      />
-
-      <div className="my-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {data
-          .map((u) => ({
-            ...u,
-            href: `/${wsId}/users/database/${u.id}`,
-          }))
-          .map((user) => (
-            <UserMonthAttendance key={user.id} wsId={wsId} user={user} />
-          ))}
-      </div>
-
-      {count > 0 && (
-        <DataTablePagination
-          pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-          pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-          pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
-          additionalSizes={[3, 6, 12, 24, 48]}
-          count={count}
-        />
-      )}
-    </>
+    <ClientUserAttendances
+      wsId={wsId}
+      data={data}
+      count={count}
+      searchParams={searchParams}
+    />
   );
 }
 

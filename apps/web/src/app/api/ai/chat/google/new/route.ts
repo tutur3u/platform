@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       .getGenerativeModel({ model })
       .generateContent(prompt);
 
-    const title = geminiRes.response.candidates?.[0].content.parts[0].text;
+    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
 
     if (!title) {
       return NextResponse.json(

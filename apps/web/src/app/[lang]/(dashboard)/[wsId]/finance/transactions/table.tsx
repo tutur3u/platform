@@ -2,9 +2,10 @@
 
 import { transactionColumns } from './columns';
 import { TransactionForm } from './form';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Dialog } from '@/components/ui/dialog';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
+import { Dialog } from '@repo/ui/components/ui/dialog';
+import { Translate } from 'next-translate';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
@@ -30,9 +31,11 @@ export default function TransactionsTable({ wsId, data, count }: Props) {
         setTransaction(open ? transaction || {} : undefined)
       }
     >
-      <DataTable
+      <CustomDataTable
         data={data}
-        columnGenerator={(t) => transactionColumns(t, setTransaction)}
+        columnGenerator={(t: Translate) =>
+          transactionColumns(t, setTransaction)
+        }
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{

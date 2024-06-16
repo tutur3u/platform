@@ -1,10 +1,10 @@
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -52,7 +52,7 @@ export default async function WorkspaceApiKeysPage({
         </div>
       </div>
       <Separator className="my-4" />
-      <DataTable
+      <CustomDataTable
         columnGenerator={apiKeyColumns}
         namespace="api-key-data-table"
         data={apiKeys}

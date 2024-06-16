@@ -4,7 +4,10 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Button } from '@/components/ui/button';
+import { Model, defaultModel } from '@/data/models';
+import { AIChat } from '@/types/db';
+import { useLocalStorage } from '@mantine/hooks';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,13 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { Model, defaultModel } from '@/data/models';
-import { cn } from '@/lib/utils';
-import { AIChat } from '@/types/db';
-import { useLocalStorage } from '@mantine/hooks';
+} from '@repo/ui/components/ui/dialog';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
+import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
@@ -67,17 +67,17 @@ const Chat = ({
   }, [hasKeys, previewToken]);
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
-  const [model, setModel] = useState<Model>(defaultModel);
+  const [model, setModel] = useState<Model | undefined>(defaultModel);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/ai/chat/${model.provider.toLowerCase()}`,
+      api: model ? `/api/ai/chat/${model.provider.toLowerCase()}` : undefined,
       body: {
         id: chat?.id,
         wsId,
-        model: model.value,
+        model: model?.value,
         previewToken,
       },
       onResponse(response) {
@@ -133,6 +133,8 @@ const Chat = ({
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const createChat = async (input: string) => {
+    if (!model) return;
+
     setPendingPrompt(input);
 
     const res = await fetch(

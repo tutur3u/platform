@@ -1,8 +1,8 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import { Separator } from '@/components/ui/separator';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {

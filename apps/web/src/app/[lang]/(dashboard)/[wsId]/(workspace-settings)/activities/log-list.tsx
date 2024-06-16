@@ -1,8 +1,8 @@
 'use client';
 
 import AuditLogCard from '@/components/cards/AuditLogCard';
-import { Accordion } from '@/components/ui/accordion';
 import { AuditLog } from '@/types/primitives/audit-log';
+import { Accordion } from '@repo/ui/components/ui/accordion';
 import { useState } from 'react';
 
 interface Props {
