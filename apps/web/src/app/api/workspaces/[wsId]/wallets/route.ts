@@ -37,16 +37,10 @@ export async function POST(req: Request, { params: { wsId } }: Params) {
 
   const data: Wallet = await req.json();
 
-  if (!data.id)
-    return NextResponse.json({ message: 'Invalid wallet ID' }, { status: 400 });
-
-  const { error } = await supabase
-    .from('workspace_wallets')
-    .upsert({
-      ...data,
-      ws_id: wsId,
-    })
-    .eq('id', data.id);
+  const { error } = await supabase.from('workspace_wallets').upsert({
+    ...data,
+    ws_id: wsId,
+  });
 
   if (error) {
     console.log(error);

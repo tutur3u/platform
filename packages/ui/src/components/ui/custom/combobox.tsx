@@ -30,6 +30,9 @@ interface ComboboxProps {
   selected: string | string[]; // Updated to handle multiple selections
   className?: string;
   placeholder?: string;
+  label?: string;
+  disabled?: boolean;
+  useFirstValueAsDefault?: boolean;
   // eslint-disable-next-line no-unused-vars
   onChange?: (event: string | string[]) => void; // Updated to handle multiple selections
   // eslint-disable-next-line no-unused-vars
@@ -42,6 +45,9 @@ export function Combobox({
   className,
   placeholder,
   mode = 'single',
+  label,
+  disabled,
+  useFirstValueAsDefault = false,
   onChange,
   onCreate,
 }: ComboboxProps) {
@@ -50,36 +56,53 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
 
+  React.useEffect(() => {
+    if (!open) {
+      setQuery('');
+    }
+  }, [open]);
+
+  React.useEffect(() => {
+    if (selected) return;
+    if (useFirstValueAsDefault && options.length > 0)
+      onChange?.(options?.[0]?.value ?? '');
+  }, [onChange, selected, options]);
+
   return (
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            key={'combobox-trigger'}
             type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {selected && selected.length > 0 ? (
-              <div className="relative mr-auto flex flex-grow flex-wrap items-center overflow-hidden">
-                <span>
-                  {mode === 'multiple' && Array.isArray(selected)
-                    ? selected
-                        .map(
-                          (selectedValue: string) =>
-                            options.find((item) => item.value === selectedValue)
-                              ?.label
-                        )
-                        .join(', ')
-                    : mode === 'single' &&
-                      options.find((item) => item.value === selected)?.label}
-                </span>
-              </div>
-            ) : (
-              placeholder ?? 'Select Item...'
+            className={cn(
+              'w-full justify-between',
+              !selected && !selected.length && 'text-muted-foreground'
             )}
+            disabled={disabled}
+          >
+            {label ??
+              (selected && selected.length > 0 ? (
+                <div className="relative mr-auto flex flex-grow flex-wrap items-center overflow-hidden">
+                  <span>
+                    {mode === 'multiple' && Array.isArray(selected)
+                      ? selected
+                          .map(
+                            (selectedValue: string) =>
+                              options.find(
+                                (item) => item.value === selectedValue
+                              )?.label
+                          )
+                          .join(', ')
+                      : mode === 'single' &&
+                        options.find((item) => item.value === selected)?.label}
+                  </span>
+                </div>
+              ) : (
+                placeholder ?? 'Select Item'
+              ))}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -89,15 +112,16 @@ export function Combobox({
               if (value.includes(search)) return 1;
               return 0;
             }}
-            // shouldFilter={true}
           >
             <CommandInput
-              placeholder={placeholder ?? 'Cari Item...'}
+              placeholder={placeholder ?? 'Search'}
               value={query}
               onValueChange={(value: string) => setQuery(value)}
             />
             <CommandEmpty className="p-1 flex flex-col items-center justify-center">
-              <div className="p-4">{t('common:empty')}</div>
+              <div className="p-8 text-sm text-muted-foreground">
+                {t('common:empty')}
+              </div>
               <Separator />
               <Button
                 variant="ghost"
@@ -108,10 +132,14 @@ export function Combobox({
                     setQuery('');
                   }
                 }}
+                disabled={!query || !onCreate}
               >
                 <Plus className="h-4 w-4 mr-2 shrink-0" />
                 <div className="w-full truncate">
-                  {t('common:add')} {query}
+                  <span className="font-normal">{t('common:add')}</span>{' '}
+                  <span className="underline decoration-dashed underline-offset-2">
+                    {query}
+                  </span>
                 </div>
               </Button>
             </CommandEmpty>
@@ -140,6 +168,7 @@ export function Combobox({
                               onChange(option.value);
                             }
                           }
+                          setOpen(false);
                         }}
                       >
                         <Check

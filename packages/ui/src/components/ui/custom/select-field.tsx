@@ -13,6 +13,7 @@ import React, { forwardRef } from 'react';
 type SelectOption = {
   value: string;
   label: string;
+  disabled?: boolean;
 };
 
 interface ClassNames {
@@ -61,6 +62,7 @@ const SelectField = forwardRef<React.ElementRef<typeof Root>, Props>(
                 key={option.value}
                 value={option.value}
                 className={classNames?.selectItem}
+                disabled={option.disabled}
               >
                 {option.label}
               </SelectItem>

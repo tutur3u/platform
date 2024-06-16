@@ -1,7 +1,13 @@
 {
   "id": "Mã số",
+  "category_name": "Tên danh mục",
+  "category_type": "Loại danh mục",
+  "name_examples": "Tiền mặt, chuyển khoản, v.v.",
+  "select_type": "Chọn loại",
   "name": "Tên",
   "amount": "Giao dịch",
+  "income": "Thu nhập",
+  "expense": "Chi phí",
   "is_expense": "Chi phí",
   "created_at": "Tạo lúc"
 }

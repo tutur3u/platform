@@ -38,7 +38,7 @@ export function TransactionCategoryForm({
   onComplete,
   submitLabel,
 }: Props) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation('transaction-category-data-table');
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -85,44 +85,48 @@ export function TransactionCategoryForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-        <FormField
-          control={form.control}
-          name="name"
-          disabled={loading}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category name</FormLabel>
-              <FormControl>
-                <Input placeholder="Cash" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-2 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('category_name')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('name_examples')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>Type</FormLabel>
-              <FormControl>
-                <SelectField
-                  id="category-type"
-                  placeholder="Select a type"
-                  options={[
-                    { value: 'EXPENSE', label: 'Expense' },
-                    { value: 'INCOME', label: 'Income' },
-                  ]}
-                  classNames={{ root: 'w-full' }}
-                  {...field}
-                  onValueChange={(value) => field.onChange(value)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>{t('category_type')}</FormLabel>
+                <FormControl>
+                  <SelectField
+                    id="category-type"
+                    placeholder={t('select_type')}
+                    options={[
+                      { value: 'EXPENSE', label: t('expense') },
+                      { value: 'INCOME', label: t('income') },
+                    ]}
+                    classNames={{ root: 'w-full' }}
+                    {...field}
+                    onValueChange={(value) => field.onChange(value)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? t('common:processing') : submitLabel}

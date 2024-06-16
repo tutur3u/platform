@@ -1,7 +1,13 @@
 {
   "id": "ID",
+  "category_name": "Category name",
+  "category_type": "Category type",
+  "name_examples": "Cash, Bank Transfer, etc.",
+  "select_type": "Select type",
   "name": "Name",
   "amount": "Transactions",
+  "income": "Income",
+  "expense": "Expense",
   "is_expense": "Is expense",
   "created_at": "Created at"
 }
