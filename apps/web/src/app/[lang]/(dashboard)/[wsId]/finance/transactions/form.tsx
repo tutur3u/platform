@@ -156,8 +156,7 @@ export function TransactionForm({
                         'justify-between',
                         !field.value && 'text-muted-foreground'
                       )}
-                      // disabled={walletsLoading}
-                      disabled
+                      disabled={walletsLoading}
                     >
                       {field.value
                         ? wallets?.find((c) => c.id === field.value)?.name
@@ -180,33 +179,35 @@ export function TransactionForm({
                       disabled={walletsLoading}
                     />
                     <CommandEmpty>No wallet found.</CommandEmpty>
-                    <CommandGroup>
-                      {(wallets?.length || 0) > 0
-                        ? wallets?.map((wallet) => (
-                            <CommandItem
-                              key={wallet.id}
-                              value={wallet.name}
-                              onSelect={() => {
-                                form.setValue(
-                                  'origin_wallet_id',
-                                  wallet?.id || ''
-                                );
-                                setShowWallets(false);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  wallet.id === field.value
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              {wallet.name}
-                            </CommandItem>
-                          ))
-                        : null}
-                    </CommandGroup>
+                    <CommandList>
+                      <CommandGroup>
+                        {(wallets?.length || 0) > 0
+                          ? wallets?.map((wallet) => (
+                              <CommandItem
+                                key={wallet.id}
+                                value={wallet.name}
+                                onSelect={() => {
+                                  form.setValue(
+                                    'origin_wallet_id',
+                                    wallet?.id || ''
+                                  );
+                                  setShowWallets(false);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    wallet.id === field.value
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {wallet.name}
+                              </CommandItem>
+                            ))
+                          : null}
+                      </CommandGroup>
+                    </CommandList>
                   </Command>
                 </PopoverContent>
               </Popover>

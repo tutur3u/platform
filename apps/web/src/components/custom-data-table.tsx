@@ -26,6 +26,7 @@ export const CustomDataTable = ({ namespace, ...props }: any) => {
       setParams={(params) => searchParams.set(params)}
       resetParams={() => searchParams.reset()}
       isEmpty={searchParams.isEmpty}
+      newObjectTitle={t('common:create')}
       {...props}
     />
   );

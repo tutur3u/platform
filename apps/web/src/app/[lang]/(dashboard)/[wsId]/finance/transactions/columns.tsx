@@ -6,11 +6,13 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
+import 'moment/locale/vi';
 import { Translate } from 'next-translate';
 
 export const transactionColumns = (
   t: Translate,
-  setTransaction: (value: Transaction | undefined) => void
+  setTransaction: (value: Transaction | undefined) => void,
+  lang: string
 ): ColumnDef<Transaction>[] => [
   // {
   //   id: 'select',
@@ -98,7 +100,7 @@ export const transactionColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('taken_at')
-          ? moment(row.getValue('taken_at')).fromNow()
+          ? moment(row.getValue('taken_at')).locale(lang).fromNow()
           : '-'}
       </div>
     ),
@@ -111,7 +113,9 @@ export const transactionColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('created_at')
-          ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
+          ? moment(row.getValue('created_at'))
+              .locale(lang)
+              .format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
       </div>
     ),

@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function TransactionsTable({ wsId, data, count }: Props) {
-  const { t } = useTranslation('common');
+  const { t, lang } = useTranslation('common');
 
   const [transaction, setTransaction] = useState<Transaction>();
 
@@ -34,7 +34,7 @@ export default function TransactionsTable({ wsId, data, count }: Props) {
       <CustomDataTable
         data={data}
         columnGenerator={(t: Translate) =>
-          transactionColumns(t, setTransaction)
+          transactionColumns(t, setTransaction, lang)
         }
         namespace="transaction-data-table"
         count={count}
