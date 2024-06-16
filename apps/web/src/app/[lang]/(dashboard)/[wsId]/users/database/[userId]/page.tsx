@@ -1,4 +1,5 @@
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
@@ -6,7 +7,6 @@ import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
@@ -217,7 +217,7 @@ export default async function WorkspaceUserDetailsPage({
       <div className="mb-2 mt-4 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
-      <DataTable
+      <CustomDataTable
         data={invoiceData}
         columnGenerator={invoiceColumns}
         namespace="invoice-data-table"

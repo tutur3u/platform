@@ -1,9 +1,9 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 export default function Loading() {
   return (
-    <DataTable
+    <CustomDataTable
       columnGenerator={batchColumns}
       namespace="batch-data-table"
       defaultVisibility={{

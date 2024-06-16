@@ -1,8 +1,8 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
 import timezones from '@/data/timezones.json';
 import { Timezone } from '@/types/primitives/Timezone';
 import { createAdminClient } from '@/utils/supabase/client';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,7 @@ export default async function WorkspaceUsersPage({ searchParams }: Props) {
   const { data, count } = await getData(searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       namespace="timezone-data-table"
       columnGenerator={timezoneColumns}

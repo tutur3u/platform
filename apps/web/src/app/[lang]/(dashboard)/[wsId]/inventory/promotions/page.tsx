@@ -1,8 +1,8 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {
@@ -34,7 +34,7 @@ export default async function WorkspacePromotionsPage({
   }));
 
   return (
-    <DataTable
+    <CustomDataTable
       data={promotions}
       columnGenerator={promotionColumns}
       namespace="promotion-data-table"

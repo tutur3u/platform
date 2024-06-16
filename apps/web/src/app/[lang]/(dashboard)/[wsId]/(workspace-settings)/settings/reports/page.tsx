@@ -1,9 +1,9 @@
 import { configColumns } from './columns';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
@@ -72,7 +72,7 @@ export default async function WorkspaceReportsSettingsPage({
       </div>
       <Separator className="my-4" />
       <div className="grid gap-4 xl:grid-cols-2">
-        <DataTable
+        <CustomDataTable
           columnGenerator={configColumns}
           namespace="api-key-data-table"
           data={configs}

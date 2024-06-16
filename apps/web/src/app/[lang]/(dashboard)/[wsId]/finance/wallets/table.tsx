@@ -2,9 +2,10 @@
 
 import { walletColumns } from './columns';
 import { WalletForm } from './form';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Wallet } from '@/types/primitives/Wallet';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { Dialog } from '@repo/ui/components/ui/dialog';
+import { Translate } from 'next-translate';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
@@ -28,9 +29,9 @@ export default function WalletsTable({ wsId, data, count }: Props) {
       open={!!wallet}
       onOpenChange={(open) => setWallet(open ? wallet || {} : undefined)}
     >
-      <DataTable
+      <CustomDataTable
         data={data}
-        columnGenerator={(t) => walletColumns(t, setWallet)}
+        columnGenerator={(t: Translate) => walletColumns(t, setWallet)}
         namespace="wallet-data-table"
         count={count}
         defaultVisibility={{

@@ -1,8 +1,8 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { createClient } from '@/utils/supabase/server';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {
@@ -23,7 +23,7 @@ export default async function WorkspaceBatchesPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={batchColumns}
       namespace="batch-data-table"

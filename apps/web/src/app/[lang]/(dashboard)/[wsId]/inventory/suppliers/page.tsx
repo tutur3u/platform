@@ -1,8 +1,8 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { basicColumns } from '@/data/columns/basic';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductSupplier } from '@/types/primitives/ProductSupplier';
 import { createClient } from '@/utils/supabase/server';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 
 interface Props {
   params: {
@@ -23,7 +23,7 @@ export default async function WorkspaceSuppliersPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={basicColumns}
       namespace="basic-data-table"

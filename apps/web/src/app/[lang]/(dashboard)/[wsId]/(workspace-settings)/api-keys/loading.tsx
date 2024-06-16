@@ -1,4 +1,4 @@
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Separator } from '@repo/ui/components/ui/separator';
 
 export default function Loading() {
@@ -11,7 +11,7 @@ export default function Loading() {
         </div>
       </div>
       <Separator className="my-4" />
-      <DataTable namespace="secret-data-table" />
+      <CustomDataTable namespace="secret-data-table" />
     </>
   );
 }

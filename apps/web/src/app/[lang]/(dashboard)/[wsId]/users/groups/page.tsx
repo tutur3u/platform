@@ -1,10 +1,10 @@
 import { UserDatabaseFilter } from '../filters';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import useTranslation from 'next-translate/useTranslation';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +42,7 @@ export default async function WorkspaceUserGroupsPage({
   const { data: excludedTags } = await getExcludedTags(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={groups}
       columnGenerator={getUserGroupColumns}
       namespace="user-group-data-table"

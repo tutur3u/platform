@@ -24,7 +24,7 @@ export default async function Navbar() {
   const workspaces = await getWorkspaces(true);
 
   return (
-    <div id="navbar" className="fixed inset-x-0 top-0 z-50">
+    <nav id="navbar" className="fixed inset-x-0 top-0 z-50">
       <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2">
@@ -74,6 +74,6 @@ export default async function Navbar() {
         </div>
       </div>
       <NavbarSeparator />
-    </div>
+    </nav>
   );
 }

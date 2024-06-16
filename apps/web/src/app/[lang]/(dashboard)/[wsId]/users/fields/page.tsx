@@ -1,10 +1,10 @@
 import { userFieldColumns } from './columns';
 import UserFieldEditDialog from './edit-dialog';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
@@ -55,7 +55,7 @@ export default async function WorkspaceUserFieldsPage({
         </div>
       </div>
       <Separator className="my-4" />
-      <DataTable
+      <CustomDataTable
         columnGenerator={userFieldColumns}
         namespace="user-field-data-table"
         data={userFields}

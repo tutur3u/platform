@@ -17,21 +17,13 @@ import { Translate } from 'next-translate';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
-  viewOpionsText?: string;
-  toggleColumnsText?: string;
-  hideAllText?: string;
-  showAllText?: string;
   table: Table<TData>;
   extraColumns?: any[];
-  t: Translate;
+  t?: Translate;
 }
 
 export function DataTableViewOptions<TData>({
   t,
-  viewOpionsText,
-  toggleColumnsText,
-  hideAllText,
-  showAllText,
   table,
   extraColumns,
 }: DataTableViewOptionsProps<TData>) {
@@ -48,11 +40,13 @@ export function DataTableViewOptions<TData>({
           className="ml-auto h-8 w-full md:w-fit"
         >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          {viewOpionsText}
+          {t?.('common:view-options') || 'View Options'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>{toggleColumnsText}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          {t?.('common:toggle-columns') || 'Toggle Columns'}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-36">
           {table
@@ -87,7 +81,7 @@ export function DataTableViewOptions<TData>({
                     {extraColumns?.findLast(
                       (extraColumn: { id: string; name?: string }) =>
                         extraColumn.id === column.id
-                    )?.name || t(column.id)}
+                    )?.name || t?.(column.id)}
                   </DropdownMenuCheckboxItem>
                 </Fragment>
               );
@@ -104,7 +98,9 @@ export function DataTableViewOptions<TData>({
                 .forEach((column) => column.toggleVisibility(!isShowingAll));
             }}
           >
-            {isShowingAll ? hideAllText : showAllText}
+            {isShowingAll
+              ? t?.('common:hide-all') || 'Hide All'
+              : t?.('common:show-all') || 'Show All'}
           </Button>
         </DropdownMenuLabel>
       </DropdownMenuContent>

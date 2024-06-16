@@ -1,9 +1,9 @@
 import ProjectEditDialog from '../../projects/_components/project-edit-dialog';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
@@ -52,7 +52,7 @@ export default async function WorkspaceAIPipelinesPage({
         </div>
       </div>
       <Separator className="my-4" />
-      <DataTable
+      <CustomDataTable
         columnGenerator={projectColumns}
         namespace="basic-data-table"
         data={projects}

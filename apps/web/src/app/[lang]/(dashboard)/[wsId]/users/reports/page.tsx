@@ -1,4 +1,5 @@
 import { UserDatabaseFilter } from '../filters';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
@@ -6,7 +7,6 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
@@ -46,7 +46,7 @@ export default async function WorkspaceUserReportsPage({
     })) ?? [];
 
   return (
-    <DataTable
+    <CustomDataTable
       data={reports}
       columnGenerator={getUserReportColumns}
       namespace="user-report-data-table"

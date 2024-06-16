@@ -41,6 +41,11 @@ interface DataTableProps<TData, TValue> {
   noBottomPadding?: boolean;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  onRefresh?: () => void;
+  // eslint-disable-next-line no-unused-vars
+  onSearch?: (query: string) => void;
+  // eslint-disable-next-line no-unused-vars
+  setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
   // eslint-disable-next-line no-unused-vars
   t?: Translate;
@@ -68,6 +73,9 @@ export function DataTable<TData, TValue>({
   disableSearch,
   isEmpty,
   t,
+  onRefresh,
+  onSearch,
+  setParams,
   resetParams,
   columnGenerator,
 }: DataTableProps<TData, TValue>) {
@@ -111,6 +119,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <DataTableToolbar
+        hasData={!!data}
         namespace={namespace}
         table={table}
         newObjectTitle={newObjectTitle}
@@ -120,6 +129,8 @@ export function DataTable<TData, TValue>({
         disableSearch={disableSearch}
         t={t}
         isEmpty={isEmpty || !data?.length}
+        onSearch={onSearch || (() => {})}
+        onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
       />
       <div className="rounded-md border">
@@ -178,15 +189,19 @@ export function DataTable<TData, TValue>({
       </div>
       {noBottomPadding || count === undefined || (
         <DataTablePagination
+          t={t}
           table={table}
           className="pointer-events-none hidden opacity-0 lg:block"
+          setParams={setParams}
         />
       )}
       {count !== undefined && (
         <DataTablePagination
+          t={t}
           table={table}
           count={count}
           className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"
+          setParams={setParams}
         />
       )}
     </div>

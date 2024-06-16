@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
+import { Translate } from 'next-translate';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;
@@ -26,10 +27,7 @@ interface DataTablePaginationProps<TData> {
   pageCount?: number;
   pageSize?: number;
   additionalSizes?: number[];
-  resultsText?: string;
-  rowsPerPageText?: string;
-  pageText?: string;
-  ofText?: string;
+  t?: Translate;
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
@@ -42,10 +40,7 @@ export function DataTablePagination<TData>({
   pageCount,
   pageSize,
   additionalSizes,
-  resultsText,
-  rowsPerPageText,
-  pageText,
-  ofText,
+  t,
   setParams,
 }: DataTablePaginationProps<TData>) {
   // filter duplicate and sort sizes
@@ -86,7 +81,7 @@ export function DataTablePagination<TData>({
           {t('of')}{' '} */}
           {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
           <span className="text-primary font-semibold">{count}</span>{' '}
-          {resultsText}
+          {t?.('common:result(s)') ?? 'result(s)'}
           {/* {lang !== 'vi' && lang !== 'vi-VN'
             ? ' ' + t('selected').toLowerCase()
             : null} */}
@@ -100,7 +95,9 @@ export function DataTablePagination<TData>({
 
       <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
-          <p className="text-sm font-medium">{rowsPerPageText}</p>
+          <p className="text-sm font-medium">
+            {t?.('common:rows-per-page') ?? 'Rows per page'}
+          </p>
           <Select
             value={`${pageSize ?? table?.getState().pagination.pageSize ?? 0}`}
             onValueChange={(value) => {
@@ -129,7 +126,7 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
         <div className="text-muted-foreground w-fit text-sm">
-          {pageText}{' '}
+          {t?.('common:page') ?? 'Page'}{' '}
           <span className="text-primary font-semibold">
             {isPageOutOfRange
               ? 1
@@ -138,7 +135,7 @@ export function DataTablePagination<TData>({
           {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
             <>
               {' '}
-              {ofText}{' '}
+              {t?.('common:of') ?? 'of'}{' '}
               <span className="text-primary font-semibold">
                 {pageCount ?? table?.getPageCount() ?? 1}
               </span>
