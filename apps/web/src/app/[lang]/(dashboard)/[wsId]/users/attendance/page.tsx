@@ -34,7 +34,7 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('user-data-table');
+  const { t, lang } = useTranslation('user-data-table');
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
@@ -46,7 +46,7 @@ export default async function WorkspaceUsersPage({
     <>
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
-        <MonthPicker className="col-span-full md:col-span-1" />
+        <MonthPicker lang={lang} className="col-span-full md:col-span-1" />
         <UserDatabaseFilter
           key="included-user-groups-filter"
           tag="includedGroups"

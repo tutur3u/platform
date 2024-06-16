@@ -67,17 +67,17 @@ const Chat = ({
   }, [hasKeys, previewToken]);
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
-  const [model, setModel] = useState<Model>(defaultModel);
+  const [model, setModel] = useState<Model | undefined>(defaultModel);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/ai/chat/${model.provider.toLowerCase()}`,
+      api: model ? `/api/ai/chat/${model.provider.toLowerCase()}` : undefined,
       body: {
         id: chat?.id,
         wsId,
-        model: model.value,
+        model: model?.value,
         previewToken,
       },
       onResponse(response) {
@@ -133,6 +133,8 @@ const Chat = ({
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const createChat = async (input: string) => {
+    if (!model) return;
+
     setPendingPrompt(input);
 
     const res = await fetch(

@@ -63,8 +63,10 @@ export default function PreviewDayTime({
         .map((v) => Number(v) - start);
 
       const startBlock =
-        Math.floor(startHour * hourSplits + startMinute / 15) + 1;
-      const endBlock = Math.floor(endHour * hourSplits + endMinute / 15);
+        Math.floor((startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15) + 1;
+      const endBlock = Math.floor(
+        (endHour ?? 0) * hourSplits + (endMinute ?? 0) / 15
+      );
 
       return i >= startBlock && i <= endBlock;
     });

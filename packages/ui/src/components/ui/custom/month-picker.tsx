@@ -1,11 +1,7 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+import { Button } from '../button';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import {
   add,
   eachMonthOfInterval,

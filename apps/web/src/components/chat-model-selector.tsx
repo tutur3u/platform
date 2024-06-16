@@ -24,14 +24,16 @@ export function ChatModelSelector({
   onChange,
   className,
 }: {
-  model: Model;
+  model?: Model;
   onChange: (value: Model) => void;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [previewModel, setPreviewModel] = useState<Model>(model);
+  const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
 
-  const currentModel = models.find((m) => m.value === model.value);
+  const currentModel = model
+    ? models.find((m) => m.value === model.value)
+    : undefined;
 
   return (
     <Popover
@@ -85,7 +87,7 @@ export function ChatModelSelector({
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            model.value === m.value
+                            model?.value === m.value
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}

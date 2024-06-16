@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '../../../../lib/utils';
 import { Separator } from '../../separator';
-import useSearchParams from '@/hooks/useSearchParams';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -17,8 +17,6 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
-import { cn } from '@ui/lib/utils';
-import useTranslation from 'next-translate/useTranslation';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;
@@ -28,6 +26,12 @@ interface DataTablePaginationProps<TData> {
   pageCount?: number;
   pageSize?: number;
   additionalSizes?: number[];
+  resultsText?: string;
+  rowsPerPageText?: string;
+  pageText?: string;
+  ofText?: string;
+  // eslint-disable-next-line no-unused-vars
+  setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
 
 export function DataTablePagination<TData>({
@@ -38,10 +42,12 @@ export function DataTablePagination<TData>({
   pageCount,
   pageSize,
   additionalSizes,
+  resultsText,
+  rowsPerPageText,
+  pageText,
+  ofText,
+  setParams,
 }: DataTablePaginationProps<TData>) {
-  const { t } = useTranslation('common');
-  const searchParams = useSearchParams();
-
   // filter duplicate and sort sizes
   const sizes = [
     5,
@@ -80,7 +86,7 @@ export function DataTablePagination<TData>({
           {t('of')}{' '} */}
           {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
           <span className="text-primary font-semibold">{count}</span>{' '}
-          {t('result(s)')}
+          {resultsText}
           {/* {lang !== 'vi' && lang !== 'vi-VN'
             ? ' ' + t('selected').toLowerCase()
             : null} */}
@@ -94,7 +100,7 @@ export function DataTablePagination<TData>({
 
       <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
-          <p className="text-sm font-medium">{t('rows-per-page')}</p>
+          <p className="text-sm font-medium">{rowsPerPageText}</p>
           <Select
             value={`${pageSize ?? table?.getState().pagination.pageSize ?? 0}`}
             onValueChange={(value) => {
@@ -103,7 +109,7 @@ export function DataTablePagination<TData>({
                 table.setPageSize(Number(value));
               }
 
-              searchParams.set({ page: 1, pageSize: value });
+              setParams?.({ page: 1, pageSize: value });
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
@@ -123,7 +129,7 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
         <div className="text-muted-foreground w-fit text-sm">
-          {t('page')}{' '}
+          {pageText}{' '}
           <span className="text-primary font-semibold">
             {isPageOutOfRange
               ? 1
@@ -132,7 +138,7 @@ export function DataTablePagination<TData>({
           {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
             <>
               {' '}
-              {t('of')}{' '}
+              {ofText}{' '}
               <span className="text-primary font-semibold">
                 {pageCount ?? table?.getPageCount() ?? 1}
               </span>
@@ -151,7 +157,7 @@ export function DataTablePagination<TData>({
                   table.setPageIndex(0);
                 }
 
-                searchParams.set({ page: 1 });
+                setParams?.({ page: 1 });
               }}
               disabled={
                 (pageIndex !== undefined
@@ -171,7 +177,7 @@ export function DataTablePagination<TData>({
                   table.previousPage();
                 }
 
-                searchParams.set({
+                setParams?.({
                   page:
                     pageIndex ?? table?.getState().pagination.pageIndex ?? 0,
                 });
@@ -194,7 +200,7 @@ export function DataTablePagination<TData>({
                   table.nextPage();
                 }
 
-                searchParams.set({
+                setParams?.({
                   page: isPageOutOfRange
                     ? 2
                     : (pageIndex ??
@@ -220,7 +226,7 @@ export function DataTablePagination<TData>({
                   table.setPageIndex(table.getPageCount() - 1);
                 }
 
-                searchParams.set({
+                setParams?.({
                   page: pageCount ?? table?.getPageCount() ?? 1,
                 });
               }}

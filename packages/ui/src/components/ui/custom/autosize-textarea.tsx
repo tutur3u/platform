@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@ui/lib/utils';
+import { cn } from '../../../lib/utils';
 import * as React from 'react';
 import { useImperativeHandle } from 'react';
 

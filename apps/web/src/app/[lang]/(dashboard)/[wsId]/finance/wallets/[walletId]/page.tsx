@@ -49,9 +49,8 @@ export default function WalletDetailsPage({
 
       if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
 
-      acc[localeDate].transactions.push(cur);
-
-      acc[localeDate].total += cur?.amount || 0;
+      acc[localeDate]!.transactions.push(cur);
+      acc[localeDate]!.total += cur?.amount || 0;
 
       return acc;
     },

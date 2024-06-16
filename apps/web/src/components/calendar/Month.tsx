@@ -96,7 +96,7 @@ export default function Month({ hasGrid, month, year }: MonthProps) {
           <MonthCell
             hasGrid={hasGrid}
             key={index}
-            date={getMonthDays()[index]}
+            date={getMonthDays()[index]!}
           />
         ))}
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '../../lib/utils';
 import {
   TimePickerType,
   getArrowByType,
@@ -7,7 +8,6 @@ import {
   setDateByType,
 } from './time-picker-utils';
 import { Input } from '@repo/ui/components/ui/input';
-import { cn } from '@ui/lib/utils';
 import React from 'react';
 
 export interface TimePickerInputProps

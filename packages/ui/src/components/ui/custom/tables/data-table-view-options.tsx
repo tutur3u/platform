@@ -13,22 +13,28 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Table } from '@tanstack/react-table';
 import { UserCog } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { Translate } from 'next-translate';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
-  namespace: string;
+  viewOpionsText?: string;
+  toggleColumnsText?: string;
+  hideAllText?: string;
+  showAllText?: string;
   table: Table<TData>;
   extraColumns?: any[];
+  t: Translate;
 }
 
 export function DataTableViewOptions<TData>({
-  namespace,
+  t,
+  viewOpionsText,
+  toggleColumnsText,
+  hideAllText,
+  showAllText,
   table,
   extraColumns,
 }: DataTableViewOptionsProps<TData>) {
-  const { t } = useTranslation(namespace);
-
   const isShowingAll = table
     .getAllColumns()
     .every((column) => column.getIsVisible());
@@ -42,11 +48,11 @@ export function DataTableViewOptions<TData>({
           className="ml-auto h-8 w-full md:w-fit"
         >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          {t('common:view-options')}
+          {viewOpionsText}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>{t('common:toggle-columns')}</DropdownMenuLabel>
+        <DropdownMenuLabel>{toggleColumnsText}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-36">
           {table
@@ -77,8 +83,10 @@ export function DataTableViewOptions<TData>({
                       <UserCog className="mr-2 h-4 w-4" />
                     ) : undefined}
 
+                    {/* @ts-expect-error */}
                     {extraColumns?.findLast(
-                      (extraColumn) => extraColumn.id === column.id
+                      (extraColumn: { id: string; name?: string }) =>
+                        extraColumn.id === column.id
                     )?.name || t(column.id)}
                   </DropdownMenuCheckboxItem>
                 </Fragment>
@@ -96,7 +104,7 @@ export function DataTableViewOptions<TData>({
                 .forEach((column) => column.toggleVisibility(!isShowingAll));
             }}
           >
-            {isShowingAll ? t('common:hide-all') : t('common:show-all')}
+            {isShowingAll ? hideAllText : showAllText}
           </Button>
         </DropdownMenuLabel>
       </DropdownMenuContent>

@@ -1,6 +1,7 @@
 import { UserDatabaseFilter } from '../filters';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
@@ -154,7 +155,7 @@ async function getData(
     return getData(wsId, { pageSize, groupId, userId, retry: false });
   }
 
-  return { data, count };
+  return { data, count } as { data: WorkspaceUserReport[]; count: number };
 }
 
 async function getUserGroups(wsId: string) {

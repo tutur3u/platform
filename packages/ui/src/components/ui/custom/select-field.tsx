@@ -1,13 +1,13 @@
-import { Root } from '@radix-ui/react-select';
-import { Label } from '@repo/ui/components/ui/label';
+import { cn } from '../../../lib/utils';
+import { Label } from '../label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { cn } from '@ui/lib/utils';
+} from '../select';
+import { Root } from '@radix-ui/react-select';
 import React, { forwardRef } from 'react';
 
 type SelectOption = {

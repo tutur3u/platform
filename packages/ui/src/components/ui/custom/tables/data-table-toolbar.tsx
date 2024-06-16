@@ -1,17 +1,15 @@
 'use client';
 
 import { DataTableCreateButton } from './data-table-create-button';
-import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
-import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import useSearchParams from '@/hooks/useSearchParams';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import { Table } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { Translate } from 'next-translate';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
+  t?: Translate;
   newObjectTitle?: string;
   editContent?: ReactNode;
   namespace: string;
@@ -19,40 +17,41 @@ interface DataTableToolbarProps<TData> {
   filters?: ReactNode[];
   extraColumns?: any[];
   disableSearch?: boolean;
+  isEmpty: boolean;
+  resetParams: () => void;
 }
 
 export function DataTableToolbar<TData>({
+  t,
   newObjectTitle,
   editContent,
   namespace,
   table,
   filters,
   extraColumns,
-  disableSearch = false,
+  // disableSearch = false,
+  isEmpty,
+  resetParams,
 }: DataTableToolbarProps<TData>) {
-  const { t } = useTranslation(namespace);
-  const searchParams = useSearchParams();
-
-  const isFiltered =
-    table.getState().columnFilters.length > 0 || !searchParams.isEmpty;
+  const isFiltered = table.getState().columnFilters.length > 0 || !isEmpty;
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
-        {disableSearch || (
+        {/* {disableSearch || (
           <GeneralSearchBar className="col-span-full w-full md:col-span-1 md:max-w-xs" />
-        )}
+        )} */}
         {filters}
         {isFiltered && (
           <Button
             variant="secondary"
             onClick={() => {
               table.resetColumnFilters();
-              searchParams.reset();
+              resetParams();
             }}
             className="h-8 px-2 lg:px-3"
           >
-            {t('common:reset')}
+            {t?.('common:reset')}
             <Cross2Icon className="ml-2 h-4 w-4" />
           </Button>
         )}
@@ -64,9 +63,10 @@ export function DataTableToolbar<TData>({
             editContent={editContent}
           />
         )}
-        <DataTableRefreshButton />
+        {/* <DataTableRefreshButton /> */}
         <DataTableViewOptions
           namespace={namespace}
+          // @ts-expect-error
           table={table}
           extraColumns={extraColumns}
         />

@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '../../lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn } from '@ui/lib/utils';
 import * as React from 'react';
 
 const Slider = React.forwardRef<

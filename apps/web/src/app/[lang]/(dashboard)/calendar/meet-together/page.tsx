@@ -72,7 +72,7 @@ export default async function MeetTogetherPage({
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
                       }).format(
-                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? 0) *
+                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
                           (plan.start_time?.includes('-') ? -1 : 1)
                       )}
                     </div>

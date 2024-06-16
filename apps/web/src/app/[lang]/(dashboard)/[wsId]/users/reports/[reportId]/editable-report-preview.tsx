@@ -57,7 +57,7 @@ export default function EditableReportPreview({
     const parsedText = segments.map((segment, index) => {
       const match = segment.match(/{{(.*?)}}/);
       if (match) {
-        const key = match[1].trim();
+        const key = match?.[1]?.trim() || '';
 
         if (key === 'user_name') {
           return (

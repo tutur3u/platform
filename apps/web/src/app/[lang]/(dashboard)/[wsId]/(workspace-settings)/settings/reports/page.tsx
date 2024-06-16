@@ -46,7 +46,7 @@ export default async function WorkspaceReportsSettingsPage({
     const parsedText = segments.map((segment, index) => {
       const match = segment.match(/{{(.*?)}}/);
       if (match) {
-        const key = match[1].trim();
+        const key = match?.[1]?.trim() || '';
         return (
           <span
             key={key + index}

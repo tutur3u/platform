@@ -35,7 +35,7 @@ export interface ChatPanelProps
   count: number | null;
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
-  model: Model;
+  model?: Model;
   setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
   clearChat: () => void;

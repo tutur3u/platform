@@ -1,25 +1,23 @@
 'use client';
 
+import { Button } from '../../button';
 import { DialogContent, DialogTrigger } from '../../dialog';
-import { Button } from '@repo/ui/components/ui/button';
 import { Plus } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 
 export interface DataTableCreateButtonProps {
   newObjectTitle?: string;
+  createButtonText?: string;
   editContent?: ReactNode;
 }
 
 export function DataTableCreateButton(props: DataTableCreateButtonProps) {
-  const { t } = useTranslation('common');
-
   return (
     <>
       <DialogTrigger asChild>
         <Button size="sm" className="col-span-full ml-auto h-8 w-full md:w-fit">
           <Plus className="mr-2 h-4 w-4" />
-          {props.newObjectTitle || t('create')}
+          {props.newObjectTitle || props.createButtonText}
         </Button>
       </DialogTrigger>
       <DialogContent

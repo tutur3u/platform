@@ -57,7 +57,9 @@ export function CubePopover({
                 max={100}
                 step={1}
                 value={[size.x]}
-                onValueChange={(v) => setSize((s) => ({ ...s, x: v[0] }))}
+                onValueChange={(v) =>
+                  setSize((s) => ({ ...s, x: v?.[0] ?? 0 }))
+                }
               />
             </div>
 
@@ -86,7 +88,9 @@ export function CubePopover({
                 max={100}
                 step={1}
                 value={[size.y]}
-                onValueChange={(v) => setSize((s) => ({ ...s, y: v[0] }))}
+                onValueChange={(v) =>
+                  setSize((s) => ({ ...s, y: v?.[0] ?? 0 }))
+                }
               />
             </div>
 
@@ -115,7 +119,9 @@ export function CubePopover({
                 max={3}
                 step={1}
                 value={[size.z]}
-                onValueChange={(v) => setSize((s) => ({ ...s, z: v[0] }))}
+                onValueChange={(v) =>
+                  setSize((s) => ({ ...s, z: v?.[0] ?? 0 }))
+                }
               />
             </div>
           </div>

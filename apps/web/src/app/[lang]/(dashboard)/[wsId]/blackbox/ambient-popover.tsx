@@ -55,7 +55,7 @@ export function AmbientPopover({
                 max={10}
                 step={0.1}
                 value={[intensity]}
-                onValueChange={(v) => setIntensity(v[0])}
+                onValueChange={(v) => setIntensity(v?.[0] || 0)}
               />
             </div>
           </div>

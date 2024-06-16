@@ -23,16 +23,11 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { Translate } from 'next-translate';
 import { ReactNode, useState } from 'react';
 
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
-  columnGenerator?: (
-    // eslint-disable-next-line no-unused-vars
-    t: (key: string, options?: { [key: string]: any }) => string,
-    // eslint-disable-next-line no-unused-vars
-    extraColumns?: any[]
-  ) => ColumnDef<TData, TValue>[];
   filters?: ReactNode[];
   extraColumns?: any[];
   newObjectTitle?: string;
@@ -40,14 +35,25 @@ interface DataTableProps<TData, TValue> {
   namespace?: string;
   data?: TData[];
   count?: number;
+  pageIndex?: number;
+  pageSize?: number;
   defaultVisibility?: VisibilityState;
   noBottomPadding?: boolean;
   disableSearch?: boolean;
+  isEmpty?: boolean;
+  resetParams?: () => void;
+  // eslint-disable-next-line no-unused-vars
+  t?: Translate;
+  columnGenerator?: (
+    // eslint-disable-next-line no-unused-vars
+    t: Translate,
+    // eslint-disable-next-line no-unused-vars
+    extraColumns?: any[]
+  ) => ColumnDef<TData, TValue>[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
-  columnGenerator,
   filters,
   extraColumns,
   newObjectTitle,
@@ -55,24 +61,26 @@ export function DataTable<TData, TValue>({
   namespace = 'common',
   data,
   count,
+  pageIndex = 0,
+  pageSize = 10,
   defaultVisibility = {},
   noBottomPadding,
   disableSearch,
+  isEmpty,
+  t,
+  resetParams,
+  columnGenerator,
 }: DataTableProps<TData, TValue>) {
-  const { t } = useTranslation(namespace);
-
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(defaultVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const pageIndex = (Number(searchParams.get('page')) || 1) - 1;
-  const pageSize = Number(searchParams.get('pageSize')) || 10;
-
   const table = useReactTable({
     data: data || [],
-    columns: columnGenerator ? columnGenerator(t, extraColumns) : columns || [],
+    columns:
+      columnGenerator && t ? columnGenerator(t, extraColumns) : columns || [],
     state: {
       sorting,
       columnVisibility,
@@ -110,6 +118,9 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
+        t={t}
+        isEmpty={isEmpty || !data?.length}
+        resetParams={resetParams || (() => {})}
       />
       <div className="rounded-md border">
         <Table>
@@ -151,12 +162,14 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columnGenerator?.(t)?.length || columns?.length || 1}
+                  colSpan={
+                    columnGenerator?.(t!)?.length || columns?.length || 1
+                  }
                   className="h-24 text-center"
                 >
                   {data
-                    ? `${t('common:no-results')}.`
-                    : `${t('common:loading')}...`}
+                    ? `${t?.('common:no-results')}.`
+                    : `${t?.('common:loading')}...`}
                 </TableCell>
               </TableRow>
             )}

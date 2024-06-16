@@ -38,9 +38,9 @@ export default async function FinanceTransactionsPage({
       if (!acc[localeDate])
         acc[localeDate] = { transactions: [], total: 0, date };
 
-      acc[localeDate].transactions.push(cur);
+      acc[localeDate]!.transactions.push(cur);
 
-      acc[localeDate].total += cur?.amount || 0;
+      acc[localeDate]!.total += cur?.amount || 0;
 
       return acc;
     },

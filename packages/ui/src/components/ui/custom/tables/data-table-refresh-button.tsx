@@ -2,13 +2,14 @@
 
 import { Button } from '@repo/ui/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
-import { useRouter } from 'next/navigation';
 
-export function DataTableRefreshButton() {
-  const { t } = useTranslation('common');
-  const router = useRouter();
-
+export function DataTableRefreshButton({
+  router,
+  refreshText,
+}: {
+  router: any;
+  refreshText: string;
+}) {
   return (
     <Button
       variant="outline"
@@ -17,7 +18,7 @@ export function DataTableRefreshButton() {
       onClick={() => router.refresh()}
     >
       <RefreshCcw className="mr-2 h-4 w-4" />
-      {t('refresh')}
+      {refreshText}
     </Button>
   );
 }

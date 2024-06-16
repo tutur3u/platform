@@ -15,7 +15,7 @@ const DynamicIsland = () => {
   const title =
     events.length >= 1
       ? events.length === 1
-        ? events[0].title || 'Unnamed Event'
+        ? events?.[0]?.title || 'Unnamed Event'
         : `${events.length} events`
       : upcomingEvent
         ? upcomingEvent.title || 'Unnamed Event'
