@@ -1,5 +1,5 @@
 import { ChatList } from './chat-list';
-import { capitalize } from '@/lib/utils';
+import { capitalize, cn } from '@/lib/utils';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { IconArrowRight } from '@repo/ui/components/ui/icons';
@@ -9,7 +9,7 @@ import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { MessageCircle } from 'lucide-react';
+import { Globe, Lock, MessageCircle, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
@@ -22,9 +22,9 @@ export function EmptyScreen({
   previousMessages,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
-  wsId: string;
-  chats: AIChat[];
-  count: number | null;
+  wsId?: string;
+  chats?: AIChat[];
+  count?: number | null;
   previousMessages?: Message[];
   locale: string;
 }) {
@@ -37,24 +37,24 @@ export function EmptyScreen({
 
   const exampleMessages = [
     {
-      heading: 'Explain technical concepts',
-      message: `What is quantum computing?`,
+      heading: t('example_1'),
+      message: t('example_1_prompt'),
     },
     {
-      heading: 'Generate math problems',
-      message: `Generate a list of hard but interesting math problems for undergraduates.`,
+      heading: t('example_2'),
+      message: t('example_2_prompt'),
     },
     {
-      heading: 'Explain to a 5th grader',
-      message: `Explain the following concepts like I'm a fifth grader: \n\n`,
+      heading: t('example_3'),
+      message: t('example_3_prompt'),
     },
     {
-      heading: 'Summarize an article',
-      message: 'Summarize the following article for a 2nd grader: \n\n',
+      heading: t('example_4'),
+      message: t('example_4_prompt'),
     },
     {
-      heading: 'Draft an email',
-      message: `Draft an email to my boss about the following: \n\n`,
+      heading: t('example_5'),
+      message: t('example_5_prompt'),
     },
   ];
 
@@ -92,7 +92,7 @@ export function EmptyScreen({
           ))}
         </div>
 
-        {chats.length > 0 && (
+        {chats && chats.length > 0 && (
           <>
             <Separator className="my-4" />
             <div>
@@ -111,14 +111,35 @@ export function EmptyScreen({
                         {chat.title}
                       </Link>
 
-                      <div className="text-xs mt-1">
+                      <div className="text-xs mt-1 flex flex-wrap gap-1 items-center">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
+                            chat.is_public
+                              ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
+                              : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                          )}
+                        >
+                          {chat.is_public ? (
+                            <>
+                              <Lock className="w-3 h-3" />
+                              {t('public')}
+                            </>
+                          ) : (
+                            <>
+                              <Globe className="w-3 h-3" />
+                              {t('private')}
+                            </>
+                          )}
+                        </span>
                         {chat.model && (
-                          <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                          <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
+                            <Sparkles className="w-3 h-3" />
                             {chat.model}
                           </span>
                         )}
                         <span className="opacity-70">
-                          {chat.model && <span className="mx-1">•</span>}
+                          {chat.model && <span className="mr-1">•</span>}
                           {capitalize(dayjs(chat?.created_at).fromNow())}
                         </span>
                       </div>
@@ -166,7 +187,7 @@ export function EmptyScreen({
         </div>
       )}
 
-      {chats.length > 5 && (
+      {chats && chats.length > 5 && (
         <div className="bg-background rounded-lg border p-4 md:p-8">
           <div className="flex flex-col">
             <h2 className="text-lg font-semibold">
@@ -194,14 +215,35 @@ export function EmptyScreen({
                       {chat.title}
                     </Link>
 
-                    <div className="text-xs mt-1">
+                    <div className="text-xs mt-1 flex flex-wrap gap-1 items-center">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
+                          chat.is_public
+                            ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
+                            : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                        )}
+                      >
+                        {chat.is_public ? (
+                          <>
+                            <Lock className="w-3 h-3" />
+                            {t('public')}
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="w-3 h-3" />
+                            {t('private')}
+                          </>
+                        )}
+                      </span>
                       {chat.model && (
-                        <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                        <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
+                          <Sparkles className="w-3 h-3" />
                           {chat.model}
                         </span>
                       )}
                       <span className="opacity-70">
-                        {chat.model && <span className="mx-1">•</span>}
+                        {chat.model && <span className="mr-1">•</span>}
                         {capitalize(dayjs(chat?.created_at).fromNow())}
                       </span>
                     </div>

@@ -53,7 +53,7 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'ai_chat_messages_model_fkey';
+            foreignKeyName: 'public_ai_chat_messages_model_fkey';
             columns: ['model'];
             isOneToOne: false;
             referencedRelation: 'ai_models';
@@ -66,6 +66,7 @@ export type Database = {
           created_at: string;
           creator_id: string | null;
           id: string;
+          is_public: boolean;
           model: string | null;
           title: string | null;
         };
@@ -73,6 +74,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
+          is_public?: boolean;
           model?: string | null;
           title?: string | null;
         };
@@ -80,6 +82,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
+          is_public?: boolean;
           model?: string | null;
           title?: string | null;
         };
@@ -92,7 +95,7 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'ai_chats_model_fkey';
+            foreignKeyName: 'public_ai_chats_model_fkey';
             columns: ['model'];
             isOneToOne: false;
             referencedRelation: 'ai_models';
@@ -124,7 +127,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'ai_models_provider_fkey';
+            foreignKeyName: 'public_ai_models_provider_fkey';
             columns: ['provider'];
             isOneToOne: false;
             referencedRelation: 'ai_providers';
@@ -3849,9 +3852,14 @@ export type Database = {
       workspace_user_groups_with_amount: {
         Row: {
           amount: number | null;
+          archived: boolean | null;
           created_at: string | null;
+          ending_date: string | null;
           id: string | null;
           name: string | null;
+          notes: string | null;
+          sessions: string[] | null;
+          starting_date: string | null;
           ws_id: string | null;
         };
         Relationships: [

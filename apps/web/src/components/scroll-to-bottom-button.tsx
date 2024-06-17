@@ -6,7 +6,7 @@ import { IconArrowDown } from '@repo/ui/components/ui/icons';
 import { cn } from '@repo/ui/lib/utils';
 
 export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
-  const isAtBottom = useAtBottom();
+  const isAtBottom = useAtBottom(50);
 
   return (
     <Button
@@ -17,7 +17,7 @@ export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
       )}
       onClick={() => {
         window.scrollTo({
-          top: document.body.offsetHeight,
+          top: document.body.scrollHeight,
           behavior: 'smooth',
         });
       }}

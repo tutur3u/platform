@@ -13,6 +13,7 @@ export interface ChatList {
   embeddedUrl?: string;
   locale: string;
   model?: string;
+  anonymize?: boolean;
   setInput: (input: string) => void;
 }
 
@@ -23,6 +24,7 @@ export function ChatList({
   embeddedUrl,
   locale,
   model,
+  anonymize,
   setInput,
 }: ChatList) {
   if (!messages.length) return null;
@@ -68,6 +70,7 @@ export function ChatList({
             setInput={setInput}
             embeddedUrl={embeddedUrl}
             locale={locale}
+            anonymize={anonymize}
           />
           {index < messages.length - 1 && (
             <Separator className="my-4 md:my-8" />
