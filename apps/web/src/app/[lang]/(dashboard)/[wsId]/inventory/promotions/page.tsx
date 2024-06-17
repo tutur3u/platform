@@ -1,10 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -36,7 +34,7 @@ export default async function WorkspacePromotionsPage({
   }));
 
   return (
-    <DataTable
+    <CustomDataTable
       data={promotions}
       columnGenerator={promotionColumns}
       namespace="promotion-data-table"
@@ -57,7 +55,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_promotions')

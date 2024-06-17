@@ -35,7 +35,7 @@ export default async function AccountSettingsPage() {
           title={displayNameLabel}
           description={displayNameDescription}
         >
-          <DisplayNameInput defaultValue={user!?.display_name} />
+          <DisplayNameInput defaultValue={user?.display_name} />
         </SettingItemTab>
       </Suspense>
 

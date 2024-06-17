@@ -1,10 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { basicColumns } from '@/data/columns/basic';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -25,7 +23,7 @@ export default async function WorkspaceUnitsPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={basicColumns}
       namespace="basic-data-table"
@@ -46,7 +44,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('inventory_units')

@@ -1,10 +1,9 @@
 import Chat from '../chat';
 import { getChats } from '../helper';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { AIChat } from '@/types/primitives/ai-chat';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { AIChat } from '@/types/db';
+import { createClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +57,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async (chatId: string) => {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
@@ -78,7 +77,7 @@ const getMessages = async (chatId: string) => {
 };
 
 const getChat = async (chatId: string) => {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('ai_chats')

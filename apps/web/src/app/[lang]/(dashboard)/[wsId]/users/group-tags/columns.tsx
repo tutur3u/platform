@@ -1,9 +1,9 @@
 'use client';
 
 import { ApiKeyRowActions } from './row-actions';
-import { ColorPicker } from '@/components/ui/color-picker';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { ColorPicker } from '@repo/ui/components/ui/color-picker';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';

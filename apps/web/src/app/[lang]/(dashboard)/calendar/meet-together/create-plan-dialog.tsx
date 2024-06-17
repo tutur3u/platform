@@ -1,6 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Timezone } from '@/types/primitives/Timezone';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -17,11 +19,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { Timezone } from '@/types/primitives/Timezone';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import dayjs from 'dayjs';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';

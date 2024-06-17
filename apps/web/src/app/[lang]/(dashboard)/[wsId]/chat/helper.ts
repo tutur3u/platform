@@ -1,8 +1,7 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 export const getChats = async () => {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, count, error } = await supabase
     .from('ai_chats')

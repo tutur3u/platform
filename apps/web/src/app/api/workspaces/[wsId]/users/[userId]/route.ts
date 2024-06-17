@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +14,7 @@ export async function GET(
   _: Request,
   { params: { wsId, userId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_users')
@@ -37,7 +36,7 @@ export async function DELETE(
   _: Request,
   { params: { wsId, userId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('workspace_users')

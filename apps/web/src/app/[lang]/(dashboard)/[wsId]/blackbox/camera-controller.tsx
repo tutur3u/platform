@@ -16,10 +16,10 @@ export function CameraController({
     camera.position.y = position.y;
     camera.position.z = position.z;
 
-    camera.quaternion.x = quaternion[0] / 360;
-    camera.quaternion.y = quaternion[1] / 360;
-    camera.quaternion.z = quaternion[2] / 360;
-    camera.quaternion.w = quaternion[3] / 360;
+    camera.quaternion.x = (quaternion?.[0] ?? 0) / 360;
+    camera.quaternion.y = (quaternion?.[1] ?? 0) / 360;
+    camera.quaternion.z = (quaternion?.[2] ?? 0) / 360;
+    camera.quaternion.w = (quaternion?.[3] ?? 0) / 360;
 
     camera.updateProjectionMatrix();
   }, [camera, position, quaternion]);

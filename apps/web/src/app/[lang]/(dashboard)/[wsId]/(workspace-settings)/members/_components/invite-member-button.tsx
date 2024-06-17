@@ -1,7 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { SelectField } from '@/components/ui/custom/select-field';
+import { User } from '@/types/primitives/User';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -18,12 +20,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { User } from '@/types/primitives/User';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

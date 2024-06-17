@@ -1,13 +1,15 @@
 'use client';
 
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceUserReport } from '@/types/db';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';
 import Link from 'next/link';
 
-export const getUserReportColumns = (t: Translate): ColumnDef<UserGroup>[] => [
+export const getUserReportColumns = (
+  t: Translate
+): ColumnDef<WorkspaceUserReport>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

@@ -1,7 +1,11 @@
 import { UserDatabaseFilter } from '../filters';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ColorPicker } from '@/components/ui/color-picker';
+import { UserGroup } from '@/types/primitives/UserGroup';
+import { UserGroupTag } from '@/types/primitives/user-group-tag';
+import { createClient } from '@/utils/supabase/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import {
   Form,
   FormControl,
@@ -9,13 +13,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { UserGroupTag } from '@/types/primitives/user-group-tag';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
@@ -157,7 +157,7 @@ export default function GroupTagForm({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')

@@ -1,13 +1,11 @@
 import { configColumns } from './columns';
-import ReportPreview from '@/components/ui/custom/report-preview';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
+import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +46,7 @@ export default async function WorkspaceReportsSettingsPage({
     const parsedText = segments.map((segment, index) => {
       const match = segment.match(/{{(.*?)}}/);
       if (match) {
-        const key = match[1].trim();
+        const key = match?.[1]?.trim() || '';
         return (
           <span
             key={key + index}
@@ -74,7 +72,7 @@ export default async function WorkspaceReportsSettingsPage({
       </div>
       <Separator className="my-4" />
       <div className="grid gap-4 xl:grid-cols-2">
-        <DataTable
+        <CustomDataTable
           columnGenerator={configColumns}
           namespace="api-key-data-table"
           data={configs}
@@ -97,7 +95,7 @@ export default async function WorkspaceReportsSettingsPage({
 }
 
 async function getConfigs(wsId: string, { q }: SearchParams) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

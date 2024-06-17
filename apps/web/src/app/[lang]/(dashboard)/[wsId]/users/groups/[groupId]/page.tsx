@@ -1,14 +1,13 @@
 import { UserDatabaseFilter } from '../../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from '@/data/columns/users';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 interface SearchParams {
   q?: string;
@@ -58,7 +57,7 @@ export default async function UserGroupDetailsPage({
         {group.name && <div>{group.name}</div>}
       </div>
 
-      <DataTable
+      <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
@@ -101,7 +100,7 @@ export default async function UserGroupDetailsPage({
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -126,7 +125,7 @@ async function getUserData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -137,7 +136,7 @@ async function getUserData(
         excluded_groups: Array.isArray(excludedGroups)
           ? excludedGroups
           : [excludedGroups],
-        search_query: q || null,
+        search_query: q || '',
       },
       {
         count: 'exact',
@@ -166,11 +165,11 @@ async function getUserData(
     });
   }
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')
@@ -187,7 +186,7 @@ async function getUserFields(wsId: string) {
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(

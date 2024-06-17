@@ -1,5 +1,5 @@
 {
-  "extends": "tsconfig/nextjs.json",
+  "extends": "@repo/tsconfig/nextjs.json",
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
@@ -7,20 +7,20 @@
         "*"
       ]
     },
+    "module": "ESNext",
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "target": "ESNext",
-    "allowJs": false
+    ]
   },
   "include": [
     "next-env.d.ts",
+    "next.config.js",
+    "**/*.js",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "vitest.config.mts",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

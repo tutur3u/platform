@@ -8,7 +8,8 @@ import {
 } from './random-colors';
 import { Coordinates, Message, Payload, User } from './types';
 import { removeFirst } from './utils';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createDynamicClient } from '@/utils/supabase/client';
+import { generateRandomUUID } from '@/utils/uuid-helper';
 import {
   PostgrestResponse,
   REALTIME_LISTEN_TYPES,
@@ -20,7 +21,6 @@ import {
 } from '@supabase/supabase-js';
 import { cloneDeep, throttle } from 'lodash';
 import { Loader } from 'lucide-react';
-import { nanoid } from 'nanoid';
 import type { NextPage } from 'next';
 import { ReactElement, useEffect, useRef, useState } from 'react';
 
@@ -31,11 +31,10 @@ const X_THRESHOLD = 25;
 const Y_THRESHOLD = 35;
 
 // Generate a random user id
-const userId = nanoid();
+const userId = generateRandomUUID();
 
 const Room: NextPage = () => {
-  const supabase = createClientComponentClient();
-
+  const supabase = createDynamicClient();
   const localColorBackup = getRandomColor();
 
   const chatboxRef = useRef<any>();
@@ -126,8 +125,8 @@ const Room: NextPage = () => {
             acc[userId] = existingUsers[userId] || {
               x: 0,
               y: 0,
-              color: color.bg,
-              hue: color.hue,
+              color: color?.bg || getRandomColor()?.bg!,
+              hue: color?.hue || getRandomColor()?.hue!,
             };
             return acc;
           },
@@ -184,7 +183,7 @@ const Room: NextPage = () => {
             }
 
             // Generate an id if no existing rooms are available
-            setRoomId(newRoomId ?? nanoid());
+            setRoomId(newRoomId ?? generateRandomUUID());
           }
         )
         .subscribe();
@@ -558,8 +557,8 @@ const Room: NextPage = () => {
             isLocalClient
             x={mousePosition?.x}
             y={mousePosition?.y}
-            color={users[userId]?.color ?? localColorBackup.bg}
-            hue={users[userId]?.hue ?? localColorBackup.hue}
+            color={users[userId]?.color ?? localColorBackup?.bg!}
+            hue={users[userId]?.hue ?? localColorBackup?.hue!}
             isTyping={isTyping}
             isCancelled={isCancelled}
             message={message}

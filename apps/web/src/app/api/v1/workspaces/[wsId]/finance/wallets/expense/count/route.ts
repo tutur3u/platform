@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -70,7 +70,7 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('wallet_transactions')

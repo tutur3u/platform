@@ -1,10 +1,8 @@
 import { DailyTotalChart, MonthlyTotalChart } from './charts';
 import TransactionsTable from './table';
-import { Separator } from '@/components/ui/separator';
 import { Transaction } from '@/types/primitives/Transaction';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 
 interface Props {
   params: {
@@ -52,7 +50,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('wallet_transactions')
@@ -93,7 +91,7 @@ async function getData(
 }
 
 async function getDailyData(wsId: string) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase.rpc('get_daily_income_expense', {
     _ws_id: wsId,
@@ -106,7 +104,7 @@ async function getDailyData(wsId: string) {
 }
 
 async function getMonthlyData(wsId: string) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase.rpc('get_monthly_income_expense', {
     _ws_id: wsId,

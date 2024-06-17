@@ -1,15 +1,13 @@
 import ProjectEditDialog from './_components/project-edit-dialog';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +55,7 @@ export default async function WorkspaceProjectsPage({
         </div>
       </div>
       <Separator className="my-4" />
-      <DataTable
+      <CustomDataTable
         columnGenerator={projectColumns}
         namespace="basic-data-table"
         data={projects}
@@ -79,7 +77,7 @@ async function getProjects(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_boards')

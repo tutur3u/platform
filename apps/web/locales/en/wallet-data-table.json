@@ -1,9 +1,14 @@
 {
   "id": "ID",
   "name": "Name",
+  "wallet_name": "Wallet name",
   "description": "Description",
   "balance": "Balance",
+  "wallet_balance": "Wallet balance",
   "type": "Type",
+  "wallet_type": "Wallet type",
+  "standard": "Standard",
+  "credit": "Credit",
   "currency": "Currency",
   "report_opt_in": "Show in reports",
   "created_at": "Created at"

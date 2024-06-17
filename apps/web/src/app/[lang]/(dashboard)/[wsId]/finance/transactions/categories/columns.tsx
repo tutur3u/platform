@@ -1,8 +1,8 @@
 'use client';
 
 import { TransactionCategoryRowActions } from './row-actions';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';

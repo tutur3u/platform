@@ -1,18 +1,18 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import useSearchParams from '@/hooks/useSearchParams';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
 } from '@/types/primitives/WorkspaceUser';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -341,7 +341,7 @@ export default function UserMonthAttendance({
 }
 
 async function getData(wsId: string, userId: string, month: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const startDate = new Date(month);
   const endDate = new Date(
@@ -362,5 +362,5 @@ async function getData(wsId: string, userId: string, month: string) {
   const { data, error } = await queryBuilder.single();
 
   if (error) throw error;
-  return { data } as { data: WorkspaceUser };
+  return { data } as unknown as { data: WorkspaceUser };
 }

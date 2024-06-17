@@ -1,5 +1,5 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 
 export default function Loading() {
-  return <DataTable />;
+  return <CustomDataTable />;
 }

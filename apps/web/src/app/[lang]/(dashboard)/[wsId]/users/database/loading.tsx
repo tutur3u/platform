@@ -1,9 +1,9 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from '@/data/columns/users';
 
 export default function Loading() {
   return (
-    <DataTable
+    <CustomDataTable
       namespace="user-data-table"
       columnGenerator={getUserColumns}
       defaultVisibility={{

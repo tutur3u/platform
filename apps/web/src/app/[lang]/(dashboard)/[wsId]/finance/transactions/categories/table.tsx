@@ -2,9 +2,10 @@
 
 import { transactionCategoryColumns } from './columns';
 import { TransactionCategoryForm } from './form';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Dialog } from '@/components/ui/dialog';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { Dialog } from '@repo/ui/components/ui/dialog';
+import { Translate } from 'next-translate';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
@@ -34,9 +35,9 @@ export default function TransactionCategoriesTable({
         setTransactionCategory(open ? category || {} : undefined)
       }
     >
-      <DataTable
+      <CustomDataTable
         data={data}
-        columnGenerator={(t) =>
+        columnGenerator={(t: Translate) =>
           transactionCategoryColumns(t, setTransactionCategory)
         }
         namespace="transaction-category-data-table"

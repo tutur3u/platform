@@ -3,7 +3,6 @@
 import BoardEditForm from '../../../../../../components/forms/BoardEditForm';
 import TaskListEditForm from '../../../../../../components/forms/TaskListEditForm';
 import TaskListWrapper from '../../../../../../components/tasks/lists/TaskListWrapper';
-import { useUser } from '@/hooks/useUser';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Task } from '@/types/primitives/Task';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
@@ -50,7 +49,7 @@ export default function WorkspaceBoardEditor({
 
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
-  const { user } = useUser();
+  const user = { id: 'TO-BE-REFACTORED' };
 
   const canFetchLists = user?.id && boardId;
 

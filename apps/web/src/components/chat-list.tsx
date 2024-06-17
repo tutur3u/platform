@@ -1,32 +1,35 @@
 import { ChatMessage } from '@/components/chat-message';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { type Message } from 'ai';
 
 export interface ChatList {
-  title?: string;
+  title?: string | null;
   titleLoading?: boolean;
   messages: (Message & {
     chat_id?: string;
     model?: string;
     created_at?: string;
   })[];
-  setInput: (input: string) => void;
   embeddedUrl?: string;
   locale: string;
   model?: string;
+  setInput: (input: string) => void;
 }
 
 export function ChatList({
   title,
   titleLoading,
   messages,
-  setInput,
   embeddedUrl,
   locale,
   model,
+  setInput,
 }: ChatList) {
   if (!messages.length) return null;
-  const formattedModel = model?.replace(/_/g, ' ').replace(/-/g, ' ');
+  const formattedModel = model
+    ?.replace(/_/g, ' ')
+    .replace(/-/g, ' ')
+    .toUpperCase();
 
   return (
     <div
@@ -44,7 +47,7 @@ export function ChatList({
             {titleLoading ? '...' : title}
 
             {formattedModel && (
-              <div className="bg-foreground/10 mt-4 rounded-lg p-2 text-lg">
+              <div className="bg-foreground/5 mt-4 rounded-lg p-2 text-lg">
                 {formattedModel}
               </div>
             )}
@@ -56,14 +59,15 @@ export function ChatList({
       {messages.map((message, index) => (
         <div key={index}>
           <ChatMessage
-            message={{ ...message, content: message.content.trim() }}
+            message={{
+              ...message,
+              model:
+                message.model || message.role === 'user' ? undefined : model,
+              content: message.content.trim(),
+            }}
             setInput={setInput}
             embeddedUrl={embeddedUrl}
             locale={locale}
-            model={
-              message.model?.replace(/_/g, ' ').replace(/-/g, ' ') ||
-              formattedModel
-            }
           />
           {index < messages.length - 1 && (
             <Separator className="my-4 md:my-8" />

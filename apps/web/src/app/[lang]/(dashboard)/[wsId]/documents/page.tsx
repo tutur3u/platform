@@ -1,11 +1,9 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import { Separator } from '@/components/ui/separator';
 import { getWorkspace } from '@/lib/workspace-helper';
-import { Document } from '@/types/primitives/Document';
+import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -92,7 +90,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 
         {ws &&
           documents &&
-          documents?.map((doc: Document) => (
+          documents?.map((doc) => (
             <DocumentCard key={`doc-${doc.id}`} wsId={ws?.id} document={doc} />
           ))}
       </div>
@@ -101,7 +99,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 }
 
 async function getDocuments(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data } = await supabase
     .from('workspace_documents')

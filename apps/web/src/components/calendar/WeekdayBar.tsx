@@ -42,7 +42,7 @@ const WeekdayBar = ({
           >
             <DayTitle
               view={view}
-              date={dates[index]}
+              date={dates[index]!}
               weekday={weekday.toLocaleString(lang, {
                 weekday: lang === 'vi' ? 'narrow' : 'short',
               })}

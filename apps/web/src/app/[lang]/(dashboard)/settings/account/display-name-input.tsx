@@ -1,16 +1,16 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  defaultValue?: string;
+  defaultValue?: string | null;
   disabled?: boolean;
 }
 
@@ -39,7 +39,7 @@ export default function DisplayNameInput({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: defaultValue,
+      name: defaultValue || '',
     },
   });
 

@@ -1,15 +1,15 @@
 'use client';
 
 import ConfigForm, { ConfigFormSchema } from './form';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+} from '@repo/ui/components/ui/dialog';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import * as z from 'zod';

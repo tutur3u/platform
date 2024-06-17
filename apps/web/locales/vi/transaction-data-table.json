@@ -1,7 +1,9 @@
 {
   "id": "Mã số",
-  "category": "Danh mục",
   "wallet": "Ví",
+  "select_wallet": "Chọn ví",
+  "category": "Danh mục",
+  "select_category": "Chọn danh mục",
   "amount": "Số tiền",
   "description": "Mô tả",
   "report_opt_in": "Hiển thị trong báo cáo",

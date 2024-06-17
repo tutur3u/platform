@@ -1,11 +1,11 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
 import { downloadPrivateObject, uploadObject } from '@/lib/storage-helper';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,7 @@ export default function LogoInput({ workspace, disabled }: Props) {
   const bucket = 'workspaces';
 
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const [file, setFile] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);

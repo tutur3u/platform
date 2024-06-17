@@ -1,7 +1,9 @@
 {
   "id": "ID",
-  "category": "Category",
   "wallet": "Wallet",
+  "select_wallet": "Select wallet",
+  "category": "Category",
+  "select_category": "Select category",
   "amount": "Amount",
   "description": "Description",
   "report_opt_in": "Show in reports",

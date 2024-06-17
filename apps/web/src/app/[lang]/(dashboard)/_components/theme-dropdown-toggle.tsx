@@ -1,10 +1,10 @@
 import { ThemeDropdownItems } from './theme-dropdown-items';
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@repo/ui/components/ui/dropdown-menu';
 import { Moon, Sun } from 'lucide-react';
 
 export function ThemeDropdownToggle() {

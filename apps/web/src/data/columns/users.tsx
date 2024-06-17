@@ -1,15 +1,15 @@
 'use client';
 
 import { UserRowActions } from '@/components/row-actions/users';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+} from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';

@@ -1,10 +1,9 @@
 'use client';
 
-import { Button, type ButtonProps } from '@/components/ui/button';
-import { IconArrowDown } from '@/components/ui/icons';
 import { useAtBottom } from '@/lib/hooks/use-at-bottom';
-import { cn } from '@/lib/utils';
-import * as React from 'react';
+import { Button, type ButtonProps } from '@repo/ui/components/ui/button';
+import { IconArrowDown } from '@repo/ui/components/ui/icons';
+import { cn } from '@repo/ui/lib/utils';
 
 export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
   const isAtBottom = useAtBottom();

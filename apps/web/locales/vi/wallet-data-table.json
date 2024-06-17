@@ -1,9 +1,14 @@
 {
   "id": "Mã số",
   "name": "Tên",
+  "wallet_name": "Tên ví",
   "description": "Mô tả",
   "balance": "Số dư",
+  "wallet_balance": "Số dư ví",
   "type": "Loại",
+  "wallet_type": "Loại ví",
+  "standard": "Tiêu chuẩn",
+  "credit": "Tín dụng",
   "currency": "Tiền tệ",
   "report_opt_in": "Hiển thị trong báo cáo",
   "created_at": "Tạo lúc"

@@ -2,10 +2,14 @@
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CodeBlock } from '@/components/ui/codeblock';
-import { IconUser } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { CodeBlock } from '@repo/ui/components/ui/codeblock';
+import { IconUser } from '@repo/ui/components/ui/icons';
+import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -20,7 +24,7 @@ import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
-  model?: string;
+  model?: string | null;
 }
 
 export function FleetingAssistantMessage({

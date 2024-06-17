@@ -1,18 +1,16 @@
 import UserMonthAttendance from '../../attendance/user-month-attendance';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
-import { Separator } from '@/components/ui/separator';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
 import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -219,7 +217,7 @@ export default async function WorkspaceUserDetailsPage({
       <div className="mb-2 mt-4 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
-      <DataTable
+      <CustomDataTable
         data={invoiceData}
         columnGenerator={invoiceColumns}
         namespace="invoice-data-table"
@@ -238,7 +236,7 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, userId }: { wsId: string; userId: string }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -283,7 +281,7 @@ async function getGroupData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
@@ -306,7 +304,7 @@ async function getReportData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -342,7 +340,7 @@ async function getCouponData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_promotions')
@@ -367,7 +365,7 @@ async function getInvoiceData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('finance_invoices')

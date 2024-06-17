@@ -1,11 +1,10 @@
 import { AIPrompt } from '@/types/db';
+import { createClient } from '@/utils/supabase/server';
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +16,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_ai_prompts')
@@ -38,7 +37,7 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
   return NextResponse.json(data);
 }
 
-const DEFAULT_MODEL_NAME = 'gemini-1.0-pro-latest';
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 const API_KEY = process.env.GOOGLE_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -70,7 +69,7 @@ const safetySettings = [
 ];
 
 export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const data: AIPrompt = await req.json();
 
   if (!data) {
@@ -89,7 +88,7 @@ export async function POST(req: Request, { params: { wsId } }: Params) {
     })
     .generateContent(data?.input);
 
-  const completion = geminiRes.response.candidates?.[0].content.parts[0].text;
+  const completion = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
   if (!completion)
     return new Response('Internal Server Error', { status: 500 });
 
@@ -99,6 +98,7 @@ export async function POST(req: Request, { params: { wsId } }: Params) {
       ...data,
       output: completion,
       ws_id: wsId,
+      model: DEFAULT_MODEL_NAME.toLowerCase(),
     })
     .select('id')
     .single();
