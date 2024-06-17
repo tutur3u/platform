@@ -41,7 +41,7 @@ export function generateMetadata({ params: { lang } }: Props): Metadata {
     creator: 'vohoangphuc',
     openGraph: {
       type: 'website',
-      locale: 'en_US',
+      locale: lang,
       url: siteConfig.url,
       title,
       description,

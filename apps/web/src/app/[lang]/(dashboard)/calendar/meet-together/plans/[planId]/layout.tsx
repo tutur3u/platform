@@ -38,7 +38,7 @@ export async function generateMetadata({
     description,
     openGraph: {
       type: 'website',
-      locale: 'en_US',
+      locale: lang,
       url: siteConfig.url,
       title,
       description,
