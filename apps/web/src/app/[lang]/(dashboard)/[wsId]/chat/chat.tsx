@@ -77,7 +77,7 @@ const Chat = ({
       body: {
         id: chat?.id,
         wsId,
-        model: model?.value,
+        model: chat?.model || model?.value,
         previewToken,
       },
       onResponse(response) {
@@ -117,10 +117,10 @@ const Chat = ({
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (input) {
-      setInput(input.toString());
-      router.replace(`/${wsId}/chat/${chat.id}`);
-    }
+    if (!input) return;
+
+    setInput(input.toString());
+    router.replace(`/${wsId}/chat/${chat.id}`);
   }, [chat?.id, searchParams, router, setInput, wsId]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -142,6 +142,7 @@ const Chat = ({
       {
         method: 'POST',
         body: JSON.stringify({
+          model: model.value,
           message: input,
           previewToken,
         }),
@@ -159,7 +160,7 @@ const Chat = ({
     const { id, title } = (await res.json()) as AIChat;
     if (id) {
       setCollapsed(true);
-      setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
+      setChat({ id, title, model: model.value });
     }
   };
 
@@ -216,7 +217,7 @@ const Chat = ({
               }
               setInput={setInput}
               locale={locale}
-              model={chat?.model}
+              model={chat?.model ?? undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

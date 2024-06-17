@@ -25,19 +25,17 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
-  message: Message & { chat_id?: string; created_at?: string };
-  setInput?: (input: string) => void;
+  message: Message & { chat_id?: string; model?: string; created_at?: string };
   embeddedUrl?: string;
   locale?: string;
-  model?: string;
+  setInput?: (input: string) => void;
 }
 
 export function ChatMessage({
   message,
-  setInput,
   embeddedUrl,
   locale = 'en',
-  model,
+  setInput,
   ...props
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
@@ -87,8 +85,16 @@ export function ChatMessage({
               )}
             </span>
 
-            <div className="text-xs font-semibold opacity-70">
-              {capitalize(dayjs(message?.created_at).fromNow())}
+            <div className="text-xs">
+              {message.model && (
+                <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                  {message.model}
+                </span>
+              )}
+              <span className="opacity-70">
+                {message.model && <span className="mx-1">•</span>}
+                {capitalize(dayjs(message?.created_at).fromNow())}
+              </span>
             </div>
           </div>
         </div>
@@ -153,7 +159,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      className="font-semibold text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -165,7 +171,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                      className="font-semibold text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -239,6 +245,9 @@ export function ChatMessage({
                   {children}
                 </pre>
               );
+            },
+            hr() {
+              return <hr className="border-border" />;
             },
           }}
         >

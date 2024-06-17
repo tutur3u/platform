@@ -146,7 +146,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
                         // if "GOOGLE_GEMINI_PRO" is in the data, set it as the default model
                         const defaultModel = data.find(
                           (model: { id: string }) =>
-                            model.id === 'GOOGLE-GEMINI-PRO'
+                            model.id === 'gemini-1.5-flash'
                         );
 
                         if (defaultModel) field.onChange(defaultModel.id);

@@ -1,20 +1,21 @@
 import { ChatModelSelector } from './chat-model-selector';
+import { PromptForm } from './prompt-form';
 import { ScrollToTopButton } from './scroll-to-top-button';
-import { PromptForm } from '@/components/prompt-form';
 import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
+import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
-import {
-  ArrowDownFromLine,
-  ArrowLeftToLine,
-  ArrowUpFromLine,
-  FolderOpen,
-} from 'lucide-react';
+import { ArrowLeftToLine, Bolt, FolderOpen } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 import React, { useState } from 'react';
@@ -206,16 +207,15 @@ export function ChatPanel({
           } transition-all duration-500`}
         >
           <ChatModelSelector
+            open={showExtraOptions}
+            model={model}
             className={`${
               showExtraOptions
                 ? 'pointer-events-auto opacity-100 delay-500 duration-500'
                 : 'pointer-events-none opacity-0'
             } transition-all ease-in-out`}
-            model={model}
-            onChange={(m) => {
-              setModel(m);
-              console.log(m);
-            }}
+            setOpen={setShowExtraOptions}
+            onChange={setModel}
           />
           <div className="flex w-full items-center gap-2">
             <PromptForm
@@ -235,15 +235,28 @@ export function ChatPanel({
               setInput={setInput}
               isLoading={isLoading}
             />
-            <Button
-              size="icon"
-              type="submit"
-              variant="ghost"
-              onClick={() => setShowExtraOptions((prev) => !prev)}
-            >
-              {showExtraOptions ? <ArrowDownFromLine /> : <ArrowUpFromLine />}
-              <span className="sr-only">Send message</span>
-            </Button>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  type="submit"
+                  variant="ghost"
+                  onClick={() => setShowExtraOptions((prev) => !prev)}
+                  className={cn(
+                    'transition-all duration-300',
+                    id
+                      ? 'opacity-0 bg-transparent w-0 text-transparent pointer-events-none'
+                      : 'opacity-100 pointer-events-auto w-10'
+                  )}
+                  disabled={isLoading || showExtraOptions}
+                >
+                  <Bolt />
+                  <span className="sr-only">Extra options</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Extra options</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

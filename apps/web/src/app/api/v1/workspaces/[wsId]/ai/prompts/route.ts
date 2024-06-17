@@ -37,7 +37,7 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
   return NextResponse.json(data);
 }
 
-const DEFAULT_MODEL_NAME = 'gemini-1.0-pro-latest';
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 const API_KEY = process.env.GOOGLE_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -98,6 +98,7 @@ export async function POST(req: Request, { params: { wsId } }: Params) {
       ...data,
       output: completion,
       ws_id: wsId,
+      model: DEFAULT_MODEL_NAME.toLowerCase(),
     })
     .select('id')
     .single();

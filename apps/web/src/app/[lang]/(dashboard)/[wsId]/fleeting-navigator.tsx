@@ -20,13 +20,15 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     'assistant' | 'search' | 'settings'
   >();
 
+  const defaultProvider = 'google';
+  const defaultModel = 'gemini-1.5-flash';
+
   const [chat, setChat] = useState<Partial<AIChat> | undefined>();
-  const [model] = useState<'google' | 'anthropic'>('google');
 
   const { messages, setMessages } = useChat({
     id: chat?.id,
     //   initialMessages,
-    api: `/api/ai/chat/${model}`,
+    api: `/api/ai/chat/${defaultProvider}`,
     body: {
       id: chat?.id,
       wsId,
@@ -62,7 +64,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   if (disabledPaths.some((path) => pathname.startsWith(path))) return null;
 
   const createChat = async (input: string) => {
-    const res = await fetch(`/api/ai/chat/${model}/new`, {
+    const res = await fetch(`/api/ai/chat/${defaultProvider}/new`, {
       method: 'POST',
       body: JSON.stringify({
         message: input,
@@ -78,9 +80,8 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     }
 
     const { id, title } = (await res.json()) as AIChat;
-    if (id) setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
-
-    return { id, title, model: 'GOOGLE-GEMINI-PRO' } as AIChat;
+    if (id) setChat({ id, title, model: defaultModel });
+    return { id, title, model: defaultModel } as AIChat;
   };
 
   return (
@@ -99,7 +100,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
             <FleetingAssistant
               wsId={wsId}
               chat={chat}
-              model={model}
+              model={defaultProvider}
               messages={messages}
               onBack={() => setCurrentView(undefined)}
               onReset={() => {

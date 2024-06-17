@@ -1,3 +1,4 @@
+import ProjectEditDialog from './_components/project-edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -7,7 +8,6 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import ProjectEditDialog from './_components/project-edit-dialog';
 
 export const dynamic = 'force-dynamic';
 

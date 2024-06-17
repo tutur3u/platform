@@ -37,7 +37,7 @@ export default function FleetingAssistant({
 }: {
   wsId: string;
   chat?: Partial<AIChat>;
-  model: 'google' | 'anthropic';
+  model: 'google';
   messages: Message[];
   onBack: () => void;
   onReset: () => void;

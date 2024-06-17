@@ -13,22 +13,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@repo/ui/components/ui/popover';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 
 export function ChatModelSelector({
+  open,
   model,
-  onChange,
   className,
+  setOpen,
+  onChange,
 }: {
+  open: boolean;
   model?: Model;
-  onChange: (value: Model) => void;
   className?: string;
+  setOpen: (open: boolean) => void;
+  onChange: (value: Model) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
 
   const currentModel = model
@@ -40,7 +42,6 @@ export function ChatModelSelector({
       open={open}
       onOpenChange={(o) => {
         if (!o) setPreviewModel(model);
-        setOpen(o);
       }}
     >
       <PopoverTrigger asChild>
@@ -48,7 +49,8 @@ export function ChatModelSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={`flex w-full ${className}`}
+          className={cn('flex w-full', className)}
+          disabled={open}
         >
           <div className="line-clamp-1 text-start">
             {model
@@ -58,49 +60,49 @@ export function ChatModelSelector({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="grid w-80 p-0 md:w-[48rem] md:grid-cols-2 xl:w-[64rem]">
+      <PopoverContent
+        className="flex md:grid w-[calc(100vw-2rem)] p-0 md:w-[48rem] flex-col-reverse md:grid-cols-2 xl:w-[64rem] rounded-b-none"
+        sideOffset={8}
+        onInteractOutside={() => setOpen(false)}
+      >
         <Command className="rounded-b-none border-b md:rounded-r-none md:border-b-0 md:border-r">
           <CommandInput placeholder="Search model..." />
-          <ScrollArea className="h-48 md:h-64">
-            <CommandEmpty>No model found.</CommandEmpty>
-            <CommandList>
-              {providers.map((provider) => (
-                <CommandGroup key={provider} heading={provider}>
-                  {models
-                    .filter((m) => m.provider === provider)
-                    .map((m) => (
-                      <CommandItem
-                        key={m.value}
-                        value={m.value}
-                        onSelect={(currentValue) => {
-                          onChange(
-                            models.find(
-                              (m) => m.value === currentValue
-                            ) as Model
-                          );
+          <CommandEmpty>No model found.</CommandEmpty>
+          <CommandList>
+            {providers.map((provider) => (
+              <CommandGroup key={provider} heading={provider}>
+                {models
+                  .filter((m) => m.provider === provider)
+                  .map((m) => (
+                    <CommandItem
+                      key={m.value}
+                      value={m.value}
+                      onSelect={(currentValue) => {
+                        if (currentValue === model?.value) return;
+                        if (m.disabled) return;
 
-                          setOpen(false);
-                        }}
-                        onMouseOver={() => setPreviewModel(m)}
-                        disabled={m.disabled}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            model?.value === m.value
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        <div className="bg-foreground text-background rounded-full px-2 py-0.5">
-                          {m.label}
-                        </div>
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </ScrollArea>
+                        onChange(
+                          models.find((m) => m.value === currentValue) as Model
+                        );
+                      }}
+                      onClick={() => setPreviewModel(m)}
+                      onMouseOver={() => setPreviewModel(m)}
+                      className={cn(m.disabled && 'opacity-50 cursor-default')}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          model?.value === m.value ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <div className="bg-foreground text-background rounded-full px-2 py-0.5">
+                        {m.label}
+                      </div>
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
         </Command>
 
         <div>
