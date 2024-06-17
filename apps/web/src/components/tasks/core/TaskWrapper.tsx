@@ -1,5 +1,4 @@
 import TaskEditForm from '../../forms/TaskEditForm';
-import { useUser } from '@/hooks/useUser';
 import { Task } from '@/types/primitives/Task';
 import { User } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
@@ -14,7 +13,6 @@ import {
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
-import React from 'react';
 import useSWR from 'swr';
 
 export interface TaskWrapperProps {
@@ -36,7 +34,7 @@ const TaskWrapper = ({
     task?.id ? `/api/tasks/${task.id}/assignees` : null
   );
 
-  const { user } = useUser();
+  const user = { id: 'TO-BE-REFACTORED' };
 
   const isMyTask = assignees?.some((assignee) => assignee.id === user?.id);
 

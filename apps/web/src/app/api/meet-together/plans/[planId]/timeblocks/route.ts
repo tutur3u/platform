@@ -1,6 +1,5 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +10,7 @@ interface Params {
   };
 }
 
-export async function GET(_: Request) {
+export async function GET(_: Request, { params: { planId } }: Params) {
   const sbAdmin = createAdminClient();
   if (!sbAdmin)
     return NextResponse.json(
@@ -21,11 +20,13 @@ export async function GET(_: Request) {
 
   const guestTimeBlocksQuery = sbAdmin
     .from('meet_together_guest_timeblocks')
-    .select('*');
+    .select('*')
+    .eq('plan_id', planId);
 
   const userTimeBlocksQuery = sbAdmin
     .from('meet_together_user_timeblocks')
-    .select('*');
+    .select('*')
+    .eq('plan_id', planId);
 
   const [guestTimeBlocks, userTimeBlocks] = await Promise.all([
     guestTimeBlocksQuery,
@@ -54,7 +55,7 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request, { params: { planId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data = await req.json();
 

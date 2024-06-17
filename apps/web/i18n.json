@@ -533,7 +533,9 @@
       "view-mode",
       "pagination",
       "transaction-form",
-      "transaction-data-table"
+      "wallet-data-table",
+      "transaction-data-table",
+      "transaction-category-data-table"
     ],
     "/[lang]/(dashboard)/[wsId]/finance/transactions/new": [
       "sidebar-tabs",

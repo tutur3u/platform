@@ -157,7 +157,7 @@ export default function CheckupDetailsPage() {
           group_id: groupId,
           vitals: vitals,
         });
-      } else newGroupVitals[index].vitals = vitals;
+      } else newGroupVitals[index]!.vitals = vitals;
 
       return newGroupVitals;
     });
@@ -192,7 +192,7 @@ export default function CheckupDetailsPage() {
 
       newGroupVitals.forEach((groupVital) => {
         groupVital.vitals = groupVital.vitals.filter(
-          (vital) => vitals[index].id !== vital.id
+          (vital) => vitals[index]!.id !== vital.id
         );
       });
 
@@ -220,7 +220,7 @@ export default function CheckupDetailsPage() {
   const updateGroupId = (index: number, groupId: string) => {
     setGroups((groups) => {
       const newGroups = [...groups];
-      newGroups[index].id = groupId;
+      newGroups[index]!.id = groupId;
       return newGroups;
     });
   };

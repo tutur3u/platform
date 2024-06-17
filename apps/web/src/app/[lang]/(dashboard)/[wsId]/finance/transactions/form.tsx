@@ -1,15 +1,16 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { WalletForm } from '../wallets/form';
+import { TransactionCategoryForm } from './categories/form';
+import { Transaction } from '@/types/primitives/Transaction';
+import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { Wallet } from '@/types/primitives/Wallet';
+import { fetcher } from '@/utils/fetcher';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { Calendar } from '@repo/ui/components/ui/calendar';
+import { Combobox } from '@repo/ui/components/ui/custom/combobox';
+import { Dialog, DialogContent } from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -17,23 +18,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
-import { Transaction } from '@/types/primitives/Transaction';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { Wallet } from '@/types/primitives/Wallet';
-import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/popover';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { toast } from '@repo/ui/hooks/use-toast';
+import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, CheckIcon, ChevronsUpDown } from 'lucide-react';
+import { enUS, vi } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -49,11 +47,11 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  description: z.string(),
+  description: z.string().optional(),
   amount: z.number().positive(),
-  origin_wallet_id: z.string().uuid(),
-  destination_wallet_id: z.string().uuid().optional(),
-  category_id: z.string().uuid(),
+  origin_wallet_id: z.string().min(1),
+  destination_wallet_id: z.string().optional(),
+  category_id: z.string().min(1),
   taken_at: z.date(),
   report_opt_in: z.boolean(),
 });
@@ -64,26 +62,29 @@ export function TransactionForm({
   onComplete,
   submitLabel,
 }: Props) {
-  const { t } = useTranslation('common');
+  const { t, lang } = useTranslation('transaction-data-table');
 
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
-
-  const [showCategories, setShowCategories] = useState(false);
-  const [showWallets, setShowWallets] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { data: categories, error: categoriesError } = useSWR<
-    TransactionCategory[]
-  >(`/api/workspaces/${wsId}/transactions/categories`, fetcher);
+  const {
+    data: categories,
+    error: categoriesError,
+    mutate: mutateCategories,
+  } = useSWR<TransactionCategory[]>(
+    `/api/workspaces/${wsId}/transactions/categories`,
+    fetcher
+  );
 
   const categoriesLoading = !categories && !categoriesError;
 
-  const { data: wallets, error: walletsError } = useSWR<Wallet[]>(
-    `/api/workspaces/${wsId}/wallets`,
-    fetcher
-  );
+  const {
+    data: wallets,
+    error: walletsError,
+    mutate: mutateWallets,
+  } = useSWR<Wallet[]>(`/api/workspaces/${wsId}/wallets`, fetcher);
 
   const walletsLoading = !wallets && !walletsError;
 
@@ -134,252 +135,231 @@ export function TransactionForm({
     }
   }
 
+  const [newContentType, setNewContentType] = useState<
+    'wallet' | 'transaction-category' | undefined
+  >();
+  const [newContent, setNewContent] = useState<
+    Wallet | TransactionCategory | undefined
+  >(undefined);
+
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col space-y-2"
-      >
-        <FormField
-          control={form.control}
-          name="origin_wallet_id"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Wallet</FormLabel>
-              <Popover open={showWallets} onOpenChange={setShowWallets}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                      // disabled={walletsLoading}
-                      disabled
-                    >
-                      {field.value
-                        ? wallets?.find((c) => c.id === field.value)?.name
-                        : walletsLoading
-                          ? 'Fetching...'
-                          : 'Select wallet'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command
-                    filter={(value, search) => {
-                      if (value.includes(search)) return 1;
-                      return 0;
-                    }}
-                  >
-                    <CommandInput
-                      placeholder="Search wallet..."
-                      disabled={walletsLoading}
-                    />
-                    <CommandEmpty>No wallet found.</CommandEmpty>
-                    <CommandGroup>
-                      {(wallets?.length || 0) > 0
-                        ? wallets?.map((wallet) => (
-                            <CommandItem
-                              key={wallet.id}
-                              value={wallet.name}
-                              onSelect={() => {
-                                form.setValue(
-                                  'origin_wallet_id',
-                                  wallet?.id || ''
-                                );
-                                setShowWallets(false);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  wallet.id === field.value
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              {wallet.name}
-                            </CommandItem>
-                          ))
-                        : null}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Dialog
+      open={!!newContent}
+      onOpenChange={(open) =>
+        setNewContent(open ? newContent || {} : undefined)
+      }
+    >
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+        {newContentType === 'wallet' ? (
+          <WalletForm
+            wsId={wsId}
+            data={newContent}
+            onComplete={() => {
+              setNewContent(undefined);
+              setNewContentType(undefined);
+              mutateWallets();
+            }}
+            submitLabel={newContent?.id ? t('common:edit') : t('common:create')}
+          />
+        ) : (
+          <TransactionCategoryForm
+            wsId={wsId}
+            data={newContent}
+            onComplete={() => {
+              setNewContent(undefined);
+              setNewContentType(undefined);
+              mutateCategories();
+            }}
+            submitLabel={newContent?.id ? t('common:edit') : t('common:create')}
+          />
+        )}
+      </DialogContent>
 
-        <FormField
-          control={form.control}
-          name="category_id"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Category</FormLabel>
-              <Popover open={showCategories} onOpenChange={setShowCategories}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                      disabled={categoriesLoading}
-                    >
-                      {field.value
-                        ? categories?.find((c) => c.id === field.value)?.name
-                        : categoriesLoading
-                          ? 'Fetching...'
-                          : 'Select category'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command
-                    filter={(value, search) => {
-                      if (value.includes(search)) return 1;
-                      return 0;
-                    }}
-                  >
-                    <CommandInput
-                      placeholder="Search category..."
-                      disabled={categoriesLoading}
-                    />
-                    <CommandEmpty>No category found.</CommandEmpty>
-                    <CommandList>
-                      <CommandGroup>
-                        {(categories?.length || 0) > 0
-                          ? categories?.map((category) => (
-                              <CommandItem
-                                key={category.id}
-                                value={category.name}
-                                onSelect={() => {
-                                  form.setValue(
-                                    'category_id',
-                                    category?.id || ''
-                                  );
-                                  setShowCategories(false);
-                                }}
-                              >
-                                <CheckIcon
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    category.id === field.value
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                {category.name}
-                              </CommandItem>
-                            ))
-                          : null}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="h-2" />
-        <Separator />
-        <div className="h-2" />
-
-        <FormField
-          control={form.control}
-          name="amount"
-          disabled={loading}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  {...field}
-                  value={Math.abs(field.value)}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          disabled={loading}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Input placeholder="Description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="h-2" />
-        <Separator />
-        <div className="h-2" />
-
-        <FormField
-          control={form.control}
-          name="taken_at"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Taken at</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={'outline'}
-                      className={cn(
-                        'pl-3 text-left font-normal',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, 'PPP')
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
-                  <Calendar
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col space-y-2"
+        >
+          <div className="grid gap-2 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="origin_wallet_id"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t('wallet')}</FormLabel>
+                  <Combobox
+                    {...field}
                     mode="single"
+                    options={
+                      wallets
+                        ? wallets.map((wallet) => ({
+                            value: wallet.id!,
+                            label: wallet.name || '',
+                          }))
+                        : []
+                    }
+                    label={walletsLoading ? 'Loading...' : undefined}
+                    placeholder={t('select_wallet')}
                     selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
+                    onChange={field.onChange}
+                    onCreate={(name) => {
+                      setNewContentType('wallet');
+                      setNewContent({
+                        name,
+                      });
+                    }}
+                    disabled={loading || walletsLoading}
+                    useFirstValueAsDefault
                   />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="h-2" />
+            <FormField
+              control={form.control}
+              name="category_id"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t('category')}</FormLabel>
+                  <Combobox
+                    {...field}
+                    mode="single"
+                    options={
+                      categories
+                        ? categories.map((category) => ({
+                            value: category.id!,
+                            label: category.name || '',
+                          }))
+                        : []
+                    }
+                    label={walletsLoading ? 'Loading...' : undefined}
+                    placeholder={t('select_category')}
+                    selected={field.value}
+                    onChange={field.onChange}
+                    onCreate={(name) => {
+                      setNewContentType('transaction-category');
+                      setNewContent({
+                        name,
+                      });
+                    }}
+                    disabled={loading || categoriesLoading}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t('common:processing') : submitLabel}
-        </Button>
-      </form>
-    </Form>
+          <div className="h-0" />
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="amount"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('amount')}</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="0"
+                    value={
+                      !field.value
+                        ? ''
+                        : new Intl.NumberFormat('en-US', {
+                            maximumFractionDigits: 2,
+                          }).format(Math.abs(field.value))
+                    }
+                    onChange={(e) => {
+                      // Remove non-numeric characters except decimal point, then parse
+                      const numericValue = parseFloat(
+                        e.target.value.replace(/[^0-9.]/g, '')
+                      );
+                      if (!isNaN(numericValue)) {
+                        field.onChange(numericValue);
+                      } else {
+                        // Handle case where the input is not a number (e.g., all non-numeric characters are deleted)
+                        field.onChange(0);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('description')}</FormLabel>
+                <FormControl>
+                  <Textarea placeholder={t('description')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="h-0" />
+
+          <FormField
+            control={form.control}
+            name="taken_at"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>{t('taken_at')}</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'pl-3 text-left font-normal',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {field.value ? (
+                          format(
+                            field.value,
+                            lang === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
+                            {
+                              locale: lang === 'vi' ? vi : enUS,
+                            }
+                          )
+                        ) : (
+                          <span>{t('taken_at')}</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="h-2" />
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? t('common:processing') : submitLabel}
+          </Button>
+        </form>
+      </Form>
+    </Dialog>
   );
 }

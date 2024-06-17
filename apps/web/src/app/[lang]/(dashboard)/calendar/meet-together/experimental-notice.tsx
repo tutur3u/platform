@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { FlaskConical } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';

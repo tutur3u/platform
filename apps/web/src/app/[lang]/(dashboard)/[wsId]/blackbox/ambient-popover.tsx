@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
+} from '@repo/ui/components/ui/popover';
+import { Slider } from '@repo/ui/components/ui/slider';
 import { Sun } from 'lucide-react';
 
 export function AmbientPopover({
@@ -55,7 +55,7 @@ export function AmbientPopover({
                 max={10}
                 step={0.1}
                 value={[intensity]}
-                onValueChange={(v) => setIntensity(v[0])}
+                onValueChange={(v) => setIntensity(v?.[0] || 0)}
               />
             </div>
           </div>

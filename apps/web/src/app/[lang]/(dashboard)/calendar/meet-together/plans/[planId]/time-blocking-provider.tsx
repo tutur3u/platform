@@ -11,11 +11,11 @@ import {
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
-import { useRouter } from 'next/navigation';
 import {
   ReactNode,
   Touch,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -25,10 +25,10 @@ dayjs.extend(isBetween);
 dayjs.extend(minMax);
 
 interface GuestUser {
-  id: string;
-  display_name?: string;
+  id?: string | null;
+  display_name?: string | null;
   password_hash?: string;
-  is_guest?: boolean;
+  is_guest?: boolean | null;
 }
 
 interface EditingParams {
@@ -88,8 +88,6 @@ const TimeBlockingProvider = ({
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
-  const router = useRouter();
-
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
 
@@ -99,48 +97,60 @@ const TimeBlockingProvider = ({
 
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
 
-  const getPreviewUsers = (timeblocks: Timeblock[]) => {
-    if (!previewDate) return { available: [], unavailable: [] };
+  const getPreviewUsers = useCallback(
+    (timeblocks: Timeblock[]) => {
+      if (!previewDate) return { available: [], unavailable: [] };
 
-    const previewUserIds = timeblocks
-      .filter((timeblock) => {
-        const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
-        const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
-        return dayjs(previewDate).isBetween(start, end, null, '[)');
-      })
-      .map((timeblock) => timeblock.user_id)
-      .filter(Boolean) as string[];
+      const previewUserIds = timeblocks
+        .filter((timeblock) => {
+          const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+          const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+          return dayjs(previewDate).isBetween(start, end, null, '[)');
+        })
+        .map((timeblock) => timeblock.user_id)
+        .filter(Boolean) as string[];
 
-    const allUsers = planUsers.filter(
-      (user) =>
-        filteredUserIds.length === 0 || filteredUserIds.includes(user.id)
-    );
+      const allUsers = planUsers.filter(
+        (user) =>
+          filteredUserIds.length === 0 ||
+          !user?.id ||
+          filteredUserIds.includes(user.id)
+      );
 
-    const uniqueUserIds = Array.from(new Set(previewUserIds));
+      const uniqueUserIds = Array.from(new Set(previewUserIds));
 
-    return {
-      available: allUsers.filter((user) => uniqueUserIds.includes(user.id)),
-      unavailable: allUsers.filter((user) => !uniqueUserIds.includes(user.id)),
-    };
-  };
+      return {
+        available: allUsers.filter(
+          (user) => !user?.id || uniqueUserIds.includes(user.id)
+        ),
+        unavailable: allUsers.filter(
+          (user) => user.id && !uniqueUserIds.includes(user.id)
+        ),
+      };
+    },
+    [previewDate, planUsers, filteredUserIds]
+  );
 
-  const getOpacityForDate = (date: Date, timeblocks: Timeblock[]) => {
-    const allTimeblocks = timeblocks
-      .filter((timeblock) => {
-        const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
-        const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
-        return dayjs(date).isBetween(start, end, null, '[)');
-      })
-      .map((timeblock) => timeblock.user_id)
-      .filter(Boolean) as string[];
+  const getOpacityForDate = useCallback(
+    (date: Date, timeblocks: Timeblock[]) => {
+      const allTimeblocks = timeblocks
+        .filter((timeblock) => {
+          const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+          const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+          return dayjs(date).isBetween(start, end, null, '[)');
+        })
+        .map((timeblock) => timeblock.user_id)
+        .filter(Boolean) as string[];
 
-    const uniqueUserIds = Array.from(new Set(allTimeblocks));
+      const uniqueUserIds = Array.from(new Set(allTimeblocks));
 
-    return (
-      uniqueUserIds.length /
-      (filteredUserIds.length > 0 ? filteredUserIds.length : planUsers.length)
-    );
-  };
+      return (
+        uniqueUserIds.length /
+        (filteredUserIds.length > 0 ? filteredUserIds.length : planUsers.length)
+      );
+    },
+    [filteredUserIds.length, planUsers.length]
+  );
 
   const [editing, setEditing] = useState<EditingParams>({
     enabled: false,
@@ -177,54 +187,54 @@ const TimeBlockingProvider = ({
     'login' | 'account-switcher'
   >();
 
-  const edit = (
-    { mode, date }: { mode: 'add' | 'remove'; date: Date },
-    event?: any
-  ) => {
-    const touch = event?.touches?.[0] as Touch | undefined;
+  const edit = useCallback(
+    ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
+      const touch = event?.touches?.[0] as Touch | undefined;
 
-    setEditing((prevData) => {
-      const nextMode = prevData?.mode === undefined ? mode : prevData.mode;
-      const nextTouch =
-        prevData?.initialTouch === undefined
-          ? touch
-            ? {
-                x: touch.clientX,
-                y: touch.clientY,
-              }
-            : undefined
-          : prevData.initialTouch;
+      setEditing((prevData) => {
+        const nextMode = prevData?.mode === undefined ? mode : prevData.mode;
+        const nextTouch =
+          prevData?.initialTouch === undefined
+            ? touch
+              ? {
+                  x: touch.clientX,
+                  y: touch.clientY,
+                }
+              : undefined
+            : prevData.initialTouch;
 
-      const nextStart =
-        prevData?.startDate === undefined ? date : prevData.startDate;
+        const nextStart =
+          prevData?.startDate === undefined ? date : prevData.startDate;
 
-      const touchXDiff =
-        (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
+        const touchXDiff =
+          (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
 
-      const touchYDiff =
-        (touch?.clientY || 0) - (prevData?.initialTouch?.y || 0);
+        const touchYDiff =
+          (touch?.clientY || 0) - (prevData?.initialTouch?.y || 0);
 
-      const nextEnd =
-        prevData?.initialTouch !== undefined && nextTouch
-          ? nextStart
-            ? dayjs(nextStart)
-                .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
-                .add(Math.floor(touchXDiff / 15 / 3), 'day')
-                .toDate()
-            : nextStart
-          : date;
+        const nextEnd =
+          prevData?.initialTouch !== undefined && nextTouch
+            ? nextStart
+              ? dayjs(nextStart)
+                  .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
+                  .add(Math.floor(touchXDiff / 15 / 3), 'day')
+                  .toDate()
+              : nextStart
+            : date;
 
-      return {
-        enabled: true,
-        mode: nextMode,
-        startDate: nextStart,
-        endDate: nextEnd,
-        initialTouch: nextTouch,
-      };
-    });
-  };
+        return {
+          enabled: true,
+          mode: nextMode,
+          startDate: nextStart,
+          endDate: nextEnd,
+          initialTouch: nextTouch,
+        };
+      });
+    },
+    []
+  );
 
-  const endEditing = () => {
+  const endEditing = useCallback(() => {
     if (
       !plan.id ||
       editing.startDate === undefined ||
@@ -260,11 +270,10 @@ const TimeBlockingProvider = ({
     setEditing({
       enabled: false,
     });
-  };
+  }, [plan.id, editing]);
 
   useEffect(() => {
     const addTimeBlock = async (timeblock: Timeblock) => {
-      console.log(plan.id);
       if (plan.id !== selectedTimeBlocks.planId) return;
 
       const data = {
@@ -280,7 +289,6 @@ const TimeBlockingProvider = ({
     };
 
     const removeTimeBlock = async (timeblock: Timeblock) => {
-      console.log(plan.id);
       if (plan.id !== selectedTimeBlocks.planId) return;
 
       const data = {
@@ -311,17 +319,57 @@ const TimeBlockingProvider = ({
     };
 
     const syncTimeBlocks = async () => {
-      if (!plan.id || !user) return;
+      if (!plan.id || !user?.id) return;
 
       const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      console.log('Server timeblocks', serverTimeblocks);
+      const localTimeblocks = selectedTimeBlocks.data;
+
+      if (!serverTimeblocks || !localTimeblocks) return;
+      if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
+
+      // If server timeblocks are empty and local timeblocks are not,
+      // add all local timeblocks to server
+      if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
+        await Promise.all(
+          localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
+        );
+        return;
+      }
+
+      // If local timeblocks are empty, remove all server timeblocks
+      if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
+        await Promise.all(
+          serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
+        );
+        return;
+      }
+
+      // If there are no timeblocks to sync (both local and server have
+      // the same timeblocks), return early
+      if (
+        serverTimeblocks.every((serverTimeblock: Timeblock) =>
+          localTimeblocks.some(
+            (localTimeblock: Timeblock) =>
+              localTimeblock.date === serverTimeblock.date &&
+              localTimeblock.start_time === serverTimeblock.start_time &&
+              localTimeblock.end_time === serverTimeblock.end_time
+          )
+        ) &&
+        localTimeblocks.every((localTimeblock: Timeblock) =>
+          serverTimeblocks.some(
+            (serverTimeblock: Timeblock) =>
+              serverTimeblock.date === localTimeblock.date &&
+              serverTimeblock.start_time === localTimeblock.start_time &&
+              serverTimeblock.end_time === localTimeblock.end_time
+          )
+        ) &&
+        serverTimeblocks.length === localTimeblocks.length
+      )
+        return;
 
       // For each time block, remove timeblocks that are not on local
       // and add timeblocks that are not on server
-      const localTimeblocks = selectedTimeBlocks.data;
-      console.log('Local timeblocks', localTimeblocks);
-
-      const timeblocksToRemove = serverTimeblocks?.filter(
+      const timeblocksToRemove = serverTimeblocks.filter(
         (serverTimeblock: Timeblock) =>
           !localTimeblocks.some(
             (localTimeblock: Timeblock) =>
@@ -331,7 +379,7 @@ const TimeBlockingProvider = ({
           )
       );
 
-      const timeblocksToAdd = localTimeblocks?.filter(
+      const timeblocksToAdd = localTimeblocks.filter(
         (localTimeblock: Timeblock) =>
           !serverTimeblocks?.some(
             (serverTimeblock: Timeblock) =>
@@ -341,22 +389,31 @@ const TimeBlockingProvider = ({
           )
       );
 
-      await Promise.all(
-        timeblocksToRemove?.map((timeblock) =>
-          timeblock.id ? removeTimeBlock(timeblock) : null
-        )
-      );
+      if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0)
+        return;
 
-      await Promise.all(
-        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-      );
+      if (timeblocksToRemove.length > 0)
+        await Promise.all(
+          timeblocksToRemove.map((timeblock) =>
+            timeblock.id ? removeTimeBlock(timeblock) : null
+          )
+        );
 
-      router.refresh();
+      if (timeblocksToAdd.length > 0)
+        await Promise.all(
+          timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
+        );
+
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
     };
 
     if (editing.enabled) return;
     syncTimeBlocks();
-  }, [router, plan.id, user, selectedTimeBlocks, editing.enabled]);
+  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   return (
     <TimeBlockContext.Provider

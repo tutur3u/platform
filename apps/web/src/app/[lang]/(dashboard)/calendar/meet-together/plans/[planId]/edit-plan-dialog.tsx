@@ -1,5 +1,7 @@
 'use client';
 
+import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,8 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
+} from '@repo/ui/components/ui/alert-dialog';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -28,12 +30,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Pencil } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';

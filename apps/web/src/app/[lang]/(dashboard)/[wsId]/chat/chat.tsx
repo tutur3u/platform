@@ -4,7 +4,10 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Button } from '@/components/ui/button';
+import { Model, defaultModel } from '@/data/models';
+import { AIChat } from '@/types/db';
+import { useLocalStorage } from '@mantine/hooks';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,13 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { Model, defaultModel } from '@/data/models';
-import { cn } from '@/lib/utils';
-import { AIChat } from '@/types/primitives/ai-chat';
-import { useLocalStorage } from '@mantine/hooks';
+} from '@repo/ui/components/ui/dialog';
+import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
+import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
@@ -26,7 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
-  defaultChat?: AIChat;
+  defaultChat?: Partial<AIChat>;
   wsId: string;
   initialMessages?: Message[];
   previousMessages?: Message[];
@@ -66,18 +66,18 @@ const Chat = ({
     setPreviewTokenDialog(!hasKeys && !previewToken);
   }, [hasKeys, previewToken]);
 
-  const [chat, setChat] = useState<AIChat | undefined>(defaultChat);
-  const [model, setModel] = useState<Model>(defaultModel);
+  const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
+  const [model, setModel] = useState<Model | undefined>(defaultModel);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
       initialMessages,
-      api: `/api/ai/chat/${model.provider.toLowerCase()}`,
+      api: model ? `/api/ai/chat/${model.provider.toLowerCase()}` : undefined,
       body: {
         id: chat?.id,
         wsId,
-        model: model.value,
+        model: chat?.model || model?.value,
         previewToken,
       },
       onResponse(response) {
@@ -117,10 +117,10 @@ const Chat = ({
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (input) {
-      setInput(input.toString());
-      router.replace(`/${wsId}/chat/${chat.id}`);
-    }
+    if (!input) return;
+
+    setInput(input.toString());
+    router.replace(`/${wsId}/chat/${chat.id}`);
   }, [chat?.id, searchParams, router, setInput, wsId]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -133,6 +133,8 @@ const Chat = ({
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const createChat = async (input: string) => {
+    if (!model) return;
+
     setPendingPrompt(input);
 
     const res = await fetch(
@@ -140,6 +142,7 @@ const Chat = ({
       {
         method: 'POST',
         body: JSON.stringify({
+          model: model.value,
           message: input,
           previewToken,
         }),
@@ -154,10 +157,10 @@ const Chat = ({
       return;
     }
 
-    const { id, title } = await res.json();
+    const { id, title } = (await res.json()) as AIChat;
     if (id) {
       setCollapsed(true);
-      setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
+      setChat({ id, title, model: model.value });
     }
   };
 
@@ -214,7 +217,7 @@ const Chat = ({
               }
               setInput={setInput}
               locale={locale}
-              model={chat?.model}
+              model={chat?.model ?? undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

@@ -1,11 +1,12 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/name-helper';
+import { createClient } from '@/utils/supabase/server';
 import {
-  SupabaseClient,
-  createServerComponentClient,
-} from '@supabase/auth-helpers-nextjs';
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { User } from 'lucide-react';
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export default async function UserProfilePage({ params: { handle } }: Props) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user: sbUser },

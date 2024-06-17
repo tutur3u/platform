@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@repo/ui/lib/utils';
 import useTranslation from 'next-translate/useTranslation';
 import { useEffect } from 'react';
 import {
@@ -51,7 +51,7 @@ export function DailyTotalChart({
             tickFormatter={(value) => {
               return Intl.DateTimeFormat(lang, {
                 day: 'numeric',
-                month: 'long',
+                month: lang === 'vi' ? 'numeric' : 'short',
               }).format(new Date(value));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
@@ -159,7 +159,8 @@ export function MonthlyTotalChart({
             dataKey="month"
             tickFormatter={(value) => {
               return Intl.DateTimeFormat(lang, {
-                month: 'long',
+                month: lang === 'vi' ? 'numeric' : 'short',
+                year: 'numeric',
               }).format(new Date(value));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}

@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +13,15 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId, groupId } }: Params) {
+  if (!groupId)
+    return NextResponse.json({ message: 'Invalid group ID' }, { status: 400 });
+
+  if (!wsId)
+    return NextResponse.json(
+      { message: 'Invalid workspace ID' },
+      { status: 400 }
+    );
+
   const apiKey = headers().get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, groupId, apiKey })
@@ -25,7 +34,7 @@ async function getDataWithApiKey({
   apiKey,
 }: {
   wsId: string;
-  groupId: string | null;
+  groupId: string;
   apiKey: string;
 }) {
   const sbAdmin = createAdminClient();
@@ -77,9 +86,9 @@ async function getDataFromSession({
   groupId,
 }: {
   wsId: string;
-  groupId: string | null;
+  groupId: string;
 }) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups_users')

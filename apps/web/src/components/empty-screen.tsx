@@ -1,9 +1,9 @@
 import { ChatList } from './chat-list';
-import { Separator } from './ui/separator';
-import { Button } from '@/components/ui/button';
-import { IconArrowRight } from '@/components/ui/icons';
 import { capitalize } from '@/lib/utils';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
+import { IconArrowRight } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
 import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
@@ -111,11 +111,17 @@ export function EmptyScreen({
                         {chat.title}
                       </Link>
 
-                      {chat?.created_at ? (
-                        <div className="text-xs opacity-70 md:text-sm">
-                          {capitalize(dayjs(chat.created_at).fromNow())}
-                        </div>
-                      ) : null}
+                      <div className="text-xs mt-1">
+                        {chat.model && (
+                          <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                            {chat.model}
+                          </span>
+                        )}
+                        <span className="opacity-70">
+                          {chat.model && <span className="mx-1">•</span>}
+                          {capitalize(dayjs(chat?.created_at).fromNow())}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -188,11 +194,17 @@ export function EmptyScreen({
                       {chat.title}
                     </Link>
 
-                    {chat?.created_at ? (
-                      <div className="text-xs opacity-70 md:text-sm">
-                        {capitalize(dayjs(chat.created_at).fromNow())}
-                      </div>
-                    ) : null}
+                    <div className="text-xs mt-1">
+                      {chat.model && (
+                        <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                          {chat.model}
+                        </span>
+                      )}
+                      <span className="opacity-70">
+                        {chat.model && <span className="mx-1">•</span>}
+                        {capitalize(dayjs(chat?.created_at).fromNow())}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}

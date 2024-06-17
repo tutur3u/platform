@@ -5,7 +5,14 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getCurrentUser } from '@/lib/user-helper';
+import { getWorkspaces } from '@/lib/workspace-helper';
+import { getInitials } from '@/utils/name-helper';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +25,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspaces } from '@/lib/workspace-helper';
-import { getInitials } from '@/utils/name-helper';
+} from '@repo/ui/components/ui/dropdown-menu';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';

@@ -2,9 +2,9 @@
 
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
-import { toast } from '@/components/ui/use-toast';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { useClickOutside } from '@mantine/hooks';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
 import { usePathname } from 'next/navigation';
@@ -20,13 +20,15 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     'assistant' | 'search' | 'settings'
   >();
 
-  const [chat, setChat] = useState<AIChat | undefined>();
-  const [model] = useState<'google' | 'anthropic'>('google');
+  const defaultProvider = 'google';
+  const defaultModel = 'gemini-1.5-flash';
+
+  const [chat, setChat] = useState<Partial<AIChat> | undefined>();
 
   const { messages, setMessages } = useChat({
     id: chat?.id,
     //   initialMessages,
-    api: `/api/ai/chat/${model}`,
+    api: `/api/ai/chat/${defaultProvider}`,
     body: {
       id: chat?.id,
       wsId,
@@ -62,7 +64,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   if (disabledPaths.some((path) => pathname.startsWith(path))) return null;
 
   const createChat = async (input: string) => {
-    const res = await fetch(`/api/ai/chat/${model}/new`, {
+    const res = await fetch(`/api/ai/chat/${defaultProvider}/new`, {
       method: 'POST',
       body: JSON.stringify({
         message: input,
@@ -77,10 +79,9 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       return;
     }
 
-    const { id, title } = await res.json();
-    if (id) setChat({ id, title, model: 'GOOGLE-GEMINI-PRO' });
-
-    return { id, title, model: 'GOOGLE-GEMINI-PRO' } as AIChat;
+    const { id, title } = (await res.json()) as AIChat;
+    if (id) setChat({ id, title, model: defaultModel });
+    return { id, title, model: defaultModel } as AIChat;
   };
 
   return (
@@ -99,7 +100,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
             <FleetingAssistant
               wsId={wsId}
               chat={chat}
-              model={model}
+              model={defaultProvider}
               messages={messages}
               onBack={() => setCurrentView(undefined)}
               onReset={() => {

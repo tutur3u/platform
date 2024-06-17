@@ -21,7 +21,7 @@ const useSearchParams = () => {
 
       const { key, fallbackValue } = data;
       return searchParams.getAll(key).length > 0
-        ? searchParams.getAll(key)
+        ? searchParams.getAll(key) || fallbackValue
         : fallbackValue;
     },
     [searchParams]
@@ -84,9 +84,23 @@ const useSearchParams = () => {
     [pathname, router]
   );
 
+  const getAll = useCallback(() => {
+    const params = new URLSearchParams(searchParams);
+    const entries = params.entries();
+    const result: Record<string, string[]> = {};
+    for (const [key, value] of entries) {
+      if (result[key]) {
+        result[key]?.push(value);
+      } else {
+        result[key] = [value];
+      }
+    }
+    return result;
+  }, [searchParams]);
+
   const isEmpty = searchParams.toString().length === 0;
 
-  return { isEmpty, has, get, set, add, remove, reset, clear: reset };
+  return { isEmpty, has, get, set, add, remove, reset, clear: reset, getAll };
 };
 
 export default useSearchParams;

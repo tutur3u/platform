@@ -1,15 +1,14 @@
 'use client';
 
-import { Document } from '@/types/primitives/Document';
+import { WorkspaceDocument } from '@/types/db';
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import useTranslation from 'next-translate/useTranslation';
-import React, { useState } from 'react';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 
 interface DocumentEditFormProps {
-  doc?: Document;
-  onSubmit?: (doc: Partial<Document>) => void;
+  doc?: Partial<WorkspaceDocument>;
+  onSubmit?: (doc: Partial<WorkspaceDocument>) => void;
   onDelete?: () => void;
 }
 

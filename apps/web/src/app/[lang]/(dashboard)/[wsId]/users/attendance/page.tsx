@@ -2,13 +2,12 @@ import { UserDatabaseFilter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import MonthPicker from '@/components/ui/custom/month-picker';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
+import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import MonthPicker from '@repo/ui/components/ui/custom/month-picker';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +34,7 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('user-data-table');
+  const { t, lang } = useTranslation('user-data-table');
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
@@ -47,7 +46,7 @@ export default async function WorkspaceUsersPage({
     <>
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
-        <MonthPicker className="col-span-full md:col-span-1" />
+        <MonthPicker lang={lang} className="col-span-full md:col-span-1" />
         <UserDatabaseFilter
           key="included-user-groups-filter"
           tag="includedGroups"
@@ -82,7 +81,7 @@ export default async function WorkspaceUsersPage({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -102,7 +101,7 @@ async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   if (!includedGroups || includedGroups.length === 0) {
     return getUserGroups(wsId);

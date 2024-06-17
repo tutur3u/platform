@@ -1,9 +1,9 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { productColumns } from '@/data/columns/products';
 
 export default function Loading() {
   return (
-    <DataTable
+    <CustomDataTable
       columnGenerator={productColumns}
       namespace="product-data-table"
       defaultVisibility={{

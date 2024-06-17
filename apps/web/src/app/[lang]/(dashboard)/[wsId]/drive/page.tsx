@@ -1,11 +1,10 @@
 import StorageObjectsTable from './table';
-import { Separator } from '@/components/ui/separator';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient, createDynamicClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 interface Props {
   params: {
@@ -90,7 +89,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createDynamicClient();
 
   const queryBuilder = supabase
     .schema('storage')
@@ -123,7 +122,7 @@ async function getData(
 }
 
 async function getTotalSize(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase.rpc('get_workspace_drive_size', {
     ws_id: wsId,
@@ -134,7 +133,7 @@ async function getTotalSize(wsId: string) {
 }
 
 async function getLargestFile(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createDynamicClient();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -152,7 +151,7 @@ async function getLargestFile(wsId: string) {
 }
 
 async function getSmallestFile(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createDynamicClient();
 
   const { data, error } = await supabase
     .schema('storage')

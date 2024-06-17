@@ -1,13 +1,18 @@
 import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
-import { AIChat } from '@/types/primitives/ai-chat';
+import { AIChat } from '@/types/db';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Message } from 'ai';
 import { useChat } from 'ai/react';
 import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
@@ -31,12 +36,12 @@ export default function FleetingAssistant({
   onSubmit: createChat,
 }: {
   wsId: string;
-  chat?: AIChat;
-  model: 'google' | 'anthropic';
+  chat?: Partial<AIChat>;
+  model: 'google';
   messages: Message[];
   onBack: () => void;
   onReset: () => void;
-  onSubmit: (prompt: string) => Promise<AIChat | undefined>;
+  onSubmit: (prompt: string) => Promise<Partial<AIChat> | undefined>;
 }) {
   const { t } = useTranslation('ai-chat');
 

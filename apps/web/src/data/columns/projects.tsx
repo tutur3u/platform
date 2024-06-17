@@ -1,8 +1,8 @@
 'use client';
 
 import { ProjectRowActions } from '@/components/row-actions/projects';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';

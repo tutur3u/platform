@@ -1,8 +1,6 @@
-import UserMonthAttendance from './user-month-attendance';
-import { DataTablePagination } from '@/components/ui/custom/tables/data-table-pagination';
+import ClientUserAttendances from './client-user-attendances';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface SearchParams {
   q?: string;
@@ -25,39 +23,14 @@ export default async function UserAttendances({
   searchParams: SearchParams;
 }) {
   const { data, count } = await getData(wsId, searchParams);
-  const { page, pageSize } = searchParams;
 
   return (
-    <>
-      <DataTablePagination
-        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
-        additionalSizes={[3, 6, 12, 24, 48]}
-        count={count}
-      />
-
-      <div className="my-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {data
-          .map((u) => ({
-            ...u,
-            href: `/${wsId}/users/database/${u.id}`,
-          }))
-          .map((user) => (
-            <UserMonthAttendance key={user.id} wsId={wsId} user={user} />
-          ))}
-      </div>
-
-      {count > 0 && (
-        <DataTablePagination
-          pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-          pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-          pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
-          additionalSizes={[3, 6, 12, 24, 48]}
-          count={count}
-        />
-      )}
-    </>
+    <ClientUserAttendances
+      wsId={wsId}
+      data={data}
+      count={count}
+      searchParams={searchParams}
+    />
   );
 }
 
@@ -72,7 +45,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -85,7 +58,7 @@ async function getData(
         excluded_groups: Array.isArray(excludedGroups)
           ? excludedGroups
           : [excludedGroups],
-        search_query: q || null,
+        search_query: q || '',
       },
       {
         count: 'exact',
@@ -109,5 +82,5 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }

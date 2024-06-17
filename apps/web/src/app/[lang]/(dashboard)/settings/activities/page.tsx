@@ -1,7 +1,6 @@
 'use client';
 
 import AuditLogCard from '../../../../../components/cards/AuditLogCard';
-import { useUser } from '@/hooks/useUser';
 import { AuditLog } from '@/types/primitives/audit-log';
 import { Accordion, Divider } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
@@ -11,7 +10,7 @@ import useSWR from 'swr';
 
 export default function UserActivitiesPage() {
   const { t } = useTranslation('settings-tabs');
-  const { user } = useUser();
+  const user = { id: 'TO-BE-REFACTORED' };
 
   const activitiesLabel = t('activities');
 

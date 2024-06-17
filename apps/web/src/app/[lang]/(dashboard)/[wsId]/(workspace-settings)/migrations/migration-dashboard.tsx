@@ -1,14 +1,14 @@
 'use client';
 
 import { MigrationModule, ModulePackage, generateModules } from './modules';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
 import { useLocalStorage } from '@mantine/hooks';
+import { Button } from '@repo/ui/components/ui/button';
+import { Card } from '@repo/ui/components/ui/card';
+import { Input } from '@repo/ui/components/ui/input';
+import { Label } from '@repo/ui/components/ui/label';
+import { Progress } from '@repo/ui/components/ui/progress';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { IconGitMerge } from '@tabler/icons-react';
 import { useState } from 'react';
 

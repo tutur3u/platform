@@ -1,15 +1,14 @@
 import i18n from '../i18n.json';
 import { LOCALE_COOKIE_NAME } from './constants/common';
-import type { Database } from '@/types/supabase';
+import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
-import type { User } from '@supabase/auth-helpers-nextjs';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { User } from '@supabase/supabase-js';
 import Negotiator from 'negotiator';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  const { res, user } = await handleSupabaseAuth({ req });
+  const { res, user } = await updateSession(req);
   const { res: nextRes, redirect } = handleRedirect({ req, res, user });
 
   if (redirect) return nextRes;
@@ -38,29 +37,6 @@ export const config = {
 
     '/((?!api|_next/static|_next/image|media|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|robots.txt|sitemap.xml|site.webmanifest|monitoring).*)',
   ],
-};
-
-const handleSupabaseAuth = async ({
-  req,
-}: {
-  req: NextRequest;
-}): Promise<{
-  res: NextResponse;
-  user: User | null;
-}> => {
-  // Create a NextResponse object to handle the response
-  const res = NextResponse.next();
-
-  // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient<Database>({ req, res });
-
-  // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/server-side/nextjs
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { res, user };
 };
 
 const handleRedirect = ({

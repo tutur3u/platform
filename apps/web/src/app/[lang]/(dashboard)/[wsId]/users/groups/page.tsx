@@ -1,13 +1,11 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
-import { Database } from '@/types/supabase';
+import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +42,7 @@ export default async function WorkspaceUserGroupsPage({
   const { data: excludedTags } = await getExcludedTags(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={groups}
       columnGenerator={getUserGroupColumns}
       namespace="user-group-data-table"
@@ -93,7 +91,7 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -123,7 +121,7 @@ async function getData(
 }
 
 async function getTags(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -140,7 +138,7 @@ async function getTags(wsId: string) {
 }
 
 async function getExcludedTags(wsId: string, { includedTags }: SearchParams) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   if (!includedTags || includedTags.length === 0) {
     return getTags(wsId);

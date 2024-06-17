@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -65,11 +65,12 @@ async function getDataWithApiKey({
     );
   }
 
+  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('wallet_transactions')
@@ -86,5 +87,6 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
     );
   }
 
+  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
+import { Invoice } from '@/types/primitives/Invoice';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Invoice } from '@/types/primitives/Invoice';
+} from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';

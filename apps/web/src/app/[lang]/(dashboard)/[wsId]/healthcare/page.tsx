@@ -1,6 +1,5 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -13,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function HealthcareOverviewPage({
   params: { wsId },
 }: Props) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { count: checkups } = await supabase
     .from('healthcare_checkups')

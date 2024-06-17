@@ -1,17 +1,13 @@
 import Form from './form';
 import UserTime from './user-time';
-import { Separator } from '@/components/ui/separator';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/utils/supabase/client';
-import {
-  User,
-  createServerComponentClient,
-} from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +59,7 @@ export default async function MeetTogetherPage({
                   /-/g,
                   ''
                 )}`}
-                key={plan.name}
+                key={plan.id}
                 className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
               >
                 <div className="flex w-full items-center justify-between gap-2">
@@ -76,7 +72,7 @@ export default async function MeetTogetherPage({
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
                       }).format(
-                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? 0) *
+                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
                           (plan.start_time?.includes('-') ? -1 : 1)
                       )}
                     </div>
@@ -144,7 +140,7 @@ async function getData(
     // pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },

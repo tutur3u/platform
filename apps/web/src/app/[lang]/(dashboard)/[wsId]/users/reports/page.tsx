@@ -1,14 +1,14 @@
 import { UserDatabaseFilter } from '../filters';
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserReportColumns } from '@/data/columns/user-reports';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export default async function WorkspaceUserReportsPage({
     })) ?? [];
 
   return (
-    <DataTable
+    <CustomDataTable
       data={reports}
       columnGenerator={getUserReportColumns}
       namespace="user-report-data-table"
@@ -111,7 +111,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean }
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -143,7 +143,9 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
 
   const data = rawData?.map((row) => ({
+    // @ts-expect-error
     user_name: row.user.full_name,
+    // @ts-expect-error
     creator_name: row.creator.full_name,
     ...row,
   }));
@@ -153,11 +155,11 @@ async function getData(
     return getData(wsId, { pageSize, groupId, userId, retry: false });
   }
 
-  return { data, count };
+  return { data, count } as { data: WorkspaceUserReport[]; count: number };
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -174,7 +176,7 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -183,7 +185,7 @@ async function getUsers(wsId: string, groupId: string) {
         _ws_id: wsId,
         included_groups: [groupId],
         excluded_groups: [],
-        search_query: null,
+        search_query: '',
       },
       {
         count: 'exact',

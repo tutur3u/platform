@@ -2,7 +2,11 @@
 
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { Button } from '@/components/ui/button';
+import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@/types/primitives/Timeblock';
+import { User } from '@/types/primitives/User';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -20,12 +24,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@/types/primitives/Timeblock';
-import { User } from '@/types/primitives/User';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import useTranslation from 'next-translate/useTranslation';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';

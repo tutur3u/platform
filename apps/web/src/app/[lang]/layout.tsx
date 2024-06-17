@@ -1,12 +1,12 @@
-import '../../styles/globals.css';
 import Navbar from './navbar';
 import NavbarPadding from './navbar-padding';
 import { StaffToolbar } from './staff-toolbar';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
-import { Toaster } from '@/components/ui/toaster';
 import { siteConfig } from '@/constants/configs';
-import { cn } from '@/lib/utils';
+import { Toaster } from '@repo/ui/components/ui/toaster';
+import '@repo/ui/globals.css';
+import { cn } from '@repo/ui/lib/utils';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
@@ -22,9 +22,7 @@ interface Props {
   };
 }
 
-export async function generateMetadata({
-  params: { lang },
-}: Props): Promise<Metadata> {
+export function generateMetadata({ params: { lang } }: Props): Metadata {
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 

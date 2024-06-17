@@ -1,10 +1,8 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { productColumns } from '@/data/columns/products';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { Database } from '@/types/supabase';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { Product } from '@/types/primitives/Product';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -25,7 +23,7 @@ export default async function WorkspaceProductsPage({
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       columnGenerator={productColumns}
       namespace="product-data-table"
@@ -46,7 +44,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_products')
@@ -73,5 +71,5 @@ async function getData(
     category: product_categories?.name,
   }));
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: Product[]; count: number };
 }

@@ -179,8 +179,8 @@ export function timetzToTime(timetz: string) {
   const [hourStr, minuteStr] = time.split(':');
 
   // Parse the hour, minute, and offset as integers
-  const hour = parseInt(hourStr, 10);
-  const minute = parseInt(minuteStr, 10);
+  const hour = parseInt(hourStr ?? '0', 10);
+  const minute = parseInt(minuteStr ?? '0', 10);
   const offset = parseInt(offsetStr, 10);
 
   // Get the current date and time
@@ -207,7 +207,7 @@ export function timetzToTime(timetz: string) {
 export function timetzToHour(timetz?: string) {
   if (!timetz) return undefined;
   const [hourStr] = timetzToTime(timetz).split(':');
-  return parseInt(hourStr);
+  return parseInt(hourStr ?? '0');
 }
 
 export function compareTimetz(timetz1: string, timetz2: string) {

@@ -1,16 +1,14 @@
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/utils/supabase/client';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getWorkspace(id?: string) {
   if (!id) return null;
 
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },
@@ -32,14 +30,14 @@ export async function getWorkspace(id?: string) {
 
   const ws = {
     ...rest,
-    role: workspace_members[0].role,
+    role: workspace_members[0]?.role,
   };
 
   return ws as Workspace;
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },
@@ -63,7 +61,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 }
 
 export async function getWorkspaceInvites() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },
@@ -73,13 +71,13 @@ export async function getWorkspaceInvites() {
 
   const invitesQuery = supabase
     .from('workspace_invites')
-    .select('workspaces(id, name), created_at')
+    .select('...workspaces(id, name), created_at')
     .eq('user_id', user.id);
 
   const emailInvitesQuery = user.email
     ? supabase
         .from('workspace_email_invites')
-        .select('workspaces(id, name), created_at')
+        .select('...workspaces(id, name), created_at')
         .eq('email', user.email)
     : null;
 
@@ -92,14 +90,8 @@ export async function getWorkspaceInvites() {
   if (invites.error || emailInvites?.error)
     throw invites.error || emailInvites?.error;
 
-  const data = [...invites.data, ...(emailInvites?.data || [])];
-
-  const workspaces = data.map(({ workspaces, created_at }) => ({
-    ...workspaces,
-    created_at,
-  }));
-
-  return workspaces as Workspace[];
+  const data = [...invites.data, ...(emailInvites?.data || [])] as Workspace[];
+  return data;
 }
 
 export function enforceRootWorkspace(
@@ -124,7 +116,7 @@ export async function enforceRootWorkspaceAdmin(
 ) {
   enforceRootWorkspace(wsId, options);
 
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },
@@ -155,9 +147,7 @@ export async function getSecrets({
   requiredSecrets?: string[];
   forceAdmin?: boolean;
 }) {
-  const supabase = forceAdmin
-    ? createAdminClient()
-    : createServerComponentClient<Database>({ cookies });
+  const supabase = forceAdmin ? createAdminClient() : createClient();
 
   if (!supabase) throw new Error('Supabase client not initialized');
   const queryBuilder = supabase.from('workspace_secrets').select('*');

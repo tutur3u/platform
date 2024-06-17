@@ -1,12 +1,14 @@
-import { Button } from '@/components/ui/button';
-import { IconArrowElbow } from '@/components/ui/icons';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { Button } from '@repo/ui/components/ui/button';
+import { IconArrowElbow } from '@repo/ui/components/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+} from '@repo/ui/components/ui/tooltip';
+import { cn } from '@repo/ui/lib/utils';
 import { UseChatHelpers } from 'ai/react';
+import { Mic, Paperclip } from 'lucide-react';
 import React from 'react';
 import Textarea from 'react-textarea-autosize';
 
@@ -50,19 +52,62 @@ export function PromptForm({
           maxRows={7}
           className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
         />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="submit"
-              disabled={isLoading || input === ''}
-              size="icon"
-            >
-              <IconArrowElbow />
-              <span className="sr-only">Send message</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Send message</TooltipContent>
-        </Tooltip>
+        <div className="flex">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                disabled
+                // disabled={isLoading}
+                size="icon"
+                variant="ghost"
+                className={cn('transition duration-300')}
+              >
+                <Paperclip />
+                <span className="sr-only">Add attachments</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Add attachments</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                disabled
+                // disabled={isLoading}
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  'transition duration-300',
+                  input ? 'mx-1' : 'ml-1'
+                )}
+              >
+                <Mic />
+                <span className="sr-only">Voice input</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Voice input</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="submit"
+                disabled={isLoading || !input}
+                size="icon"
+                className={cn(
+                  'transition-all duration-300',
+                  !input
+                    ? 'opacity-0 bg-transparent w-0 text-transparent pointer-events-none'
+                    : 'opacity-100 pointer-events-auto w-10'
+                )}
+              >
+                <IconArrowElbow />
+                <span className="sr-only">Send message</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Send message</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </form>
   );

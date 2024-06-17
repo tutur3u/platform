@@ -3,6 +3,8 @@ import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
 import { ReactNode } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: {
     lang: string;
@@ -36,7 +38,7 @@ export async function generateMetadata({
     description,
     openGraph: {
       type: 'website',
-      locale: 'en_US',
+      locale: lang,
       url: siteConfig.url,
       title,
       description,

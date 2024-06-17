@@ -28,13 +28,13 @@ export default function NavbarPadding({ children }: Props) {
         className={`${pathname === '/login' ? 'flex' : ''}`}
         style={{ height: navbarHeight }}
       />
-      <div
+      <main
         style={{
           height: `calc(100vh - ${navbarHeight}px)`,
         }}
       >
         {children}
-      </div>
+      </main>
     </>
   );
 }

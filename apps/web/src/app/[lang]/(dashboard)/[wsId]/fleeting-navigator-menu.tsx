@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Cog6ToothIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
 } from '@heroicons/react/20/solid';
+import { Button } from '@repo/ui/components/ui/button';
+import { Separator } from '@repo/ui/components/ui/separator';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,

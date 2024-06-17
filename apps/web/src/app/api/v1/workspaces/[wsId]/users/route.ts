@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies, headers } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -88,7 +88,7 @@ async function getDataFromSession(
   req: NextRequest,
   { wsId }: { wsId: string }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const mainQuery = supabase
     .from('workspace_users')

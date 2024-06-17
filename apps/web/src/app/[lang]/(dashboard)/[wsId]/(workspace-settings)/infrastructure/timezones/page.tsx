@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/ui/custom/tables/data-table';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
 import timezones from '@/data/timezones.json';
 import { Timezone } from '@/types/primitives/Timezone';
@@ -19,7 +19,7 @@ export default async function WorkspaceUsersPage({ searchParams }: Props) {
   const { data, count } = await getData(searchParams);
 
   return (
-    <DataTable
+    <CustomDataTable
       data={data}
       namespace="timezone-data-table"
       columnGenerator={timezoneColumns}

@@ -1,13 +1,15 @@
 'use client';
 
 import AIModelSelector from './model-selector';
+import { AIPrompt } from '@/types/db';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
+} from '@repo/ui/components/ui/accordion';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
   FormControl,
@@ -15,13 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
-import { AIPrompt } from '@/types/db';
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { toast } from '@repo/ui/hooks/use-toast';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -146,7 +146,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
                         // if "GOOGLE_GEMINI_PRO" is in the data, set it as the default model
                         const defaultModel = data.find(
                           (model: { id: string }) =>
-                            model.id === 'GOOGLE-GEMINI-PRO'
+                            model.id === 'gemini-1.5-flash'
                         );
 
                         if (defaultModel) field.onChange(defaultModel.id);

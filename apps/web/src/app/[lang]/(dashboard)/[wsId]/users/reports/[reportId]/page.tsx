@@ -6,12 +6,10 @@ import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { Database } from '@/types/supabase';
+import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 interface Props {
@@ -131,7 +129,7 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -174,7 +172,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -191,7 +189,7 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -200,7 +198,7 @@ async function getUsers(wsId: string, groupId: string) {
         _ws_id: wsId,
         included_groups: [groupId],
         excluded_groups: [],
-        search_query: null,
+        search_query: '',
       },
       {
         count: 'exact',
@@ -221,7 +219,7 @@ async function getReports(
   userId: string,
   forceRedirect = false
 ) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -239,7 +237,9 @@ async function getReports(
   if (error) throw error;
 
   const data = rawData?.map((rawData) => ({
+    // @ts-expect-error
     user_name: rawData.user.full_name,
+    // @ts-expect-error
     creator_name: rawData.creator.full_name,
     ...rawData,
   }));
@@ -254,7 +254,7 @@ async function getReports(
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

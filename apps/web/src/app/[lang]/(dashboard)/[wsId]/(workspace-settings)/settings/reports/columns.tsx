@@ -1,8 +1,8 @@
 'use client';
 
 import { ConfigRowActions } from './row-actions';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import { Translate } from 'next-translate';

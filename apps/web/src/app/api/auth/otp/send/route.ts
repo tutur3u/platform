@@ -1,6 +1,5 @@
 import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -13,7 +12,7 @@ export async function POST(request: Request) {
   const validatedEmail = await validateEmail(email);
 
   const userExists = await checkIfUserExists({ email: validatedEmail });
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   if (userExists) {
     const { error } = await supabase.auth.signInWithOtp({

@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
 import { Workspace } from '@/types/primitives/Workspace';
+import { Button } from '@repo/ui/components/ui/button';
+import { toast } from '@repo/ui/hooks/use-toast';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -31,11 +31,11 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "8.57.0",
-    "eslint-config-custom": "workspace:*",
+    "@repo/eslint-config-custom": "workspace:*",
     "prettier": "^3.3.2",
-    "prettier-plugin-tailwindcss": "^0.6.3",
-    "tsconfig": "workspace:*",
-    "turbo": "^2.0.3",
+    "prettier-plugin-tailwindcss": "^0.6.4",
+    "@repo/tsconfig": "workspace:*",
+    "turbo": "^2.0.4",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },

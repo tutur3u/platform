@@ -1,14 +1,13 @@
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
-import { Separator } from '@/components/ui/separator';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient } from '@/utils/supabase/client';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
-import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -107,7 +106,7 @@ const getMembers = async (
   wsId: string,
   { status, roles }: { status: string; roles: string }
 ) => {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const sbAdmin = createAdminClient();
   if (!sbAdmin) throw new Error('Internal server error');

@@ -1,13 +1,13 @@
 import { Size } from './types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
+} from '@repo/ui/components/ui/popover';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Slider } from '@repo/ui/components/ui/slider';
 import { Camera } from 'lucide-react';
 
 export function CameraPopover({
@@ -64,7 +64,9 @@ export function CameraPopover({
                 max={100}
                 step={1}
                 value={[position.x]}
-                onValueChange={(v) => setPosition((s) => ({ ...s, x: v[0] }))}
+                onValueChange={(v) =>
+                  setPosition((s) => ({ ...s, x: v?.[0] ?? 0 }))
+                }
               />
             </div>
 
@@ -93,7 +95,9 @@ export function CameraPopover({
                 max={100}
                 step={1}
                 value={[position.y]}
-                onValueChange={(v) => setPosition((s) => ({ ...s, y: v[0] }))}
+                onValueChange={(v) =>
+                  setPosition((s) => ({ ...s, y: v?.[0] ?? 0 }))
+                }
               />
             </div>
 
@@ -122,7 +126,9 @@ export function CameraPopover({
                 max={100}
                 step={1}
                 value={[position.z]}
-                onValueChange={(v) => setPosition((s) => ({ ...s, z: v[0] }))}
+                onValueChange={(v) =>
+                  setPosition((s) => ({ ...s, z: v?.[0] ?? 0 }))
+                }
               />
             </div>
 
@@ -136,7 +142,7 @@ export function CameraPopover({
             <div className="flex gap-2">
               <Input
                 placeholder="X"
-                value={quaternion[0]}
+                value={quaternion?.[0] ?? 0}
                 onChange={(e) => {
                   const value = Number(e.target.value);
 
@@ -159,11 +165,11 @@ export function CameraPopover({
                 defaultValue={[0]}
                 max={360}
                 step={1}
-                value={[quaternion[0]]}
+                value={[quaternion?.[0] ?? 0]}
                 onValueChange={(v) =>
                   setQuaternion((q) => {
                     const newQ = [...q];
-                    newQ[0] = v[0];
+                    newQ[0] = v?.[0] ?? 0;
                     return newQ;
                   })
                 }
@@ -174,7 +180,7 @@ export function CameraPopover({
             <div className="flex gap-2">
               <Input
                 placeholder="Y"
-                value={quaternion[1]}
+                value={quaternion?.[1] ?? 0}
                 onChange={(e) => {
                   const value = Number(e.target.value);
 
@@ -197,11 +203,11 @@ export function CameraPopover({
                 defaultValue={[0]}
                 max={360}
                 step={1}
-                value={[quaternion[1]]}
+                value={[quaternion?.[1] ?? 0]}
                 onValueChange={(v) =>
                   setQuaternion((q) => {
                     const newQ = [...q];
-                    newQ[1] = v[0];
+                    newQ[1] = v?.[0] ?? 0;
                     return newQ;
                   })
                 }
@@ -212,7 +218,7 @@ export function CameraPopover({
             <div className="flex gap-2">
               <Input
                 placeholder="Z"
-                value={quaternion[2]}
+                value={quaternion?.[2] ?? 0}
                 onChange={(e) => {
                   const value = Number(e.target.value);
 
@@ -235,11 +241,11 @@ export function CameraPopover({
                 defaultValue={[0]}
                 max={360}
                 step={1}
-                value={[quaternion[2]]}
+                value={[quaternion?.[2] ?? 0]}
                 onValueChange={(v) =>
                   setQuaternion((q) => {
                     const newQ = [...q];
-                    newQ[2] = v[0];
+                    newQ[2] = v?.[0] ?? 0;
                     return newQ;
                   })
                 }
@@ -250,7 +256,7 @@ export function CameraPopover({
             <div className="flex gap-2">
               <Input
                 placeholder="W"
-                value={quaternion[3]}
+                value={quaternion?.[3] ?? 0}
                 onChange={(e) => {
                   const value = Number(e.target.value);
 
@@ -273,11 +279,11 @@ export function CameraPopover({
                 defaultValue={[0]}
                 max={360}
                 step={1}
-                value={[quaternion[3]]}
+                value={[quaternion?.[3] ?? 0]}
                 onValueChange={(v) =>
                   setQuaternion((q) => {
                     const newQ = [...q];
-                    newQ[3] = v[0];
+                    newQ[3] = v?.[0] ?? 0;
                     return newQ;
                   })
                 }
