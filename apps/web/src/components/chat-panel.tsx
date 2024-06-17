@@ -202,17 +202,15 @@ export function ChatPanel({
         </div>
 
         <div
-          className={`bg-background/20 flex flex-col items-start justify-end space-y-2 rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg ${
-            showExtraOptions ? 'h-[7.75rem]' : 'h-20'
-          } transition-all duration-500`}
+          className={`bg-background/20 flex flex-col items-start justify-end rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg transition-all`}
         >
           <ChatModelSelector
             open={showExtraOptions}
             model={model}
             className={`${
               showExtraOptions
-                ? 'pointer-events-auto opacity-100 delay-500 duration-500'
-                : 'pointer-events-none opacity-0'
+                ? 'pointer-events-auto opacity-100 mb-2'
+                : 'pointer-events-none opacity-0 h-0 p-0'
             } transition-all ease-in-out`}
             setOpen={setShowExtraOptions}
             onChange={setModel}

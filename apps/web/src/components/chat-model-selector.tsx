@@ -15,7 +15,7 @@ import {
 } from '@repo/ui/components/ui/popover';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 
 export function ChatModelSelector({
@@ -57,7 +57,6 @@ export function ChatModelSelector({
               ? `${currentModel?.provider.toLowerCase()}/${currentModel?.label}`
               : 'Select model'}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -111,7 +110,9 @@ export function ChatModelSelector({
               {previewModel?.provider}{' '}
             </div>
             <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
-            <div className="line-clamp-1 text-xs">{previewModel?.label}</div>
+            <div className="line-clamp-1 text-xs font-mono">
+              {previewModel?.label}
+            </div>
           </div>
           <Separator className="my-2" />
           <div className="p-2 pt-0">
