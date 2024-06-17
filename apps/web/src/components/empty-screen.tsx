@@ -37,24 +37,24 @@ export function EmptyScreen({
 
   const exampleMessages = [
     {
-      heading: 'Explain technical concepts',
-      message: `What is quantum computing?`,
+      heading: t('example_1'),
+      message: t('example_1_prompt'),
     },
     {
-      heading: 'Generate math problems',
-      message: `Generate a list of hard but interesting math problems for undergraduates.`,
+      heading: t('example_2'),
+      message: t('example_2_prompt'),
     },
     {
-      heading: 'Explain to a 5th grader',
-      message: `Explain the following concepts like I'm a fifth grader: \n\n`,
+      heading: t('example_3'),
+      message: t('example_3_prompt'),
     },
     {
-      heading: 'Summarize an article',
-      message: 'Summarize the following article for a 2nd grader: \n\n',
+      heading: t('example_4'),
+      message: t('example_4_prompt'),
     },
     {
-      heading: 'Draft an email',
-      message: `Draft an email to my boss about the following: \n\n`,
+      heading: t('example_5'),
+      message: t('example_5_prompt'),
     },
   ];
 
