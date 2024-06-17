@@ -117,7 +117,14 @@ const Chat = ({
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (!input) return;
+    if (!input) {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth',
+      });
+
+      return;
+    }
 
     setInput(input.toString());
     router.replace(`/${wsId}/chat/${chat.id}`);

@@ -1,7 +1,7 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm } from './prompt-form';
+import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
-import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
