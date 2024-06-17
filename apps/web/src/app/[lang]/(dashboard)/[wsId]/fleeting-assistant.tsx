@@ -185,6 +185,10 @@ export default function FleetingAssistant({
               {currentMessages.map((message, i) => (
                 <FleetingAssistantMessage
                   key={i}
+                  setInput={(value: string) => {
+                    form.setValue('prompt', value);
+                    form.trigger('prompt');
+                  }}
                   message={{ ...message, content: message.content.trim() }}
                   model={chat?.model}
                 />

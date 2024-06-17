@@ -1,6 +1,16 @@
 {
   "welcome_to": "Welcome to",
   "welcome_msg": "You can start a conversation here or try the following examples:",
+  "example_1": "Explain technical concepts",
+  "example_1_prompt": "What is quantum computing?",
+  "example_2": "Generate math problems",
+  "example_2_prompt": "Generate a list of hard but interesting math problems for undergraduates.",
+  "example_3": "Explain to a 5th grader",
+  "example_3_prompt": "Explain the following concepts like I'm a fifth grader: \n\n",
+  "example_4": "Summarize an article",
+  "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
+  "example_5": "Draft an email",
+  "example_5_prompt": "Draft an email to my boss about the following: \n\n",
   "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
   "prompt_placeholder": "Type your prompt here...",
   "chats": "Chats",
@@ -18,5 +28,13 @@
   "view_conversation": "View conversation",
   "all_conversations": "All conversations",
   "created": "Created",
-  "you": "You"
+  "anonymous": "Anonymous",
+  "you": "You",
+  "chat_visibility": "Chat visibility",
+  "chat_visibility_description": "Choose who can view this chat.",
+  "public": "Public",
+  "only_me": "Only me",
+  "chat_updated": "Chat updated",
+  "visibility_updated_desc": "Chat visibility updated successfully.",
+  "copy_link": "Copy link"
 }
