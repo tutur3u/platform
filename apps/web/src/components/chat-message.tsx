@@ -28,6 +28,7 @@ export interface ChatMessageProps {
   message: Message & { chat_id?: string; model?: string; created_at?: string };
   embeddedUrl?: string;
   locale?: string;
+  anonymize?: boolean;
   setInput?: (input: string) => void;
 }
 
@@ -35,6 +36,7 @@ export function ChatMessage({
   message,
   embeddedUrl,
   locale = 'en',
+  anonymize,
   setInput,
   ...props
 }: ChatMessageProps) {
@@ -71,7 +73,11 @@ export function ChatMessage({
           <div>
             <span className="line-clamp-1 font-semibold">
               {message.role === 'user' ? (
-                t('you')
+                anonymize ? (
+                  t('anonymous')
+                ) : (
+                  t('you')
+                )
               ) : (
                 <span
                   className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${

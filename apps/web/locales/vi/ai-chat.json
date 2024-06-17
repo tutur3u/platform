@@ -28,5 +28,13 @@
   "view_conversation": "Xem cuộc trò chuyện",
   "all_conversations": "Tất cả cuộc trò chuyện",
   "created": "Đã tạo",
-  "you": "Bạn"
+  "anonymous": "Ẩn danh",
+  "you": "Bạn",
+  "chat_visibility": "Hiển thị trò chuyện",
+  "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
+  "public": "Công khai",
+  "only_me": "Chỉ mình tôi",
+  "chat_updated": "Cập nhật trò chuyện",
+  "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
+  "copy_link": "Sao chép liên kết"
 }

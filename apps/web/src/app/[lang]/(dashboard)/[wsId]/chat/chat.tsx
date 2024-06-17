@@ -6,6 +6,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { Model, defaultModel } from '@/data/models';
 import { AIChat } from '@/types/db';
+import { createClient } from '@/utils/supabase/client';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -27,11 +28,11 @@ import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
-  wsId: string;
+  wsId?: string;
   initialMessages?: Message[];
   previousMessages?: Message[];
-  chats: AIChat[];
-  count: number | null;
+  chats?: AIChat[];
+  count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
   locale: string;
 }
@@ -117,7 +118,7 @@ const Chat = ({
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (!input) {
+    if (!input && !!chats && count !== undefined) {
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: 'smooth',
@@ -126,9 +127,10 @@ const Chat = ({
       return;
     }
 
+    if (!input) return;
     setInput(input.toString());
     router.replace(`/${wsId}/chat/${chat.id}`);
-  }, [chat?.id, searchParams, router, setInput, wsId]);
+  }, [chat?.id, searchParams, router, setInput, wsId, chats, count]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -167,8 +169,34 @@ const Chat = ({
     const { id, title } = (await res.json()) as AIChat;
     if (id) {
       setCollapsed(true);
-      setChat({ id, title, model: model.value });
+      setChat({ id, title, model: model.value, is_public: false });
     }
+  };
+
+  const updateChat = async (newData: Partial<AIChat>) => {
+    if (!chat?.id) return;
+
+    const { is_public } = newData;
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('ai_chats')
+      .update({ is_public })
+      .eq('id', chat?.id);
+
+    if (error) {
+      toast({
+        title: t('something_went_wrong'),
+        description: error.message,
+      });
+      return;
+    }
+
+    setChat({ ...chat, is_public });
+    toast({
+      title: t('chat_updated'),
+      description: t('visibility_updated_desc'),
+    });
   };
 
   const clearChat = () => {
@@ -225,6 +253,7 @@ const Chat = ({
               setInput={setInput}
               locale={locale}
               model={chat?.model ?? undefined}
+              anonymize={!chats || count === undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
@@ -240,26 +269,30 @@ const Chat = ({
         )}
       </div>
 
-      <ChatPanel
-        id={chat?.id}
-        chats={chats}
-        count={count}
-        isLoading={isLoading}
-        stop={stop}
-        append={append}
-        reload={reload}
-        input={input}
-        inputRef={inputRef}
-        setInput={setInput}
-        model={model}
-        setModel={setModel}
-        messages={messages}
-        collapsed={collapsed}
-        createChat={createChat}
-        clearChat={clearChat}
-        setCollapsed={setCollapsed}
-        defaultRoute={`/${wsId}/chat`}
-      />
+      {chats && count !== undefined && (
+        <ChatPanel
+          id={chat?.id}
+          chat={chat}
+          chats={chats}
+          count={count}
+          isLoading={isLoading}
+          stop={stop}
+          append={append}
+          reload={reload}
+          input={input}
+          inputRef={inputRef}
+          setInput={setInput}
+          model={model}
+          setModel={setModel}
+          messages={messages}
+          collapsed={collapsed}
+          createChat={createChat}
+          updateChat={updateChat}
+          clearChat={clearChat}
+          setCollapsed={setCollapsed}
+          defaultRoute={`/${wsId}/chat`}
+        />
+      )}
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
         <DialogContent>

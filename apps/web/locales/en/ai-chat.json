@@ -28,5 +28,13 @@
   "view_conversation": "View conversation",
   "all_conversations": "All conversations",
   "created": "Created",
-  "you": "You"
+  "anonymous": "Anonymous",
+  "you": "You",
+  "chat_visibility": "Chat visibility",
+  "chat_visibility_description": "Choose who can view this chat.",
+  "public": "Public",
+  "only_me": "Only me",
+  "chat_updated": "Chat updated",
+  "visibility_updated_desc": "Chat visibility updated successfully.",
+  "copy_link": "Copy link"
 }
