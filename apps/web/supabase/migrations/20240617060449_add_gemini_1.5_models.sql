@@ -4,6 +4,18 @@ alter table "public"."ai_models" add constraint "public_ai_models_provider_fkey"
 
 alter table "public"."ai_models" validate constraint "public_ai_models_provider_fkey";
 
+alter table "public"."ai_chat_messages" drop constraint "ai_chat_messages_model_fkey";
+
+alter table "public"."ai_chats" drop constraint "ai_chats_model_fkey";
+
+alter table "public"."ai_chat_messages" add constraint "public_ai_chat_messages_model_fkey" FOREIGN KEY (model) REFERENCES ai_models(id) ON UPDATE CASCADE not valid;
+
+alter table "public"."ai_chat_messages" validate constraint "public_ai_chat_messages_model_fkey";
+
+alter table "public"."ai_chats" add constraint "public_ai_chats_model_fkey" FOREIGN KEY (model) REFERENCES ai_models(id) ON UPDATE CASCADE not valid;
+
+alter table "public"."ai_chats" validate constraint "public_ai_chats_model_fkey";
+
 UPDATE public.ai_models
 SET id = 'claude-2.1'
 WHERE id = 'CLAUDE-2.1';
