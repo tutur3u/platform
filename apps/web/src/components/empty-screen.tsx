@@ -78,16 +78,16 @@ export function EmptyScreen({
           {t('welcome_msg')}
         </p>
 
-        <div className="mt-4 flex w-full flex-col gap-2">
+        <div className="mt-4 flex w-fit max-w-full flex-col gap-2">
           {exampleMessages.map((message, index) => (
             <Button
               key={index}
               variant="link"
-              className="h-auto w-full p-0 text-left justify-start text-base"
+              className="h-auto w-fit max-w-full p-0 text-left justify-start text-base"
               onClick={() => setInput(message.message)}
             >
               <IconArrowRight className="text-foreground/80 mr-2 shrink-0" />
-              <div className="w-full truncate">{message.heading}</div>
+              <div className="w-fit max-w-full truncate">{message.heading}</div>
             </Button>
           ))}
         </div>
