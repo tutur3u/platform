@@ -36,5 +36,6 @@
   "only_me": "Chỉ mình tôi",
   "chat_updated": "Cập nhật trò chuyện",
   "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
-  "copy_link": "Sao chép liên kết"
+  "copy_link": "Sao chép liên kết",
+  "summary": "Tóm tắt"
 }

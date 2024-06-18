@@ -58,7 +58,7 @@ const getMessages = async () => {
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
-    .select('*, ai_chats(*)')
+    .select('*, ai_chats!chat_id(*)')
     .order('created_at', { ascending: false })
     .limit(2);
 
