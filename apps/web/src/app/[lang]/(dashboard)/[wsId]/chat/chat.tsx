@@ -102,8 +102,9 @@ const Chat = ({
   );
 
   useEffect(() => {
+    setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
 
   useEffect(() => {
     if (!chat || (!hasKeys && !previewToken) || isLoading) return;
@@ -142,11 +143,7 @@ const Chat = ({
       }
 
       const { response } = (await res.json()) as { response: string };
-      if (response) {
-        console.log('new summary', response);
-        setSummary(response);
-        setChat((prev) => ({ ...prev, summary: response }));
-      }
+      if (response) setSummary(response);
     };
 
     // Generate the chat summary if the chat's latest summarized message id
@@ -173,6 +170,8 @@ const Chat = ({
     };
   }, [wsId, chat, hasKeys, previewToken, isLoading, messages, reload]);
 
+  const [initialScroll, setInitialScroll] = useState(true);
+
   useEffect(() => {
     if (!chat?.id) return;
 
@@ -180,7 +179,8 @@ const Chat = ({
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (!input && !!chats && count !== undefined) {
+    if (initialScroll && !input && !!chats && count !== undefined) {
+      setInitialScroll(false);
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: 'smooth',
@@ -192,7 +192,16 @@ const Chat = ({
     if (!input) return;
     setInput(input.toString());
     router.replace(`/${wsId}/chat/${chat.id}`);
-  }, [chat?.id, searchParams, router, setInput, wsId, chats, count]);
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    setInput,
+    wsId,
+    chats,
+    count,
+    initialScroll,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -232,6 +241,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
+      router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
 
@@ -263,6 +273,7 @@ const Chat = ({
 
   const clearChat = () => {
     if (defaultChat?.id) return;
+    setSummary(undefined);
     setChat(undefined);
     setCollapsed(true);
   };
