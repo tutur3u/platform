@@ -173,25 +173,34 @@ const Chat = ({
   const [initialScroll, setInitialScroll] = useState(true);
 
   useEffect(() => {
-    if (!chat?.id) return;
-
     // if there is "input" in the query string, we will
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (initialScroll && !input && !!chats && count !== undefined) {
+    const refresh = searchParams.get('refresh');
+
+    if (
+      (initialScroll || refresh) &&
+      !input &&
+      !!chats &&
+      count !== undefined
+    ) {
       setInitialScroll(false);
       window.scrollTo({
-        top: document.body.scrollHeight,
+        top: chat?.id ? document.body.scrollHeight : 0,
         behavior: 'smooth',
       });
-
-      return;
     }
 
-    if (!input) return;
-    setInput(input.toString());
-    router.replace(`/${wsId}/chat/${chat.id}`);
+    if (chat?.id && input) {
+      setInput(input.toString());
+      router.replace(`/${wsId}/chat/${chat.id}`);
+    }
+
+    if (refresh) {
+      clearChat();
+      router.replace(`/${wsId}/chat?`);
+    }
   }, [
     chat?.id,
     searchParams,

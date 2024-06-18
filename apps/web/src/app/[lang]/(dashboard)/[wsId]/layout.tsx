@@ -48,6 +48,7 @@ export default async function Layout({
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
+      forceRefresh: true,
       disabled: !verifySecret('ENABLE_CHAT', 'true', secrets),
     },
     {
