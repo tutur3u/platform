@@ -34,6 +34,7 @@
   "chat_visibility_description": "Choose who can view this chat.",
   "public": "Public",
   "only_me": "Only me",
+  "summarized": "Summarized",
   "chat_updated": "Chat updated",
   "visibility_updated_desc": "Chat visibility updated successfully.",
   "copy_public_link": "Copy public link",

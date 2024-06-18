@@ -28,6 +28,7 @@ const config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
 
+        'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-green': 'hsl(var(--green))',
         'dynamic-yellow': 'hsl(var(--yellow))',
         'dynamic-red': 'hsl(var(--red))',

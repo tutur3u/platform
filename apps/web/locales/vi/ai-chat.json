@@ -34,6 +34,7 @@
   "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
   "public": "Công khai",
   "only_me": "Chỉ mình tôi",
+  "summarized": "Có tóm tắt",
   "chat_updated": "Cập nhật trò chuyện",
   "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
   "copy_public_link": "Sao chép liên kết công khai",

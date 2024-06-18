@@ -299,6 +299,7 @@ const Chat = ({
               chatIsPublic={chat?.is_public}
               chatModel={chat?.model}
               chatSummary={summary || chat?.summary}
+              summarizing={summarizing}
               messages={
                 pendingPrompt
                   ? [
