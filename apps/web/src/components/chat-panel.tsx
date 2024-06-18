@@ -28,6 +28,7 @@ import {
   Bolt,
   Check,
   CheckCheck,
+  ExternalLink,
   FolderOpen,
   Globe,
   LinkIcon,
@@ -90,6 +91,8 @@ export function ChatPanel({
 
   const [showChatVisibility, setShowChatVisibility] = useState(false);
   const [showExtraOptions, setShowExtraOptions] = useState(false);
+
+  const disablePublicLink = isLoading || updating || !id || !chat?.is_public;
 
   return (
     <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
@@ -326,6 +329,7 @@ export function ChatPanel({
               onClick={async () => {
                 setUpdating(true);
                 await updateChat({ is_public: true });
+                setCopiedLink(false);
                 setUpdating(false);
               }}
               disabled={isLoading || updating || !id || chat?.is_public}
@@ -345,6 +349,7 @@ export function ChatPanel({
               onClick={async () => {
                 setUpdating(true);
                 await updateChat({ is_public: false });
+                setCopiedLink(false);
                 setUpdating(false);
               }}
               disabled={isLoading || updating || !id || !chat?.is_public}
@@ -360,8 +365,10 @@ export function ChatPanel({
             </Button>
           </div>
 
+          <Separator className="mt-4 mb-2" />
+
           <Button
-            variant="ghost"
+            variant="outline"
             className="w-full mt-2"
             onClick={() => {
               navigator.clipboard.writeText(
@@ -370,16 +377,24 @@ export function ChatPanel({
               setCopiedLink(true);
               setTimeout(() => setCopiedLink(false), 2000);
             }}
-            disabled={
-              isLoading || updating || !id || !chat?.is_public || copiedLink
-            }
+            disabled={disablePublicLink || copiedLink}
           >
             {copiedLink ? (
               <CheckCheck className="w-4 h-4 mr-2" />
             ) : (
               <LinkIcon className="w-4 h-4 mr-2" />
             )}
-            {t('copy_link')}
+            {t('copy_public_link')}
+          </Button>
+          <Button
+            className="w-full mt-2"
+            onClick={() =>
+              window.open(`${window.location.origin}/ai/chats/${id}`)
+            }
+            disabled={disablePublicLink}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            {t('open_public_link')}
           </Button>
         </div>
       </DialogContent>
