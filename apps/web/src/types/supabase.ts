@@ -67,7 +67,9 @@ export type Database = {
           creator_id: string | null;
           id: string;
           is_public: boolean;
+          latest_summarized_message_id: string | null;
           model: string | null;
+          summary: string | null;
           title: string | null;
         };
         Insert: {
@@ -75,7 +77,9 @@ export type Database = {
           creator_id?: string | null;
           id?: string;
           is_public?: boolean;
+          latest_summarized_message_id?: string | null;
           model?: string | null;
+          summary?: string | null;
           title?: string | null;
         };
         Update: {
@@ -83,7 +87,9 @@ export type Database = {
           creator_id?: string | null;
           id?: string;
           is_public?: boolean;
+          latest_summarized_message_id?: string | null;
           model?: string | null;
+          summary?: string | null;
           title?: string | null;
         };
         Relationships: [
@@ -92,6 +98,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_ai_chats_latest_summarized_message_id_fkey';
+            columns: ['latest_summarized_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chat_messages';
             referencedColumns: ['id'];
           },
           {
