@@ -78,16 +78,16 @@ export function EmptyScreen({
           {t('welcome_msg')}
         </p>
 
-        <div className="mt-4 flex w-full flex-col items-start space-y-2">
+        <div className="mt-4 flex w-full flex-col gap-2">
           {exampleMessages.map((message, index) => (
             <Button
               key={index}
               variant="link"
-              className="h-auto p-0 text-left text-base"
+              className="h-auto w-full p-0 text-left justify-start text-base"
               onClick={() => setInput(message.message)}
             >
               <IconArrowRight className="text-foreground/80 mr-2 shrink-0" />
-              <span className="line-clamp-2">{message.heading}</span>
+              <div className="w-full truncate">{message.heading}</div>
             </Button>
           ))}
         </div>
@@ -106,7 +106,7 @@ export function EmptyScreen({
                     <div className="flex w-full flex-col items-start">
                       <Link
                         href={`/${wsId}/chat/${chat.id}`}
-                        className="text-base hover:underline"
+                        className="text-sm md:text-base hover:underline"
                       >
                         {chat.title}
                       </Link>
@@ -128,7 +128,7 @@ export function EmptyScreen({
                           ) : (
                             <>
                               <Globe className="w-3 h-3" />
-                              {t('private')}
+                              {t('only_me')}
                             </>
                           )}
                         </span>
@@ -210,7 +210,7 @@ export function EmptyScreen({
                   <div className="flex w-full flex-col items-start">
                     <Link
                       href={`/${wsId}/chat/${chat.id}`}
-                      className="text-base hover:underline"
+                      className="text-sm md:text-base hover:underline"
                     >
                       {chat.title}
                     </Link>
@@ -232,7 +232,7 @@ export function EmptyScreen({
                         ) : (
                           <>
                             <Globe className="w-3 h-3" />
-                            {t('private')}
+                            {t('only_me')}
                           </>
                         )}
                       </span>

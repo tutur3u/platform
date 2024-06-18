@@ -242,6 +242,13 @@ export function ChatMessage({
                 </code>
               );
             },
+            table({ children }) {
+              return (
+                <table className="w-full overflow-x-scroll table-fixed">
+                  {children}
+                </table>
+              );
+            },
             th({ children }) {
               return <th className="text-foreground">{children}</th>;
             },
