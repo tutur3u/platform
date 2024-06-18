@@ -174,6 +174,11 @@ const handleLocale = ({
   req: NextRequest;
   res: NextResponse;
 }): NextResponse => {
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    return res;
+  }
+
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
 
