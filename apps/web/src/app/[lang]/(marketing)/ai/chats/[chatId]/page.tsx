@@ -34,13 +34,15 @@ export default async function AIPage({
   };
 
   return (
-    <Chat
-      wsId={wsId}
-      hasKeys={hasKeys}
-      initialMessages={messages}
-      defaultChat={chat}
-      locale={locale}
-    />
+    <div className="p-4 lg:p-0">
+      <Chat
+        wsId={wsId}
+        hasKeys={hasKeys}
+        initialMessages={messages}
+        defaultChat={chat}
+        locale={locale}
+      />
+    </div>
   );
 }
 
@@ -54,7 +56,7 @@ const getMessages = async (chatId: string) => {
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
-    .select('*, ai_chats!inner(is_public)')
+    .select('*, ai_chats!chat_id!inner(is_public)')
     .eq('chat_id', chatId)
     .eq('ai_chats.is_public', true)
     .order('created_at');

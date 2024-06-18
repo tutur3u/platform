@@ -96,20 +96,82 @@ const Chat = ({
       },
     });
 
+  const [summarizing, setSummarizing] = useState(false);
+  const [summary, setSummary] = useState<string | undefined>(
+    chat?.summary || ''
+  );
+
+  useEffect(() => {
+    setSummarizing(false);
+  }, [messages?.length, chat?.latest_summarized_message_id]);
+
   useEffect(() => {
     if (!chat || (!hasKeys && !previewToken) || isLoading) return;
+
+    const generateSummary = async (messages: Message[] = []) => {
+      if (
+        summarizing ||
+        !model ||
+        !chat?.id ||
+        !chat?.model ||
+        !messages?.length ||
+        chat.latest_summarized_message_id === messages[messages.length - 1]?.id
+      )
+        return;
+
+      setSummarizing(true);
+
+      const res = await fetch(
+        `/api/ai/chat/${model.provider.toLowerCase()}/summary`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            id: chat.id,
+            model: chat.model,
+            previewToken,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        toast({
+          title: t('something_went_wrong'),
+          description: res.statusText,
+        });
+        return;
+      }
+
+      const { response } = (await res.json()) as { response: string };
+      if (response) {
+        console.log('new summary', response);
+        setSummary(response);
+        setChat((prev) => ({ ...prev, summary: response }));
+      }
+    };
+
+    // Generate the chat summary if the chat's latest summarized message id
+    // is not the same as the last message id in the chat
+    if (
+      wsId &&
+      !isLoading &&
+      chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
+      messages[messages.length - 1]?.role !== 'user'
+    )
+      generateSummary(messages);
+
     if (messages[messages.length - 1]?.role !== 'user') return;
 
     // Reload the chat if the user sends a message
     // but the AI did not respond yet after 1 second
-    const timeout = setTimeout(() => {
+    const reloadTimeout = setTimeout(() => {
+      if (messages[messages.length - 1]?.role !== 'user') return;
       reload();
     }, 1000);
 
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(reloadTimeout);
     };
-  }, [chat, hasKeys, previewToken, isLoading, messages, reload]);
+  }, [wsId, chat, hasKeys, previewToken, isLoading, messages, reload]);
 
   useEffect(() => {
     if (!chat?.id) return;
@@ -221,8 +283,11 @@ const Chat = ({
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
-              title={chat?.title}
-              titleLoading={!chat?.id}
+              chatId={chat?.id}
+              chatTitle={chat?.title}
+              chatIsPublic={chat?.is_public}
+              chatModel={chat?.model}
+              chatSummary={summary || chat?.summary}
               messages={
                 pendingPrompt
                   ? [

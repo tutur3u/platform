@@ -4,8 +4,8 @@ import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
 import { User } from '@supabase/supabase-js';
 import Negotiator from 'negotiator';
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { res, user } = await updateSession(req);
@@ -19,23 +19,23 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - media (media files)
      * - favicon.ico (favicon file)
-     * - favicon-16x16.png (favicon file)
-     * - favicon-32x32.png (favicon file)
-     * - apple-touch-icon.png (favicon file)
-     * - android-chrome-192x192.png (favicon file)
-     * - android-chrome-512x512.png (favicon file)
      * - robots.txt (SEO)
      * - sitemap.xml (SEO)
      * - site.webmanifest (SEO)
      * - monitoring (analytics)
+     * Excludes files with the following extensions for static assets:
+     * - svg
+     * - png
+     * - jpg
+     * - jpeg
+     * - gif
+     * - webp
      */
 
-    '/((?!api|_next/static|_next/image|media|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|robots.txt|sitemap.xml|site.webmanifest|monitoring).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
 
@@ -51,6 +51,11 @@ const handleRedirect = ({
   res: NextResponse;
   redirect: boolean;
 } => {
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    return { res, redirect: false };
+  }
+
   // If current path ends with /login and user is logged in, redirect to onboarding page
   if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
@@ -169,6 +174,11 @@ const handleLocale = ({
   req: NextRequest;
   res: NextResponse;
 }): NextResponse => {
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    return res;
+  }
+
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
 
