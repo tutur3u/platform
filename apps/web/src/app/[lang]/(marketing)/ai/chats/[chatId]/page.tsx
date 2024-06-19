@@ -4,8 +4,6 @@ import { createAdminClient } from '@/utils/supabase/client';
 import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;
