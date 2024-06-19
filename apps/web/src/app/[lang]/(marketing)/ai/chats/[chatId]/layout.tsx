@@ -35,50 +35,61 @@ const getChat = async (chatId: string) => {
 export async function generateMetadata({
   params: { lang, chatId },
 }: Props): Promise<Metadata> {
-  const viTitle = 'Trò chuyện AI';
-  const enTitle = 'AI Chat';
+  try {
+    const viTitle = 'Trò chuyện AI';
+    const enTitle = 'AI Chat';
 
-  const enDescription = 'AI Discussion Experiment';
-  const viDescription = 'Thử nghiệm trò chuyện AI';
+    const enDefaultDescription =
+      'Discuss with AI about anything, anytime, anywhere.';
+    const viDefaultDescription =
+      'Trò chuyện với AI về mọi thứ, mọi lúc, mọi nơi.';
 
-  const untitled = lang === 'vi' ? 'Chưa đặt tên' : 'Untitled';
+    const untitled = lang === 'vi' ? 'Chưa đặt tên' : 'Untitled';
+    const defaultDescription =
+      lang === 'vi' ? viDefaultDescription : enDefaultDescription;
 
-  const chat = await getChat(chatId);
-  const chatTitle = chat.title || untitled;
+    const chat = await getChat(chatId);
 
-  const title = `${chatTitle} - ${lang === 'vi' ? viTitle : enTitle}`;
-  const description = lang === 'vi' ? viDescription : enDescription;
+    const chatTitle = chat.title || untitled;
+    const chatSummary = chat.summary || defaultDescription;
 
-  return {
-    title: {
-      default: title,
-      template: `%s - ${title}`,
-    },
-    description,
-    openGraph: {
-      type: 'website',
-      locale: lang,
-      url: siteConfig.url,
-      title,
+    const title = `${chatTitle} - ${lang === 'vi' ? viTitle : enTitle}`;
+    const description = chatSummary;
+
+    return {
+      title: {
+        default: title,
+        template: `%s - ${title}`,
+      },
       description,
-      siteName: siteConfig.name,
-      images: [
-        {
-          url: siteConfig.ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${title} - ${siteConfig.name}`,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [siteConfig.ogImage],
-      creator: '@tutur3u',
-    },
-  };
+      openGraph: {
+        type: 'website',
+        locale: lang,
+        url: siteConfig.url,
+        title,
+        description,
+        siteName: siteConfig.name,
+        images: [
+          {
+            url: siteConfig.ogImage,
+            width: 1200,
+            height: 630,
+            alt: `${title} - ${siteConfig.name}`,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [siteConfig.ogImage],
+        creator: '@tutur3u',
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    notFound();
+  }
 }
 
 export default async function AIChatDetailsLayout({
