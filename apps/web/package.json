@@ -123,7 +123,7 @@
     "lint-staged": "^15.2.7",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.38",
-    "supabase": "^1.178.0",
+    "supabase": "^1.178.1",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
