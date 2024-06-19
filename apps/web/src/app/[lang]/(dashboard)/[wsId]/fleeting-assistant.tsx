@@ -1,6 +1,7 @@
 import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
 import { AIChat } from '@/types/db';
+import { useChat } from '@ai-sdk/react';
 import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
@@ -14,7 +15,6 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Message } from 'ai';
-import { useChat } from 'ai/react';
 import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';

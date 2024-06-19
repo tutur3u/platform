@@ -7,6 +7,7 @@ import { EmptyScreen } from '@/components/empty-screen';
 import { Model, defaultModel } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
+import { useChat } from '@ai-sdk/react';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -21,7 +22,6 @@ import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
-import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
