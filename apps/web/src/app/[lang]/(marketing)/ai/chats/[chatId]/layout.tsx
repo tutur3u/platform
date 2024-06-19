@@ -5,8 +5,6 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     lang: string;
