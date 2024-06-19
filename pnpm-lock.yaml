@@ -57,8 +57,8 @@ importers:
         specifier: ^0.0.31
         version: 0.0.31(zod@3.23.8)
       '@ai-sdk/react':
-        specifier: ^0.0.3
-        version: 0.0.3(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
+        specifier: ^0.0.4
+        version: 0.0.4(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
       '@anthropic-ai/sdk':
         specifier: ^0.23.0
         version: 0.23.0
@@ -596,6 +596,18 @@ packages:
       react:
         optional: true
 
+  '@ai-sdk/react@0.0.4':
+    resolution: {integrity: sha512-YPvp81onTxNlnOWolyjvappS5y9pMkZwWKMxrqwMimaJI4NWquPrAeHCYqzaVAb/+RKaveEGSvyYs/SD8AO6ig==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      zod:
+        optional: true
+
   '@ai-sdk/solid@0.0.3':
     resolution: {integrity: sha512-arCWuCO/jowIaFRIbczv44rHwGV8oW/ON8Sc3W7gFlparnt7z1umdwcEFo4BXbHxvMNsd9xYv4FFrgSTkULxbQ==}
     engines: {node: '>=18'}
@@ -617,6 +629,15 @@ packages:
   '@ai-sdk/ui-utils@0.0.3':
     resolution: {integrity: sha512-V3tF7zh1h4wEORlh8hRE8MI31KiCE/RliXrVNQT9aW3+lAlDNd9nd/sEtGsdioxhJcddqQmPxycVrSOSAFEEzw==}
     engines: {node: '>=18'}
+
+  '@ai-sdk/ui-utils@0.0.4':
+    resolution: {integrity: sha512-vUfuqVOZV3MyFokAduQyJsnDP00qzyZut6mizFscXlCOmiiW3FAnu/XEnMEwCmf7yUG7O4v7Xa2zd4X1tsN5pg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
   '@ai-sdk/vue@0.0.3':
     resolution: {integrity: sha512-HtpFZBCFayn34s68jel6KdFgMa+iC3pNfWVIld/vqgJ4OM1seuY4fVz8+52wEw737FN9hqYvEY+93jORoxgOCg==}
@@ -6512,6 +6533,15 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
+  '@ai-sdk/react@0.0.4(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider-utils': 0.0.15(zod@3.23.8)
+      '@ai-sdk/ui-utils': 0.0.4(zod@3.23.8)
+      swr: 2.2.0(react@19.0.0-rc-6230622a1a-20240610)
+    optionalDependencies:
+      react: 19.0.0-rc-6230622a1a-20240610
+      zod: 3.23.8
+
   '@ai-sdk/solid@0.0.3(solid-js@1.8.17)(zod@3.23.8)':
     dependencies:
       '@ai-sdk/ui-utils': 0.0.3(zod@3.23.8)
@@ -6537,6 +6567,13 @@ snapshots:
       '@ai-sdk/provider-utils': 0.0.15(zod@3.23.8)
     transitivePeerDependencies:
       - zod
+
+  '@ai-sdk/ui-utils@0.0.4(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider-utils': 0.0.15(zod@3.23.8)
+      secure-json-parse: 2.7.0
+    optionalDependencies:
+      zod: 3.23.8
 
   '@ai-sdk/vue@0.0.3(vue@3.4.29(typescript@5.4.5))(zod@3.23.8)':
     dependencies:
