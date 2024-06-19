@@ -71,7 +71,7 @@
     "lucide-react": "^0.395.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.36",
+    "next": "15.0.0-canary.37",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
     "openai": "^4.51.0",
@@ -96,8 +96,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.36",
-    "@next/eslint-plugin-next": "15.0.0-canary.36",
+    "@next/bundle-analyzer": "15.0.0-canary.37",
+    "@next/eslint-plugin-next": "15.0.0-canary.37",
     "@repo/eslint-config-custom": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.43.1",
@@ -123,7 +123,7 @@
     "lint-staged": "^15.2.7",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.38",
-    "supabase": "^1.176.10",
+    "supabase": "^1.178.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
