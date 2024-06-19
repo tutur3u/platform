@@ -74,7 +74,7 @@
     "next": "15.0.0-canary.37",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
-    "openai": "^4.51.0",
+    "openai": "^4.52.0",
     "react": "19.0.0-rc-6230622a1a-20240610",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",

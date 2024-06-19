@@ -145,7 +145,7 @@ importers:
         version: 0.1.15(next@15.0.0-canary.37(@babel/core@7.24.7)(react-dom@19.0.0-rc-6230622a1a-20240610(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610)(vite@5.3.1(@types/node@20.14.5))
       ai:
         specifier: ^3.2.0
-        version: 3.2.0(openai@4.51.0)(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.29(typescript@5.4.5))(zod@3.23.8)
+        version: 3.2.0(openai@4.52.0)(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.29(typescript@5.4.5))(zod@3.23.8)
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
@@ -174,8 +174,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2(next@15.0.0-canary.37(@babel/core@7.24.7)(react-dom@19.0.0-rc-6230622a1a-20240610(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610))(react@19.0.0-rc-6230622a1a-20240610)
       openai:
-        specifier: ^4.51.0
-        version: 4.51.0
+        specifier: ^4.52.0
+        version: 4.52.0
       react:
         specifier: 19.0.0-rc-6230622a1a-20240610
         version: 19.0.0-rc-6230622a1a-20240610
@@ -4841,8 +4841,8 @@ packages:
     resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
     engines: {node: '>=12'}
 
-  openai@4.51.0:
-    resolution: {integrity: sha512-UKuWc3/qQyklqhHM8CbdXCv0Z0obap6T0ECdcO5oATQxAbKE5Ky3YCXFQY207z+eGG6ez4U9wvAcuMygxhmStg==}
+  openai@4.52.0:
+    resolution: {integrity: sha512-xmiNcdA9QJ5wffHpZDpIsge6AsPTETJ6h5iqDNuFQ7qGSNtonHn8Qe0VHy4UwLE8rBWiSqh4j+iSvuYZSeKkPg==}
     hasBin: true
 
   opener@1.5.2:
@@ -8868,7 +8868,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.2.0(openai@4.51.0)(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.29(typescript@5.4.5))(zod@3.23.8):
+  ai@3.2.0(openai@4.52.0)(react@19.0.0-rc-6230622a1a-20240610)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.29(typescript@5.4.5))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.10
       '@ai-sdk/provider-utils': 0.0.15(zod@3.23.8)
@@ -8885,7 +8885,7 @@ snapshots:
       sswr: 2.1.0(svelte@4.2.18)
       zod-to-json-schema: 3.22.5(zod@3.23.8)
     optionalDependencies:
-      openai: 4.51.0
+      openai: 4.52.0
       react: 19.0.0-rc-6230622a1a-20240610
       svelte: 4.2.18
       zod: 3.23.8
@@ -11403,7 +11403,7 @@ snapshots:
     dependencies:
       mimic-fn: 4.0.0
 
-  openai@4.51.0:
+  openai@4.52.0:
     dependencies:
       '@types/node': 18.19.34
       '@types/node-fetch': 2.6.11
