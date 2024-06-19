@@ -10,8 +10,6 @@ import 'dayjs/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   // params: {
   //   wsId: string;

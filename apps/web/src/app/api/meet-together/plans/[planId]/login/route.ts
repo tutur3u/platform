@@ -2,8 +2,6 @@ import { createAdminClient } from '@/utils/supabase/client';
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface Params {
   params: {
     planId: string;

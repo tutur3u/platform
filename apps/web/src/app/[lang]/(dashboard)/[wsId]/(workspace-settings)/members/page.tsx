@@ -10,8 +10,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;

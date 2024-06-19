@@ -5,8 +5,6 @@ import { Timezone } from '@/types/primitives/Timezone';
 import { createAdminClient } from '@/utils/supabase/client';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   searchParams: {
     q?: string;

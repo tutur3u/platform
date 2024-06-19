@@ -8,7 +8,7 @@ interface Props {
   };
 }
 
-export function generateMetadata({ params: { lang } }: Props): Metadata {
+export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
   const viTitle = 'Họp cùng nhau | Giải pháp thay thế When2Meet, mã nguồn mở';
   const enTitle = 'Meet together | The Open Source When2Meet Alternative';
 
@@ -63,7 +63,7 @@ export function generateMetadata({ params: { lang } }: Props): Metadata {
       creator: '@tutur3u',
     },
   };
-}
+};
 
 export default async function MeetTogetherLayout({
   children,

@@ -6,7 +6,6 @@ import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();

@@ -9,8 +9,6 @@ import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import useTranslation from 'next-translate/useTranslation';
 
-export const dynamic = 'force-dynamic';
-
 interface SearchParams {
   q?: string;
   page?: string;

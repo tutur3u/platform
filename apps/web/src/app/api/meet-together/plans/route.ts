@@ -2,8 +2,6 @@ import { createAdminClient } from '@/utils/supabase/client';
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(_: Request) {
   const supabase = createClient();
 

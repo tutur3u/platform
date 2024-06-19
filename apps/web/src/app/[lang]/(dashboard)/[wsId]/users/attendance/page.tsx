@@ -10,8 +10,6 @@ import MonthPicker from '@repo/ui/components/ui/custom/month-picker';
 import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface SearchParams {
   q?: string;
   page?: string;

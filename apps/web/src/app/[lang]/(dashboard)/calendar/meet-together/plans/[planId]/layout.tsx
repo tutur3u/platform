@@ -14,9 +14,9 @@ interface Props {
   };
 }
 
-export async function generateMetadata({
+export const generateMetadata = async ({
   params: { lang, planId },
-}: Props): Promise<Metadata> {
+}: Props): Promise<Metadata> => {
   try {
     const viTitle = 'Họp cùng nhau';
     const enTitle = 'Meet together';
@@ -67,7 +67,7 @@ export async function generateMetadata({
     console.error(error);
     notFound();
   }
-}
+};
 
 export default async function MeetTogetherLayout({
   children,

@@ -11,8 +11,6 @@ interface Props {
   };
 }
 
-export const dynamic = 'force-dynamic';
-
 export default async function DocumentsPage({ params: { wsId } }: Props) {
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);

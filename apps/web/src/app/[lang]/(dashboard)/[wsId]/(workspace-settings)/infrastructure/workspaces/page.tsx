@@ -13,8 +13,6 @@ interface Props {
   };
 }
 
-export const dynamic = 'force-dynamic';
-
 export default async function InfrastructureWorkspacesPage({
   params: { wsId },
 }: Props) {

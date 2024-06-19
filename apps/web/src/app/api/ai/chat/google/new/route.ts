@@ -11,7 +11,6 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-export const dynamic = 'force-dynamic';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 const API_KEY = process.env.GOOGLE_API_KEY || '';

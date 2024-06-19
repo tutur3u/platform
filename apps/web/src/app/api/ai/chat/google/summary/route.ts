@@ -9,7 +9,6 @@ import { Message } from 'ai';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-export const dynamic = 'force-dynamic';
 
 const model = 'gemini-1.5-flash';
 const API_KEY = process.env.GOOGLE_API_KEY || '';

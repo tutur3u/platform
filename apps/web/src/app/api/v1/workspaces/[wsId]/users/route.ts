@@ -3,8 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface Params {
   params: {
     wsId: string;

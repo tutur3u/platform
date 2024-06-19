@@ -9,8 +9,6 @@ import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;

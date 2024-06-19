@@ -33,9 +33,9 @@ const getChat = async (chatId: string) => {
   return data as AIChat;
 };
 
-export async function generateMetadata({
+export const generateMetadata = async ({
   params: { lang, chatId },
-}: Props): Promise<Metadata> {
+}: Props): Promise<Metadata> => {
   try {
     const viTitle = 'Trò chuyện AI';
     const enTitle = 'AI Chat';
@@ -91,7 +91,7 @@ export async function generateMetadata({
     console.error(error);
     notFound();
   }
-}
+};
 
 export default async function AIChatDetailsLayout({
   children,

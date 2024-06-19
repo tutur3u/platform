@@ -2,7 +2,6 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);

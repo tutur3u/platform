@@ -1,8 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 export async function PATCH(req: Request) {
   const supabase = createClient();
 
