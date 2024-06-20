@@ -299,7 +299,7 @@ const Chat = ({
 
   return (
     <>
-      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
+      <div className={cn('pt-4 md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
