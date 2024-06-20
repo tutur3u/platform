@@ -35,20 +35,6 @@ export async function PATCH(req: Request) {
 
     if (!user) return new Response('Unauthorized', { status: 401 });
 
-    const { count: secretsCount, error: secretsError } = await supabase
-      .from('workspace_secrets')
-      .select('*', { count: 'exact', head: true })
-      .eq('name', 'ENABLE_CHAT')
-      .eq('value', 'true');
-
-    if (secretsError)
-      return new Response(secretsError.message, { status: 500 });
-
-    if (secretsCount === 0)
-      return new Response('You are not allowed to use this feature.', {
-        status: 401,
-      });
-
     const { data: rawMessages, error: messagesError } = await supabase
       .from('ai_chat_messages')
       .select('id, content, role')
