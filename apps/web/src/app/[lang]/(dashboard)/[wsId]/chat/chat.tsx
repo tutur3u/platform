@@ -111,6 +111,7 @@ const Chat = ({
 
     const generateSummary = async (messages: Message[] = []) => {
       if (
+        !wsId ||
         summarizing ||
         !model ||
         !chat?.id ||
@@ -161,7 +162,7 @@ const Chat = ({
     // Reload the chat if the user sends a message
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
-      if (messages[messages.length - 1]?.role !== 'user') return;
+      if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
       reload();
     }, 1000);
 
@@ -288,14 +289,14 @@ const Chat = ({
   };
 
   useEffect(() => {
-    if (!pendingPrompt || !chat?.id) return;
+    if (!pendingPrompt || !chat?.id || !wsId) return;
     append({
       id: chat?.id,
       content: pendingPrompt,
       role: 'user',
     });
     setPendingPrompt(null);
-  }, [pendingPrompt, chat?.id, append]);
+  }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
     <>
