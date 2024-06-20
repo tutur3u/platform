@@ -20,6 +20,7 @@ import 'katex/dist/katex.min.css';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
+import { useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -149,6 +150,107 @@ export function ChatMessage({
               );
             },
             p({ children }) {
+              // Improved quiz message handling with correct option display
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                )
+              ) {
+                const quizContent = children.join('');
+                const questionMatch = quizContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const optionsMatches = Array.from(
+                  quizContent.matchAll(
+                    /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
+                  )
+                );
+
+                const options = optionsMatches.map((match) => ({
+                  isCorrect: match[0].includes('isCorrect'),
+                  text: match?.[1]?.trim() || '',
+                }));
+
+                const [selectedOption, setSelectedOption] = useState<{
+                  isCorrect: boolean;
+                  text: string;
+                }>({ isCorrect: false, text: '' });
+                const [revealCorrect, setRevealCorrect] = useState(false);
+
+                const handleOptionClick = (option: {
+                  isCorrect: boolean;
+                  text: string;
+                }) => {
+                  if (revealCorrect) return;
+
+                  setSelectedOption(option);
+                  setRevealCorrect(true);
+                };
+
+                const questionElement = (
+                  <div className="font-semibold text-foreground mb-2">
+                    {question}
+                  </div>
+                );
+
+                const optionsElements = options.map((option, index) => (
+                  <button
+                    key={index}
+                    className={`font-semibold rounded-full border text-left transition ${
+                      revealCorrect && option.isCorrect
+                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        : revealCorrect
+                          ? 'bg-foreground/5 text-foreground opacity-50'
+                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                    }`}
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    <span className="line-clamp-1 px-3 py-1">
+                      {option.text}
+                    </span>
+                  </button>
+                ));
+
+                return (
+                  <div className="mt-4 border rounded-lg w-full p-4">
+                    {questionElement}
+                    <div className="flex gap-2 flex-wrap">
+                      {optionsElements}
+                    </div>
+                    {revealCorrect && (
+                      <div className="mt-2">
+                        <span className="opacity-70">
+                          {t('correct_answer_is_highlighed')}.{' '}
+                          {t('you_selected')}{' '}
+                        </span>
+                        <span className="font-semibold">
+                          {selectedOption.text}
+                        </span>
+                        <span className="opacity-70">, {t('which_is')} </span>
+                        {selectedOption.isCorrect ? (
+                          <span className="font-semibold underline text-dynamic-green">
+                            {t('correct')}
+                          </span>
+                        ) : (
+                          <span className="font-semibold underline text-dynamic-red">
+                            {t('incorrect')}
+                          </span>
+                        )}
+                        <span className="opacity-70">.</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               // If the message is a followup, we will render it as a button
               if (
                 Array.isArray(children) &&

@@ -39,5 +39,10 @@
   "visibility_updated_desc": "Chat visibility updated successfully.",
   "copy_public_link": "Copy public link",
   "open_public_link": "Open public link",
-  "summary": "Summary"
+  "summary": "Summary",
+  "correct_answer_is_highlighed": "The correct answer is highlighted",
+  "you_selected": "You selected",
+  "which_is": "which is",
+  "correct": "correct",
+  "incorrect": "incorrect"
 }

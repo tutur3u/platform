@@ -1,19 +1,27 @@
-import { SupabaseCookie, checkEnvVariables } from './common';
+import { checkEnvVariables } from './common';
 import { Database } from '@/types/supabase';
-import { createServerClient } from '@supabase/ssr';
+import {
+  CookieOptions,
+  createBrowserClient,
+  createServerClient,
+} from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   return {
-    getAll() {
-      return cookieStore.getAll();
+    get(name: string) {
+      return cookieStore.get(name)?.value;
     },
-    setAll: async (cookiesToSet: SupabaseCookie[]) => {
+    set(name: string, value: string, options: CookieOptions) {
       try {
-        // set the cookies exactly as they appear in the cookiesToSet array
-        cookiesToSet.forEach((cookie) => {
-          cookieStore.set(cookie);
-        });
+        cookieStore.set({ name, value, ...options });
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    remove(name: string, options: CookieOptions) {
+      try {
+        cookieStore.set({ name, value: '', ...options });
       } catch (error) {
         console.log(error);
       }
@@ -21,20 +29,12 @@ function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   };
 }
 
-function createGenericClient(isAdmin: boolean) {
-  const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
+export function createClient() {
+  const { url, key } = checkEnvVariables({ useServiceKey: false });
   const cookieStore = cookies();
   return createServerClient<Database>(url, key, {
     cookies: createCookieHandler(cookieStore),
   });
-}
-
-export function createAdminClient() {
-  return createGenericClient(true);
-}
-
-export function createClient() {
-  return createGenericClient(false);
 }
 
 export function createDynamicClient() {
@@ -43,4 +43,9 @@ export function createDynamicClient() {
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),
   });
+}
+
+export function createAdminClient() {
+  const { url, key } = checkEnvVariables({ useServiceKey: true });
+  return createBrowserClient(url, key);
 }

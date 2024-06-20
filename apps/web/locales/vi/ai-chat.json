@@ -39,5 +39,10 @@
   "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
   "copy_public_link": "Sao chép liên kết công khai",
   "open_public_link": "Mở liên kết công khai",
-  "summary": "Tóm tắt"
+  "summary": "Tóm tắt",
+  "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
+  "you_selected": "Bạn đã chọn",
+  "which_is": "đó là một câu trả lời",
+  "correct": "chính xác",
+  "incorrect": "không chính xác"
 }
