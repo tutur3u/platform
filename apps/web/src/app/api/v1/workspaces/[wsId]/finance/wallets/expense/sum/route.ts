@@ -62,7 +62,6 @@ async function getDataWithApiKey({
     );
   }
 
-  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }
 
