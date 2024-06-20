@@ -14,7 +14,7 @@
     "eslint-plugin-only-warn": "^1.1.0",
     "@typescript-eslint/parser": "^7.13.1",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   },
   "packageManager": "pnpm@9.4.0"
 }

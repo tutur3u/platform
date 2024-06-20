@@ -30,13 +30,13 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.21",
-    "@ai-sdk/azure": "^0.0.7",
+    "@ai-sdk/azure": "^0.0.8",
     "@ai-sdk/google": "^0.0.22",
     "@ai-sdk/google-vertex": "^0.0.10",
     "@ai-sdk/mistral": "^0.0.18",
-    "@ai-sdk/openai": "^0.0.31",
+    "@ai-sdk/openai": "^0.0.32",
     "@ai-sdk/react": "^0.0.4",
-    "@anthropic-ai/sdk": "^0.23.0",
+    "@anthropic-ai/sdk": "^0.24.0",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
@@ -71,7 +71,7 @@
     "lucide-react": "^0.395.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.37",
+    "next": "15.0.0-canary.38",
     "next-themes": "^0.3.0",
     "next-translate": "^2.6.2",
     "openai": "^4.52.0",
@@ -96,8 +96,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.37",
-    "@next/eslint-plugin-next": "15.0.0-canary.37",
+    "@next/bundle-analyzer": "15.0.0-canary.38",
+    "@next/eslint-plugin-next": "15.0.0-canary.38",
     "@repo/eslint-config-custom": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.43.1",
@@ -123,8 +123,8 @@
     "lint-staged": "^15.2.7",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.38",
-    "supabase": "^1.178.1",
-    "typescript": "^5.4.5",
+    "supabase": "^1.178.2",
+    "typescript": "^5.5.2",
     "vitest": "^1.6.0"
   },
   "overrides": {
