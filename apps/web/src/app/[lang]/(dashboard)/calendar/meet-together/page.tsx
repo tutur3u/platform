@@ -1,8 +1,7 @@
 import Form from './form';
 import UserTime from './user-time';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createAdminClient } from '@/utils/supabase/client';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';

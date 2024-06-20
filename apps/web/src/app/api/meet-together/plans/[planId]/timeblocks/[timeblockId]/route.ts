@@ -1,5 +1,4 @@
-import { createAdminClient } from '@/utils/supabase/client';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {

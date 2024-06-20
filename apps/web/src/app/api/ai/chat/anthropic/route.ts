@@ -1,5 +1,4 @@
-import { createAdminClient } from '@/utils/supabase/client';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 

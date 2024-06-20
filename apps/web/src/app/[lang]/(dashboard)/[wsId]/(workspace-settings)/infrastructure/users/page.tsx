@@ -3,7 +3,7 @@ import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSear
 import PaginationIndicator from '@/components/pagination/PaginationIndicator';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 

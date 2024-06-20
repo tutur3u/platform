@@ -1,23 +1,19 @@
-import { checkEnvVariables } from './common';
+import { SupabaseCookie, checkEnvVariables } from './common';
 import { Database } from '@/types/supabase';
-import { type CookieOptions, createServerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   return {
-    get(name: string) {
-      return cookieStore.get(name)?.value;
+    getAll() {
+      return cookieStore.getAll();
     },
-    set(name: string, value: string, options: CookieOptions) {
+    setAll: async (cookiesToSet: SupabaseCookie[]) => {
       try {
-        cookieStore.set({ name, value, ...options });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    remove(name: string, options: CookieOptions) {
-      try {
-        cookieStore.set({ name, value: '', ...options });
+        // set the cookies exactly as they appear in the cookiesToSet array
+        cookiesToSet.forEach((cookie) => {
+          cookieStore.set(cookie);
+        });
       } catch (error) {
         console.log(error);
       }
@@ -25,16 +21,24 @@ function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   };
 }
 
-export function createClient() {
-  const { url, key } = checkEnvVariables({ useServiceKey: true });
+function createGenericClient(isAdmin: boolean) {
+  const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
   const cookieStore = cookies();
   return createServerClient<Database>(url, key, {
     cookies: createCookieHandler(cookieStore),
   });
 }
 
+export function createAdminClient() {
+  return createGenericClient(true);
+}
+
+export function createClient() {
+  return createGenericClient(false);
+}
+
 export function createDynamicClient() {
-  const { url, key } = checkEnvVariables({ useServiceKey: true });
+  const { url, key } = checkEnvVariables({ useServiceKey: false });
   const cookieStore = cookies();
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),
