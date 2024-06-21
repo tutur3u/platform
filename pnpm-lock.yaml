@@ -57,8 +57,8 @@ importers:
         specifier: ^0.0.33
         version: 0.0.33(zod@3.23.8)
       '@ai-sdk/react':
-        specifier: ^0.0.5
-        version: 0.0.5(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
+        specifier: ^0.0.6
+        version: 0.0.6(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
       '@anthropic-ai/sdk':
         specifier: ^0.24.0
         version: 0.24.0
@@ -595,6 +595,18 @@ packages:
 
   '@ai-sdk/react@0.0.5':
     resolution: {integrity: sha512-ifDnEzr2togqgobq3LARdH9Qp/lZ/bYuIfxO2/WXo0dOS1WeWi60vmtD16H8lj0xUFEToBNzzwUi95oDbyBXrw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      zod:
+        optional: true
+
+  '@ai-sdk/react@0.0.6':
+    resolution: {integrity: sha512-k0gpsiUxDTkDMYsdWl0WhujXVPMZvfPMCSbxZtzGvEao0YZNFQ/9ct+SZJvb5t9126oiNG0a344COO9CZ1OdLg==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19
@@ -6691,6 +6703,15 @@ snapshots:
       json-schema: 0.4.0
 
   '@ai-sdk/react@0.0.5(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider-utils': 0.0.16(zod@3.23.8)
+      '@ai-sdk/ui-utils': 0.0.5(zod@3.23.8)
+      swr: 2.2.0(react@19.0.0-rc-6230622a1a-20240610)
+    optionalDependencies:
+      react: 19.0.0-rc-6230622a1a-20240610
+      zod: 3.23.8
+
+  '@ai-sdk/react@0.0.6(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider-utils': 0.0.16(zod@3.23.8)
       '@ai-sdk/ui-utils': 0.0.5(zod@3.23.8)
