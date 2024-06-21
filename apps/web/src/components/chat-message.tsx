@@ -255,7 +255,7 @@ export function ChatMessage({
                         </div>
 
                         <Separator className="my-4" />
-                        <div className="w-full text-sm text-center font-semibold p-1 rounded border border-dynamic-red/20 text-dynamic-red bg-dynamic-red/10">
+                        <div className="w-full text-sm text-center font-semibold p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
                           {t('experimental_disclaimer')}
                         </div>
                       </>
@@ -307,7 +307,7 @@ export function ChatMessage({
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />
-                          <div className="w-full text-sm text-center p-1 rounded border border-dynamic-red/20 text-dynamic-red bg-dynamic-red/10">
+                          <div className="w-full text-sm text-center p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
                             {t('experimental_disclaimer')}
                           </div>
                         </>
