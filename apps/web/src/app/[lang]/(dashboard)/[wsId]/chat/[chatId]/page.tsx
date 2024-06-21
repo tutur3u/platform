@@ -6,8 +6,6 @@ import { createClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;

@@ -2,8 +2,6 @@ import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface Params {
   params: {
     transactionId: string;

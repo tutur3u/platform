@@ -12,29 +12,38 @@ export type Database = {
       ai_chat_messages: {
         Row: {
           chat_id: string;
+          completion_tokens: number;
           content: string | null;
           created_at: string;
           creator_id: string | null;
+          finish_reason: string | null;
           id: string;
           model: string | null;
+          prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
         };
         Insert: {
           chat_id: string;
+          completion_tokens?: number;
           content?: string | null;
           created_at?: string;
           creator_id?: string | null;
+          finish_reason?: string | null;
           id?: string;
           model?: string | null;
+          prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
         };
         Update: {
           chat_id?: string;
+          completion_tokens?: number;
           content?: string | null;
           created_at?: string;
           creator_id?: string | null;
+          finish_reason?: string | null;
           id?: string;
           model?: string | null;
+          prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
         };
         Relationships: [

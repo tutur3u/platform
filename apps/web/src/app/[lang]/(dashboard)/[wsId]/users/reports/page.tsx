@@ -10,8 +10,6 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
-export const dynamic = 'force-dynamic';
-
 interface SearchParams {
   page?: string;
   pageSize?: string;

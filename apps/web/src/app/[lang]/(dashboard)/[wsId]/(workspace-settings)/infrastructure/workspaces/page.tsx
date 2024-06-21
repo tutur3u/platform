@@ -3,7 +3,7 @@ import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSear
 import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 
@@ -12,8 +12,6 @@ interface Props {
     wsId: string;
   };
 }
-
-export const dynamic = 'force-dynamic';
 
 export default async function InfrastructureWorkspacesPage({
   params: { wsId },

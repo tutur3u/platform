@@ -13,8 +13,6 @@ import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   children: ReactNode;
   params: {
@@ -22,7 +20,7 @@ interface Props {
   };
 }
 
-export function generateMetadata({ params: { lang } }: Props): Metadata {
+export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
@@ -79,7 +77,7 @@ export function generateMetadata({ params: { lang } }: Props): Metadata {
     },
     manifest: `/site.webmanifest`,
   };
-}
+};
 
 export const viewport: Viewport = {
   width: 'device-width',

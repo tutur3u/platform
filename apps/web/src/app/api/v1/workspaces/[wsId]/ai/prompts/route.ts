@@ -7,8 +7,6 @@ import {
 } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface Params {
   params: {
     wsId: string;

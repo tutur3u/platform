@@ -8,8 +8,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface SearchParams {
   q?: string;
 }

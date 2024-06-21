@@ -3,8 +3,6 @@ import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: Request) {
   const cookies = c();
 
