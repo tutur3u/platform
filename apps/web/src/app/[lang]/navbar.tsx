@@ -3,7 +3,7 @@ import NavbarSeparator from './navbar-separator';
 import Navlinks from './navlinks';
 import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
-import { UserNav } from './user-nav';
+import { UserNavWrapper } from './user-nav-wrapper';
 import WorkspaceSelect from './workspace-select';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { getCurrentUser } from '@/lib/user-helper';
@@ -61,7 +61,7 @@ export default async function Navbar() {
               {sbUser ? (
                 <>
                   <NotificationPopover />
-                  <UserNav />
+                  <UserNavWrapper />
                 </>
               ) : (
                 <>

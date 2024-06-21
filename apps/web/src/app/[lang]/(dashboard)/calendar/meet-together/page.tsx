@@ -1,16 +1,13 @@
 import Form from './form';
 import UserTime from './user-time';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createAdminClient } from '@/utils/supabase/client';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
-
-export const dynamic = 'force-dynamic';
 
 interface Props {
   // params: {

@@ -12,20 +12,29 @@ import {
 } from '@repo/ui/components/ui/avatar';
 import { CodeBlock } from '@repo/ui/components/ui/codeblock';
 import { IconUser } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'katex/dist/katex.min.css';
+import { Bot, Send, Sparkle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
+import { useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
-  message: Message & { chat_id?: string; model?: string; created_at?: string };
+  message: Message & {
+    chat_id?: string;
+    model?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    created_at?: string;
+  };
   embeddedUrl?: string;
   locale?: string;
   anonymize?: boolean;
@@ -56,13 +65,13 @@ export function ChatMessage({
         <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
-              'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
+              'bg-foreground/10 text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-md border shadow'
             )}
           >
             {message.role === 'user' ? (
               <IconUser className="h-5 w-5" />
             ) : (
-              <Avatar className="h-10 w-10 rounded-md">
+              <Avatar className="h-12 w-12 rounded-md">
                 <AvatarImage src="/media/logos/light.png" alt="Skora" />
                 <AvatarFallback className="rounded-lg font-semibold">
                   AI
@@ -70,7 +79,7 @@ export function ChatMessage({
               </Avatar>
             )}
           </div>
-          <div>
+          <div className="flex flex-col justify-between">
             <span className="line-clamp-1 font-semibold">
               {message.role === 'user' ? (
                 anonymize ? (
@@ -91,14 +100,35 @@ export function ChatMessage({
               )}
             </span>
 
-            <div className="text-xs">
+            <div className="text-xs flex flex-wrap gap-1 items-center">
               {message.model && (
-                <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                <span className="hidden font-semibold md:inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-yellow/10 text-dynamic-yellow rounded bg-dynamic-yellow/10">
+                  <Sparkle className="w-3 h-3" />
                   {message.model}
                 </span>
               )}
+              {message.prompt_tokens !== undefined &&
+                message.prompt_tokens !== 0 && (
+                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-green/10 text-dynamic-green rounded bg-dynamic-green/10">
+                    <Send className="w-3 h-3" />
+                    {Intl.NumberFormat(locale).format(message.prompt_tokens)}
+                  </span>
+                )}
+              {message.completion_tokens !== undefined &&
+                message.completion_tokens !== 0 && (
+                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-purple/10 text-dynamic-purple rounded bg-dynamic-purple/10">
+                    <Bot className="w-3 h-3" />
+                    {Intl.NumberFormat(locale).format(
+                      message.completion_tokens
+                    )}
+                  </span>
+                )}
               <span className="opacity-70">
-                {message.model && <span className="mx-1">•</span>}
+                {message.model ||
+                message.prompt_tokens ||
+                message.completion_tokens
+                  ? '• '
+                  : ''}
                 {capitalize(dayjs(message?.created_at).fromNow())}
               </span>
             </div>
@@ -149,6 +179,174 @@ export function ChatMessage({
               );
             },
             p({ children }) {
+              // Quiz component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                )
+              ) {
+                const quizContent = children.join('');
+                const questionMatch = quizContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const optionsMatches = Array.from(
+                  quizContent.matchAll(
+                    /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
+                  )
+                );
+
+                const options = optionsMatches.map((match) => ({
+                  isCorrect: match[0].includes('isCorrect'),
+                  text: match?.[1]?.trim() || '',
+                }));
+
+                const [selectedOption, setSelectedOption] = useState<{
+                  isCorrect: boolean;
+                  text: string;
+                }>({ isCorrect: false, text: '' });
+                const [revealCorrect, setRevealCorrect] = useState(false);
+
+                const handleOptionClick = (option: {
+                  isCorrect: boolean;
+                  text: string;
+                }) => {
+                  if (revealCorrect) return;
+
+                  setSelectedOption(option);
+                  setRevealCorrect(true);
+                };
+
+                const questionElement = (
+                  <div className="text-lg font-bold text-foreground">
+                    {question}
+                  </div>
+                );
+
+                const optionsElements = options.map((option, index) => (
+                  <button
+                    key={index}
+                    className={`font-semibold w-full rounded border text-left md:text-center transition px-3 py-1 ${
+                      revealCorrect && option.isCorrect
+                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        : revealCorrect
+                          ? 'bg-foreground/5 text-foreground opacity-50'
+                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                    }`}
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    {option.text}
+                  </button>
+                ));
+
+                return (
+                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
+                    {questionElement}
+                    <Separator className="my-2" />
+                    <div
+                      className={`grid md:grid-cols-2 gap-2 w-full ${
+                        options.length === 3
+                          ? 'xl:grid-cols-3'
+                          : 'xl:grid-cols-4'
+                      }`}
+                    >
+                      {optionsElements}
+                    </div>
+                    {revealCorrect && (
+                      <>
+                        <div className="mt-4">
+                          <span className="opacity-70">
+                            {t('correct_answer_is_highlighed')}.{' '}
+                            {t('you_selected')}{' '}
+                          </span>
+                          <span className="font-semibold">
+                            {selectedOption.text}
+                          </span>
+                          <span className="opacity-70">, {t('which_is')} </span>
+                          {selectedOption.isCorrect ? (
+                            <span className="font-semibold underline text-dynamic-green">
+                              {t('correct')}
+                            </span>
+                          ) : (
+                            <span className="font-semibold underline text-dynamic-red">
+                              {t('incorrect')}
+                            </span>
+                          )}
+                          <span className="opacity-70">.</span>
+                        </div>
+
+                        <Separator className="my-4" />
+                        <div className="w-full text-sm text-center font-semibold p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
+                          {t('experimental_disclaimer')}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              // Flashcard component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<FLASHCARD>')
+                )
+              ) {
+                const flashcardContent = children.join('');
+                const questionMatch = flashcardContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const answerMatch = flashcardContent.match(
+                  /<ANSWER>(.*?)<\/ANSWER>/
+                );
+                const answer = answerMatch ? answerMatch[1] : 'No answer found';
+
+                const [revealAnswer, setRevealAnswer] = useState(false);
+
+                return (
+                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
+                    <div className="text-lg font-bold text-foreground">
+                      {question}
+                    </div>
+                    <Separator className="mt-2 mb-4" />
+                    <button
+                      className={`font-semibold w-full rounded border text-center transition duration-300 px-3 py-1 text-foreground ${
+                        revealAnswer
+                          ? 'cursor-default border-transparent'
+                          : 'bg-foreground/5 hover:bg-foreground/10'
+                      }`}
+                      onClick={() => setRevealAnswer(true)}
+                    >
+                      {revealAnswer ? (
+                        <>
+                          <div className="text-dynamic-yellow">{answer}</div>
+                          <Separator className="my-4" />
+                          <div className="w-full text-sm text-center p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
+                            {t('experimental_disclaimer')}
+                          </div>
+                        </>
+                      ) : (
+                        t('reveal_answer')
+                      )}
+                    </button>
+                  </div>
+                );
+              }
+
               // If the message is a followup, we will render it as a button
               if (
                 Array.isArray(children) &&

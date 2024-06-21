@@ -1,6 +1,10 @@
 import { checkEnvVariables } from './common';
 import { Database } from '@/types/supabase';
-import { type CookieOptions, createServerClient } from '@supabase/ssr';
+import {
+  CookieOptions,
+  createBrowserClient,
+  createServerClient,
+} from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
@@ -25,16 +29,29 @@ function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   };
 }
 
-export function createClient() {
-  const { url, key } = checkEnvVariables({ useServiceKey: true });
+function createGenericClient(isAdmin: boolean) {
+  const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
   const cookieStore = cookies();
   return createServerClient<Database>(url, key, {
     cookies: createCookieHandler(cookieStore),
   });
 }
 
-export function createDynamicClient() {
+export function createAdminClientWithCookies() {
+  return createGenericClient(true);
+}
+
+export const createAdminClient = () => {
   const { url, key } = checkEnvVariables({ useServiceKey: true });
+  return createBrowserClient<Database>(url, key);
+};
+
+export function createClient() {
+  return createGenericClient(false);
+}
+
+export function createDynamicClient() {
+  const { url, key } = checkEnvVariables({ useServiceKey: false });
   const cookieStore = cookies();
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),

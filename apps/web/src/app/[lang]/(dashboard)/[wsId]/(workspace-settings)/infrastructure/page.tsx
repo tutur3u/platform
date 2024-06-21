@@ -1,7 +1,7 @@
 import StatisticCard from '../../../../../../components/cards/StatisticCard';
 import tzs from '@/data/timezones.json';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClient } from '@/utils/supabase/server';
 import useTranslation from 'next-translate/useTranslation';
 import { notFound } from 'next/navigation';
 
@@ -10,8 +10,6 @@ interface Props {
     wsId: string;
   };
 }
-
-export const dynamic = 'force-dynamic';
 
 export default async function InfrastructureOverviewPage({
   params: { wsId },

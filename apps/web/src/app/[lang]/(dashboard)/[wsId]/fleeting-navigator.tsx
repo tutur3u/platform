@@ -3,9 +3,9 @@
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import { AIChat } from '@/types/db';
+import { useChat } from '@ai-sdk/react';
 import { useClickOutside } from '@mantine/hooks';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';

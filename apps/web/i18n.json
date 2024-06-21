@@ -31,6 +31,9 @@
     "/[lang]/(marketing)/branding": [
       "branding"
     ],
+    "/[lang]/(marketing)/ai/chats/[chatId]": [
+      "ai-chat"
+    ],
     "/[lang]/(dashboard)/calendar/meet-together": [
       "meet-together",
       "experimental-notice"

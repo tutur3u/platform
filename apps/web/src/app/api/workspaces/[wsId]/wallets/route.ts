@@ -2,8 +2,6 @@ import { Wallet } from '@/types/primitives/Wallet';
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface Params {
   params: {
     wsId: string;

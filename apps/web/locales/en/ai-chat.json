@@ -34,8 +34,17 @@
   "chat_visibility_description": "Choose who can view this chat.",
   "public": "Public",
   "only_me": "Only me",
+  "summarized": "Summarized",
   "chat_updated": "Chat updated",
   "visibility_updated_desc": "Chat visibility updated successfully.",
-  "copy_link": "Copy link",
-  "summary": "Summary"
+  "copy_public_link": "Copy public link",
+  "open_public_link": "Open public link",
+  "summary": "Summary",
+  "correct_answer_is_highlighed": "The correct answer is highlighted",
+  "you_selected": "You selected",
+  "which_is": "which is",
+  "correct": "correct",
+  "incorrect": "incorrect",
+  "reveal_answer": "Reveal answer",
+  "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it."
 }

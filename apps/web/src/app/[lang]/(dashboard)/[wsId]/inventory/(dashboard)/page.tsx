@@ -17,8 +17,6 @@ interface Props {
   };
 }
 
-export const dynamic = 'force-dynamic';
-
 export default async function InventoryPage({ params: { wsId } }: Props) {
   return (
     <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">

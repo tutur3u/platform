@@ -10,8 +10,6 @@ import { User } from 'lucide-react';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     handle: string;

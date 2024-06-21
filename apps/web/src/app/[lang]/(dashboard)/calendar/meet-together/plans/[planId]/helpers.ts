@@ -1,9 +1,9 @@
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClientWithCookies } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 export async function getPlan(planId: string) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = createAdminClientWithCookies();
   if (!sbAdmin) return notFound();
 
   // planId is an uuid without dashes, so we need to add them back in

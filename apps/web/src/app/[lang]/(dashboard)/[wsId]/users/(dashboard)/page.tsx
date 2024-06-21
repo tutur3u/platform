@@ -7,8 +7,6 @@ import {
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;

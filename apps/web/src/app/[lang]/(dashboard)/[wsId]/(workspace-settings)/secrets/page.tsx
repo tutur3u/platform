@@ -8,8 +8,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: {
     wsId: string;

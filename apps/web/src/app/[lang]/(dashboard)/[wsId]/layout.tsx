@@ -5,8 +5,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 import { ReactNode } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 interface LayoutProps {
   params: {
     wsId: string;
@@ -48,6 +46,7 @@ export default async function Layout({
     {
       name: t('chat'),
       href: `/${wsId}/chat`,
+      forceRefresh: true,
       disabled: !verifySecret('ENABLE_CHAT', 'true', secrets),
     },
     {

@@ -5,7 +5,7 @@ import { AuditLog } from '@/types/primitives/audit-log';
 import { Accordion, Divider } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import useTranslation from 'next-translate/useTranslation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import useSWR from 'swr';
 
 export default function UserActivitiesPage() {
@@ -37,7 +37,7 @@ export default function UserActivitiesPage() {
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
 
   return (
-    <>
+    <Suspense>
       {user?.id && (
         <>
           <div className="border-border bg-foreground/5 rounded-lg border p-4">
@@ -82,6 +82,6 @@ export default function UserActivitiesPage() {
             ))}
         </Accordion>
       </div>
-    </>
+    </Suspense>
   );
 }

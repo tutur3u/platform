@@ -9,7 +9,7 @@ import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Globe, Lock, MessageCircle, Sparkles } from 'lucide-react';
+import { Box, Globe, Lock, MessageCircle, Sparkle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
@@ -114,7 +114,7 @@ export function EmptyScreen({
                       <div className="text-xs mt-1 flex flex-wrap gap-1 items-center">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
+                            'lowercase inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
                             chat.is_public
                               ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
                               : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
@@ -122,20 +122,26 @@ export function EmptyScreen({
                         >
                           {chat.is_public ? (
                             <>
-                              <Lock className="w-3 h-3" />
+                              <Globe className="w-3 h-3" />
                               {t('public')}
                             </>
                           ) : (
                             <>
-                              <Globe className="w-3 h-3" />
+                              <Lock className="w-3 h-3" />
                               {t('only_me')}
                             </>
                           )}
                         </span>
                         {chat.model && (
-                          <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
-                            <Sparkles className="w-3 h-3" />
+                          <span className="lowercase font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
+                            <Sparkle className="w-3 h-3" />
                             {chat.model}
+                          </span>
+                        )}
+                        {chat.summary && (
+                          <span className="lowercase font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20">
+                            <Box className="w-3 h-3" />
+                            {t('summarized')}
                           </span>
                         )}
                         <span className="opacity-70">
@@ -218,7 +224,7 @@ export function EmptyScreen({
                     <div className="text-xs mt-1 flex flex-wrap gap-1 items-center">
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
+                          'lowercase inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
                           chat.is_public
                             ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
                             : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
@@ -226,20 +232,26 @@ export function EmptyScreen({
                       >
                         {chat.is_public ? (
                           <>
-                            <Lock className="w-3 h-3" />
+                            <Globe className="w-3 h-3" />
                             {t('public')}
                           </>
                         ) : (
                           <>
-                            <Globe className="w-3 h-3" />
+                            <Lock className="w-3 h-3" />
                             {t('only_me')}
                           </>
                         )}
                       </span>
                       {chat.model && (
-                        <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
-                          <Sparkles className="w-3 h-3" />
+                        <span className="lowercase font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20">
+                          <Sparkle className="w-3 h-3" />
                           {chat.model}
+                        </span>
+                      )}
+                      {chat.summary && (
+                        <span className="lowercase font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border rounded bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20">
+                          <Box className="w-3 h-3" />
+                          {t('summarized')}
                         </span>
                       )}
                       <span className="opacity-70">

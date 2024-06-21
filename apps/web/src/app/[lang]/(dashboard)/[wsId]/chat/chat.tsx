@@ -7,6 +7,7 @@ import { EmptyScreen } from '@/components/empty-screen';
 import { Model, defaultModel } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
+import { useChat } from '@ai-sdk/react';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -21,7 +22,6 @@ import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
-import { useChat } from 'ai/react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
@@ -102,14 +102,16 @@ const Chat = ({
   );
 
   useEffect(() => {
+    setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
 
   useEffect(() => {
     if (!chat || (!hasKeys && !previewToken) || isLoading) return;
 
     const generateSummary = async (messages: Message[] = []) => {
       if (
+        !wsId ||
         summarizing ||
         !model ||
         !chat?.id ||
@@ -142,11 +144,7 @@ const Chat = ({
       }
 
       const { response } = (await res.json()) as { response: string };
-      if (response) {
-        console.log('new summary', response);
-        setSummary(response);
-        setChat((prev) => ({ ...prev, summary: response }));
-      }
+      if (response) setSummary(response);
     };
 
     // Generate the chat summary if the chat's latest summarized message id
@@ -164,7 +162,7 @@ const Chat = ({
     // Reload the chat if the user sends a message
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
-      if (messages[messages.length - 1]?.role !== 'user') return;
+      if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
       reload();
     }, 1000);
 
@@ -173,26 +171,47 @@ const Chat = ({
     };
   }, [wsId, chat, hasKeys, previewToken, isLoading, messages, reload]);
 
-  useEffect(() => {
-    if (!chat?.id) return;
+  const [initialScroll, setInitialScroll] = useState(true);
 
+  useEffect(() => {
     // if there is "input" in the query string, we will
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
-    if (!input && !!chats && count !== undefined) {
+    const refresh = searchParams.get('refresh');
+
+    if (
+      (initialScroll || refresh) &&
+      !input &&
+      !!chats &&
+      count !== undefined
+    ) {
+      setInitialScroll(false);
       window.scrollTo({
-        top: document.body.scrollHeight,
+        top: chat?.id ? document.body.scrollHeight : 0,
         behavior: 'smooth',
       });
-
-      return;
     }
 
-    if (!input) return;
-    setInput(input.toString());
-    router.replace(`/${wsId}/chat/${chat.id}`);
-  }, [chat?.id, searchParams, router, setInput, wsId, chats, count]);
+    if (chat?.id && input) {
+      setInput(input.toString());
+      router.replace(`/${wsId}/chat/${chat.id}`);
+    }
+
+    if (refresh) {
+      clearChat();
+      router.replace(`/${wsId}/chat?`);
+    }
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    setInput,
+    wsId,
+    chats,
+    count,
+    initialScroll,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -232,6 +251,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
+      router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
 
@@ -263,23 +283,24 @@ const Chat = ({
 
   const clearChat = () => {
     if (defaultChat?.id) return;
+    setSummary(undefined);
     setChat(undefined);
     setCollapsed(true);
   };
 
   useEffect(() => {
-    if (!pendingPrompt || !chat?.id) return;
+    if (!pendingPrompt || !chat?.id || !wsId) return;
     append({
       id: chat?.id,
       content: pendingPrompt,
       role: 'user',
     });
     setPendingPrompt(null);
-  }, [pendingPrompt, chat?.id, append]);
+  }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
     <>
-      <div className={cn('pb-32 pt-4 md:pt-10', className)}>
+      <div className={cn('pt-4 md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -288,6 +309,7 @@ const Chat = ({
               chatIsPublic={chat?.is_public}
               chatModel={chat?.model}
               chatSummary={summary || chat?.summary}
+              summarizing={summarizing}
               messages={
                 pendingPrompt
                   ? [

@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 export interface NavLink {
   name: string;
   href: string;
+  forceRefresh?: boolean;
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
@@ -127,8 +128,10 @@ export function Navigation({
                 ? 'underline decoration-dashed underline-offset-4'
                 : ''
             } flex-none rounded-full border px-3 py-1 transition duration-300`}
-            onClick={isActive ? scrollActiveLinksIntoView : undefined}
-            href={link.href}
+            onClick={() => {
+              if (isActive) scrollActiveLinksIntoView();
+            }}
+            href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
             key={link.name}
           >
             {link.name}
