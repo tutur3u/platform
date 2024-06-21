@@ -12,6 +12,7 @@ import {
 } from '@repo/ui/components/ui/avatar';
 import { CodeBlock } from '@repo/ui/components/ui/codeblock';
 import { IconUser } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -150,7 +151,7 @@ export function ChatMessage({
               );
             },
             p({ children }) {
-              // Improved quiz message handling with correct option display
+              // Quiz component
               if (
                 Array.isArray(children) &&
                 children.length > 0 &&
@@ -196,7 +197,7 @@ export function ChatMessage({
                 };
 
                 const questionElement = (
-                  <div className="font-semibold text-foreground mb-2">
+                  <div className="text-lg font-bold text-foreground">
                     {question}
                   </div>
                 );
@@ -204,7 +205,7 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`font-semibold rounded-full border text-left transition ${
+                    className={`font-semibold w-full rounded border text-left transition px-3 py-1 ${
                       revealCorrect && option.isCorrect
                         ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
                         : revealCorrect
@@ -213,40 +214,107 @@ export function ChatMessage({
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
-                    <span className="line-clamp-1 px-3 py-1">
-                      {option.text}
-                    </span>
+                    {option.text}
                   </button>
                 ));
 
                 return (
-                  <div className="mt-4 border rounded-lg w-full p-4">
+                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
                     {questionElement}
-                    <div className="flex gap-2 flex-wrap">
+                    <Separator className="my-2" />
+                    <div
+                      className={`grid md:grid-cols-2 gap-2 w-full ${
+                        options.length === 3
+                          ? 'xl:grid-cols-3'
+                          : 'xl:grid-cols-4'
+                      }`}
+                    >
                       {optionsElements}
                     </div>
                     {revealCorrect && (
-                      <div className="mt-2">
-                        <span className="opacity-70">
-                          {t('correct_answer_is_highlighed')}.{' '}
-                          {t('you_selected')}{' '}
-                        </span>
-                        <span className="font-semibold">
-                          {selectedOption.text}
-                        </span>
-                        <span className="opacity-70">, {t('which_is')} </span>
-                        {selectedOption.isCorrect ? (
-                          <span className="font-semibold underline text-dynamic-green">
-                            {t('correct')}
+                      <>
+                        <div className="mt-4">
+                          <span className="opacity-70">
+                            {t('correct_answer_is_highlighed')}.{' '}
+                            {t('you_selected')}{' '}
                           </span>
-                        ) : (
-                          <span className="font-semibold underline text-dynamic-red">
-                            {t('incorrect')}
+                          <span className="font-semibold">
+                            {selectedOption.text}
                           </span>
-                        )}
-                        <span className="opacity-70">.</span>
-                      </div>
+                          <span className="opacity-70">, {t('which_is')} </span>
+                          {selectedOption.isCorrect ? (
+                            <span className="font-semibold underline text-dynamic-green">
+                              {t('correct')}
+                            </span>
+                          ) : (
+                            <span className="font-semibold underline text-dynamic-red">
+                              {t('incorrect')}
+                            </span>
+                          )}
+                          <span className="opacity-70">.</span>
+                        </div>
+
+                        <Separator className="my-4" />
+                        <div className="w-full text-sm text-center font-semibold p-1 rounded border border-dynamic-red/20 text-dynamic-red bg-dynamic-red/10">
+                          {t('experimental_disclaimer')}
+                        </div>
+                      </>
                     )}
+                  </div>
+                );
+              }
+
+              // Flashcard component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<FLASHCARD>')
+                )
+              ) {
+                const flashcardContent = children.join('');
+                const questionMatch = flashcardContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const answerMatch = flashcardContent.match(
+                  /<ANSWER>(.*?)<\/ANSWER>/
+                );
+                const answer = answerMatch ? answerMatch[1] : 'No answer found';
+
+                const [revealAnswer, setRevealAnswer] = useState(false);
+
+                return (
+                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
+                    <div className="text-lg font-bold text-foreground">
+                      {question}
+                    </div>
+                    <Separator className="mt-2 mb-4" />
+                    <button
+                      className={`font-semibold w-full rounded border text-center transition duration-300 px-3 py-1 text-foreground ${
+                        revealAnswer
+                          ? 'cursor-default border-transparent'
+                          : 'bg-foreground/5 hover:bg-foreground/10'
+                      }`}
+                      onClick={() => setRevealAnswer(true)}
+                    >
+                      {revealAnswer ? (
+                        <>
+                          <div className="text-dynamic-yellow">{answer}</div>
+                          <Separator className="my-4" />
+                          <div className="w-full text-sm text-center p-1 rounded border border-dynamic-red/20 text-dynamic-red bg-dynamic-red/10">
+                            {t('experimental_disclaimer')}
+                          </div>
+                        </>
+                      ) : (
+                        t('reveal_answer')
+                      )}
+                    </button>
                   </div>
                 );
               }

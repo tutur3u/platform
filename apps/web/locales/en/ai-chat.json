@@ -44,5 +44,7 @@
   "you_selected": "You selected",
   "which_is": "which is",
   "correct": "correct",
-  "incorrect": "incorrect"
+  "incorrect": "incorrect",
+  "reveal_answer": "Reveal answer",
+  "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it."
 }

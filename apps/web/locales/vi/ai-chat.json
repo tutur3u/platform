@@ -44,5 +44,7 @@
   "you_selected": "Bạn đã chọn",
   "which_is": "đó là một câu trả lời",
   "correct": "chính xác",
-  "incorrect": "không chính xác"
+  "incorrect": "không chính xác",
+  "reveal_answer": "Xem đáp án",
+  "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng."
 }
