@@ -123,7 +123,7 @@ export function ChatList({
             message={{
               ...message,
               model:
-                message.model || message.role === 'user' ? undefined : model,
+                message.model || (message.role === 'user' ? undefined : model),
               content: message.content.trim(),
             }}
             setInput={setInput}

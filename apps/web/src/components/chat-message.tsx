@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'katex/dist/katex.min.css';
+import { Bot, Send, Sparkle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
@@ -27,7 +28,13 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
-  message: Message & { chat_id?: string; model?: string; created_at?: string };
+  message: Message & {
+    chat_id?: string;
+    model?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    created_at?: string;
+  };
   embeddedUrl?: string;
   locale?: string;
   anonymize?: boolean;
@@ -58,13 +65,13 @@ export function ChatMessage({
         <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
-              'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
+              'bg-foreground/10 text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-md border shadow'
             )}
           >
             {message.role === 'user' ? (
               <IconUser className="h-5 w-5" />
             ) : (
-              <Avatar className="h-10 w-10 rounded-md">
+              <Avatar className="h-12 w-12 rounded-md">
                 <AvatarImage src="/media/logos/light.png" alt="Skora" />
                 <AvatarFallback className="rounded-lg font-semibold">
                   AI
@@ -72,7 +79,7 @@ export function ChatMessage({
               </Avatar>
             )}
           </div>
-          <div>
+          <div className="flex flex-col justify-between">
             <span className="line-clamp-1 font-semibold">
               {message.role === 'user' ? (
                 anonymize ? (
@@ -93,14 +100,35 @@ export function ChatMessage({
               )}
             </span>
 
-            <div className="text-xs">
+            <div className="text-xs flex flex-wrap gap-1 items-center">
               {message.model && (
-                <span className="font-semibold font-mono px-1 py-0.5 border rounded bg-foreground/10">
+                <span className="hidden font-semibold md:inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-yellow/10 text-dynamic-yellow rounded bg-dynamic-yellow/10">
+                  <Sparkle className="w-3 h-3" />
                   {message.model}
                 </span>
               )}
+              {message.prompt_tokens !== undefined &&
+                message.prompt_tokens !== 0 && (
+                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-green/10 text-dynamic-green rounded bg-dynamic-green/10">
+                    <Send className="w-3 h-3" />
+                    {Intl.NumberFormat(locale).format(message.prompt_tokens)}
+                  </span>
+                )}
+              {message.completion_tokens !== undefined &&
+                message.completion_tokens !== 0 && (
+                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-purple/10 text-dynamic-purple rounded bg-dynamic-purple/10">
+                    <Bot className="w-3 h-3" />
+                    {Intl.NumberFormat(locale).format(
+                      message.completion_tokens
+                    )}
+                  </span>
+                )}
               <span className="opacity-70">
-                {message.model && <span className="mx-1">•</span>}
+                {message.model ||
+                message.prompt_tokens ||
+                message.completion_tokens
+                  ? '• '
+                  : ''}
                 {capitalize(dayjs(message?.created_at).fromNow())}
               </span>
             </div>
@@ -205,7 +233,7 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`font-semibold w-full rounded border text-left transition px-3 py-1 ${
+                    className={`font-semibold w-full rounded border text-left md:text-center transition px-3 py-1 ${
                       revealCorrect && option.isCorrect
                         ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
                         : revealCorrect
