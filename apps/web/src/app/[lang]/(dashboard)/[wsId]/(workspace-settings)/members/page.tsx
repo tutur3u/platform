@@ -104,9 +104,7 @@ const getMembers = async (
   { status, roles }: { status: string; roles: string }
 ) => {
   const supabase = createClient();
-
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) throw new Error('Internal server error');
 
   const { data: secretData, error: secretError } = await sbAdmin
     .from('workspace_secrets')

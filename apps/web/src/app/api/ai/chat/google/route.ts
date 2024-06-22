@@ -10,7 +10,6 @@ const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
   const {
     id,

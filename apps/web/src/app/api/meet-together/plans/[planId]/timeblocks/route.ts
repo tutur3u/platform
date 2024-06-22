@@ -9,11 +9,6 @@ interface Params {
 
 export async function GET(_: Request, { params: { planId } }: Params) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const guestTimeBlocksQuery = sbAdmin
     .from('meet_together_guest_timeblocks')
@@ -90,11 +85,6 @@ export async function POST(req: Request, { params: { planId } }: Params) {
     return NextResponse.json({ id: tb.id, message: 'success' });
   } else {
     const sbAdmin = createAdminClient();
-    if (!sbAdmin)
-      return NextResponse.json(
-        { message: 'Internal server error' },
-        { status: 500 }
-      );
 
     const { data: guest } = await sbAdmin
       .from('meet_together_guests')

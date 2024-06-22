@@ -8,7 +8,6 @@ export const preferredRegion = 'sin1';
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
   const {
     id: chatId,

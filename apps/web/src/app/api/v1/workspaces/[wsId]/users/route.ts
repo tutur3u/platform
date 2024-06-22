@@ -26,11 +26,6 @@ async function getDataWithApiKey(
   }
 ) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const apiCheckQuery = sbAdmin
     .from('workspace_api_keys')

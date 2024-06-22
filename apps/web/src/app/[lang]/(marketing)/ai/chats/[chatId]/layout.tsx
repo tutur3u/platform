@@ -1,6 +1,6 @@
 import { siteConfig } from '@/constants/configs';
 import { AIChat } from '@/types/db';
-import { createAdminClientWithCookies } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -15,7 +15,7 @@ interface Props {
 }
 
 const getChat = async (chatId: string) => {
-  const supabase = createAdminClientWithCookies();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from('ai_chats')

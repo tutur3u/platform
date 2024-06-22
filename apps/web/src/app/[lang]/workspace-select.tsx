@@ -71,46 +71,11 @@ const FormSchema = z.object({
 
 export default function WorkspaceSelect() {
   const { t } = useTranslation();
-  const supabase = createClient();
 
   const [user, setUser] = useState<User | undefined>();
   const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();
 
-  useEffect(() => {
-    async function fetchData() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select(
-          'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
-        )
-        .eq('id', user.id)
-        .single();
-
-      if (userError) return;
-
-      const { user_private_details, ...userRest } = userData;
-      setUser({ ...userRest, ...user_private_details } as User);
-
-      const { data: wsData, error: wsError } = await supabase
-        .from('workspaces')
-        .select(
-          'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
-        )
-        .eq('workspace_members.user_id', user.id);
-
-      if (wsError) return;
-
-      setWorkspaces(wsData as Workspace[]);
-    }
-
-    fetchData();
-  }, []);
+  
 
   const router = useRouter();
   const params = useParams();
@@ -188,8 +153,54 @@ export default function WorkspaceSelect() {
     if (newPathname) router.push(newPathname);
   };
 
-  const wsId = params.wsId as string;
+  const wsId = params.wsId as string | undefined;
   const workspace = workspaces?.find((ws) => ws.id === wsId);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select(
+          'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
+        )
+        .eq('id', user.id)
+        .single();
+
+      if (userError) return;
+
+      const { user_private_details, ...userRest } = userData;
+      setUser({ ...userRest, ...user_private_details } as User);
+
+      const { data: wsData, error: wsError } = await supabase
+        .from('workspaces')
+        .select(
+          'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+        )
+        .eq('workspace_members.user_id', user.id);
+
+      if (wsError) return;
+
+      setWorkspaces(wsData as Workspace[]);
+    }
+
+    supabase.auth.onAuthStateChange((event) => {
+      if (
+        event === 'INITIAL_SESSION' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT'
+      )
+        fetchData();
+    });
+  }, [wsId]);
 
   // Toggle the menu when ⌘K is pressed
   useEffect(() => {
@@ -255,20 +266,16 @@ export default function WorkspaceSelect() {
         });
     }
 
-    const channel = wsId
-      ? supabase.channel(
-          `workspace:${wsId}`,
-          user?.id
-            ? {
-                config: {
-                  presence: {
-                    key: user.id,
-                  },
-                },
-              }
-            : undefined
-        )
-      : null;
+    if (!wsId || !user?.id) return;
+    const supabase = createClient();
+
+    const channel = supabase.channel(`workspace:${wsId}`, {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
 
     trackPresence(channel);
     return () => {
