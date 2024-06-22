@@ -64,18 +64,53 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-interface Props {
-  user: User | null;
-  workspaces: Workspace[] | null;
-}
-
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
   plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
 });
 
-export default function WorkspaceSelect({ user, workspaces }: Props) {
+export default function WorkspaceSelect() {
   const { t } = useTranslation();
+  const supabase = createClient();
+
+  const [user, setUser] = useState<User | undefined>();
+  const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();
+
+  useEffect(() => {
+    async function fetchData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select(
+          'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
+        )
+        .eq('id', user.id)
+        .single();
+
+      if (userError) return;
+
+      const { user_private_details, ...userRest } = userData;
+      setUser({ ...userRest, ...user_private_details } as User);
+
+      const { data: wsData, error: wsError } = await supabase
+        .from('workspaces')
+        .select(
+          'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+        )
+        .eq('workspace_members.user_id', user.id);
+
+      if (wsError) return;
+
+      setWorkspaces(wsData as Workspace[]);
+    }
+
+    fetchData();
+  }, []);
 
   const router = useRouter();
   const params = useParams();
@@ -220,7 +255,6 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
         });
     }
 
-    const supabase = createClient();
     const channel = wsId
       ? supabase.channel(
           `workspace:${wsId}`,
@@ -245,7 +279,7 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
   const { resolvedTheme } = useTheme();
   const isDefault = !resolvedTheme?.includes('-');
 
-  if (!workspace || !workspaces?.length) return null;
+  if (!wsId) return null;
 
   return (
     <>
@@ -258,23 +292,33 @@ export default function WorkspaceSelect({ user, workspaces }: Props) {
         }}
       >
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger
+            asChild
+            disabled={!workspaces || workspaces.length === 0}
+          >
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
               className={cn('w-full justify-between md:max-w-[16rem]')}
+              disabled={!workspaces || workspaces.length === 0}
             >
               <Avatar className="mr-2 h-5 w-5">
                 <AvatarImage
-                  src={`https://avatar.vercel.sh/${workspace.name}.png`}
-                  alt={workspace.name}
+                  src={
+                    workspace?.name
+                      ? `https://avatar.vercel.sh/${workspace.name}.png`
+                      : undefined
+                  }
+                  alt={workspace?.name || 'Workspace'}
                 />
-                <AvatarFallback>{getInitials(workspace.name)}</AvatarFallback>
+                <AvatarFallback>
+                  {workspace?.name ? getInitials(workspace.name) : '?'}
+                </AvatarFallback>
               </Avatar>
               <span className="line-clamp-1 hidden md:block">
-                {workspace.name}
+                {workspace?.name || t('common:loading') + '...'}
               </span>
               <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
             </Button>
