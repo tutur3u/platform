@@ -62,7 +62,6 @@ const validateEmail = async (email?: string | null) => {
 
 const checkIfUserExists = async ({ email }: { email: string }) => {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) throw 'Could not create admin client';
 
   const { data, error } = await sbAdmin
     .from('user_private_details')

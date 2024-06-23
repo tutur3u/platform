@@ -1,6 +1,7 @@
 {
   "workspace": "Không gian làm việc",
   "members": "Thành viên",
+  "roles": "Vai trò",
   "teams": "Nhóm",
   "reports": "Báo cáo",
   "api_keys": "Khóa API",

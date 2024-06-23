@@ -39,7 +39,7 @@ export default function MonthPicker({
   const queryMonth = defaultMonth;
 
   const currentYYYYMM = Array.isArray(queryMonth)
-    ? queryMonth[0]
+    ? queryMonth?.[0] || format(new Date(), 'yyyy-MM')
     : queryMonth || format(new Date(), 'yyyy-MM');
 
   const currentMonth =

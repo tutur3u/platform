@@ -5,6 +5,12 @@ export enum SupabaseKeys {
   Anon = 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
 }
 
+export type SupabaseCookie = {
+  name: string;
+  value: string;
+  options: CookieOptions;
+};
+
 export function checkEnvVariables({
   useServiceKey = false,
 }: {
@@ -20,9 +26,3 @@ export function checkEnvVariables({
 
   return { url, key };
 }
-
-export type SupabaseCookie = {
-  name: string;
-  value: string;
-  options: CookieOptions;
-};

@@ -1,28 +1,13 @@
 import LogoTitle from './logo-title';
+import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import Navlinks from './navlinks';
-import NotificationPopover from './notification-popover';
-import { ThemeToggle } from './theme-toggle';
-import { UserNavWrapper } from './user-nav-wrapper';
 import WorkspaceSelect from './workspace-select';
-import GetStartedButton from '@/components/layouts/GetStartedButton';
-import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspaces } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
-export default async function Navbar() {
-  const supabase = createClient();
-
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
-
-  const user = await getCurrentUser(true);
-  const workspaces = await getWorkspaces(true);
-
+export default function Navbar() {
   return (
     <nav id="navbar" className="fixed inset-x-0 top-0 z-50">
       <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
@@ -44,9 +29,7 @@ export default async function Navbar() {
                 <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
-              {sbUser ? (
-                <WorkspaceSelect user={user} workspaces={workspaces} />
-              ) : null}
+              <WorkspaceSelect />
             </Suspense>
           </div>
 
@@ -57,19 +40,7 @@ export default async function Navbar() {
               <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
             }
           >
-            <div className="flex items-center gap-2">
-              {sbUser ? (
-                <>
-                  <NotificationPopover />
-                  <UserNavWrapper />
-                </>
-              ) : (
-                <>
-                  <GetStartedButton />
-                  <ThemeToggle />
-                </>
-              )}
-            </div>
+            <NavbarActions />
           </Suspense>
         </div>
       </div>

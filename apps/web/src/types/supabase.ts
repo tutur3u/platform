@@ -3096,6 +3096,35 @@ export type Database = {
           },
         ];
       };
+      workspace_roles: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_secrets: {
         Row: {
           created_at: string;

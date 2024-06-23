@@ -31,13 +31,20 @@ export default async function Layout({
       href: `/${wsId}/members`,
     },
     {
+      name: t('roles'),
+      href: `/${wsId}/roles`,
+      allowedRoles: ['OWNER'],
+    },
+    {
       name: t('teams'),
       href: `/${wsId}/teams`,
+      allowedRoles: ['ADMIN', 'OWNER'],
       disabled: true,
     },
     {
       name: t('reports'),
       href: `/${wsId}/settings/reports`,
+      allowedRoles: ['ADMIN', 'OWNER'],
     },
     {
       name: t('api_keys'),

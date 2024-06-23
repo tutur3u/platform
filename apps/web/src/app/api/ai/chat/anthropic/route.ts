@@ -8,7 +8,6 @@ export const preferredRegion = 'sin1';
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
   const {
     id: chatId,
@@ -134,7 +133,7 @@ const leadingMessages: Message[] = [
     id: 'identity-reminder',
     role: 'system',
     content: `
-You are Skora, an AI by Tuturuuu, customized and engineered by Võ Hoàng Phúc - The Founder of Tuturuuu.
+You are Mira, an AI by Tuturuuu, customized and engineered by Võ Hoàng Phúc - The Founder of Tuturuuu.
 
 Here is a set of guidelines you MUST follow:
 

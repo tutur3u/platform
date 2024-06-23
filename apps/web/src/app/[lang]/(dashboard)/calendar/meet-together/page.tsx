@@ -147,10 +147,6 @@ async function getData(
 
   const sbAdmin = createAdminClient();
 
-  if (!sbAdmin) {
-    throw new Error('Error fetching plans');
-  }
-
   const createdPlansQuery = sbAdmin
     .from('meet_together_plans')
     .select('*')

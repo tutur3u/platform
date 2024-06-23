@@ -4,13 +4,6 @@ import { NextResponse } from 'next/server';
 export async function GET(_: Request) {
   const sbAdmin = createAdminClient();
 
-  if (!sbAdmin) {
-    return NextResponse.json(
-      { message: 'Error fetching prompts' },
-      { status: 500 }
-    );
-  }
-
   const { data, error } = await sbAdmin
     .from('ai_models')
     .select('*', {
