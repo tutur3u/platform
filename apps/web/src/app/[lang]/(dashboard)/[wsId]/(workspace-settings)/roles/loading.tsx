@@ -11,7 +11,7 @@ export default function Loading() {
         </div>
       </div>
       <Separator className="my-4" />
-      <CustomDataTable namespace="secret-data-table" />
+      <CustomDataTable namespace="workspace-role-data-table" />
     </>
   );
 }

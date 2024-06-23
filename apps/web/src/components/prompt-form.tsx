@@ -8,8 +8,9 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { UseChatHelpers } from 'ai/react';
-import { Mic, Paperclip } from 'lucide-react';
-import React from 'react';
+import { Mic, Paperclip, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps
@@ -26,7 +27,14 @@ export function PromptForm({
   setInput,
   isLoading,
 }: PromptProps) {
+  const router = useRouter();
   const { formRef, onKeyDown } = useEnterSubmit();
+
+  const [isInternalLoading, setIsInternalLoading] = useState(isLoading);
+
+  useEffect(() => {
+    setIsInternalLoading(isLoading);
+  }, [isLoading]);
 
   return (
     <form
@@ -57,13 +65,12 @@ export function PromptForm({
             <TooltipTrigger asChild>
               <Button
                 disabled
-                // disabled={isLoading}
+                // disabled={isInternalLoading}
                 size="icon"
                 variant="ghost"
                 className={cn('transition duration-300')}
               >
                 <Paperclip />
-                <span className="sr-only">Add attachments</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Add attachments</TooltipContent>
@@ -73,26 +80,52 @@ export function PromptForm({
             <TooltipTrigger asChild>
               <Button
                 disabled
-                // disabled={isLoading}
+                // disabled={isInternalLoading}
                 size="icon"
                 variant="ghost"
                 className={cn(
                   'transition duration-300',
-                  input ? 'mx-1' : 'ml-1'
+                  input ? 'mx-1 md:mr-0' : 'ml-1'
                 )}
               >
                 <Mic />
-                <span className="sr-only">Voice input</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Voice input</TooltipContent>
           </Tooltip>
 
           <Tooltip>
+            <TooltipTrigger className="hidden md:flex" asChild>
+              <Button
+                disabled={isInternalLoading}
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  'transition duration-300',
+                  input ? 'mx-1' : 'ml-1'
+                )}
+                onClick={() => {
+                  setIsInternalLoading(true);
+                  router.refresh();
+
+                  setTimeout(() => {
+                    setIsInternalLoading(false);
+                  }, 1000);
+                }}
+              >
+                <RefreshCw
+                  className={isInternalLoading ? 'animate-spin' : ''}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Refresh Chat</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 type="submit"
-                disabled={isLoading || !input}
+                disabled={isInternalLoading || !input}
                 size="icon"
                 className={cn(
                   'transition-all duration-300',

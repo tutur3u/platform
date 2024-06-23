@@ -20,7 +20,14 @@ function createGenericClient(isAdmin: boolean) {
   const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
   const cookieStore = cookies();
   return createServerClient<Database>(url, key, {
-    cookies: createCookieHandler(cookieStore),
+    cookies: isAdmin
+      ? {
+          getAll() {
+            return [];
+          },
+          setAll(_: SupabaseCookie[]) {},
+        }
+      : createCookieHandler(cookieStore),
   });
 }
 

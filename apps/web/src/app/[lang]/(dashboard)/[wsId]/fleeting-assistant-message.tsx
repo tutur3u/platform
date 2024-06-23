@@ -66,8 +66,17 @@ export function FleetingAssistantMessage({
             {message.role === 'user' ? (
               <IconUser className="h-5 w-5" />
             ) : (
-              <Avatar className="h-10 w-10 rounded-md">
-                <AvatarImage src="/media/logos/light.png" alt="Skora" />
+              <Avatar className="h-10 w-10 rounded-md border">
+                <AvatarImage
+                  src="/media/logos/mira-light.png"
+                  className="dark:hidden"
+                  alt="Mira"
+                />
+                <AvatarImage
+                  src="/media/logos/mira-dark.png"
+                  className="hidden dark:block"
+                  alt="Mira"
+                />
                 <AvatarFallback className="rounded-lg font-semibold">
                   AI
                 </AvatarFallback>
@@ -86,7 +95,7 @@ export function FleetingAssistantMessage({
                       : 'from-pink-600 via-purple-500 to-sky-500'
                   }`}
                 >
-                  Skora AI {formattedModel ? `/ ${formattedModel}` : ''}
+                  Mira AI {formattedModel ? `/ ${formattedModel}` : ''}
                 </span>
               )}
             </span>

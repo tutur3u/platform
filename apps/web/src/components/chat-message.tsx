@@ -19,7 +19,6 @@ import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'katex/dist/katex.min.css';
 import { Bot, Send, Sparkle } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -53,8 +52,6 @@ export function ChatMessage({
   dayjs.locale(locale);
 
   const { t } = useTranslation('ai-chat');
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
 
   return (
     <div
@@ -71,52 +68,53 @@ export function ChatMessage({
             {message.role === 'user' ? (
               <IconUser className="h-5 w-5" />
             ) : (
-              <Avatar className="h-12 w-12 rounded-md">
-                <AvatarImage src="/media/logos/light.png" alt="Skora" />
+              <Avatar className="h-12 w-12 rounded-md border">
+                <AvatarImage
+                  src="/media/logos/mira-light.png"
+                  className="dark:hidden"
+                  alt="Mira"
+                />
+                <AvatarImage
+                  src="/media/logos/mira-dark.png"
+                  className="hidden dark:block"
+                  alt="Mira"
+                />
                 <AvatarFallback className="rounded-lg font-semibold">
                   AI
                 </AvatarFallback>
               </Avatar>
             )}
           </div>
-          <div className="flex flex-col justify-between">
-            <span className="line-clamp-1 font-semibold">
-              {message.role === 'user' ? (
-                anonymize ? (
-                  t('anonymous')
-                ) : (
-                  t('you')
-                )
-              ) : (
-                <span
-                  className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
-                    isDark
-                      ? 'from-pink-300 via-amber-200 to-blue-300'
-                      : 'from-pink-600 via-purple-500 to-sky-500'
-                  }`}
-                >
-                  Skora
-                </span>
-              )}
+          <div
+            className={`flex flex-col ${
+              message.role === 'user' ? '' : 'h-12 justify-between'
+            }`}
+          >
+            <span className="text-lg h-fit line-clamp-1 overflow-hidden font-bold">
+              {message.role === 'user'
+                ? anonymize
+                  ? t('anonymous')
+                  : t('you')
+                : 'Mira'}
             </span>
 
-            <div className="text-xs flex flex-wrap gap-1 items-center">
+            <div className="text-xs flex font-semibold flex-wrap gap-1 items-center">
               {message.model && (
-                <span className="hidden font-semibold md:inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-yellow/10 text-dynamic-yellow rounded bg-dynamic-yellow/10">
+                <span className="hidden md:inline-flex items-center gap-1 font-mono px-1 border border-dynamic-yellow/10 text-dynamic-yellow rounded bg-dynamic-yellow/10">
                   <Sparkle className="w-3 h-3" />
                   {message.model}
                 </span>
               )}
               {message.prompt_tokens !== undefined &&
                 message.prompt_tokens !== 0 && (
-                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-green/10 text-dynamic-green rounded bg-dynamic-green/10">
+                  <span className="inline-flex items-center gap-1 font-mono px-1 border border-dynamic-green/10 text-dynamic-green rounded bg-dynamic-green/10">
                     <Send className="w-3 h-3" />
                     {Intl.NumberFormat(locale).format(message.prompt_tokens)}
                   </span>
                 )}
               {message.completion_tokens !== undefined &&
                 message.completion_tokens !== 0 && (
-                  <span className="font-semibold inline-flex items-center gap-1 font-mono px-1 py-0.5 border border-dynamic-purple/10 text-dynamic-purple rounded bg-dynamic-purple/10">
+                  <span className="inline-flex items-center gap-1 font-mono px-1 border border-dynamic-purple/10 text-dynamic-purple rounded bg-dynamic-purple/10">
                     <Bot className="w-3 h-3" />
                     {Intl.NumberFormat(locale).format(
                       message.completion_tokens
