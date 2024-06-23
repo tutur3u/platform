@@ -68,7 +68,7 @@ export function ChatList({
                   'lowercase inline-flex items-center gap-1 font-semibold font-mono px-1 py-0.5 border rounded',
                   chatIsPublic
                     ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                    : 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20'
+                    : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
                 )}
               >
                 {chatIsPublic ? (

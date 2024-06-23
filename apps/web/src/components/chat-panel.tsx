@@ -24,7 +24,7 @@ import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {
-  ArrowLeftToLine,
+  ArrowDownToLine,
   Bolt,
   Check,
   CheckCheck,
@@ -128,17 +128,17 @@ export function ChatPanel({
                       )}
                     </div>
                     <Separator className="my-2" />
-                    <div className="grid gap-1">
+                    <div className="grid grid-cols-1 gap-1 md:grid-cols-2 lg:grid-cols-3 w-full items-center justify-center overflow-hidden">
                       {chats.length > 0 ? (
                         chats.map((chat) =>
                           chat.id === id ? (
                             <Button
                               key={chat.id}
                               variant="secondary"
-                              className="w-full"
+                              className="inline-block w-full"
                               disabled
                             >
-                              <div className="line-clamp-1">
+                              <div className="truncate max-w-full">
                                 {chat?.title || chat.id}
                               </div>
                             </Button>
@@ -146,13 +146,14 @@ export function ChatPanel({
                             <Link
                               key={chat.id}
                               href={`${defaultRoute}/${chat.id}`}
+                              className="w-full"
                             >
                               <Button
                                 variant="secondary"
-                                className="w-full"
+                                className="inline-block w-full"
                                 disabled={collapsed}
                               >
-                                <div className="line-clamp-1">
+                                <div className="truncate max-w-full">
                                   {chat?.title || chat.id}
                                 </div>
                               </Button>
@@ -181,7 +182,7 @@ export function ChatPanel({
                     {collapsed ? (
                       <FolderOpen className="h-5 w-5" />
                     ) : (
-                      <ArrowLeftToLine className="h-5 w-5" />
+                      <ArrowDownToLine className="h-5 w-5" />
                     )}
                   </Button>
 
