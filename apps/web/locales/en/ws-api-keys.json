@@ -1,7 +1,7 @@
 {
   "api_key": "API Key",
   "api_keys": "API Keys",
-  "description": "Secret keys to access your workspace data externally via Tuturuuu Platform API in a secure and confidental way.",
+  "description": "Secret keys to access your workspace data externally via Genius Junior Platform API in a secure and confidental way.",
   "name": "Name",
   "value": "Value",
   "create_key": "Create API Key",

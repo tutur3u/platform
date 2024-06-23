@@ -210,7 +210,7 @@ values ('local'),
     ('user2'),
     ('user3'),
     ('user4'),
-    ('tuturuuu'),
+    ('genius-junior'),
     ('prototype-all'),
     ('prototype-general'),
     ('prototype-pharmacy'),
@@ -251,8 +251,8 @@ where id = '00000000-0000-0000-0000-000000000005';
 insert into public.workspaces (id, name, handle)
 values (
         '00000000-0000-0000-0000-000000000000',
-        'Tuturuuu',
-        'tuturuuu'
+        'Genius Junior',
+        'genius-junior'
     ),
     (
         '00000000-0000-0000-0000-000000000001',

@@ -1,6 +1,6 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "tuturuuu"
+project_id = "genius-junior"
 
 [api]
 enabled = true
@@ -93,7 +93,7 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Auth templates
 [auth.email.template.confirmation]
-subject = "Confirm your Tuturuuu account"
+subject = "Confirm your Genius Junior account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
@@ -101,15 +101,15 @@ subject = "Email Change Confirmation"
 content_path = "./supabase/templates/email_change.html"
 
 [auth.email.template.invite]
-subject = "Invitation to Tuturuuu"
+subject = "Invitation to Genius Junior"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Tuturuuu Verification Code"
+subject = "Genius Junior Verification Code"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.recovery]
-subject = "Tuturuuu Password Recovery"
+subject = "Genius Junior Password Recovery"
 content_path = "./supabase/templates/recovery.html"
 
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
