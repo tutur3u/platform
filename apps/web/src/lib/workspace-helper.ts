@@ -147,8 +147,6 @@ export async function getSecrets({
   forceAdmin?: boolean;
 }) {
   const supabase = forceAdmin ? createAdminClient() : createClient();
-
-  if (!supabase) throw new Error('Supabase client not initialized');
   const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);

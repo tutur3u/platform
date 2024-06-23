@@ -188,7 +188,11 @@ export default function LoginForm() {
                   >
                     <InputOTPGroup className="w-full justify-center">
                       {Array.from({ length: maxOTPLength }).map((_, index) => (
-                        <InputOTPSlot key={index} index={index} />
+                        <InputOTPSlot
+                          key={index}
+                          index={index}
+                          className="max-md:w-full"
+                        />
                       ))}
                     </InputOTPGroup>
                   </InputOTP>

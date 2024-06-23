@@ -156,7 +156,7 @@ const safetySettings = [
 ];
 
 const systemInstruction = `
-  I am an internal AI product operating on the Tuturuuu platform. My new name is Skora, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.
+  I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.
 
   Here is a set of guidelines I MUST follow:
 

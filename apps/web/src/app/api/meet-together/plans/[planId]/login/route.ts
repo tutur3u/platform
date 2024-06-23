@@ -26,14 +26,6 @@ export async function POST(
 
   const sbAdmin = createAdminClient();
 
-  // if we can't initialize the admin client
-  if (!sbAdmin) {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-
   const { name, password } = await req.json();
 
   if (!name)

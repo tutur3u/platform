@@ -12,7 +12,7 @@ export default function AssistantGradientName() {
           : 'from-pink-500 via-yellow-500 to-sky-600 dark:from-pink-300 dark:via-amber-300 dark:to-blue-300'
       } bg-gradient-to-r bg-clip-text font-bold text-transparent`}
     >
-      Skora AI
+      Mira AI
     </span>
   );
 }

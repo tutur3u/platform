@@ -66,18 +66,15 @@ const handleRedirect = ({
   }
 
   // If current path ends with /onboarding and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/onboarding') && !user) {
+  if (
+    req.nextUrl.pathname !== '/' &&
+    !req.nextUrl.pathname.endsWith('/login') &&
+    !PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path)) &&
+    !user
+  ) {
     const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/onboarding', '/login')
-    );
-
-    return { res: nextRes, redirect: true };
-  }
-
-  // If current path ends with /realtime and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/realtime') && !user) {
-    const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/realtime', '/login')
+      req.nextUrl.href.replace(req.nextUrl.pathname, '/login') +
+        `?nextUrl=${req.nextUrl.pathname}`
     );
 
     return { res: nextRes, redirect: true };
@@ -192,3 +189,11 @@ const handleLocale = ({
 
   return NextResponse.rewrite(req.nextUrl, res);
 };
+
+const PUBLIC_PATHS = [
+  '/terms',
+  '/privacy',
+  '/branding',
+  '/ai/chats',
+  '/calendar/meet-together',
+];

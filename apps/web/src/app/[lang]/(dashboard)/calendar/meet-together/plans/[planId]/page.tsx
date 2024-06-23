@@ -71,7 +71,6 @@ export default async function MeetTogetherPlanDetailsPage({
 
 async function getUsers(planId: string) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return notFound();
 
   const { data, error } = await sbAdmin
     .from('meet_together_users')
@@ -88,7 +87,6 @@ async function getUsers(planId: string) {
 
 async function getTimeBlocks(planId: string) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return notFound();
 
   const guestQueryBuilder = sbAdmin
     .from('meet_together_guest_timeblocks')

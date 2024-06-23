@@ -22,13 +22,6 @@ export async function GET(_: Request) {
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
 
-  if (!sbAdmin) {
-    return NextResponse.json(
-      { message: 'Error creating meet together plan' },
-      { status: 500 }
-    );
-  }
-
   const data = await req.json();
   const supabase = createClient();
 
