@@ -19,6 +19,7 @@
   "linked_to": "Đã liên kết với",
   "created_at": "Ngày tạo",
   "updated_at": "Ngày cập nhật cuối",
+  "no_reports": "Chưa có báo cáo nào",
   "no_coupons": "Chưa có liên kết nào",
   "no_groups": "Không thuộc nhóm nào",
   "user": "Người dùng",

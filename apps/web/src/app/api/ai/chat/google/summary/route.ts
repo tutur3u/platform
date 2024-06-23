@@ -11,7 +11,7 @@ export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
 const model = 'gemini-1.5-flash';
-const API_KEY = process.env.GOOGLE_API_KEY || '';
+const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
@@ -24,7 +24,7 @@ export async function PATCH(req: Request) {
   try {
     if (!id) return new Response('Missing chat ID', { status: 400 });
 
-    const apiKey = previewToken || process.env.GOOGLE_API_KEY;
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = createClient();

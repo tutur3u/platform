@@ -36,7 +36,7 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
 }
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
-const API_KEY = process.env.GOOGLE_API_KEY || '';
+const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 

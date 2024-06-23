@@ -33,7 +33,7 @@ export default async function AIPage({
   const hasKeys = {
     openAI: hasKey('OPENAI_API_KEY'),
     anthropic: hasKey('ANTHROPIC_API_KEY'),
-    google: hasKey('GOOGLE_API_KEY'),
+    google: hasKey('GOOGLE_GENERATIVE_AI_API_KEY'),
   };
 
   return (

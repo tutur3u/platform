@@ -147,7 +147,7 @@ export default async function WorkspaceUserDetailsPage({
                     </Link>
                   ))
                 ) : (
-                  <div className="text-center text-opacity-60">
+                  <div className="text-center text-opacity-60 col-span-full">
                     {t('no_groups')}.
                   </div>
                 )}
@@ -178,7 +178,7 @@ export default async function WorkspaceUserDetailsPage({
                     </Link>
                   ))
                 ) : (
-                  <div className="text-center text-opacity-60">
+                  <div className="text-center text-opacity-60 col-span-full">
                     {t('no_reports')}.
                   </div>
                 )}
@@ -204,7 +204,7 @@ export default async function WorkspaceUserDetailsPage({
                     </div>
                   ))
                 ) : (
-                  <div className="text-center text-opacity-60">
+                  <div className="text-center text-opacity-60 col-span-full">
                     {t('no_coupons')}.
                   </div>
                 )}

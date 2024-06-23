@@ -19,6 +19,7 @@
   "linked_to": "Linked to",
   "created_at": "Created At",
   "updated_at": "Updated At",
+  "no_reports": "No reports",
   "no_coupons": "No linked coupons",
   "no_groups": "Not in any group",
   "user": "User",
