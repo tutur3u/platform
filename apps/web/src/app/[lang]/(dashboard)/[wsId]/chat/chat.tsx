@@ -356,30 +356,28 @@ const Chat = ({
         )}
       </div>
 
-      {chats && count !== undefined && (
-        <ChatPanel
-          id={chat?.id}
-          chat={chat}
-          chats={chats}
-          count={count}
-          isLoading={isLoading}
-          stop={stop}
-          append={append}
-          reload={reload}
-          input={input}
-          inputRef={inputRef}
-          setInput={setInput}
-          model={model}
-          setModel={setModel}
-          messages={messages}
-          collapsed={collapsed}
-          createChat={createChat}
-          updateChat={updateChat}
-          clearChat={clearChat}
-          setCollapsed={setCollapsed}
-          defaultRoute={`/${wsId}/chat`}
-        />
-      )}
+      <ChatPanel
+        id={chat?.id}
+        chat={chat}
+        chats={chats}
+        count={count}
+        isLoading={isLoading}
+        stop={stop}
+        append={append}
+        reload={reload}
+        input={input}
+        inputRef={inputRef}
+        setInput={setInput}
+        model={model}
+        setModel={setModel}
+        messages={messages}
+        collapsed={collapsed}
+        createChat={createChat}
+        updateChat={updateChat}
+        clearChat={clearChat}
+        setCollapsed={setCollapsed}
+        defaultRoute={`/${wsId}/chat`}
+      />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
         <DialogContent>

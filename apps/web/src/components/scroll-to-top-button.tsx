@@ -11,8 +11,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'bg-background/20 backdrop-blur-lg transition-opacity duration-300',
-        isAtTop ? 'pointer-events-none opacity-0' : 'opacity-100',
+        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {
@@ -23,6 +22,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
       }}
       size="icon"
       variant="outline"
+      disabled={isAtTop}
       {...props}
     >
       <IconArrowDown className="rotate-180" />
