@@ -5,6 +5,7 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
+import UserPresenceIndicator from './user-presence-indicator';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspaces } from '@/lib/workspace-helper';
 import { getInitials } from '@/utils/name-helper';
@@ -51,7 +52,7 @@ export async function UserNav() {
               <User className="h-5 w-5" />
             )}
           </AvatarFallback>
-          <div className="border-background absolute bottom-0 right-0 z-20 h-3 w-3 rounded-full border-2 bg-green-500 dark:bg-green-400" />
+          <UserPresenceIndicator className="h-3 w-3 border-2" />
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

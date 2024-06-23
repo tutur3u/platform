@@ -1,5 +1,6 @@
 'use client';
 
+import UserPresenceIndicator from './user-presence-indicator';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
@@ -57,7 +58,6 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import useTranslation from 'next-translate/useTranslation';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -74,8 +74,6 @@ export default function WorkspaceSelect() {
 
   const [user, setUser] = useState<User | undefined>();
   const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();
-
-  
 
   const router = useRouter();
   const params = useParams();
@@ -282,9 +280,6 @@ export default function WorkspaceSelect() {
       channel?.unsubscribe();
     };
   }, [wsId, user]);
-
-  const { resolvedTheme } = useTheme();
-  const isDefault = !resolvedTheme?.includes('-');
 
   if (!wsId) return null;
 
@@ -512,13 +507,7 @@ export default function WorkspaceSelect() {
                         user?.display_name || user?.handle || user.email || '?'
                       )}
                     </AvatarFallback>
-                    <div
-                      className={`border-background absolute bottom-0 right-0 z-20 h-2 w-2 rounded-full border ${
-                        isDefault
-                          ? 'bg-green-500 dark:bg-green-400'
-                          : 'bg-foreground'
-                      }`}
-                    />
+                    <UserPresenceIndicator />
                   </Avatar>
                 </div>
               ))
@@ -529,20 +518,9 @@ export default function WorkspaceSelect() {
             {onlineUsers && (
               <div className="flex items-center gap-2 font-semibold md:hidden">
                 <div>{onlineUsers.length || 0}</div>
-                <div
-                  className={`relative inset-0 h-2 w-2 rounded-full ${
-                    isDefault
-                      ? 'bg-green-500 dark:bg-green-400'
-                      : 'bg-foreground'
-                  }`}
-                >
-                  <div
-                    className={`absolute h-2 w-2 animate-ping rounded-full ${
-                      isDefault
-                        ? 'bg-green-500 dark:bg-green-400'
-                        : 'bg-foreground'
-                    }`}
-                  />
+                <div className="flex items-center relative">
+                  <UserPresenceIndicator className="relative h-2.5 w-2.5" />
+                  <UserPresenceIndicator className="animate-ping h-2.5 w-2.5" />
                 </div>
               </div>
             )}
@@ -573,20 +551,9 @@ export default function WorkspaceSelect() {
                       user?.display_name || user?.handle || user.email || '?'
                     )}
                   </AvatarFallback>
-                  <div
-                    className={`border-background absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 ${
-                      isDefault
-                        ? 'bg-green-500 dark:bg-green-400'
-                        : 'bg-foreground'
-                    }`}
-                  >
-                    <div
-                      className={`absolute h-2 w-2 animate-ping rounded-full ${
-                        isDefault
-                          ? 'bg-green-500 dark:bg-green-400'
-                          : 'bg-foreground'
-                      }`}
-                    />
+                  <div className="flex items-center absolute bottom-0 right-0">
+                    <UserPresenceIndicator className="relative h-2.5 w-2.5" />
+                    <UserPresenceIndicator className="animate-ping h-2.5 w-2.5" />
                   </div>
                 </Avatar>
                 <span className="line-clamp-1">

@@ -93,7 +93,7 @@
   "rows-per-page": "Rows per page",
   "ascending": "Ascending",
   "descending": "Descending",
-  "hide-column": "Hide column",
+  "hide_column": "Hide column",
   "unnamed": "No name",
   "personal_account": "Personal Account",
   "workspaces": "Workspaces",

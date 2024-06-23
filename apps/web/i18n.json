@@ -134,6 +134,12 @@
       "member-roles",
       "ws-members"
     ],
+    "/[lang]/(dashboard)/[wsId]/(workspace-settings)/roles": [
+      "workspace-settings-layout",
+      "ws-roles",
+      "search",
+      "workspace-role-data-table"
+    ],
     "/[lang]/(dashboard)/[wsId]/(workspace-settings)/activities": [
       "sidebar-tabs",
       "workspace-settings-layout",

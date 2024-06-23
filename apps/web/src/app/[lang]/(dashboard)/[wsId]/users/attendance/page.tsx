@@ -1,12 +1,12 @@
 import { UserDatabaseFilter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
+import { CustomMonthPicker } from '@/components/custom-month-picker';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import MonthPicker from '@repo/ui/components/ui/custom/month-picker';
 import useTranslation from 'next-translate/useTranslation';
 import { Suspense } from 'react';
 
@@ -44,7 +44,10 @@ export default async function WorkspaceUsersPage({
     <>
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
-        <MonthPicker lang={lang} className="col-span-full md:col-span-1" />
+        <CustomMonthPicker
+          lang={lang}
+          className="col-span-full md:col-span-1"
+        />
         <UserDatabaseFilter
           key="included-user-groups-filter"
           tag="includedGroups"

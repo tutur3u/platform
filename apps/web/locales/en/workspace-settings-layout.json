@@ -1,6 +1,7 @@
 {
   "workspace": "Workspace",
   "members": "Members",
+  "roles": "Roles",
   "teams": "Teams",
   "reports": "Reports",
   "api_keys": "API Keys",

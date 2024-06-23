@@ -14,25 +14,22 @@ import {
   EyeNoneIcon,
 } from '@radix-ui/react-icons';
 import { Column } from '@tanstack/react-table';
+import useTranslation from 'next-translate/useTranslation';
 import React from 'react';
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title?: string;
-  ascendingLabel?: string;
-  descendingLabel?: string;
-  hideColumnLabel?: string;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
-  ascendingLabel,
-  descendingLabel,
-  hideColumnLabel,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  const { t } = useTranslation();
+
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }
@@ -63,16 +60,16 @@ export function DataTableColumnHeader<TData, TValue>({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
             <ArrowUpIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {ascendingLabel}
+            {t('common:ascending')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
             <ArrowDownIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {descendingLabel}
+            {t('common:descending')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
             <EyeNoneIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {hideColumnLabel}
+            {t('common:hide_column')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
