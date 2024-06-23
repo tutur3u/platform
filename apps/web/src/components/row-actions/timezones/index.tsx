@@ -93,14 +93,14 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
           {timezone?.id != null && (
             <>
               <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                Edit
+                {t('common:edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={deleteTimezone}
                 disabled={!timezone?.id}
               >
-                Delete
+                {t('common:delete')}
               </DropdownMenuItem>
             </>
           )}

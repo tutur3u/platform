@@ -51,7 +51,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   if (!groupTag.id || !groupTag.ws_id) return null;
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -64,10 +64,12 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteApiKey}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteApiKey}>
+            {t('common:delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ApiKeyEditDialog
@@ -77,6 +79,6 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         setOpen={setShowEditDialog}
         submitLabel={t('edit_tag')}
       />
-    </>
+    </div>
   );
 }

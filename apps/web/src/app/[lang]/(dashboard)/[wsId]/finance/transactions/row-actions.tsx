@@ -48,7 +48,7 @@ export function TransactionRowActions(props: Props) {
   if (!transaction.id || !transaction.ws_id) return null;
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -69,6 +69,6 @@ export function TransactionRowActions(props: Props) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   );
 }

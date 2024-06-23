@@ -1,6 +1,7 @@
 'use client';
 
-import { Wallet } from '@/types/primitives/Wallet';
+import UserGroupEditDialog from './edit-dialog';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -12,23 +13,25 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-interface WalletRowActionsProps {
-  row: Row<Wallet>;
-  setWallet: (value: Wallet | undefined) => void;
+interface UserGroupRowActionsProps {
+  row: Row<UserGroup>;
 }
 
-export function WalletRowActions(props: WalletRowActionsProps) {
-  const { t } = useTranslation();
-
+export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
   const router = useRouter();
-  const wallet = props.row.original;
+  const { t } = useTranslation('ws-user-group-tags');
 
-  const deleteWallet = async () => {
+  const groupTag = row.original;
+
+  const deleteUserGroup = async () => {
     const res = await fetch(
-      `/api/workspaces/${wallet.ws_id}/wallets/${wallet.id}`,
+      `/api/v1/workspaces/${groupTag.ws_id}/group-tags/${groupTag.id}`,
       {
         method: 'DELETE',
       }
@@ -39,16 +42,27 @@ export function WalletRowActions(props: WalletRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace wallet',
+        title: 'Failed to delete workspace user group tag',
         description: data.message,
       });
     }
   };
 
-  if (!wallet.id || !wallet.ws_id) return null;
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  if (!groupTag.id || !groupTag.ws_id) return null;
 
   return (
     <div className="flex gap-2 justify-end items-center">
+      {groupTag.href && (
+        <Link href={groupTag.href}>
+          <Button>
+            <Eye className="h-5 w-5 mr-1" />
+            {t('common:view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -60,15 +74,21 @@ export function WalletRowActions(props: WalletRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => props.setWallet(wallet)}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWallet}>
+          <DropdownMenuItem onClick={deleteUserGroup}>
             {t('common:delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <UserGroupEditDialog
+        data={groupTag}
+        open={showEditDialog}
+        setOpen={setShowEditDialog}
+        submitLabel={t('edit_tag')}
+      />
     </div>
   );
 }

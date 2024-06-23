@@ -1,5 +1,5 @@
+import { getUserGroupColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getUserGroupColumns } from '@/data/columns/user-groups';
 
 export default function Loading() {
   return (

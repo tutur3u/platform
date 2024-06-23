@@ -64,10 +64,12 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteProject}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteProject}>
+            {t('common:delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ProjectEditDialog

@@ -42,20 +42,3 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
 
   return NextResponse.json({ message: 'success' });
 }
-
-export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from('workspace_users')
-    .delete()
-    .eq('ws_id', id);
-
-  if (error)
-    return NextResponse.json(
-      { message: 'Error deleting workspace users' },
-      { status: 500 }
-    );
-
-  return NextResponse.json({ message: 'success' });
-}

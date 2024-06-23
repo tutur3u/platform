@@ -1,6 +1,6 @@
 import { UserDatabaseFilter } from '../filters';
+import { getUserGroupColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getUserGroupColumns } from '@/data/columns/user-groups';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';

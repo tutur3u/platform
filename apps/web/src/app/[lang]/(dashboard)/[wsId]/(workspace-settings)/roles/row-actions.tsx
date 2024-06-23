@@ -13,6 +13,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -51,7 +52,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
   if (!role.id || !role.ws_id) return null;
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
+      <Button>
+        <Eye className="h-5 w-5 mr-1" />
+        {t('common:view')}
+      </Button>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -64,10 +69,12 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteRole}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteRole}>
+            {t('common:delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <RoleEditDialog
@@ -76,6 +83,6 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         setOpen={setShowEditDialog}
         submitLabel={t('edit_role')}
       />
-    </>
+    </div>
   );
 }

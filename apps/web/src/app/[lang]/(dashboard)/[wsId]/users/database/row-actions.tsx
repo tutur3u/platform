@@ -1,6 +1,6 @@
 'use client';
 
-import { DatePicker } from './users/date-picker';
+import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
 import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
@@ -40,7 +40,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { User as UserIcon } from 'lucide-react';
+import { Eye, User as UserIcon } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -55,15 +55,15 @@ interface UserRowActionsProps {
 
 const FormSchema = z.object({
   id: z.string(),
-  fullName: z.string().optional(),
-  displayName: z.string().optional(),
+  full_name: z.string().optional(),
+  display_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   birthday: z.date().optional(),
   ethnicity: z.string().optional(),
-  guardianName: z.string().optional(),
-  nationalId: z.string().optional(),
+  guardian: z.string().optional(),
+  national_id: z.string().optional(),
   address: z.string().optional(),
   note: z.string().optional(),
 });
@@ -73,12 +73,14 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
   const router = useRouter();
 
   const user = row.original;
-  const ws = { id: user.ws_id || '' };
 
   const deleteUser = async () => {
-    const res = await fetch(`/api/workspaces/${user.ws_id}/users/${user.id}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(
+      `/api/v1/workspaces/${user.ws_id}/users/${user.id}`,
+      {
+        method: 'DELETE',
+      }
+    );
 
     if (res.ok) {
       router.refresh();
@@ -95,8 +97,8 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
     resolver: zodResolver(FormSchema),
     values: {
       id: user?.id || '',
-      fullName: user?.full_name || '',
-      displayName: user?.display_name || '',
+      full_name: user?.full_name || '',
+      display_name: user?.display_name || '',
       email: user?.email || '',
       phone: user?.phone || '',
       gender: user?.gender?.toLocaleUpperCase() as
@@ -106,8 +108,8 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
         | undefined,
       birthday: user?.birthday ? new Date(user.birthday) : undefined,
       ethnicity: user?.ethnicity || '',
-      guardianName: user?.guardian || '',
-      nationalId: user?.national_id || '',
+      guardian: user?.guardian || '',
+      national_id: user?.national_id || '',
       address: user?.address || '',
       note: user?.note || '',
     },
@@ -115,55 +117,22 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
   const [open, setOpen] = useState(false);
 
-  const deleteMember = async () => {
-    const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (response.ok) {
-      toast({
-        title: t('member_removed'),
-        description: `"${user?.display_name || 'Unknown'}" ${t(
-          'has_been_removed'
-        )}`,
-        color: 'teal',
-      });
-    } else {
-      toast({
-        title: t('error'),
-        description: `${t('remove_error')} "${
-          user?.display_name || 'Unknown'
-        }"`,
-      });
-    }
-
-    router.refresh();
-    setOpen(false);
-  };
-
   const updateMember = async (data: z.infer<typeof FormSchema>) => {
     const response = await fetch(
-      `/api/workspaces/${ws.id}/members/${user.id}`,
+      `/api/v1/workspaces/${user.ws_id}/users/${user.id}`,
       {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: user.id,
-          full_name: data.fullName,
-          display_name: data.displayName,
-        } as WorkspaceUser),
+        body: JSON.stringify(data),
       }
     );
 
     if (response.ok) {
       toast({
         title: t('member-updated'),
-        description: `"${user?.display_name || 'Unknown'}" ${t(
+        description: `"${user?.display_name || user?.full_name || 'Unknown'}" ${t(
           'has-been-updated'
         )}`,
         color: 'teal',
@@ -172,19 +141,27 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
       toast({
         title: t('error'),
         description: `${t('update-error')} "${
-          user?.display_name || 'Unknown'
+          user?.display_name || user?.full_name || 'Unknown'
         }"`,
       });
     }
-
     router.refresh();
     setOpen(false);
   };
 
-  const name = form.watch('displayName') || form.watch('fullName');
+  const name = form.watch('display_name') || form.watch('full_name');
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
+      {href && (
+        <Link href={href}>
+          <Button>
+            <Eye className="h-5 w-5 mr-1" />
+            {t('common:view')}
+          </Button>
+        </Link>
+      )}
+
       <Dialog
         open={open}
         onOpenChange={(open) => {
@@ -253,7 +230,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
               <FormField
                 control={form.control}
-                name="fullName"
+                name="full_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
@@ -270,7 +247,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
               <FormField
                 control={form.control}
-                name="displayName"
+                name="display_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Display Name</FormLabel>
@@ -375,7 +352,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
               <FormField
                 control={form.control}
-                name="nationalId"
+                name="national_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>National ID</FormLabel>
@@ -403,7 +380,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
               <FormField
                 control={form.control}
-                name="guardianName"
+                name="guardian"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Guardian</FormLabel>
@@ -446,15 +423,6 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
               />
 
               <div className="flex justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="flex-none"
-                  onClick={deleteMember}
-                >
-                  Remove Member
-                </Button>
-
                 <Button type="submit" className="w-full">
                   Save changes
                 </Button>
@@ -475,14 +443,8 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          {href && (
-            <Link href={href}>
-              <DropdownMenuItem>View</DropdownMenuItem>
-            </Link>
-          )}
-
           <DropdownMenuItem onClick={() => setOpen(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           {/* <DropdownMenuItem>Make a copy</DropdownMenuItem> */}
           {/* <DropdownMenuItem>Favorite</DropdownMenuItem> */}
@@ -508,6 +470,6 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   );
 }

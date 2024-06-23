@@ -58,6 +58,7 @@ export default async function WorkspaceUserGroupTagsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          color: false,
           created_at: false,
         }}
       />

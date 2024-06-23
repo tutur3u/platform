@@ -1,4 +1,4 @@
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -15,26 +15,24 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  data: WorkspaceSecret;
+  data: UserGroup;
   submitLabel?: string;
   onSubmit: (values: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   name: z.string().min(1),
-  value: z.string().min(1),
 });
 
-export const ApiConfigFormSchema = FormSchema;
+export const UserGroupFormSchema = FormSchema;
 
-export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-secrets');
+export default function UserGroupForm({ data, submitLabel, onSubmit }: Props) {
+  const { t } = useTranslation('ws-user-group-tags');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',
-      value: data.value || (data.id ? '' : 'true'),
     },
   });
 
@@ -46,38 +44,19 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('tag_name')}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="Name"
+                  placeholder={t('tag_name')}
                   autoComplete="off"
                   {...field}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value.replace(/\s/g, '_').toUpperCase()
-                    )
-                  }
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="value"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('value')}</FormLabel>
-              <FormControl>
-                <Input placeholder="Value" autoComplete="off" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

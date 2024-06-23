@@ -51,7 +51,7 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
   if (!userField.id || !userField.ws_id) return null;
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -64,10 +64,12 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteUserField}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteUserField}>
+            {t('common:delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <UserFieldEditDialog
@@ -76,6 +78,6 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
         setOpen={setShowEditDialog}
         submitLabel={t('edit_field')}
       />
-    </>
+    </div>
   );
 }

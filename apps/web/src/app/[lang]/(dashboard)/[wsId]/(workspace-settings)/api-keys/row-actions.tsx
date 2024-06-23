@@ -64,10 +64,12 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common:edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteApiKey}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteApiKey}>
+            {t('common:delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ApiKeyEditDialog

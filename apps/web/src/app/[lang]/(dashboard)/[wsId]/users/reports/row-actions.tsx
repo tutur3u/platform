@@ -1,0 +1,87 @@
+'use client';
+
+import UserReportEditDialog from './edit-dialog';
+import { WorkspaceUserReport } from '@/types/db';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
+import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
+import useTranslation from 'next-translate/useTranslation';
+import Link from 'next/link';
+import { useState } from 'react';
+
+interface UserReportRowActionsProps {
+  row: Row<WorkspaceUserReport>;
+}
+
+export function UserReportRowActions({ row }: UserReportRowActionsProps) {
+  // const router = useRouter();
+  const { t } = useTranslation('ws-user-reports');
+
+  const report = row.original;
+
+  const deleteUserReport = async () => {
+    // const res = await fetch(
+    //   `/api/v1/workspaces/${report.ws_id}/reports/${report.id}`,
+    //   {
+    //     method: 'DELETE',
+    //   }
+    // );
+    // if (res.ok) {
+    //   router.refresh();
+    // } else {
+    //   const data = await res.json();
+    //   toast({
+    //     title: 'Failed to delete workspace user group tag',
+    //     description: data.message,
+    //   });
+    // }
+  };
+
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  // if (!report.id || !report.ws_id) return null;
+  if (!report.id) return null;
+
+  return (
+    <div className="flex gap-2 justify-end items-center">
+      {report.href && (
+        <Link href={report.href}>
+          <Button>
+            <Eye className="h-5 w-5 mr-1" />
+            {t('common:view')}
+          </Button>
+        </Link>
+      )}
+
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+          >
+            <DotsHorizontalIcon className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem onClick={deleteUserReport}>
+            {t('common:delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <UserReportEditDialog
+        data={report}
+        open={showEditDialog}
+        setOpen={setShowEditDialog}
+        submitLabel={t('edit_tag')}
+      />
+    </div>
+  );
+}

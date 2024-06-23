@@ -1,6 +1,6 @@
 import { UserDatabaseFilter } from '../filters';
+import { getUserColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getUserColumns } from '@/data/columns/users';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';

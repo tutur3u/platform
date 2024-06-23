@@ -1,5 +1,6 @@
 'use client';
 
+import { UserGroupRowActions } from './row-actions';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
@@ -75,8 +76,8 @@ export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  {
+    id: 'actions',
+    cell: ({ row }) => <UserGroupRowActions row={row} />,
+  },
 ];

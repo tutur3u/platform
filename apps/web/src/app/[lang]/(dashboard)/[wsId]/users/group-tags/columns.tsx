@@ -48,7 +48,11 @@ export const groupTagColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('name') || '-'}
+        <ColorPicker
+          text={row.getValue('name')}
+          value={row.getValue('color')}
+          className="w-full line-clamp-1 cursor-default"
+        />
       </div>
     ),
   },
@@ -59,15 +63,7 @@ export const groupTagColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('color') ? (
-          <ColorPicker
-            text={row.getValue('name')}
-            value={row.getValue('color')}
-            className="w-full line-clamp-1 cursor-default"
-          />
-        ) : (
-          '-'
-        )}
+        {row.getValue('color') ? `#${row.getValue('color')}` : '-'}
       </div>
     ),
   },
