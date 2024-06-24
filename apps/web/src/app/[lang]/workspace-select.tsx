@@ -147,8 +147,15 @@ export default function WorkspaceSelect() {
   ];
 
   const onValueChange = (wsId: string) => {
-    const newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
-    if (newPathname) router.push(newPathname);
+    let newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
+    if (newPathname) {
+      // Regex to match a UUID at the end of the string, with or without dashes
+      const uuidRegex =
+        /\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/;
+      // Remove the UUID if present
+      newPathname = newPathname.replace(uuidRegex, '');
+      router.push(newPathname);
+    }
   };
 
   const wsId = params.wsId as string | undefined;

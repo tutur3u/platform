@@ -13,6 +13,7 @@ import moment from 'moment';
 import useTranslation from 'next-translate/useTranslation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 interface Props {
   params: {
@@ -257,10 +258,11 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
     .eq('ws_id', wsId)
     .eq('id', userId)
     .eq('linked_users.users.workspace_members.ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   const { data: rawData, error } = await queryBuilder;
   if (error) throw error;
+  if (!rawData) notFound();
 
   const data = {
     ...rawData,

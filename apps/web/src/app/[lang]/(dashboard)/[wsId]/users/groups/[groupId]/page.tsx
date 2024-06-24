@@ -8,6 +8,7 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
 import useTranslation from 'next-translate/useTranslation';
+import { notFound } from 'next/navigation';
 
 interface SearchParams {
   q?: string;
@@ -107,9 +108,10 @@ async function getData(wsId: string, groupId: string) {
     .select('*')
     .eq('ws_id', wsId)
     .eq('id', groupId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) notFound();
 
   return data as WorkspaceUser;
 }

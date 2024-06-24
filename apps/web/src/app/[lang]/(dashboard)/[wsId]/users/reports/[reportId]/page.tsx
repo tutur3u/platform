@@ -10,7 +10,7 @@ import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -142,10 +142,11 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
     .eq('id', reportId)
     .eq('user.ws_id', wsId)
     .order('created_at', { ascending: false })
-    .single();
+    .maybeSingle();
 
   const { data: rawData, error } = await queryBuilder;
   if (error) throw error;
+  if (!rawData) notFound();
 
   const data: {
     user_name?: string;
