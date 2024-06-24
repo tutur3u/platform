@@ -165,7 +165,7 @@ export default async function Footer() {
               {t('common:documentation')}
             </Link>
             <Link
-              href="https://github.com/tutur3u/tutur3u"
+              href="https://github.com/tutur3u/platform"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >

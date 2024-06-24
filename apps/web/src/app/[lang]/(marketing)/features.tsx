@@ -46,7 +46,7 @@ export function getFeatures(t: Translate): Feature[] {
     {
       title: t('features-6-title'),
       subtitle: t('features-6-subtitle'),
-      url: 'https://github.com/tutur3u/tutur3u',
+      url: 'https://github.com/tutur3u/platform',
       icon: <CodeBracketIcon className="h-6 w-6" />,
     },
   ];
