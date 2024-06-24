@@ -12,9 +12,12 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
   },
   "include": [
+    "global.d.ts",
     "next-env.d.ts",
     "next.config.js",
     "**/*.js",

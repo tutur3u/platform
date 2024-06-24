@@ -1,6 +1,7 @@
 module.exports = {
   extends: [
     '@repo/eslint-config-custom/next.js',
+    'plugin:@next/next/recommended',
     'plugin:@tanstack/eslint-plugin-query/recommended',
   ],
   parser: '@typescript-eslint/parser',
