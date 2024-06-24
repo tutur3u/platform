@@ -77,9 +77,8 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('group_tag')}
-        createDescription={t('create_tag')}
-        editDescription={t('edit_tag')}
+        title={t('edit')}
+        editDescription={t('edit_description')}
         setOpen={setShowEditDialog}
         form={<GroupTagForm wsId={data.ws_id} data={data} />}
       />

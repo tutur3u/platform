@@ -9,7 +9,7 @@ interface Props<T> {
   pluralTitle: string;
   singularTitle: string;
   description: string;
-  editDescription?: string;
+  createTitle?: string;
   createDescription?: string;
   open?: boolean;
   // eslint-disable-next-line no-unused-vars
@@ -23,8 +23,8 @@ export default function FeatureSummary<T>({
   singularTitle,
   description,
   open,
+  createTitle,
   createDescription,
-  editDescription,
   setOpen,
 }: Props<T>) {
   return (
@@ -40,14 +40,13 @@ export default function FeatureSummary<T>({
           trigger={
             <Button className="w-full md:w-fit">
               <Plus className="mr-2 h-5 w-5" />
-              {createDescription}
+              {createTitle}
             </Button>
           }
           form={form}
           open={open}
           setOpen={setOpen}
           createDescription={createDescription}
-          editDescription={editDescription}
           title={singularTitle}
         />
       </div>

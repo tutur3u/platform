@@ -1,13 +1,12 @@
 {
-    "group_tag": "Group Tag",
-    "group_tags": "Group Tags",
+    "singular": "Group Tag",
+    "plural": "Group Tags",
     "description": "Organize user groups together for easier management.",
-    "tag_name": "Tag Name",
-    "tag_color": "Tag Color",
+    "name": "Tag Name",
+    "color": "Tag Color",
     "linked_user_groups": "Linked User Groups",
-    "enable_custom_color": "Enable Custom Color",
-    "create_tag": "Create Tag",
-    "edit_tag": "Edit Tag",
-    "add_new_group_tag": "Add a new group tag",
-    "edit_existing_group_tag": "Edit an existing group tag"
+    "create": "Create Tag",
+    "edit": "Edit Tag",
+    "create_description": "Create a new group tag",
+    "edit_description": "Edit an existing group tag"
 }

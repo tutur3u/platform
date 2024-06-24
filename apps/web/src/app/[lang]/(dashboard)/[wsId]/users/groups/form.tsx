@@ -1,3 +1,5 @@
+'use client';
+
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
@@ -10,29 +12,32 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  data: UserGroup;
-  submitLabel?: string;
-  onSubmit: (values: z.infer<typeof FormSchema>) => void;
+  wsId: string;
+  data?: UserGroup;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1),
 });
 
-export const UserGroupFormSchema = FormSchema;
-
-export default function UserGroupForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-user-group-tags');
+export default function UserGroupForm({ wsId, data, onFinish }: Props) {
+  const { t } = useTranslation('ws-user-groups');
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: data.name || '',
+      id: data?.id,
+      name: data?.name || '',
     },
   });
 
@@ -42,6 +47,36 @@ export default function UserGroupForm({ data, submitLabel, onSubmit }: Props) {
 
   const disabled = !isDirty || !isValid || isSubmitting;
 
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    try {
+      const res = await fetch(
+        data.id
+          ? `/api/v1/workspaces/${wsId}/user-groups/${data.id}`
+          : `/api/v1/workspaces/${wsId}/user-groups`,
+        {
+          method: data.id ? 'PUT' : 'POST',
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (res.ok) {
+        onFinish?.(data);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast({
+          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+          description: data.message,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
@@ -50,13 +85,9 @@ export default function UserGroupForm({ data, submitLabel, onSubmit }: Props) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('tag_name')}</FormLabel>
+              <FormLabel>{t('name')}</FormLabel>
               <FormControl>
-                <Input
-                  placeholder={t('tag_name')}
-                  autoComplete="off"
-                  {...field}
-                />
+                <Input placeholder={t('name')} autoComplete="off" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -64,7 +95,7 @@ export default function UserGroupForm({ data, submitLabel, onSubmit }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {submitLabel}
+          {!!data?.id ? t('edit') : t('create')}
         </Button>
       </form>
     </Form>

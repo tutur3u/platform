@@ -1,5 +1,6 @@
 'use client';
 
+import { UserDatabaseFilter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/user-group-tag';
 import { createClient } from '@/utils/supabase/client';
@@ -23,7 +24,6 @@ import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { UserDatabaseFilter } from '../filters';
 
 interface Props {
   wsId: string;
@@ -103,13 +103,9 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('tag_name')}</FormLabel>
+              <FormLabel>{t('name')}</FormLabel>
               <FormControl>
-                <Input
-                  placeholder={t('tag_name')}
-                  autoComplete="off"
-                  {...field}
-                />
+                <Input placeholder={t('name')} autoComplete="off" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -121,7 +117,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
           name="color"
           render={({ field }) => (
             <FormItem className="overflow-hidden">
-              <FormLabel>{t('tag_color')}</FormLabel>
+              <FormLabel>{t('color')}</FormLabel>
               <FormControl>
                 <ColorPicker
                   {...field}
@@ -136,7 +132,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
           )}
         />
 
-        {!!data?.id || (
+        {true || !!data?.id || (
           <>
             <Separator />
 
@@ -161,7 +157,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {t('create_tag')}
+          {!!data?.id ? t('edit') : t('create')}
         </Button>
       </form>
     </Form>

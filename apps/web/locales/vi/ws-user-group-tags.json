@@ -1,13 +1,13 @@
 {
-    "group_tag": "Gắn thẻ nhóm",
-    "group_tags": "Gắn thẻ nhóm",
+    "singular": "Gắn thẻ nhóm",
+    "plural": "Gắn thẻ nhóm",
     "description": "Gom các nhóm người dùng lại với nhau để quản lý dễ dàng hơn.",
-    "tag_name": "Tên gắn thẻ",
-    "tag_color": "Màu gắn thẻ",
+    "name": "Tên gắn thẻ",
+    "color": "Màu gắn thẻ",
     "linked_user_groups": "Nhóm người dùng liên kết",
     "enable_custom_color": "Bật màu tùy chỉnh",
-    "create_tag": "Tạo gắn thẻ",
-    "edit_tag": "Sửa gắn thẻ",
-    "add_new_group_tag": "Thêm một gắn thẻ nhóm mới",
-    "edit_existing_group_tag": "Sửa gắn thẻ nhóm"
+    "create": "Tạo gắn thẻ",
+    "edit": "Sửa gắn thẻ",
+    "create_description": "Thêm một gắn thẻ nhóm mới",
+    "edit_description": "Sửa gắn thẻ nhóm"
 }

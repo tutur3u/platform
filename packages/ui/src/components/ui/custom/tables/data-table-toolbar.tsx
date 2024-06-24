@@ -16,8 +16,9 @@ interface DataTableToolbarProps<TData> {
   editContent?: ReactNode;
   namespace: string;
   table: Table<TData>;
-  filters?: ReactNode[];
+  filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
+  defaultQuery?: string;
   disableSearch?: boolean;
   isEmpty: boolean;
   t?: Translate;
@@ -34,6 +35,7 @@ export function DataTableToolbar<TData>({
   table,
   filters,
   extraColumns,
+  defaultQuery,
   disableSearch = false,
   isEmpty,
   t,
@@ -41,13 +43,17 @@ export function DataTableToolbar<TData>({
   onSearch,
   resetParams,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0 || !isEmpty;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    !isEmpty ||
+    (defaultQuery?.length || 0) > 0;
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
         {disableSearch || (
           <SearchBar
+            defaultValue={defaultQuery}
             onSearch={onSearch}
             className="col-span-full w-full md:col-span-1 md:max-w-xs"
           />

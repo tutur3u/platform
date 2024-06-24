@@ -268,7 +268,7 @@
       "user-group-data-table",
       "view-mode",
       "pagination",
-      "ws-user-groups-configs"
+      "ws-user-groups"
     ],
     "/[lang]/(dashboard)/[wsId]/users/groups/new": [
       "sidebar-tabs",

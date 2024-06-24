@@ -28,11 +28,11 @@ export default async function WorkspaceUserGroupTagsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('group_tags')}
-        singularTitle={t('group_tag')}
+        pluralTitle={t('plural')}
+        singularTitle={t('singular')}
         description={t('description')}
-        createDescription={t('create_tag')}
-        editDescription={t('edit_tag')}
+        createTitle={t('create')}
+        createDescription={t('create_description')}
         form={<GroupTagForm wsId={wsId} />}
       />
       <Separator className="my-4" />

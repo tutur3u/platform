@@ -1,10 +1,12 @@
-import { UserDatabaseFilter } from '../filters';
 import { getUserGroupColumns } from './columns';
+import Filters from './filters';
+import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
 interface SearchParams {
@@ -27,7 +29,7 @@ export default async function WorkspaceUserGroupsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('user-group-data-table');
+  const { t } = useTranslation('ws-user-groups');
 
   const { data, count } = await getData(wsId, searchParams);
 
@@ -36,47 +38,30 @@ export default async function WorkspaceUserGroupsPage({
     href: `/${wsId}/users/groups/${g.id}`,
   }));
 
-  const { data: tags } = await getTags(wsId);
-  const { data: excludedTags } = await getExcludedTags(wsId, searchParams);
-
   return (
-    <CustomDataTable
-      data={groups}
-      columnGenerator={getUserGroupColumns}
-      namespace="user-group-data-table"
-      count={count}
-      filters={[
-        <UserDatabaseFilter
-          key="included-user-tags-filter"
-          tag="includedTags"
-          title={t('included_tags')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-          options={tags.map((tag) => ({
-            label: tag.name || 'No name',
-            value: tag.id,
-            count: tag.amount,
-          }))}
-          disabled
-        />,
-        <UserDatabaseFilter
-          key="excluded-user-tags-filter"
-          tag="excludedTags"
-          title={t('excluded_tags')}
-          icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
-          options={excludedTags.map((tag) => ({
-            label: tag.name || 'No name',
-            value: tag.id,
-            count: tag.amount,
-          }))}
-          disabled
-        />,
-      ]}
-      defaultVisibility={{
-        id: false,
-        locked: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('plural')}
+        singularTitle={t('singular')}
+        description={t('description')}
+        createTitle={t('create')}
+        createDescription={t('create_description')}
+        form={<UserGroupForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={groups}
+        columnGenerator={getUserGroupColumns}
+        namespace="user-group-data-table"
+        count={count}
+        filters={<Filters wsId={wsId} searchParams={searchParams} />}
+        defaultVisibility={{
+          id: false,
+          locked: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 
@@ -114,52 +99,6 @@ async function getData(
     if (!retry) throw error;
     return getData(wsId, { q, pageSize, retry: false });
   }
-
-  return { data, count } as { data: UserGroup[]; count: number };
-}
-
-async function getTags(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
-}
-
-async function getExcludedTags(wsId: string, { includedTags }: SearchParams) {
-  const supabase = createClient();
-
-  if (!includedTags || includedTags.length === 0) {
-    return getTags(wsId);
-  }
-
-  const queryBuilder = supabase
-    .rpc(
-      'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedTags)
-          ? includedTags
-          : [includedTags],
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('id, name, amount')
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
 
   return { data, count } as { data: UserGroup[]; count: number };
 }

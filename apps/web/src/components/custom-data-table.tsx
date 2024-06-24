@@ -22,7 +22,13 @@ export const CustomDataTable = ({ namespace, ...props }: any) => {
       pageIndex={pageIndex || 0}
       pageSize={pageSize || 10}
       onRefresh={() => router.refresh()}
-      onSearch={(query: string) => searchParams.set({ q: query, page: '1' })}
+      defaultQuery={searchParams.get({
+        key: 'q',
+        fallbackValue: '',
+      })}
+      onSearch={(query: string) =>
+        query ? searchParams.set({ q: query, page: '1' }) : searchParams.reset()
+      }
       setParams={(params) => searchParams.set(params)}
       resetParams={() => searchParams.reset()}
       isEmpty={searchParams.isEmpty}

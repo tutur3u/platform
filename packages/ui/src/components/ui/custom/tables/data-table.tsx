@@ -28,7 +28,7 @@ import { ReactNode, useState } from 'react';
 
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
-  filters?: ReactNode[];
+  filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
   count?: number;
   pageIndex?: number;
   pageSize?: number;
+  defaultQuery?: string;
   defaultVisibility?: VisibilityState;
   noBottomPadding?: boolean;
   disableSearch?: boolean;
@@ -68,6 +69,7 @@ export function DataTable<TData, TValue>({
   count,
   pageIndex = 0,
   pageSize = 10,
+  defaultQuery,
   defaultVisibility = {},
   noBottomPadding,
   disableSearch,
@@ -129,6 +131,7 @@ export function DataTable<TData, TValue>({
         disableSearch={disableSearch}
         t={t}
         isEmpty={isEmpty || !data?.length}
+        defaultQuery={defaultQuery}
         onSearch={onSearch || (() => {})}
         onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
