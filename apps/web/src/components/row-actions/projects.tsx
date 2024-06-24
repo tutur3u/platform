@@ -1,6 +1,6 @@
 'use client';
 
-import ProjectEditDialog from '@/app/[lang]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
+import ProjectEditDialog from '@/app/[locale]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';

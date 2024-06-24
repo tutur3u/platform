@@ -1,4 +1,4 @@
-import Chat from '@/app/[lang]/(dashboard)/[wsId]/chat/chat';
+import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
 import { AIChat } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Message } from 'ai';

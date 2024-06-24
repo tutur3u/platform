@@ -1,6 +1,6 @@
 'use client';
 
-import SecretEditDialog from '@/app/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
+import SecretEditDialog from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
