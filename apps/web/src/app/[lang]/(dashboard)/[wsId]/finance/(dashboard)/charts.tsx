@@ -37,13 +37,13 @@ export function DailyTotalChart({
   }, []);
 
   return (
-    <div className="flex gap-2 flex-col items-center">
+    <div className="flex flex-col items-center gap-2">
       <div className="font-semibold">
         {t('daily_total_from_14_recent_days')}
       </div>
       <ResponsiveContainer
         id="daily-total-chart"
-        className="overflow-x-auto grid items-center justify-center"
+        className="grid items-center justify-center overflow-x-auto"
       >
         <BarChart data={data} width={data.length * 75} height={300}>
           <XAxis
@@ -146,13 +146,13 @@ export function MonthlyTotalChart({
   }, []);
 
   return (
-    <div className="flex gap-2 justify-center flex-col items-center">
+    <div className="flex flex-col items-center justify-center gap-2">
       <div className="font-semibold">
         {t('monthly_total_from_12_recent_months')}
       </div>
       <ResponsiveContainer
         id="monthly-total-chart"
-        className="overflow-x-auto grid items-center justify-center"
+        className="grid items-center justify-center overflow-x-auto"
       >
         <BarChart data={data} width={data.length * 100} height={300}>
           <XAxis

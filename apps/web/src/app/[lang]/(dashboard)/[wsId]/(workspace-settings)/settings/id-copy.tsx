@@ -28,7 +28,7 @@ export default function WorkspaceIDCopy({ wsId }: Props) {
   return (
     <div className="grid gap-2">
       <Label htmlFor="workspace-id">{t('id')}</Label>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <Input id="workspace-id" value={wsId} disabled />
 
         <Button onClick={copyId} size="icon" disabled={!showCopy}>

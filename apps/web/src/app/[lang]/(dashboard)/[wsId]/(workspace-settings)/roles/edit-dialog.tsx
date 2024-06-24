@@ -1,5 +1,6 @@
 'use client';
 
+import RoleForm, { RoleFormSchema } from './form';
 import { WorkspaceRole } from '@/types/db';
 import {
   Dialog,
@@ -14,7 +15,6 @@ import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import * as z from 'zod';
-import RoleForm, { RoleFormSchema } from './form';
 
 interface Props {
   data: Partial<WorkspaceRole>;

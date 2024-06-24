@@ -118,8 +118,8 @@ export function Combobox({
               value={query}
               onValueChange={(value: string) => setQuery(value)}
             />
-            <CommandEmpty className="p-1 flex flex-col items-center justify-center">
-              <div className="p-8 text-sm text-muted-foreground">
+            <CommandEmpty className="flex flex-col items-center justify-center p-1">
+              <div className="text-muted-foreground p-8 text-sm">
                 {t('common:empty')}
               </div>
               <Separator />
@@ -134,7 +134,7 @@ export function Combobox({
                 }}
                 disabled={!query || !onCreate}
               >
-                <Plus className="h-4 w-4 mr-2 shrink-0" />
+                <Plus className="mr-2 h-4 w-4 shrink-0" />
                 <div className="w-full truncate">
                   <span className="font-normal">{t('common:add')}</span>{' '}
                   <span className="underline decoration-dashed underline-offset-2">

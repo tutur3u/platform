@@ -120,7 +120,7 @@ export default function GroupTagForm({
                     text={form.watch('name')}
                     value={field.value!}
                     onChange={field.onChange}
-                    className="w-full flex-grow-0 break-all line-clamp-1 whitespace-nowrap overflow-ellipsis"
+                    className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
                   />
                 </FormControl>
                 <FormMessage />

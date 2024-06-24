@@ -58,8 +58,8 @@ export const roleColumns = (t: Translate): ColumnDef<WorkspaceRole>[] => [
       <DataTableColumnHeader column={column} title={t('user_count')} />
     ),
     cell: ({ row }) => (
-      <div className="flex items-center font-semibold gap-1">
-        <UserCircle className="w-5 h-5" />
+      <div className="flex items-center gap-1 font-semibold">
+        <UserCircle className="h-5 w-5" />
         {row.getValue('user_count') ?? '-'}
       </div>
     ),

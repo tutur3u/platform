@@ -46,7 +46,7 @@ export const secretColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 font-semibold break-all">
+      <div className="line-clamp-1 break-all font-semibold">
         {row.getValue('name') || '-'}
       </div>
     ),

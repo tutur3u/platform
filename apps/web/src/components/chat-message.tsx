@@ -90,7 +90,7 @@ export function ChatMessage({
               message.role === 'user' ? '' : 'h-12 justify-between'
             }`}
           >
-            <span className="text-lg h-fit line-clamp-1 overflow-hidden font-bold">
+            <span className="line-clamp-1 h-fit overflow-hidden text-lg font-bold">
               {message.role === 'user'
                 ? anonymize
                   ? t('anonymous')
@@ -98,24 +98,24 @@ export function ChatMessage({
                 : 'Mira'}
             </span>
 
-            <div className="text-xs flex font-semibold flex-wrap gap-1 items-center">
+            <div className="flex flex-wrap items-center gap-1 text-xs font-semibold">
               {message.model && (
-                <span className="hidden md:inline-flex items-center gap-1 font-mono px-1 border border-dynamic-yellow/10 text-dynamic-yellow rounded bg-dynamic-yellow/10">
-                  <Sparkle className="w-3 h-3" />
+                <span className="border-dynamic-yellow/10 text-dynamic-yellow bg-dynamic-yellow/10 hidden items-center gap-1 rounded border px-1 font-mono md:inline-flex">
+                  <Sparkle className="h-3 w-3" />
                   {message.model}
                 </span>
               )}
               {message.prompt_tokens !== undefined &&
                 message.prompt_tokens !== 0 && (
-                  <span className="inline-flex items-center gap-1 font-mono px-1 border border-dynamic-green/10 text-dynamic-green rounded bg-dynamic-green/10">
-                    <Send className="w-3 h-3" />
+                  <span className="border-dynamic-green/10 text-dynamic-green bg-dynamic-green/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                    <Send className="h-3 w-3" />
                     {Intl.NumberFormat(locale).format(message.prompt_tokens)}
                   </span>
                 )}
               {message.completion_tokens !== undefined &&
                 message.completion_tokens !== 0 && (
-                  <span className="inline-flex items-center gap-1 font-mono px-1 border border-dynamic-purple/10 text-dynamic-purple rounded bg-dynamic-purple/10">
-                    <Bot className="w-3 h-3" />
+                  <span className="border-dynamic-purple/10 text-dynamic-purple bg-dynamic-purple/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                    <Bot className="h-3 w-3" />
                     {Intl.NumberFormat(locale).format(
                       message.completion_tokens
                     )}
@@ -223,7 +223,7 @@ export function ChatMessage({
                 };
 
                 const questionElement = (
-                  <div className="text-lg font-bold text-foreground">
+                  <div className="text-foreground text-lg font-bold">
                     {question}
                   </div>
                 );
@@ -231,7 +231,7 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`font-semibold w-full rounded border text-left md:text-center transition px-3 py-1 ${
+                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
                       revealCorrect && option.isCorrect
                         ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
                         : revealCorrect
@@ -245,11 +245,11 @@ export function ChatMessage({
                 ));
 
                 return (
-                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
                     {questionElement}
                     <Separator className="my-2" />
                     <div
-                      className={`grid md:grid-cols-2 gap-2 w-full ${
+                      className={`grid w-full gap-2 md:grid-cols-2 ${
                         options.length === 3
                           ? 'xl:grid-cols-3'
                           : 'xl:grid-cols-4'
@@ -269,11 +269,11 @@ export function ChatMessage({
                           </span>
                           <span className="opacity-70">, {t('which_is')} </span>
                           {selectedOption.isCorrect ? (
-                            <span className="font-semibold underline text-dynamic-green">
+                            <span className="text-dynamic-green font-semibold underline">
                               {t('correct')}
                             </span>
                           ) : (
-                            <span className="font-semibold underline text-dynamic-red">
+                            <span className="text-dynamic-red font-semibold underline">
                               {t('incorrect')}
                             </span>
                           )}
@@ -281,7 +281,7 @@ export function ChatMessage({
                         </div>
 
                         <Separator className="my-4" />
-                        <div className="w-full text-sm text-center font-semibold p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
+                        <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm font-semibold">
                           {t('experimental_disclaimer')}
                         </div>
                       </>
@@ -316,13 +316,13 @@ export function ChatMessage({
                 const [revealAnswer, setRevealAnswer] = useState(false);
 
                 return (
-                  <div className="mt-4 flex flex-col items-center justify-center border bg-foreground/5 rounded-lg w-full p-4">
-                    <div className="text-lg font-bold text-foreground">
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
+                    <div className="text-foreground text-lg font-bold">
                       {question}
                     </div>
-                    <Separator className="mt-2 mb-4" />
+                    <Separator className="mb-4 mt-2" />
                     <button
-                      className={`font-semibold w-full rounded border text-center transition duration-300 px-3 py-1 text-foreground ${
+                      className={`text-foreground w-full rounded border px-3 py-1 text-center font-semibold transition duration-300 ${
                         revealAnswer
                           ? 'cursor-default border-transparent'
                           : 'bg-foreground/5 hover:bg-foreground/10'
@@ -333,7 +333,7 @@ export function ChatMessage({
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />
-                          <div className="w-full text-sm text-center p-1 rounded border border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10">
+                          <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm">
                             {t('experimental_disclaimer')}
                           </div>
                         </>
@@ -361,7 +361,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="font-semibold text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -373,7 +373,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="font-semibold text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -440,7 +440,7 @@ export function ChatMessage({
             },
             table({ children }) {
               return (
-                <table className="w-full overflow-x-scroll table-fixed">
+                <table className="w-full table-fixed overflow-x-scroll">
                   {children}
                 </table>
               );

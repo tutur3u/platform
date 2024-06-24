@@ -51,7 +51,7 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
   if (!userField.id || !userField.ws_id) return null;
 
   return (
-    <div className="flex gap-2 justify-end items-center">
+    <div className="flex items-center justify-end gap-2">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button

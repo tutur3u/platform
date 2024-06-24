@@ -530,9 +530,9 @@ export default function WorkspaceSelect() {
             {onlineUsers && (
               <div className="flex items-center gap-2 font-semibold md:hidden">
                 <div>{onlineUsers.length || 0}</div>
-                <div className="flex items-center relative">
+                <div className="relative flex items-center">
                   <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                  <UserPresenceIndicator className="animate-ping h-2.5 w-2.5" />
+                  <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
                 </div>
               </div>
             )}
@@ -563,9 +563,9 @@ export default function WorkspaceSelect() {
                       user?.display_name || user?.handle || user.email || '?'
                     )}
                   </AvatarFallback>
-                  <div className="flex items-center absolute bottom-0 right-0">
+                  <div className="absolute bottom-0 right-0 flex items-center">
                     <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                    <UserPresenceIndicator className="animate-ping h-2.5 w-2.5" />
+                    <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
                   </div>
                 </Avatar>
                 <span className="line-clamp-1">

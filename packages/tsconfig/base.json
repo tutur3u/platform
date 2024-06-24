@@ -2,19 +2,11 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Default",
   "compilerOptions": {
-    "composite": false,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "inlineSources": false,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "preserveWatchOutput": true,
-    "strictNullChecks": true,
-    "allowJs": false,
     "incremental": false,
+    "isolatedModules": true,
     "lib": [
       "es2022",
       "DOM",
@@ -28,8 +20,5 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022"
-  },
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }

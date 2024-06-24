@@ -51,7 +51,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   if (!groupTag.id || !groupTag.ws_id) return null;
 
   return (
-    <div className="flex gap-2 justify-end items-center">
+    <div className="flex items-center justify-end gap-2">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button

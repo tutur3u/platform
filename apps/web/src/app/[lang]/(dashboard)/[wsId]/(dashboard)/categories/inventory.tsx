@@ -15,7 +15,7 @@ export default async function InventoryCategoryStatistics({
   if (!enabled) return null;
 
   return (
-    <div className="mt-4 mb-2 text-2xl font-semibold">
+    <div className="mb-2 mt-4 text-2xl font-semibold">
       {t('sidebar-tabs:inventory')}
     </div>
   );

@@ -52,9 +52,9 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
   if (!role.id || !role.ws_id) return null;
 
   return (
-    <div className="flex gap-2 justify-end items-center">
+    <div className="flex items-center justify-end gap-2">
       <Button>
-        <Eye className="h-5 w-5 mr-1" />
+        <Eye className="mr-1 h-5 w-5" />
         {t('common:view')}
       </Button>
       <DropdownMenu modal={false}>
