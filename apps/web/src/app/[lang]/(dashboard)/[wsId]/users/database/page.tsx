@@ -1,12 +1,12 @@
-import { UserDatabaseFilter } from '../filters';
 import { getUserColumns } from './columns';
+import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import useTranslation from 'next-translate/useTranslation';
 
 interface SearchParams {
@@ -29,16 +29,10 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('user-data-table');
+  const { t } = useTranslation('ws-users');
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: extraFields } = await getUserFields(wsId);
-
-  const { data: userGroups } = await getUserGroups(wsId);
-  const { data: excludedUserGroups } = await getExcludedUserGroups(
-    wsId,
-    searchParams
-  );
 
   const users = data.map((u) => ({
     ...u,
@@ -47,36 +41,22 @@ export default async function WorkspaceUsersPage({
 
   return (
     <>
+      <FeatureSummary
+        pluralTitle={t('plural')}
+        singularTitle={t('singular')}
+        description={t('description')}
+        createTitle={t('create')}
+        createDescription={t('create_description')}
+        // form={<UserForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
       <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
         count={count}
-        filters={[
-          <UserDatabaseFilter
-            key="included-user-groups-filter"
-            tag="includedGroups"
-            title={t('included_groups')}
-            icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-            options={userGroups.map((group) => ({
-              label: group.name || 'No name',
-              value: group.id,
-              count: group.amount,
-            }))}
-          />,
-          <UserDatabaseFilter
-            key="excluded-user-groups-filter"
-            tag="excludedGroups"
-            title={t('excluded_groups')}
-            icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
-            options={excludedUserGroups.map((group) => ({
-              label: group.name || 'No name',
-              value: group.id,
-              count: group.amount,
-            }))}
-          />,
-        ]}
+        filters={<Filters wsId={wsId} searchParams={searchParams} />}
         defaultVisibility={{
           id: false,
           gender: false,
@@ -166,53 +146,4 @@ async function getUserFields(wsId: string) {
   if (error) throw error;
 
   return { data, count } as { data: WorkspaceUserField[]; count: number };
-}
-
-async function getUserGroups(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
-}
-
-async function getExcludedUserGroups(
-  wsId: string,
-  { includedGroups }: SearchParams
-) {
-  const supabase = createClient();
-
-  if (!includedGroups || includedGroups.length === 0) {
-    return getUserGroups(wsId);
-  }
-
-  const queryBuilder = supabase
-    .rpc(
-      'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('id, name, amount')
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }

@@ -260,7 +260,7 @@
       "user-data-table",
       "view-mode",
       "pagination",
-      "ws-users-list-configs"
+      "ws-users"
     ],
     "/[lang]/(dashboard)/[wsId]/users/groups": [
       "sidebar-tabs",
@@ -280,7 +280,6 @@
       "view-mode",
       "pagination",
       "user-data-table",
-      "ws-users-list-configs",
       "ws-user-groups-details",
       "ws-user-groups-details-tabs"
     ],
@@ -318,7 +317,8 @@
     "/[lang]/(dashboard)/[wsId]/users/database/[userId]": [
       "search",
       "user-data-table",
-      "invoice-data-table"
+      "invoice-data-table",
+      "ws-users"
     ],
     "/[lang]/(dashboard)/[wsId]/users/attendance": [
       "search",

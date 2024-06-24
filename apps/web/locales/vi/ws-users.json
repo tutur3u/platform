@@ -1,0 +1,11 @@
+{
+    "singular": "Người dùng",
+    "plural": "Người dùng",
+    "description": "Người dùng là những người có liên quan trực tiếp hoặc gián tiếp đến không gian làm việc của bạn. Họ có thể được gán cho các công việc, dự án và nhiều hơn nữa.",
+    "full_name": "Họ và tên",
+    "display_name": "Tên hiển thị",
+    "create": "Tạo người dùng",
+    "edit": "Chỉnh sửa người dùng",
+    "create_description": "Tạo một người dùng mới",
+    "edit_description": "Chỉnh sửa thông tin của người dùng"
+}
