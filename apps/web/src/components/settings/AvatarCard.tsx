@@ -1,6 +1,6 @@
 import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { ActionIcon, Avatar, Button, FileButton, Menu } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
-  const { t } = useTranslation('settings-account');
+  const t = useTranslations('settings-account');
   const avatarLabel = t('avatar');
 
   const [opened, setOpened] = useState(false);

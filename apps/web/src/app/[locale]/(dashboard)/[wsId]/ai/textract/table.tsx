@@ -5,8 +5,8 @@ import { AIPromptForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { AIPrompt } from '@/types/db';
 import { Dialog } from '@repo/ui/components/ui/dialog';
+import { useTranslations } from 'next-intl';
 import { Translate } from 'next-translate';
-import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function AIPromptsTable({ wsId, data, count }: Props) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const [prompt, setPrompt] = useState<Partial<AIPrompt> | undefined>();
 

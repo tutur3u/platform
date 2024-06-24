@@ -12,7 +12,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Row } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -22,7 +22,7 @@ interface UserReportRowActionsProps {
 
 export function UserReportRowActions({ row }: UserReportRowActionsProps) {
   // const router = useRouter();
-  const { t } = useTranslation('ws-user-reports');
+  const t = useTranslations('ws-user-reports');
 
   const report = row.original;
 

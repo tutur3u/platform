@@ -4,7 +4,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { toast } from '@repo/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface Props {

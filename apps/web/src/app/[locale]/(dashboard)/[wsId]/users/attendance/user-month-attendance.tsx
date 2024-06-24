@@ -16,7 +16,7 @@ import {
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 
@@ -28,7 +28,7 @@ export default function UserMonthAttendance({
   user: WorkspaceUser & { href: string };
   defaultIncludedGroups?: string[];
 }) {
-  const { lang } = useTranslation();
+  const locale = useLocale();
   const searchParams = useSearchParams();
 
   const queryMonth = searchParams.get('month');
@@ -81,13 +81,13 @@ export default function UserMonthAttendance({
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)));
 
   const thisYear = currentDate.getFullYear();
-  const thisMonth = currentDate.toLocaleString(lang, { month: '2-digit' });
+  const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
     let newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
-    return newDay.toLocaleString(lang, { weekday: 'narrow' });
+    return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)

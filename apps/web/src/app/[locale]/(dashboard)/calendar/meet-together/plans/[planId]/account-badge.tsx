@@ -1,8 +1,8 @@
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 
 export default function AccountBadge({ type }: { type: 'GUEST' | 'PLATFORM' }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
 
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');

@@ -2,11 +2,11 @@
 
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FlaskConical } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 
 export default function ExperimentalNotice() {
-  const { t } = useTranslation('experimental-notice');
+  const t = useTranslations('experimental-notice');
 
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');

@@ -4,7 +4,7 @@ import DatePlanner from './date-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@/types/primitives/Timeblock';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default function AllAvailabilities({
   plan,
@@ -13,7 +13,7 @@ export default function AllAvailabilities({
   plan: MeetTogetherPlan;
   timeblocks: Timeblock[];
 }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
   const { user, planUsers, selectedTimeBlocks, filteredUserIds } =
     useTimeBlocking();
 

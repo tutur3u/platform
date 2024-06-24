@@ -1,12 +1,12 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 const enabled = true;
 
 export default async function InvoicesStatistics({ wsId }: { wsId: string }) {
   const supabase = createClient();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const { count: invoicesCount } = enabled
     ? await supabase

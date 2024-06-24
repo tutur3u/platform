@@ -22,7 +22,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -48,7 +48,7 @@ const Chat = ({
   hasKeys,
   locale,
 }: ChatProps) => {
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
 
   const router = useRouter();
   const searchParams = useSearchParams();

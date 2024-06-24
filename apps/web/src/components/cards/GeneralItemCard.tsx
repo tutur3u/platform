@@ -1,7 +1,7 @@
 'use client';
 
 import { Divider } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import useSWR from 'swr';
 
@@ -48,7 +48,7 @@ const GeneralItemCard = ({
   showSecondaryLabel = false,
   showTertiaryLabel = false,
 }: Props) => {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const { data: secondaryLabelData } = useSWR(
     showSecondaryLabel && secondaryLabelFetchPath

@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@repo/ui/components/ui/form';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -42,7 +42,7 @@ export default function ApiKeyForm({
   resetMode,
   onSubmit,
 }: Props) {
-  const { t } = useTranslation('ws-reports');
+  const t = useTranslations('ws-reports');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

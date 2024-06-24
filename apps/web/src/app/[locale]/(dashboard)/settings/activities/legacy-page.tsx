@@ -4,12 +4,12 @@ import AuditLogCard from '../../../../../components/cards/AuditLogCard';
 import { AuditLog } from '@/types/primitives/audit-log';
 import { Accordion, Divider } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { Suspense, useState } from 'react';
 import useSWR from 'swr';
 
 export default function UserActivitiesPage() {
-  const { t } = useTranslation('settings-tabs');
+  const t = useTranslations('settings-tabs');
   const user = { id: 'TO-BE-REFACTORED' };
 
   const activitiesLabel = t('activities');

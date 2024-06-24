@@ -41,7 +41,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import { Eye, User as UserIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -69,7 +69,7 @@ const FormSchema = z.object({
 });
 
 export function UserRowActions({ row, href }: UserRowActionsProps) {
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations('ws-members');
   const router = useRouter();
 
   const user = row.original;

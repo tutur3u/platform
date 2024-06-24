@@ -2,11 +2,11 @@
 
 import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
 import { LogOut } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 export function LogoutDropdownItem() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const router = useRouter();
 
   const logout = async () => {

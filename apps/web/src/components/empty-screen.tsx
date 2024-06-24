@@ -10,8 +10,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Box, Globe, Lock, MessageCircle, Sparkle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 export function EmptyScreen({
@@ -31,7 +31,7 @@ export function EmptyScreen({
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 

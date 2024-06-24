@@ -3,7 +3,7 @@
 import { Workspace } from '@/types/primitives/Workspace';
 import { Button } from '@repo/ui/components/ui/button';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -14,7 +14,7 @@ interface Props {
 export default function Security({ workspace }: Props) {
   const isSystemWs = workspace?.id === '00000000-0000-0000-0000-000000000000';
 
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
   const router = useRouter();
 
   const [isDeleting, setIsDeleting] = useState(false);

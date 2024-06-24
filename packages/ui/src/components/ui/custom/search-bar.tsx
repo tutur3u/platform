@@ -3,7 +3,7 @@
 import { Input } from '@repo/ui/components/ui/input';
 import { cn } from '@repo/ui/lib/utils';
 import { debounce } from 'lodash';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
 const SearchBar = ({ defaultValue, className, onSearch }: Props) => {
   const updateQuery = onSearch ? debounce(onSearch, 300) : () => {};
 
-  const { t } = useTranslation('search');
+  const t = useTranslations('search');
   const searchPlaceholder = t('search-placeholder');
 
   const [value, setValue] = useState(defaultValue);

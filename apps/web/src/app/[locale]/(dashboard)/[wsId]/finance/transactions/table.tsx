@@ -5,8 +5,8 @@ import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Dialog } from '@repo/ui/components/ui/dialog';
+import { useTranslations } from 'next-intl';
 import { Translate } from 'next-translate';
-import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
 interface Props {

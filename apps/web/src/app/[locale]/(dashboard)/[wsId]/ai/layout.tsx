@@ -1,7 +1,7 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspace } from '@/lib/workspace-helper';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface LayoutProps {
@@ -15,7 +15,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const { t } = useTranslation('workspace-ai-layout');
+  const t = useTranslations('workspace-ai-layout');
 
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();

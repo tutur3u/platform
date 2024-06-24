@@ -32,7 +32,7 @@ import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

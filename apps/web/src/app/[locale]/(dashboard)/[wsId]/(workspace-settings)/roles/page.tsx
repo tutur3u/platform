@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -24,7 +24,7 @@ export default async function WorkspaceRolesPage({
   searchParams,
 }: Props) {
   const { data: rawData, count } = await getRoles(wsId, searchParams);
-  const { t } = useTranslation('ws-roles');
+  const t = useTranslations('ws-roles');
 
   const data = rawData.map((role) => ({
     ...role,

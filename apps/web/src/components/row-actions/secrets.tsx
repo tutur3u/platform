@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -23,7 +23,7 @@ interface SecretRowActionsProps {
 
 export function SecretRowActions({ row }: SecretRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-secrets');
+  const t = useTranslations('ws-secrets');
 
   const secret = row.original;
 

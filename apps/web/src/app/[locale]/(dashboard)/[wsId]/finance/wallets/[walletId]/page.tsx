@@ -5,7 +5,7 @@ import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 
 interface Props {
@@ -18,8 +18,8 @@ interface Props {
 export default function WalletDetailsPage({
   params: { wsId, walletId },
 }: Props) {
-  const { lang } = useTranslation();
-  const { t } = useTranslation('wallet');
+  const locale = useLocale();
+  const t = useTranslations('wallet');
 
   const apiPath =
     wsId && walletId
@@ -77,7 +77,7 @@ export default function WalletDetailsPage({
 
     // Capitalize the first letter of the day
     return moment(date)
-      .locale(lang)
+      .locale(locale)
       .format('dddd, DD/MM/YYYY')
       .replace(/(^\w)|(\s+\w)/g, (letter) => letter.toUpperCase());
   };

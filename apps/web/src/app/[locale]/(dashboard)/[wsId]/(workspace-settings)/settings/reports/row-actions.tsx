@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface ConfigRowActionsProps {
@@ -20,7 +20,7 @@ interface ConfigRowActionsProps {
 }
 
 export function ConfigRowActions({ row }: ConfigRowActionsProps) {
-  const { t } = useTranslation('ws-reports');
+  const t = useTranslations('ws-reports');
   const config = row.original;
 
   const [showEditDialog, setShowEditDialog] = useState(false);

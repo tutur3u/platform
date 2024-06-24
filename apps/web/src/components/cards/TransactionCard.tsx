@@ -5,7 +5,7 @@ import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import useSWR from 'swr';
 
@@ -30,7 +30,7 @@ const TransactionCard = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const { t } = useTranslation('transaction-card');
+  const t = useTranslations('transaction-card');
 
   const apiPath =
     wsId && showWallet && transaction?.wallet_id

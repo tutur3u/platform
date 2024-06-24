@@ -7,7 +7,7 @@ import { getWorkspace } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -18,7 +18,7 @@ interface Props {
 export default async function WorkspaceSettingsPage({
   params: { wsId },
 }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
 
   const ws = await getWorkspace(wsId);
   const { data: secrets } = await getSecrets(wsId);

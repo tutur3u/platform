@@ -1,11 +1,11 @@
 'use client';
 
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navlinks() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const pathname = usePathname();
 
   if (pathname === '/calendar/meet-together') return null;

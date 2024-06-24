@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import * as z from 'zod';
@@ -32,7 +32,7 @@ export default function RoleEditDialog({
   submitLabel,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('ws-roles');
+  const t = useTranslations('ws-roles');
 
   const [internalOpen, setInternalOpen] = useState(false);
 

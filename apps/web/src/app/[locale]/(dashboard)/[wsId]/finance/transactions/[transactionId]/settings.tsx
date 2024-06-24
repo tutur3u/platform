@@ -17,7 +17,7 @@ import {
 import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -28,7 +28,7 @@ export default function TransactionSettingsPage() {
   const { setRootSegment } = useSegments();
   const { ws } = useWorkspaces();
 
-  const { t } = useTranslation('transactions');
+  const t = useTranslations('transactions');
 
   const finance = t('finance');
   const transactions = t('transactions');
@@ -129,7 +129,7 @@ export default function TransactionSettingsPage() {
 
   const hasRequiredFields = () => amount != 0 && wallet;
 
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -208,7 +208,7 @@ export default function TransactionSettingsPage() {
             disabled={!wallet}
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
             placeholder={'Date & time'}
-            locale={lang}
+            locale={locale}
           />
         </SettingItemCard>
 

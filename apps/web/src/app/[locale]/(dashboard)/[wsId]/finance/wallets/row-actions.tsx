@@ -12,7 +12,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface WalletRowActionsProps {
@@ -21,7 +21,7 @@ interface WalletRowActionsProps {
 }
 
 export function WalletRowActions(props: WalletRowActionsProps) {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const router = useRouter();
   const wallet = props.row.original;

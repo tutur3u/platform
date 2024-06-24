@@ -15,8 +15,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'katex/dist/katex.min.css';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
@@ -36,7 +36,7 @@ export function FleetingAssistantMessage({
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
 
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 

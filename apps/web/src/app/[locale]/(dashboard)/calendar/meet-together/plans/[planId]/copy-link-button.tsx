@@ -2,11 +2,11 @@
 
 import { Button } from '@repo/ui/components/ui/button';
 import { Check, LinkIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 export default function CopyLinkButton({ url }: { url: string }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {

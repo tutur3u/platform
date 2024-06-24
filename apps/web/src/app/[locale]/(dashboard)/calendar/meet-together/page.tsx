@@ -6,7 +6,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {

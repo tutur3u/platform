@@ -4,11 +4,11 @@ import useSearchParams from '@/hooks/useSearchParams';
 import { Button } from '@repo/ui/components/ui/button';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useMemo } from 'react';
 
 export default function UserMonthAttendanceSkeleton() {
-  const { lang } = useTranslation();
+  const locale = useLocale();
   const searchParams = useSearchParams();
 
   const currentYYYYMM = useMemo(
@@ -25,13 +25,13 @@ export default function UserMonthAttendanceSkeleton() {
   );
 
   const thisYear = currentMonth.getFullYear();
-  const thisMonth = currentMonth.toLocaleString(lang, { month: '2-digit' });
+  const thisMonth = currentMonth.toLocaleString(locale, { month: '2-digit' });
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
     let newDay = new Date(currentMonth);
     newDay.setDate(currentMonth.getDate() - currentMonth.getDay() + i + 1);
-    return newDay.toLocaleString(lang, { weekday: 'narrow' });
+    return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)

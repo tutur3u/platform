@@ -1,5 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface LayoutProps {
@@ -13,7 +13,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const { t } = useTranslation('workspace-inventory-tabs');
+  const t = useTranslations('workspace-inventory-tabs');
 
   const navLinks: NavLink[] = [
     {

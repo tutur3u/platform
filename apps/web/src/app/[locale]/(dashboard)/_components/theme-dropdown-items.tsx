@@ -17,11 +17,11 @@ import {
   Trees,
   Waves,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 
 export function ThemeDropdownItems() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const { theme, systemTheme, setTheme } = useTheme();
 
   const isSystem = theme === 'system' || theme === null;

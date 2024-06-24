@@ -20,7 +20,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -39,7 +39,7 @@ const FormSchema = z.object({
 });
 
 export default function GroupTagForm({ wsId, data, onFinish }: Props) {
-  const { t } = useTranslation('ws-user-group-tags');
+  const t = useTranslations('ws-user-group-tags');
   const router = useRouter();
 
   const { data: queryData, isPending } = useQuery({

@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -23,7 +23,7 @@ interface ApiKeyRowActionsProps {
 
 export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-api-keys');
+  const t = useTranslations('ws-api-keys');
 
   const apiKey = row.original;
 

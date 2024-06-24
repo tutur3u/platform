@@ -10,7 +10,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -33,7 +33,7 @@ export default async function WorkspaceUserDetailsPage({
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
-  const { t } = useTranslation('user-data-table');
+  const t = useTranslations('user-data-table');
 
   const data = await getData({ wsId, userId });
 

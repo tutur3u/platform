@@ -1,11 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 import Link from 'next/link';
 
 export default function GetStartedButton({ href }: { href: string }) {
-  const { t } = useTranslation('home');
+  const t = useTranslations('home');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 

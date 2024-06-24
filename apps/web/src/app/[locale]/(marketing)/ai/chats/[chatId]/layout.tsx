@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: {
-    lang: string;
+    locale: string;
     chatId: string;
   };
 }
@@ -33,7 +33,7 @@ const getChat = async (chatId: string) => {
 };
 
 export const generateMetadata = async ({
-  params: { lang, chatId },
+  params: { locale, chatId },
 }: Props): Promise<Metadata> => {
   try {
     const viTitle = 'Trò chuyện AI';
@@ -44,16 +44,16 @@ export const generateMetadata = async ({
     const viDefaultDescription =
       'Trò chuyện với AI về mọi thứ, mọi lúc, mọi nơi.';
 
-    const untitled = lang === 'vi' ? 'Chưa đặt tên' : 'Untitled';
+    const untitled = locale === 'vi' ? 'Chưa đặt tên' : 'Untitled';
     const defaultDescription =
-      lang === 'vi' ? viDefaultDescription : enDefaultDescription;
+      locale === 'vi' ? viDefaultDescription : enDefaultDescription;
 
     const chat = await getChat(chatId);
 
     const chatTitle = chat.title || untitled;
     const chatSummary = chat.summary || defaultDescription;
 
-    const title = `${chatTitle} - ${lang === 'vi' ? viTitle : enTitle}`;
+    const title = `${chatTitle} - ${locale === 'vi' ? viTitle : enTitle}`;
     const description = chatSummary;
 
     return {
@@ -64,7 +64,7 @@ export const generateMetadata = async ({
       description,
       openGraph: {
         type: 'website',
-        locale: lang,
+        locale,
         url: siteConfig.url,
         title,
         description,

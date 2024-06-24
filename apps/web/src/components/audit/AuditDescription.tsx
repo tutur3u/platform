@@ -2,7 +2,7 @@ import AuditSmartContent from './AuditSmartContent';
 import { DEV_MODE } from '@/constants/common';
 import { AuditLog } from '@/types/primitives/audit-log';
 import { JsonInput, Tabs } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const AuditDescription = ({ data, isExpanded }: Props) => {
-  const { t } = useTranslation('ws-activities');
+  const t = useTranslations('ws-activities');
 
   const [activeTab, setActiveTab] = useState<string | null>('default');
 

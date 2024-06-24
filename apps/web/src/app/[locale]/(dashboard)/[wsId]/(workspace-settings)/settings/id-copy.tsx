@@ -4,7 +4,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { CheckCheck, Copy } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function WorkspaceIDCopy({ wsId }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
 
   const [showCopy, setShowCopy] = useState(true);
 

@@ -1,11 +1,11 @@
 'use client';
 
 import FeatureToggle from '@/components/cards/FeatureToggle';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export default function FeatureToggles() {
-  const { t } = useTranslation('sidebar-tabs');
+  const t = useTranslations('sidebar-tabs');
 
   const [features, setFeatures] = useState<{
     [key: string]: boolean;

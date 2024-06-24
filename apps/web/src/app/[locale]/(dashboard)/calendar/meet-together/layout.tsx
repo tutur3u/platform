@@ -4,11 +4,11 @@ import { ReactNode } from 'react';
 
 interface Props {
   params: {
-    lang: string;
+    locale: string;
   };
 }
 
-export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
+export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
   const viTitle = 'Họp cùng nhau | Giải pháp thay thế When2Meet, mã nguồn mở';
   const enTitle = 'Meet together | The Open Source When2Meet Alternative';
 
@@ -16,8 +16,8 @@ export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
   const viDescription =
     'Tìm khung giờ tốt nhất cho mọi người, dễ hơn bao giờ hết.';
 
-  const title = lang === 'vi' ? viTitle : enTitle;
-  const description = lang === 'vi' ? viDescription : enDescription;
+  const title = locale === 'vi' ? viTitle : enTitle;
+  const description = locale === 'vi' ? viDescription : enDescription;
 
   return {
     title: {
@@ -41,7 +41,7 @@ export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
     creator: 'vohoangphuc',
     openGraph: {
       type: 'website',
-      locale: lang,
+      locale,
       url: siteConfig.url,
       title,
       description,

@@ -1,11 +1,11 @@
 import WorkspaceInvites from './workspace-invites';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 export default async function OnboardingPage() {
-  const { t } = useTranslation('onboarding');
+  const t = useTranslations('onboarding');
 
   return (
     <div className="inset-0 flex h-full items-center justify-center p-4 lg:px-32">

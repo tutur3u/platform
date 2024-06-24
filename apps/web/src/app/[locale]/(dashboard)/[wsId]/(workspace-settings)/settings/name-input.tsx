@@ -13,7 +13,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -34,7 +34,7 @@ export default function NameInput({
   defaultValue = '',
   disabled,
 }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);

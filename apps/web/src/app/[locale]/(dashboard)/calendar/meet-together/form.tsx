@@ -7,11 +7,11 @@ import TimezoneSelector from './timezone-selector';
 import timezones from '@/data/timezones.json';
 import { Timezone } from '@/types/primitives/Timezone';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 export default function Form() {
-  const { t } = useTranslation('meet-together');
+  const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
   const [startTime, setStartTime] = useState<number | undefined>(9);

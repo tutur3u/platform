@@ -10,7 +10,7 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -25,7 +25,7 @@ interface Props {
 export default function WalletSettingsPage({
   params: { wsId, walletId },
 }: Props) {
-  const { t } = useTranslation('wallets');
+  const t = useTranslations('wallets');
 
   const router = useRouter();
 

@@ -15,7 +15,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -26,7 +26,7 @@ interface UserGroupRowActionsProps {
 
 export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-user-groups');
+  const t = useTranslations('ws-user-groups');
 
   const data = row.original;
 

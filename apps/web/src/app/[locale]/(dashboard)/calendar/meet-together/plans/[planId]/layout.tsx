@@ -8,13 +8,13 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: {
-    lang: string;
+    locale: string;
     planId: string;
   };
 }
 
 export const generateMetadata = async ({
-  params: { lang, planId },
+  params: { locale, planId },
 }: Props): Promise<Metadata> => {
   try {
     const viTitle = 'Họp cùng nhau';
@@ -24,13 +24,13 @@ export const generateMetadata = async ({
     const viDescription =
       'Tìm khung giờ tốt nhất cho mọi người, dễ hơn bao giờ hết.';
 
-    const untitled = lang === 'vi' ? 'Kế hoạch' : 'Plan';
+    const untitled = locale === 'vi' ? 'Kế hoạch' : 'Plan';
 
     const plan = await getPlan(planId);
     const planName = plan.name || untitled;
 
-    const title = `${planName} - ${lang === 'vi' ? viTitle : enTitle}`;
-    const description = lang === 'vi' ? viDescription : enDescription;
+    const title = `${planName} - ${locale === 'vi' ? viTitle : enTitle}`;
+    const description = locale === 'vi' ? viDescription : enDescription;
 
     return {
       title: {
@@ -40,7 +40,7 @@ export const generateMetadata = async ({
       description,
       openGraph: {
         type: 'website',
-        locale: lang,
+        locale,
         url: siteConfig.url,
         title,
         description,

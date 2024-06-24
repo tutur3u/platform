@@ -3,7 +3,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { type Message } from 'ai';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
 export interface ChatList {
@@ -40,7 +40,7 @@ export function ChatList({
   summarizing,
   setInput,
 }: ChatList) {
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
   if (!messages.length) return null;
 
   return (

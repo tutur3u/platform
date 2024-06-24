@@ -2,7 +2,7 @@ import StatisticCard from '../../../../../../components/cards/StatisticCard';
 import tzs from '@/data/timezones.json';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { createAdminClient } from '@/utils/supabase/server';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -18,7 +18,7 @@ export default async function InfrastructureOverviewPage({
     redirectTo: `/${wsId}/settings`,
   });
 
-  const { t } = useTranslation('infrastructure-tabs');
+  const t = useTranslations('infrastructure-tabs');
 
   const usersLabel = t('users');
   const workspacesLabel = t('workspaces');

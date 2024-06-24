@@ -34,7 +34,7 @@ import {
   LinkIcon,
   Lock,
 } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
@@ -84,7 +84,7 @@ export function ChatPanel({
   collapsed,
   setCollapsed,
 }: ChatPanelProps) {
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);

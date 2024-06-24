@@ -2,7 +2,7 @@ import FleetingNavigator from './fleeting-navigator';
 import { NavLink, Navigation } from '@/components/navigation';
 import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -16,7 +16,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const { t } = useTranslation('sidebar-tabs');
+  const t = useTranslations('sidebar-tabs');
 
   const secrets = await getSecrets({
     wsId,

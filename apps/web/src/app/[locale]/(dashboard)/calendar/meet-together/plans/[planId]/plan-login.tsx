@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -49,7 +49,7 @@ export default function PlanLogin({
   const pathname = usePathname();
   const router = useRouter();
 
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
 
   const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
 

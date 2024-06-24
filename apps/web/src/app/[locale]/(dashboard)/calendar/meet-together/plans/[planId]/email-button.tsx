@@ -1,7 +1,7 @@
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { Button } from '@repo/ui/components/ui/button';
 import { Mail } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function EmailButton({
@@ -11,7 +11,7 @@ export default function EmailButton({
   url: string;
   plan: MeetTogetherPlan;
 }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
 
   return (
     <Link

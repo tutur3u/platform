@@ -58,7 +58,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -70,7 +70,7 @@ const FormSchema = z.object({
 });
 
 export default function WorkspaceSelect() {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const [user, setUser] = useState<User | undefined>();
   const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();

@@ -8,7 +8,7 @@ import { Divider, NumberInput, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 
@@ -22,7 +22,7 @@ interface Props {
 export default function InvoiceDetailsPage({
   params: { wsId, invoiceId },
 }: Props) {
-  const { t } = useTranslation('invoices');
+  const t = useTranslations('invoices');
 
   const apiPath =
     wsId && invoiceId
@@ -156,7 +156,7 @@ export default function InvoiceDetailsPage({
     }
   };
 
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   return (
     <div className="mt-2 flex min-h-full w-full flex-col">
@@ -180,7 +180,7 @@ export default function InvoiceDetailsPage({
               invoice ? 'hover:bg-red-300/20' : 'cursor-not-allowed opacity-50'
             }`}
           >
-            {t('common:delete')}
+            {t('common.delete')}
           </button>
 
           <button
@@ -213,7 +213,7 @@ export default function InvoiceDetailsPage({
             }}
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
             placeholder={'Date & time'}
-            locale={lang}
+            locale={locale}
             disabled={!transaction?.taken_at}
           />
 

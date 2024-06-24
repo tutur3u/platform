@@ -1,6 +1,6 @@
 import { User } from '@/types/primitives/User';
 import { Button, TextInput } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function AccountDeleteForm({ user, onDelete }: Props) {
-  const { t } = useTranslation('settings-account');
+  const t = useTranslations('settings-account');
   const [value, setValue] = useState('');
   const [isDisabled, setIsDisabled] = useState(true);
 

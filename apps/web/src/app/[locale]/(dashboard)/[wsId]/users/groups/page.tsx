@@ -7,7 +7,7 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface SearchParams {
   q?: string;
@@ -29,7 +29,7 @@ export default async function WorkspaceUserGroupsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('ws-user-groups');
+  const t = useTranslations('ws-user-groups');
 
   const { data, count } = await getData(wsId, searchParams);
 

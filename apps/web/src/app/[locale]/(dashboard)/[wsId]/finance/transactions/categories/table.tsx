@@ -5,8 +5,8 @@ import { TransactionCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { Dialog } from '@repo/ui/components/ui/dialog';
+import { useTranslations } from 'next-intl';
 import { Translate } from 'next-translate';
-import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 
 interface Props {
@@ -20,7 +20,7 @@ export default function TransactionCategoriesTable({
   data,
   count,
 }: Props) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const [category, setTransactionCategory] = useState<TransactionCategory>();
 

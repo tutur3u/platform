@@ -2,7 +2,7 @@ import SettingItemCard from '../settings/SettingItemCard';
 import { Product } from '@/types/primitives/Product';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { NumberInput } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 interface Props {
@@ -53,7 +53,7 @@ const InvoiceProductInput = ({
       });
   }, [wsId, p, hideStock, updateProduct]);
 
-  const { t } = useTranslation('invoice-product-input');
+  const t = useTranslations('invoice-product-input');
 
   return (
     <SettingItemCard

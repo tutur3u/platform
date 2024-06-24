@@ -1,6 +1,6 @@
 import { SupportedColor } from '@/types/primitives/SupportedColors';
 import { Tooltip } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface ColorOptionProps {
   color: SupportedColor;
@@ -126,7 +126,7 @@ const ColorOption = ({
     return colors[color];
   };
 
-  const { t } = useTranslation('calendar-event-configs');
+  const t = useTranslations('calendar-event-configs');
 
   return (
     <Tooltip

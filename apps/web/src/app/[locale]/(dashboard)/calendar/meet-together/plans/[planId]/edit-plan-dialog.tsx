@@ -35,7 +35,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Pencil } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -51,7 +51,7 @@ const FormSchema = z.object({
 });
 
 export default function EditPlanDialog({ plan }: Props) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
   const router = useRouter();
 
   const [isOpened, setIsOpened] = useState(false);

@@ -2,11 +2,11 @@ import SettingItemTab from '../../../../../components/settings/SettingItemTab';
 import DisplayNameInput from './display-name-input';
 import EmailInput from './email-input';
 import { getCurrentUser } from '@/lib/user-helper';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 export default async function AccountSettingsPage() {
-  const { t } = useTranslation('settings-account');
+  const t = useTranslations('settings-account');
   const user = await getCurrentUser();
 
   // const avatarLabel = t('avatar');

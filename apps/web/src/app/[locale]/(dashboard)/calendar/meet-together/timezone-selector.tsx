@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   value: Timezone | undefined;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function TimezoneSelector({ value, onValueChange }: Props) {
-  const { t } = useTranslation('meet-together');
+  const t = useTranslations('meet-together');
 
   const handleValueChange = (value: string) => {
     const timezone = timezones.find((timezone) => timezone.value === value);

@@ -14,7 +14,7 @@ import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 export type ComboboxOptions = {
@@ -51,7 +51,7 @@ export function Combobox({
   onChange,
   onCreate,
 }: ComboboxProps) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');

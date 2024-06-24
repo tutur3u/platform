@@ -6,14 +6,14 @@ import { AIChat } from '@/types/db';
 import { useChat } from '@ai-sdk/react';
 import { useClickOutside } from '@mantine/hooks';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const disabledPaths = [`/${wsId}/chat`, `/${wsId}/ai/playground`];
 
-  const { t } = useTranslation('sidebar-tabs');
+  const t = useTranslations('sidebar-tabs');
   const pathname = usePathname();
 
   const [currentView, setCurrentView] = useState<

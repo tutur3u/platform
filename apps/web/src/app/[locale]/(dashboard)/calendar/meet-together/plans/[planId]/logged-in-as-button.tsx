@@ -3,14 +3,14 @@ import { useTimeBlocking } from './time-blocking-provider';
 import { User as PlatformUser } from '@/types/primitives/User';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default function LoggedInAsButton({
   platformUser,
 }: {
   platformUser: PlatformUser | null;
 }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
   const { user: guestUser, setDisplayMode } = useTimeBlocking();
 
   const user = guestUser ?? platformUser;

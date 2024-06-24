@@ -33,7 +33,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { User as UserIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -56,7 +56,7 @@ export function MemberSettingsButton({
   currentUser,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations('ws-members');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

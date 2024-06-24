@@ -21,7 +21,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -65,7 +65,7 @@ export function UserDatabaseFilter({
   disabled,
   onSet,
 }: UserDatabaseFilterProps) {
-  const { t } = useTranslation('user-data-table');
+  const t = useTranslations('user-data-table');
 
   const searchParams = useSearchParams();
   const router = useRouter();

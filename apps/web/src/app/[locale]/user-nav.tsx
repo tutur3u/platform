@@ -28,11 +28,11 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Globe, Palette, Settings, User } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export async function UserNav() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const user = await getCurrentUser(true);
   const workspaces = await getWorkspaces(true);

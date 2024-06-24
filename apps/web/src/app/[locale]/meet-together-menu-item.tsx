@@ -6,12 +6,12 @@ import {
   DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { CalendarClock } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function MeetTogetherMenuItem() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const pathname = usePathname();
 
   return (

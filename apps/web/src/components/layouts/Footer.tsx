@@ -1,11 +1,11 @@
 import Slogan from './slogan';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function Footer() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const getStarted = t('get-started');
   const getStartedDesc = t('get-started-desc');

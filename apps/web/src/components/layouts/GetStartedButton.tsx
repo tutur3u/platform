@@ -1,11 +1,11 @@
 'use client';
 
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function GetStartedButton() {
-  const { t } = useTranslation();
+  const t = useTranslations();
   const pathname = usePathname();
 
   const hidden = pathname === '/login';

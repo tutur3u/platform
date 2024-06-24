@@ -4,7 +4,7 @@ import { User, UserRole } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import React, { ChangeEvent, useState } from 'react';
 
 interface Props {
@@ -24,7 +24,7 @@ const WorkspaceMemberEditForm = ({
   onDelete,
   disallowOwnerChange,
 }: Props) => {
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations('ws-members');
 
   const [role, setRole] = useState<UserRole>(user?.role || 'MEMBER');
   const [roleTitle, setRoleTitle] = useState(user?.role_title || '');

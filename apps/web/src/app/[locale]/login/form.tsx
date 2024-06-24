@@ -21,7 +21,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -34,7 +34,7 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
-  const { t } = useTranslation('login');
+  const t = useTranslations('login');
   const router = useRouter();
   const searchParams = useSearchParams();
 

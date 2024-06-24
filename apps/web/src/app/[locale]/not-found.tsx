@@ -1,8 +1,8 @@
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function NotFound() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const msg = t('404-msg');
   const backToHome = t('back-to-home');

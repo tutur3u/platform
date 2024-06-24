@@ -1,12 +1,12 @@
 import LoginForm from './form';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 export default async function Login() {
-  const { t } = useTranslation('auth');
+  const t = useTranslations('auth');
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center p-8">

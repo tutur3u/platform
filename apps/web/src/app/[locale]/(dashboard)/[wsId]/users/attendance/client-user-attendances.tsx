@@ -4,7 +4,7 @@ import UserMonthAttendance from './user-month-attendance';
 import useSearchParams from '@/hooks/useSearchParams';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { DataTablePagination } from '@repo/ui/components/ui/custom/tables/data-table-pagination';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface SearchParams {
   q?: string;
@@ -30,7 +30,7 @@ export default async function ClientUserAttendances({
   data: WorkspaceUser[];
   count: number;
 }) {
-  const { t } = useTranslation();
+  const t = useTranslations();
   const searchParams = useSearchParams();
 
   // const queryPage = useMemo(

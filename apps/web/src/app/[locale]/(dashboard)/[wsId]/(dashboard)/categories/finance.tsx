@@ -1,12 +1,12 @@
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default async function FinanceCategoryStatistics({
   wsId,
 }: {
   wsId: string;
 }) {
-  const { t } = useTranslation('ws-home');
+  const t = useTranslations('ws-home');
 
   const forceEnable = true;
   const enabled =

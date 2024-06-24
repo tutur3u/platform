@@ -14,7 +14,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -24,7 +24,7 @@ interface RoleRowActionsProps {
 
 export function RoleRowActions({ row }: RoleRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-roles');
+  const t = useTranslations('ws-roles');
 
   const role = row.original;
 

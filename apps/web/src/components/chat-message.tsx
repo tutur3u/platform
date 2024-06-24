@@ -19,7 +19,7 @@ import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'katex/dist/katex.min.css';
 import { Bot, Send, Sparkle } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import rehypeKatex from 'rehype-katex';
@@ -51,7 +51,7 @@ export function ChatMessage({
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
 
   return (
     <div

@@ -2,7 +2,7 @@
 
 import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
 import { Check, Monitor } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function SystemLanguageDropdownItem({ selected }: Props) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const router = useRouter();
 
   const useDefaultLocale = async () => {

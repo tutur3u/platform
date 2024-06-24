@@ -1,9 +1,9 @@
 import LogoTab from '@/components/branding/LogoTab';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 const LandingPage = () => {
-  const { t } = useTranslation('branding');
+  const t = useTranslations('branding');
 
   return (
     <div className="mx-4 flex flex-col gap-8 pt-24 md:mx-32 lg:mx-64">

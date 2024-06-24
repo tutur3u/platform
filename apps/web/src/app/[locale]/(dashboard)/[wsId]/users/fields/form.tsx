@@ -32,7 +32,7 @@ import { Textarea } from '@repo/ui/components/ui/textarea';
 import { cn } from '@repo/ui/lib/utils';
 import dayjs from 'dayjs';
 import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import useSWR from 'swr';
@@ -56,7 +56,7 @@ const FormSchema = z.object({
 export const ApiConfigFormSchema = FormSchema;
 
 export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-user-fields');
+  const t = useTranslations('ws-user-fields');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

@@ -1,6 +1,6 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 const enabled = true;
 
@@ -10,7 +10,7 @@ export default async function TotalBalanceStatistics({
   wsId: string;
 }) {
   const supabase = createClient();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const { data: income } = enabled
     ? await supabase.rpc('get_workspace_wallets_income', {

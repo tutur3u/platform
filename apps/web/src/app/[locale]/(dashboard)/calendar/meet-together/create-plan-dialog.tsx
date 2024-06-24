@@ -23,8 +23,8 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -57,7 +57,7 @@ const convertToTimetz = (
 };
 
 export default function CreatePlanDialog({ plan }: Props) {
-  const { t } = useTranslation('meet-together');
+  const t = useTranslations('meet-together');
   const router = useRouter();
 
   const { resolvedTheme } = useTheme();

@@ -3,7 +3,7 @@ import { getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -15,7 +15,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);
 
-  const { t } = useTranslation('documents');
+  const t = useTranslations('documents');
 
   const newDocumentLabel = t('new-document');
   const noDocumentsLabel = t('no-documents');

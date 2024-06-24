@@ -2,7 +2,7 @@ import DayTime from './day-time';
 import { Timeblock } from '@/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import React from 'react';
 
 export default function DayPlanner({
@@ -20,19 +20,19 @@ export default function DayPlanner({
   editable: boolean;
   disabled: boolean;
 }) {
-  const { lang } = useTranslation();
-  dayjs.locale(lang);
+  const locale = useLocale();
+  dayjs.locale(locale);
 
   return (
     <div>
       <div className="pointer-events-none select-none p-1">
         <div className="line-clamp-1 text-xs">
           {dayjs(date)
-            .locale(lang)
-            .format(lang === 'vi' ? 'DD/MM' : 'MMM D')}
+            .locale(locale)
+            .format(locale === 'vi' ? 'DD/MM' : 'MMM D')}
         </div>
         <div className="font-semibold">
-          {dayjs(date).locale(lang).format('ddd')}
+          {dayjs(date).locale(locale).format('ddd')}
         </div>
       </div>
 

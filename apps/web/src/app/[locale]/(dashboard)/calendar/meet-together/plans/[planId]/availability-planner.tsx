@@ -1,7 +1,7 @@
 import DatePlanner from './date-planner';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@/types/primitives/Timeblock';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default function AvailabilityPlanner({
   plan,
@@ -12,7 +12,7 @@ export default function AvailabilityPlanner({
   timeblocks: Timeblock[];
   disabled?: boolean;
 }) {
-  const { t } = useTranslation('meet-together-plan-details');
+  const t = useTranslations('meet-together-plan-details');
 
   return (
     <div className="flex flex-col gap-2 text-center">

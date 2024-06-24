@@ -2,7 +2,7 @@ import { UserDatabaseFilter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface SearchParams {
   q?: string;
@@ -19,7 +19,7 @@ export default async function Filters({
   wsId: string;
   searchParams: SearchParams;
 }) {
-  const { t } = useTranslation('user-group-data-table');
+  const t = useTranslations('user-group-data-table');
 
   const { data: tags } = await getTags(wsId);
   const { data: excludedTags } = await getExcludedTags(wsId, searchParams);

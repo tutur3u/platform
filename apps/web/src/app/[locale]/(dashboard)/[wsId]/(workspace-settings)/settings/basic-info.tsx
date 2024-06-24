@@ -3,7 +3,7 @@
 import WorkspaceIDCopy from './id-copy';
 import NameInput from './name-input';
 import { Workspace } from '@/types/primitives/Workspace';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function BasicInfo({ workspace, allowEdit }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
 
   if (!workspace) return null;
 

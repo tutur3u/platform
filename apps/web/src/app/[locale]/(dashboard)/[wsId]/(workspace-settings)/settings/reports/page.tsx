@@ -5,7 +5,7 @@ import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 interface SearchParams {

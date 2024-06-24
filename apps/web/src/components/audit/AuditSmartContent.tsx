@@ -1,7 +1,7 @@
 import { User } from '@/types/primitives/User';
 import { AuditLog } from '@/types/primitives/audit-log';
 import { JsonInput, Loader } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 
 interface Props {

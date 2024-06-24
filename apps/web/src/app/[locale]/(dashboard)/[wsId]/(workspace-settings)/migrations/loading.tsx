@@ -1,7 +1,7 @@
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default function Loading() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   return (
     <div className="flex items-center justify-center p-8 font-semibold">

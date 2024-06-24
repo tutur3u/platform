@@ -1,4 +1,4 @@
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function TimeColumn({
   id,
@@ -11,7 +11,7 @@ export default function TimeColumn({
   end: number;
   className?: string;
 }) {
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   return (
     <div className={className}>
@@ -44,8 +44,8 @@ export default function TimeColumn({
                       : hr / 4 === 24
                         ? '12:00 AM'
                         : hr / 4 < 12
-                          ? `${hr / 4}:00 ${lang === 'vi' ? 'SA' : 'AM'}`
-                          : `${hr / 4 - 12}:00 ${lang === 'vi' ? 'CH' : 'PM'}`}
+                          ? `${hr / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
+                          : `${hr / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
                   </div>
                 </div>
               )}

@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -30,7 +30,7 @@ const FormSchema = z.object({
 });
 
 export default function UserGroupForm({ wsId, data, onFinish }: Props) {
-  const { t } = useTranslation('ws-user-groups');
+  const t = useTranslations('ws-user-groups');
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({

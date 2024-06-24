@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import * as z from 'zod';
@@ -33,7 +33,7 @@ export default function ApiKeyEditDialog({
   submitLabel,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('ws-api-keys');
+  const t = useTranslations('ws-api-keys');
 
   const [internalOpen, setInternalOpen] = useState(false);
 

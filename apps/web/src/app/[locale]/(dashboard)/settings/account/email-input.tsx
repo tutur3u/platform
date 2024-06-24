@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -31,7 +31,7 @@ const FormSchema = z.object({
 
 export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   const router = useRouter();
-  const { t } = useTranslation('settings-account');
+  const t = useTranslations('settings-account');
 
   const newEmailLabel = t('new-email');
   const currentEmailLabel = t('current-email');

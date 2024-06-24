@@ -14,7 +14,7 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Check, Trash } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -37,7 +37,7 @@ const FormSchema = z.object({
 });
 
 export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const router = useRouter();
   const supabase = createClient();

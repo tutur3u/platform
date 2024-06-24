@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -27,7 +27,7 @@ export default async function WorkspaceUserFieldsPage({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
   const { data: userFields, count } = await getUserFields(wsId, searchParams);
-  const { t } = useTranslation('ws-user-fields');
+  const t = useTranslations('ws-user-fields');
 
   return (
     <>

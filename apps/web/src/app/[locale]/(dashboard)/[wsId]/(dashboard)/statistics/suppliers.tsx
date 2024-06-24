@@ -1,7 +1,7 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 export default async function SuppliersStatistics({
   wsId,
@@ -11,7 +11,7 @@ export default async function SuppliersStatistics({
   redirect?: boolean;
 }) {
   const supabase = createClient();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const enabled = await verifyHasSecrets(
     wsId,

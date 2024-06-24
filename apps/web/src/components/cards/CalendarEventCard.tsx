@@ -3,7 +3,7 @@ import { CalendarEvent } from '@/types/primitives/calendar-event';
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {
@@ -18,7 +18,7 @@ const CalendarEventCard = ({
   orientation = 'vertical',
 }: Props) => {
   const { ws } = useWorkspaces();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   if (!ws) return null;
 

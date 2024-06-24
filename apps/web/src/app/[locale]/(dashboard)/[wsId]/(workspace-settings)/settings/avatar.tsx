@@ -2,7 +2,7 @@
 
 import AvatarInput from './avatar-input';
 import { Workspace } from '@/types/primitives/Workspace';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;
@@ -13,7 +13,7 @@ export default function WorkspaceAvatarSettings({
   workspace,
   allowEdit,
 }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
 
   if (!workspace) return null;
 

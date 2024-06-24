@@ -2,7 +2,7 @@
 
 import LogoInput from './logo-input';
 import { Workspace } from '@/types/primitives/Workspace';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function WorkspaceLogoSettings({ workspace, allowEdit }: Props) {
-  const { t } = useTranslation('ws-settings');
+  const t = useTranslations('ws-settings');
 
   if (!workspace) return null;
 

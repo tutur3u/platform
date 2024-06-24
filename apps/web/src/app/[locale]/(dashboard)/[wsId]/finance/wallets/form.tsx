@@ -14,7 +14,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -35,7 +35,7 @@ const FormSchema = z.object({
 });
 
 export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
-  const { t } = useTranslation('wallet-data-table');
+  const t = useTranslations('wallet-data-table');
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();

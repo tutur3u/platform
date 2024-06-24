@@ -6,7 +6,7 @@ import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 interface Props {
@@ -27,7 +27,7 @@ export default async function WorkspaceMembersPage({
   const user = await getCurrentUser();
   const members = await getMembers(wsId, searchParams);
 
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations('ws-members');
 
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 

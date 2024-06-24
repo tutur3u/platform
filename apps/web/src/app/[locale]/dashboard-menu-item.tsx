@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { ActivitySquare, Database } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function DashboardMenuItem({ defaultWorkspaceId }: Props) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   return (
     <>

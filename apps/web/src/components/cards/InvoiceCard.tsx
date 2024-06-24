@@ -6,7 +6,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getGender } from '@/utils/gender-helper';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import useSWR from 'swr';
 
@@ -37,7 +37,7 @@ const InvoiceCard = ({
 }: Props) => {
   const { ws } = useWorkspaces();
 
-  const { t } = useTranslation('invoice-card');
+  const t = useTranslations('invoice-card');
 
   const userApiPath = `/api/workspaces/${ws?.id}/users/${invoice.customer_id}`;
   const { data: user } = useSWR<WorkspaceUser>(

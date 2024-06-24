@@ -4,7 +4,7 @@ import { AuditLog } from '@/types/primitives/audit-log';
 import { getLabel } from '@/utils/audit-helper';
 import moment from 'moment';
 import 'moment/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 
 interface Props {

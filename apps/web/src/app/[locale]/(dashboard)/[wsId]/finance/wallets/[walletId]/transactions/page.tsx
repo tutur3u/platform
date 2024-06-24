@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 import 'moment/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -25,8 +25,8 @@ export default async function FinanceTransactionsPage({
   params: { wsId, walletId },
   searchParams,
 }: Props) {
-  const { lang } = useTranslation();
-  const { t } = useTranslation('transactions');
+  const locale = useLocale();
+  const t = useTranslations('transactions');
 
   const transactions = await getTransactions(walletId, searchParams);
 
@@ -73,7 +73,7 @@ export default async function FinanceTransactionsPage({
 
     return (
       moment(date)
-        .locale(lang)
+        .locale(locale)
         // Format the date to a string
         .format('dddd, DD/MM/YYYY')
         // Capitalize the first letter of the day

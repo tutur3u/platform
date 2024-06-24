@@ -8,7 +8,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface SearchParams {
   page?: string;
@@ -29,7 +29,7 @@ export default async function WorkspaceUserReportsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t } = useTranslation('user-data-table');
+  const t = useTranslations('user-data-table');
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: userGroups } = await getUserGroups(wsId);

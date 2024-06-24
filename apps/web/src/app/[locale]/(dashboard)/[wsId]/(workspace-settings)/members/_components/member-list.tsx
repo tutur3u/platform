@@ -12,7 +12,7 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;

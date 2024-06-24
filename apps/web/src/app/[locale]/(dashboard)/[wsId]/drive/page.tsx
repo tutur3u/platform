@@ -4,7 +4,7 @@ import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -21,7 +21,7 @@ export default async function WorkspaceStorageObjectsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { t } = useTranslation('ws-storage-objects');
+  const t = useTranslations('ws-storage-objects');
 
   await verifyHasSecrets(wsId, ['ENABLE_DRIVE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);

@@ -16,7 +16,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Message } from 'ai';
 import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -43,7 +43,7 @@ export default function FleetingAssistant({
   onReset: () => void;
   onSubmit: (prompt: string) => Promise<Partial<AIChat> | undefined>;
 }) {
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai-chat');
 
   const { isLoading, append, setMessages } = useChat({
     id: chat?.id,

@@ -1,6 +1,6 @@
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { enUS, vi } from 'date-fns/locale';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import React from 'react';
 
 interface DateSelectorProps {
@@ -9,7 +9,7 @@ interface DateSelectorProps {
 }
 
 export default function DateSelector({ value, onSelect }: DateSelectorProps) {
-  const { lang } = useTranslation();
+  const locale = useLocale();
   return (
     <Calendar
       mode="multiple"
@@ -21,7 +21,7 @@ export default function DateSelector({ value, onSelect }: DateSelectorProps) {
         head_row: 'flex justify-center gap-2 md:gap-1',
         tbody: 'grid gap-2 md:gap-1',
       }}
-      locale={lang === 'vi' ? vi : enUS}
+      locale={locale === 'vi' ? vi : enUS}
     />
   );
 }

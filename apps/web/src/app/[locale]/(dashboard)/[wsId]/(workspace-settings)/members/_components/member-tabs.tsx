@@ -1,13 +1,13 @@
 import TabNavigation from './tab-navigation';
 import { Tabs, TabsList } from '@repo/ui/components/ui/tabs';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   value?: string;
 }
 
 export default function MemberTabs({ value }: Props) {
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations('ws-members');
 
   const allLabel = t('all');
   const joinedLabel = t('joined');

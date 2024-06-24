@@ -2,14 +2,14 @@
 
 import useSearchParams from '@/hooks/useSearchParams';
 import { DataTable } from '@repo/ui/components/ui/custom/tables/data-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 export const CustomDataTable = ({ namespace, ...props }: any) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { t } = useTranslation(namespace);
+  const t = useTranslations(namespace);
 
   const pageSize = Number(searchParams.get('pageSize') || 10);
   const page = Number(searchParams.get('page') || 0);

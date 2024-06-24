@@ -3,7 +3,7 @@
 import { WorkspaceDocument } from '@/types/db';
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { ChangeEvent, useState } from 'react';
 
 interface DocumentEditFormProps {
@@ -17,7 +17,7 @@ const DocumentEditForm = ({
   onSubmit,
   onDelete,
 }: DocumentEditFormProps) => {
-  const { t } = useTranslation('documents');
+  const t = useTranslations('documents');
   const [name, setName] = useState(doc?.name || '');
 
   const documentNameLabel = t('document-name');

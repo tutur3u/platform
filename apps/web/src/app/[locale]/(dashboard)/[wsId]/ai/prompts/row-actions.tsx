@@ -12,7 +12,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface AIPromptRowActions {
@@ -21,7 +21,7 @@ interface AIPromptRowActions {
 }
 
 export function AIPromptRowActions(props: AIPromptRowActions) {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const router = useRouter();
   const data = props.row.original;
