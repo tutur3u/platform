@@ -50,7 +50,7 @@ export const groupTagColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
       <div className="line-clamp-1 max-w-[8rem] break-all">
         <ColorPicker
           text={row.getValue('name')}
-          value={row.getValue('color')}
+          value={row.getValue('color') || '#000000'}
           className="line-clamp-1 w-full cursor-default"
         />
       </div>

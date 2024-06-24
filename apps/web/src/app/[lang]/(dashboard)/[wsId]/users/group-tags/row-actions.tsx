@@ -1,9 +1,10 @@
 'use client';
 
-import ApiKeyEditDialog from './edit-dialog';
+import GroupTagForm from './form';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +26,11 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const router = useRouter();
   const { t } = useTranslation('ws-user-group-tags');
 
-  const groupTag = row.original;
+  const data = row.original;
 
   const deleteApiKey = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${groupTag.ws_id}/group-tags/${groupTag.id}`,
+      `/api/v1/workspaces/${data.ws_id}/group-tags/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -48,7 +49,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!groupTag.id || !groupTag.ws_id) return null;
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -72,12 +73,15 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ApiKeyEditDialog
-        wsId={groupTag.ws_id}
-        data={groupTag}
+
+      <ModifiableDialogTrigger
+        data={data}
         open={showEditDialog}
+        title={t('group_tag')}
+        createDescription={t('create_tag')}
+        editDescription={t('edit_tag')}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_tag')}
+        form={<GroupTagForm wsId={data.ws_id} data={data} />}
       />
     </div>
   );

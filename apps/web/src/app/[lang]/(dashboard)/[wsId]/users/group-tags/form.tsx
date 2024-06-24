@@ -1,10 +1,10 @@
-import { UserDatabaseFilter } from '../filters';
+'use client';
+
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/user-group-tag';
 import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import {
   Form,
@@ -16,34 +16,31 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { UserDatabaseFilter } from '../filters';
 
 interface Props {
   wsId: string;
-  data: UserGroupTag;
-  submitLabel?: string;
-  onSubmit: (values: z.infer<typeof FormSchema>) => void;
+  data?: UserGroupTag;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1),
-  color: z.string().min(1).optional(),
+  color: z.string().min(1),
   group_ids: z.array(z.string()).optional(),
 });
 
-export const GroupTagFormSchema = FormSchema;
-
-export default function GroupTagForm({
-  wsId,
-  data,
-  submitLabel,
-  onSubmit,
-}: Props) {
+export default function GroupTagForm({ wsId, data, onFinish }: Props) {
   const { t } = useTranslation('ws-user-group-tags');
+  const router = useRouter();
 
   const { data: queryData, isPending } = useQuery({
     queryKey: ['workspaces', wsId, 'user-groups'],
@@ -55,9 +52,10 @@ export default function GroupTagForm({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: data.name || '',
-      color: data.color || undefined,
-      group_ids: data.group_ids,
+      id: data?.id,
+      name: data?.name || '',
+      color: data?.color || '#000000',
+      group_ids: data?.group_ids,
     },
   });
 
@@ -66,6 +64,36 @@ export default function GroupTagForm({
   const isSubmitting = form.formState.isSubmitting;
 
   const disabled = !isDirty || !isValid || isSubmitting;
+
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    try {
+      const res = await fetch(
+        data.id
+          ? `/api/v1/workspaces/${wsId}/group-tags/${data.id}`
+          : `/api/v1/workspaces/${wsId}/group-tags`,
+        {
+          method: data.id ? 'PUT' : 'POST',
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (res.ok) {
+        onFinish?.(data);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast({
+          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+          description: data.message,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
 
   return (
     <Form {...form}>
@@ -87,69 +115,53 @@ export default function GroupTagForm({
             </FormItem>
           )}
         />
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="enable-custom-color"
-            checked={!!form.watch('color')}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                form.setValue('color', '#000000');
-              } else {
-                form.setValue('color', undefined);
-              }
-            }}
-          />
-          <label
-            htmlFor="enable-custom-color"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            {t('enable_custom_color')}
-          </label>
-        </div>
 
-        {!!form.watch('color') && (
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem className="overflow-hidden">
-                <FormLabel>{t('tag_color')}</FormLabel>
-                <FormControl>
-                  <ColorPicker
-                    {...field}
-                    text={form.watch('name')}
-                    value={field.value!}
-                    onChange={field.onChange}
-                    className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem className="overflow-hidden">
+              <FormLabel>{t('tag_color')}</FormLabel>
+              <FormControl>
+                <ColorPicker
+                  {...field}
+                  text={form.watch('name')}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {!!data?.id || (
+          <>
+            <Separator />
+
+            <UserDatabaseFilter
+              title={t('linked_user_groups')}
+              icon={<Users className="mr-2 h-4 w-4" />}
+              defaultValues={form.watch('group_ids')}
+              options={
+                userGroups?.map((group) => ({
+                  label: group.name || 'No name',
+                  value: group.id,
+                  count: group.amount,
+                })) || []
+              }
+              onSet={(value) => form.setValue('group_ids', value)}
+              disabled={isPending || !!data?.id}
+              align="center"
+              alwaysEnableZero
+              alwaysShowNumber
+            />
+          </>
         )}
 
-        <Separator />
-
-        <UserDatabaseFilter
-          title={t('linked_user_groups')}
-          icon={<Users className="mr-2 h-4 w-4" />}
-          defaultValues={form.watch('group_ids')}
-          options={
-            userGroups?.map((group) => ({
-              label: group.name || 'No name',
-              value: group.id,
-              count: group.amount,
-            })) || []
-          }
-          onSet={(value) => form.setValue('group_ids', value)}
-          disabled={isPending || !!data.id}
-          align="center"
-          alwaysEnableZero
-          alwaysShowNumber
-        />
         <Button type="submit" className="w-full" disabled={disabled}>
-          {submitLabel}
+          {t('create_tag')}
         </Button>
       </form>
     </Form>

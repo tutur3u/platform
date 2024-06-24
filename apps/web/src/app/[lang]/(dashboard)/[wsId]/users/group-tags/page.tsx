@@ -1,11 +1,10 @@
 import { groupTagColumns } from './columns';
-import ApiKeyEditDialog from './edit-dialog';
+import GroupTagForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
@@ -28,28 +27,14 @@ export default async function WorkspaceUserGroupTagsPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('group_tags')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <ApiKeyEditDialog
-            wsId={wsId}
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create_tag')}
-              </Button>
-            }
-            submitLabel={t('create_tag')}
-          />
-        </div>
-      </div>
+      <FeatureSummary
+        pluralTitle={t('group_tags')}
+        singularTitle={t('group_tag')}
+        description={t('description')}
+        createDescription={t('create_tag')}
+        editDescription={t('edit_tag')}
+        form={<GroupTagForm wsId={wsId} />}
+      />
       <Separator className="my-4" />
       <CustomDataTable
         columnGenerator={groupTagColumns}
