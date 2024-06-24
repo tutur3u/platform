@@ -157,11 +157,11 @@ export function DataTable<TData, TValue>({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  key={row.id}
+                  key={`${namespace}-${row.id}`}
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={`${namespace}-${cell.id}`}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -176,7 +176,7 @@ export function DataTable<TData, TValue>({
                   colSpan={
                     columnGenerator?.(t!)?.length || columns?.length || 1
                   }
-                  className="h-24 text-center"
+                  className="h-24 text-center opacity-60"
                 >
                   {data
                     ? `${t?.('common:no-results')}.`

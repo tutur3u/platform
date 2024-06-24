@@ -488,29 +488,34 @@ export default function WorkspaceSelect() {
             className="flex flex-none items-center gap-1 px-2"
             disabled={!onlineUsers}
           >
-            {onlineUsers && (onlineUsers?.length || 0) > 0 ? (
-              onlineUsers.slice(0, 3).map((user) => (
-                <div
-                  key={user.id}
-                  className="hidden items-center gap-2 md:flex"
-                >
-                  <Avatar className="border-background relative h-6 w-6 overflow-visible border">
-                    <AvatarImage
-                      src={user?.avatar_url || undefined}
-                      alt={
-                        user.display_name || user.handle || user.email || '?'
-                      }
-                      className="overflow-clip rounded-full"
-                    />
-                    <AvatarFallback className="text-xs font-semibold">
-                      {getInitials(
-                        user?.display_name || user?.handle || user.email || '?'
-                      )}
-                    </AvatarFallback>
-                    <UserPresenceIndicator />
-                  </Avatar>
-                </div>
-              ))
+            {user?.id || (onlineUsers && (onlineUsers?.length || 0) > 0) ? (
+              (onlineUsers ? onlineUsers : user?.id ? [user] : [])
+                .slice(0, 3)
+                .map((user) => (
+                  <div
+                    key={user.id}
+                    className="hidden items-center gap-2 md:flex"
+                  >
+                    <Avatar className="border-background relative h-6 w-6 overflow-visible border">
+                      <AvatarImage
+                        src={user?.avatar_url || undefined}
+                        alt={
+                          user.display_name || user.handle || user.email || '?'
+                        }
+                        className="overflow-clip rounded-full"
+                      />
+                      <AvatarFallback className="text-xs font-semibold">
+                        {getInitials(
+                          user?.display_name ||
+                            user?.handle ||
+                            user.email ||
+                            '?'
+                        )}
+                      </AvatarFallback>
+                      <UserPresenceIndicator />
+                    </Avatar>
+                  </div>
+                ))
             ) : (
               <LoadingIndicator className="h-6 w-6" />
             )}

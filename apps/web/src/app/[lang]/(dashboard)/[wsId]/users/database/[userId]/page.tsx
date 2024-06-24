@@ -117,7 +117,7 @@ export default async function WorkspaceUserDetailsPage({
             wsId={wsId}
             user={{
               id: data.id,
-              full_name: data.full_name,
+              full_name: data.display_name || data.full_name,
               href: `/${wsId}/users/database/${data.id}`,
             }}
           />
@@ -125,14 +125,16 @@ export default async function WorkspaceUserDetailsPage({
 
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
-            <div className="grid gap-2">
+            <div
+              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col justify-center items-center'}`}
+            >
               <div className="text-lg font-semibold">
-                Nhóm đã tham gia ({groupCount})
+                {t('joined_groups')} ({groupCount})
               </div>
               <Separator />
-              <div className="grid gap-2 2xl:grid-cols-2">
-                {groups && groups.length ? (
-                  groups.map((group) => (
+              {groups && groups.length ? (
+                <div className="grid gap-2 2xl:grid-cols-2 h-full">
+                  {groups.map((group) => (
                     <Link
                       key={group.id}
                       href={`/${wsId}/users/groups/${group.id}`}
@@ -145,70 +147,79 @@ export default async function WorkspaceUserDetailsPage({
                         {group.name}
                       </Button>
                     </Link>
-                  ))
-                ) : (
-                  <div className="text-center text-opacity-60 col-span-full">
-                    {t('no_groups')}.
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full flex-1 flex justify-center items-center text-center opacity-60">
+                  {t('no_groups')}.
+                </div>
+              )}
             </div>
           </div>
 
           <div className="h-full rounded-lg border p-4">
-            <div className="grid gap-2">
+            <div
+              className={`h-full gap-2 ${reports && reports.length ? 'grid content-start' : 'flex flex-col justify-center items-center'}`}
+            >
               <div className="text-lg font-semibold">
-                Báo cáo ({reportCount})
+                {t('reports')} ({reportCount})
               </div>
               <Separator />
-              <div className="grid gap-2 2xl:grid-cols-2">
-                {reports && reports.length ? (
-                  reports.map((report) => (
+              {reports && reports.length ? (
+                <div className="grid gap-2 2xl:grid-cols-2 h-full">
+                  {reports.map((group) => (
                     <Link
-                      key={report.id}
-                      href={`/${wsId}/users/reports/${report.id}`}
+                      key={group.id}
+                      href={`/${wsId}/users/reports/${group.id}`}
                     >
                       <Button
                         className="flex w-full items-center gap-2"
                         variant="secondary"
                       >
                         <Users className="inline-block h-6 w-6" />
-                        {report.title}
+                        {group.title}
                       </Button>
                     </Link>
-                  ))
-                ) : (
-                  <div className="text-center text-opacity-60 col-span-full">
-                    {t('no_reports')}.
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full flex-1 flex justify-center items-center text-center opacity-60">
+                  {t('no_reports')}.
+                </div>
+              )}
             </div>
           </div>
 
           <div className="h-full rounded-lg border p-4">
-            <div className="grid gap-2">
+            <div
+              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col justify-center items-center'}`}
+            >
               <div className="text-lg font-semibold">
-                Mã giảm giá liên kết ({couponCount})
+                {t('coupons')} ({couponCount})
               </div>
               <Separator />
-              <div className="grid gap-2">
-                {coupons && coupons.length ? (
-                  coupons.map((coupon) => (
-                    <div
+              {coupons && coupons.length ? (
+                <div className="grid gap-2 2xl:grid-cols-2 h-full">
+                  {coupons.map((coupon) => (
+                    <Link
                       key={coupon.id}
-                      className="border-border bg-foreground/5 flex items-center gap-2 rounded border p-2"
+                      href={`/${wsId}/users/coupons/${coupon.id}`}
                     >
-                      <TicketCheck className="inline-block h-6 w-6" />
-                      {coupon.name}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-opacity-60 col-span-full">
-                    {t('no_coupons')}.
-                  </div>
-                )}
-              </div>
+                      <Button
+                        className="flex w-full items-center gap-2"
+                        variant="secondary"
+                      >
+                        <TicketCheck className="inline-block h-6 w-6" />
+                        {coupon.name}
+                      </Button>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full flex-1 flex justify-center items-center text-center opacity-60">
+                  {t('no_coupons')}.
+                </div>
+              )}
             </div>
           </div>
         </div>
