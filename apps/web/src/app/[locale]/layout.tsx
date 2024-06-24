@@ -3,6 +3,7 @@ import NavbarPadding from './navbar-padding';
 import { StaffToolbar } from './staff-toolbar';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
+import { locales } from '@/config';
 import { siteConfig } from '@/constants/configs';
 import { Toaster } from '@repo/ui/components/ui/toaster';
 import '@repo/ui/globals.css';
@@ -10,21 +11,22 @@ import { cn } from '@repo/ui/lib/utils';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
+import { unstable_setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
   params: {
-    lang: string;
+    locale: string;
   };
 }
 
-export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
+export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
-  const description = lang === 'vi' ? viDescription : enDescription;
+  const description = locale === 'vi' ? viDescription : enDescription;
 
   return {
     title: {
@@ -49,7 +51,7 @@ export const generateMetadata = ({ params: { lang } }: Props): Metadata => {
     creator: 'vohoangphuc',
     openGraph: {
       type: 'website',
-      locale: lang,
+      locale,
       url: siteConfig.url,
       title: siteConfig.name,
       description,
@@ -93,12 +95,17 @@ export const viewport: Viewport = {
 const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
 export async function generateStaticParams() {
-  return [{ lang: 'en' }, { lang: 'vi' }];
+  return locales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({ children, params }: Props) {
+export default async function RootLayout({
+  children,
+  params: { locale },
+}: Props) {
+  unstable_setRequestLocale(locale);
+
   return (
-    <html lang={params.lang}>
+    <html lang={locale}>
       <body
         className={cn(
           'bg-background min-h-screen font-sans antialiased',

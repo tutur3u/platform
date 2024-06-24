@@ -1,9 +1,0 @@
-{
-  "module": "Workflows",
-  "description": "Workflows are a series of input-output pairs that define the behavior of a model.",
-  "name": "Name",
-  "create": "Create Workflow",
-  "edit": "Edit Workflow",
-  "add_new": "Add a new workflow to this workspace.",
-  "edit_existing": "Edit an existing workflow in this workspace."
-}
