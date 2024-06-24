@@ -32,7 +32,8 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const { t, lang } = useTranslation('user-data-table');
+  const locale = useLocale();
+  const t = useTranslations('user-data-table');
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(

@@ -150,7 +150,8 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
     return colors[eventColor];
   };
 
-  const { t, lang } = useTranslation('calendar-event-configs');
+  const locale = useLocale();
+  const t = useTranslations('calendar-event-configs');
 
   const countApiPath =
     wsId && event

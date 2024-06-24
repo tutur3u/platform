@@ -10,7 +10,8 @@ interface Props {
 }
 
 const AuditSmartContent = ({ data, isExpanded }: Props) => {
-  const { t, lang } = useTranslation('ws-activities');
+  const locale = useLocale();
+  const t = useTranslations('ws-activities');
 
   const userId = data?.record?.user_id || data?.old_record?.user_id || null;
   const userApi = userId ? `/api/users/${userId}` : null;

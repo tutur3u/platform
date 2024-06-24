@@ -5,7 +5,7 @@ import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 interface SearchParams {
@@ -24,7 +24,8 @@ export default async function WorkspaceReportsSettingsPage({
   searchParams,
 }: Props) {
   const { data } = await getConfigs(wsId, searchParams);
-  const { t, lang } = useTranslation('ws-reports');
+  const locale = useLocale();
+  const t = useTranslations('ws-reports');
 
   const configs = data.map((config) => ({
     ...config,
@@ -83,7 +84,7 @@ export default async function WorkspaceReportsSettingsPage({
 
         <ReportPreview
           t={t}
-          lang={lang}
+          lang={locale}
           parseDynamicText={parseDynamicText}
           getConfig={getConfig}
         />

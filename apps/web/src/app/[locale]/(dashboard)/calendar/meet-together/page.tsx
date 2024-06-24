@@ -6,7 +6,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {
@@ -24,7 +24,8 @@ export default async function MeetTogetherPage({
   // params: { wsId },
   searchParams,
 }: Props) {
-  const { t, lang } = useTranslation('meet-together');
+  const locale = useLocale();
+  const t = useTranslations('meet-together');
   const { data: plans, user } = await getData(searchParams);
 
   return (
@@ -102,9 +103,9 @@ export default async function MeetTogetherPage({
                           className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
                         >
                           {dayjs(date)
-                            .locale(lang)
+                            .locale(locale)
                             .format(
-                              `${lang === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
+                              `${locale === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
                             )}
                         </div>
                       ))}

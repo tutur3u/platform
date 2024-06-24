@@ -32,7 +32,7 @@ import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -62,7 +62,8 @@ export function TransactionForm({
   onComplete,
   submitLabel,
 }: Props) {
-  const { t, lang } = useTranslation('transaction-data-table');
+  const locale = useLocale();
+  const t = useTranslations('transaction-data-table');
 
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
@@ -327,9 +328,9 @@ export function TransactionForm({
                         {field.value ? (
                           format(
                             field.value,
-                            lang === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
+                            locale === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
                             {
-                              locale: lang === 'vi' ? vi : enUS,
+                              locale: locale === 'vi' ? vi : enUS,
                             }
                           )
                         ) : (

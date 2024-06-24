@@ -16,7 +16,8 @@ interface Props {
 }
 
 export default function TransactionsTable({ wsId, data, count }: Props) {
-  const { t, lang } = useTranslation('common');
+  const locale = useLocale();
+  const t = useTranslations('common');
 
   const [transaction, setTransaction] = useState<Transaction>();
 

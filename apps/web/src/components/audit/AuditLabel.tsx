@@ -15,7 +15,8 @@ interface Props {
 }
 
 const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
-  const { t, lang } = useTranslation('ws-activities');
+  const locale = useLocale();
+  const t = useTranslations('ws-activities');
 
   const wsId = data?.ws_id;
   const wsApiPath = wsId ? `/api/workspaces/${wsId}` : null;

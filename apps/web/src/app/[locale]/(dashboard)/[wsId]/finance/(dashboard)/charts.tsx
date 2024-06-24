@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@repo/ui/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import {
   Bar,
@@ -22,7 +22,8 @@ export function DailyTotalChart({
     total_expense: number;
   }[];
 }) {
-  const { t, lang } = useTranslation('transaction-data-table');
+  const locale = useLocale();
+  const t = useTranslations('transaction-data-table');
 
   useEffect(() => {
     const chart = document.getElementById('daily-total-chart');
@@ -49,9 +50,9 @@ export function DailyTotalChart({
           <XAxis
             dataKey="day"
             tickFormatter={(value) => {
-              return Intl.DateTimeFormat(lang, {
+              return Intl.DateTimeFormat(locale, {
                 day: 'numeric',
-                month: lang === 'vi' ? 'numeric' : 'short',
+                month: locale === 'vi' ? 'numeric' : 'short',
               }).format(new Date(value));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
@@ -59,7 +60,7 @@ export function DailyTotalChart({
           <YAxis
             tickFormatter={(value) => {
               return typeof value === 'number'
-                ? Intl.NumberFormat(lang, {
+                ? Intl.NumberFormat(locale, {
                     style: 'decimal',
                     notation: 'compact',
                   }).format(value)
@@ -78,7 +79,7 @@ export function DailyTotalChart({
             }}
             separator=": "
             labelFormatter={(value) => {
-              return Intl.DateTimeFormat(lang, {
+              return Intl.DateTimeFormat(locale, {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
@@ -95,7 +96,7 @@ export function DailyTotalChart({
                   )}
                 >
                   {typeof value === 'number'
-                    ? Intl.NumberFormat(lang, {
+                    ? Intl.NumberFormat(locale, {
                         style: 'decimal',
                       }).format(value)
                     : value}
@@ -131,7 +132,8 @@ export function MonthlyTotalChart({
     total_expense: number;
   }[];
 }) {
-  const { t, lang } = useTranslation('transaction-data-table');
+  const locale = useLocale();
+  const t = useTranslations('transaction-data-table');
 
   useEffect(() => {
     const chart = document.getElementById('monthly-total-chart');
@@ -158,8 +160,8 @@ export function MonthlyTotalChart({
           <XAxis
             dataKey="month"
             tickFormatter={(value) => {
-              return Intl.DateTimeFormat(lang, {
-                month: lang === 'vi' ? 'numeric' : 'short',
+              return Intl.DateTimeFormat(locale, {
+                month: locale === 'vi' ? 'numeric' : 'short',
                 year: 'numeric',
               }).format(new Date(value));
             }}
@@ -168,7 +170,7 @@ export function MonthlyTotalChart({
           <YAxis
             tickFormatter={(value) => {
               return typeof value === 'number'
-                ? Intl.NumberFormat(lang, {
+                ? Intl.NumberFormat(locale, {
                     style: 'decimal',
                     notation: 'compact',
                   }).format(value)
@@ -187,7 +189,7 @@ export function MonthlyTotalChart({
             }}
             separator=": "
             labelFormatter={(value) => {
-              return Intl.DateTimeFormat(lang, {
+              return Intl.DateTimeFormat(locale, {
                 month: 'long',
                 year: 'numeric',
               }).format(new Date(value));
@@ -202,7 +204,7 @@ export function MonthlyTotalChart({
                   )}
                 >
                   {typeof value === 'number'
-                    ? Intl.NumberFormat(lang, {
+                    ? Intl.NumberFormat(locale, {
                         style: 'decimal',
                       }).format(value)
                     : value}

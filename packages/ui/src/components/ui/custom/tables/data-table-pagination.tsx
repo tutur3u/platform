@@ -74,7 +74,7 @@ export function DataTablePagination<TData>({
     >
       {count !== undefined && count > 0 ? (
         <div className="text-muted-foreground flex-none text-sm">
-          {/* {lang === 'vi' || lang === 'vi-VN' ? t('selected') : null}{' '} */}
+          {/* {locale === 'vi' || locale === 'vi-VN' ? t('selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
             {table ? table.getFilteredSelectedRowModel().rows.length : 0}
           </span>{' '}
@@ -82,7 +82,7 @@ export function DataTablePagination<TData>({
           {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
           <span className="text-primary font-semibold">{count}</span>{' '}
           {t?.('common:result(s)') ?? 'result(s)'}
-          {/* {lang !== 'vi' && lang !== 'vi-VN'
+          {/* {locale !== 'vi' && locale !== 'vi-VN'
             ? ' ' + t('selected').toLowerCase()
             : null} */}
           .

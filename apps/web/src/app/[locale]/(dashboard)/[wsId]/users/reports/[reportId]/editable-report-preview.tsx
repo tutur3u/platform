@@ -30,7 +30,8 @@ export default function EditableReportPreview({
   };
   configs: WorkspaceConfig[];
 }) {
-  const { t, lang } = useTranslation();
+  const locale = useLocale();
+  const t = useTranslations();
 
   const form = useForm<z.infer<typeof UserReportFormSchema>>({
     resolver: zodResolver(UserReportFormSchema),

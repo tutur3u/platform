@@ -12,7 +12,7 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;
@@ -27,7 +27,8 @@ export default async function MemberList({
   invited,
   loading,
 }: Props) {
-  const { t, lang } = useTranslation('ws-members');
+  const locale = useLocale();
+  const t = useTranslations('ws-members');
   const user = await getCurrentUser();
 
   if (!members || members.length === 0) {
@@ -118,7 +119,7 @@ export default async function MemberList({
               {t(member?.pending ? 'invited' : 'member_since')}
             </span>{' '}
             <span className="font-semibold">
-              {moment(member.created_at).locale(lang).fromNow()}
+              {moment(member.created_at).locale(locale).fromNow()}
             </span>
             .
           </div>

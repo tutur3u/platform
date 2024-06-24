@@ -14,7 +14,8 @@ interface Props {
 
 const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const router = useRouter();
-  const { t, lang } = useTranslation('invite');
+  const locale = useLocale();
+  const t = useTranslations('invite');
 
   const creationDate = moment(ws?.created_at).locale(lang).fromNow();
 

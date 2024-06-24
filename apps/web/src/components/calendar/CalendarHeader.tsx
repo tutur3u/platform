@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarHeader({
   date,
@@ -15,13 +15,14 @@ export default function CalendarHeader({
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
 }) {
-  const { t, lang } = useTranslation('calendar');
+  const locale = useLocale();
+  const t = useTranslations('calendar');
 
   // const views = availableViews.filter((view) => view?.disabled !== true);
 
   const title = dayjs(date)
-    .locale(lang)
-    .format(lang === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
+    .locale(locale)
+    .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
     .replace(/^\w/, (c) => c.toUpperCase());
 
   const handleNext = () =>
