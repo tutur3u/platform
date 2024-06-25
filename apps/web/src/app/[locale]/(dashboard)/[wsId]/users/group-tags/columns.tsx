@@ -6,9 +6,8 @@ import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const groupTagColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
+export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

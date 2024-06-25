@@ -13,13 +13,12 @@ import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { UserCog } from 'lucide-react';
-import { Translate } from 'next-translate';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   extraColumns?: any[];
-  t?: Translate;
+  t?: any;
 }
 
 export function DataTableViewOptions<TData>({

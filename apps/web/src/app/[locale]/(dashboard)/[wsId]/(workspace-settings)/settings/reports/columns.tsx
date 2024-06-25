@@ -5,9 +5,8 @@ import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const configColumns = (t: Translate): ColumnDef<WorkspaceConfig>[] => [
+export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

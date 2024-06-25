@@ -5,10 +5,9 @@ import { AIPrompt } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
 export const aiPromptsColumns = (
-  t: Translate,
+  t: any,
   setAIPrompt: (value: AIPrompt | undefined) => void
 ): ColumnDef<AIPrompt>[] => [
   // {

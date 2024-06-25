@@ -12,13 +12,12 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
 
 export const getUserColumns = (
-  t: Translate,
+  t: any,
   extraFields?: WorkspaceUserField[]
 ): ColumnDef<WorkspaceUser>[] => [
   // {

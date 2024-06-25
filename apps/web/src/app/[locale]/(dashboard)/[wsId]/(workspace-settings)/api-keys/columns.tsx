@@ -5,9 +5,8 @@ import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const apiKeyColumns = (t: Translate): ColumnDef<WorkspaceApiKey>[] => [
+export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

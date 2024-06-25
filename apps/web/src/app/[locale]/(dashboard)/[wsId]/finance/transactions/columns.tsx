@@ -7,10 +7,9 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { Translate } from 'next-translate';
 
 export const transactionColumns = (
-  t: Translate,
+  t: any,
   setTransaction: (value: Transaction | undefined) => void,
   lang: string
 ): ColumnDef<Transaction>[] => [

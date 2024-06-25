@@ -6,7 +6,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { Wallet } from '@/types/primitives/Wallet';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { useState } from 'react';
 
 interface Props {
@@ -31,7 +30,7 @@ export default function WalletsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: Translate) => walletColumns(t, setWallet)}
+        columnGenerator={(t: any) => walletColumns(t, setWallet)}
         namespace="wallet-data-table"
         count={count}
         defaultVisibility={{

@@ -5,11 +5,8 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const userFieldColumns = (
-  t: Translate
-): ColumnDef<WorkspaceUserField>[] => [
+export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

@@ -5,11 +5,10 @@ import { WorkspaceUserReport } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 import Link from 'next/link';
 
 export const getUserReportColumns = (
-  t: Translate
+  t: any
 ): ColumnDef<WorkspaceUserReport>[] => [
   // {
   //   id: 'select',

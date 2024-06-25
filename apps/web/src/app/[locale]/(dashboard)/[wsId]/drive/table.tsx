@@ -6,7 +6,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { useState } from 'react';
 
 interface Props {
@@ -33,7 +32,7 @@ export default function StorageObjectsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: Translate) =>
+        columnGenerator={(t: any) =>
           storageObjectsColumns(t, setStorageObject, wsId)
         }
         namespace="storage-object-data-table"

@@ -6,9 +6,8 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from 'lucide-react';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const roleColumns = (t: Translate): ColumnDef<WorkspaceRole>[] => [
+export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

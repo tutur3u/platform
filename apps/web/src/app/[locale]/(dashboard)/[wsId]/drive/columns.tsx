@@ -6,10 +6,9 @@ import { formatBytes } from '@/utils/file-helper';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
 export const storageObjectsColumns = (
-  t: Translate,
+  t: any,
   setStorageObject: (value: StorageObject | undefined) => void,
   wsId: string
 ): ColumnDef<StorageObject>[] => [

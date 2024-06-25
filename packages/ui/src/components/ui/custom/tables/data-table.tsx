@@ -24,7 +24,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { ReactNode, useState } from 'react';
 
 interface DataTableProps<TData, TValue> {
@@ -49,11 +48,10 @@ interface DataTableProps<TData, TValue> {
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
-  // eslint-disable-next-line no-unused-vars
-  t?: Translate;
+  t?: any;
   columnGenerator?: (
     // eslint-disable-next-line no-unused-vars
-    t: Translate,
+    t: any,
     // eslint-disable-next-line no-unused-vars
     extraColumns?: any[]
   ) => ColumnDef<TData, TValue>[];

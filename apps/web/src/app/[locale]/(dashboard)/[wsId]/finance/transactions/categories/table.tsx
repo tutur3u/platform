@@ -6,7 +6,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { useState } from 'react';
 
 interface Props {
@@ -37,7 +36,7 @@ export default function TransactionCategoriesTable({
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: Translate) =>
+        columnGenerator={(t: any) =>
           transactionCategoryColumns(t, setTransactionCategory)
         }
         namespace="transaction-category-data-table"

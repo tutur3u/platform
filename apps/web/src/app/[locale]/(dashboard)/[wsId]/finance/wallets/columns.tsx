@@ -6,10 +6,9 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
 export const walletColumns = (
-  t: Translate,
+  t: any,
   setWallet: (value: Wallet | undefined) => void
 ): ColumnDef<Wallet>[] => [
   // {

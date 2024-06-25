@@ -6,10 +6,9 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 import Link from 'next/link';
 
-export const getUserGroupColumns = (t: Translate): ColumnDef<UserGroup>[] => [
+export const getUserGroupColumns = (t: any): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

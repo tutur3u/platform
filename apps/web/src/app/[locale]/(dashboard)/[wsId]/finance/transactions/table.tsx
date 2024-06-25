@@ -6,7 +6,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useLocale, useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { useState } from 'react';
 
 interface Props {
@@ -34,7 +33,7 @@ export default function TransactionsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: Translate) =>
+        columnGenerator={(t: any) =>
           transactionColumns(t, setTransaction, locale)
         }
         namespace="transaction-data-table"

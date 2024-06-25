@@ -6,7 +6,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { AIPrompt } from '@/types/db';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { Translate } from 'next-translate';
 import { useState } from 'react';
 
 interface Props {
@@ -31,7 +30,7 @@ export default function AIPromptsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: Translate) => aiPromptsColumns(t, setPrompt)}
+        columnGenerator={(t: any) => aiPromptsColumns(t, setPrompt)}
         namespace="ai-prompts-data-table"
         count={count}
         defaultVisibility={{
