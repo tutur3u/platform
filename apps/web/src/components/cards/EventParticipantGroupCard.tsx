@@ -3,7 +3,7 @@ import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { EventParticipant } from '@/types/primitives/EventParticipant';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Accordion, Button, Divider, Loader } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 
@@ -23,7 +23,7 @@ const EventParticipantGroupCard = ({
   selected = false,
 }: Props) => {
   const { ws } = useWorkspaces();
-  const { t } = useTranslation('calendar-event-configs');
+  const t = (key: string) => key;
 
   const [loading, setLoading] = useState(false);
 

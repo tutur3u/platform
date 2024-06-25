@@ -1,7 +1,9 @@
-import nextTranslate from 'next-translate-plugin';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
-const nextConfig = nextTranslate({
+const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
@@ -47,8 +49,6 @@ const nextConfig = nextTranslate({
       },
     ];
   },
-});
+};
 
-// Next.js App Directory doesn't need the i18n config
-nextConfig.i18n = undefined;
-export default nextConfig;
+export default withNextIntl(nextConfig);

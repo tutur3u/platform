@@ -3,7 +3,7 @@ import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 import 'moment/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {
@@ -15,9 +15,9 @@ const DocumentCard = ({ wsId, document }: Props) => {
   const { id, name, content, created_at } = document;
   const href = id ? `/${wsId}/documents/${id}` : '';
 
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
-  const creationDate = moment(created_at).locale(lang).fromNow();
+  const creationDate = moment(created_at).locale(locale).fromNow();
 
   return (
     <Link

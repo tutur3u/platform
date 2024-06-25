@@ -1,7 +1,5 @@
 'use client';
 
-import { DataTablePagination } from './data-table-pagination';
-import { DataTableToolbar } from './data-table-toolbar';
 import {
   Table,
   TableBody,
@@ -9,7 +7,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/ui/table';
+} from '../../table';
+import { DataTablePagination } from './data-table-pagination';
+import { DataTableToolbar } from './data-table-toolbar';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -23,6 +23,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { useTranslations } from 'next-intl';
 import { Translate } from 'next-translate';
 import { ReactNode, useState } from 'react';
 
@@ -81,6 +82,8 @@ export function DataTable<TData, TValue>({
   resetParams,
   columnGenerator,
 }: DataTableProps<TData, TValue>) {
+  const commonT = useTranslations();
+
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(defaultVisibility);
@@ -129,7 +132,7 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
-        t={t}
+        t={commonT}
         isEmpty={isEmpty || !data?.length}
         defaultQuery={defaultQuery}
         onSearch={onSearch || (() => {})}
@@ -182,8 +185,8 @@ export function DataTable<TData, TValue>({
                   className="h-24 text-center opacity-60"
                 >
                   {data
-                    ? `${t?.('common:no-results')}.`
-                    : `${t?.('common:loading')}...`}
+                    ? `${commonT?.('common.no-results')}.`
+                    : `${commonT?.('common.loading')}...`}
                 </TableCell>
               </TableRow>
             )}
@@ -192,7 +195,7 @@ export function DataTable<TData, TValue>({
       </div>
       {noBottomPadding || count === undefined || (
         <DataTablePagination
-          t={t}
+          t={commonT}
           table={table}
           className="pointer-events-none hidden opacity-0 lg:block"
           setParams={setParams}
@@ -200,7 +203,7 @@ export function DataTable<TData, TValue>({
       )}
       {count !== undefined && (
         <DataTablePagination
-          t={t}
+          t={commonT}
           table={table}
           count={count}
           className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"

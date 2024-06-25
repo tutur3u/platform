@@ -1,5 +1,5 @@
 import DayTitle from './DayTitle';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 
 const WeekdayBar = ({
   view,
@@ -8,7 +8,7 @@ const WeekdayBar = ({
   view: 'day' | '4-days' | 'week';
   dates: Date[];
 }) => {
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   const getGridCols = () => {
     switch (dates.length) {
@@ -36,15 +36,15 @@ const WeekdayBar = ({
       >
         {dates.map((weekday, index) => (
           <div
-            key={`date-${weekday.toLocaleString(lang, {
+            key={`date-${weekday.toLocaleString(locale, {
               weekday: 'short',
             })}`}
           >
             <DayTitle
               view={view}
               date={dates[index]!}
-              weekday={weekday.toLocaleString(lang, {
-                weekday: lang === 'vi' ? 'narrow' : 'short',
+              weekday={weekday.toLocaleString(locale, {
+                weekday: locale === 'vi' ? 'narrow' : 'short',
               })}
             />
           </div>

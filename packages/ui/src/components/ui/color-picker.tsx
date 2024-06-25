@@ -1,14 +1,10 @@
 'use client';
 
 import { useForwardedRef } from '../../hooks/use-forwarded-ref';
-import type { ButtonProps } from '@repo/ui/components/ui/button';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+import type { ButtonProps } from './button';
+import { Button } from './button';
+import { Input } from './input';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { useTheme } from 'next-themes';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
