@@ -1,7 +1,7 @@
 'use client';
 
-import { Input } from '@repo/ui/components/ui/input';
-import { cn } from '@repo/ui/lib/utils';
+import { cn } from '../../../lib/utils';
+import { Input } from '../input';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

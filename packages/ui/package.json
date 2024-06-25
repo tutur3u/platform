@@ -66,6 +66,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@types/lodash": "^4.17.5",
     "@types/node": "^20.14.8",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@types/react": "^18.3.3",
     "@types/react-resizable": "^3.0.7",
     "autoprefixer": "^10.4.19",

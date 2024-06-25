@@ -1,13 +1,12 @@
 'use client';
 
+import { Button } from '../../button';
 import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
 import { Cross2Icon } from '@radix-ui/react-icons';
-import { Button } from '@repo/ui/components/ui/button';
 import { Table } from '@tanstack/react-table';
-import { Translate } from 'next-translate';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -21,7 +20,7 @@ interface DataTableToolbarProps<TData> {
   defaultQuery?: string;
   disableSearch?: boolean;
   isEmpty: boolean;
-  t?: Translate;
+  t?: any;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void;

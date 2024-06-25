@@ -52,7 +52,6 @@
   "trustedDependencies": [
     "@vercel/speed-insights",
     "esbuild",
-    "next-translate-plugin",
     "sharp",
     "supabase"
   ]

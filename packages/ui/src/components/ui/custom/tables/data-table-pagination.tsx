@@ -1,6 +1,14 @@
 'use client';
 
 import { cn } from '../../../../lib/utils';
+import { Button } from '../../button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../select';
 import { Separator } from '../../separator';
 import {
   ChevronLeftIcon,
@@ -8,14 +16,6 @@ import {
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
 } from '@radix-ui/react-icons';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
 
 interface DataTablePaginationProps<TData> {
