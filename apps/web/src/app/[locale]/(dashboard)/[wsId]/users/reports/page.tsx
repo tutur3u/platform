@@ -7,8 +7,12 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { User } from 'lucide-react';
+import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Plus, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface SearchParams {
   page?: string;
@@ -29,7 +33,7 @@ export default async function WorkspaceUserReportsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = await getTranslations('user-data-table');
+  const t = await getTranslations();
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: userGroups } = await getUserGroups(wsId);
@@ -44,58 +48,74 @@ export default async function WorkspaceUserReportsPage({
     })) ?? [];
 
   return (
-    <CustomDataTable
-      data={reports}
-      columnGenerator={getUserReportColumns}
-      namespace="user-report-data-table"
-      count={count ?? undefined}
-      defaultVisibility={{
-        id: false,
-        user_id: false,
-        created_at: false,
-      }}
-      filters={[
-        <UserDatabaseFilter
-          key="group-filter"
-          tag="groupId"
-          title={t('group')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-          defaultValues={searchParams.groupId ? [searchParams.groupId] : []}
-          extraQueryOnSet={{ userId: undefined }}
-          options={userGroups.map((group) => ({
-            label: group.name || 'No name',
-            value: group.id,
-            count: group.amount,
-          }))}
-          multiple={false}
-        />,
-        <UserDatabaseFilter
-          key="user-filter"
-          tag="userId"
-          title={t('user')}
-          icon={<User className="mr-2 h-4 w-4" />}
-          defaultValues={
-            searchParams.groupId
-              ? searchParams.userId &&
-                users.map((user) => user.id).includes(searchParams.userId)
-                ? [searchParams.userId]
-                : []
-              : searchParams.userId
-                ? [searchParams.userId]
-                : []
-          }
-          options={users.map((user) => ({
-            label: user.full_name || 'No name',
-            value: user.id,
-          }))}
-          disabled={!searchParams.groupId}
-          resetSignals={['groupId']}
-          sortCheckedFirst={false}
-          multiple={false}
-        />,
-      ]}
-      disableSearch
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-user-reports.plural')}
+        singularTitle={t('ws-user-reports.singular')}
+        description={t('ws-user-reports.description')}
+        action={
+          <Link href={`/${wsId}/users/reports/new`}>
+            <Button className="w-full md:w-fit">
+              <Plus className="mr-2 h-5 w-5" />
+              {t('ws-user-reports.create')}
+            </Button>
+          </Link>
+        }
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={reports}
+        columnGenerator={getUserReportColumns}
+        namespace="user-report-data-table"
+        count={count ?? undefined}
+        defaultVisibility={{
+          id: false,
+          user_id: false,
+          created_at: false,
+        }}
+        filters={[
+          <UserDatabaseFilter
+            key="group-filter"
+            tag="groupId"
+            title={t('user-data-table.group')}
+            icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+            defaultValues={searchParams.groupId ? [searchParams.groupId] : []}
+            extraQueryOnSet={{ userId: undefined }}
+            options={userGroups.map((group) => ({
+              label: group.name || 'No name',
+              value: group.id,
+              count: group.amount,
+            }))}
+            multiple={false}
+          />,
+          <UserDatabaseFilter
+            key="user-filter"
+            tag="userId"
+            title={t('user-data-table.user')}
+            icon={<User className="mr-2 h-4 w-4" />}
+            defaultValues={
+              searchParams.groupId
+                ? searchParams.userId &&
+                  users.map((user) => user.id).includes(searchParams.userId)
+                  ? [searchParams.userId]
+                  : []
+                : searchParams.userId
+                  ? [searchParams.userId]
+                  : []
+            }
+            options={users.map((user) => ({
+              label: user.full_name || 'No name',
+              value: user.id,
+            }))}
+            disabled={!searchParams.groupId}
+            resetSignals={['groupId']}
+            sortCheckedFirst={false}
+            multiple={false}
+          />,
+        ]}
+        disableSearch
+      />
+    </>
   );
 }
 

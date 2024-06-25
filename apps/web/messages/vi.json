@@ -501,6 +501,12 @@
         "type": "Loại dữ liệu",
         "possible_values": "Giá trị khả dụng",
         "default_value": "Giá trị mặc định",
+        "null": "Không có giá trị",
+        "boolean": "Có/Không",
+        "text": "Văn bản",
+        "number": "Số",
+        "date": "Ngày, tháng, năm",
+        "datetime": "Ngày và giờ",
         "notes": "Ghi chú",
         "created_at": "Tạo lúc"
     },
@@ -725,6 +731,15 @@
         "create_description": "Tạo một người dùng mới",
         "edit_description": "Chỉnh sửa thông tin của người dùng"
     },
+    "ws-user-attendance": {
+        "singular": "Điểm danh",
+        "plural": "Điểm danh",
+        "description": "Điểm danh giúp bạn theo dõi tiến độ tham gia của người dùng trong không gian làm việc của bạn.",
+        "create": "Tạo điểm danh",
+        "edit": "Chỉnh sửa điểm danh",
+        "create_description": "Tạo một điểm danh mới",
+        "edit_description": "Chỉnh sửa điểm danh hiện có"
+    },
     "ws-user-groups": {
         "singular": "Nhóm người dùng",
         "plural": "Nhóm người dùng",
@@ -748,6 +763,15 @@
         "create_description": "Thêm một gắn thẻ nhóm mới",
         "edit_description": "Sửa gắn thẻ nhóm"
     },
+    "ws-user-reports": {
+        "singular": "Báo cáo người dùng",
+        "plural": "Báo cáo người dùng",
+        "description": "Báo cáo người dùng giúp bạn theo dõi tiến độ công việc của người dùng trong không gian làm việc của bạn.",
+        "create": "Tạo báo cáo",
+        "edit": "Sửa báo cáo",
+        "create_description": "Tạo một báo cáo mới",
+        "edit_description": "Sửa báo cáo hiện có"
+    },
     "ws-user-fields": {
         "module": "Trường thông tin người dùng",
         "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",
@@ -764,13 +788,7 @@
         "create_field": "Tạo trường",
         "edit_field": "Sửa trường",
         "add_new_user_field": "Thêm trường người dùng mới cho không gian làm việc này.",
-        "edit_existing_user_field": "Chỉnh sửa trường người dùng hiện tại cho không gian làm việc này.",
-        "null": "Không có giá trị",
-        "boolean": "Có/Không",
-        "text": "Văn bản",
-        "number": "Số",
-        "date": "Ngày, tháng, năm",
-        "datetime": "Ngày và giờ"
+        "edit_existing_user_field": "Chỉnh sửa trường người dùng hiện tại cho không gian làm việc này."
     },
     "ws-members": {
         "description": "Quản lý thành viên trong không gian làm việc.",

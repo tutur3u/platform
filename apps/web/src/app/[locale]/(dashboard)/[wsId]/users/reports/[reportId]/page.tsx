@@ -123,7 +123,12 @@ export default async function WorkspaceUserDetailsPage({
         )}
       </div>
 
-      <EditableReportPreview wsId={wsId} report={report} configs={configs} />
+      <EditableReportPreview
+        wsId={wsId}
+        report={report}
+        configs={configs}
+        isNew={reportId === 'new'}
+      />
     </div>
   );
 }
