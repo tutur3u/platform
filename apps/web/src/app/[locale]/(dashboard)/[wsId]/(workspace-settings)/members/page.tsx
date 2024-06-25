@@ -85,7 +85,6 @@ const getMembers = async (
     .in('name', ['HIDE_MEMBER_EMAIL', 'HIDE_MEMBER_NAME'])
     .eq('value', 'true');
 
-  console.log(secretData);
   if (secretError) throw secretError;
 
   const queryBuilder = supabase

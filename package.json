@@ -35,7 +35,7 @@
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
     "@repo/tsconfig": "workspace:*",
-    "turbo": "^2.0.4",
+    "turbo": "^2.0.5",
     "typescript": "^5.5.2",
     "vitest": "^1.6.0"
   },
