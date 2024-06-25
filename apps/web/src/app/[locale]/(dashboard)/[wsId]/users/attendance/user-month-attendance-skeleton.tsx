@@ -4,7 +4,7 @@ import useSearchParams from '@/hooks/useSearchParams';
 import { Button } from '@repo/ui/components/ui/button';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Fragment, useMemo } from 'react';
 
 export default function UserMonthAttendanceSkeleton() {
@@ -80,18 +80,11 @@ export default function UserMonthAttendanceSkeleton() {
                   <span className="text-blue-500 dark:text-blue-300">?</span>
                 </div>
 
-                <Button size="xs" variant="secondary">
+                <Button size="xs" variant="secondary" disabled>
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
 
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  disabled={
-                    currentMonth.getMonth() === new Date().getMonth() &&
-                    currentMonth.getFullYear() === new Date().getFullYear()
-                  }
-                >
+                <Button size="xs" variant="secondary" disabled>
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>

@@ -1,6 +1,11 @@
-import WalletsTable from './table';
+import { walletColumns } from './columns';
+import { WalletForm } from './form';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Wallet } from '@/types/primitives/Wallet';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -17,9 +22,42 @@ export default async function WorkspaceWalletsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data, count } = await getData(wsId, searchParams);
+  const { data: rawData, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
 
-  return <WalletsTable wsId={wsId} data={data} count={count} />;
+  const data = rawData.map((d) => ({
+    ...d,
+    // href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  }));
+
+  return (
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-wallets.plural')}
+        singularTitle={t('ws-wallets.singular')}
+        description={t('ws-wallets.description')}
+        createTitle={t('ws-wallets.create')}
+        createDescription={t('ws-wallets.create_description')}
+        form={<WalletForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={walletColumns}
+        namespace="wallet-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          description: false,
+          type: false,
+          currency: false,
+          report_opt_in: false,
+          created_at: false,
+        }}
+      />
+    </>
+  );
 }
 
 async function getData(

@@ -60,7 +60,10 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
                   {...field}
                   onChange={(e) =>
                     field.onChange(
-                      e.target.value.replace(/\s/g, '_').toUpperCase()
+                      e.target.value
+                        .replace(/-/g, '_')
+                        .replace(/\s/g, '_')
+                        .toUpperCase()
                     )
                   }
                 />

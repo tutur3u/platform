@@ -1,6 +1,11 @@
-import TransactionCategoriesTable from './table';
+import { transactionCategoryColumns } from './columns';
+import { TransactionCategoryForm } from './form';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -17,9 +22,38 @@ export default async function WorkspaceTransactionCategoriesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data, count } = await getData(wsId, searchParams);
+  const { data: rawData, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
 
-  return <TransactionCategoriesTable wsId={wsId} data={data} count={count} />;
+  const data = rawData.map((d) => ({
+    ...d,
+    // href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  }));
+
+  return (
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-transaction-categories.plural')}
+        singularTitle={t('ws-transaction-categories.singular')}
+        description={t('ws-transaction-categories.description')}
+        createTitle={t('ws-transaction-categories.create')}
+        createDescription={t('ws-transaction-categories.create_description')}
+        form={<TransactionCategoryForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={transactionCategoryColumns}
+        namespace="transaction-category-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
+  );
 }
 
 async function getData(

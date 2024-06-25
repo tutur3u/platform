@@ -1,6 +1,5 @@
 import { SupportedColor } from '@/types/primitives/SupportedColors';
 import { Tooltip } from '@mantine/core';
-import { useTranslations } from 'next-intl';
 
 interface ColorOptionProps {
   color: SupportedColor;

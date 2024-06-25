@@ -501,6 +501,12 @@
         "type": "Type",
         "possible_values": "Possible values",
         "default_value": "Default value",
+        "null": "None",
+        "boolean": "Boolean",
+        "text": "Text",
+        "number": "Number",
+        "date": "Date",
+        "datetime": "Date and Time",
         "notes": "Notes",
         "created_at": "Created at"
     },
@@ -554,6 +560,7 @@
         "select_type": "Select type",
         "name": "Name",
         "amount": "Transactions",
+        "type": "Type",
         "income": "Income",
         "expense": "Expense",
         "is_expense": "Is expense",
@@ -725,6 +732,15 @@
         "create_description": "Create a new user",
         "edit_description": "Edit an existing user"
     },
+    "ws-user-attendance": {
+        "singular": "Attendance",
+        "plural": "Attendances",
+        "description": "Attendance helps you track the participation progress of users in your workspace.",
+        "create": "Add attendance",
+        "edit": "Edit attendance",
+        "create_description": "Add a new attendance",
+        "edit_description": "Edit an existing attendance"
+    },
     "ws-user-groups": {
         "singular": "User group",
         "plural": "User groups",
@@ -747,6 +763,42 @@
         "create_description": "Create a new group tag",
         "edit_description": "Edit an existing group tag"
     },
+    "ws-user-reports": {
+        "singular": "User Report",
+        "plural": "User Reports",
+        "description": "User reports are used to track the progress of users in your workspace.",
+        "create": "Create report",
+        "edit": "Edit report",
+        "create_description": "Create a new user report",
+        "edit_description": "Edit an existing user report"
+    },
+    "ws-wallets": {
+        "singular": "Wallet",
+        "plural": "Wallets",
+        "description": "Wallets are used to store and manage the financial activities of your workspace.",
+        "create": "Create wallet",
+        "edit": "Edit wallet",
+        "create_description": "Create a new wallet",
+        "edit_description": "Edit an existing wallet"
+    },
+    "ws-transactions": {
+        "singular": "Transaction",
+        "plural": "Transactions",
+        "description": "Transactions are used to track the financial activities of your workspace.",
+        "create": "Create transaction",
+        "edit": "Edit transaction",
+        "create_description": "Create a new transaction",
+        "edit_description": "Edit an existing transaction"
+    },
+    "ws-transaction-categories": {
+        "singular": "Transaction Category",
+        "plural": "Transaction Categories",
+        "description": "Transaction categories are used to categorize the financial activities of your workspace.",
+        "create": "Create category",
+        "edit": "Edit category",
+        "create_description": "Create a new transaction category",
+        "edit_description": "Edit an existing transaction category"
+    },
     "ws-user-fields": {
         "module": "User Fields",
         "module_description": "User fields are used to store additional information about users in your workspace.",
@@ -763,13 +815,7 @@
         "create_field": "Create field",
         "edit_field": "Edit field",
         "add_new_user_field": "Add a new user field for this workspace.",
-        "edit_existing_user_field": "Edit an existing user field for this workspace.",
-        "null": "None",
-        "boolean": "Boolean",
-        "text": "Text",
-        "number": "Number",
-        "date": "Date",
-        "datetime": "Date and Time"
+        "edit_existing_user_field": "Edit an existing user field for this workspace."
     },
     "ws-members": {
         "description": "Manage members of your workspace.",
@@ -1176,7 +1222,6 @@
     },
     "workspace-ai-layout": {
         "overview": "Overview",
-        "textract": "Textract",
         "test_generation": "Test Generation",
         "prompts": "Prompts",
         "workflows": "Workflows",

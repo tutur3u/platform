@@ -112,6 +112,7 @@ export function Navigation({
 
         return (
           <Link
+            key={`${link.name}-${link.href}`}
             id={
               isActive && currentWsId
                 ? 'active-ws-navlink'
@@ -132,7 +133,6 @@ export function Navigation({
               if (isActive) scrollActiveLinksIntoView();
             }}
             href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
-            key={link.name}
           >
             {link.name}
           </Link>

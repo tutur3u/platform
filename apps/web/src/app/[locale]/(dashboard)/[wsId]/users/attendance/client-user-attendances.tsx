@@ -17,7 +17,7 @@ interface SearchParams {
 }
 
 const DEFAULT_PAGE = '1';
-const DEFAULT_PAGE_SIZE = '3';
+const DEFAULT_PAGE_SIZE = '6';
 
 export default function ClientUserAttendances({
   wsId,

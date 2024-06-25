@@ -14,7 +14,7 @@ export default async function UserAttendancesSkeleton({
   searchParams: SearchParams;
 }) {
   const pageIndex = parseInt(searchParams.page ?? '1') - 1;
-  const pageSize = parseInt(searchParams.pageSize ?? '3');
+  const pageSize = parseInt(searchParams.pageSize ?? '6');
 
   return (
     <>

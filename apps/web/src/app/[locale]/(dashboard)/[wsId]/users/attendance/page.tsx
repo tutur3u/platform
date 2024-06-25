@@ -7,6 +7,8 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -27,13 +29,13 @@ interface Props {
   searchParams: SearchParams;
 }
 
-export default async function WorkspaceUsersPage({
+export default async function WorkspaceUserAttendancePage({
   params: { wsId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const locale = await getLocale();
-  const t = await getTranslations('user-data-table');
+  const t = await getTranslations();
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
@@ -43,6 +45,15 @@ export default async function WorkspaceUsersPage({
 
   return (
     <>
+      <FeatureSummary
+        pluralTitle={t('ws-user-attendance.plural')}
+        singularTitle={t('ws-user-attendance.singular')}
+        description={t('ws-user-attendance.description')}
+        createTitle={t('ws-user-attendance.create')}
+        createDescription={t('ws-user-attendance.create_description')}
+        // form={<UserGroupForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
         <CustomMonthPicker
@@ -52,7 +63,7 @@ export default async function WorkspaceUsersPage({
         <UserDatabaseFilter
           key="included-user-groups-filter"
           tag="includedGroups"
-          title={t('included_groups')}
+          title={t('user-data-table.included_groups')}
           icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
@@ -63,7 +74,7 @@ export default async function WorkspaceUsersPage({
         <UserDatabaseFilter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
-          title={t('excluded_groups')}
+          title={t('user-data-table.excluded_groups')}
           icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
           options={excludedUserGroups.map((group) => ({
             label: group.name || 'No name',

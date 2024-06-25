@@ -42,11 +42,11 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: Transaction;
-  onComplete?: () => void;
-  submitLabel?: string;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   description: z.string().optional(),
   amount: z.number().positive(),
   origin_wallet_id: z.string().min(1),
@@ -56,14 +56,9 @@ const FormSchema = z.object({
   report_opt_in: z.boolean(),
 });
 
-export function TransactionForm({
-  wsId,
-  data,
-  onComplete,
-  submitLabel,
-}: Props) {
-  const locale = useLocale();
+export function TransactionForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
 
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
@@ -92,6 +87,7 @@ export function TransactionForm({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      id: data?.id,
       description: data?.description || '',
       amount: data?.amount ? Math.abs(data.amount) : undefined,
       origin_wallet_id: data?.wallet_id || wallets?.[0]?.id || '',
@@ -101,7 +97,7 @@ export function TransactionForm({
     },
   });
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
 
     const res = await fetch(
@@ -114,19 +110,19 @@ export function TransactionForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          ...data,
           amount:
-            categories?.find((c) => c.id === formData.category_id)
-              ?.is_expense === false
-              ? Math.abs(formData.amount)
-              : -Math.abs(formData.amount),
+            categories?.find((c) => c.id === data.category_id)?.is_expense ===
+            false
+              ? Math.abs(data.amount)
+              : -Math.abs(data.amount),
         }),
       }
     );
 
     if (res.ok) {
+      onFinish?.(data);
       router.refresh();
-      if (onComplete) onComplete();
     } else {
       setLoading(false);
       toast({
@@ -155,23 +151,21 @@ export function TransactionForm({
           <WalletForm
             wsId={wsId}
             data={newContent}
-            onComplete={() => {
+            onFinish={() => {
               setNewContent(undefined);
               setNewContentType(undefined);
               mutateWallets();
             }}
-            submitLabel={newContent?.id ? t('common.edit') : t('common.create')}
           />
         ) : (
           <TransactionCategoryForm
             wsId={wsId}
             data={newContent}
-            onComplete={() => {
+            onFinish={() => {
               setNewContent(undefined);
               setNewContentType(undefined);
               mutateCategories();
             }}
-            submitLabel={newContent?.id ? t('common.edit') : t('common.create')}
           />
         )}
       </DialogContent>
@@ -360,7 +354,11 @@ export function TransactionForm({
           <div className="h-2" />
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? t('common.processing') : submitLabel}
+            {loading
+              ? t('common.processing')
+              : !!data?.id
+                ? t('ws-transactions.edit')
+                : t('ws-transactions.create')}
           </Button>
         </form>
       </Form>

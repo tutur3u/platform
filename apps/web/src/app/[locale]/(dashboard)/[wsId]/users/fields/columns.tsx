@@ -69,9 +69,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
         {row.getValue('type')
-          ? t(
-              `ws-user-fields:${(row.getValue('type') as string).toLowerCase()}`
-            )
+          ? t((row.getValue('type') as string).toLowerCase())
           : '-'}
       </div>
     ),

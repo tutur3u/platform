@@ -1,8 +1,10 @@
 'use client';
 
+import { TransactionCategoryForm } from './form';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +16,21 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface Props {
   row: Row<TransactionCategory>;
-  setCategory: (value: TransactionCategory | undefined) => void;
 }
 
 export function TransactionCategoryRowActions(props: Props) {
   const t = useTranslations();
 
   const router = useRouter();
-  const category = props.row.original;
+  const data = props.row.original;
 
   const deleteCategory = async () => {
     const res = await fetch(
-      `/api/workspaces/${category.ws_id}/transactions/categories/${category.id}`,
+      `/api/workspaces/${data.ws_id}/transactions/categories/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -45,7 +47,9 @@ export function TransactionCategoryRowActions(props: Props) {
     }
   };
 
-  if (!category.id || !category.ws_id) return null;
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -60,7 +64,7 @@ export function TransactionCategoryRowActions(props: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => props.setCategory(category)}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -69,6 +73,15 @@ export function TransactionCategoryRowActions(props: Props) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showEditDialog}
+        title={t('ws-transaction-categories.edit')}
+        editDescription={t('ws-transaction-categories.edit_description')}
+        setOpen={setShowEditDialog}
+        form={<TransactionCategoryForm wsId={data.ws_id} data={data} />}
+      />
     </div>
   );
 }

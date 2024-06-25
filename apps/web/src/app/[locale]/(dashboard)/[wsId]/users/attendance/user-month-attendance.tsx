@@ -16,7 +16,7 @@ import {
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 

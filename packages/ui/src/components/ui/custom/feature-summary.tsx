@@ -1,14 +1,18 @@
+import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 import { Plus } from 'lucide-react';
+import { ReactNode } from 'react';
 
 interface Props<T> {
   data?: T & { id?: string };
-  trigger?: React.ReactNode;
-  form?: React.ReactNode;
+  trigger?: ReactNode;
+  form?: ReactNode;
+  href?: string;
   pluralTitle: string;
   singularTitle: string;
   description: string;
+  action?: ReactNode;
   createTitle?: string;
   createDescription?: string;
   open?: boolean;
@@ -19,9 +23,11 @@ interface Props<T> {
 export default function FeatureSummary<T>({
   data,
   form,
+  href,
   pluralTitle,
   singularTitle,
   description,
+  action,
   open,
   createTitle,
   createDescription,
@@ -35,20 +41,22 @@ export default function FeatureSummary<T>({
       </div>
 
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-        <ModifiableDialogTrigger
-          data={data}
-          trigger={
-            <Button className="w-full md:w-fit">
-              <Plus className="mr-2 h-5 w-5" />
-              {createTitle}
-            </Button>
-          }
-          form={form}
-          open={open}
-          setOpen={setOpen}
-          createDescription={createDescription}
-          title={singularTitle}
-        />
+        {action || (
+          <ModifiableDialogTrigger
+            data={data}
+            trigger={
+              <Button className="w-full md:w-fit" disabled={!form && !href}>
+                <Plus className={cn('h-5 w-5', createTitle ? 'mr-2' : '')} />
+                {createTitle}
+              </Button>
+            }
+            form={form}
+            open={open}
+            setOpen={setOpen}
+            createDescription={createDescription}
+            title={singularTitle}
+          />
+        )}
       </div>
     </div>
   );

@@ -8,12 +8,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../dialog';
-import React, { ReactElement, cloneElement, useState } from 'react';
+import { ReactElement, ReactNode, cloneElement, useState } from 'react';
 
 interface Props<T> {
   data?: T & { id?: string };
-  trigger?: React.ReactNode;
-  form?: React.ReactNode;
+  trigger?: ReactNode;
+  form?: ReactNode;
   open?: boolean;
   title?: string;
   editDescription?: string;

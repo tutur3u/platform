@@ -15,10 +15,12 @@ import { UseFormReturn } from 'react-hook-form';
 import * as z from 'zod';
 
 export default function UserReportForm({
+  isNew,
   form,
   submitLabel,
   onSubmit,
 }: {
+  isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
   submitLabel: string;
   onSubmit: (formData: z.infer<typeof UserReportFormSchema>) => void;
@@ -36,7 +38,7 @@ export default function UserReportForm({
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Title" {...field} />
+                  <Input placeholder="Title" {...field} disabled={isNew} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -50,7 +52,11 @@ export default function UserReportForm({
               <FormItem>
                 <FormLabel>Content</FormLabel>
                 <FormControl>
-                  <AutosizeTextarea placeholder="Content" {...field} />
+                  <AutosizeTextarea
+                    placeholder="Content"
+                    {...field}
+                    disabled={isNew}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -64,7 +70,11 @@ export default function UserReportForm({
               <FormItem>
                 <FormLabel>Feedback</FormLabel>
                 <FormControl>
-                  <AutosizeTextarea placeholder="Feedback" {...field} />
+                  <AutosizeTextarea
+                    placeholder="Feedback"
+                    {...field}
+                    disabled={isNew}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -73,7 +83,7 @@ export default function UserReportForm({
 
           <Separator />
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isNew}>
             {submitLabel}
           </Button>
         </form>

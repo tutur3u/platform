@@ -1,5 +1,5 @@
 import { Chip, Divider } from '@mantine/core';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 interface Props {
   amount: number;

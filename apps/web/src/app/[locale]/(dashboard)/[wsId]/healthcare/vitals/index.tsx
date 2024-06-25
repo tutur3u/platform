@@ -3,11 +3,9 @@ import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchB
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { Vital } from '@/types/primitives/Vital';
 import { Divider, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { useEffect, useState } from 'react';
-import useSWR from 'swr';
+import { useEffect } from 'react';
 
 export default function MiscVitalsPage() {
   const { setRootSegment } = useSegments();
@@ -33,23 +31,10 @@ export default function MiscVitalsPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [query] = useState('');
-  const [activePage] = useState(1);
-
-  const [itemsPerPage] = useLocalStorage({
-    key: 'healthcare-vitals-items-per-page',
-    defaultValue: 15,
-  });
-
-  const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/healthcare/vitals?query=${query}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
   // const countApi = ws?.id
   //   ? `/api/workspaces/${ws.id}/healthcare/vitals/count`
   //   : null;
 
-  const { data: vitals } = useSWR<Vital[]>(apiPath);
   // const { data: count } = useSWR<number>(countApi);
 
   const [showUnit, setShowUnit] = useLocalStorage({

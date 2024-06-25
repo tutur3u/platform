@@ -22,6 +22,7 @@ export default function EditableReportPreview({
   wsId,
   report,
   configs,
+  isNew,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -29,6 +30,7 @@ export default function EditableReportPreview({
     creator_name?: string;
   };
   configs: WorkspaceConfig[];
+  isNew: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -102,55 +104,58 @@ export default function EditableReportPreview({
   return (
     <div className="grid h-fit gap-4 2xl:grid-cols-2">
       <div className="grid h-fit gap-4">
-        <div className="grid h-fit gap-2 rounded-lg border p-4">
-          <div className="text-lg font-semibold">User Data</div>
-          <Separator />
+        {isNew || (
+          <div className="grid h-fit gap-2 rounded-lg border p-4">
+            <div className="text-lg font-semibold">User Data</div>
+            <Separator />
 
-          <div>
-            {report.scores?.length === 0 ? (
-              <div className="text-red-500">No scores data</div>
-            ) : (
-              <div className="flex items-center gap-1">
-                Average score:
-                <div className="flex flex-wrap gap-1">
-                  <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
-                    {(
-                      (report?.scores
-                        ?.filter((s) => s !== null && s !== undefined)
-                        ?.reduce((a, b) => a + b, 0) ?? 0) /
-                      (report?.scores?.filter(
-                        (s) => s !== null && s !== undefined
-                      )?.length ?? 1)
-                    )?.toPrecision(2) || '-'}
+            <div>
+              {report.scores?.length === 0 ? (
+                <div className="text-red-500">No scores data</div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  Average score:
+                  <div className="flex flex-wrap gap-1">
+                    <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
+                      {(
+                        (report?.scores
+                          ?.filter((s) => s !== null && s !== undefined)
+                          ?.reduce((a, b) => a + b, 0) ?? 0) /
+                        (report?.scores?.filter(
+                          (s) => s !== null && s !== undefined
+                        )?.length ?? 1)
+                      )?.toPrecision(2) || '-'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div>
-            {report.scores?.length === 0 ? (
-              <div className="text-red-500">No scores data</div>
-            ) : (
-              <div className="flex items-center gap-1">
-                Scores:
-                <div className="flex flex-wrap gap-1">
-                  {report.scores
-                    ?.filter((s) => s !== null && s !== undefined)
-                    ?.map((s, idx) => (
-                      <div
-                        key={`report-${report.id}-score-${idx}`}
-                        className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
-                      >
-                        {s}
-                      </div>
-                    ))}
+              )}
+            </div>
+            <div>
+              {report.scores?.length === 0 ? (
+                <div className="text-red-500">No scores data</div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  Scores:
+                  <div className="flex flex-wrap gap-1">
+                    {report.scores
+                      ?.filter((s) => s !== null && s !== undefined)
+                      ?.map((s, idx) => (
+                        <div
+                          key={`report-${report.id}-score-${idx}`}
+                          className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
+                        >
+                          {s}
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <UserReportForm
+          isNew={isNew}
           form={form}
           submitLabel={t('common.save')}
           onSubmit={(_) => {}}

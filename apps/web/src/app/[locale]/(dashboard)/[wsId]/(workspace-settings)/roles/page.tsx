@@ -1,3 +1,5 @@
+import { roleColumns } from './columns';
+import RoleEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
@@ -5,8 +7,6 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { roleColumns } from './columns';
-import RoleEditDialog from './edit-dialog';
 
 interface Props {
   params: {
