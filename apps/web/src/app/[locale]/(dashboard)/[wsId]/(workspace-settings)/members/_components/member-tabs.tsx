@@ -1,13 +1,13 @@
 import TabNavigation from './tab-navigation';
 import { Tabs, TabsList } from '@repo/ui/components/ui/tabs';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   value?: string;
 }
 
-export default function MemberTabs({ value }: Props) {
-  const t = useTranslations('ws-members');
+export default async function MemberTabs({ value }: Props) {
+  const t = await getTranslations('ws-members');
 
   const allLabel = t('all');
   const joinedLabel = t('joined');

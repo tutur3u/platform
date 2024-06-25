@@ -156,7 +156,11 @@ export async function getSecrets({
     ascending: false,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.log(error);
+    notFound();
+  }
+
   return data as WorkspaceSecret[];
 }
 

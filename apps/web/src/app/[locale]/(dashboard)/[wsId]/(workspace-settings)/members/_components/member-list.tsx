@@ -12,8 +12,7 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
-import { useLocale } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 interface Props {
   workspace?: Workspace | null;
@@ -28,7 +27,7 @@ export default async function MemberList({
   invited,
   loading,
 }: Props) {
-  const locale = useLocale();
+  const locale = await getLocale();
   const t = await getTranslations('ws-members');
   const user = await getCurrentUser();
 

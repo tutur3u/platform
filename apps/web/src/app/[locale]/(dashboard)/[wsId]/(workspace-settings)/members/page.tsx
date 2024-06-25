@@ -7,7 +7,6 @@ import { User } from '@/types/primitives/User';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 
 interface Props {
   params: {
@@ -41,33 +40,19 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <Suspense
-            fallback={
-              <InviteMemberButton
-                wsId={wsId}
-                currentUser={{
-                  id: '',
-                  role: 'MEMBER',
-                }}
-                label={t('ws-members.invite_member')}
-                disabled
-              />
+          <InviteMemberButton
+            wsId={wsId}
+            currentUser={{
+              ...user!,
+              role: ws?.role,
+            }}
+            label={
+              disableInvite
+                ? t('ws-members.invite_member_disabled')
+                : t('ws-members.invite_member')
             }
-          >
-            <InviteMemberButton
-              wsId={wsId}
-              currentUser={{
-                ...user!,
-                role: ws?.role,
-              }}
-              label={
-                disableInvite
-                  ? t('ws-members.invite_member_disabled')
-                  : t('ws-members.invite_member')
-              }
-              disabled={disableInvite}
-            />
-          </Suspense>
+            disabled={disableInvite}
+          />
           <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
@@ -75,25 +60,11 @@ export default async function WorkspaceMembersPage({
 
       <div className="flex min-h-full w-full flex-col">
         <div className="grid items-end gap-4 lg:grid-cols-2">
-          <Suspense
-            fallback={
-              <MemberList
-                members={Array.from({ length: 10 }).map((_, i) => ({
-                  id: i.toString(),
-                  display_name: 'Unknown',
-                  role: 'MEMBER',
-                  pending: true,
-                }))}
-                loading
-              />
-            }
-          >
-            <MemberList
-              workspace={ws}
-              members={members}
-              invited={searchParams?.status === 'invited'}
-            />
-          </Suspense>
+          <MemberList
+            workspace={ws}
+            members={members}
+            invited={searchParams?.status === 'invited'}
+          />
         </div>
       </div>
     </>
