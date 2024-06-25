@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../dialog';
+} from '../dialog';
 import React, { ReactElement, cloneElement, useState } from 'react';
 
 interface Props<T> {
