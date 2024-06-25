@@ -7,6 +7,8 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -27,7 +29,7 @@ interface Props {
   searchParams: SearchParams;
 }
 
-export default async function WorkspaceUsersPage({
+export default async function WorkspaceUserAttendancePage({
   params: { wsId },
   searchParams,
 }: Props) {
@@ -43,6 +45,15 @@ export default async function WorkspaceUsersPage({
 
   return (
     <>
+      {/* <FeatureSummary
+        pluralTitle={t('plural')}
+        singularTitle={t('singular')}
+        description={t('description')}
+        // createTitle={t('create')}
+        createDescription={t('create_description')}
+        // form={<UserGroupForm wsId={wsId} />}
+      /> */}
+      <Separator className="my-4" />
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
         <CustomMonthPicker

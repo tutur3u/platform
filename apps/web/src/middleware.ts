@@ -75,11 +75,6 @@ const handleRedirect = ({
   res: NextResponse;
   redirect: boolean;
 } => {
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return { res, redirect: false };
-  }
-
   // If current path ends with /login and user is logged in, redirect to onboarding page
   if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
@@ -194,11 +189,6 @@ const handleLocale = ({
   req: NextRequest;
   res: NextResponse;
 }): NextResponse => {
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return res;
-  }
-
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
 
