@@ -115,10 +115,10 @@ importers:
         version: link:../../packages/ui
       '@supabase/ssr':
         specifier: ^0.4.0
-        version: 0.4.0(@supabase/supabase-js@2.43.5)
+        version: 0.4.0(@supabase/supabase-js@2.43.6)
       '@supabase/supabase-js':
-        specifier: 2.43.5
-        version: 2.43.5
+        specifier: 2.43.6
+        version: 2.43.6
       '@tabler/icons-react':
         specifier: ^3.6.0
         version: 3.6.0(react@19.0.0-rc-6230622a1a-20240610)
@@ -2282,8 +2282,8 @@ packages:
     resolution: {integrity: sha512-1ibVeYUacxWYi9i0cf5efil6adJ9WRyZBLivgjs+AUpewx1F3xPi7gLgaASI2SmIQxPoCEjAsLAzKPgMJVgOUQ==}
     engines: {node: 4.x || >=6.0.0}
 
-  '@supabase/postgrest-js@1.15.5':
-    resolution: {integrity: sha512-YR4TiitTE2hizT7mB99Cl3V9i00RAY5sUxS2/NuWWzkreM7OeYlP2OqnqVwwb4z6ILn+j8x9e/igJDepFhjswQ==}
+  '@supabase/postgrest-js@1.15.6':
+    resolution: {integrity: sha512-zg3URVhoHOijdqMyn3LIFHh+Pqj5BmRqWAaoSExzIHc4m0kGBMPMjDcleamGhbelAAiKbjpQ04mBgooDliGl5A==}
 
   '@supabase/realtime-js@2.9.5':
     resolution: {integrity: sha512-TEHlGwNGGmKPdeMtca1lFTYCedrhTAv3nZVoSjrKQ+wkMmaERuCe57zkC5KSWFzLYkb5FVHW8Hrr+PX1DDwplQ==}
@@ -2296,8 +2296,8 @@ packages:
   '@supabase/storage-js@2.6.0':
     resolution: {integrity: sha512-REAxr7myf+3utMkI2oOmZ6sdplMZZ71/2NEIEMBZHL9Fkmm3/JnaOZVSRqvG4LStYj2v5WhCruCzuMn6oD/Drw==}
 
-  '@supabase/supabase-js@2.43.5':
-    resolution: {integrity: sha512-Y4GukjZWW6ouohMaPlYz8tSz9ykf9jY7w9/RhqKuScmla3Xiklce8eLr8TYAtA+oQYCWxo3RgS3B6O4rd/72FA==}
+  '@supabase/supabase-js@2.43.6':
+    resolution: {integrity: sha512-6N9x1bDMDXUC7bE1yd5DRgMdgdbL/LYrRVywsW4Zu3sJFPo64wyA/IzmrqhJNSm7CgYysPrpXaKcmD8MsD786Q==}
 
   '@swc/helpers@0.5.11':
     resolution: {integrity: sha512-YNlnKRWF2sVojTpIyzwou9XoTNbzbzONwRhOoniEioF1AtaitTvVZblaQRrAzChWQ1bLYyYSWzM18y4WwgzJ+A==}
@@ -8406,7 +8406,7 @@ snapshots:
     dependencies:
       whatwg-url: 5.0.0
 
-  '@supabase/postgrest-js@1.15.5':
+  '@supabase/postgrest-js@1.15.6':
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
@@ -8420,9 +8420,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@supabase/ssr@0.4.0(@supabase/supabase-js@2.43.5)':
+  '@supabase/ssr@0.4.0(@supabase/supabase-js@2.43.6)':
     dependencies:
-      '@supabase/supabase-js': 2.43.5
+      '@supabase/supabase-js': 2.43.6
       cookie: 0.6.0
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.18.0
@@ -8431,12 +8431,12 @@ snapshots:
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
-  '@supabase/supabase-js@2.43.5':
+  '@supabase/supabase-js@2.43.6':
     dependencies:
       '@supabase/auth-js': 2.64.2
       '@supabase/functions-js': 2.4.1
       '@supabase/node-fetch': 2.6.15
-      '@supabase/postgrest-js': 1.15.5
+      '@supabase/postgrest-js': 1.15.6
       '@supabase/realtime-js': 2.9.5
       '@supabase/storage-js': 2.6.0
     transitivePeerDependencies:

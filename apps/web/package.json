@@ -55,7 +55,7 @@
     "@remixicon/react": "^4.2.0",
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.4.0",
-    "@supabase/supabase-js": "2.43.5",
+    "@supabase/supabase-js": "2.43.6",
     "@tabler/icons-react": "^3.6.0",
     "@tanstack/react-query": "^5.45.1",
     "@tanstack/react-table": "^8.17.3",
