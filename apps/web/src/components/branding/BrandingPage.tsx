@@ -1,9 +1,9 @@
 import LogoTab from './LogoTab';
 import { Button } from '@repo/ui/components/ui/button';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 const LandingPage = () => {
-  const { t } = useTranslation('branding');
+  const t = useTranslations('branding');
 
   return (
     <>

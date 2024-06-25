@@ -8,7 +8,7 @@ export const siteConfig = {
     : 'https://geniusjunior.vercel.app/media/logos/og-image.jpg',
   links: {
     twitter: 'https://twitter.com/tutur3u',
-    github: 'https://github.com/tutur3u/tutur3u',
+    github: 'https://github.com/tutur3u/platform',
   },
 };
 

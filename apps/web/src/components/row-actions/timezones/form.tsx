@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -33,7 +33,7 @@ const FormSchema = z.object({
 export const ApiConfigFormSchema = FormSchema;
 
 export default function TimezoneForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-secrets');
+  const t = (key: string) => key;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

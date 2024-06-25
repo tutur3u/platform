@@ -14,7 +14,7 @@ import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 export type ComboboxOptions = {
@@ -51,7 +51,7 @@ export function Combobox({
   onChange,
   onCreate,
 }: ComboboxProps) {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
@@ -118,9 +118,9 @@ export function Combobox({
               value={query}
               onValueChange={(value: string) => setQuery(value)}
             />
-            <CommandEmpty className="p-1 flex flex-col items-center justify-center">
-              <div className="p-8 text-sm text-muted-foreground">
-                {t('common:empty')}
+            <CommandEmpty className="flex flex-col items-center justify-center p-1">
+              <div className="text-muted-foreground p-8 text-sm">
+                {t('empty')}
               </div>
               <Separator />
               <Button
@@ -134,9 +134,9 @@ export function Combobox({
                 }}
                 disabled={!query || !onCreate}
               >
-                <Plus className="h-4 w-4 mr-2 shrink-0" />
+                <Plus className="mr-2 h-4 w-4 shrink-0" />
                 <div className="w-full truncate">
-                  <span className="font-normal">{t('common:add')}</span>{' '}
+                  <span className="font-normal">{t('add')}</span>{' '}
                   <span className="underline decoration-dashed underline-offset-2">
                     {query}
                   </span>

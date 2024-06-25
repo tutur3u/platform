@@ -1,6 +1,6 @@
 'use client';
 
-import SecretEditDialog from '@/app/[lang]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
+import SecretEditDialog from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -23,7 +23,7 @@ interface SecretRowActionsProps {
 
 export function SecretRowActions({ row }: SecretRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-secrets');
+  const t = useTranslations();
 
   const secret = row.original;
 
@@ -64,17 +64,19 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteSecret}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteSecret}>
+            {t('common.delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <SecretEditDialog
         data={secret}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_secret')}
+        submitLabel={t('ws-secrets.edit_secret')}
       />
     </>
   );

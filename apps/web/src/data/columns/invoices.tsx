@@ -10,9 +10,8 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const invoiceColumns = (t: Translate): ColumnDef<Invoice>[] => [
+export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

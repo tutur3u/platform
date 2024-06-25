@@ -4,11 +4,8 @@ import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const promotionColumns = (
-  t: Translate
-): ColumnDef<ProductPromotion>[] => [
+export const promotionColumns = (t: any): ColumnDef<ProductPromotion>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

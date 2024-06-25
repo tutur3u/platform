@@ -30,6 +30,29 @@ export async function GET(
   return NextResponse.json(data);
 }
 
+export async function PUT(
+  req: Request,
+  { params: { wsId, userId: id } }: Params
+) {
+  const supabase = createClient();
+
+  const data = await req.json();
+
+  const { error } = await supabase
+    .from('workspace_users')
+    .update(data)
+    .eq('id', id)
+    .eq('ws_id', wsId);
+
+  if (error)
+    return NextResponse.json(
+      { message: 'Error updating workspace user' },
+      { status: 500 }
+    );
+
+  return NextResponse.json({ message: 'success' });
+}
+
 export async function DELETE(
   _: Request,
   { params: { wsId, userId: id } }: Params

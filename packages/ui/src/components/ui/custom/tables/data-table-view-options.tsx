@@ -1,25 +1,24 @@
 'use client';
 
-import { ScrollArea } from '../../scroll-area';
-import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import { MixerHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '../../button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '../../dropdown-menu';
+import { ScrollArea } from '../../scroll-area';
+import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { UserCog } from 'lucide-react';
-import { Translate } from 'next-translate';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   extraColumns?: any[];
-  t?: Translate;
+  t?: any;
 }
 
 export function DataTableViewOptions<TData>({
@@ -40,12 +39,12 @@ export function DataTableViewOptions<TData>({
           className="ml-auto h-8 w-full md:w-fit"
         >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          {t?.('common:view-options') || 'View Options'}
+          {t?.('common.view-options') || 'View Options'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>
-          {t?.('common:toggle-columns') || 'Toggle Columns'}
+          {t?.('common.toggle-columns') || 'Toggle Columns'}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-36">
@@ -99,8 +98,8 @@ export function DataTableViewOptions<TData>({
             }}
           >
             {isShowingAll
-              ? t?.('common:hide-all') || 'Hide All'
-              : t?.('common:show-all') || 'Show All'}
+              ? t?.('common.hide-all') || 'Hide All'
+              : t?.('common.show-all') || 'Show All'}
           </Button>
         </DropdownMenuLabel>
       </DropdownMenuContent>

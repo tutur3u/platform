@@ -60,7 +60,7 @@ export function ChatModelSelector({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="flex md:grid w-[calc(100vw-2rem)] p-0 md:w-[48rem] flex-col-reverse md:grid-cols-2 xl:w-[64rem] rounded-b-none"
+        className="flex w-[calc(100vw-2rem)] flex-col-reverse rounded-b-none p-0 md:grid md:w-[48rem] md:grid-cols-2 xl:w-[64rem]"
         sideOffset={8}
         onInteractOutside={() => setOpen(false)}
       >
@@ -86,7 +86,7 @@ export function ChatModelSelector({
                       }}
                       onClick={() => setPreviewModel(m)}
                       onMouseOver={() => setPreviewModel(m)}
-                      className={cn(m.disabled && 'opacity-50 cursor-default')}
+                      className={cn(m.disabled && 'cursor-default opacity-50')}
                     >
                       <Check
                         className={cn(
@@ -110,7 +110,7 @@ export function ChatModelSelector({
               {previewModel?.provider}{' '}
             </div>
             <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
-            <div className="line-clamp-1 text-xs font-mono">
+            <div className="line-clamp-1 font-mono text-xs">
               {previewModel?.label}
             </div>
           </div>
