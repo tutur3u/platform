@@ -49,7 +49,7 @@ export const config = {
 const PUBLIC_PATHS = [
   '/terms',
   '/privacy',
-//   '/branding',
+  //   '/branding',
   '/ai/chats',
   '/calendar/meet-together',
 ].reduce((acc: string[], path) => {
@@ -217,11 +217,3 @@ const handleLocale = ({
 
   return nextIntlMiddleware(req);
 };
-
-const PUBLIC_PATHS = [
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/calendar/meet-together',
-];
