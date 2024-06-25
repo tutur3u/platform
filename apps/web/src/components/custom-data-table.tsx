@@ -9,6 +9,7 @@ export const CustomDataTable = ({ namespace, ...props }: any) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const commonT = useTranslations('common');
   const t = useTranslations(namespace);
 
   const pageSize = Number(searchParams.get('pageSize') || 10);
@@ -32,7 +33,7 @@ export const CustomDataTable = ({ namespace, ...props }: any) => {
       setParams={(params) => searchParams.set(params)}
       resetParams={() => searchParams.reset()}
       isEmpty={searchParams.isEmpty}
-      newObjectTitle={t('common:create')}
+      newObjectTitle={commonT('create')}
       {...props}
     />
   );

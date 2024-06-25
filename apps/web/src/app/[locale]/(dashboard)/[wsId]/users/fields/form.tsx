@@ -56,7 +56,7 @@ const FormSchema = z.object({
 export const ApiConfigFormSchema = FormSchema;
 
 export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
-  const t = useTranslations('ws-user-fields');
+  const t = useTranslations();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -94,10 +94,10 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('name')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.name')}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t('name')}
+                    placeholder={t('ws-user-fields.name')}
                     autoComplete="off"
                     {...field}
                   />
@@ -112,7 +112,7 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="type"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>{t('type')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.type')}</FormLabel>
                 <Popover open={showTypes} onOpenChange={setShowTypes}>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -127,13 +127,20 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                       >
                         {field.value
                           ? t(
-                              types
-                                ?.find((t) => t.id === field.value)
-                                ?.id.toLowerCase() || ''
+                              `ws-user-fields.${
+                                (types
+                                  ?.find((t) => t.id === field.value)
+                                  ?.id.toLowerCase() || '') as
+                                  | 'boolean'
+                                  | 'text'
+                                  | 'number'
+                                  | 'date'
+                                  | 'datetime'
+                              }`
                             )
                           : typesLoading
-                            ? t('common:loading')
-                            : t('select_type')}
+                            ? t('common.loading')
+                            : t('ws-user-fields.select_type')}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
@@ -180,7 +187,16 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                                         : 'opacity-0'
                                     )}
                                   />
-                                  {t(type.id.toLowerCase())}
+                                  {t(
+                                    `ws-user-fields.${
+                                      type.id.toLowerCase() as
+                                        | 'boolean'
+                                        | 'text'
+                                        | 'number'
+                                        | 'date'
+                                        | 'datetime'
+                                    }`
+                                  )}
                                 </CommandItem>
                               ))
                             : null}
@@ -201,9 +217,9 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="possible_values"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('possible_values')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.possible_values')}</FormLabel>
                 <FormDescription>
-                  {t('possible_values_description')}
+                  {t('ws-user-fields.possible_values_description')}
                 </FormDescription>
                 <div
                   className={
@@ -221,7 +237,9 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                             onValueChange={(value) => {
                               const values = field.value || [];
                               values[index] = value
-                                ? dayjs(value).format('YYYY-MM-DD')
+                                ? dayjs(value).format(
+                                    'ws-user-fields.YYYY-MM-DD'
+                                  )
                                 : '';
                               form.setValue('possible_values', values);
                             }}
@@ -234,7 +252,7 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                                 ? 'number'
                                 : 'text'
                             }
-                            placeholder={t('value')}
+                            placeholder={t('ws-user-fields.value')}
                             autoComplete="off"
                             className="w-full"
                             value={value}
@@ -282,7 +300,7 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
               }}
               disabled={!form.getValues('type')}
             >
-              {t('add_possible_value')}
+              {t('ws-user-fields.add_possible_value')}
               <PlusIcon className="ml-2" />
             </Button>
           )}
@@ -292,10 +310,10 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="default_value"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('default_value')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.default_value')}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t('null')}
+                    placeholder={t('ws-user-fields.null')}
                     autoComplete="off"
                     {...field}
                   />
@@ -312,10 +330,10 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('description')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.description')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder={t('description')}
+                    placeholder={t('ws-user-fields.description')}
                     autoComplete="off"
                     {...field}
                   />
@@ -330,10 +348,10 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
             name="notes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('notes')}</FormLabel>
+                <FormLabel>{t('ws-user-fields.notes')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder={t('notes')}
+                    placeholder={t('ws-user-fields.notes')}
                     autoComplete="off"
                     {...field}
                   />

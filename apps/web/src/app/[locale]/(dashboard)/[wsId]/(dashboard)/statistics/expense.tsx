@@ -1,12 +1,12 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function ExpenseStatistics({ wsId }: { wsId: string }) {
   const supabase = createClient();
-  const t = useTranslations();
+  const t = await getTranslations();
 
   const { data: expense } = enabled
     ? await supabase.rpc('get_workspace_wallets_expense', {
@@ -18,7 +18,7 @@ export default async function ExpenseStatistics({ wsId }: { wsId: string }) {
 
   return (
     <StatisticCard
-      title={t('finance-overview:total-expense')}
+      title={t('finance-overview.total-expense')}
       value={Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',

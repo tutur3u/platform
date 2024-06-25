@@ -5,7 +5,7 @@ import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
 import { Divider } from '@mantine/core';
 import moment from 'moment';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import useSWR from 'swr';
 
 interface Props {
@@ -19,7 +19,7 @@ export default function WalletDetailsPage({
   params: { wsId, walletId },
 }: Props) {
   const locale = useLocale();
-  const t = useTranslations('wallet');
+  const t = (key: string) => key;
 
   const apiPath =
     wsId && walletId

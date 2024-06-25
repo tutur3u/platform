@@ -20,7 +20,7 @@ interface ConfigRowActionsProps {
 }
 
 export function ConfigRowActions({ row }: ConfigRowActionsProps) {
-  const t = useTranslations('ws-reports');
+  const t = useTranslations();
   const config = row.original;
 
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -40,13 +40,13 @@ export function ConfigRowActions({ row }: ConfigRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           {config.value && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
-                {t('common:reset')}
+                {t('common.reset')}
               </DropdownMenuItem>
             </>
           )}
@@ -64,7 +64,11 @@ export function ConfigRowActions({ row }: ConfigRowActionsProps) {
         open={showEditDialog || showResetDialog}
         setOpen={showEditDialog ? setShowEditDialog : setShowResetDialog}
         resetMode={showResetDialog}
-        submitLabel={showEditDialog ? t('edit_value') : t('reset_value')}
+        submitLabel={
+          showEditDialog
+            ? t('ws-reports.edit_value')
+            : t('ws-reports.reset_value')
+        }
       />
     </>
   );

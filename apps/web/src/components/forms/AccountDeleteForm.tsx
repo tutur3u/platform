@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function AccountDeleteForm({ user, onDelete }: Props) {
-  const t = useTranslations('settings-account');
+  const t = useTranslations();
   const [value, setValue] = useState('');
   const [isDisabled, setIsDisabled] = useState(true);
 
@@ -23,7 +23,7 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div>{t('delete-account-message')}</div>
+      <div>{t('settings-account.delete-account-message')}</div>
       <TextInput
         value={value}
         placeholder={user.email}
@@ -40,7 +40,7 @@ export default function AccountDeleteForm({ user, onDelete }: Props) {
         }}
         disabled={isDisabled}
       >
-        {t('common:delete')}
+        {t('common.delete')}
       </Button>
     </div>
   );

@@ -23,7 +23,7 @@ interface TimezoneRowActionsProps {
 
 export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('timezones');
+  const t = useTranslations();
 
   const timezone = row.original;
 
@@ -93,14 +93,14 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
           {timezone?.id != null && (
             <>
               <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                {t('common:edit')}
+                {t('common.edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={deleteTimezone}
                 disabled={!timezone?.id}
               >
-                {t('common:delete')}
+                {t('common.delete')}
               </DropdownMenuItem>
             </>
           )}
@@ -110,7 +110,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
         data={timezone}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_timezone')}
+        submitLabel={'edit_timezone'}
       />
     </>
   );

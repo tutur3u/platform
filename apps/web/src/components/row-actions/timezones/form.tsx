@@ -33,7 +33,7 @@ const FormSchema = z.object({
 export const ApiConfigFormSchema = FormSchema;
 
 export default function TimezoneForm({ data, submitLabel, onSubmit }: Props) {
-  const t = useTranslations('ws-secrets');
+  const t = (key: string) => key;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

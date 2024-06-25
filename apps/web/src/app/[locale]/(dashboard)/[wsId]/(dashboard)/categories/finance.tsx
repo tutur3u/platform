@@ -1,12 +1,12 @@
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 export default async function FinanceCategoryStatistics({
   wsId,
 }: {
   wsId: string;
 }) {
-  const t = useTranslations('ws-home');
+  const t = await getTranslations();
 
   const forceEnable = true;
   const enabled =
@@ -16,7 +16,7 @@ export default async function FinanceCategoryStatistics({
 
   return (
     <div className="my-2 text-2xl font-semibold">
-      {t('sidebar-tabs:finance')}
+      {t('sidebar_tabs.finance')}
     </div>
   );
 }

@@ -118,14 +118,14 @@ export function StorageObjectRowActions(props: Props) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={renameStorageObject}>
-            {t('common:rename')}
+            {t('common.rename')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={downloadStorageObject}>
-            {t('common:download')}
+            {t('common.download')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteStorageObject}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

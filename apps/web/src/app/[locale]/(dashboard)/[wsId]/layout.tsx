@@ -2,7 +2,7 @@ import FleetingNavigator from './fleeting-navigator';
 import { NavLink, Navigation } from '@/components/navigation';
 import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -16,7 +16,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const t = useTranslations('sidebar-tabs');
+  const t = await getTranslations();
 
   const secrets = await getSecrets({
     wsId,
@@ -37,76 +37,76 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('X'),
+      name: t('sidebar_tabs.x'),
       href: `/${wsId}/x`,
       disabled: !verifySecret('ENABLE_X', 'true', secrets),
       requireRootMember: true,
       requireRootWorkspace: true,
     },
     {
-      name: t('chat'),
+      name: t('sidebar_tabs.chat'),
       href: `/${wsId}/chat`,
       forceRefresh: true,
       disabled: !verifySecret('ENABLE_CHAT', 'true', secrets),
     },
     {
-      name: t('common:dashboard'),
+      name: t('common.dashboard'),
       href: `/${wsId}`,
       matchExact: true,
     },
     {
-      name: t('ai'),
+      name: t('sidebar_tabs.ai'),
       href: `/${wsId}/ai`,
       disabled: !verifySecret('ENABLE_AI', 'true', secrets),
     },
     {
-      name: t('blackbox'),
+      name: t('sidebar_tabs.blackbox'),
       href: `/${wsId}/blackbox`,
       disabled: true,
     },
     {
-      name: t('calendar'),
+      name: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       disabled: !verifySecret('ENABLE_CALENDAR', 'true', secrets),
     },
     {
-      name: t('projects'),
+      name: t('sidebar_tabs.projects'),
       href: `/${wsId}/projects`,
       disabled: !verifySecret('ENABLE_PROJECTS', 'true', secrets),
     },
     {
-      name: t('documents'),
+      name: t('sidebar_tabs.documents'),
       href: `/${wsId}/documents`,
       disabled: !verifySecret('ENABLE_DOCS', 'true', secrets),
     },
     {
-      name: t('drive'),
+      name: t('sidebar_tabs.drive'),
       href: `/${wsId}/drive`,
       disabled: !verifySecret('ENABLE_DRIVE', 'true', secrets),
     },
     {
-      name: t('users'),
+      name: t('sidebar_tabs.users'),
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       disabled: !verifySecret('ENABLE_USERS', 'true', secrets),
     },
     {
-      name: t('inventory'),
+      name: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       disabled: !verifySecret('ENABLE_INVENTORY', 'true', secrets),
     },
     {
-      name: t('healthcare'),
+      name: t('sidebar_tabs.healthcare'),
       href: `/${wsId}/healthcare`,
       disabled: !verifySecret('ENABLE_HEALTHCARE', 'true', secrets),
     },
     {
-      name: t('finance'),
+      name: t('sidebar_tabs.finance'),
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
     },
     {
-      name: t('common:settings'),
+      name: t('common.settings'),
       href: `/${wsId}/settings`,
       aliases: [
         `/${wsId}/members`,

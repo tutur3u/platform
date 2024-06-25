@@ -51,7 +51,7 @@ export function ChatMessage({
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
-  const t = useTranslations('ai-chat');
+  const t = useTranslations('ai_chat');
 
   return (
     <div

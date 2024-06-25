@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export default function FeatureToggles() {
-  const t = useTranslations('sidebar-tabs');
+  const t = useTranslations('sidebar_tabs');
 
   const [features, setFeatures] = useState<{
     [key: string]: boolean;
@@ -28,7 +28,7 @@ export default function FeatureToggles() {
     'healthcare',
     'inventory',
     'finance',
-  ];
+  ] as const;
 
   return availableFeatures.map((feature) => (
     <FeatureToggle

@@ -43,7 +43,7 @@ export default function FleetingAssistant({
   onReset: () => void;
   onSubmit: (prompt: string) => Promise<Partial<AIChat> | undefined>;
 }) {
-  const t = useTranslations('ai-chat');
+  const t = useTranslations();
 
   const { isLoading, append, setMessages } = useChat({
     id: chat?.id,
@@ -56,14 +56,14 @@ export default function FleetingAssistant({
     onResponse(response) {
       if (!response.ok)
         toast({
-          title: t('something_went_wrong'),
-          description: t('try_again_later'),
+          title: t('ai_chat.something_went_wrong'),
+          description: t('ai_chat.try_again_later'),
         });
     },
     onError(_) {
       toast({
-        title: t('something_went_wrong'),
-        description: t('try_again_later'),
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
       });
     },
   });
@@ -118,7 +118,7 @@ export default function FleetingAssistant({
               },
               {
                 id: 'assistant-pending',
-                content: t('common:waiting_for_response'),
+                content: t('common.waiting_for_response'),
                 role: 'assistant',
               },
             ]

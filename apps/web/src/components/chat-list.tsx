@@ -40,7 +40,7 @@ export function ChatList({
   summarizing,
   setInput,
 }: ChatList) {
-  const t = useTranslations('ai-chat');
+  const t = useTranslations('ai_chat');
   if (!messages.length) return null;
 
   return (

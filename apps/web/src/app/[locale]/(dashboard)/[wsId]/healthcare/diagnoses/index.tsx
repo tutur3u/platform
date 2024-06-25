@@ -1,4 +1,3 @@
-import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
@@ -88,19 +87,6 @@ export default function HealthcareDiagnosesPage() {
 
       <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws.id}/healthcare/diagnoses/new`} />
-
-        {diagnoses &&
-          diagnoses?.map((d) => (
-            <GeneralItemCard
-              key={d.id}
-              name={d.name}
-              href={`/${ws.id}/healthcare/diagnoses/${d.id}`}
-              secondaryLabel={d.description}
-              tertiaryLabel={d.note}
-              showSecondaryLabel={showDescription}
-              showTertiaryLabel={showNote}
-            />
-          ))}
       </div>
     </div>
   );

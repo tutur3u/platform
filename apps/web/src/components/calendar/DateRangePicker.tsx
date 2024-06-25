@@ -31,7 +31,7 @@ const DateRangePicker = ({
   const [unit, setUnit] = useState<DateRangeUnit>(defaultUnit);
   const [option, setOption] = useState<DateRangeOption>(defaultOption);
 
-  const t = useTranslations('date-helper');
+  const t = useTranslations('date_helper');
   const timeUnit = t('time-unit');
   const timeUnitPlaceholder = t('time-unit-placeholder');
   const timeRange = t('time-range');

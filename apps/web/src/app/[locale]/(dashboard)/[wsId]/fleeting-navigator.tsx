@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const disabledPaths = [`/${wsId}/chat`, `/${wsId}/ai/playground`];
 
-  const t = useTranslations('sidebar-tabs');
+  const t = useTranslations();
   const pathname = usePathname();
 
   const [currentView, setCurrentView] = useState<
@@ -36,14 +36,14 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     onResponse(response) {
       if (!response.ok)
         toast({
-          title: t('something_went_wrong'),
-          description: t('try_again_later'),
+          title: t('ai_chat.something_went_wrong'),
+          description: t('ai_chat.try_again_later'),
         });
     },
     onError(_) {
       toast({
-        title: t('something_went_wrong'),
-        description: t('try_again_later'),
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
       });
     },
   });
@@ -73,7 +73,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
 
     if (!res.ok) {
       toast({
-        title: t('something_went_wrong'),
+        title: t('ai_chat.something_went_wrong'),
         description: res.statusText,
       });
       return;

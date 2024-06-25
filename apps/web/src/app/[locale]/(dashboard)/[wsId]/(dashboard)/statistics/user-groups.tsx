@@ -1,7 +1,7 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 export default async function UserGroupsStatistics({
   wsId,
@@ -11,7 +11,7 @@ export default async function UserGroupsStatistics({
   redirect?: boolean;
 }) {
   const supabase = createClient();
-  const t = useTranslations();
+  const t = await getTranslations();
 
   const enabled = await verifyHasSecrets(
     wsId,
@@ -33,7 +33,7 @@ export default async function UserGroupsStatistics({
 
   return (
     <StatisticCard
-      title={t('workspace-users-tabs:groups')}
+      title={t('workspace-users-tabs.groups')}
       value={userGroups}
       href={`/${wsId}/users/groups`}
     />

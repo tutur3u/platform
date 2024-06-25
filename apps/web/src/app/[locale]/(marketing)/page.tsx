@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default function MarketingPage() {
-  const t = useTranslations('home');
+  const t = useTranslations();
   const features = getFeatures(t);
 
   return (
@@ -25,8 +25,8 @@ export default function MarketingPage() {
           </div>
 
           <h1 className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            {t('headline-p1')} <br />
-            <GradientHeadline title={t('headline-p2')} />.
+            {t('home.headline-p1')} <br />
+            <GradientHeadline title={t('home.headline-p2')} />.
           </h1>
 
           <GetStartedButton href="/login" />
@@ -36,7 +36,7 @@ export default function MarketingPage() {
 
         <div className="text-foreground flex flex-col gap-8">
           <h2 className="text-center font-bold md:text-lg">
-            {t('features-lead')}
+            {t('home.features-lead')}
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {features.map(({ title, subtitle, url, icon }) => (

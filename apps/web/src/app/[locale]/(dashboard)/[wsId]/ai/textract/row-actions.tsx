@@ -61,11 +61,11 @@ export function AIPromptRowActions(props: AIPromptRowActions) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => props.setAIPrompt(data)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteAIPrompt}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

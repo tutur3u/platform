@@ -1,12 +1,12 @@
-import { roleColumns } from './columns';
-import RoleEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { roleColumns } from './columns';
+import RoleEditDialog from './edit-dialog';
 
 interface Props {
   params: {
@@ -24,7 +24,7 @@ export default async function WorkspaceRolesPage({
   searchParams,
 }: Props) {
   const { data: rawData, count } = await getRoles(wsId, searchParams);
-  const t = useTranslations('ws-roles');
+  const t = await getTranslations('ws-roles');
 
   const data = rawData.map((role) => ({
     ...role,

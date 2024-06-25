@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
-import { Translate } from 'next-translate';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;
@@ -27,7 +26,7 @@ interface DataTablePaginationProps<TData> {
   pageCount?: number;
   pageSize?: number;
   additionalSizes?: number[];
-  t?: Translate;
+  t?: any;
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
@@ -74,16 +73,16 @@ export function DataTablePagination<TData>({
     >
       {count !== undefined && count > 0 ? (
         <div className="text-muted-foreground flex-none text-sm">
-          {/* {locale === 'vi' || locale === 'vi-VN' ? t('selected') : null}{' '} */}
+          {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
             {table ? table.getFilteredSelectedRowModel().rows.length : 0}
           </span>{' '}
-          {t('of')}{' '} */}
+          {t('common.of')}{' '} */}
           {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
           <span className="text-primary font-semibold">{count}</span>{' '}
-          {t?.('common:result(s)') ?? 'result(s)'}
+          {t?.('common.result(s)') ?? 'result(s)'}
           {/* {locale !== 'vi' && locale !== 'vi-VN'
-            ? ' ' + t('selected').toLowerCase()
+            ? ' ' + t('common.selected').toLowerCase()
             : null} */}
           .
         </div>
@@ -96,7 +95,7 @@ export function DataTablePagination<TData>({
       <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
           <p className="text-sm font-medium">
-            {t?.('common:rows-per-page') ?? 'Rows per page'}
+            {t?.('common.rows-per-page') ?? 'Rows per page'}
           </p>
           <Select
             value={`${pageSize ?? table?.getState().pagination.pageSize ?? 0}`}
@@ -126,7 +125,7 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
         <div className="text-muted-foreground w-fit text-sm">
-          {t?.('common:page') ?? 'Page'}{' '}
+          {t?.('common.page') ?? 'Page'}{' '}
           <span className="text-primary font-semibold">
             {isPageOutOfRange
               ? 1
@@ -135,7 +134,7 @@ export function DataTablePagination<TData>({
           {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
             <>
               {' '}
-              {t?.('common:of') ?? 'of'}{' '}
+              {t?.('common.of') ?? 'of'}{' '}
               <span className="text-primary font-semibold">
                 {pageCount ?? table?.getPageCount() ?? 1}
               </span>

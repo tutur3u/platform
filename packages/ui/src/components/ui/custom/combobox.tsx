@@ -120,7 +120,7 @@ export function Combobox({
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
               <div className="text-muted-foreground p-8 text-sm">
-                {t('common:empty')}
+                {t('empty')}
               </div>
               <Separator />
               <Button
@@ -136,7 +136,7 @@ export function Combobox({
               >
                 <Plus className="mr-2 h-4 w-4 shrink-0" />
                 <div className="w-full truncate">
-                  <span className="font-normal">{t('common:add')}</span>{' '}
+                  <span className="font-normal">{t('add')}</span>{' '}
                   <span className="underline decoration-dashed underline-offset-2">
                     {query}
                   </span>

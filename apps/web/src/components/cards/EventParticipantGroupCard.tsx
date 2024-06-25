@@ -23,7 +23,7 @@ const EventParticipantGroupCard = ({
   selected = false,
 }: Props) => {
   const { ws } = useWorkspaces();
-  const t = useTranslations('calendar-event-configs');
+  const t = (key: string) => key;
 
   const [loading, setLoading] = useState(false);
 

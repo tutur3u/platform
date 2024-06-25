@@ -84,7 +84,7 @@ export function ChatPanel({
   collapsed,
   setCollapsed,
 }: ChatPanelProps) {
-  const t = useTranslations('ai-chat');
+  const t = useTranslations('ai_chat');
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);

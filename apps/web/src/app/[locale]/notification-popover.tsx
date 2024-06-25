@@ -14,11 +14,11 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Bell } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function NotificationPopover() {
-  const locale = useLocale();
-  const t = useTranslations('notifications');
+  const locale = await getLocale();
+  const t = await getTranslations('notifications');
 
   // Configure dayjs
   dayjs.locale(locale);

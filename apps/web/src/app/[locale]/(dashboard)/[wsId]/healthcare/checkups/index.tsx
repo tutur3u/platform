@@ -1,4 +1,3 @@
-import CheckupCard from '../../../../../../components/cards/CheckupCard';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import { useSegments } from '@/hooks/useSegments';
@@ -131,21 +130,6 @@ export default function MiscExaminationPage() {
 
       <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws?.id}/healthcare/checkups/new`} />
-
-        {checkups &&
-          checkups?.map((c) => (
-            <CheckupCard
-              key={c.id}
-              checkup={c}
-              showAddress={showAddress}
-              showGender={showGender}
-              showPhone={showPhone}
-              showTime={showTime}
-              showStatus={showStatus}
-              showDiagnosis={showDiagnosis}
-              showCreator={showCreator}
-            />
-          ))}
       </div>
     </div>
   );

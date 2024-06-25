@@ -7,7 +7,7 @@ import { getWorkspace } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -18,7 +18,7 @@ interface Props {
 export default async function WorkspaceSettingsPage({
   params: { wsId },
 }: Props) {
-  const t = useTranslations('ws-settings');
+  const t = await getTranslations();
 
   const ws = await getWorkspace(wsId);
   const { data: secrets } = await getSecrets(wsId);
@@ -42,13 +42,13 @@ export default async function WorkspaceSettingsPage({
   const enableSecurity =
     !isRootWorkspace && isWorkspaceOwner && !preventWorkspaceDeletion;
 
-  const settingsLabel = t('common:settings');
+  const settingsLabel = t('common.settings');
 
   return (
     <>
       <div className="border-border bg-foreground/5 rounded-lg border p-4">
         <h1 className="text-2xl font-bold">{settingsLabel}</h1>
-        <p className="text-foreground/80">{t('description')}</p>
+        <p className="text-foreground/80">{t('ws-settings.description')}</p>
       </div>
       <Separator className="my-4" />
 

@@ -38,7 +38,7 @@ export function TransactionCategoryForm({
   onComplete,
   submitLabel,
 }: Props) {
-  const t = useTranslations('transaction-category-data-table');
+  const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -92,9 +92,16 @@ export function TransactionCategoryForm({
             disabled={loading}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('category_name')}</FormLabel>
+                <FormLabel>
+                  {t('transaction-category-data-table.category_name')}
+                </FormLabel>
                 <FormControl>
-                  <Input placeholder={t('name_examples')} {...field} />
+                  <Input
+                    placeholder={t(
+                      'transaction-category-data-table.name_examples'
+                    )}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -106,14 +113,24 @@ export function TransactionCategoryForm({
             name="type"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>{t('category_type')}</FormLabel>
+                <FormLabel>
+                  {t('transaction-category-data-table.category_type')}
+                </FormLabel>
                 <FormControl>
                   <SelectField
                     id="category-type"
-                    placeholder={t('select_type')}
+                    placeholder={t(
+                      'transaction-category-data-table.select_type'
+                    )}
                     options={[
-                      { value: 'EXPENSE', label: t('expense') },
-                      { value: 'INCOME', label: t('income') },
+                      {
+                        value: 'EXPENSE',
+                        label: t('transaction-category-data-table.expense'),
+                      },
+                      {
+                        value: 'INCOME',
+                        label: t('transaction-category-data-table.income'),
+                      },
                     ]}
                     classNames={{ root: 'w-full' }}
                     {...field}
@@ -129,7 +146,7 @@ export function TransactionCategoryForm({
         <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t('common:processing') : submitLabel}
+          {loading ? t('common.processing') : submitLabel}
         </Button>
       </form>
     </Form>

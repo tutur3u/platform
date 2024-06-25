@@ -60,16 +60,16 @@ export function DataTableColumnHeader<TData, TValue>({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
             <ArrowUpIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {t('common:ascending')}
+            {t('common.ascending')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
             <ArrowDownIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {t('common:descending')}
+            {t('common.descending')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
             <EyeNoneIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
-            {t('common:hide_column')}
+            {t('common.hide_column')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

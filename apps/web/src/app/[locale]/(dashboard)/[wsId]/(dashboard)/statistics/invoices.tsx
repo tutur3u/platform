@@ -1,12 +1,12 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function InvoicesStatistics({ wsId }: { wsId: string }) {
   const supabase = createClient();
-  const t = useTranslations();
+  const t = await getTranslations();
 
   const { count: invoicesCount } = enabled
     ? await supabase
@@ -22,7 +22,7 @@ export default async function InvoicesStatistics({ wsId }: { wsId: string }) {
 
   return (
     <StatisticCard
-      title={t('workspace-finance-tabs:invoices')}
+      title={t('workspace-finance-tabs.invoices')}
       value={invoicesCount}
       href={`/${wsId}/finance/invoices`}
     />

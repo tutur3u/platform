@@ -5,7 +5,7 @@ import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -23,7 +23,7 @@ export default async function WorkspaceUserGroupTagsPage({
   searchParams,
 }: Props) {
   const { data: tags, count } = await getGroupTags(wsId, searchParams);
-  const t = useTranslations('ws-user-group-tags');
+  const t = await getTranslations('ws-user-group-tags');
 
   return (
     <>

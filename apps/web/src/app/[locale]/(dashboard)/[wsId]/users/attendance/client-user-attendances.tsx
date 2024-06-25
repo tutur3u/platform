@@ -19,7 +19,7 @@ interface SearchParams {
 const DEFAULT_PAGE = '1';
 const DEFAULT_PAGE_SIZE = '3';
 
-export default async function ClientUserAttendances({
+export default function ClientUserAttendances({
   wsId,
   searchParams: serverSearchParams,
   data,

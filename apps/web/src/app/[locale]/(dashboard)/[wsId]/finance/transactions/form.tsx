@@ -63,7 +63,7 @@ export function TransactionForm({
   submitLabel,
 }: Props) {
   const locale = useLocale();
-  const t = useTranslations('transaction-data-table');
+  const t = useTranslations();
 
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
@@ -160,7 +160,7 @@ export function TransactionForm({
               setNewContentType(undefined);
               mutateWallets();
             }}
-            submitLabel={newContent?.id ? t('common:edit') : t('common:create')}
+            submitLabel={newContent?.id ? t('common.edit') : t('common.create')}
           />
         ) : (
           <TransactionCategoryForm
@@ -171,7 +171,7 @@ export function TransactionForm({
               setNewContentType(undefined);
               mutateCategories();
             }}
-            submitLabel={newContent?.id ? t('common:edit') : t('common:create')}
+            submitLabel={newContent?.id ? t('common.edit') : t('common.create')}
           />
         )}
       </DialogContent>
@@ -187,7 +187,7 @@ export function TransactionForm({
               name="origin_wallet_id"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>{t('wallet')}</FormLabel>
+                  <FormLabel>{t('transaction-data-table.wallet')}</FormLabel>
                   <Combobox
                     {...field}
                     mode="single"
@@ -200,7 +200,7 @@ export function TransactionForm({
                         : []
                     }
                     label={walletsLoading ? 'Loading...' : undefined}
-                    placeholder={t('select_wallet')}
+                    placeholder={t('transaction-data-table.select_wallet')}
                     selected={field.value}
                     onChange={field.onChange}
                     onCreate={(name) => {
@@ -222,7 +222,7 @@ export function TransactionForm({
               name="category_id"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>{t('category')}</FormLabel>
+                  <FormLabel>{t('transaction-data-table.category')}</FormLabel>
                   <Combobox
                     {...field}
                     mode="single"
@@ -235,7 +235,7 @@ export function TransactionForm({
                         : []
                     }
                     label={walletsLoading ? 'Loading...' : undefined}
-                    placeholder={t('select_category')}
+                    placeholder={t('transaction-data-table.select_category')}
                     selected={field.value}
                     onChange={field.onChange}
                     onCreate={(name) => {
@@ -261,7 +261,7 @@ export function TransactionForm({
             disabled={loading}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('amount')}</FormLabel>
+                <FormLabel>{t('transaction-data-table.amount')}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -298,9 +298,12 @@ export function TransactionForm({
             disabled={loading}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('description')}</FormLabel>
+                <FormLabel>{t('transaction-data-table.description')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder={t('description')} {...field} />
+                  <Textarea
+                    placeholder={t('transaction-data-table.description')}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -314,7 +317,7 @@ export function TransactionForm({
             name="taken_at"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>{t('taken_at')}</FormLabel>
+                <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -334,7 +337,7 @@ export function TransactionForm({
                             }
                           )
                         ) : (
-                          <span>{t('taken_at')}</span>
+                          <span>{t('transaction-data-table.taken_at')}</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -357,7 +360,7 @@ export function TransactionForm({
           <div className="h-2" />
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? t('common:processing') : submitLabel}
+            {loading ? t('common.processing') : submitLabel}
           </Button>
         </form>
       </Form>

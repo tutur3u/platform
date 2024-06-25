@@ -113,7 +113,7 @@
         "no_online_users": "No online users",
         "waiting_for_response": "I'll respond to you shortly, please wait..."
     },
-    "date-helper": {
+    "date_helper": {
         "time-unit": "Time unit",
         "time-unit-placeholder": "Select time unit",
         "time-range": "Time range",
@@ -316,7 +316,7 @@
         "search": "Search",
         "search-placeholder": "Enter a keyword to search"
     },
-    "sidebar-tabs": {
+    "sidebar_tabs": {
         "invite": "Invite",
         "more-members": "more members",
         "new": "New",
@@ -335,6 +335,7 @@
         "classes": "Classes",
         "finance": "Finance",
         "databases": "Databases",
+        "x": "X",
         "ai": "AI",
         "infrastructure": "Infrastructure",
         "migrations": "Migrations",

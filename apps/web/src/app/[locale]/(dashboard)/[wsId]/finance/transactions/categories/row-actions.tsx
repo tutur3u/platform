@@ -61,11 +61,11 @@ export function TransactionCategoryRowActions(props: Props) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => props.setCategory(category)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteCategory}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

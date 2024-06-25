@@ -1,12 +1,12 @@
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 export default async function InventoryCategoryStatistics({
   wsId,
 }: {
   wsId: string;
 }) {
-  const t = useTranslations('ws-home');
+  const t = await getTranslations();
 
   const forceEnable = false;
   const enabled =
@@ -16,7 +16,7 @@ export default async function InventoryCategoryStatistics({
 
   return (
     <div className="mb-2 mt-4 text-2xl font-semibold">
-      {t('sidebar-tabs:inventory')}
+      {t('sidebar_tabs.inventory')}
     </div>
   );
 }

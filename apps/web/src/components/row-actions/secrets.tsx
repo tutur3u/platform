@@ -23,7 +23,7 @@ interface SecretRowActionsProps {
 
 export function SecretRowActions({ row }: SecretRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-secrets');
+  const t = useTranslations();
 
   const secret = row.original;
 
@@ -64,11 +64,11 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteSecret}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -76,7 +76,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
         data={secret}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_secret')}
+        submitLabel={t('ws-secrets.edit_secret')}
       />
     </>
   );

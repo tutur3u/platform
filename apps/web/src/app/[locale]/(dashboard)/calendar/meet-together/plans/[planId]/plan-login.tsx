@@ -49,7 +49,7 @@ export default function PlanLogin({
   const pathname = usePathname();
   const router = useRouter();
 
-  const t = useTranslations('meet-together-plan-details');
+  const t = useTranslations();
 
   const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
 
@@ -116,16 +116,16 @@ export default function PlanLogin({
         <DialogHeader>
           <DialogTitle>
             {displayMode === 'account-switcher'
-              ? t('account_switcher')
+              ? t('meet-together-plan-details.account_switcher')
               : displayMode === 'login'
-                ? t('identity_protection')
+                ? t('meet-together-plan-details.identity_protection')
                 : null}
           </DialogTitle>
           <DialogDescription>
             {displayMode === 'account-switcher'
-              ? t('account_switcher_desc')
+              ? t('meet-together-plan-details.account_switcher_desc')
               : displayMode === 'login'
-                ? t('identity_protection_desc')
+                ? t('meet-together-plan-details.identity_protection_desc')
                 : null}
           </DialogDescription>
         </DialogHeader>
@@ -151,8 +151,8 @@ export default function PlanLogin({
               }
             >
               {!!platformUser && (!user?.id || platformUser?.id === user?.id)
-                ? t('using_tuturuuu_account')
-                : t('use_tuturuuu_account')}
+                ? t('meet-together-plan-details.using_tuturuuu_account')
+                : t('meet-together-plan-details.use_tuturuuu_account')}
             </Button>
             <Button
               variant="outline"
@@ -162,8 +162,8 @@ export default function PlanLogin({
               }}
             >
               {user?.is_guest
-                ? t('use_other_guest_account')
-                : t('use_guest_account')}
+                ? t('meet-together-plan-details.use_other_guest_account')
+                : t('meet-together-plan-details.use_guest_account')}
             </Button>
           </div>
         ) : displayMode === 'login' ? (
@@ -174,7 +174,9 @@ export default function PlanLogin({
                 name="guestName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('your_name')}</FormLabel>
+                    <FormLabel>
+                      {t('meet-together-plan-details.your_name')}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Tuturuuu"
@@ -183,7 +185,9 @@ export default function PlanLogin({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>{t('your_name_desc')}</FormDescription>
+                    <FormDescription>
+                      {t('meet-together-plan-details.your_name_desc')}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -193,7 +197,9 @@ export default function PlanLogin({
                 name="guestPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('password')}</FormLabel>
+                    <FormLabel>
+                      {t('meet-together-plan-details.password')}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -204,7 +210,9 @@ export default function PlanLogin({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>{t('password_desc')}</FormDescription>
+                    <FormDescription>
+                      {t('meet-together-plan-details.password_desc')}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -216,7 +224,7 @@ export default function PlanLogin({
                   className="w-full"
                   disabled={missingFields || loading}
                 >
-                  {loading ? t('common:processing') : t('common:continue')}
+                  {loading ? t('common.processing') : t('common.continue')}
                 </Button>
               </DialogFooter>
             </form>

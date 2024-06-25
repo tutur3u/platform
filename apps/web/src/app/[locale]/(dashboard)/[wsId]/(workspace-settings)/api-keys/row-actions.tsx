@@ -23,7 +23,7 @@ interface ApiKeyRowActionsProps {
 
 export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-api-keys');
+  const t = useTranslations();
 
   const apiKey = row.original;
 
@@ -64,11 +64,11 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteApiKey}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -76,7 +76,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         data={apiKey}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_key')}
+        submitLabel={t('ws-api-keys.edit_key')}
       />
     </>
   );

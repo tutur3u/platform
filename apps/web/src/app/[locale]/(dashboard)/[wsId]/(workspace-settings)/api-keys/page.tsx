@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -24,7 +24,7 @@ export default async function WorkspaceApiKeysPage({
   searchParams,
 }: Props) {
   const { data: apiKeys, count } = await getApiKeys(wsId, searchParams);
-  const t = useTranslations('ws-api-keys');
+  const t = await getTranslations('ws-api-keys');
 
   return (
     <>

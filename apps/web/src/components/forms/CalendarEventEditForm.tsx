@@ -6,7 +6,7 @@ import { Button, Divider, TextInput, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -151,7 +151,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   };
 
   const locale = useLocale();
-  const t = useTranslations('calendar-event-configs');
+  const t = (key: string) => key;
 
   const countApiPath =
     wsId && event
@@ -225,7 +225,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             setStartDate(date);
           }}
           clearable={false}
-          locale={lang}
+          locale={locale}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
           placeholder={'Date & time'}
@@ -255,7 +255,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             setEndDate(date);
           }}
           clearable={false}
-          locale={lang}
+          locale={locale}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
           placeholder={'Date & time'}

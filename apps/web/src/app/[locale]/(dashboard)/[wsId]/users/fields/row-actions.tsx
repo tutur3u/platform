@@ -23,7 +23,7 @@ interface UserFieldRowActionsProps {
 
 export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-user-fields');
+  const t = useTranslations();
 
   const userField = row.original;
 
@@ -64,11 +64,11 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteUserField}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -76,7 +76,7 @@ export function UserFieldRowActions({ row }: UserFieldRowActionsProps) {
         data={userField}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_field')}
+        submitLabel={t('ws-user-fields.edit_field')}
       />
     </div>
   );

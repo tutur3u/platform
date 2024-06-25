@@ -1,6 +1,5 @@
 import { Divider } from '@mantine/core';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 
 interface Props {
   title: string;

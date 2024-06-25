@@ -113,7 +113,7 @@
         "no_online_users": "Không có ai trực tuyến",
         "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi..."
     },
-    "date-helper": {
+    "date_helper": {
         "time-unit": "Đơn vị thời gian",
         "time-unit-placeholder": "Chọn đơn vị thời gian",
         "time-range": "Khoảng thời gian",
@@ -316,7 +316,7 @@
         "search": "Tìm kiếm",
         "search-placeholder": "Nhập từ khóa để tìm kiếm"
     },
-    "sidebar-tabs": {
+    "sidebar_tabs": {
         "invite": "Mời",
         "more-members": "người khác",
         "new": "Tạo mới",
@@ -335,6 +335,7 @@
         "classes": "Lớp học",
         "finance": "Tài chính",
         "databases": "Cơ sở dữ liệu",
+        "x": "X",
         "ai": "Trí tuệ nhân tạo",
         "infrastructure": "Cơ sở hạ tầng",
         "migrations": "Chuyển dữ liệu",

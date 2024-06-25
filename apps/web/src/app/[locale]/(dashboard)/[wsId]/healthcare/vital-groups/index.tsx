@@ -1,4 +1,3 @@
-import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
@@ -98,22 +97,6 @@ export default function MiscVitalGroupsPage() {
 
       <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws.id}/healthcare/vital-groups/new`} />
-
-        {groups &&
-          groups?.map((v) => (
-            <GeneralItemCard
-              key={v.id}
-              name={v.name}
-              href={`/${ws.id}/healthcare/vital-groups/${v.id}`}
-              secondaryLabel={v?.description || 'Không có mô tả'}
-              tertiaryLabel={v?.note || 'Không có ghi chú'}
-              amountFetchPath={`/api/workspaces/${ws.id}/healthcare/vital-groups/${v.id}/vitals/count`}
-              amountTrailing="chỉ số"
-              showSecondaryLabel={showDescription}
-              showTertiaryLabel={showNote}
-              showAmount={showVitalAmount}
-            />
-          ))}
       </div>
     </div>
   );

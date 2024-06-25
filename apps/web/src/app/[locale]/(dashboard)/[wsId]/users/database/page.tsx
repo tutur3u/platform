@@ -7,7 +7,7 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
   q?: string;
@@ -29,7 +29,7 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = useTranslations('ws-users');
+  const t = await getTranslations('ws-users');
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: extraFields } = await getUserFields(wsId);

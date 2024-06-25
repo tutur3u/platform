@@ -18,7 +18,7 @@ export default function ReportPreview({
   };
   showImage?: boolean;
   // eslint-disable-next-line no-unused-vars
-  t: (key: string) => string;
+  t: any;
   // eslint-disable-next-line no-unused-vars
   parseDynamicText: (text?: string | null) => ReactNode;
   // eslint-disable-next-line no-unused-vars
@@ -100,7 +100,7 @@ export default function ReportPreview({
                     }`}
                   >
                     <span className={data?.content ? '' : 'opacity-50'}>
-                      {data?.content || t('common:empty')}
+                      {data?.content || t('common.empty')}
                     </span>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export default function ReportPreview({
                     }`}
                   >
                     <span className={data?.feedback ? '' : 'opacity-50'}>
-                      {data?.feedback || t('common:empty')}
+                      {data?.feedback || t('common.empty')}
                     </span>
                   </div>
                 </div>

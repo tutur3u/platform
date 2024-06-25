@@ -10,7 +10,7 @@ export default function LoggedInAsButton({
 }: {
   platformUser: PlatformUser | null;
 }) {
-  const t = useTranslations('meet-together-plan-details');
+  const t = useTranslations();
   const { user: guestUser, setDisplayMode } = useTimeBlocking();
 
   const user = guestUser ?? platformUser;
@@ -18,12 +18,16 @@ export default function LoggedInAsButton({
   return (
     <div className="bg-foreground/5 border-foreground/20 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
       <div className="text-sm opacity-80">
-        {user?.id ? t('interacting_as') : t('viewing_as')}
+        {user?.id
+          ? t('meet-together-plan-details.interacting_as')
+          : t('meet-together-plan-details.viewing_as')}
       </div>
       <div
         className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
-        {user?.display_name || platformUser?.email || t('anonymous')}{' '}
+        {user?.display_name ||
+          platformUser?.email ||
+          t('meet-together-plan-details.anonymous')}{' '}
       </div>
 
       {user?.id ? (
@@ -44,7 +48,9 @@ export default function LoggedInAsButton({
           setDisplayMode('account-switcher');
         }}
       >
-        {user?.id ? t('switch_account') : t('common:login')}
+        {user?.id
+          ? t('meet-together-plan-details.switch_account')
+          : t('common.login')}
       </Button>
     </div>
   );

@@ -32,7 +32,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export async function UserNav() {
-  const t = useTranslations('common');
+  const t = useTranslations();
 
   const user = await getCurrentUser(true);
   const workspaces = await getWorkspaces(true);
@@ -62,7 +62,7 @@ export async function UserNav() {
               href="/settings/account"
               className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
             >
-              {user?.display_name || user?.handle || t('common:unnamed')}
+              {user?.display_name || user?.handle || t('common.unnamed')}
             </Link>
             <p className="text-muted-foreground line-clamp-1 break-all text-xs">
               {user?.email}
@@ -76,7 +76,7 @@ export async function UserNav() {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Palette className="mr-2 h-4 w-4" />
-              <span>{t('theme')}</span>
+              <span>{t('common.theme')}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -87,7 +87,7 @@ export async function UserNav() {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Globe className="mr-2 h-4 w-4" />
-              <span>{t('language')}</span>
+              <span>{t('common.language')}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -101,7 +101,7 @@ export async function UserNav() {
           <Link href="/settings/account">
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
-              <span>{t('settings')}</span>
+              <span>{t('common.settings')}</span>
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>

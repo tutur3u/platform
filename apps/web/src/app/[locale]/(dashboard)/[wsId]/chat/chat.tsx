@@ -48,7 +48,7 @@ const Chat = ({
   hasKeys,
   locale,
 }: ChatProps) => {
-  const t = useTranslations('ai-chat');
+  const t = useTranslations('ai_chat');
 
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -9,10 +9,8 @@ import { Suspense, useState } from 'react';
 import useSWR from 'swr';
 
 export default function UserActivitiesPage() {
-  const t = useTranslations('settings-tabs');
+  const t = useTranslations();
   const user = { id: 'TO-BE-REFACTORED' };
-
-  const activitiesLabel = t('activities');
 
   const [activePage] = useState(1);
 
@@ -41,9 +39,11 @@ export default function UserActivitiesPage() {
       {user?.id && (
         <>
           <div className="border-border bg-foreground/5 rounded-lg border p-4">
-            <h1 className="text-2xl font-bold">{activitiesLabel}</h1>
+            <h1 className="text-2xl font-bold">
+              {t('settings-tabs.activities')}
+            </h1>
             <p className="text-foreground/80">
-              {t('ws-activities:description')}
+              {t('ws-activities.description')}
             </p>
           </div>
           <Divider className="my-4" />

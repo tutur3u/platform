@@ -1,7 +1,7 @@
 import { User } from '@/types/primitives/User';
 import { AuditLog } from '@/types/primitives/audit-log';
 import { JsonInput, Loader } from '@mantine/core';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 
 interface Props {
@@ -488,7 +488,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             <div>
               • {t('set_balance_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'currency',
                   currency: 'VND',
                 }).format(data.record.balance)}
@@ -628,14 +628,14 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.old_record.balance)}
                 </span>{' '}
                 {t('to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.record.balance)}
@@ -747,7 +747,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('set_wallet_balance_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
@@ -809,14 +809,14 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.old_record?.currency || 'USD',
                   }).format(data.old_record.balance)}
                 </span>{' '}
                 {t('to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
@@ -918,11 +918,17 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     <div>
                       • {t('change_role_from')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                        {t('ws-members:' + data.old_record.role.toLowerCase())}
+                        {t(
+                          ('ws-members.' +
+                            data.old_record.role.toLowerCase()) as any
+                        )}
                       </span>{' '}
                       {t('to')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                        {t('ws-members:' + data.record.role.toLowerCase())}
+                        {t(
+                          ('ws-members.' +
+                            data.record.role.toLowerCase()) as any
+                        )}
                       </span>
                     </div>
                   )}

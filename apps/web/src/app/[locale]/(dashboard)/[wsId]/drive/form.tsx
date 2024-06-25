@@ -37,7 +37,7 @@ const FormSchema = z.object({
 });
 
 export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
-  const t = useTranslations('common');
+  const t = useTranslations();
 
   const router = useRouter();
   const supabase = createClient();
@@ -121,7 +121,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
           render={({ field: { value, onChange, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
-                {t('storage-object-data-table:files')}
+                {t('storage-object-data-table.files')}
                 {files.length > 0 ? ` (${files.length})` : ''}
               </FormLabel>
               {files.length === 0 ? (
@@ -213,13 +213,13 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                             <div className="text-xs font-semibold">
                               {fileStatuses[file.name] === 'uploading' ? (
                                 <span className="opacity-70">
-                                  {t('uploading')}...
+                                  {t('common.uploading')}...
                                 </span>
                               ) : fileStatuses[file.name] === 'uploaded' ? (
-                                <span>{t('uploaded')}</span>
+                                <span>{t('common.uploaded')}</span>
                               ) : fileStatuses[file.name] === 'error' ? (
                                 <span className="text-destructive">
-                                  {t('error')}
+                                  {t('common.error')}
                                 </span>
                               ) : (
                                 <span>{Math.round(file.size / 1024)} KB</span>
@@ -275,14 +275,14 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
               variant="ghost"
               disabled={loading || files.length === 0 || uploadedAllFiles}
             >
-              {t('storage-object-data-table:clear_files')}
+              {t('storage-object-data-table.clear_files')}
             </Button>
             <Button
               type="submit"
               className="w-full"
               disabled={loading || files.length === 0 || uploadedAllFiles}
             >
-              {loading ? t('common:processing') : submitLabel}
+              {loading ? t('common.processing') : submitLabel}
             </Button>
           </div>
         )}

@@ -1,5 +1,3 @@
-import { UserDatabaseFilter } from '../filters';
-import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
@@ -8,7 +6,9 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { UserDatabaseFilter } from '../filters';
+import { getUserReportColumns } from './columns';
 
 interface SearchParams {
   page?: string;
@@ -29,7 +29,7 @@ export default async function WorkspaceUserReportsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = useTranslations('user-data-table');
+  const t = await getTranslations('user-data-table');
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: userGroups } = await getUserGroups(wsId);

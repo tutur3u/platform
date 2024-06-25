@@ -1,4 +1,3 @@
-import ProjectEditDialog from './_components/project-edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -7,7 +6,8 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import ProjectEditDialog from './_components/project-edit-dialog';
 
 interface Props {
   params: {
@@ -27,7 +27,7 @@ export default async function WorkspaceProjectsPage({
   await verifyHasSecrets(wsId, ['ENABLE_PROJECTS'], `/${wsId}`);
 
   const { data: projects, count } = await getProjects(wsId, searchParams);
-  const t = useTranslations('ws-projects');
+  const t = await getTranslations('ws-projects');
 
   return (
     <>

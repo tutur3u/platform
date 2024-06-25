@@ -1,6 +1,6 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
@@ -10,7 +10,7 @@ export default async function TransactionsStatistics({
   wsId: string;
 }) {
   const supabase = createClient();
-  const t = useTranslations();
+  const t = await getTranslations();
 
   const { count: transactionsCount } = enabled
     ? await supabase
@@ -26,7 +26,7 @@ export default async function TransactionsStatistics({
 
   return (
     <StatisticCard
-      title={t('workspace-finance-tabs:transactions')}
+      title={t('workspace-finance-tabs.transactions')}
       value={transactionsCount}
       href={`/${wsId}/finance/transactions`}
     />

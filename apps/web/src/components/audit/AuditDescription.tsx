@@ -11,7 +11,7 @@ interface Props {
 }
 
 const AuditDescription = ({ data, isExpanded }: Props) => {
-  const t = useTranslations('ws-activities');
+  const t = useTranslations();
 
   const [activeTab, setActiveTab] = useState<string | null>('default');
 
@@ -26,7 +26,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
       color="blue"
     >
       <Tabs.List>
-        <Tabs.Tab value="default">{t('common:default')}</Tabs.Tab>
+        <Tabs.Tab value="default">{t('common.default')}</Tabs.Tab>
         <Tabs.Tab value="json">JSON</Tabs.Tab>
       </Tabs.List>
 

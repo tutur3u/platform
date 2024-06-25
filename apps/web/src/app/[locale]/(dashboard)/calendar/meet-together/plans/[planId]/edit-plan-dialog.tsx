@@ -51,7 +51,7 @@ const FormSchema = z.object({
 });
 
 export default function EditPlanDialog({ plan }: Props) {
-  const t = useTranslations('meet-together-plan-details');
+  const t = useTranslations();
   const router = useRouter();
 
   const [isOpened, setIsOpened] = useState(false);
@@ -62,7 +62,7 @@ export default function EditPlanDialog({ plan }: Props) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: plan.name || t('untitled_plan'),
+      name: plan.name || t('meet-together.untitled_plan'),
       is_public: true,
     },
   });
@@ -95,8 +95,8 @@ export default function EditPlanDialog({ plan }: Props) {
     } else {
       setUpdating(false);
       toast({
-        title: t('something_went_wrong'),
-        description: t('cant_update_plan_right_now'),
+        title: t('meet-together-plan-details.something_went_wrong'),
+        description: t('meet-together-plan-details.cant_update_plan_right_now'),
       });
     }
   };
@@ -113,8 +113,8 @@ export default function EditPlanDialog({ plan }: Props) {
     } else {
       setDeleting(false);
       toast({
-        title: t('something_went_wrong'),
-        description: t('cant_delete_plan_right_now'),
+        title: t('meet-together-plan-details.something_went_wrong'),
+        description: t('meet-together-plan-details.cant_delete_plan_right_now'),
       });
     }
   };
@@ -137,8 +137,12 @@ export default function EditPlanDialog({ plan }: Props) {
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{t('update_plan')}</DialogTitle>
-          <DialogDescription>{t('update_plan_desc')}</DialogDescription>
+          <DialogTitle>
+            {t('meet-together-plan-details.update_plan')}
+          </DialogTitle>
+          <DialogDescription>
+            {t('meet-together-plan-details.update_plan_desc')}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -151,7 +155,7 @@ export default function EditPlanDialog({ plan }: Props) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('name')}</FormLabel>
+                  <FormLabel>{t('meet-together-plan-details.name')}</FormLabel>
                   <FormControl>
                     <Input placeholder="Name" autoComplete="off" {...field} />
                   </FormControl>
@@ -172,7 +176,9 @@ export default function EditPlanDialog({ plan }: Props) {
                     deleting
                   }
                 >
-                  {updating ? t('updating_plan') : t('update_plan')}
+                  {updating
+                    ? t('meet-together-plan-details.updating_plan')
+                    : t('meet-together-plan-details.update_plan')}
                 </Button>
 
                 <Separator />
@@ -185,24 +191,28 @@ export default function EditPlanDialog({ plan }: Props) {
                       variant="destructive"
                       disabled={disabled || updating || deleting}
                     >
-                      {deleting ? t('deleting_plan') : t('delete_plan')}
+                      {deleting
+                        ? t('meet-together-plan-details.deleting_plan')
+                        : t('meet-together-plan-details.delete_plan')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        {t('are_you_absolutely_sure')}
+                        {t(
+                          'meet-together-plan-details.are_you_absolutely_sure'
+                        )}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('delete_plan_warning')}
+                        {t('meet-together-plan-details.delete_plan_warning')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>
-                        {t('common:cancel')}
+                        {t('common.cancel')}
                       </AlertDialogCancel>
                       <AlertDialogAction onClick={handleDelete}>
-                        {t('common:continue')}
+                        {t('common.continue')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

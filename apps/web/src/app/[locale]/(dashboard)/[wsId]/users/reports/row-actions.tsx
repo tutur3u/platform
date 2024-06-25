@@ -1,6 +1,5 @@
 'use client';
 
-import UserReportEditDialog from './edit-dialog';
 import { WorkspaceUserReport } from '@/types/db';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
@@ -22,7 +21,7 @@ interface UserReportRowActionsProps {
 
 export function UserReportRowActions({ row }: UserReportRowActionsProps) {
   // const router = useRouter();
-  const t = useTranslations('ws-user-reports');
+  const t = useTranslations();
 
   const report = row.original;
 
@@ -55,7 +54,7 @@ export function UserReportRowActions({ row }: UserReportRowActionsProps) {
         <Link href={report.href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
-            {t('common:view')}
+            {t('common.view')}
           </Button>
         </Link>
       )}
@@ -72,16 +71,10 @@ export function UserReportRowActions({ row }: UserReportRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={deleteUserReport}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <UserReportEditDialog
-        data={report}
-        open={showEditDialog}
-        setOpen={setShowEditDialog}
-        submitLabel={t('edit_tag')}
-      />
     </div>
   );
 }

@@ -12,8 +12,7 @@ interface Props {
 }
 
 const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
-  const t = useTranslations('settings-account');
-  const avatarLabel = t('avatar');
+  const t = useTranslations();
 
   const [opened, setOpened] = useState(false);
 
@@ -34,7 +33,7 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
     <div className="flex items-center justify-center">
       <div className="relative w-fit">
         <Avatar
-          alt={avatarLabel}
+          alt={t('settings-account.avatar')}
           src={file ? URL.createObjectURL(file) : src || undefined}
           size="2xl"
           color="blue"
@@ -68,7 +67,7 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                   variant="light"
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
                 >
-                  {t('common:edit')}
+                  {t('common.edit')}
                 </Button>
               )}
             </FileButton>
@@ -80,7 +79,7 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
                   onClick={() => updateFile(null)}
                 >
-                  {t('revert_changes')}
+                  {t('settings-account.revert_changes')}
                 </Button>
               ) : (
                 <Button
@@ -88,7 +87,7 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
                   className="flex w-full border text-zinc-900 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-300/10"
                   onClick={removeFile}
                 >
-                  {t('common:remove')}
+                  {t('common.remove')}
                 </Button>
               )
             ) : null}
@@ -98,7 +97,7 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
         {isPreview && (
           <div className="absolute -bottom-2 left-0 right-0 mx-auto flex w-fit transform items-center justify-center rounded-full bg-clip-text backdrop-blur-xl">
             <div className="w-full rounded-full border-2 border-zinc-700/30 bg-zinc-100/50 bg-clip-padding px-4 py-1 text-center font-semibold text-black dark:border-zinc-300/30 dark:bg-transparent dark:text-zinc-300">
-              {t('preview')}
+              {t('settings-account.preview')}
             </div>
           </div>
         )}

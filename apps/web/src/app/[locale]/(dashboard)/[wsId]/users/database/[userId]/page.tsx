@@ -1,4 +1,3 @@
-import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -10,10 +9,11 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
 
 interface Props {
   params: {
@@ -33,7 +33,7 @@ export default async function WorkspaceUserDetailsPage({
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
 
-  const t = useTranslations('user-data-table');
+  const t = await getTranslations('user-data-table');
 
   const data = await getData({ wsId, userId });
 
@@ -87,7 +87,7 @@ export default async function WorkspaceUserDetailsPage({
             {data.birthday && (
               <div>
                 <span className="opacity-60">{t('birthday')}:</span>{' '}
-                {t(data.birthday)}
+                {data.birthday}
               </div>
             )}
             {data.email && (
@@ -102,8 +102,7 @@ export default async function WorkspaceUserDetailsPage({
             )}
             {data.gender && (
               <div>
-                <span className="opacity-60">{t('gender')}:</span>{' '}
-                {t(data.gender)}
+                <span className="opacity-60">{t('gender')}:</span> {data.gender}
               </div>
             )}
             <div className="flex gap-1">

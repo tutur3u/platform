@@ -1,7 +1,7 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 export default async function ProductCategoriesStatistics({
   wsId,
@@ -11,7 +11,7 @@ export default async function ProductCategoriesStatistics({
   redirect?: boolean;
 }) {
   const supabase = createClient();
-  const t = useTranslations();
+  const t = await getTranslations();
 
   const enabled = await verifyHasSecrets(
     wsId,
@@ -33,7 +33,7 @@ export default async function ProductCategoriesStatistics({
 
   return (
     <StatisticCard
-      title={t('workspace-inventory-tabs:categories')}
+      title={t('workspace-inventory-tabs.categories')}
       value={categories}
       href={`/${wsId}/inventory/categories`}
     />

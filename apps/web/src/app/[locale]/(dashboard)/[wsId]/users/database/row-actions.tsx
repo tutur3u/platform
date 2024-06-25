@@ -69,7 +69,7 @@ const FormSchema = z.object({
 });
 
 export function UserRowActions({ row, href }: UserRowActionsProps) {
-  const t = useTranslations('ws-members');
+  const t = useTranslations();
   const router = useRouter();
 
   const user = row.original;
@@ -131,16 +131,16 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
 
     if (response.ok) {
       toast({
-        title: t('member-updated'),
+        title: t('ws-members.member-updated'),
         description: `"${user?.display_name || user?.full_name || 'Unknown'}" ${t(
-          'has-been-updated'
+          'ws-members.has-been-updated'
         )}`,
         color: 'teal',
       });
     } else {
       toast({
-        title: t('error'),
-        description: `${t('update-error')} "${
+        title: t('ws-members.error'),
+        description: `${t('ws-members.update-error')} "${
           user?.display_name || user?.full_name || 'Unknown'
         }"`,
       });
@@ -157,7 +157,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
         <Link href={href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
-            {t('common:view')}
+            {t('common.view')}
           </Button>
         </Link>
       )}
@@ -444,7 +444,7 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setOpen(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           {/* <DropdownMenuItem>Make a copy</DropdownMenuItem> */}
           {/* <DropdownMenuItem>Favorite</DropdownMenuItem> */}

@@ -1,10 +1,10 @@
 import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
 import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 export default async function WorkspaceInvites() {
-  const t = useTranslations('onboarding');
+  const t = await getTranslations('onboarding');
 
   const workspaces = await getWorkspaces();
   const workspaceInvites = await getWorkspaceInvites();

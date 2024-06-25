@@ -12,7 +12,8 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   workspace?: Workspace | null;
@@ -28,7 +29,7 @@ export default async function MemberList({
   loading,
 }: Props) {
   const locale = useLocale();
-  const t = useTranslations('ws-members');
+  const t = await getTranslations('ws-members');
   const user = await getCurrentUser();
 
   if (!members || members.length === 0) {
@@ -148,7 +149,12 @@ export default async function MemberList({
                 : 'border-border bg-foreground/5 text-foreground'
             )}
           >
-            {t(member?.role?.toLocaleLowerCase() || 'unknown')}
+            {t(
+              (member?.role?.toLocaleLowerCase() || 'unknown') as
+                | 'member'
+                | 'admin'
+                | 'owner'
+            )}
           </div>
         </div>
       </div>

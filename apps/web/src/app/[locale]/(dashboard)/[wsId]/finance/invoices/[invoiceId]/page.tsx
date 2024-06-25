@@ -1,6 +1,5 @@
 'use client';
 
-import InvoiceProductInput from '../../../../../../../components/inputs/InvoiceProductInput';
 import { Invoice } from '@/types/primitives/Invoice';
 import { Product } from '@/types/primitives/Product';
 import { Transaction } from '@/types/primitives/Transaction';
@@ -22,7 +21,7 @@ interface Props {
 export default function InvoiceDetailsPage({
   params: { wsId, invoiceId },
 }: Props) {
-  const t = useTranslations('invoices');
+  const t = useTranslations();
 
   const apiPath =
     wsId && invoiceId
@@ -171,7 +170,9 @@ export default function InvoiceDetailsPage({
           }`}
           onClick={hasRequiredFields() ? toggleStatus : undefined}
         >
-          {completed ? t('reopen-invoice') : t('close-invoice')}
+          {completed
+            ? t('invoices.reopen-invoice')
+            : t('invoices.close-invoice')}
         </button>
 
         <div className="flex items-end justify-end gap-2">
@@ -190,7 +191,7 @@ export default function InvoiceDetailsPage({
                 : 'cursor-not-allowed opacity-50'
             }`}
           >
-            {t('save-changes')}
+            {t('invoices.save-changes')}
           </button>
         </div>
       </div>
@@ -199,13 +200,15 @@ export default function InvoiceDetailsPage({
       <div className="grid gap-x-8 gap-y-4 xl:grid-cols-4 xl:gap-x-16">
         <div className="grid h-fit gap-x-4 gap-y-2 md:grid-cols-2">
           <div className="col-span-full">
-            <div className="text-2xl font-semibold">{t('basic-info')}</div>
+            <div className="text-2xl font-semibold">
+              {t('invoices.basic-info')}
+            </div>
             <Divider className="my-2" variant="dashed" />
           </div>
 
           <DateTimePicker
             value={takenAt}
-            label={t('time')}
+            label={t('invoices.time')}
             onChange={(date) => setTakenAt(date || new Date())}
             className="col-span-full"
             classNames={{
@@ -221,8 +224,8 @@ export default function InvoiceDetailsPage({
 
           {notice != null ? (
             <Textarea
-              label={t('notice')}
-              placeholder={t('notice-placeholder')}
+              label={t('invoices.notice')}
+              placeholder={t('invoices.notice-placeholder')}
               value={notice}
               onChange={(e) => setNotice(e.currentTarget.value)}
               className="md:col-span-2"
@@ -236,14 +239,14 @@ export default function InvoiceDetailsPage({
               className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 md:col-span-2 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               onClick={() => setNotice('')}
             >
-              + {t('add-notice')}
+              + {t('invoices.add-notice')}
             </button>
           )}
 
           {note != null ? (
             <Textarea
-              label={t('note')}
-              placeholder={t('note-placeholder')}
+              label={t('invoices.note')}
+              placeholder={t('invoices.note-placeholder')}
               value={note}
               onChange={(e) => setNote(e.currentTarget.value)}
               className="md:col-span-2"
@@ -257,7 +260,7 @@ export default function InvoiceDetailsPage({
               className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-2 font-semibold text-blue-600 transition hover:bg-blue-500/20 md:col-span-2 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               onClick={() => setNote('')}
             >
-              + {t('add-note')}
+              + {t('invoices.add-note')}
             </button>
           )}
 
@@ -266,8 +269,8 @@ export default function InvoiceDetailsPage({
           {products?.length > 0 && (
             <div className="col-span-full">
               <NumberInput
-                label={t('total')}
-                placeholder={t('total-placeholder')}
+                label={t('invoices.total')}
+                placeholder={t('invoices.total-placeholder')}
                 value={price + (diff || 0)}
                 onChange={(e) => setDiff((e ? Number(e) : 0) - price)}
               />
@@ -278,18 +281,20 @@ export default function InvoiceDetailsPage({
                     className="mt-2 w-full rounded border border-red-500/10 bg-red-500/10 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-500/20 md:col-span-2 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300 dark:hover:bg-red-300/20"
                     onClick={() => setDiff(0)}
                   >
-                    {t('reset')}
+                    {t('invoices.reset')}
                   </button>
                   <Divider className="my-2" />
                   <div className="my-2 rounded border border-orange-500/10 bg-orange-500/10 p-2 text-center font-semibold text-orange-400 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300">
-                    {diff > 0 ? t('extra-pay') : t('discount')}{' '}
+                    {diff > 0
+                      ? t('invoices.extra-pay')
+                      : t('invoices.discount')}{' '}
                     <span className="text-orange-600 underline decoration-orange-600 underline-offset-4 dark:text-orange-100 dark:decoration-orange-100">
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND',
                       }).format(Math.abs(diff))}
                     </span>{' '}
-                    {t('for-this-invoice')}
+                    {t('invoices.for-this-invoice')}
                   </div>
                 </>
               )}
@@ -300,7 +305,7 @@ export default function InvoiceDetailsPage({
         <div className="grid h-fit gap-x-4 gap-y-2 xl:col-span-3">
           <div className="col-span-full">
             <div className="text-2xl font-semibold">
-              {t('products')}{' '}
+              {t('invoices.products')}{' '}
               {products?.length > 0 && (
                 <>
                   (
@@ -364,23 +369,8 @@ export default function InvoiceDetailsPage({
               className="rounded border border-blue-500/10 bg-blue-500/10 px-4 py-1 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:border-blue-300/10 dark:bg-blue-300/10 dark:text-blue-300 dark:hover:bg-blue-300/20"
               onClick={addEmptyProduct}
             >
-              + {t('add-product')}
+              + {t('invoices.add-product')}
             </button>
-          </div>
-
-          <div className="mt-4 grid gap-4">
-            {products.map((p, idx) => (
-              <InvoiceProductInput
-                key={p.id + idx}
-                wsId={wsId}
-                product={p}
-                isLast={idx === products.length - 1}
-                getUniqueWarehouseIds={getUniqueWarehouseIds}
-                removePrice={() => removePrice(idx)}
-                updateProduct={(product) => updateProduct(idx, product)}
-                hideStock
-              />
-            ))}
           </div>
         </div>
       </div>

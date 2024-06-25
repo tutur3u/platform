@@ -1,5 +1,5 @@
 import { getWorkspace } from '@/lib/workspace-helper';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
-  const t = useTranslations('ws-home');
+  const t = await getTranslations('ws-home');
   const ws = await getWorkspace(wsId);
 
   const homeLabel = t('home');

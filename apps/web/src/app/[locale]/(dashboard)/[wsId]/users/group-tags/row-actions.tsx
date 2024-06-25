@@ -24,7 +24,7 @@ interface ApiKeyRowActionsProps {
 
 export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-user-group-tags');
+  const t = useTranslations();
 
   const data = row.original;
 
@@ -65,11 +65,11 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteApiKey}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -77,8 +77,8 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('edit')}
-        editDescription={t('edit_description')}
+        title={t('ws-user-group-tags.edit')}
+        editDescription={t('ws-user-group-tags.edit_description')}
         setOpen={setShowEditDialog}
         form={<GroupTagForm wsId={data.ws_id} data={data} />}
       />

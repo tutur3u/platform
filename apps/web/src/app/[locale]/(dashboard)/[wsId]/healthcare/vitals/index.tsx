@@ -1,4 +1,3 @@
-import GeneralItemCard from '../../../../../../components/cards/GeneralItemCard';
 import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import GeneralSearchBar from '../../../../../../components/inputs/GeneralSearchBar';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
@@ -78,17 +77,6 @@ export default function MiscVitalsPage() {
 
       <div className={`grid gap-4 ${'md:grid-cols-2 xl:grid-cols-4'}`}>
         <PlusCardButton href={`/${ws.id}/healthcare/vitals/new`} />
-
-        {vitals &&
-          vitals?.map((v) => (
-            <GeneralItemCard
-              key={v.id}
-              name={v.name}
-              hint={v.unit}
-              href={`/${ws.id}/healthcare/vitals/${v.id}`}
-              showHint={showUnit}
-            />
-          ))}
       </div>
     </div>
   );

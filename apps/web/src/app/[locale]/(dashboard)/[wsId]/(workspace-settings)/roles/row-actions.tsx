@@ -24,7 +24,7 @@ interface RoleRowActionsProps {
 
 export function RoleRowActions({ row }: RoleRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-roles');
+  const t = useTranslations();
 
   const role = row.original;
 
@@ -55,7 +55,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
     <div className="flex items-center justify-end gap-2">
       <Button>
         <Eye className="mr-1 h-5 w-5" />
-        {t('common:view')}
+        {t('common.view')}
       </Button>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -69,11 +69,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteRole}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -81,7 +81,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         data={role}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_role')}
+        submitLabel={t('ws-roles.edit_role')}
       />
     </div>
   );

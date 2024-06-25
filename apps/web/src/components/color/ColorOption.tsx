@@ -126,7 +126,7 @@ const ColorOption = ({
     return colors[color];
   };
 
-  const t = useTranslations('calendar-event-configs');
+  const t = (key: string) => key;
 
   return (
     <Tooltip

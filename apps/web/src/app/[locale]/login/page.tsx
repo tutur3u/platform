@@ -1,12 +1,12 @@
 import LoginForm from './form';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 export default async function Login() {
-  const t = useTranslations('auth');
+  const t = await getTranslations();
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center p-8">
@@ -28,7 +28,7 @@ export default async function Login() {
         >
           <polyline points="15 18 9 12 15 6" />
         </svg>{' '}
-        {t('common:back')}
+        {t('common.back')}
       </Link>
 
       <div className="grid gap-2 sm:max-w-md">
@@ -43,29 +43,29 @@ export default async function Login() {
           </h1>
         </div>
 
-        <Suspense fallback={<div>{t('common:loading')}...</div>}>
+        <Suspense fallback={<div>{t('common.loading')}...</div>}>
           <LoginForm />
         </Suspense>
 
         <Separator className="mt-2" />
         <div className="text-foreground/50 text-center text-sm font-semibold">
-          {t('notice-p1')}{' '}
+          {t('auth.notice-p1')}{' '}
           <Link
             href="/terms"
             target="_blank"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
-            {t('tos')}
+            {t('auth.tos')}
           </Link>{' '}
-          {t('common:and')}{' '}
+          {t('common.and')}{' '}
           <Link
             href="/privacy"
             target="_blank"
             className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
-            {t('privacy')}
+            {t('auth.privacy')}
           </Link>{' '}
-          {t('notice-p2')}.
+          {t('auth.notice-p2')}.
         </div>
       </div>
     </div>

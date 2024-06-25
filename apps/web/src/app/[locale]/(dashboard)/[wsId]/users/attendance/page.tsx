@@ -7,7 +7,7 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface SearchParams {
@@ -32,8 +32,8 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const locale = useLocale();
-  const t = useTranslations('user-data-table');
+  const locale = await getLocale();
+  const t = await getTranslations('user-data-table');
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
@@ -46,7 +46,7 @@ export default async function WorkspaceUsersPage({
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
         <GeneralSearchBar className="w-full md:max-w-xs" />
         <CustomMonthPicker
-          lang={lang}
+          lang={locale}
           className="col-span-full md:col-span-1"
         />
         <UserDatabaseFilter

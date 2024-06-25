@@ -7,7 +7,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface SearchParams {
@@ -30,7 +30,7 @@ export default async function UserGroupDetailsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = useTranslations('user-data-table');
+  const t = await getTranslations('user-data-table');
 
   const group = await getData(wsId, groupId);
 

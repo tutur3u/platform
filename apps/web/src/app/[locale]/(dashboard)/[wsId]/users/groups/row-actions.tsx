@@ -26,7 +26,7 @@ interface UserGroupRowActionsProps {
 
 export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-user-groups');
+  const t = useTranslations();
 
   const data = row.original;
 
@@ -59,7 +59,7 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
         <Link href={data.href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
-            {t('common:view')}
+            {t('common.view')}
           </Button>
         </Link>
       )}
@@ -76,11 +76,11 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteUserGroup}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -88,8 +88,8 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('edit')}
-        editDescription={t('edit_description')}
+        title={t('ws-user-groups.edit')}
+        editDescription={t('ws-user-groups.edit_description')}
         setOpen={setShowEditDialog}
         form={<UserGroupForm wsId={data.ws_id} data={data} />}
       />

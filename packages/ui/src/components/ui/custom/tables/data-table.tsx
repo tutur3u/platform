@@ -182,8 +182,8 @@ export function DataTable<TData, TValue>({
                   className="h-24 text-center opacity-60"
                 >
                   {data
-                    ? `${t?.('common:no-results')}.`
-                    : `${t?.('common:loading')}...`}
+                    ? `${t?.('common.no-results')}.`
+                    : `${t?.('common.loading')}...`}
                 </TableCell>
               </TableRow>
             )}

@@ -35,7 +35,7 @@ const FormSchema = z.object({
 });
 
 export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
-  const t = useTranslations('wallet-data-table');
+  const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -87,7 +87,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
           disabled={loading}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('wallet_name')}</FormLabel>
+              <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
               <FormControl>
                 <Input placeholder="Cash" {...field} />
               </FormControl>
@@ -101,7 +101,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
           name="balance"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('wallet_balance')}</FormLabel>
+              <FormLabel>{t('wallet-data-table.wallet_balance')}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -124,15 +124,22 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
             name="type"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>{t('wallet_type')}</FormLabel>
+                <FormLabel>{t('wallet-data-table.wallet_type')}</FormLabel>
                 <FormControl>
                   <SelectField
                     id="wallet-type"
                     placeholder="Select a type"
                     defaultValue="STANDARD"
                     options={[
-                      { value: 'STANDARD', label: t('standard') },
-                      { value: 'CREDIT', label: t('credit'), disabled: true },
+                      {
+                        value: 'STANDARD',
+                        label: t('wallet-data-table.standard'),
+                      },
+                      {
+                        value: 'CREDIT',
+                        label: t('wallet-data-table.credit'),
+                        disabled: true,
+                      },
                     ]}
                     classNames={{ root: 'w-full' }}
                     {...field}
@@ -147,7 +154,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
             name="currency"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>{t('currency')}</FormLabel>
+                <FormLabel>{t('wallet-data-table.currency')}</FormLabel>
                 <FormControl>
                   <SelectField
                     id="wallet-currency"
@@ -170,7 +177,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
         <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t('common:processing') : submitLabel}
+          {loading ? t('common.processing') : submitLabel}
         </Button>
       </form>
     </Form>

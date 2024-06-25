@@ -9,7 +9,7 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
@@ -32,7 +32,7 @@ export default async function WorkspaceUserDetailsPage({
   searchParams: { groupId, userId },
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = useTranslations('user-data-table');
+  const t = await getTranslations('user-data-table');
 
   const report =
     reportId === 'new'

@@ -17,7 +17,7 @@ export default function GetStartedButton() {
         hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
-      {t('common:get-started')}
+      {t('common.get-started')}
     </Link>
   );
 }

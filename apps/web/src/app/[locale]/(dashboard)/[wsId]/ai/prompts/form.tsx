@@ -43,7 +43,7 @@ const FormSchema = z.object({
 });
 
 export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
-  const t = useTranslations('common');
+  const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -179,7 +179,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
               <Separator />
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('common:processing') : submitLabel}
+                {loading ? t('common.processing') : submitLabel}
               </Button>
             </form>
           </Form>

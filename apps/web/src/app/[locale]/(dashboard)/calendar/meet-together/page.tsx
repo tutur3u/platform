@@ -6,7 +6,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 interface Props {
@@ -24,8 +24,8 @@ export default async function MeetTogetherPage({
   // params: { wsId },
   searchParams,
 }: Props) {
-  const locale = useLocale();
-  const t = useTranslations('meet-together');
+  const locale = await getLocale();
+  const t = await getTranslations('meet-together');
   const { data: plans, user } = await getData(searchParams);
 
   return (

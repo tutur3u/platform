@@ -1,6 +1,4 @@
 import SettingItemCard from '../../../../../../../components/settings/SettingItemCard';
-import { useSegments } from '@/hooks/useSegments';
-import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
 import { EyeIcon } from '@heroicons/react/24/outline';
@@ -15,26 +13,14 @@ import {
 import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 import useSWR from 'swr';
 
 export default function TransactionDetailsPage() {
-  const { setRootSegment } = useSegments();
-  const { ws } = useWorkspaces();
-
-  const t = useTranslations('transactions');
-
-  const finance = t('finance');
-  const transactions = t('transactions');
-  const unnamedWorkspace = t('unnamed-ws');
-  const loading = t('common:loading');
-
-  const informationLabel = t('transaction-details-tabs:information');
-
   const router = useRouter();
   const { wsId, transactionId } = router.query;
+  const t = (key: string) => key;
 
   const apiPath =
     wsId && transactionId
@@ -50,44 +36,8 @@ export default function TransactionDetailsPage() {
 
   const { data: transactionWallet } = useSWR<Wallet>(walletApiPath);
 
-  useEffect(() => {
-    setRootSegment(
-      ws && transaction
-        ? [
-            {
-              content: ws?.name || unnamedWorkspace,
-              href: `/${ws.id}`,
-            },
-            { content: finance, href: `/${ws.id}/finance` },
-            {
-              content: transactions,
-              href: `/${ws.id}/finance/transactions`,
-            },
-            {
-              content: transaction?.id || loading,
-              href: `/${ws.id}/finance/transactions/${transaction?.id}`,
-            },
-            {
-              content: informationLabel,
-              href: `/${ws.id}/finance/transactions/${transaction?.id}`,
-            },
-          ]
-        : []
-    );
-
-    return () => setRootSegment([]);
-  }, [
-    ws,
-    transaction,
-    setRootSegment,
-    finance,
-    transactions,
-    informationLabel,
-    unnamedWorkspace,
-    loading,
-  ]);
-
   const locale = useLocale();
+  const ws = { id: wsId };
 
   return (
     <div className="flex min-h-full w-full flex-col">

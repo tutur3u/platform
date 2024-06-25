@@ -6,7 +6,7 @@ import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface Props {
@@ -27,8 +27,7 @@ export default async function WorkspaceMembersPage({
   const user = await getCurrentUser();
   const members = await getMembers(wsId, searchParams);
 
-  const t = useTranslations('ws-members');
-
+  const t = await getTranslations();
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   return (
@@ -36,9 +35,9 @@ export default async function WorkspaceMembersPage({
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
-            {t('workspace-settings-layout:members')}
+            {t('workspace-settings-layout.members')}
           </h1>
-          <p className="text-foreground/80">{t('description')}</p>
+          <p className="text-foreground/80">{t('ws-members.description')}</p>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
@@ -50,7 +49,7 @@ export default async function WorkspaceMembersPage({
                   id: '',
                   role: 'MEMBER',
                 }}
-                label={t('invite_member')}
+                label={t('ws-members.invite_member')}
                 disabled
               />
             }
@@ -62,7 +61,9 @@ export default async function WorkspaceMembersPage({
                 role: ws?.role,
               }}
               label={
-                disableInvite ? t('invite_member_disabled') : t('invite_member')
+                disableInvite
+                  ? t('ws-members.invite_member_disabled')
+                  : t('ws-members.invite_member')
               }
               disabled={disableInvite}
             />

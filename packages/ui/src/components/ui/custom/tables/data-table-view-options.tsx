@@ -40,12 +40,12 @@ export function DataTableViewOptions<TData>({
           className="ml-auto h-8 w-full md:w-fit"
         >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          {t?.('common:view-options') || 'View Options'}
+          {t?.('common.view-options') || 'View Options'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>
-          {t?.('common:toggle-columns') || 'Toggle Columns'}
+          {t?.('common.toggle-columns') || 'Toggle Columns'}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-36">
@@ -99,8 +99,8 @@ export function DataTableViewOptions<TData>({
             }}
           >
             {isShowingAll
-              ? t?.('common:hide-all') || 'Hide All'
-              : t?.('common:show-all') || 'Show All'}
+              ? t?.('common.hide-all') || 'Hide All'
+              : t?.('common.show-all') || 'Show All'}
           </Button>
         </DropdownMenuLabel>
       </DropdownMenuContent>

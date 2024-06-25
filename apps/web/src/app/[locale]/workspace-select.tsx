@@ -126,7 +126,7 @@ export default function WorkspaceSelect() {
   const groups = [
     {
       id: 'personal',
-      label: t('common:personal_account'),
+      label: t('common.personal_account'),
       teams: [
         {
           label:
@@ -137,7 +137,7 @@ export default function WorkspaceSelect() {
     },
     {
       id: 'workspaces',
-      label: t('common:workspaces'),
+      label: t('common.workspaces'),
       teams:
         workspaces?.map((workspace) => ({
           label: workspace.name || 'Untitled',
@@ -327,7 +327,7 @@ export default function WorkspaceSelect() {
                 </AvatarFallback>
               </Avatar>
               <span className="line-clamp-1 hidden md:block">
-                {workspace?.name || t('common:loading') + '...'}
+                {workspace?.name || t('common.loading') + '...'}
               </span>
               <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -386,7 +386,7 @@ export default function WorkspaceSelect() {
                     }}
                   >
                     <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    {t('common:create_new_workspace')}
+                    {t('common.create_new_workspace')}
                   </CommandItem>
                 </CommandGroup>
               </DialogTrigger>
@@ -395,9 +395,9 @@ export default function WorkspaceSelect() {
         </Popover>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('common:create_workspace')}</DialogTitle>
+            <DialogTitle>{t('common.create_workspace')}</DialogTitle>
             <DialogDescription>
-              {t('common:create_workspace_description')}
+              {t('common.create_workspace_description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -408,7 +408,7 @@ export default function WorkspaceSelect() {
                 disabled={loading}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('common:workspace_name')}</FormLabel>
+                    <FormLabel>{t('common.workspace_name')}</FormLabel>
                     <FormControl>
                       <Input placeholder="Acme Inc." {...field} />
                     </FormControl>
@@ -423,7 +423,7 @@ export default function WorkspaceSelect() {
                 disabled={loading}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('common:subscription_plan')}</FormLabel>
+                    <FormLabel>{t('common.subscription_plan')}</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
@@ -435,29 +435,29 @@ export default function WorkspaceSelect() {
                         <SelectContent>
                           <SelectItem value="FREE">
                             <span className="font-medium">
-                              {t('common:free')}
+                              {t('common.free')}
                             </span>{' '}
                             -{' '}
                             <span className="text-muted-foreground">
-                              {t('common:0_usd_per_month')}
+                              {t('common.0_usd_per_month')}
                             </span>
                           </SelectItem>
                           <SelectItem value="PRO" disabled>
                             <span className="font-medium">
-                              {t('common:pro')}
+                              {t('common.pro')}
                             </span>{' '}
                             -{' '}
                             <span className="text-muted-foreground">
-                              {t('common:coming_soon')}
+                              {t('common.coming_soon')}
                             </span>
                           </SelectItem>
                           <SelectItem value="ENTERPRISE" disabled>
                             <span className="font-medium">
-                              {t('common:enterprise')}
+                              {t('common.enterprise')}
                             </span>{' '}
                             -{' '}
                             <span className="text-muted-foreground">
-                              {t('common:coming_soon')}
+                              {t('common.coming_soon')}
                             </span>
                           </SelectItem>
                         </SelectContent>
@@ -473,13 +473,13 @@ export default function WorkspaceSelect() {
                   variant="outline"
                   onClick={() => setShowNewWorkspaceDialog(false)}
                 >
-                  {t('common:cancel')}
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading || !form.formState.isValid}
                 >
-                  {t('common:continue')}
+                  {t('common.continue')}
                 </Button>
               </DialogFooter>
             </form>
@@ -547,7 +547,7 @@ export default function WorkspaceSelect() {
         <PopoverContent align="end" className="mx-2 my-1 md:m-0">
           <div className="grid gap-2">
             <div className="font-semibold">
-              {t('common:currently_online')} ({onlineUsers?.length || 0})
+              {t('common.currently_online')} ({onlineUsers?.length || 0})
             </div>
             <Separator className="mb-1" />
             {onlineUsers?.map((user) => (
@@ -572,7 +572,7 @@ export default function WorkspaceSelect() {
                   {user.display_name ||
                     user.handle ||
                     user.email ||
-                    t('common:unknown')}
+                    t('common.unknown')}
                 </span>
               </div>
             ))}

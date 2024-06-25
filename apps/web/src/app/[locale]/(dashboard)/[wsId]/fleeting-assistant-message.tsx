@@ -36,7 +36,7 @@ export function FleetingAssistantMessage({
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
 
-  const t = useTranslations('ai-chat');
+  const t = useTranslations('ai_chat');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 

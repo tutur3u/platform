@@ -23,7 +23,7 @@ interface ProjectRowActionsProps {
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const router = useRouter();
-  const t = useTranslations('ws-projects');
+  const t = useTranslations();
 
   const project = row.original;
 
@@ -64,11 +64,11 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common:edit')}
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteProject}>
-            {t('common:delete')}
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -76,7 +76,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         data={project}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_project')}
+        submitLabel={t('ws-projects.edit_project')}
       />
     </>
   );

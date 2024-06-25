@@ -5,7 +5,7 @@ import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useLocale, useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { ReactNode } from 'react';
 
 interface SearchParams {
@@ -24,13 +24,13 @@ export default async function WorkspaceReportsSettingsPage({
   searchParams,
 }: Props) {
   const { data } = await getConfigs(wsId, searchParams);
-  const locale = useLocale();
-  const t = useTranslations('ws-reports');
+  const locale = await getLocale();
+  const t = await getTranslations('ws-reports');
 
   const configs = data.map((config) => ({
     ...config,
     ws_id: wsId,
-    name: config?.id ? t(config.id.toLowerCase()) : '',
+    name: config?.id ? t(config.id.toLowerCase() as any) : '',
   }));
 
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
