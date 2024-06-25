@@ -1,6 +1,6 @@
 'use client';
 
-import ProjectEditDialog from '@/app/[lang]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
+import ProjectEditDialog from '@/app/[locale]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
@@ -13,7 +13,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -23,7 +23,7 @@ interface ProjectRowActionsProps {
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('ws-projects');
+  const t = useTranslations();
 
   const project = row.original;
 
@@ -64,17 +64,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            Edit
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteProject}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={deleteProject}>
+            {t('common.delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ProjectEditDialog
         data={project}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_project')}
+        submitLabel={t('ws-projects.edit_project')}
       />
     </>
   );

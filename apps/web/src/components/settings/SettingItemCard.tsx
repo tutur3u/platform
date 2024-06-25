@@ -1,6 +1,5 @@
 import { Divider } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
-import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   title: string;
@@ -28,7 +27,7 @@ const SettingItemCard = ({
   className,
   children,
 }: Props) => {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
 
   const comingSoonLabel = t('coming_soon');
   const extraAction = onSave || onDelete || comingSoon;

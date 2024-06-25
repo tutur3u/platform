@@ -1,9 +1,0 @@
-{
-  "all": "All",
-  "active": "Active",
-  "inactive": "Inactive",
-  "completed": "Completed",
-  "incomplete": "Incomplete",
-  "status": "Status",
-  "status-placeholder": "Select status"
-}

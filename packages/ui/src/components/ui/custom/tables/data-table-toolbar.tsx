@@ -1,13 +1,12 @@
 'use client';
 
+import { Button } from '../../button';
 import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
 import { Cross2Icon } from '@radix-ui/react-icons';
-import { Button } from '@repo/ui/components/ui/button';
 import { Table } from '@tanstack/react-table';
-import { Translate } from 'next-translate';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -16,11 +15,12 @@ interface DataTableToolbarProps<TData> {
   editContent?: ReactNode;
   namespace: string;
   table: Table<TData>;
-  filters?: ReactNode[];
+  filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
+  defaultQuery?: string;
   disableSearch?: boolean;
   isEmpty: boolean;
-  t?: Translate;
+  t?: any;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void;
@@ -34,20 +34,26 @@ export function DataTableToolbar<TData>({
   table,
   filters,
   extraColumns,
+  defaultQuery,
   disableSearch = false,
   isEmpty,
   t,
+  namespace,
   onRefresh,
   onSearch,
   resetParams,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0 || !isEmpty;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    !isEmpty ||
+    (defaultQuery?.length || 0) > 0;
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
         {disableSearch || (
           <SearchBar
+            defaultValue={defaultQuery}
             onSearch={onSearch}
             className="col-span-full w-full md:col-span-1 md:max-w-xs"
           />
@@ -62,7 +68,7 @@ export function DataTableToolbar<TData>({
             }}
             className="h-8 px-2 lg:px-3"
           >
-            {t?.('common:reset')}
+            {t?.('common.reset')}
             <Cross2Icon className="ml-2 h-4 w-4" />
           </Button>
         )}
@@ -77,10 +83,15 @@ export function DataTableToolbar<TData>({
         {hasData && (
           <DataTableRefreshButton
             onRefresh={onRefresh}
-            refreshText={t?.('common:refresh') || 'Refresh'}
+            refreshText={t?.('common.refresh') || 'Refresh'}
           />
         )}
-        <DataTableViewOptions t={t} table={table} extraColumns={extraColumns} />
+        <DataTableViewOptions
+          t={t}
+          namespace={namespace}
+          table={table}
+          extraColumns={extraColumns}
+        />
       </div>
     </div>
   );

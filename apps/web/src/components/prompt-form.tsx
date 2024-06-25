@@ -130,8 +130,8 @@ export function PromptForm({
                 className={cn(
                   'transition-all duration-300',
                   !input
-                    ? 'opacity-0 bg-transparent w-0 text-transparent pointer-events-none'
-                    : 'opacity-100 pointer-events-auto w-10'
+                    ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                    : 'pointer-events-auto w-10 opacity-100'
                 )}
               >
                 <IconArrowElbow />

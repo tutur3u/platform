@@ -558,21 +558,21 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'external_user_monthly_reports_user_id_fkey';
+            foreignKeyName: 'public_external_user_monthly_reports_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'external_user_monthly_reports_user_id_fkey';
+            foreignKeyName: 'public_external_user_monthly_reports_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'external_user_monthly_reports_user_id_fkey';
+            foreignKeyName: 'public_external_user_monthly_reports_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';

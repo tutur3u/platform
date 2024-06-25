@@ -1,7 +1,5 @@
 'use client';
 
-import { DataTablePagination } from './data-table-pagination';
-import { DataTableToolbar } from './data-table-toolbar';
 import {
   Table,
   TableBody,
@@ -9,7 +7,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/ui/table';
+} from '../../table';
+import { DataTablePagination } from './data-table-pagination';
+import { DataTableToolbar } from './data-table-toolbar';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -23,12 +23,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Translate } from 'next-translate';
+import { useTranslations } from 'next-intl';
 import { ReactNode, useState } from 'react';
 
 interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
-  filters?: ReactNode[];
+  filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
   count?: number;
   pageIndex?: number;
   pageSize?: number;
+  defaultQuery?: string;
   defaultVisibility?: VisibilityState;
   noBottomPadding?: boolean;
   disableSearch?: boolean;
@@ -47,11 +48,10 @@ interface DataTableProps<TData, TValue> {
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
-  // eslint-disable-next-line no-unused-vars
-  t?: Translate;
+  t?: any;
   columnGenerator?: (
     // eslint-disable-next-line no-unused-vars
-    t: Translate,
+    t: any,
     // eslint-disable-next-line no-unused-vars
     extraColumns?: any[]
   ) => ColumnDef<TData, TValue>[];
@@ -68,6 +68,7 @@ export function DataTable<TData, TValue>({
   count,
   pageIndex = 0,
   pageSize = 10,
+  defaultQuery,
   defaultVisibility = {},
   noBottomPadding,
   disableSearch,
@@ -79,6 +80,8 @@ export function DataTable<TData, TValue>({
   resetParams,
   columnGenerator,
 }: DataTableProps<TData, TValue>) {
+  const commonT = useTranslations();
+
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(defaultVisibility);
@@ -127,8 +130,9 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
-        t={t}
+        t={commonT}
         isEmpty={isEmpty || !data?.length}
+        defaultQuery={defaultQuery}
         onSearch={onSearch || (() => {})}
         onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
@@ -157,11 +161,11 @@ export function DataTable<TData, TValue>({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  key={row.id}
+                  key={`${namespace}-${row.id}`}
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={`${namespace}-${cell.id}`}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -176,11 +180,11 @@ export function DataTable<TData, TValue>({
                   colSpan={
                     columnGenerator?.(t!)?.length || columns?.length || 1
                   }
-                  className="h-24 text-center"
+                  className="h-24 text-center opacity-60"
                 >
                   {data
-                    ? `${t?.('common:no-results')}.`
-                    : `${t?.('common:loading')}...`}
+                    ? `${commonT?.('common.no-results')}.`
+                    : `${commonT?.('common.loading')}...`}
                 </TableCell>
               </TableRow>
             )}
@@ -189,7 +193,7 @@ export function DataTable<TData, TValue>({
       </div>
       {noBottomPadding || count === undefined || (
         <DataTablePagination
-          t={t}
+          t={commonT}
           table={table}
           className="pointer-events-none hidden opacity-0 lg:block"
           setParams={setParams}
@@ -197,7 +201,7 @@ export function DataTable<TData, TValue>({
       )}
       {count !== undefined && (
         <DataTablePagination
-          t={t}
+          t={commonT}
           table={table}
           count={count}
           className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"

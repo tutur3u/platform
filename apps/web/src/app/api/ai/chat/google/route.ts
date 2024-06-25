@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
-    const apiKey = previewToken || process.env.GOOGLE_API_KEY;
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = createClient();

@@ -4,7 +4,7 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { toast } from '@repo/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -14,26 +14,27 @@ interface Props {
 
 const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const router = useRouter();
-  const { t, lang } = useTranslation('invite');
+  const locale = useLocale();
+  const t = useTranslations('invite');
 
-  const creationDate = moment(ws?.created_at).locale(lang).fromNow();
+  const creationDate = moment(ws?.created_at).locale(locale).fromNow();
 
   const invitedTo = t('invited-to');
 
   const declineInviteLabel = t('decline-invite');
   const acceptInviteLabel = t('accept-invite');
 
-  const acceptInviteSuccessTitle = t('invite:accept-invite-success-title');
-  const acceptInviteSuccessMessage = t('invite:accept-invite-success-msg');
+  const acceptInviteSuccessTitle = t('accept-invite-success-title');
+  const acceptInviteSuccessMessage = t('accept-invite-success-msg');
 
-  const acceptInviteErrorTitle = t('invite:accept-invite-error-title');
-  const acceptInviteErrorMessage = t('invite:accept-invite-error-msg');
+  const acceptInviteErrorTitle = t('accept-invite-error-title');
+  const acceptInviteErrorMessage = t('accept-invite-error-msg');
 
-  const declineInviteSuccessTitle = t('invite:decline-invite-success-title');
-  const declineInviteSuccessMessage = t('invite:decline-invite-success-msg');
+  const declineInviteSuccessTitle = t('decline-invite-success-title');
+  const declineInviteSuccessMessage = t('decline-invite-success-msg');
 
-  const declineInviteErrorTitle = t('invite:decline-invite-error-title');
-  const declineInviteErrorMessage = t('invite:decline-invite-error-msg');
+  const declineInviteErrorTitle = t('decline-invite-error-title');
+  const declineInviteErrorMessage = t('decline-invite-error-msg');
 
   const acceptInvite = async (ws: Workspace) => {
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {

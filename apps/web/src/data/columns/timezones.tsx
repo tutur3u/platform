@@ -6,9 +6,8 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
+export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

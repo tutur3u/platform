@@ -1,17 +1,24 @@
-import i18n from '../i18n.json';
+import { Locales, defaultLocale, locales } from './config';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
 import { User } from '@supabase/supabase-js';
 import Negotiator from 'negotiator';
+import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
+  // Make sure user session is always refreshed
   const { res, user } = await updateSession(req);
-  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
 
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) return res;
+
+  // Handle special cases for public paths
+  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
   if (redirect) return nextRes;
+
   return handleLocale({ req, res: nextRes });
 }
 
@@ -39,6 +46,23 @@ export const config = {
   ],
 };
 
+const PUBLIC_PATHS = [
+  '/terms',
+  '/privacy',
+  '/branding',
+  '/ai/chats',
+  '/calendar/meet-together',
+].reduce((acc: string[], path) => {
+  // Add the original path
+  acc.push(path);
+
+  // Add localized paths
+  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+  acc.push(...localizedPaths);
+
+  return acc;
+}, []);
+
 const handleRedirect = ({
   req,
   res,
@@ -51,11 +75,6 @@ const handleRedirect = ({
   res: NextResponse;
   redirect: boolean;
 } => {
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return { res, redirect: false };
-  }
-
   // If current path ends with /login and user is logged in, redirect to onboarding page
   if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
@@ -83,18 +102,14 @@ const handleRedirect = ({
   return { res, redirect: false };
 };
 
-const getSupportedLocale = (locale: string): string | null => {
-  const configs = i18n as {
-    locales: string[];
-  };
-
-  return configs.locales.includes(locale) ? locale : null;
+const getSupportedLocale = (locale: string): Locales | null => {
+  return locales.includes(locale as any) ? (locale as Locales) : null;
 };
 
 const getExistingLocale = (
   req: NextRequest
 ): {
-  locale: string | null;
+  locale: Locales | null;
   cookie: string | null;
   pathname: string | null;
 } => {
@@ -106,8 +121,10 @@ const getExistingLocale = (
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
   const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
 
+  const locale = localeFromPathname || localeFromCookie;
+
   return {
-    locale: localeFromPathname || localeFromCookie,
+    locale,
     cookie: localeFromCookie,
     pathname: localeFromPathname,
   };
@@ -116,20 +133,21 @@ const getExistingLocale = (
 const getDefaultLocale = (
   req: NextRequest
 ): {
-  locale: string;
+  locale: Locales;
 } => {
   // Get browser languages
   const headers = {
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
-  const configs = i18n as {
-    locales: string[];
-    defaultLocale: string;
-  };
-
   const languages = new Negotiator({ headers }).languages();
-  return { locale: match(languages, configs.locales, configs.defaultLocale) };
+  const detectedLocale = match(languages, locales, defaultLocale);
+
+  return {
+    locale: locales.includes(detectedLocale as any)
+      ? (detectedLocale as Locales)
+      : defaultLocale,
+  };
 };
 
 const getLocale = (
@@ -171,29 +189,21 @@ const handleLocale = ({
   req: NextRequest;
   res: NextResponse;
 }): NextResponse => {
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return res;
-  }
-
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
-
-  // Update locale in search params to load correct translations
-  req.nextUrl.searchParams.set('lang', locale);
 
   // Construct nextUrl with locale and redirect
   req.nextUrl.pathname = !pathname
     ? `/${locale}${req.nextUrl.pathname}`
     : req.nextUrl.pathname.replace(pathname, locale);
 
-  return NextResponse.rewrite(req.nextUrl, res);
-};
+  NextResponse.rewrite(req.nextUrl, res);
 
-const PUBLIC_PATHS = [
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/calendar/meet-together',
-];
+  const nextIntlMiddleware = createIntlMiddleware({
+    locales,
+    defaultLocale: locale as Locales,
+    localeDetection: false,
+  });
+
+  return nextIntlMiddleware(req);
+};
