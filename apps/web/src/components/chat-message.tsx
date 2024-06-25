@@ -17,7 +17,7 @@ import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-// import 'katex/dist/katex.min.css';
+import 'katex/dist/katex.min.css';
 import { Bot, Send, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
