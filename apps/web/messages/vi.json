@@ -560,6 +560,7 @@
         "select_type": "Chọn loại",
         "name": "Tên",
         "amount": "Giao dịch",
+        "type": "Loại",
         "income": "Thu nhập",
         "expense": "Chi phí",
         "is_expense": "Chi phí",
@@ -771,6 +772,33 @@
         "edit": "Sửa báo cáo",
         "create_description": "Tạo một báo cáo mới",
         "edit_description": "Sửa báo cáo hiện có"
+    },
+    "ws-wallets": {
+        "singular": "Ví",
+        "plural": "Ví",
+        "description": "Ví giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+        "create": "Tạo ví",
+        "edit": "Sửa ví",
+        "create_description": "Tạo một ví mới",
+        "edit_description": "Sửa ví hiện có"
+    },
+    "ws-transactions": {
+        "singular": "Giao dịch",
+        "plural": "Giao dịch",
+        "description": "Giao dịch giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+        "create": "Tạo giao dịch",
+        "edit": "Sửa giao dịch",
+        "create_description": "Tạo một giao dịch mới",
+        "edit_description": "Sửa giao dịch hiện có"
+    },
+    "ws-transaction-categories": {
+        "singular": "Danh mục giao dịch",
+        "plural": "Danh mục giao dịch",
+        "description": "Danh mục giao dịch giúp bạn phân loại tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+        "create": "Tạo danh mục",
+        "edit": "Sửa danh mục",
+        "create_description": "Tạo một danh mục giao dịch mới",
+        "edit_description": "Sửa danh mục giao dịch hiện có"
     },
     "ws-user-fields": {
         "module": "Trường thông tin người dùng",
@@ -1195,7 +1223,6 @@
     },
     "workspace-ai-layout": {
         "overview": "Tổng quan",
-        "textract": "Rút trích văn bản",
         "test_generation": "Tạo test case tự động",
         "prompts": "Lệnh nhắc",
         "workflows": "Quy trình",

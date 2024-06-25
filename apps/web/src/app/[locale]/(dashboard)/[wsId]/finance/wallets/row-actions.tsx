@@ -1,8 +1,10 @@
 'use client';
 
+import { WalletForm } from './form';
 import { Wallet } from '@/types/primitives/Wallet';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +16,21 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
-  setWallet: (value: Wallet | undefined) => void;
 }
 
 export function WalletRowActions(props: WalletRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
-  const wallet = props.row.original;
+  const data = props.row.original;
 
   const deleteWallet = async () => {
     const res = await fetch(
-      `/api/workspaces/${wallet.ws_id}/wallets/${wallet.id}`,
+      `/api/workspaces/${data.ws_id}/wallets/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -45,7 +47,9 @@ export function WalletRowActions(props: WalletRowActionsProps) {
     }
   };
 
-  if (!wallet.id || !wallet.ws_id) return null;
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -60,7 +64,7 @@ export function WalletRowActions(props: WalletRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => props.setWallet(wallet)}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -69,6 +73,15 @@ export function WalletRowActions(props: WalletRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showEditDialog}
+        title={t('ws-wallets.edit')}
+        editDescription={t('ws-wallets.edit_description')}
+        setOpen={setShowEditDialog}
+        form={<WalletForm wsId={data.ws_id} data={data} />}
+      />
     </div>
   );
 }

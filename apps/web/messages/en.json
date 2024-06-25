@@ -560,6 +560,7 @@
         "select_type": "Select type",
         "name": "Name",
         "amount": "Transactions",
+        "type": "Type",
         "income": "Income",
         "expense": "Expense",
         "is_expense": "Is expense",
@@ -770,6 +771,33 @@
         "edit": "Edit report",
         "create_description": "Create a new user report",
         "edit_description": "Edit an existing user report"
+    },
+    "ws-wallets": {
+        "singular": "Wallet",
+        "plural": "Wallets",
+        "description": "Wallets are used to store and manage the financial activities of your workspace.",
+        "create": "Create wallet",
+        "edit": "Edit wallet",
+        "create_description": "Create a new wallet",
+        "edit_description": "Edit an existing wallet"
+    },
+    "ws-transactions": {
+        "singular": "Transaction",
+        "plural": "Transactions",
+        "description": "Transactions are used to track the financial activities of your workspace.",
+        "create": "Create transaction",
+        "edit": "Edit transaction",
+        "create_description": "Create a new transaction",
+        "edit_description": "Edit an existing transaction"
+    },
+    "ws-transaction-categories": {
+        "singular": "Transaction Category",
+        "plural": "Transaction Categories",
+        "description": "Transaction categories are used to categorize the financial activities of your workspace.",
+        "create": "Create category",
+        "edit": "Edit category",
+        "create_description": "Create a new transaction category",
+        "edit_description": "Edit an existing transaction category"
     },
     "ws-user-fields": {
         "module": "User Fields",
@@ -1194,7 +1222,6 @@
     },
     "workspace-ai-layout": {
         "overview": "Overview",
-        "textract": "Textract",
         "test_generation": "Test Generation",
         "prompts": "Prompts",
         "workflows": "Workflows",

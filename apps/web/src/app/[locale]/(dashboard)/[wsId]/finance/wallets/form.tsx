@@ -23,18 +23,18 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: Wallet;
-  onComplete?: () => void;
-  submitLabel?: string;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1).max(255),
   balance: z.number().optional(),
   type: z.enum(['STANDARD', 'CREDIT']),
   currency: z.enum(['VND']),
 });
 
-export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
+export function WalletForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -43,6 +43,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      id: data?.id,
       name: data?.name || '',
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
@@ -50,7 +51,7 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
     },
   });
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
 
     const res = await fetch(
@@ -62,13 +63,13 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       }
     );
 
     if (res.ok) {
+      onFinish?.(data);
       router.refresh();
-      if (onComplete) onComplete();
     } else {
       setLoading(false);
       toast({
@@ -104,10 +105,27 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
               <FormLabel>{t('wallet-data-table.wallet_balance')}</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
                   placeholder="0"
                   {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  value={
+                    !field.value
+                      ? ''
+                      : new Intl.NumberFormat('en-US', {
+                          maximumFractionDigits: 2,
+                        }).format(Math.abs(field.value))
+                  }
+                  onChange={(e) => {
+                    // Remove non-numeric characters except decimal point, then parse
+                    const numericValue = parseFloat(
+                      e.target.value.replace(/[^0-9.]/g, '')
+                    );
+                    if (!isNaN(numericValue)) {
+                      field.onChange(numericValue);
+                    } else {
+                      // Handle case where the input is not a number (e.g., all non-numeric characters are deleted)
+                      field.onChange(0);
+                    }
+                  }}
                   disabled
                 />
               </FormControl>
@@ -177,7 +195,11 @@ export function WalletForm({ wsId, data, onComplete, submitLabel }: Props) {
         <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t('common.processing') : submitLabel}
+          {loading
+            ? t('common.processing')
+            : !!data?.id
+              ? t('ws-wallets.edit')
+              : t('ws-wallets.create')}
         </Button>
       </form>
     </Form>

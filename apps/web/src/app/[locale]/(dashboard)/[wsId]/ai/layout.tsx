@@ -27,10 +27,6 @@ export default async function Layout({
       matchExact: true,
     },
     {
-      name: t('textract'),
-      href: `/${wsId}/ai/textract`,
-    },
-    {
       name: t('prompts'),
       href: `/${wsId}/ai/prompts`,
     },

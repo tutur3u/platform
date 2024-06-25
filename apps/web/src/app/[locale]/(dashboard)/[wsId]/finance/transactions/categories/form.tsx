@@ -23,21 +23,16 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: TransactionCategory;
-  onComplete?: () => void;
-  submitLabel?: string;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1).max(255),
   type: z.enum(['INCOME', 'EXPENSE']),
 });
 
-export function TransactionCategoryForm({
-  wsId,
-  data,
-  onComplete,
-  submitLabel,
-}: Props) {
+export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -46,12 +41,13 @@ export function TransactionCategoryForm({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      id: data?.id,
       name: data?.name || '',
       type: data?.is_expense === false ? 'INCOME' : 'EXPENSE',
     },
   });
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
 
     const res = await fetch(
@@ -64,15 +60,15 @@ export function TransactionCategoryForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
-          is_expense: formData.type === 'EXPENSE',
+          name: data.name,
+          is_expense: data.type === 'EXPENSE',
         }),
       }
     );
 
     if (res.ok) {
+      onFinish?.(data);
       router.refresh();
-      if (onComplete) onComplete();
     } else {
       setLoading(false);
       toast({
@@ -146,7 +142,11 @@ export function TransactionCategoryForm({
         <div className="h-2" />
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t('common.processing') : submitLabel}
+          {loading
+            ? t('common.processing')
+            : !!data?.id
+              ? t('ws-transaction-categories.edit')
+              : t('ws-transaction-categories.create')}
         </Button>
       </form>
     </Form>

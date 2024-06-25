@@ -1,5 +1,6 @@
 export interface Transaction {
   id?: string;
+  href?: string;
   amount?: number;
   description?: string;
   category_id?: string;

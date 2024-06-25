@@ -1,8 +1,10 @@
 'use client';
 
+import { TransactionForm } from './form';
 import { Transaction } from '@/types/primitives/Transaction';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,23 +14,25 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface Props {
   row: Row<Transaction>;
-  setTransaction: (value: Transaction | undefined) => void;
 }
 
 export function TransactionRowActions(props: Props) {
   const t = useTranslations();
 
   const router = useRouter();
-  const transaction = props.row.original;
+  const data = props.row.original;
 
   const deleteTransaction = async () => {
     const res = await fetch(
-      `/api/workspaces/${transaction.ws_id}/transactions/${transaction.id}`,
+      `/api/workspaces/${data.ws_id}/transactions/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -45,10 +49,21 @@ export function TransactionRowActions(props: Props) {
     }
   };
 
-  if (!transaction.id || !transaction.ws_id) return null;
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
+      {data.href && (
+        <Link href={data.href}>
+          <Button>
+            <Eye className="mr-1 h-5 w-5" />
+            {t('common.view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -60,7 +75,7 @@ export function TransactionRowActions(props: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => props.setTransaction(transaction)}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -69,6 +84,15 @@ export function TransactionRowActions(props: Props) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showEditDialog}
+        title={t('ws-transactions.edit')}
+        editDescription={t('ws-transactions.edit_description')}
+        setOpen={setShowEditDialog}
+        form={<TransactionForm wsId={data.ws_id} data={data} />}
+      />
     </div>
   );
 }

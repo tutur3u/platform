@@ -1,15 +1,13 @@
 'use client';
 
-import { TransactionCategoryRowActions } from './row-actions';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
+import { TransactionCategoryRowActions } from './row-actions';
 
 export const transactionCategoryColumns = (
-  t: any,
-  setCategory: (value: TransactionCategory | undefined) => void
+  t: any
 ): ColumnDef<TransactionCategory>[] => [
   // {
   //   id: 'select',
@@ -58,10 +56,20 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('is_expense')} />
+      <DataTableColumnHeader column={column} title={t('type')} />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue('is_expense') ? <Check /> : <X />}</div>
+      <div>
+        {row.getValue('is_expense') ? (
+          <div className="bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20 w-fit rounded border px-1 font-semibold">
+            {t('expense')}
+          </div>
+        ) : (
+          <div className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20 w-fit rounded border px-1 font-semibold">
+            {t('income')}
+          </div>
+        )}
+      </div>
     ),
   },
   {
@@ -79,8 +87,6 @@ export const transactionCategoryColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <TransactionCategoryRowActions row={row} setCategory={setCategory} />
-    ),
+    cell: ({ row }) => <TransactionCategoryRowActions row={row} />,
   },
 ];
