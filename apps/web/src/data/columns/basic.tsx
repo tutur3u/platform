@@ -4,9 +4,8 @@ import { Entity } from '@/types/primitives/Entity';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const basicColumns = (t: Translate): ColumnDef<Entity>[] => [
+export const basicColumns = (t: any): ColumnDef<Entity>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

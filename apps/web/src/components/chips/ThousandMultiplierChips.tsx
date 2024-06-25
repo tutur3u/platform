@@ -1,5 +1,5 @@
 import { Chip, Divider } from '@mantine/core';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale } from 'next-intl';
 
 interface Props {
   amount: number;
@@ -13,7 +13,7 @@ const ThousandMultiplierChips = ({
   setAmount,
   hidden = false,
 }: Props) => {
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   if (hidden) return null;
 
@@ -26,7 +26,7 @@ const ThousandMultiplierChips = ({
         <div>
           Chuyển{' '}
           <span className="font-semibold text-blue-300">
-            {Intl.NumberFormat(lang, {
+            {Intl.NumberFormat(locale, {
               style: 'decimal',
             }).format(Math.abs(amount))}
           </span>{' '}
@@ -43,7 +43,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount * 10))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 10))}
               </Chip>
@@ -54,7 +54,7 @@ const ThousandMultiplierChips = ({
                 checked={false}
                 onClick={() => setAmount(Math.abs(amount * 100))}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 100))}
               </Chip>
@@ -65,7 +65,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount * 1000))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 1000))}
               </Chip>
@@ -76,7 +76,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount * 1000 * 10))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 1000 * 10))}
               </Chip>
@@ -87,7 +87,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount * 1000 * 100))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 1000 * 100))}
               </Chip>
@@ -98,7 +98,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount * 1000 * 1000))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount * 1000 * 1000))}
               </Chip>
@@ -116,7 +116,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 1000 / 1000))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 1000 / 1000))}
               </Chip>
@@ -127,7 +127,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 1000 / 100))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 1000 / 100))}
               </Chip>
@@ -138,7 +138,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 1000 / 10))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 1000 / 10))}
               </Chip>
@@ -149,7 +149,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 1000))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 1000))}
               </Chip>
@@ -160,7 +160,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 100))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 100))}
               </Chip>
@@ -171,7 +171,7 @@ const ThousandMultiplierChips = ({
                 onClick={() => setAmount(Math.abs(amount / 10))}
                 checked={false}
               >
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'decimal',
                 }).format(Math.abs(amount / 10))}
               </Chip>

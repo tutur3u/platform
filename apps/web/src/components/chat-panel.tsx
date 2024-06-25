@@ -34,7 +34,7 @@ import {
   LinkIcon,
   Lock,
 } from 'lucide-react';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
@@ -84,7 +84,7 @@ export function ChatPanel({
   collapsed,
   setCollapsed,
 }: ChatPanelProps) {
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai_chat');
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -106,7 +106,7 @@ export function ChatPanel({
       <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
         <div
           className={cn(
-            'flex items-end md:flex-col absolute z-10 gap-2',
+            'absolute z-10 flex items-end gap-2 md:flex-col',
             !!chats ? 'right-2 md:right-6 xl:right-8' : 'right-2 md:right-4'
           )}
           style={{
@@ -137,7 +137,7 @@ export function ChatPanel({
         {!!chats && count !== undefined && (
           <div
             id="chat-input"
-            className="flex flex-col gap-2 mx-auto md:px-4 lg:max-w-4xl xl:max-w-6xl"
+            className="mx-auto flex flex-col gap-2 md:px-4 lg:max-w-4xl xl:max-w-6xl"
           >
             <div className="relative flex items-center justify-center gap-2">
               <div
@@ -164,7 +164,7 @@ export function ChatPanel({
                     </div>
                     <Separator className="my-2" />
                     <ScrollArea className="h-96">
-                      <div className="grid grid-cols-1 gap-1 md:grid-cols-2 lg:grid-cols-3 w-full items-center justify-center overflow-hidden">
+                      <div className="grid w-full grid-cols-1 items-center justify-center gap-1 overflow-hidden md:grid-cols-2 lg:grid-cols-3">
                         {chats.length > 0 ? (
                           chats.map((chat) =>
                             chat.id === id ? (
@@ -174,7 +174,7 @@ export function ChatPanel({
                                 className="inline-block w-full"
                                 disabled
                               >
-                                <div className="truncate max-w-full">
+                                <div className="max-w-full truncate">
                                   {chat?.title || chat.id}
                                 </div>
                               </Button>
@@ -189,7 +189,7 @@ export function ChatPanel({
                                   className="inline-block w-full"
                                   disabled={collapsed}
                                 >
-                                  <div className="truncate max-w-full">
+                                  <div className="max-w-full truncate">
                                     {chat?.title || chat.id}
                                   </div>
                                 </Button>
@@ -204,7 +204,7 @@ export function ChatPanel({
                       </div>
                     </ScrollArea>
                     <Separator className="my-2" />
-                    <div className="flex flex-row-reverse lg:flex-row gap-2">
+                    <div className="flex flex-row-reverse gap-2 lg:flex-row">
                       <Button
                         size="icon"
                         variant="secondary"
@@ -264,8 +264,8 @@ export function ChatPanel({
                 model={model}
                 className={`${
                   showExtraOptions
-                    ? 'pointer-events-auto opacity-100 mb-2'
-                    : 'pointer-events-none opacity-0 h-0 p-0'
+                    ? 'pointer-events-auto mb-2 opacity-100'
+                    : 'pointer-events-none h-0 p-0 opacity-0'
                 } transition-all ease-in-out`}
                 setOpen={setShowExtraOptions}
                 onChange={setModel}
@@ -297,8 +297,8 @@ export function ChatPanel({
                       className={cn(
                         'transition duration-300',
                         !id
-                          ? 'opacity-0 bg-transparent w-0 text-transparent pointer-events-none'
-                          : 'ml-2 opacity-100 pointer-events-auto w-10'
+                          ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                          : 'pointer-events-auto ml-2 w-10 opacity-100'
                       )}
                       disabled={isLoading || !id}
                       onClick={() => setShowChatVisibility((prev) => !prev)}
@@ -320,8 +320,8 @@ export function ChatPanel({
                       className={cn(
                         'transition-all duration-300',
                         id
-                          ? 'opacity-0 bg-transparent w-0 text-transparent pointer-events-none'
-                          : 'ml-2 opacity-100 pointer-events-auto w-10'
+                          ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                          : 'pointer-events-auto ml-2 w-10 opacity-100'
                       )}
                       disabled={isLoading || showExtraOptions}
                     >
@@ -359,11 +359,11 @@ export function ChatPanel({
               disabled={isLoading || updating || !id || chat?.is_public}
             >
               {chat?.is_public ? (
-                <Check className="w-4 h-4 mr-2" />
+                <Check className="mr-2 h-4 w-4" />
               ) : updating ? (
-                <LoadingIndicator className="w-4 h-4 mr-2" />
+                <LoadingIndicator className="mr-2 h-4 w-4" />
               ) : (
-                <Globe className="w-4 h-4 mr-2" />
+                <Globe className="mr-2 h-4 w-4" />
               )}
               <div className="line-clamp-1">{t('public')}</div>
             </Button>
@@ -379,21 +379,21 @@ export function ChatPanel({
               disabled={isLoading || updating || !id || !chat?.is_public}
             >
               {!chat?.is_public ? (
-                <Check className="w-4 h-4 mr-2" />
+                <Check className="mr-2 h-4 w-4" />
               ) : updating ? (
-                <LoadingIndicator className="w-4 h-4 mr-2" />
+                <LoadingIndicator className="mr-2 h-4 w-4" />
               ) : (
-                <Lock className="w-4 h-4 mr-2" />
+                <Lock className="mr-2 h-4 w-4" />
               )}
               <div className="line-clamp-1">{t('only_me')}</div>
             </Button>
           </div>
 
-          <Separator className="mt-4 mb-2" />
+          <Separator className="mb-2 mt-4" />
 
           <Button
             variant="outline"
-            className="w-full mt-2"
+            className="mt-2 w-full"
             onClick={() => {
               navigator.clipboard.writeText(
                 `${window.location.origin}/ai/chats/${id}`
@@ -404,20 +404,20 @@ export function ChatPanel({
             disabled={disablePublicLink || copiedLink}
           >
             {copiedLink ? (
-              <CheckCheck className="w-4 h-4 mr-2" />
+              <CheckCheck className="mr-2 h-4 w-4" />
             ) : (
-              <LinkIcon className="w-4 h-4 mr-2" />
+              <LinkIcon className="mr-2 h-4 w-4" />
             )}
             {t('copy_public_link')}
           </Button>
           <Button
-            className="w-full mt-2"
+            className="mt-2 w-full"
             onClick={() =>
               window.open(`${window.location.origin}/ai/chats/${id}`)
             }
             disabled={disablePublicLink}
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
+            <ExternalLink className="mr-2 h-4 w-4" />
             {t('open_public_link')}
           </Button>
         </div>

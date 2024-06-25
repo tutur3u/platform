@@ -1,4 +1,4 @@
-import i18n from '../../../../../../i18n.json';
+import { locales } from '@/config';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -17,8 +17,6 @@ export async function POST(req: Request) {
   }
 
   // Check if locale is supported
-  const locales = i18n.locales;
-
   if (!locales.includes(locale))
     return NextResponse.json(
       { message: 'Locale is not supported' },

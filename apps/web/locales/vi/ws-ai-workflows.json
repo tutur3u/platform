@@ -1,9 +1,0 @@
-{
-  "module": "Quy trình",
-  "description": "Quy trình là một chuỗi các cặp \"đầu vào\"-\"đầu ra\" nhằm xác định hành vi của một mô hình.",
-  "name": "Tên",
-  "create": "Tạo Quy trình",
-  "edit": "Sửa Quy trình",
-  "add_new": "Thêm Quy trình mới vào không gian làm việc này.",
-  "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này."
-}

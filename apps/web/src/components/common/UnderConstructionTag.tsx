@@ -1,8 +1,8 @@
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 
 const UnderConstructionTag = () => {
-  const { t } = useTranslation();
-  const label = t('common:underconstruction');
+  const t = useTranslations();
+  const label = t('common.underconstruction');
 
   return (
     <div className="pb-4 md:h-full md:pb-8">

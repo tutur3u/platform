@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 
 export default function Slogan() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const { resolvedTheme } = useTheme();
 
   const isDark = resolvedTheme?.includes('dark');

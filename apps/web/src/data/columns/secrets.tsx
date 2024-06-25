@@ -5,9 +5,8 @@ import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const secretColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
+export const secretColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -46,7 +45,7 @@ export const secretColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
       <DataTableColumnHeader column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 font-semibold break-all">
+      <div className="line-clamp-1 break-all font-semibold">
         {row.getValue('name') || '-'}
       </div>
     ),

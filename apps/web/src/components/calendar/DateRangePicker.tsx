@@ -9,7 +9,7 @@ import {
 import { Select } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import 'dayjs/locale/vi';
-import useTranslation from 'next-translate/useTranslation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -26,12 +26,12 @@ const DateRangePicker = ({
   defaultUnit = 'custom',
   defaultOption = 'present',
 }: Props) => {
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
   const [unit, setUnit] = useState<DateRangeUnit>(defaultUnit);
   const [option, setOption] = useState<DateRangeOption>(defaultOption);
 
-  const { t } = useTranslation('date-helper');
+  const t = useTranslations('date_helper');
   const timeUnit = t('time-unit');
   const timeUnitPlaceholder = t('time-unit-placeholder');
   const timeRange = t('time-range');
@@ -70,7 +70,7 @@ const DateRangePicker = ({
           classNames={{
             input: 'dark:bg-[#25262b]',
           }}
-          locale={lang}
+          locale={locale}
           valueFormat="DD MMMM, YYYY"
         />
       ) : (

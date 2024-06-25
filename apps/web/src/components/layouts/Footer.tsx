@@ -1,14 +1,11 @@
 import Slogan from './slogan';
 import { Separator } from '@repo/ui/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function Footer() {
-  const { t } = useTranslation('common');
-
-  const getStarted = t('get-started');
-  const getStartedDesc = t('get-started-desc');
+  const t = await getTranslations();
 
   return (
     <div className="w-full text-center">
@@ -17,14 +14,14 @@ export default async function Footer() {
         <Slogan />
 
         <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
-          {getStartedDesc}
+          {t('common.get-started-desc')}
         </div>
 
         <Link
           href="/login"
           className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
         >
-          {getStarted}
+          {t('common.get-started')}
         </Link>
       </div>
 
@@ -116,60 +113,60 @@ export default async function Footer() {
         <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {t('common:legal')}
+              {t('common.legal')}
             </div>
             <Link
               href="/terms"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:terms')}
+              {t('common.terms')}
             </Link>
             <Link
               href="/privacy"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:privacy')}
+              {t('common.privacy')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {t('common:resources')}
+              {t('common.resources')}
             </div>
             <Link
               href="/calendar/meet-together"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:meet-together')}
+              {t('common.meet-together')}
             </Link>
             <Link
               href="/branding"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:branding')}
+              {t('common.branding')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {t('common:developers')}
+              {t('common.developers')}
             </div>
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:documentation')}
+              {t('common.documentation')}
             </Link>
             <Link
-              href="https://github.com/tutur3u/tutur3u"
+              href="https://github.com/tutur3u/platform"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:open-source')}
+              {t('common.open-source')}
             </Link>
           </div>
         </div>
@@ -177,7 +174,7 @@ export default async function Footer() {
 
       <Separator className="bg-foreground/5 mt-8" />
       <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
-        {t('copyright')}
+        {t('common.copyright')}
       </div>
     </div>
   );

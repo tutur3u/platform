@@ -4,7 +4,7 @@ import { User, UserRole } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import useTranslation from 'next-translate/useTranslation';
+import { useTranslations } from 'next-intl';
 import React, { ChangeEvent, useState } from 'react';
 
 interface Props {
@@ -24,7 +24,7 @@ const WorkspaceMemberEditForm = ({
   onDelete,
   disallowOwnerChange,
 }: Props) => {
-  const { t } = useTranslation('ws-members');
+  const t = useTranslations();
 
   const [role, setRole] = useState<UserRole>(user?.role || 'MEMBER');
   const [roleTitle, setRoleTitle] = useState(user?.role_title || '');
@@ -85,15 +85,15 @@ const WorkspaceMemberEditForm = ({
       <Divider className="my-1" />
 
       <Select
-        label={t('role')}
-        placeholder={t('role-placeholder')}
+        label={t('ws-members.role')}
+        placeholder={t('ws-members.role-placeholder')}
         value={role}
         onChange={(role) => {
           setRole(role as UserRole);
         }}
         data={availableRoles.map((role) => ({
           value: role,
-          label: t(role.toLowerCase()),
+          label: t(role.toLowerCase() as any),
           disabled: !checkRole(role),
         }))}
         disabled={
@@ -103,8 +103,8 @@ const WorkspaceMemberEditForm = ({
       />
 
       <TextInput
-        label={t('role-title')}
-        placeholder={t('role-title-placeholder')}
+        label={t('ws-members.role-title')}
+        placeholder={t('ws-members.role-title-placeholder')}
         value={roleTitle}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setRoleTitle(event.target.value)
@@ -131,7 +131,7 @@ const WorkspaceMemberEditForm = ({
         }
         className="bg-blue-500/10 dark:bg-blue-300/10"
       >
-        {user?.id ? t('common:save') : t('invite_member')}
+        {user?.id ? t('common.save') : t('ws-members.invite_member')}
       </Button>
 
       {user?.id &&
@@ -144,8 +144,8 @@ const WorkspaceMemberEditForm = ({
             <div>
               <span className="text-foreground/80">
                 {user.role === 'OWNER' && disallowOwnerChange
-                  ? t('cannot-delete-last-owner')
-                  : t('delete-member-description')}
+                  ? t('ws-members.cannot-delete-last-owner')
+                  : t('ws-members.delete-member-description')}
               </span>
             </div>
             <Button
@@ -159,7 +159,7 @@ const WorkspaceMemberEditForm = ({
               className="bg-red-500/10 dark:bg-red-300/10"
               disabled={user.role === 'OWNER' && disallowOwnerChange}
             >
-              {t('common:delete')}
+              {t('common.delete')}
             </Button>
           </>
         )}

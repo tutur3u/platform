@@ -5,9 +5,8 @@ import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { Translate } from 'next-translate';
 
-export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
+export const projectColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
