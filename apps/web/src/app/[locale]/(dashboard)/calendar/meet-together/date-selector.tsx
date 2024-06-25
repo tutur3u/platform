@@ -1,6 +1,6 @@
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { enUS, vi } from 'date-fns/locale';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import React from 'react';
 
 interface DateSelectorProps {

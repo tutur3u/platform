@@ -1,3 +1,5 @@
+import { UserDatabaseFilter } from '../filters';
+import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
@@ -7,8 +9,6 @@ import { createClient } from '@/utils/supabase/server';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { UserDatabaseFilter } from '../filters';
-import { getUserReportColumns } from './columns';
 
 interface SearchParams {
   page?: string;

@@ -2,8 +2,7 @@ import DayTime from './day-time';
 import { Timeblock } from '@/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
-import React from 'react';
+import { useLocale } from 'next-intl';
 
 export default function DayPlanner({
   timeblocks,

@@ -1,3 +1,4 @@
+import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -13,7 +14,6 @@ import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import UserMonthAttendance from '../../attendance/user-month-attendance';
 
 interface Props {
   params: {

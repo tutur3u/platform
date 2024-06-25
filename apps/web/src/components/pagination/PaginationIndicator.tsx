@@ -1,15 +1,12 @@
 'use client';
 
 import { Pagination } from '@mantine/core';
-import { useTranslations } from 'next-intl';
 
 interface Props {
   totalItems: number | null;
 }
 
 export default function PaginationIndicator({ totalItems }: Props) {
-  const t = useTranslations();
-
   const activePage = 1;
   const itemsPerPage = 15;
 

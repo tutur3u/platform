@@ -7,7 +7,6 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';

@@ -1,4 +1,4 @@
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function TimeColumn({
   id,

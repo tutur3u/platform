@@ -13,7 +13,6 @@ import { Row } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
 
 interface UserReportRowActionsProps {
   row: Row<WorkspaceUserReport>;
@@ -43,7 +42,7 @@ export function UserReportRowActions({ row }: UserReportRowActionsProps) {
     // }
   };
 
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  // const [showEditDialog, setShowEditDialog] = useState(false);
 
   // if (!report.id || !report.ws_id) return null;
   if (!report.id) return null;

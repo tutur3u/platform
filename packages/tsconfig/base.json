@@ -7,6 +7,13 @@
     "esModuleInterop": true,
     "incremental": false,
     "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "preserveWatchOutput": true,
+    "strictNullChecks": true,
+    "allowJs": false,
     "lib": [
       "es2022",
       "DOM",

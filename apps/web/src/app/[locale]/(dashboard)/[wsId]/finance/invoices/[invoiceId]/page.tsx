@@ -101,22 +101,6 @@ export default function InvoiceDetailsPage({
     ]);
   };
 
-  const getUniqueWarehouseIds = () => {
-    const ids = new Set<string>();
-    (products || []).forEach((product) =>
-      ids.add(`${product.id}::${product.unit_id}`)
-    );
-    return Array.from(ids);
-  };
-
-  const removePrice = (index: number) =>
-    setProducts((products) => (products || []).filter((_, i) => i !== index));
-
-  const updateProduct = (index: number, product: Product) =>
-    setProducts((products) =>
-      products.map((p, i) => (i === index ? product : p))
-    );
-
   const amount = products.reduce(
     (acc, product) => acc + (product?.amount ? Number(product?.amount) : 0),
     0

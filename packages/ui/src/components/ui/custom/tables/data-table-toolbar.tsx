@@ -38,6 +38,7 @@ export function DataTableToolbar<TData>({
   disableSearch = false,
   isEmpty,
   t,
+  namespace,
   onRefresh,
   onSearch,
   resetParams,
@@ -85,7 +86,12 @@ export function DataTableToolbar<TData>({
             refreshText={t?.('common.refresh') || 'Refresh'}
           />
         )}
-        <DataTableViewOptions t={t} table={table} extraColumns={extraColumns} />
+        <DataTableViewOptions
+          t={t}
+          namespace={namespace}
+          table={table}
+          extraColumns={extraColumns}
+        />
       </div>
     </div>
   );

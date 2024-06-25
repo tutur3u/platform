@@ -2,11 +2,9 @@ import PlusCardButton from '../../../../../../components/common/PlusCardButton';
 import PaginationIndicator from '../../../../../../components/pagination/PaginationIndicator';
 import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { Checkup } from '@/types/primitives/Checkup';
 import { Divider, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { useEffect, useState } from 'react';
-import useSWR from 'swr';
+import { useEffect } from 'react';
 
 export default function MiscExaminationPage() {
   const { setRootSegment } = useSegments();
@@ -32,22 +30,10 @@ export default function MiscExaminationPage() {
     return () => setRootSegment([]);
   }, [ws, setRootSegment]);
 
-  const [activePage] = useState(1);
-
-  const [itemsPerPage] = useLocalStorage({
-    key: 'healthcare-checkups-items-per-page',
-    defaultValue: 15,
-  });
-
-  const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/healthcare/checkups?page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
   // const countApi = ws?.id
   //   ? `/api/workspaces/${ws.id}/healthcare/checkups/count`
   //   : null;
 
-  const { data: checkups } = useSWR<Checkup[]>(apiPath);
   // const { data: count } = useSWR<number>(countApi);
 
   const [showPhone, setShowPhone] = useLocalStorage({

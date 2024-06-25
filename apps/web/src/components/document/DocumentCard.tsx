@@ -3,7 +3,7 @@ import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 
 interface Props {
