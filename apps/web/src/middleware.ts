@@ -98,4 +98,13 @@ const PUBLIC_PATHS = [
   '/branding',
   '/ai/chats',
   '/calendar/meet-together',
-];
+].reduce((acc: string[], path) => {
+  // Add the original path
+  acc.push(path);
+
+  // Add localized paths
+  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+  acc.push(...localizedPaths);
+
+  return acc;
+}, []);
