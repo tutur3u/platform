@@ -40,6 +40,7 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          <MemberTabs value={searchParams?.status || 'all'} />
           <InviteMemberButton
             wsId={wsId}
             currentUser={{
@@ -53,7 +54,6 @@ export default async function WorkspaceMembersPage({
             }
             disabled={disableInvite}
           />
-          <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
       <Separator className="my-4" />

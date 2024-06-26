@@ -1,3 +1,6 @@
+import { SectionProps } from './index';
+import { permissionGroups } from './permissions';
+import RolePermission from './role-permission';
 import {
   Accordion,
   AccordionContent,
@@ -8,9 +11,6 @@ import { FormField, FormItem } from '@repo/ui/components/ui/form';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
-import { SectionProps } from './index';
-import { permissionGroups } from './permissions';
-import RolePermission from './role-permission';
 
 export default function RoleFormPermissionsSection({
   form,
@@ -21,6 +21,12 @@ export default function RoleFormPermissionsSection({
 
   return (
     <>
+      {form.watch('name') && (
+        <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+          {form.watch('name')}
+        </div>
+      )}
+
       <Accordion
         type="multiple"
         defaultValue={groups.map((group) => `group-${group.id}`)}

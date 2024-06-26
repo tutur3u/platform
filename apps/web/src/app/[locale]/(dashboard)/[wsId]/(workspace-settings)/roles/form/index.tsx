@@ -2,6 +2,7 @@
 
 import { permissionGroups } from './permissions';
 import RoleFormDisplaySection from './role-display';
+import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
 import { PermissionId, WorkspaceRole } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -138,7 +139,10 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
               <Monitor className="mr-1 h-5 w-5" />
               {t('ws-roles.display')}
             </TabsTrigger>
-            <TabsTrigger value="permissions">
+            <TabsTrigger
+              value="permissions"
+              disabled={!data?.id && form.watch('name') === ''}
+            >
               <PencilRuler className="mr-1 h-5 w-5" />
               {t('ws-roles.permissions')} (
               {enabledPermissionsCount.reduce(
@@ -149,7 +153,10 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
               {groups.reduce((acc, group) => acc + group.permissions.length, 0)}
               )
             </TabsTrigger>
-            <TabsTrigger value="members">
+            <TabsTrigger
+              value="members"
+              disabled={!data?.id && form.watch('name') === ''}
+            >
               <Users className="mr-1 h-5 w-5" />
               {t('ws-roles.members')} (0)
             </TabsTrigger>
@@ -162,7 +169,9 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
             <TabsContent value="permissions">
               <RoleFormPermissionsSection {...sectionProps} />
             </TabsContent>
-            <TabsContent value="members"></TabsContent>
+            <TabsContent value="members">
+              <RoleFormMembersSection {...sectionProps} />
+            </TabsContent>
           </ScrollArea>
         </Tabs>
 
