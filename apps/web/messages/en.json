@@ -1238,5 +1238,11 @@
         "infrastructure": "Infrastructure",
         "migrations": "Migrations",
         "activities": "Activities"
+    },
+    "platform-token-usage": {
+        "daily_total_from_14_recent_days": "Daily total token from 14 most recent days",
+        "monthly_total_from_12_recent_months": "Monthly total token from 12 most recent months",
+        "prompt_tokens": "Prompt tokens",
+        "completion_tokens": "Completion tokens"
     }
 }

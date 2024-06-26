@@ -4,6 +4,7 @@ import {
   InventoryCategoryStatistics,
   UsersCategoryStatistics,
 } from './categories';
+import { DailyTotalChart, MonthlyTotalChart } from './charts';
 import {
   BatchesStatistics,
   ExpenseStatistics,
@@ -30,7 +31,10 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
+import { createAdminClient } from '@/utils/supabase/server';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -43,6 +47,20 @@ interface Props {
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
+
+  const { data: dailyData } =
+    wsId === ROOT_WORKSPACE_ID
+      ? await getDailyData(wsId)
+      : {
+          data: [],
+        };
+
+  const { data: monthlyData } =
+    wsId === ROOT_WORKSPACE_ID
+      ? await getMonthlyData(wsId)
+      : {
+          data: [],
+        };
 
   return (
     <>
@@ -150,6 +168,45 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
           <UserReportsStatistics wsId={wsId} />
         </Suspense>
       </div>
+
+      {wsId === ROOT_WORKSPACE_ID && (
+        <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
+          <div className="col-span-full mb-32">
+            <Separator className="my-4" />
+            <DailyTotalChart data={dailyData} />
+            <Separator className="my-4" />
+            <MonthlyTotalChart data={monthlyData} />
+          </div>
+        </Suspense>
+      )}
     </>
   );
+}
+
+async function getDailyData(wsId: string) {
+  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Invalid workspace ID');
+  const supabase = createAdminClient();
+
+  const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  console.log(data, count);
+
+  return { data, count };
+}
+
+async function getMonthlyData(wsId: string) {
+  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Invalid workspace ID');
+  const supabase = createAdminClient();
+
+  const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  console.log(data, count);
+
+  return { data, count };
 }
