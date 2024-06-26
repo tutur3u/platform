@@ -1,134 +1,73 @@
-import { Props } from './index';
-import { permissionGroups } from './permissions';
-import RolePermission from './role-permission';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@repo/ui/components/ui/accordion';
-import { Button } from '@repo/ui/components/ui/button';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { FormField, FormItem } from '@repo/ui/components/ui/form';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { Fragment, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
-const FormSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1),
-});
-
-export const RoleFormSchema = FormSchema;
+import { Fragment } from 'react';
+import { SectionProps } from './index';
+import { permissionGroups } from './permissions';
+import RolePermission from './role-permission';
 
 export default function RoleFormPermissionsSection({
-  wsId,
-  data,
-  onFinish,
-}: Props) {
+  form,
+  enabledPermissionsCount,
+}: SectionProps) {
   const t = useTranslations();
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(false);
-
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
-    values: {
-      id: data?.id,
-      name: data?.name || '',
-    },
-  });
-
-  const isDirty = form.formState.isDirty;
-  const isValid = form.formState.isValid;
-  const isSubmitting = form.formState.isSubmitting;
-
-  const disabled = !isDirty || !isValid || isSubmitting;
-
-  const onSubmit = async (data: z.infer<typeof RoleFormSchema>) => {
-    setLoading(true);
-
-    const res = await fetch(
-      data?.id
-        ? `/api/v1/workspaces/${wsId}/roles/${data.id}`
-        : `/api/v1/workspaces/${wsId}/roles`,
-      {
-        method: data.id ? 'PUT' : 'POST',
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (res.ok) {
-      onFinish?.(data);
-      router.refresh();
-    } else {
-      setLoading(false);
-      const data = await res.json();
-      toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} role`,
-        description: data.message,
-      });
-    }
-  };
+  const groups = permissionGroups(t);
 
   return (
     <>
-      <ScrollArea className="h-[70vh] pb-4">
-        <Accordion type="multiple">
-          {permissionGroups.map((group, idx) => (
-            <Fragment key={`group-${group.id}`}>
-              <AccordionItem value={`group-${group.id}`}>
-                <AccordionTrigger>
-                  {group.title} (0/{group.permissions.length})
-                </AccordionTrigger>
-                <AccordionContent>
-                  {group.permissions.map((permission, idx) => (
-                    <Fragment
-                      key={`group-${group.id}-permission-${permission.id}`}
-                    >
-                      <RolePermission
-                        title={permission.title}
-                        description={permission.description}
-                        // value={data?.permissions.includes(permission.id)}
-                        // onChange={(value) => {
-                        //   form.setValue(
-                        //     'permissions',
-                        //     value
-                        //       ? [...data?.permissions, permission.id]
-                        //       : data?.permissions.filter((id) => id !== permission.id)
-                        //   );
-                        // }}
-                        disabled={permission.disabled}
-                      />
-                      {idx !== group.permissions.length - 1 && (
-                        <Separator className="my-4" />
-                      )}
-                    </Fragment>
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-              {idx !== permissionGroups.length - 1 && <div className="mb-2" />}
-            </Fragment>
-          ))}
-        </Accordion>
-      </ScrollArea>
-
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={disabled || loading}
-        onClick={form.handleSubmit(onSubmit)}
+      <Accordion
+        type="multiple"
+        defaultValue={groups.map((group) => `group-${group.id}`)}
       >
-        {loading
-          ? t('common.processing')
-          : data?.id
-            ? t('ws-roles.edit')
-            : t('ws-roles.create')}
-      </Button>
+        {groups.map((group, idx) => (
+          <Fragment key={`group-${group.id}`}>
+            <AccordionItem value={`group-${group.id}`}>
+              <AccordionTrigger>
+                {group.title} (
+                {enabledPermissionsCount.find((x) => x.id === group.id)
+                  ?.count || 0}
+                /{group.permissions.length})
+              </AccordionTrigger>
+              <AccordionContent>
+                {group.permissions.map((permission, idx) => (
+                  <Fragment
+                    key={`group-${group.id}-permission-${permission.id}`}
+                  >
+                    <FormField
+                      control={form.control}
+                      name={`permissions.${permission.id}`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <RolePermission
+                            title={permission.title}
+                            description={permission.description}
+                            value={field.value}
+                            onChange={(value) => {
+                              field.onChange(value);
+                              form.trigger('permissions');
+                            }}
+                            disabled={permission?.disabled}
+                          />
+                        </FormItem>
+                      )}
+                    />
+                    {idx !== group.permissions.length - 1 && (
+                      <Separator className="my-4" />
+                    )}
+                  </Fragment>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+            {idx !== groups.length - 1 && <div className="mb-2" />}
+          </Fragment>
+        ))}
+      </Accordion>
     </>
   );
 }

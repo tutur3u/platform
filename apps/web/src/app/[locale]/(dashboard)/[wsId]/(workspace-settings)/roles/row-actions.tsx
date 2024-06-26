@@ -1,6 +1,6 @@
 'use client';
 
-import RoleForm from './form';
+import { RoleForm } from './form';
 import { WorkspaceRole } from '@/types/db';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';

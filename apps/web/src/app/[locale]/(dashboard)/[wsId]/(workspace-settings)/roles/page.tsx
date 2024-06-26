@@ -1,5 +1,5 @@
 import { roleColumns } from './columns';
-import RoleForm from './form';
+import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
@@ -27,6 +27,7 @@ export default async function WorkspaceRolesPage({
 
   const data = rawData.map((role) => ({
     ...role,
+    ws_id: wsId,
     user_count: 0, // TODO: get user count
   }));
 
@@ -68,9 +69,12 @@ async function getRoles(
 
   const queryBuilder = supabase
     .from('workspace_roles')
-    .select('*', {
-      count: 'exact',
-    })
+    .select(
+      'id, name, permissions:workspace_role_permissions(id:permission, enabled), created_at',
+      {
+        count: 'exact',
+      }
+    )
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
