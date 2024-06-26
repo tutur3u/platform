@@ -861,14 +861,14 @@
         "you": "You"
     },
     "ws-roles": {
-        "role": "Role",
-        "roles": "Roles",
-        "description": "Manage user permissions in your workspace by creating roles and assigning them to users.",
+        "singular": "Role",
+        "plural": "Roles",
+        "description": "Roles are used to manage user permissions in your workspace by creating roles and assigning them to users.",
         "name": "Name",
-        "create_role": "Create role",
-        "edit_role": "Edit role",
-        "add_new_workspace_role": "Add a new role to this workspace.",
-        "edit_existing_workspace_role": "Edit an existing role in this workspace."
+        "create": "Create role",
+        "edit": "Edit role",
+        "create_description": "Create a new role for this workspace.",
+        "edit_description": "Edit an existing role in this workspace."
     },
     "ws-activities": {
         "description": "View all activities in your workspace",

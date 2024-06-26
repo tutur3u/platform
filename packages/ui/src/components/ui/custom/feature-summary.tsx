@@ -10,7 +10,7 @@ interface Props<T> {
   form?: ReactNode;
   href?: string;
   pluralTitle: string;
-  singularTitle: string;
+  singularTitle?: string;
   description: string;
   action?: ReactNode;
   createTitle?: string;

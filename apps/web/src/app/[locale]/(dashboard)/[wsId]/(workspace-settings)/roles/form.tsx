@@ -1,3 +1,5 @@
+'use client';
+
 import { WorkspaceRole } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
@@ -10,29 +12,37 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  data: Partial<WorkspaceRole>;
-  submitLabel?: string;
-  onSubmit: (values: z.infer<typeof FormSchema>) => void;
+  wsId: string;
+  data?: WorkspaceRole;
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1),
 });
 
 export const RoleFormSchema = FormSchema;
 
-export default function RoleForm({ data, submitLabel, onSubmit }: Props) {
-  const t = useTranslations('ws-roles');
+export default function RoleForm({ wsId, data, onFinish }: Props) {
+  const t = useTranslations();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: data.name || '',
+      id: data?.id,
+      name: data?.name || '',
     },
   });
 
@@ -42,6 +52,32 @@ export default function RoleForm({ data, submitLabel, onSubmit }: Props) {
 
   const disabled = !isDirty || !isValid || isSubmitting;
 
+  const onSubmit = async (data: z.infer<typeof RoleFormSchema>) => {
+    setLoading(true);
+
+    const res = await fetch(
+      data?.id
+        ? `/api/v1/workspaces/${wsId}/roles/${data.id}`
+        : `/api/v1/workspaces/${wsId}/roles`,
+      {
+        method: data.id ? 'PUT' : 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (res.ok) {
+      onFinish?.(data);
+      router.refresh();
+    } else {
+      setLoading(false);
+      const data = await res.json();
+      toast({
+        title: `Failed to ${data.id ? 'edit' : 'create'} role`,
+        description: data.message,
+      });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
@@ -50,7 +86,7 @@ export default function RoleForm({ data, submitLabel, onSubmit }: Props) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('ws-roles.name')}</FormLabel>
               <FormControl>
                 <Input placeholder="Name" autoComplete="off" {...field} />
               </FormControl>
@@ -59,8 +95,12 @@ export default function RoleForm({ data, submitLabel, onSubmit }: Props) {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={disabled}>
-          {submitLabel}
+        <Button type="submit" className="w-full" disabled={disabled || loading}>
+          {loading
+            ? t('common.processing')
+            : data?.id
+              ? t('ws-roles.edit')
+              : t('ws-roles.create')}
         </Button>
       </form>
     </Form>

@@ -862,14 +862,14 @@
         "you": "Bạn"
     },
     "ws-roles": {
-        "role": "Vai trò",
-        "roles": "Vai trò",
-        "description": "Quản lý quyền của người dùng trong không gian làm việc của bạn bằng cách tạo vai trò và gán chúng cho người dùng.",
+        "singular": "Vai trò",
+        "plural": "Vai trò",
+        "description": "Vai trò được sử dụng để quản lý quyền của người dùng trong không gian làm việc bằng cách tạo vai trò và gán chúng cho người dùng.",
         "name": "Tên",
-        "create_role": "Tạo vai trò",
-        "edit_role": "Chỉnh sửa vai trò",
-        "add_new_workspace_role": "Thêm một vai trò mới vào không gian làm việc này.",
-        "edit_existing_workspace_role": "Chỉnh sửa vai trò hiện có trong không gian làm việc này."
+        "create": "Tạo vai trò",
+        "edit": "Chỉnh sửa vai trò",
+        "create_description": "Tạo một vai trò mới cho không gian làm việc này.",
+        "edit_description": "Chỉnh sửa một vai trò hiện có trong không gian làm việc này."
     },
     "ws-activities": {
         "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",

@@ -1,9 +1,10 @@
 'use client';
 
-import RoleEditDialog from './edit-dialog';
+import RoleForm from './form';
 import { WorkspaceRole } from '@/types/db';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,11 +27,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
-  const role = row.original;
+  const data = row.original;
 
   const deleteRole = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${role.ws_id}/roles/${role.id}`,
+      `/api/v1/workspaces/${data.ws_id}/roles/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -49,7 +50,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!role.id || !role.ws_id) return null;
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -77,11 +78,14 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <RoleEditDialog
-        data={role}
+
+      <ModifiableDialogTrigger
+        data={data}
         open={showEditDialog}
+        title={t('ws-transactions.edit')}
+        editDescription={t('ws-transactions.edit_description')}
         setOpen={setShowEditDialog}
-        submitLabel={t('ws-roles.edit_role')}
+        form={<RoleForm wsId={data.ws_id} data={data} />}
       />
     </div>
   );
