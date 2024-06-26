@@ -18,6 +18,7 @@ interface Props<T> {
   title?: string;
   editDescription?: string;
   createDescription?: string;
+  requireExpansion?: boolean;
   // eslint-disable-next-line no-unused-vars
   setOpen?: (open: boolean) => void;
 }
@@ -30,6 +31,7 @@ export default function ModifiableDialogTrigger<T>({
   title,
   editDescription,
   createDescription,
+  requireExpansion,
   setOpen: setExternalOpen,
 }: Props<T>) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -48,7 +50,8 @@ export default function ModifiableDialogTrigger<T>({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        // onInteractOutside={(e) => e.preventDefault()}
+        className={requireExpansion ? 'md:max-w-2xl xl:max-w-4xl' : undefined}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

@@ -1,6 +1,4 @@
-'use client';
-
-import { WorkspaceRole } from '@/types/db';
+import { Props } from './index';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -19,12 +17,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-interface Props {
-  wsId: string;
-  data?: WorkspaceRole;
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
-}
-
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
@@ -32,7 +24,11 @@ const FormSchema = z.object({
 
 export const RoleFormSchema = FormSchema;
 
-export default function RoleForm({ wsId, data, onFinish }: Props) {
+export default function RoleFormDisplaySection({
+  wsId,
+  data,
+  onFinish,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
 

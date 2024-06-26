@@ -91,8 +91,8 @@ export function HourlyTotalChart({
                 <span
                   className={cn(
                     name === t('prompt_tokens')
-                      ? 'text-dynamic-green'
-                      : 'text-dynamic-red'
+                      ? 'text-dynamic-orange'
+                      : 'text-dynamic-purple'
                   )}
                 >
                   {typeof value === 'number'
@@ -199,8 +199,8 @@ export function DailyTotalChart({
                 <span
                   className={cn(
                     name === t('prompt_tokens')
-                      ? 'text-dynamic-green'
-                      : 'text-dynamic-red'
+                      ? 'text-dynamic-orange'
+                      : 'text-dynamic-purple'
                   )}
                 >
                   {typeof value === 'number'
@@ -305,8 +305,8 @@ export function MonthlyTotalChart({
                 <span
                   className={cn(
                     name === t('prompt_tokens')
-                      ? 'text-dynamic-green'
-                      : 'text-dynamic-red'
+                      ? 'text-dynamic-orange'
+                      : 'text-dynamic-purple'
                   )}
                 >
                   {typeof value === 'number'

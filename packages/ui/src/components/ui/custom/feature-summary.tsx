@@ -15,6 +15,7 @@ interface Props<T> {
   action?: ReactNode;
   createTitle?: string;
   createDescription?: string;
+  requireExpansion?: boolean;
   open?: boolean;
   // eslint-disable-next-line no-unused-vars
   setOpen?: (open: boolean) => void;
@@ -31,6 +32,7 @@ export default function FeatureSummary<T>({
   open,
   createTitle,
   createDescription,
+  requireExpansion,
   setOpen,
 }: Props<T>) {
   return (
@@ -54,6 +56,7 @@ export default function FeatureSummary<T>({
             open={open}
             setOpen={setOpen}
             createDescription={createDescription}
+            requireExpansion={requireExpansion}
             title={singularTitle}
           />
         )}

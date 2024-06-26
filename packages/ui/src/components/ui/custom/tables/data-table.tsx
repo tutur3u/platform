@@ -26,7 +26,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { ReactNode, useState } from 'react';
 
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];

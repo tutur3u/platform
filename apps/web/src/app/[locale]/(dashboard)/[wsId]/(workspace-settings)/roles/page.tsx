@@ -23,7 +23,7 @@ export default async function WorkspaceRolesPage({
   searchParams,
 }: Props) {
   const { data: rawData, count } = await getRoles(wsId, searchParams);
-  const t = await getTranslations('ws-roles');
+  const t = await getTranslations();
 
   const data = rawData.map((role) => ({
     ...role,
@@ -33,12 +33,13 @@ export default async function WorkspaceRolesPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
+        pluralTitle={t('ws-roles.plural')}
+        singularTitle={t('ws-roles.singular')}
+        description={t('ws-roles.description')}
+        createTitle={t('ws-roles.create')}
+        createDescription={t('ws-roles.create_description')}
         form={<RoleForm wsId={wsId} />}
+        requireExpansion
       />
       <Separator className="my-4" />
       <CustomDataTable
