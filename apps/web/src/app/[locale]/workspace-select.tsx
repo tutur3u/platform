@@ -152,8 +152,9 @@ export default function WorkspaceSelect() {
       // Regex to match a UUID at the end of the string, with or without dashes
       const uuidRegex =
         /\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/;
-      // Remove the UUID if present
-      newPathname = newPathname.replace(uuidRegex, '');
+      // Remove the UUID if present, and the current path is not /:wsId
+      if (uuidRegex.test(newPathname) && newPathname !== `/${wsId}`)
+        newPathname = newPathname.replace(uuidRegex, '');
       router.push(newPathname);
     }
   };

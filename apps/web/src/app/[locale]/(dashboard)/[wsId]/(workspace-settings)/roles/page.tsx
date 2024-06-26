@@ -1,11 +1,10 @@
 import { roleColumns } from './columns';
-import RoleEditDialog from './edit-dialog';
+import RoleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -33,27 +32,14 @@ export default async function WorkspaceRolesPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('roles')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <RoleEditDialog
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create_role')}
-              </Button>
-            }
-            submitLabel={t('create_role')}
-          />
-        </div>
-      </div>
+      <FeatureSummary
+        pluralTitle={t('plural')}
+        singularTitle={t('singular')}
+        description={t('description')}
+        createTitle={t('create')}
+        createDescription={t('create_description')}
+        form={<RoleForm wsId={wsId} />}
+      />
       <Separator className="my-4" />
       <CustomDataTable
         columnGenerator={roleColumns}

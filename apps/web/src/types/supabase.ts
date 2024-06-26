@@ -4075,6 +4075,16 @@ export type Database = {
           total_expense: number;
         }[];
       };
+      get_daily_prompt_completion_tokens: {
+        Args: {
+          past_days?: number;
+        };
+        Returns: {
+          day: string;
+          total_prompt_tokens: number;
+          total_completion_tokens: number;
+        }[];
+      };
       get_finance_invoices_count: {
         Args: {
           ws_id: string;
@@ -4104,6 +4114,16 @@ export type Database = {
           ws_id: string;
         };
         Returns: number;
+      };
+      get_hourly_prompt_completion_tokens: {
+        Args: {
+          past_hours?: number;
+        };
+        Returns: {
+          hour: string;
+          total_prompt_tokens: number;
+          total_completion_tokens: number;
+        }[];
       };
       get_inventory_batches_count: {
         Args: {
@@ -4170,6 +4190,16 @@ export type Database = {
           month: string;
           total_income: number;
           total_expense: number;
+        }[];
+      };
+      get_monthly_prompt_completion_tokens: {
+        Args: {
+          past_months?: number;
+        };
+        Returns: {
+          month: string;
+          total_prompt_tokens: number;
+          total_completion_tokens: number;
         }[];
       };
       get_pending_event_participants: {

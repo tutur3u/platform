@@ -6,8 +6,12 @@ import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { UserPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: {
@@ -42,14 +46,20 @@ export default async function WorkspaceSettingsPage({
   const enableSecurity =
     !isRootWorkspace && isWorkspaceOwner && !preventWorkspaceDeletion;
 
-  const settingsLabel = t('common.settings');
-
   return (
     <>
-      <div className="border-border bg-foreground/5 rounded-lg border p-4">
-        <h1 className="text-2xl font-bold">{settingsLabel}</h1>
-        <p className="text-foreground/80">{t('ws-settings.description')}</p>
-      </div>
+      <FeatureSummary
+        pluralTitle={t('common.settings')}
+        description={t('ws-settings.description')}
+        action={
+          <Link href={`/${wsId}/members`}>
+            <Button className="cursor-pointer">
+              <UserPlus className="mr-2 h-4 w-4" />
+              <span>{t('common.invite_users')}</span>
+            </Button>
+          </Link>
+        }
+      />
       <Separator className="my-4" />
 
       <div className="grid gap-4 lg:grid-cols-2">
