@@ -4115,6 +4115,16 @@ export type Database = {
         };
         Returns: number;
       };
+      get_hourly_prompt_completion_tokens: {
+        Args: {
+          past_hours?: number;
+        };
+        Returns: {
+          hour: string;
+          total_prompt_tokens: number;
+          total_completion_tokens: number;
+        }[];
+      };
       get_inventory_batches_count: {
         Args: {
           ws_id: string;
