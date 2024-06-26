@@ -1,6 +1,6 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getSecrets, getWorkspace, verifySecret } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import React from 'react';
 
@@ -20,6 +20,23 @@ export default async function Layout({
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: [
+      'ENABLE_X',
+      'ENABLE_AI',
+      'ENABLE_CHAT',
+      'ENABLE_CALENDAR',
+      'ENABLE_USERS',
+      'ENABLE_PROJECTS',
+      'ENABLE_DOCS',
+      'ENABLE_DRIVE',
+      'ENABLE_INVENTORY',
+      'ENABLE_HEALTHCARE',
+    ],
+    forceAdmin: true,
+  });
+
   const navLinks: NavLink[] = [
     {
       name: t('workspace'),
@@ -34,17 +51,21 @@ export default async function Layout({
       name: t('roles'),
       href: `/${wsId}/roles`,
       allowedRoles: ['OWNER'],
+      requireRootWorkspace: true,
+      requireRootMember: true,
     },
     {
       name: t('teams'),
       href: `/${wsId}/teams`,
       allowedRoles: ['ADMIN', 'OWNER'],
+      requireRootWorkspace: true,
       disabled: true,
     },
     {
       name: t('reports'),
       href: `/${wsId}/settings/reports`,
       allowedRoles: ['ADMIN', 'OWNER'],
+      disabled: !verifySecret('ENABLE_USERS', 'true', secrets),
     },
     {
       name: t('api_keys'),
@@ -54,7 +75,6 @@ export default async function Layout({
     {
       name: t('secrets'),
       href: `/${wsId}/secrets`,
-      allowedRoles: ['ADMIN', 'OWNER'],
       requireRootMember: true,
     },
     {
