@@ -1,3 +1,5 @@
+import { PROD_MODE } from '@/constants/common';
+
 type RolePermission = {
   id: string;
   title: string;
@@ -21,36 +23,50 @@ export const permissionGroups = (t: any) => {
             id: 'manage_workspace_roles',
             title: t('ws-roles.manage_workspace_roles'),
             description: t('ws-roles.manage_workspace_roles_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_members',
             title: t('ws-roles.manage_workspace_members'),
             description: t('ws-roles.manage_workspace_members_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_invites',
             title: t('ws-roles.manage_workspace_invites'),
             description: t('ws-roles.manage_workspace_invites_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_settings',
             title: t('ws-roles.manage_workspace_settings'),
             description: t('ws-roles.manage_workspace_settings_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_security',
             title: t('ws-roles.manage_workspace_security'),
             description: t('ws-roles.manage_workspace_security_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_audit_logs',
             title: t('ws-roles.manage_workspace_audit_logs'),
             description: t('ws-roles.manage_workspace_audit_logs_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
           {
             id: 'manage_workspace_billing',
             title: t('ws-roles.manage_workspace_billing'),
             description: t('ws-roles.manage_workspace_billing_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
         ],
       },
@@ -62,6 +78,8 @@ export const permissionGroups = (t: any) => {
             id: 'ai_chat',
             title: t('ws-roles.ai_chat'),
             description: t('ws-roles.ai_chat_description'),
+            disableOnProduction: true,
+            disabled: true,
           },
         ],
       },
@@ -97,7 +115,7 @@ export const permissionGroups = (t: any) => {
         group.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
-        disabled: false,
+        disabled: p.disableOnProduction ? PROD_MODE : p.disabled,
       })),
     }))
     .filter(
