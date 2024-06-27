@@ -34,14 +34,14 @@ export const getUserReportColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'user_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('user_id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('user_id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('user_id')}</div>
@@ -50,7 +50,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'user_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('user_name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('user_name')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 min-w-[8rem] max-w-[24rem]">
@@ -61,7 +61,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'title',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('title')} />
+      <DataTableColumnHeader t={t} column={column} title={t('title')} />
     ),
     cell: ({ row }) => (
       <Link
@@ -75,7 +75,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'content',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('content')} />
+      <DataTableColumnHeader t={t} column={column} title={t('content')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
@@ -86,7 +86,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'feedback',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('feedback')} />
+      <DataTableColumnHeader t={t} column={column} title={t('feedback')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
@@ -97,7 +97,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'creator_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('creator_name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('creator_name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('creator_name') || '-'}</div>
@@ -106,7 +106,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'updated_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('updated_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('updated_at')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -119,7 +119,7 @@ export const getUserReportColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

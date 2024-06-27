@@ -34,42 +34,42 @@ export const aiPromptsColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'model',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('model')} />
+      <DataTableColumnHeader t={t} column={column} title={t('model')} />
     ),
     cell: ({ row }) => <div>{row.getValue('model') || '-'}</div>,
   },
   {
     accessorKey: 'input',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('input')} />
+      <DataTableColumnHeader t={t} column={column} title={t('input')} />
     ),
     cell: ({ row }) => <div>{row.getValue('input') || '-'}</div>,
   },
   {
     accessorKey: 'output',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('output')} />
+      <DataTableColumnHeader t={t} column={column} title={t('output')} />
     ),
     cell: ({ row }) => <div>{row.getValue('output') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

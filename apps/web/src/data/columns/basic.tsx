@@ -30,21 +30,21 @@ export const basicColumns = (t: any): ColumnDef<Entity>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

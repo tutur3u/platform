@@ -14,7 +14,6 @@ import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 export type ComboboxOptions = {
@@ -25,6 +24,7 @@ export type ComboboxOptions = {
 type Mode = 'single' | 'multiple';
 
 interface ComboboxProps {
+  t: any;
   mode?: Mode;
   options: ComboboxOptions[];
   selected: string | string[]; // Updated to handle multiple selections
@@ -40,6 +40,7 @@ interface ComboboxProps {
 }
 
 export function Combobox({
+  t,
   options,
   selected,
   className,
@@ -51,8 +52,6 @@ export function Combobox({
   onChange,
   onCreate,
 }: ComboboxProps) {
-  const t = useTranslations('common');
-
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
 
@@ -120,28 +119,32 @@ export function Combobox({
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
               <div className="text-muted-foreground p-8 text-sm">
-                {t('empty')}
+                {t('common.empty')}
               </div>
-              <Separator />
-              <Button
-                variant="ghost"
-                className="mt-1 w-full"
-                onClick={() => {
-                  if (onCreate) {
-                    onCreate(query);
-                    setQuery('');
-                  }
-                }}
-                disabled={!query || !onCreate}
-              >
-                <Plus className="mr-2 h-4 w-4 shrink-0" />
-                <div className="w-full truncate">
-                  <span className="font-normal">{t('add')}</span>{' '}
-                  <span className="underline decoration-dashed underline-offset-2">
-                    {query}
-                  </span>
-                </div>
-              </Button>
+              {query && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="ghost"
+                    className="mt-1 w-full"
+                    onClick={() => {
+                      if (onCreate) {
+                        onCreate(query);
+                        setQuery('');
+                      }
+                    }}
+                    disabled={!query || !onCreate}
+                  >
+                    <Plus className="mr-2 h-4 w-4 shrink-0" />
+                    <div className="w-full truncate">
+                      <span className="font-normal">{t('common.add')}</span>{' '}
+                      <span className="underline decoration-dashed underline-offset-2">
+                        {query}
+                      </span>
+                    </div>
+                  </Button>
+                </>
+              )}
             </CommandEmpty>
             <ScrollArea>
               <div className="max-h-80">

@@ -32,7 +32,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('value')} />
+      <DataTableColumnHeader t={t} column={column} title={t('value')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-3 max-w-[12rem] break-words">
@@ -43,7 +43,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'abbr',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('abbr')} />
+      <DataTableColumnHeader t={t} column={column} title={t('abbr')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -54,7 +54,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'offset',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('offset')} />
+      <DataTableColumnHeader t={t} column={column} title={t('offset')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -67,7 +67,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'isdst',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('isdst')} />
+      <DataTableColumnHeader t={t} column={column} title={t('isdst')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -78,7 +78,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('status')} />
+      <DataTableColumnHeader t={t} column={column} title={t('status')} />
     ),
     cell: ({ row }) => {
       const status = row.getValue<TimezoneStatus>('status');
@@ -103,7 +103,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'text',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('text')} />
+      <DataTableColumnHeader t={t} column={column} title={t('text')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-3 max-w-[12rem] break-words">
@@ -114,7 +114,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'utc',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('utc')} />
+      <DataTableColumnHeader t={t} column={column} title={t('utc')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 flex max-w-[8rem] items-center gap-1 break-words">
@@ -128,7 +128,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-words">
@@ -140,7 +140,7 @@ export const timezoneColumns = (t: any): ColumnDef<Timezone>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <TimezoneRowActions row={row} />,
   },
 ];

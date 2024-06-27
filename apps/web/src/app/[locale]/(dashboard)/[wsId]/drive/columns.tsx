@@ -36,7 +36,7 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -45,7 +45,7 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem] font-semibold">
@@ -58,7 +58,7 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'size',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('size')} />
+      <DataTableColumnHeader t={t} column={column} title={t('size')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -71,7 +71,7 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">

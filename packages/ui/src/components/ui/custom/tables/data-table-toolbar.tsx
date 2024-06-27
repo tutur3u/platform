@@ -53,6 +53,7 @@ export function DataTableToolbar<TData>({
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
         {disableSearch || (
           <SearchBar
+            t={t}
             defaultValue={defaultQuery}
             onSearch={onSearch}
             className="col-span-full w-full md:col-span-1 md:max-w-xs"

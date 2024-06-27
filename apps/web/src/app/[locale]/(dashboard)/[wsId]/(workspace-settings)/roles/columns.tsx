@@ -32,7 +32,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -43,7 +43,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -54,7 +54,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'user_count',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('user_count')} />
+      <DataTableColumnHeader t={t} column={column} title={t('user_count')} />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 font-semibold">
@@ -66,7 +66,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="break-all">
@@ -78,7 +78,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <RoleRowActions row={row} />,
   },
 ];

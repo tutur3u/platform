@@ -30,14 +30,14 @@ export const batchColumns = (t: any): ColumnDef<ProductBatch>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('price')} />
+      <DataTableColumnHeader t={t} column={column} title={t('price')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -51,7 +51,7 @@ export const batchColumns = (t: any): ColumnDef<ProductBatch>[] => [
   {
     accessorKey: 'total_diff',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('total_diff')} />
+      <DataTableColumnHeader t={t} column={column} title={t('total_diff')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -65,21 +65,21 @@ export const batchColumns = (t: any): ColumnDef<ProductBatch>[] => [
   {
     accessorKey: 'warehouse',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('warehouse')} />
+      <DataTableColumnHeader t={t} column={column} title={t('warehouse')} />
     ),
     cell: ({ row }) => <div>{row.getValue('warehouse')}</div>,
   },
   {
     accessorKey: 'supplier',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('supplier')} />
+      <DataTableColumnHeader t={t} column={column} title={t('supplier')} />
     ),
     cell: ({ row }) => <div>{row.getValue('supplier')}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

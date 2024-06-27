@@ -31,7 +31,7 @@ export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -42,7 +42,7 @@ export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -53,7 +53,7 @@ export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('value')} />
+      <DataTableColumnHeader t={t} column={column} title={t('value')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -64,7 +64,7 @@ export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-all">
@@ -76,7 +76,7 @@ export const apiKeyColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <ApiKeyRowActions row={row} />,
   },
 ];

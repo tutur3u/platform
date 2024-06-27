@@ -31,7 +31,7 @@ export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 break-all">{row.getValue('id')}</div>
@@ -40,7 +40,7 @@ export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 break-all">
@@ -51,7 +51,7 @@ export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('value')} />
+      <DataTableColumnHeader t={t} column={column} title={t('value')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[24rem] break-all">
@@ -62,7 +62,7 @@ export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   {
     accessorKey: 'updated_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('updated_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('updated_at')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-all">
@@ -74,7 +74,7 @@ export const configColumns = (t: any): ColumnDef<WorkspaceConfig>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <ConfigRowActions row={row} />,
   },
 ];

@@ -31,7 +31,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -42,7 +42,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -53,7 +53,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'description',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('description')} />
+      <DataTableColumnHeader t={t} column={column} title={t('description')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -64,7 +64,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'type',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('type')} />
+      <DataTableColumnHeader t={t} column={column} title={t('type')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -77,7 +77,11 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'possible_values',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('possible_values')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t('possible_values')}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[12rem] break-all">
@@ -101,7 +105,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'default_value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('default_value')} />
+      <DataTableColumnHeader t={t} column={column} title={t('default_value')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -112,7 +116,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'notes',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('notes')} />
+      <DataTableColumnHeader t={t} column={column} title={t('notes')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -123,7 +127,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-all">
@@ -135,7 +139,7 @@ export const userFieldColumns = (t: any): ColumnDef<WorkspaceUserField>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <UserFieldRowActions row={row} />,
   },
 ];

@@ -44,7 +44,7 @@ export const getUserColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -53,7 +53,7 @@ export const getUserColumns = (
   {
     accessorKey: 'avatar_url',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('avatar_url')} />
+      <DataTableColumnHeader t={t} column={column} title={t('avatar_url')} />
     ),
     cell: async ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
@@ -73,7 +73,7 @@ export const getUserColumns = (
   {
     accessorKey: 'full_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('full_name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('full_name')} />
     ),
     cell: ({ row }) => (
       <Link href={row.original.href || '#'} className="min-w-[8rem]">
@@ -117,7 +117,7 @@ export const getUserColumns = (
   {
     accessorKey: 'display_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('display_name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('display_name')} />
     ),
     cell: ({ row }) => (
       <Link href={row.original.href || '#'} className="min-w-[8rem]">
@@ -161,14 +161,14 @@ export const getUserColumns = (
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('email')} />
+      <DataTableColumnHeader t={t} column={column} title={t('email')} />
     ),
     cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
   },
   {
     accessorKey: 'phone',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('phone')} />
+      <DataTableColumnHeader t={t} column={column} title={t('phone')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[100px]">
@@ -179,7 +179,7 @@ export const getUserColumns = (
   {
     accessorKey: 'gender',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('gender')} />
+      <DataTableColumnHeader t={t} column={column} title={t('gender')} />
     ),
     cell: ({ row }) => (
       <div className="w-[8rem]">
@@ -192,7 +192,7 @@ export const getUserColumns = (
   {
     accessorKey: 'birthday',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('birthday')} />
+      <DataTableColumnHeader t={t} column={column} title={t('birthday')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -205,7 +205,7 @@ export const getUserColumns = (
   {
     accessorKey: 'ethnicity',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('ethnicity')} />
+      <DataTableColumnHeader t={t} column={column} title={t('ethnicity')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -216,7 +216,7 @@ export const getUserColumns = (
   {
     accessorKey: 'guardian',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('guardian')} />
+      <DataTableColumnHeader t={t} column={column} title={t('guardian')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -227,7 +227,7 @@ export const getUserColumns = (
   {
     accessorKey: 'national_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('national_id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('national_id')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('national_id') || '-'}</div>
@@ -236,7 +236,7 @@ export const getUserColumns = (
   {
     accessorKey: 'address',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('address')} />
+      <DataTableColumnHeader t={t} column={column} title={t('address')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -247,7 +247,7 @@ export const getUserColumns = (
   {
     accessorKey: 'note',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('note')} />
+      <DataTableColumnHeader t={t} column={column} title={t('note')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">{row.getValue('note') || '-'}</div>
@@ -256,7 +256,7 @@ export const getUserColumns = (
   {
     accessorKey: 'group_count',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('group_count')} />
+      <DataTableColumnHeader t={t} column={column} title={t('group_count')} />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -267,7 +267,7 @@ export const getUserColumns = (
   {
     accessorKey: 'linked_users',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('linked_users')} />
+      <DataTableColumnHeader t={t} column={column} title={t('linked_users')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -285,7 +285,7 @@ export const getUserColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -296,7 +296,7 @@ export const getUserColumns = (
   {
     accessorKey: 'updated_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('updated_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('updated_at')} />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -307,7 +307,7 @@ export const getUserColumns = (
   // {
   //   accessorKey: 'status',
   //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="Status" />
+  //     <DataTableColumnHeader t={t}column={column} title="Status" />
   //   ),
   //   cell: ({ row }) => {
   //     const status = statuses.find(
@@ -334,7 +334,7 @@ export const getUserColumns = (
   // {
   //   accessorKey: 'priority',
   //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="Priority" />
+  //     <DataTableColumnHeader t={t}column={column} title="Priority" />
   //   ),
   //   cell: ({ row }) => {
   //     const priority = priorities.find(
@@ -362,7 +362,7 @@ export const getUserColumns = (
     id: field.id,
     accessorKey: field.id,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={field.name} />
+      <DataTableColumnHeader t={t} column={column} title={field.name} />
     ),
     cell: ({ row: _ }) => (
       <div className="line-clamp-1 w-[8rem]">

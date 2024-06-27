@@ -3,21 +3,20 @@
 import { cn } from '../../../lib/utils';
 import { Input } from '../input';
 import { debounce } from 'lodash';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
+  t: any;
   defaultValue?: string;
   className?: string;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
 }
 
-const SearchBar = ({ defaultValue, className, onSearch }: Props) => {
+const SearchBar = ({ t, defaultValue, className, onSearch }: Props) => {
   const updateQuery = onSearch ? debounce(onSearch, 300) : () => {};
 
-  const t = useTranslations('search');
-  const searchPlaceholder = t('search-placeholder');
+  const searchPlaceholder = t('search.search-placeholder');
 
   const [value, setValue] = useState(defaultValue);
 

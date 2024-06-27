@@ -37,7 +37,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'id',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('id')} />
+        <DataTableColumnHeader t={t} column={column} title={t('id')} />
       ),
       cell: ({ row }) => (
         <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -46,7 +46,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'wallet',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('wallet')} />
+        <DataTableColumnHeader t={t} column={column} title={t('wallet')} />
       ),
       cell: ({ row }) => (
         <div className="min-w-[8rem] font-semibold">
@@ -57,7 +57,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'description',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('description')} />
+        <DataTableColumnHeader t={t} column={column} title={t('description')} />
       ),
       cell: ({ row }) => (
         <div className="min-w-[8rem]">
@@ -71,7 +71,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'amount',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('amount')} />
+        <DataTableColumnHeader t={t} column={column} title={t('amount')} />
       ),
       cell: ({ row }) => (
         <div className="min-w-[8rem]">
@@ -85,7 +85,11 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'report_opt_in',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('report_opt_in')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t('report_opt_in')}
+        />
       ),
       cell: ({ row }) => (
         <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
@@ -94,7 +98,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'taken_at',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('taken_at')} />
+        <DataTableColumnHeader t={t} column={column} title={t('taken_at')} />
       ),
       cell: ({ row }) => (
         <div className="min-w-[8rem]">
@@ -107,7 +111,7 @@ export const transactionColumns = (t: any): ColumnDef<Transaction>[] => {
     {
       accessorKey: 'created_at',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('created_at')} />
+        <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
       ),
       cell: ({ row }) => (
         <div className="min-w-[8rem]">
