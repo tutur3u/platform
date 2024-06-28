@@ -57,8 +57,8 @@ importers:
         specifier: ^0.0.34
         version: 0.0.34(zod@3.23.8)
       '@ai-sdk/react':
-        specifier: ^0.0.13
-        version: 0.0.13(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
+        specifier: ^0.0.14
+        version: 0.0.14(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)
       '@anthropic-ai/sdk':
         specifier: ^0.24.1
         version: 0.24.1
@@ -596,6 +596,18 @@ packages:
       zod:
         optional: true
 
+  '@ai-sdk/react@0.0.14':
+    resolution: {integrity: sha512-uVHBBm3x6qGI1sx4dbquebtKeOi7x5QNFnXj5ckxNuHg8g0dDstbmkHqk/u9s9+feTaienp/eSiWbTj8ygetpg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      zod:
+        optional: true
+
   '@ai-sdk/solid@0.0.10':
     resolution: {integrity: sha512-a3kSvFGvRru0I2LKR6nLBj2rre6TrkwqGylisoLPHed8E5OjYfzJbQ/cZLrZW5+E5Vmf/4MVQCOesDrfVIkhag==}
     engines: {node: '>=18'}
@@ -616,6 +628,15 @@ packages:
 
   '@ai-sdk/ui-utils@0.0.8':
     resolution: {integrity: sha512-eTMZBwpU1v1y/cvq5oFkKI8RgUs13jbLNoWo2gYEkS6ojudLMGhQIXvIWdPm4r3yd+EzCj1d1yHComwjA8vwKA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@ai-sdk/ui-utils@0.0.9':
+    resolution: {integrity: sha512-RdC68yG1abpFQgpm3Tcn4hMbRzpRj0BXbphhwSpMwHqPQu4c/n82tYYJvhGB+rRXs/qLftLBS1NtrhqEYSVZTg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -6649,6 +6670,15 @@ snapshots:
       react: 19.0.0-rc-6230622a1a-20240610
       zod: 3.23.8
 
+  '@ai-sdk/react@0.0.14(react@19.0.0-rc-6230622a1a-20240610)(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider-utils': 1.0.0(zod@3.23.8)
+      '@ai-sdk/ui-utils': 0.0.9(zod@3.23.8)
+      swr: 2.2.0(react@19.0.0-rc-6230622a1a-20240610)
+    optionalDependencies:
+      react: 19.0.0-rc-6230622a1a-20240610
+      zod: 3.23.8
+
   '@ai-sdk/solid@0.0.10(solid-js@1.8.17)(zod@3.23.8)':
     dependencies:
       '@ai-sdk/ui-utils': 0.0.8(zod@3.23.8)
@@ -6668,6 +6698,13 @@ snapshots:
       - zod
 
   '@ai-sdk/ui-utils@0.0.8(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider-utils': 1.0.0(zod@3.23.8)
+      secure-json-parse: 2.7.0
+    optionalDependencies:
+      zod: 3.23.8
+
+  '@ai-sdk/ui-utils@0.0.9(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider-utils': 1.0.0(zod@3.23.8)
       secure-json-parse: 2.7.0
