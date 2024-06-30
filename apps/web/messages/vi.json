@@ -10,7 +10,7 @@
         "coming_soon": "Sắp ra mắt",
         "get-started": "Bắt đầu ngay",
         "get-started-desc": "Đăng ký miễn phí và bắt đầu sử dụng nền tảng của chúng tôi ngay hôm nay.",
-        "copyright": "Bản quyền © 2024 Tuturuuu LLC – Mọi quyền được bảo lưu.",
+        "copyright": "Bản quyền © 2024 Genius Junior LLC – Mọi quyền được bảo lưu.",
         "legal": "Pháp lý",
         "terms": "Điều khoản sử dụng",
         "privacy": "Chính sách bảo mật",
@@ -138,10 +138,10 @@
         "next-year": "Năm sau"
     },
     "home": {
-        "headline-p1": "Quản lý công việc của bạn,",
-        "headline-p2": "siêu tốc độ cùng AI",
+        "headline-p1": "Ươm mầm tài năng Việt, nuôi dưỡng những",
+        "headline-p2": "nhà lãnh đạo công nghệ toàn cầu",
         "get-started": "Bắt đầu ngay",
-        "features-lead": "Bạn có thể làm gì với Tuturuuu?",
+        "features-lead": "Bạn có thể làm gì với Genius Junior?",
         "features-1-title": "Tăng cường bởi AI",
         "features-1-subtitle": "Tư duy và tổ chức ý tưởng của bạn với tốc độ tia chớp, với các công cụ thông minh được tăng cường bởi AI.",
         "features-2-title": "Trò chuyện mượt mà",
@@ -153,7 +153,7 @@
         "features-5-title": "Theo dõi tài chính linh hoạt",
         "features-5-subtitle": "Theo dõi tài chính của bạn, và giữ cho đội của bạn luôn được cập nhật, để bạn có thể tập trung vào những điều quan trọng.",
         "features-6-title": "Mã nguồn mở",
-        "features-6-subtitle": "Tuturuuu là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người."
+        "features-6-subtitle": "Genius Junior là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người."
     },
     "branding": {
         "branding": "Thương hiệu",
@@ -188,7 +188,7 @@
         "something_went_wrong": "Đã có lỗi xảy ra",
         "cant_create_plan_right_now": "Chúng tôi không thể tạo kế hoạch của bạn lúc này. Vui lòng thử lại sau.",
         "local_time": "Giờ địa phương",
-        "login_to_save_plans": "Đăng nhập hoặc đăng ký tài khoản Tuturuuu để lưu kế hoạch của bạn.",
+        "login_to_save_plans": "Đăng nhập hoặc đăng ký tài khoản Genius Junior để lưu kế hoạch của bạn.",
         "untitled_plan": "Kế hoạch chưa đặt tên"
     },
     "meet-together-plan-details": {
@@ -206,11 +206,11 @@
         "identity_protection": "Bảo vệ danh tính",
         "identity_protection_desc": "Sử dụng tài khoản khách và tùy chọn đặt mật khẩu cho kế hoạch này để bảo vệ danh tính của bạn.",
         "account_switcher": "Chuyển tài khoản",
-        "account_switcher_desc": "Tương tác với kế hoạch này thông qua tài khoản khách, hoặc sử dụng tài khoản Tuturuuu với nhiều tính năng nâng cao hơn.",
+        "account_switcher_desc": "Tương tác với kế hoạch này thông qua tài khoản khách, hoặc sử dụng tài khoản Genius Junior với nhiều tính năng nâng cao hơn.",
         "use_guest_account": "Sử dụng tài khoản khách",
         "use_other_guest_account": "Sử dụng tài khoản khách khác",
-        "use_tuturuuu_account": "Sử dụng tài khoản Tuturuuu",
-        "using_tuturuuu_account": "Bạn đang sử dụng tài khoản Tuturuuu",
+        "use_tuturuuu_account": "Sử dụng tài khoản Genius Junior",
+        "using_tuturuuu_account": "Bạn đang sử dụng tài khoản Genius Junior",
         "your_name": "Tên của bạn",
         "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này.",
         "password": "Mật khẩu (không bắt buộc)",
@@ -220,7 +220,7 @@
         "interacting_as": "Đang tương tác bằng",
         "guest": "Khách",
         "guest_account": "Tài khoản khách",
-        "tuturuuu_account": "Tài khoản Tuturuuu",
+        "tuturuuu_account": "Tài khoản Genius Junior",
         "switch_account": "Chuyển tài khoản",
         "plan_users": "Người dùng kế hoạch",
         "timeblocks": "Khung giờ",
@@ -235,7 +235,7 @@
         "cant_delete_plan_right_now": "Chúng tôi không thể xóa kế hoạch của bạn ngay bây giờ. Vui lòng thử lại sau.",
         "no_users_yet": "Chưa có người dùng nào",
         "are_you_absolutely_sure": "Bạn có chắc chắn không?",
-        "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của Tuturuuu.",
+        "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của Genius Junior.",
         "select_users_to_filter": "Chọn người dùng để lọc kết quả"
     },
     "invite": {
@@ -254,7 +254,7 @@
     "auth": {
         "password": "Mật khẩu",
         "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
-        "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
+        "notice-p2": "của Genius Junior và nhận email định kỳ với các cập nhật mới",
         "tos": "Điều khoản dịch vụ",
         "privacy": "Chính sách bảo mật"
     },
@@ -269,7 +269,7 @@
     },
     "login": {
         "email_placeholder": "Địa chỉ email",
-        "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Tuturuuu.",
+        "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Genius Junior.",
         "otp_code": "Mã xác thực",
         "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
         "open_inbucket": "Mở Inbucket",
@@ -296,7 +296,7 @@
         "login": "Đăng nhập",
         "already-have-account": "Bạn đã có tài khoản?",
         "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
-        "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
+        "notice-p2": "của Genius Junior và nhận email định kỳ với các cập nhật mới",
         "tos": "Điều khoản dịch vụ",
         "privacy": "Chính sách bảo mật"
     },
@@ -629,10 +629,10 @@
         "latest_announcement": "Thông báo mới nhất",
         "ai_chat_playground_experiment": "Thử nghiệm trò chuyện trí tuệ nhân tạo (Mira AI)",
         "ai_chat_playground_discontinued_p1": "Chào bạn,\n\nChúng tôi rất tiếc phải thông báo rằng",
-        "ai_chat_playground_discontinued_p2": "tạm thời bị vô hiệu hóa để tiến hành cải thiện và kiểm tra thêm. Đừng lo lắng! Chúng tôi đang phát triển thêm nhiều tính năng thú vị để mang lại trải nghiệm tốt hơn cho bạn. Hãy chờ đợi sự trở lại với nhiều tính năng vượt trội hơn. Cảm ơn bạn đã kiên nhẫn và thấu hiểu cho chúng tôi.\n\nTrân trọng,\nTuturuuu"
+        "ai_chat_playground_discontinued_p2": "tạm thời bị vô hiệu hóa để tiến hành cải thiện và kiểm tra thêm. Đừng lo lắng! Chúng tôi đang phát triển thêm nhiều tính năng thú vị để mang lại trải nghiệm tốt hơn cho bạn. Hãy chờ đợi sự trở lại với nhiều tính năng vượt trội hơn. Cảm ơn bạn đã kiên nhẫn và thấu hiểu cho chúng tôi.\n\nTrân trọng,\nGenius Junior"
     },
     "ws-storage-objects": {
-        "module": "Tuturuuu Drive",
+        "module": "Genius Junior Drive",
         "description": "Lưu trữ tệp làm việc một cách an toàn và truy cập chúng từ bất kỳ nơi nào.",
         "total_files": "Tổng số tệp",
         "total_size": "Tổng dung lượng",
@@ -691,7 +691,7 @@
     "ws-api-keys": {
         "api_key": "Khoá API",
         "api_keys": "Khoá API",
-        "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của Tuturuuu một cách an toàn và bảo mật.",
+        "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của Genius Junior một cách an toàn và bảo mật.",
         "name": "Tên",
         "value": "Giá trị",
         "create_key": "Tạo khoá",
@@ -1147,7 +1147,7 @@
         "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
         "example_5": "Viết một email",
         "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
-        "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
+        "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Genius Junior AI.",
         "prompt_placeholder": "Nhập yêu cầu của bạn...",
         "chats": "Các cuộc trò chuyện",
         "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
@@ -1210,7 +1210,7 @@
         "preview": "Xem trước",
         "display-name": "Tên hiển thị",
         "display-name-description": "Nhập tên bạn muốn hiển thị trên hồ sơ của mình.",
-        "handle-description": "Đây là URL tự chọn của bạn trong Tuturuuu.",
+        "handle-description": "Đây là URL tự chọn của bạn trong Genius Junior.",
         "birthday": "Ngày sinh",
         "birthday-description": "Ngày sinh của bạn sẽ chỉ được dùng cho các tính năng xã hội.",
         "birthday-placeholder": "Ngày sinh của bạn",
@@ -1234,7 +1234,7 @@
     },
     "settings-appearance": {
         "appearance": "Hiển thị",
-        "appearance-description": "Tuỳ chỉnh giao diện Tuturuuu",
+        "appearance-description": "Tuỳ chỉnh giao diện Genius Junior",
         "light-mode": "Chế độ sáng",
         "dark-mode": "Chế độ tối"
     },

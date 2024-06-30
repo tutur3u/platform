@@ -1,9 +1,9 @@
-# Tuturuuu Monorepo
+# Genius Junior Monorepo
 
 [![Tests](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
 [![Supabase](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
 
-This repository is a monorepo for all of Tuturuuu's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
+This repository is a monorepo for all of Genius Junior's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 
 ## What's inside?
 
@@ -11,7 +11,7 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 
 ### Apps
 
-- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about Tuturuuu, including the landing page, pricing plans, branding-related resources and Tuturuuu's services through a web application interface. On production, this app is located at [**tuturuuu.com**](https://tuturuuu.com).
+- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about Genius Junior, including the landing page, pricing plans, branding-related resources and Genius Junior's services through a web application interface. On production, this app is located at [**tuturuuu.com**](https://geniusjunior.vercel.app).
 
 ### Packages
 

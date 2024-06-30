@@ -14,19 +14,18 @@ export default async function MarketingPage() {
       <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="mb-4 flex flex-col items-center lg:mb-12">
           <div className="relative mb-4 text-center text-4xl font-bold lg:text-7xl">
-            <span className="sr-only">Tuturuuu</span>
+            <span className="sr-only">Genius Junior</span>
             <Image
               src="/media/logos/transparent.png"
               width={160}
               height={160}
-              alt="Tuturuuu Logo"
+              alt="Genius Junior Logo"
               priority
             />
           </div>
 
           <h1 className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            {t('home.headline-p1')} <br />
-            <GradientHeadline title={t('home.headline-p2')} />.
+            {t('home.headline-p1')} <GradientHeadline title={t('home.headline-p2')} />.
           </h1>
 
           <GetStartedButton href="/login" />

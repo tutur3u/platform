@@ -23,9 +23,11 @@ interface Props {
   };
 }
 
-export function generateMetadata({ params: { locale } }: Props): Metadata {
-  const enDescription = 'Take control of your workflow, supercharged by AI.';
-  const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
+export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
+  const enDescription =
+    'Nurturing Vietnamese talents, fostering global tech leaders';
+  const viDescription =
+    'Ươm mầm tài năng Việt, nuôi dưỡng những nhà lãnh đạo công nghệ toàn cầu';
 
   const description = locale === 'vi' ? viDescription : enDescription;
 

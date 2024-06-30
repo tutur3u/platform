@@ -179,7 +179,7 @@ export default function PlanLogin({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Tuturuuu"
+                        placeholder="Genius Junior"
                         autoComplete="off"
                         autoCorrect="off"
                         {...field}
