@@ -97,8 +97,8 @@
   "devDependencies": {
     "@next/bundle-analyzer": "15.0.0-canary.48",
     "@next/eslint-plugin-next": "15.0.0-canary.48",
-    "@repo/eslint-config-custom": "workspace:*",
-    "@repo/tsconfig": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.49.0",
     "@tanstack/react-query-devtools": "^5.49.0",
     "@testing-library/react": "^16.0.0",
