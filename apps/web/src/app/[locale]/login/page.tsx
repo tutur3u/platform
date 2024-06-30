@@ -38,7 +38,7 @@ export default async function Login() {
               src="/media/logos/transparent.png"
               width={128}
               height={128}
-              alt="Genius Junior Logo"
+              alt="Tuturuuu Logo"
             />
           </h1>
         </div>

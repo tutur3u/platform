@@ -32,7 +32,7 @@ export default async function Footer() {
           <Link
             href="/"
             className="flex items-center gap-4 transition dark:hover:text-blue-200"
-            aria-label="Genius Junior"
+            aria-label="Tuturuuu"
           >
             <Image
               src="/media/logos/transparent.png"
@@ -41,12 +41,12 @@ export default async function Footer() {
               alt="logo"
               className="h-12 w-12"
             />
-            <div className="text-4xl font-semibold">Genius Junior</div>
+            <div className="text-4xl font-semibold">Tuturuuu</div>
           </Link>
 
           <div className="flex gap-8">
             <Link
-              href="https://www.facebook.com/GeniusJuniorVietnam"
+              href="https://www.facebook.com/tuturuuu"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Facebook"
             >
@@ -59,7 +59,7 @@ export default async function Footer() {
               </svg>
             </Link>
 
-            {/* <Link
+            <Link
               href="https://x.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="X (formerly Twitter)"
@@ -78,10 +78,10 @@ export default async function Footer() {
                 />
                 <path d="M15.724,9l20.578,30h-4.106L11.618,9H15.724 M17.304,6H5.922l24.694,36h11.382L17.304,6L17.304,6z" />
               </svg>
-            </Link> */}
+            </Link>
 
             <Link
-              href="https://github.com/genius-junior"
+              href="https://github.com/tutur3u"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Github"
             >
@@ -94,7 +94,7 @@ export default async function Footer() {
               </svg>
             </Link>
 
-            {/* <Link
+            <Link
               href="https://www.linkedin.com/company/tuturuuu/"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="LinkedIn"
@@ -106,7 +106,7 @@ export default async function Footer() {
               >
                 <path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z" />
               </svg>
-            </Link> */}
+            </Link>
           </div>
         </div>
 
@@ -141,47 +141,40 @@ export default async function Footer() {
             >
               {t('common.meet-together')}
             </Link>
-            {/* <Link
+            <Link
               href="/branding"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.branding')}
-            </Link> */}
+            </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
               {t('common.developers')}
             </div>
-            {/* <Link
+            <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.documentation')}
-            </Link> */}
+            </Link>
             <Link
-              href="https://github.com/genius-junior/platform"
+              href="https://github.com/tutur3u/platform"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.open-source')}
-            </Link>
-            <Link
-              href="https://tuturuuu.com"
-              target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
-            >
-              Tuturuuu
             </Link>
           </div>
         </div>
       </div>
 
       <Separator className="bg-foreground/5 mt-8" />
-      <div className="p-4 text-center md:px-32 xl:px-64">
-        <span className="opacity-80">{t('common.copyright')}</span>
+      <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
+        {t('common.copyright')}
       </div>
     </div>
   );

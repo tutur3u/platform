@@ -7,5 +7,5 @@ export default function LogoTitle() {
   const hasWorkspace = !!params.wsId;
 
   if (hasWorkspace) return null;
-  return <div className="text-lg md:text-2xl">Genius Junior</div>;
+  return <div className="text-2xl">Tuturuuu</div>;
 }

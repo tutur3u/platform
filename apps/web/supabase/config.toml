@@ -1,6 +1,6 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "genius-junior"
+project_id = "tuturuuu"
 
 [api]
 enabled = true
@@ -118,7 +118,7 @@ max_frequency = "1s"
 
 # Auth templates
 [auth.email.template.confirmation]
-subject = "Confirm your Genius Junior account"
+subject = "Confirm your Tuturuuu account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
@@ -126,15 +126,15 @@ subject = "Email Change Confirmation"
 content_path = "./supabase/templates/email_change.html"
 
 [auth.email.template.invite]
-subject = "Invitation to Genius Junior"
+subject = "Invitation to Tuturuuu"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Genius Junior Verification Code"
+subject = "Tuturuuu Verification Code"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.recovery]
-subject = "Genius Junior Password Recovery"
+subject = "Tuturuuu Password Recovery"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.sms]
