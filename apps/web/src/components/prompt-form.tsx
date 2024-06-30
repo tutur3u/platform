@@ -85,10 +85,6 @@ export function PromptForm({
       setupMicrophone();
     }
 
-    if (microphoneState === MicrophoneState.Error) {
-      setShowPermissionDenied(true);
-    }
-
     if (
       microphoneState === MicrophoneState.Paused &&
       connectionState === LiveConnectionState.OPEN
