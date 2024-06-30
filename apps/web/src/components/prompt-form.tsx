@@ -272,7 +272,7 @@ export function PromptForm({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.voice_input')}</TooltipContent>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{t('ai_chat.permission_denied')}</DialogTitle>
                   <DialogDescription>

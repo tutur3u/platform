@@ -301,7 +301,7 @@ export function ChatPanel({
                           ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
                           : 'pointer-events-auto ml-2 w-10 opacity-100'
                       )}
-                      disabled={isLoading || !id}
+                      disabled={!id}
                       onClick={() => setShowChatVisibility((prev) => !prev)}
                     >
                       {chat?.is_public ? <Globe /> : <Lock />}
@@ -357,7 +357,7 @@ export function ChatPanel({
                 setCopiedLink(false);
                 setUpdating(false);
               }}
-              disabled={isLoading || updating || !id || chat?.is_public}
+              disabled={!id || chat?.is_public}
             >
               {chat?.is_public ? (
                 <Check className="mr-2 h-4 w-4" />
@@ -377,7 +377,7 @@ export function ChatPanel({
                 setCopiedLink(false);
                 setUpdating(false);
               }}
-              disabled={isLoading || updating || !id || !chat?.is_public}
+              disabled={!id || !chat?.is_public}
             >
               {!chat?.is_public ? (
                 <Check className="mr-2 h-4 w-4" />
