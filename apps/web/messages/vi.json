@@ -1182,7 +1182,14 @@
         "correct": "chính xác",
         "incorrect": "không chính xác",
         "reveal_answer": "Xem đáp án",
-        "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng."
+        "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
+        "add_attachments": "Thêm tệp đính kèm",
+        "voice_input": "Nhập bằng giọng nói",
+        "refresh_chat": "Làm mới trò chuyện",
+        "send_message": "Gửi tin nhắn",
+        "extra_options": "Tùy chọn khác",
+        "permission_denied": "Quyền truy cập bị từ chối",
+        "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này."
     },
     "crud-ops": {
         "ops": "Thao tác",

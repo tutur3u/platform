@@ -1181,7 +1181,14 @@
         "correct": "correct",
         "incorrect": "incorrect",
         "reveal_answer": "Reveal answer",
-        "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it."
+        "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it.",
+        "add_attachments": "Add attachments",
+        "voice_input": "Voice input",
+        "refresh_chat": "Refresh chat",
+        "send_message": "Send message",
+        "extra_options": "Extra options",
+        "permission_denied": "Permission denied",
+        "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature."
     },
     "crud-ops": {
         "ops": "Operations",

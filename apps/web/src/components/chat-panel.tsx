@@ -272,6 +272,7 @@ export function ChatPanel({
               />
               <div className="flex w-full items-center">
                 <PromptForm
+                  chat={chat}
                   onSubmit={async (value) => {
                     // If there is no id, create a new chat
                     if (!id) return await createChat(value);
@@ -304,10 +305,10 @@ export function ChatPanel({
                       onClick={() => setShowChatVisibility((prev) => !prev)}
                     >
                       {chat?.is_public ? <Globe /> : <Lock />}
-                      <span className="sr-only">Chat visibility</span>
+                      <span className="sr-only">{t('chat_visibility')}</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Chat visibility</TooltipContent>
+                  <TooltipContent>{t('chat_visibility')}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -326,10 +327,10 @@ export function ChatPanel({
                       disabled={isLoading || showExtraOptions}
                     >
                       <Bolt />
-                      <span className="sr-only">Extra options</span>
+                      <span className="sr-only">{t('extra_options')}</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Extra options</TooltipContent>
+                  <TooltipContent>{t('extra_options')}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
