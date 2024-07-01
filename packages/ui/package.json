@@ -41,7 +41,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "embla-carousel-react": "^8.1.5",
+    "embla-carousel-react": "^8.1.6",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
     "lucide-react": "^0.399.0",
