@@ -18,6 +18,7 @@ import { Fragment } from 'react';
 
 export const getUserColumns = (
   t: any,
+  namespace: string,
   extraFields?: WorkspaceUserField[]
 ): ColumnDef<WorkspaceUser>[] => [
   // {
@@ -44,7 +45,11 @@ export const getUserColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -53,7 +58,11 @@ export const getUserColumns = (
   {
     accessorKey: 'avatar_url',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('avatar_url')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.avatar_url`)}
+      />
     ),
     cell: async ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
@@ -73,7 +82,11 @@ export const getUserColumns = (
   {
     accessorKey: 'full_name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('full_name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.full_name`)}
+      />
     ),
     cell: ({ row }) => (
       <Link href={row.original.href || '#'} className="min-w-[8rem]">
@@ -117,7 +130,11 @@ export const getUserColumns = (
   {
     accessorKey: 'display_name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('display_name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.display_name`)}
+      />
     ),
     cell: ({ row }) => (
       <Link href={row.original.href || '#'} className="min-w-[8rem]">
@@ -161,14 +178,22 @@ export const getUserColumns = (
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('email')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.email`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
   },
   {
     accessorKey: 'phone',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('phone')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.phone`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[100px]">
@@ -179,7 +204,11 @@ export const getUserColumns = (
   {
     accessorKey: 'gender',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('gender')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.gender`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="w-[8rem]">
@@ -192,7 +221,11 @@ export const getUserColumns = (
   {
     accessorKey: 'birthday',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('birthday')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.birthday`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -205,7 +238,11 @@ export const getUserColumns = (
   {
     accessorKey: 'ethnicity',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('ethnicity')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.ethnicity`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -216,7 +253,11 @@ export const getUserColumns = (
   {
     accessorKey: 'guardian',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('guardian')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.guardian`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -227,7 +268,11 @@ export const getUserColumns = (
   {
     accessorKey: 'national_id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('national_id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.national_id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('national_id') || '-'}</div>
@@ -236,7 +281,11 @@ export const getUserColumns = (
   {
     accessorKey: 'address',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('address')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.address`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -247,7 +296,11 @@ export const getUserColumns = (
   {
     accessorKey: 'note',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('note')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.note`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">{row.getValue('note') || '-'}</div>
@@ -256,7 +309,11 @@ export const getUserColumns = (
   {
     accessorKey: 'group_count',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('group_count')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.group_count`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[8rem]">
@@ -267,7 +324,11 @@ export const getUserColumns = (
   {
     accessorKey: 'linked_users',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('linked_users')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.linked_users`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -285,7 +346,11 @@ export const getUserColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -296,7 +361,11 @@ export const getUserColumns = (
   {
     accessorKey: 'updated_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('updated_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.updated_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">

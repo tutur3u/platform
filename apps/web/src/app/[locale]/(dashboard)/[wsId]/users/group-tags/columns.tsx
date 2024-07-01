@@ -7,7 +7,10 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
-export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
+export const groupTagColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<WorkspaceApiKey>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -32,7 +35,11 @@ export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -43,7 +50,11 @@ export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -58,7 +69,11 @@ export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'color',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('color')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.color`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -69,7 +84,11 @@ export const groupTagColumns = (t: any): ColumnDef<WorkspaceApiKey>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-all">

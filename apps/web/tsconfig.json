@@ -14,14 +14,14 @@
       }
     ],
     "esModuleInterop": true,
-    "resolveJsonModule": true,
+    "resolveJsonModule": true
   },
   "include": [
-    "global.d.ts",
-    "next-env.d.ts",
     "**/*.js",
     "**/*.ts",
     "**/*.tsx",
+    "global.d.ts",
+    "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

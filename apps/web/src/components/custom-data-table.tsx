@@ -12,11 +12,9 @@ export function CustomDataTable<TData, TValue>({
   namespace,
   ...props
 }: DataTableProps<TData, TValue>) {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const generalT = useTranslations();
-  const t = useTranslations(namespace as any);
 
   const pageSize = Number(searchParams.get('pageSize') || 10);
   const page = Number(searchParams.get('page') || 0);
@@ -25,7 +23,6 @@ export function CustomDataTable<TData, TValue>({
   return (
     <DataTable
       t={t}
-      generalT={generalT}
       namespace={namespace}
       pageIndex={pageIndex || 0}
       pageSize={pageSize || 10}
@@ -37,7 +34,7 @@ export function CustomDataTable<TData, TValue>({
       setParams={(params) => searchParams.set(params)}
       resetParams={() => searchParams.reset()}
       isEmpty={searchParams.isEmpty}
-      newObjectTitle={generalT('common.create')}
+      newObjectTitle={t('common.create')}
       {...props}
     />
   );

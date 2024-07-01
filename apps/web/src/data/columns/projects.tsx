@@ -6,7 +6,10 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
-export const projectColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
+export const projectColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<WorkspaceSecret>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -31,7 +34,11 @@ export const projectColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -42,7 +49,11 @@ export const projectColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -53,7 +64,11 @@ export const projectColumns = (t: any): ColumnDef<WorkspaceSecret>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div>

@@ -48,10 +48,11 @@ export interface DataTableProps<TData, TValue> {
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
   t?: any;
-  generalT?: any;
   columnGenerator?: (
     // eslint-disable-next-line no-unused-vars
     t: any,
+    // eslint-disable-next-line no-unused-vars
+    namespace: string,
     // eslint-disable-next-line no-unused-vars
     extraColumns?: any[]
   ) => ColumnDef<TData, TValue>[];
@@ -74,7 +75,6 @@ export function DataTable<TData, TValue>({
   disableSearch,
   isEmpty,
   t,
-  generalT,
   onRefresh,
   onSearch,
   setParams,
@@ -90,7 +90,9 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data: data || [],
     columns:
-      columnGenerator && t ? columnGenerator(t, extraColumns) : columns || [],
+      columnGenerator && t
+        ? columnGenerator(t, namespace, extraColumns)
+        : columns || [],
     state: {
       sorting,
       columnVisibility,
@@ -129,7 +131,7 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
-        t={generalT}
+        t={t}
         isEmpty={isEmpty || !data?.length}
         defaultQuery={defaultQuery}
         onSearch={onSearch || (() => {})}
@@ -177,13 +179,15 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={
-                    columnGenerator?.(t!)?.length || columns?.length || 1
+                    columnGenerator?.(t, namespace)?.length ||
+                    columns?.length ||
+                    1
                   }
                   className="h-24 text-center opacity-60"
                 >
                   {data
-                    ? `${generalT?.('common.no-results')}.`
-                    : `${generalT?.('common.loading')}...`}
+                    ? `${t?.('common.no-results')}.`
+                    : `${t?.('common.loading')}...`}
                 </TableCell>
               </TableRow>
             )}
@@ -192,7 +196,7 @@ export function DataTable<TData, TValue>({
       </div>
       {noBottomPadding || count === undefined || (
         <DataTablePagination
-          t={generalT}
+          t={t}
           table={table}
           className="pointer-events-none hidden opacity-0 lg:block"
           setParams={setParams}
@@ -200,7 +204,7 @@ export function DataTable<TData, TValue>({
       )}
       {count !== undefined && (
         <DataTablePagination
-          t={generalT}
+          t={t}
           table={table}
           count={count}
           className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"

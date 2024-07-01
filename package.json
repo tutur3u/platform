@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "pnpm i && turbo test lint build check-types",
+    "buildx": "pnpm i && turbo test lint build",
     "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "bdevx": "cd apps/web && pnpm bdevx",

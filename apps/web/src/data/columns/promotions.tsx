@@ -5,7 +5,10 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
-export const promotionColumns = (t: any): ColumnDef<ProductPromotion>[] => [
+export const promotionColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<ProductPromotion>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -30,42 +33,66 @@ export const promotionColumns = (t: any): ColumnDef<ProductPromotion>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'code',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('code')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.code`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('code') || '-'}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'description',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('description')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.description`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
   },
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('value')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.value`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div>

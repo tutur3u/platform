@@ -7,7 +7,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from 'lucide-react';
 import moment from 'moment';
 
-export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
+export const roleColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -32,7 +35,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -43,7 +50,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -54,7 +65,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'user_count',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('user_count')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.user_count`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 font-semibold">
@@ -66,7 +81,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="break-all">

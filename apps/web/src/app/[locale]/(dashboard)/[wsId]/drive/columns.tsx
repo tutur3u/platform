@@ -9,6 +9,7 @@ import moment from 'moment';
 
 export const storageObjectsColumns = (
   t: any,
+  namespace: string,
   setStorageObject: (value: StorageObject | undefined) => void,
   wsId: string
 ): ColumnDef<StorageObject>[] => [
@@ -36,7 +37,11 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -45,7 +50,11 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem] font-semibold">
@@ -58,7 +67,11 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'size',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('size')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.size`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -71,7 +84,11 @@ export const storageObjectsColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
