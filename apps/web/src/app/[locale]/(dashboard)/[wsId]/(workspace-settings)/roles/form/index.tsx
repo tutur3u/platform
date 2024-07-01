@@ -44,15 +44,17 @@ type FormType = z.infer<typeof FormSchema>;
 interface Props {
   wsId: string;
   data?: WorkspaceRole;
+  forceDefault?: boolean;
   onFinish?: (data: FormType) => void;
 }
 
 export interface SectionProps {
+  wsId: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
 
-export function RoleForm({ wsId, data, onFinish }: Props) {
+export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -61,8 +63,8 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: data?.id,
-      name: data?.name || '',
+      id: forceDefault ? 'DEFAULT' : data?.id,
+      name: forceDefault ? t('ws-roles.default_permissions') : data?.name || '',
       permissions: groups.reduce(
         (acc, group) => {
           group.permissions.forEach((permission) => {
@@ -88,11 +90,13 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
     setLoading(true);
 
     const res = await fetch(
-      data?.id
-        ? `/api/v1/workspaces/${wsId}/roles/${data.id}`
-        : `/api/v1/workspaces/${wsId}/roles`,
+      forceDefault
+        ? `/api/v1/workspaces/${wsId}/roles/default`
+        : data?.id
+          ? `/api/v1/workspaces/${wsId}/roles/${data.id}`
+          : `/api/v1/workspaces/${wsId}/roles`,
       {
-        method: data.id ? 'PUT' : 'POST',
+        method: data.id || forceDefault ? 'PUT' : 'POST',
         body: JSON.stringify({
           ...data,
           permissions: Object.entries(data.permissions).map(
@@ -128,21 +132,21 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
     ).length,
   }));
 
-  const sectionProps = { form, enabledPermissionsCount };
+  const sectionProps = { wsId, form, enabledPermissionsCount };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <Tabs defaultValue="display" className="w-full">
+        <Tabs
+          defaultValue={forceDefault ? 'permissions' : 'display'}
+          className="w-full"
+        >
           <TabsList className="grid h-fit w-full grid-cols-1 md:grid-cols-3">
-            <TabsTrigger value="display">
+            <TabsTrigger value="display" disabled={forceDefault}>
               <Monitor className="mr-1 h-5 w-5" />
               {t('ws-roles.display')}
             </TabsTrigger>
-            <TabsTrigger
-              value="permissions"
-              disabled={!data?.id && form.watch('name') === ''}
-            >
+            <TabsTrigger value="permissions">
               <PencilRuler className="mr-1 h-5 w-5" />
               {t('ws-roles.permissions')} (
               {enabledPermissionsCount.reduce(
@@ -153,10 +157,7 @@ export function RoleForm({ wsId, data, onFinish }: Props) {
               {groups.reduce((acc, group) => acc + group.permissions.length, 0)}
               )
             </TabsTrigger>
-            <TabsTrigger
-              value="members"
-              disabled={!data?.id && form.watch('name') === ''}
-            >
+            <TabsTrigger value="members" disabled={forceDefault}>
               <Users className="mr-1 h-5 w-5" />
               {t('ws-roles.members')} (0)
             </TabsTrigger>

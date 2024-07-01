@@ -22,13 +22,16 @@ export default async function WorkspaceRolesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: rawData, count } = await getRoles(wsId, searchParams);
+  const {
+    data: rawData,
+    defaultData,
+    count,
+  } = await getRoles(wsId, searchParams);
   const t = await getTranslations();
 
   const data = rawData.map((role) => ({
     ...role,
     ws_id: wsId,
-    user_count: 0, // TODO: get user count
   }));
 
   return (
@@ -40,6 +43,11 @@ export default async function WorkspaceRolesPage({
         createTitle={t('ws-roles.create')}
         createDescription={t('ws-roles.create_description')}
         form={<RoleForm wsId={wsId} />}
+        defaultData={defaultData}
+        secondaryTriggerTitle={t('ws-roles.manage_default_permissions')}
+        secondaryTitle={t('ws-roles.default_permissions')}
+        secondaryDescription={t('ws-roles.default_permissions_description')}
+        showDefaultFormAsSecondary
         requireExpansion
       />
       <Separator className="my-4" />
@@ -67,10 +75,10 @@ async function getRoles(
 ) {
   const supabase = createClient();
 
-  const queryBuilder = supabase
+  const rolesQuery = supabase
     .from('workspace_roles')
     .select(
-      'id, name, permissions:workspace_role_permissions(id:permission, enabled), created_at',
+      'id, name, permissions:workspace_role_permissions(id:permission, enabled), workspace_role_members(role_id.count()), created_at',
       {
         count: 'exact',
       }
@@ -78,18 +86,56 @@ async function getRoles(
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) rolesQuery.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    rolesQuery.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  const defaultPermissionsQuery = supabase
+    .from('workspace_default_permissions')
+    .select('id:permission, enabled, created_at')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
 
-  return { data, count } as { data: WorkspaceRole[]; count: number };
+  const [rolesRes, defaultPermissionsRes] = await Promise.all([
+    rolesQuery,
+    defaultPermissionsQuery,
+  ]);
+
+  const { data: roleData, error, count } = rolesRes;
+  const { data: defaultPermissionsData, error: defaultPermissionsError } =
+    defaultPermissionsRes;
+
+  if (error) throw error;
+  if (defaultPermissionsError) throw defaultPermissionsError;
+
+  const defaultData = {
+    id: 'DEFAULT',
+    name: 'DEFAULT',
+    permissions: defaultPermissionsData.map((p) => ({
+      id: p.id,
+      enabled: p.enabled,
+    })),
+  };
+
+  const data = roleData.map(
+    ({ id, name, permissions, workspace_role_members, created_at }) => ({
+      id,
+      name,
+      permissions,
+      user_count: workspace_role_members?.[0]?.count,
+      created_at,
+    })
+  );
+
+  return { data, defaultData, count } as {
+    data: WorkspaceRole[];
+    defaultData: WorkspaceRole;
+    count: number;
+  };
 }

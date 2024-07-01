@@ -15,7 +15,7 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const t = await getTranslations('workspace-settings-layout');
+  const t = await getTranslations();
 
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
@@ -39,58 +39,57 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('workspace'),
+      name: t('workspace-settings-layout.workspace'),
       href: `/${wsId}/settings`,
       matchExact: true,
     },
     {
-      name: t('members'),
+      name: t('workspace-settings-layout.members'),
       href: `/${wsId}/members`,
     },
     {
-      name: t('roles'),
+      name: t('workspace-settings-layout.roles'),
       href: `/${wsId}/roles`,
       allowedRoles: ['OWNER'],
-      requireRootWorkspace: true,
       requireRootMember: true,
     },
     {
-      name: t('teams'),
+      name: t('workspace-settings-layout.teams'),
       href: `/${wsId}/teams`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
       disabled: true,
     },
     {
-      name: t('reports'),
+      name: t('workspace-settings-layout.reports'),
       href: `/${wsId}/settings/reports`,
       allowedRoles: ['ADMIN', 'OWNER'],
       disabled: !verifySecret('ENABLE_USERS', 'true', secrets),
     },
     {
-      name: t('api_keys'),
+      name: t('workspace-settings-layout.api_keys'),
       href: `/${wsId}/api-keys`,
       allowedRoles: ['ADMIN', 'OWNER'],
     },
     {
-      name: t('secrets'),
+      name: t('workspace-settings-layout.secrets'),
       href: `/${wsId}/secrets`,
       requireRootMember: true,
     },
     {
-      name: t('infrastructure'),
+      name: t('workspace-settings-layout.infrastructure'),
       href: `/${wsId}/infrastructure`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
     },
     {
-      name: t('migrations'),
+      name: t('workspace-settings-layout.migrations'),
       href: `/${wsId}/migrations`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,
     },
     {
-      name: t('activities'),
+      name: t('workspace-settings-layout.activities'),
       href: `/${wsId}/activities`,
       allowedRoles: ['ADMIN', 'OWNER'],
       requireRootWorkspace: true,

@@ -11,6 +11,6 @@ interface Props {
 export default async function PlatformMigrationsPage({
   params: { wsId },
 }: Props) {
-  if (wsId !== ROOT_WORKSPACE_ID) redirect(`/${wsId}`);
+  if (wsId !== ROOT_WORKSPACE_ID) redirect(`/${wsId}/settings`);
   return <MigrationDashboard />;
 }

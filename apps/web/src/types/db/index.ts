@@ -12,6 +12,7 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
     id: PermissionId;
     enabled: boolean;
   }[];
+  user_count?: number;
 };
 
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {

@@ -19,6 +19,7 @@ interface Props<T> {
   editDescription?: string;
   createDescription?: string;
   requireExpansion?: boolean;
+  forceDefault?: boolean;
   // eslint-disable-next-line no-unused-vars
   setOpen?: (open: boolean) => void;
 }
@@ -32,6 +33,7 @@ export default function ModifiableDialogTrigger<T>({
   editDescription,
   createDescription,
   requireExpansion,
+  forceDefault,
   setOpen: setExternalOpen,
 }: Props<T>) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -41,6 +43,8 @@ export default function ModifiableDialogTrigger<T>({
 
   const formWithCallback = form
     ? cloneElement(form as ReactElement, {
+        data,
+        forceDefault,
         onFinish: () => setOpen(false),
       })
     : null;
