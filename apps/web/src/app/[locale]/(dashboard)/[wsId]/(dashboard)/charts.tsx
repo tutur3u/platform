@@ -38,7 +38,7 @@ export function HourlyTotalChart({
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center justify-center gap-2 text-center">
       <div className="font-semibold">
         {t('hourly_total_from_last_12_hours')}
       </div>
@@ -146,7 +146,7 @@ export function DailyTotalChart({
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center justify-center gap-2 text-center">
       <div className="font-semibold">
         {t('daily_total_from_14_recent_days')}
       </div>
@@ -254,7 +254,7 @@ export function MonthlyTotalChart({
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2">
+    <div className="flex flex-col items-center justify-center gap-2 text-center">
       <div className="font-semibold">
         {t('monthly_total_from_12_recent_months')}
       </div>

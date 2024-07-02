@@ -175,6 +175,20 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   );
 }
 
+async function getHourlyData(wsId: string) {
+  if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
+  const supabase = createAdminClient();
+
+  const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
+    past_hours: 24,
+  });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
+}
+
 async function getDailyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
   const supabase = createAdminClient();
@@ -192,18 +206,6 @@ async function getMonthlyData(wsId: string) {
   const supabase = createAdminClient();
 
   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count };
-}
-
-async function getHourlyData(wsId: string) {
-  if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
-
-  const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens');
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
