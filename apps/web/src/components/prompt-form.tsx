@@ -1,14 +1,3 @@
-import {
-  LiveConnectionState,
-  LiveTranscriptionEvent,
-  LiveTranscriptionEvents,
-  useDeepgram,
-} from '@/hooks/useDeepgram';
-import {
-  MicrophoneEvents,
-  MicrophoneState,
-  useMicrophone,
-} from '@/hooks/useMicrophone';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
@@ -27,10 +16,10 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { UseChatHelpers } from 'ai/react';
-import { Mic, MicOff, Paperclip, RefreshCw } from 'lucide-react';
+import { Mic, Paperclip, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps
@@ -60,113 +49,113 @@ export function PromptForm({
     setIsInternalLoading(isLoading);
   }, [isLoading]);
 
-  const [caption, setCaption] = useState<string | undefined>();
-  const {
-    connection,
-    connectToDeepgram,
-    disconnectFromDeepgram,
-    connectionState,
-  } = useDeepgram();
-  const {
-    setupMicrophone,
-    microphone,
-    startMicrophone,
-    stopMicrophone,
-    microphoneState,
-  } = useMicrophone();
+  // const [caption, setCaption] = useState<string | undefined>();
+  // const {
+  //   connection,
+  //   connectToDeepgram,
+  //   disconnectFromDeepgram,
+  //   connectionState,
+  // } = useDeepgram();
+  // const {
+  //   setupMicrophone,
+  //   microphone,
+  //   startMicrophone,
+  //   stopMicrophone,
+  //   microphoneState,
+  // } = useMicrophone();
 
-  const captionTimeout = useRef<any>();
-  const keepAliveInterval = useRef<any>();
+  // const captionTimeout = useRef<any>();
+  // const keepAliveInterval = useRef<any>();
 
   const [showPermissionDenied, setShowPermissionDenied] = useState(false);
 
-  useEffect(() => {
-    if (microphoneState === MicrophoneState.NotSetup) {
-      setupMicrophone();
-    }
+  // useEffect(() => {
+  //   if (microphoneState === MicrophoneState.NotSetup) {
+  //     setupMicrophone();
+  //   }
 
-    if (
-      microphoneState === MicrophoneState.Paused &&
-      connectionState === LiveConnectionState.OPEN
-    ) {
-      disconnectFromDeepgram();
-    }
-  }, [microphoneState]);
+  //   if (
+  //     microphoneState === MicrophoneState.Paused &&
+  //     connectionState === LiveConnectionState.OPEN
+  //   ) {
+  //     disconnectFromDeepgram();
+  //   }
+  // }, [microphoneState]);
 
-  useEffect(() => {
-    if (!microphone) {
-      console.log('!microphone');
-      return;
-    }
+  // useEffect(() => {
+  //   if (!microphone) {
+  //     console.log('!microphone');
+  //     return;
+  //   }
 
-    if (!connection) {
-      console.log('!connection');
-      return;
-    }
+  //   if (!connection) {
+  //     console.log('!connection');
+  //     return;
+  //   }
 
-    console.log('connectionState', connectionState);
+  //   console.log('connectionState', connectionState);
 
-    const onData = (e: BlobEvent) => {
-      connection?.send(e.data);
-    };
+  //   const onData = (e: BlobEvent) => {
+  //     connection?.send(e.data);
+  //   };
 
-    const onTranscript = (data: LiveTranscriptionEvent) => {
-      const { is_final: isFinal, speech_final: speechFinal } = data;
-      let thisCaption = data.channel.alternatives?.[0]?.transcript;
+  //   const onTranscript = (data: LiveTranscriptionEvent) => {
+  //     const { is_final: isFinal, speech_final: speechFinal } = data;
+  //     let thisCaption = data.channel.alternatives?.[0]?.transcript;
 
-      console.log('thisCaption', thisCaption);
-      if (thisCaption !== '') {
-        console.log('thisCaption !== ""', thisCaption);
-        setCaption(thisCaption);
-      }
+  //     console.log('thisCaption', thisCaption);
+  //     if (thisCaption !== '') {
+  //       console.log('thisCaption !== ""', thisCaption);
+  //       setCaption(thisCaption);
+  //     }
 
-      if (isFinal && speechFinal) {
-        clearTimeout(captionTimeout.current);
-        captionTimeout.current = setTimeout(() => {
-          setInput((prev) => [prev, thisCaption].join(' '));
-          setCaption(undefined);
-          disconnectFromDeepgram();
-          stopMicrophone();
-          clearTimeout(captionTimeout.current);
-        }, 3000);
-      }
-    };
+  //     if (isFinal && speechFinal) {
+  //       clearTimeout(captionTimeout.current);
+  //       captionTimeout.current = setTimeout(() => {
+  //         setInput((prev) => [prev, thisCaption].join(' '));
+  //         setCaption(undefined);
+  //         disconnectFromDeepgram();
+  //         stopMicrophone();
+  //         clearTimeout(captionTimeout.current);
+  //       }, 3000);
+  //     }
+  //   };
 
-    if (connectionState === LiveConnectionState.OPEN) {
-      connection?.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      microphone?.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      startMicrophone();
-    }
+  //   if (connectionState === LiveConnectionState.OPEN) {
+  //     connection?.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+  //     microphone?.addEventListener(MicrophoneEvents.DataAvailable, onData);
+  //     startMicrophone();
+  //   }
 
-    return () => {
-      // prettier-ignore
-      connection?.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      microphone?.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-      clearTimeout(captionTimeout.current);
-      stopMicrophone();
-    };
-  }, [microphone, connection, connectionState]);
+  //   return () => {
+  //     // prettier-ignore
+  //     connection?.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+  //     microphone?.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+  //     clearTimeout(captionTimeout.current);
+  //     stopMicrophone();
+  //   };
+  // }, [microphone, connection, connectionState]);
 
-  useEffect(() => {
-    if (!connection) return;
+  // useEffect(() => {
+  //   if (!connection) return;
 
-    if (
-      microphoneState !== MicrophoneState.Open &&
-      connectionState === LiveConnectionState.OPEN
-    ) {
-      connection.keepAlive();
+  //   if (
+  //     microphoneState !== MicrophoneState.Open &&
+  //     connectionState === LiveConnectionState.OPEN
+  //   ) {
+  //     connection.keepAlive();
 
-      keepAliveInterval.current = setInterval(() => {
-        connection.keepAlive();
-      }, 10000);
-    } else {
-      clearInterval(keepAliveInterval.current);
-    }
+  //     keepAliveInterval.current = setInterval(() => {
+  //       connection.keepAlive();
+  //     }, 10000);
+  //   } else {
+  //     clearInterval(keepAliveInterval.current);
+  //   }
 
-    return () => {
-      clearInterval(keepAliveInterval.current);
-    };
-  }, [microphoneState, connectionState]);
+  //   return () => {
+  //     clearInterval(keepAliveInterval.current);
+  //   };
+  // }, [microphoneState, connectionState]);
 
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
@@ -186,7 +175,8 @@ export function PromptForm({
             tabIndex={0}
             onKeyDown={onKeyDown}
             rows={1}
-            value={[input, caption || ''].filter(Boolean).join(' ')}
+            value={input}
+            // value={[input, caption || ''].filter(Boolean).join(' ')}
             onChange={(e) => setInput(e.target.value)}
             placeholder={`${t('ai_chat.send_message')}.`}
             spellCheck={false}
@@ -222,49 +212,50 @@ export function PromptForm({
                     chat?.id && isInternalLoading ? 'md:mr-0' : ''
                   )}
                   type="button"
-                  onClick={() => {
-                    if (microphoneState === MicrophoneState.Error) {
-                      setShowPermissionDenied(true);
-                      return;
-                    }
+                  // onClick={() => {
+                  //   if (microphoneState === MicrophoneState.Error) {
+                  //     setShowPermissionDenied(true);
+                  //     return;
+                  //   }
 
-                    if (
-                      microphoneState === MicrophoneState.Ready ||
-                      microphoneState === MicrophoneState.Paused
-                    ) {
-                      connectToDeepgram({
-                        model: 'nova-2',
-                        interim_results: true,
-                        smart_format: true,
-                        filler_words: true,
-                        utterance_end_ms: 3000,
-                      });
-                      return;
-                    }
+                  //   if (
+                  //     microphoneState === MicrophoneState.Ready ||
+                  //     microphoneState === MicrophoneState.Paused
+                  //   ) {
+                  //     connectToDeepgram({
+                  //       model: 'nova-2',
+                  //       interim_results: true,
+                  //       smart_format: true,
+                  //       filler_words: true,
+                  //       utterance_end_ms: 3000,
+                  //     });
+                  //     return;
+                  //   }
 
-                    if (microphoneState === MicrophoneState.Open) {
-                      setInput((prev) =>
-                        [prev, caption || ''].filter(Boolean).join(' ')
-                      );
-                      setCaption(undefined);
-                      disconnectFromDeepgram();
-                      stopMicrophone();
-                      return;
-                    }
-                  }}
-                  disabled={
-                    isInternalLoading ||
-                    microphoneState === MicrophoneState.Opening ||
-                    microphoneState === MicrophoneState.Pausing ||
-                    microphoneState === MicrophoneState.SettingUp ||
-                    microphoneState === MicrophoneState.NotSetup
-                  }
+                  //   if (microphoneState === MicrophoneState.Open) {
+                  //     setInput((prev) =>
+                  //       [prev, caption || ''].filter(Boolean).join(' ')
+                  //     );
+                  //     setCaption(undefined);
+                  //     disconnectFromDeepgram();
+                  //     stopMicrophone();
+                  //     return;
+                  //   }
+                  // }}
+                  // disabled={
+                  //   isInternalLoading ||
+                  //   microphoneState === MicrophoneState.Opening ||
+                  //   microphoneState === MicrophoneState.Pausing ||
+                  //   microphoneState === MicrophoneState.SettingUp ||
+                  //   microphoneState === MicrophoneState.NotSetup
+                  // }
+                  disabled
                 >
-                  {microphoneState === MicrophoneState.Open ? (
-                    <Mic />
-                  ) : (
+                  {/* {microphoneState === MicrophoneState.Open ? ( */}
+                  <Mic />
+                  {/* ) : (
                     <MicOff />
-                  )}
+                  )} */}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.voice_input')}</TooltipContent>
