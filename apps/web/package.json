@@ -47,7 +47,7 @@
     "@formatjs/intl-localematcher": "^0.5.4",
     "@google/generative-ai": "^0.14.1",
     "@heroicons/react": "^2.1.4",
-    "@hookform/resolvers": "^3.6.0",
+    "@hookform/resolvers": "^3.7.0",
     "@mantine/core": "^7.11.1",
     "@mantine/dates": "^7.11.1",
     "@mantine/hooks": "^7.11.1",
