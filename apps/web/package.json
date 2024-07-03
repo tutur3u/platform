@@ -40,7 +40,7 @@
     "@ai-sdk/openai": "^0.0.34",
     "@ai-sdk/react": "^0.0.16",
     "@anthropic-ai/sdk": "^0.24.3",
-    "@deepgram/sdk": "^3.3.5",
+    "@deepgram/sdk": "^3.4.0",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
