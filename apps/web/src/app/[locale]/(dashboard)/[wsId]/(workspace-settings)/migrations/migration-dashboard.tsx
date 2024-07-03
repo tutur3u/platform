@@ -384,7 +384,7 @@ export default function MigrationDashboard() {
           <div className="grid w-full items-center gap-1.5">
             <Label>API endpoint</Label>
             <Input
-              placeholder="https://tuturuuu.com/api/v1"
+              placeholder="https://rmitneoculturetechclub.com/api/v1"
               value={apiEndpoint}
               onChange={(e) => setApiEndpoint(e.currentTarget.value)}
             />
