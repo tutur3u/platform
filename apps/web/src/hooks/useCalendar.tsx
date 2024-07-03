@@ -1,16 +1,16 @@
+import { Workspace } from '@/types/primitives/Workspace';
+import { CalendarEvent } from '@/types/primitives/calendar-event';
+import moment from 'moment';
+import 'moment/locale/vi';
 import {
-  createContext,
   ReactNode,
+  createContext,
   useCallback,
   useContext,
   useMemo,
   useState,
 } from 'react';
 import useSWR, { mutate as swrMutate } from 'swr';
-import { CalendarEvent } from '@/types/primitives/calendar-event';
-import moment from 'moment';
-import 'moment/locale/vi';
-import { Workspace } from '@/types/primitives/Workspace';
 
 const CalendarContext = createContext({
   getEvent: (eventId: string) => {

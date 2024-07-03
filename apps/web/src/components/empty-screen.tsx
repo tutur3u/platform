@@ -1,18 +1,18 @@
-import { UseChatHelpers } from 'ai/react';
-import { Button } from '@/components/ui/button';
-import { IconArrowRight } from '@/components/ui/icons';
-import { AIChat } from '@/types/primitives/ai-chat';
-import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { Message } from 'ai';
 import { ChatList } from './chat-list';
+import { capitalize, cn } from '@/lib/utils';
+import { AIChat } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
+import { IconArrowRight } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { Message } from 'ai';
+import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import useTranslation from 'next-translate/useTranslation';
-import { Separator } from './ui/separator';
-import { capitalize } from '@/lib/utils';
 import 'dayjs/locale/vi';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { Box, Globe, Lock, MessageCircle, Sparkle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import Link from 'next/link';
 
 export function EmptyScreen({
   wsId,
@@ -22,39 +22,39 @@ export function EmptyScreen({
   previousMessages,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
-  wsId: string;
-  chats: AIChat[];
-  count: number | null;
+  wsId?: string;
+  chats?: AIChat[];
+  count?: number | null;
   previousMessages?: Message[];
   locale: string;
 }) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
-  const { t } = useTranslation('ai-chat');
+  const t = useTranslations('ai_chat');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme?.includes('dark');
 
   const exampleMessages = [
     {
-      heading: 'Explain technical concepts',
-      message: `What is quantum computing?`,
+      heading: t('example_1'),
+      message: t('example_1_prompt'),
     },
     {
-      heading: 'Generate math problems',
-      message: `Generate a list of hard but interesting math problems for undergraduates.`,
+      heading: t('example_2'),
+      message: t('example_2_prompt'),
     },
     {
-      heading: 'Explain to a 5th grader',
-      message: `Explain the following concepts like I'm a fifth grader: \n\n`,
+      heading: t('example_3'),
+      message: t('example_3_prompt'),
     },
     {
-      heading: 'Summarize an article',
-      message: 'Summarize the following article for a 2nd grader: \n\n',
+      heading: t('example_4'),
+      message: t('example_4_prompt'),
     },
     {
-      heading: 'Draft an email',
-      message: `Draft an email to my boss about the following: \n\n`,
+      heading: t('example_5'),
+      message: t('example_5_prompt'),
     },
   ];
 
@@ -78,21 +78,21 @@ export function EmptyScreen({
           {t('welcome_msg')}
         </p>
 
-        <div className="mt-4 flex w-full flex-col items-start space-y-2">
+        <div className="mt-4 flex w-fit max-w-full flex-col gap-2">
           {exampleMessages.map((message, index) => (
             <Button
               key={index}
               variant="link"
-              className="h-auto p-0 text-left text-base"
+              className="h-auto w-fit max-w-full justify-start p-0 text-left text-base"
               onClick={() => setInput(message.message)}
             >
               <IconArrowRight className="text-foreground/80 mr-2 shrink-0" />
-              <span className="line-clamp-2">{message.heading}</span>
+              <div className="w-fit max-w-full truncate">{message.heading}</div>
             </Button>
           ))}
         </div>
 
-        {chats.length > 0 && (
+        {chats && chats.length > 0 && (
           <>
             <Separator className="my-4" />
             <div>
@@ -106,16 +106,49 @@ export function EmptyScreen({
                     <div className="flex w-full flex-col items-start">
                       <Link
                         href={`/${wsId}/chat/${chat.id}`}
-                        className="text-base hover:underline"
+                        className="text-sm hover:underline md:text-base"
                       >
                         {chat.title}
                       </Link>
 
-                      {chat?.created_at ? (
-                        <div className="text-xs opacity-70 md:text-sm">
-                          {capitalize(dayjs(chat.created_at).fromNow())}
-                        </div>
-                      ) : null}
+                      <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
+                            chat.is_public
+                              ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
+                              : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                          )}
+                        >
+                          {chat.is_public ? (
+                            <>
+                              <Globe className="h-3 w-3" />
+                              {t('public')}
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-3 w-3" />
+                              {t('only_me')}
+                            </>
+                          )}
+                        </span>
+                        {chat.model && (
+                          <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                            <Sparkle className="h-3 w-3" />
+                            {chat.model}
+                          </span>
+                        )}
+                        {chat.summary && (
+                          <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                            <Box className="h-3 w-3" />
+                            {t('summarized')}
+                          </span>
+                        )}
+                        <span className="opacity-70">
+                          {chat.model && <span className="mr-1">•</span>}
+                          {capitalize(dayjs(chat?.created_at).fromNow())}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -160,7 +193,7 @@ export function EmptyScreen({
         </div>
       )}
 
-      {chats.length > 5 && (
+      {chats && chats.length > 5 && (
         <div className="bg-background rounded-lg border p-4 md:p-8">
           <div className="flex flex-col">
             <h2 className="text-lg font-semibold">
@@ -183,16 +216,49 @@ export function EmptyScreen({
                   <div className="flex w-full flex-col items-start">
                     <Link
                       href={`/${wsId}/chat/${chat.id}`}
-                      className="text-base hover:underline"
+                      className="text-sm hover:underline md:text-base"
                     >
                       {chat.title}
                     </Link>
 
-                    {chat?.created_at ? (
-                      <div className="text-xs opacity-70 md:text-sm">
-                        {capitalize(dayjs(chat.created_at).fromNow())}
-                      </div>
-                    ) : null}
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
+                          chat.is_public
+                            ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
+                            : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                        )}
+                      >
+                        {chat.is_public ? (
+                          <>
+                            <Globe className="h-3 w-3" />
+                            {t('public')}
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-3 w-3" />
+                            {t('only_me')}
+                          </>
+                        )}
+                      </span>
+                      {chat.model && (
+                        <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                          <Sparkle className="h-3 w-3" />
+                          {chat.model}
+                        </span>
+                      )}
+                      {chat.summary && (
+                        <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                          <Box className="h-3 w-3" />
+                          {t('summarized')}
+                        </span>
+                      )}
+                      <span className="opacity-70">
+                        {chat.model && <span className="mr-1">•</span>}
+                        {capitalize(dayjs(chat?.created_at).fromNow())}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}

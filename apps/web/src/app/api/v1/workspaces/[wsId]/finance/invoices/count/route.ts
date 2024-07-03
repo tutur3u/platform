@@ -1,9 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { headers, cookies } from 'next/headers';
-import { createAdminClient } from '@/utils/supabase/client';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -26,11 +23,6 @@ async function getDataWithApiKey({
   apiKey: string;
 }) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const apiCheckQuery = sbAdmin
     .from('workspace_api_keys')
@@ -69,7 +61,7 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('finance_invoices')

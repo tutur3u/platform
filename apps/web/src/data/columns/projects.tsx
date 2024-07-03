@@ -1,40 +1,44 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
-import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import moment from 'moment';
-import { Translate } from 'next-translate';
 import { ProjectRowActions } from '@/components/row-actions/projects';
+import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
+import moment from 'moment';
 
-export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="translate-y-[2px]"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="translate-y-[2px]"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+export const projectColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<WorkspaceSecret>[] => [
+  // {
+  //   id: 'select',
+  //   header: ({ table }) => (
+  //     <Checkbox
+  //       checked={table.getIsAllPageRowsSelected()}
+  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+  //       aria-label="Select all"
+  //       className="translate-y-[2px]"
+  //     />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <Checkbox
+  //       checked={row.getIsSelected()}
+  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
+  //       aria-label="Select row"
+  //       className="translate-y-[2px]"
+  //     />
+  //   ),
+  //   enableSorting: false,
+  //   enableHiding: false,
+  // },
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -45,7 +49,11 @@ export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -56,7 +64,11 @@ export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div>
@@ -68,7 +80,7 @@ export const projectColumns = (t: Translate): ColumnDef<WorkspaceSecret>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <ProjectRowActions row={row} />,
   },
 ];

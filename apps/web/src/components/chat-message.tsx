@@ -2,47 +2,56 @@
 
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-
+import { ChatMessageActions } from '@/components/chat-message-actions';
+import { MemoizedReactMarkdown } from '@/components/markdown';
+import { capitalize, cn } from '@/lib/utils';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@repo/ui/components/ui/avatar';
+import { CodeBlock } from '@repo/ui/components/ui/codeblock';
+import { IconUser } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Message } from 'ai';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'katex/dist/katex.min.css';
+import { Bot, Send, Sparkle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useState } from 'react';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import { capitalize, cn } from '@/lib/utils';
-import { CodeBlock } from '@/components/ui/codeblock';
-import { MemoizedReactMarkdown } from '@/components/markdown';
-import { IconUser } from '@/components/ui/icons';
-import { ChatMessageActions } from '@/components/chat-message-actions';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import useTranslation from 'next-translate/useTranslation';
-import 'katex/dist/katex.min.css';
-import 'dayjs/locale/vi';
 
 export interface ChatMessageProps {
-  message: Message & { chat_id?: string; created_at?: string };
-  setInput?: (input: string) => void;
+  message: Message & {
+    chat_id?: string;
+    model?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    created_at?: string;
+  };
   embeddedUrl?: string;
   locale?: string;
-  model?: string;
+  anonymize?: boolean;
+  setInput?: (input: string) => void;
 }
 
 export function ChatMessage({
   message,
-  setInput,
   embeddedUrl,
   locale = 'en',
-  model,
+  anonymize,
+  setInput,
   ...props
 }: ChatMessageProps) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
-  const { t } = useTranslation('ai-chat');
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
+  const t = useTranslations('ai_chat');
 
   return (
     <div
@@ -53,39 +62,73 @@ export function ChatMessage({
         <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
-              'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
+              'bg-foreground/10 text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-md border shadow'
             )}
           >
             {message.role === 'user' ? (
               <IconUser className="h-5 w-5" />
             ) : (
-              <Avatar className="h-10 w-10 rounded-md">
-                <AvatarImage src="/media/logos/light.png" alt="Skora" />
+              <Avatar className="h-12 w-12 rounded-md border">
+                <AvatarImage
+                  src="/media/logos/mira-light.png"
+                  className="dark:hidden"
+                  alt="Mira"
+                />
+                <AvatarImage
+                  src="/media/logos/mira-dark.png"
+                  className="hidden dark:block"
+                  alt="Mira"
+                />
                 <AvatarFallback className="rounded-lg font-semibold">
                   AI
                 </AvatarFallback>
               </Avatar>
             )}
           </div>
-          <div>
-            <span className="line-clamp-1 font-semibold">
-              {message.role === 'user' ? (
-                t('you')
-              ) : (
-                <span
-                  className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
-                    isDark
-                      ? 'from-pink-300 via-amber-200 to-blue-300'
-                      : 'from-pink-600 via-purple-500 to-sky-500'
-                  }`}
-                >
-                  Skora
-                </span>
-              )}
+          <div
+            className={`flex flex-col ${
+              message.role === 'user' ? '' : 'h-12 justify-between'
+            }`}
+          >
+            <span className="line-clamp-1 h-fit overflow-hidden text-lg font-bold">
+              {message.role === 'user'
+                ? anonymize
+                  ? t('anonymous')
+                  : t('you')
+                : 'Mira'}
             </span>
 
-            <div className="text-xs font-semibold opacity-70">
-              {capitalize(dayjs(message?.created_at).fromNow())}
+            <div className="flex flex-wrap items-center gap-1 text-xs font-semibold">
+              {message.model && (
+                <span className="border-dynamic-yellow/10 text-dynamic-yellow bg-dynamic-yellow/10 hidden items-center gap-1 rounded border px-1 font-mono md:inline-flex">
+                  <Sparkle className="h-3 w-3" />
+                  {message.model}
+                </span>
+              )}
+              {message.prompt_tokens !== undefined &&
+                message.prompt_tokens !== 0 && (
+                  <span className="border-dynamic-green/10 text-dynamic-green bg-dynamic-green/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                    <Send className="h-3 w-3" />
+                    {Intl.NumberFormat(locale).format(message.prompt_tokens)}
+                  </span>
+                )}
+              {message.completion_tokens !== undefined &&
+                message.completion_tokens !== 0 && (
+                  <span className="border-dynamic-purple/10 text-dynamic-purple bg-dynamic-purple/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                    <Bot className="h-3 w-3" />
+                    {Intl.NumberFormat(locale).format(
+                      message.completion_tokens
+                    )}
+                  </span>
+                )}
+              <span className="opacity-70">
+                {message.model ||
+                message.prompt_tokens ||
+                message.completion_tokens
+                  ? '• '
+                  : ''}
+                {capitalize(dayjs(message?.created_at).fromNow())}
+              </span>
             </div>
           </div>
         </div>
@@ -134,6 +177,174 @@ export function ChatMessage({
               );
             },
             p({ children }) {
+              // Quiz component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                )
+              ) {
+                const quizContent = children.join('');
+                const questionMatch = quizContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const optionsMatches = Array.from(
+                  quizContent.matchAll(
+                    /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
+                  )
+                );
+
+                const options = optionsMatches.map((match) => ({
+                  isCorrect: match[0].includes('isCorrect'),
+                  text: match?.[1]?.trim() || '',
+                }));
+
+                const [selectedOption, setSelectedOption] = useState<{
+                  isCorrect: boolean;
+                  text: string;
+                }>({ isCorrect: false, text: '' });
+                const [revealCorrect, setRevealCorrect] = useState(false);
+
+                const handleOptionClick = (option: {
+                  isCorrect: boolean;
+                  text: string;
+                }) => {
+                  if (revealCorrect) return;
+
+                  setSelectedOption(option);
+                  setRevealCorrect(true);
+                };
+
+                const questionElement = (
+                  <div className="text-foreground text-lg font-bold">
+                    {question}
+                  </div>
+                );
+
+                const optionsElements = options.map((option, index) => (
+                  <button
+                    key={index}
+                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                      revealCorrect && option.isCorrect
+                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        : revealCorrect
+                          ? 'bg-foreground/5 text-foreground opacity-50'
+                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                    }`}
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    {option.text}
+                  </button>
+                ));
+
+                return (
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
+                    {questionElement}
+                    <Separator className="my-2" />
+                    <div
+                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                        options.length === 3
+                          ? 'xl:grid-cols-3'
+                          : 'xl:grid-cols-4'
+                      }`}
+                    >
+                      {optionsElements}
+                    </div>
+                    {revealCorrect && (
+                      <>
+                        <div className="mt-4">
+                          <span className="opacity-70">
+                            {t('correct_answer_is_highlighed')}.{' '}
+                            {t('you_selected')}{' '}
+                          </span>
+                          <span className="font-semibold">
+                            {selectedOption.text}
+                          </span>
+                          <span className="opacity-70">, {t('which_is')} </span>
+                          {selectedOption.isCorrect ? (
+                            <span className="text-dynamic-green font-semibold underline">
+                              {t('correct')}
+                            </span>
+                          ) : (
+                            <span className="text-dynamic-red font-semibold underline">
+                              {t('incorrect')}
+                            </span>
+                          )}
+                          <span className="opacity-70">.</span>
+                        </div>
+
+                        <Separator className="my-4" />
+                        <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm font-semibold">
+                          {t('experimental_disclaimer')}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              // Flashcard component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<FLASHCARD>')
+                )
+              ) {
+                const flashcardContent = children.join('');
+                const questionMatch = flashcardContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const answerMatch = flashcardContent.match(
+                  /<ANSWER>(.*?)<\/ANSWER>/
+                );
+                const answer = answerMatch ? answerMatch[1] : 'No answer found';
+
+                const [revealAnswer, setRevealAnswer] = useState(false);
+
+                return (
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
+                    <div className="text-foreground text-lg font-bold">
+                      {question}
+                    </div>
+                    <Separator className="mb-4 mt-2" />
+                    <button
+                      className={`text-foreground w-full rounded border px-3 py-1 text-center font-semibold transition duration-300 ${
+                        revealAnswer
+                          ? 'cursor-default border-transparent'
+                          : 'bg-foreground/5 hover:bg-foreground/10'
+                      }`}
+                      onClick={() => setRevealAnswer(true)}
+                    >
+                      {revealAnswer ? (
+                        <>
+                          <div className="text-dynamic-yellow">{answer}</div>
+                          <Separator className="my-4" />
+                          <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm">
+                            {t('experimental_disclaimer')}
+                          </div>
+                        </>
+                      ) : (
+                        t('reveal_answer')
+                      )}
+                    </button>
+                  </div>
+                );
+              }
+
               // If the message is a followup, we will render it as a button
               if (
                 Array.isArray(children) &&
@@ -150,7 +361,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left no-underline transition last:mb-0"
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -162,7 +373,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left transition last:mb-0"
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -227,6 +438,13 @@ export function ChatMessage({
                 </code>
               );
             },
+            table({ children }) {
+              return (
+                <table className="w-full table-fixed overflow-x-scroll">
+                  {children}
+                </table>
+              );
+            },
             th({ children }) {
               return <th className="text-foreground">{children}</th>;
             },
@@ -236,6 +454,9 @@ export function ChatMessage({
                   {children}
                 </pre>
               );
+            },
+            hr() {
+              return <hr className="border-border" />;
             },
           }}
         >

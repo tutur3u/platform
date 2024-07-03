@@ -3,12 +3,15 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "pnpm i && turbo run build",
+    "buildx": "pnpm i && turbo test lint build",
     "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
+    "bdevx": "cd apps/web && pnpm bdevx",
     "devx": "cd apps/web && pnpm devx",
+    "bdevrs": "cd apps/web && pnpm bdevrs",
     "devrs": "cd apps/web && pnpm devrs",
     "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -27,19 +30,20 @@
     "ui:diff": "pnpm --filter ui ui:diff"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "eslint-config-custom": "workspace:*",
-    "prettier": "^3.2.5",
-    "prettier-plugin-tailwindcss": "^0.5.13",
-    "tsconfig": "workspace:*",
-    "turbo": "^1.13.2",
-    "typescript": "^5.4.4",
-    "vitest": "^1.4.0"
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "eslint": "8.57.0",
+    "@repo/eslint-config": "workspace:*",
+    "prettier": "^3.3.2",
+    "prettier-plugin-tailwindcss": "^0.6.5",
+    "@repo/typescript-config": "workspace:*",
+    "turbo": "^2.0.6",
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "pnpm@9.4.0",
   "workspaces": {
     "packages": [
       "apps/*",
@@ -47,8 +51,9 @@
     ]
   },
   "trustedDependencies": [
-    "@sentry/cli",
     "@vercel/speed-insights",
-    "next-translate-plugin"
+    "esbuild",
+    "sharp",
+    "supabase"
   ]
 }

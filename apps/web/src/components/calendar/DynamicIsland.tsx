@@ -1,10 +1,10 @@
+import { useCalendar } from '@/hooks/useCalendar';
+import { getCardColor } from '@/utils/color-helper';
 import { PlayIcon, StopIcon } from '@heroicons/react/24/solid';
 import { Divider } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { useCalendar } from '@/hooks/useCalendar';
-import { getCardColor } from '@/utils/color-helper';
 
 const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();
@@ -15,7 +15,7 @@ const DynamicIsland = () => {
   const title =
     events.length >= 1
       ? events.length === 1
-        ? events[0].title || 'Unnamed Event'
+        ? events?.[0]?.title || 'Unnamed Event'
         : `${events.length} events`
       : upcomingEvent
         ? upcomingEvent.title || 'Unnamed Event'
@@ -237,7 +237,7 @@ const DynamicIsland = () => {
             onClick={startTimer}
             className={`aspect-square h-fit justify-self-end rounded-lg border border-opacity-10 p-1 ${getCardColor(
               color
-            )} transition hover:border-opacity-30 `}
+            )} transition hover:border-opacity-30`}
           >
             {startAt ? (
               <StopIcon className="h-6 w-6" />

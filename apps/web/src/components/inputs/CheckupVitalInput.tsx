@@ -1,6 +1,6 @@
+import { Vital } from '@/types/primitives/Vital';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
-import { Vital } from '@/types/primitives/Vital';
 
 interface Props {
   vital: Vital;

@@ -1,8 +1,8 @@
-import { JsonInput, Loader } from '@mantine/core';
-import { AuditLog } from '@/types/primitives/audit-log';
 import { User } from '@/types/primitives/User';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { JsonInput, Loader } from '@mantine/core';
+import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
-import useTranslation from 'next-translate/useTranslation';
 
 interface Props {
   data: AuditLog;
@@ -10,7 +10,8 @@ interface Props {
 }
 
 const AuditSmartContent = ({ data, isExpanded }: Props) => {
-  const { t, lang } = useTranslation('ws-activities');
+  const locale = useLocale();
+  const t = useTranslations('ws-activities');
 
   const userId = data?.record?.user_id || data?.old_record?.user_id || null;
   const userApi = userId ? `/api/users/${userId}` : null;
@@ -487,7 +488,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             <div>
               • {t('set_balance_to')}{' '}
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                {Intl.NumberFormat(lang, {
+                {Intl.NumberFormat(locale, {
                   style: 'currency',
                   currency: 'VND',
                 }).format(data.record.balance)}
@@ -627,14 +628,14 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.old_record.balance)}
                 </span>{' '}
                 {t('to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'VND',
                   }).format(data.record.balance)}
@@ -746,7 +747,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('set_wallet_balance_to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
@@ -808,14 +809,14 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.old_record?.currency || 'USD',
                   }).format(data.old_record.balance)}
                 </span>{' '}
                 {t('to')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                  {Intl.NumberFormat(lang, {
+                  {Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: data?.record?.currency || 'USD',
                   }).format(data.record.balance)}
@@ -917,11 +918,17 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     <div>
                       • {t('change_role_from')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                        {t('ws-members:' + data.old_record.role.toLowerCase())}
+                        {t(
+                          ('ws-members.' +
+                            data.old_record.role.toLowerCase()) as any
+                        )}
                       </span>{' '}
                       {t('to')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                        {t('ws-members:' + data.record.role.toLowerCase())}
+                        {t(
+                          ('ws-members.' +
+                            data.record.role.toLowerCase()) as any
+                        )}
                       </span>
                     </div>
                   )}

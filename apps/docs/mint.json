@@ -31,27 +31,37 @@
     {
       "name": "GitHub Repository",
       "icon": "github",
-      "url": "https://github.com/tutur3u/tutur3u"
+      "url": "https://github.com/tutur3u/platform"
     }
   ],
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "development", "documentation"]
+      "pages": [
+        "introduction",
+        "development",
+        "documenting"
+      ]
     },
     {
       "group": "Features",
-      "pages": ["features/meet-together"]
+      "pages": [
+        "features/meet-together"
+      ]
     },
     {
       "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
+      "pages": [
+        "personalization/themes",
+        "personalization/language"
+      ]
     },
     {
       "group": "Experiments",
       "pages": [
         "experiments/form-builder",
         "experiments/calendar",
+        "experiments/finance",
         "experiments/project-management",
         "experiments/ai-chat"
       ]

@@ -1,41 +1,45 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-
-import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableColumnHeader } from '@/components/ui/custom/tables/data-table-column-header';
-import moment from 'moment';
-import { Translate } from 'next-translate';
-import { Timezone, TimezoneStatus } from '@/types/primitives/Timezone';
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
+import { Timezone, TimezoneStatus } from '@/types/primitives/Timezone';
+import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';
+import moment from 'moment';
 
-export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="translate-y-[2px]"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="translate-y-[2px]"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+export const timezoneColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<Timezone>[] => [
+  // {
+  //   id: 'select',
+  //   header: ({ table }) => (
+  //     <Checkbox
+  //       checked={table.getIsAllPageRowsSelected()}
+  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+  //       aria-label="Select all"
+  //       className="translate-y-[2px]"
+  //     />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <Checkbox
+  //       checked={row.getIsSelected()}
+  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
+  //       aria-label="Select row"
+  //       className="translate-y-[2px]"
+  //     />
+  //   ),
+  //   enableSorting: false,
+  //   enableHiding: false,
+  // },
   {
     accessorKey: 'value',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('value')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.value`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-3 max-w-[12rem] break-words">
@@ -46,7 +50,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'abbr',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('abbr')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.abbr`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -57,7 +65,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'offset',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('offset')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.offset`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -70,7 +82,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'isdst',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('isdst')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.isdst`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[4rem] break-words">
@@ -81,7 +97,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('status')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.status`)}
+      />
     ),
     cell: ({ row }) => {
       const status = row.getValue<TimezoneStatus>('status');
@@ -106,7 +126,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'text',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('text')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.text`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-3 max-w-[12rem] break-words">
@@ -117,7 +141,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'utc',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('utc')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.utc`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 flex max-w-[8rem] items-center gap-1 break-words">
@@ -131,7 +159,11 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[8rem] break-words">
@@ -143,7 +175,7 @@ export const timezoneColumns = (t: Translate): ColumnDef<Timezone>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <TimezoneRowActions row={row} />,
   },
 ];

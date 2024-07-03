@@ -203,12 +203,6 @@ VALUES (
         NULL,
         'f'
     );
--- Populate workspace presets
-insert into public.workspace_presets (name)
-values ('ALL'),
-    ('GENERAL'),
-    ('PHARMACY'),
-    ('EDUCATION');
 -- Populate handles
 insert into public.handles (value)
 values ('local'),
@@ -254,36 +248,31 @@ update public.users
 set display_name = 'User 4'
 where id = '00000000-0000-0000-0000-000000000005';
 -- Populate workspaces
-insert into public.workspaces (id, name, handle, preset)
+insert into public.workspaces (id, name, handle)
 values (
         '00000000-0000-0000-0000-000000000000',
         'Tuturuuu',
-        'tuturuuu',
-        'ALL'
+        'tuturuuu'
     ),
     (
         '00000000-0000-0000-0000-000000000001',
         'Prototype All',
-        'prototype-all',
-        'ALL'
+        'prototype-all'
     ),
     (
         '00000000-0000-0000-0000-000000000002',
         'Prototype General',
-        'prototype-general',
-        'GENERAL'
+        'prototype-general'
     ),
     (
         '00000000-0000-0000-0000-000000000003',
         'Prototype Pharmacy',
-        'prototype-pharmacy',
-        'PHARMACY'
+        'prototype-pharmacy'
     ),
     (
         '00000000-0000-0000-0000-000000000004',
         'Prototype School',
-        'prototype-school',
-        'EDUCATION'
+        'prototype-school'
     );
 -- Populate workspace_secrets
 insert into public.workspace_secrets (ws_id, name, value)
@@ -294,7 +283,22 @@ values (
     ),
     (
         '00000000-0000-0000-0000-000000000000',
+        'ENABLE_AI',
+        'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
         'ENABLE_CALENDAR',
+        'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_DOCS',
+        'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_DRIVE',
         'true'
     ),
     (

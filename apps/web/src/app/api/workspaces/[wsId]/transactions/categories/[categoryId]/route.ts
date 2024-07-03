@@ -1,8 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -11,7 +8,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { categoryId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('transaction_categories')
@@ -34,7 +31,7 @@ export async function PUT(
   req: Request,
   { params: { categoryId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const data = await req.json();
 
   const { error } = await supabase
@@ -57,7 +54,7 @@ export async function DELETE(
   _: Request,
   { params: { categoryId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('transaction_categories')

@@ -1,4 +1,7 @@
-import { Input } from '@/components/ui/input';
+import { Timezone } from '@/types/primitives/Timezone';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -6,15 +9,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-
-import { zodResolver } from '@hookform/resolvers/zod';
+} from '@repo/ui/components/ui/form';
+import { Input } from '@repo/ui/components/ui/input';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import useTranslation from 'next-translate/useTranslation';
-import { Timezone } from '@/types/primitives/Timezone';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface Props {
   data: Timezone;
@@ -34,7 +32,7 @@ const FormSchema = z.object({
 export const ApiConfigFormSchema = FormSchema;
 
 export default function TimezoneForm({ data, submitLabel, onSubmit }: Props) {
-  const { t } = useTranslation('ws-secrets');
+  const t = (key: string) => key;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

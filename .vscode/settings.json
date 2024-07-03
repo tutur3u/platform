@@ -5,7 +5,28 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "typescript.tsdk": "node_modules\\typescript\\lib",
-
-  "vitest.enable": true,
-  "vitest.commandLine": "pnpm exec vitest"
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.exclude": {
+    // "**/node_modules": true,
+    // "**/.turbo": true
+  },
+  "workbench.editor.customLabels.patterns": {
+    "**/app/**/page.tsx": "${dirname} - Page",
+    "**/app/**/layout.tsx": "${dirname} - Layout",
+    "**/app/**/route.ts": "${dirname} - API Route",
+    "**/components/**/index.tsx": "${dirname} - Component"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "i18n-ally.enabledFrameworks": [
+    "next-intl"
+  ],
+  "i18n-ally.localesPaths": [
+    "apps/web/messages",
+  ],
+  "i18n-ally.keystyle": "nested",
+  "codeQL.githubDatabase.update": "never"
 }

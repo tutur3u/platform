@@ -1,0 +1,28 @@
+name: Supabase CI
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Migrate staging database
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+
+      - name: Deploy migrations to staging
+        run: |
+          cd apps/web
+          supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
+          supabase db push

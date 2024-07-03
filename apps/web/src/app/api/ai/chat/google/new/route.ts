@@ -1,27 +1,38 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import {
+  GoogleGenerativeAI,
+  HarmBlockThreshold,
+  HarmCategory,
+} from '@google/generative-ai';
 import { Message } from 'ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
+export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-export const dynamic = 'force-dynamic';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
+const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 export async function POST(req: Request) {
   try {
-    const { message, previewToken } = await req.json();
+    const {
+      model = DEFAULT_MODEL_NAME,
+      message,
+      previewToken,
+    } = (await req.json()) as {
+      model?: string;
+      message?: string;
+      previewToken?: string;
+    };
 
     if (!message)
       return NextResponse.json('No message provided', { status: 400 });
 
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({
-      cookies: () => cookieStore,
-    });
+    const supabase = createClient();
 
     const {
       data: { user },
@@ -29,7 +40,7 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    const apiKey = previewToken || process.env.GOOGLE_API_KEY;
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const prompt = buildPrompt([
@@ -40,14 +51,11 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const model = 'gemini-1.0-pro-latest';
-
     const geminiRes = await genAI
-      .getGenerativeModel({ model })
+      .getGenerativeModel({ model, generationConfig, safetySettings })
       .generateContent(prompt);
 
-    const title = geminiRes.response.candidates?.[0].content.parts[0].text;
-    console.log({ title });
+    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
 
     if (!title) {
       return NextResponse.json(
@@ -70,7 +78,7 @@ export async function POST(req: Request) {
     const { data: id, error } = await supabase.rpc('create_ai_chat', {
       title,
       message,
-      model: 'GOOGLE-GEMINI-PRO',
+      model: model.toLowerCase(),
     });
 
     if (error) return NextResponse.json(error.message, { status: 500 });
@@ -85,24 +93,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-const leadingMessages: Message[] = [
-  {
-    id: 'initial-message',
-    role: 'assistant',
-    content:
-      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
-  },
-];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'final-message',
-    role: 'assistant',
-    content:
-      'Thank you, I will respond with a title in my next response, and it will only contain the title without any quotation marks, and nothing else.',
-  },
-];
 
 const normalize = (message: Message) => {
   const { content, role } = message;
@@ -121,3 +111,49 @@ function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
+
+const generationConfig = undefined;
+
+// const generationConfig = {
+//   temperature: 0.9,
+//   topK: 1,
+//   topP: 1,
+//   maxOutputTokens: 2048,
+// };
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+];
+
+const leadingMessages: Message[] = [
+  {
+    id: 'initial-message',
+    role: 'assistant',
+    content:
+      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+  },
+];
+
+const trailingMessages: Message[] = [
+  {
+    id: 'final-message',
+    role: 'assistant',
+    content:
+      'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
+  },
+];

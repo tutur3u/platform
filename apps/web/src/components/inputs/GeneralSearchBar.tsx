@@ -1,11 +1,9 @@
 'use client';
 
-import useTranslation from 'next-translate/useTranslation';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { debounce } from 'lodash';
-import { cn } from '@/lib/utils';
-import useQuery from '@/hooks/useQuery';
+import useSearchParams from '@/hooks/useSearchParams';
+import SearchBar from '@repo/ui/components/ui/custom/search-bar';
+import { cn } from '@repo/ui/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   resetPage?: boolean;
@@ -13,27 +11,18 @@ interface Props {
 }
 
 const GeneralSearchBar = ({ resetPage = true, className }: Props) => {
-  const query = useQuery();
-
-  const updateQuery = debounce((q: string) => {
-    query.set({ q, page: resetPage ? '1' : undefined });
-  }, 300);
-
-  const { t } = useTranslation('search');
-
-  const searchLabel = t('search');
-  const searchPlaceholder = t('search-placeholder');
+  const t = useTranslations();
+  const searchParams = useSearchParams();
 
   return (
-    <div className={cn('grid w-full items-center gap-1.5', className)}>
-      <Label>{searchLabel}</Label>
-      <Input
-        placeholder={searchPlaceholder}
-        defaultValue={query.get('q') || ''}
-        onChange={(e) => updateQuery(e.target.value)}
-        className="placeholder:text-foreground/60"
-      />
-    </div>
+    <SearchBar
+    t={t}
+      className={cn('w-full', className)}
+      defaultValue=""
+      onSearch={(q: string) =>
+        searchParams.set({ q, page: resetPage ? '1' : undefined })
+      }
+    />
   );
 };
 

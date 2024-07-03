@@ -1,11 +1,11 @@
-import moment from 'moment';
-import { getLabel } from '@/utils/audit-helper';
-import { AuditLog } from '@/types/primitives/audit-log';
 import { User } from '@/types/primitives/User';
-import useTranslation from 'next-translate/useTranslation';
-import useSWR from 'swr';
-import 'moment/locale/vi';
 import { Workspace } from '@/types/primitives/Workspace';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { getLabel } from '@/utils/audit-helper';
+import moment from 'moment';
+import 'moment/locale/vi';
+import { useLocale, useTranslations } from 'next-intl';
+import useSWR from 'swr';
 
 interface Props {
   data: AuditLog;
@@ -15,7 +15,10 @@ interface Props {
 }
 
 const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
-  const { t, lang } = useTranslation('ws-activities');
+  const locale = useLocale();
+
+  const commonT = useTranslations('common');
+  const t = useTranslations('ws-activities');
 
   const wsId = data?.ws_id;
   const wsApiPath = wsId ? `/api/workspaces/${wsId}` : null;
@@ -23,11 +26,11 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
   const { data: workspace } = useSWR<Workspace>(wsApiPath);
 
   const label = getLabel(t, data);
-  const unnamedWorkspace = t('common:unnamed-workspace');
+  const unnamedWorkspace = commonT('unnamed-workspace');
 
-  const fullLabel = isLoading ? t('common:loading') : label.trim();
+  const fullLabel = isLoading ? commonT('loading') : label.trim();
 
-  const localizedMoment = moment(data.ts).locale(lang);
+  const localizedMoment = moment(data.ts).locale(locale);
   const relativeTime = localizedMoment.fromNow();
 
   return (

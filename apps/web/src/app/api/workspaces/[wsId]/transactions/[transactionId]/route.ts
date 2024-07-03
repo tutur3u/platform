@@ -1,9 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { Transaction } from '@/types/primitives/Transaction';
-
-export const dynamic = 'force-dynamic';
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
@@ -15,7 +12,7 @@ export async function GET(
   _: Request,
   { params: { transactionId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('wallet_transactions')
@@ -38,7 +35,7 @@ export async function PUT(
   req: Request,
   { params: { transactionId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data: Transaction & {
     origin_wallet_id?: string;
@@ -73,7 +70,7 @@ export async function DELETE(
   _: Request,
   { params: { transactionId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('wallet_transactions')

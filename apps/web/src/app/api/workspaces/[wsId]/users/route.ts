@@ -1,8 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -11,7 +8,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_users')
@@ -28,7 +25,7 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
 }
 
 export async function POST(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data = await req.json();
 
@@ -40,23 +37,6 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
   if (error)
     return NextResponse.json(
       { message: 'Error creating workspace users' },
-      { status: 500 }
-    );
-
-  return NextResponse.json({ message: 'success' });
-}
-
-export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
-
-  const { error } = await supabase
-    .from('workspace_users')
-    .delete()
-    .eq('ws_id', id);
-
-  if (error)
-    return NextResponse.json(
-      { message: 'Error deleting workspace users' },
       { status: 500 }
     );
 

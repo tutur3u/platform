@@ -1,7 +1,7 @@
+import { Team } from '@/types/primitives/Team';
 import { Button, Divider, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import { useState } from 'react';
-import { Team } from '@/types/primitives/Team';
 
 interface Props {
   team: Team;
