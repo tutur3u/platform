@@ -69,8 +69,8 @@ importers:
         specifier: ^0.24.3
         version: 0.24.3
       '@deepgram/sdk':
-        specifier: ^3.4.0
-        version: 3.4.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: ^3.4.1
+        version: 3.4.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@emotion/react':
         specifier: ^11.11.4
         version: 11.11.4(@types/react@18.3.3)(react@19.0.0-rc-6230622a1a-20240610)
@@ -910,8 +910,8 @@ packages:
     resolution: {integrity: sha512-8B1C/oTxTxyHlSFubAhNRgCbQ2SQ5wwvtlByn8sDYZvdDtdn/VE2yEPZ4BvUnrKWmsbTQY6/ooLV+9Ka2qmDSQ==}
     engines: {node: '>=18.0.0'}
 
-  '@deepgram/sdk@3.4.0':
-    resolution: {integrity: sha512-MIlAwLBNIJykrybYkpqpmGBga53tQ8xfwB5P+vgzWhLwpz3Xvht/EoklopjRRnZEeczf2DIaEahD0DIGIpt78Q==}
+  '@deepgram/sdk@3.4.1':
+    resolution: {integrity: sha512-UL1oOEdaLzpSvmiiZYajhBF4CXPiBSsgSMLNzbmf2ZqyF4VM42fLckRsmUmCsrCcs9N+ewEf/7PIco/h+eLqDg==}
     engines: {node: '>=18.0.0'}
 
   '@discoveryjs/json-ext@0.5.7':
@@ -7668,7 +7668,7 @@ snapshots:
     dependencies:
       dayjs: 1.11.11
 
-  '@deepgram/sdk@3.4.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@deepgram/sdk@3.4.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@deepgram/captions': 1.2.0
       cross-fetch: 3.1.8
