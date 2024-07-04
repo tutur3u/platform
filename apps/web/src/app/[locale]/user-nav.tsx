@@ -7,7 +7,6 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import UserPresenceIndicator from './user-presence-indicator';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspaces } from '@/lib/workspace-helper';
 import { getInitials } from '@/utils/name-helper';
 import {
   Avatar,
@@ -28,14 +27,14 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Globe, Palette, Settings, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 export async function UserNav() {
-  const t = useTranslations();
+  const t = await getTranslations();
 
-  const user = await getCurrentUser(true);
-  const workspaces = await getWorkspaces(true);
+  const user = await getCurrentUser();
 
   return (
     <DropdownMenu modal={false}>
@@ -69,7 +68,9 @@ export async function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DashboardMenuItem defaultWorkspaceId={workspaces?.[0]?.id} />
+        <Suspense fallback={null}>
+          <DashboardMenuItem />
+        </Suspense>
         <MeetTogetherMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

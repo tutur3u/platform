@@ -1,7 +1,7 @@
 import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
-import Navlinks from './navlinks';
+import ServerMenu from './server-menu';
 import WorkspaceSelect from './workspace-select';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -33,7 +33,9 @@ export default function Navbar() {
             </Suspense>
           </div>
 
-          <Navlinks />
+          <Suspense>
+            <ServerMenu />
+          </Suspense>
 
           <Suspense
             fallback={

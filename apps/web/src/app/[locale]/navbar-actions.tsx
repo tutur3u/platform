@@ -12,7 +12,7 @@ export default async function NavbarActions() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="hidden items-center gap-2 md:flex">
       {sbUser ? (
         <>
           <NotificationPopover />
