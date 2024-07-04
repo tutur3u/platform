@@ -21,5 +21,15 @@ export interface WorkspaceUser {
     display_name: string;
   }[];
   href?: string;
+  attendance?: WorkspaceUserAttendance[];
   created_at?: string;
+}
+
+export interface WorkspaceUserAttendance {
+  date: string;
+  status: string;
+  groups?: {
+    id: string;
+    name: string;
+  }[];
 }

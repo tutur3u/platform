@@ -1,3 +1,7 @@
+import TaskEditForm from '../../forms/TaskEditForm';
+import { Task } from '@/types/primitives/Task';
+import { User } from '@/types/primitives/User';
+import { getInitials } from '@/utils/name-helper';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Avatar,
@@ -9,13 +13,7 @@ import {
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
 import moment from 'moment';
-import React from 'react';
-import { Task } from '@/types/primitives/Task';
-import { User } from '@/types/primitives/User';
-import { getInitials } from '@/utils/name-helper';
-import TaskEditForm from '../../forms/TaskEditForm';
 import useSWR from 'swr';
-import { useUser } from '@/hooks/useUser';
 
 export interface TaskWrapperProps {
   task: Task;
@@ -36,7 +34,7 @@ const TaskWrapper = ({
     task?.id ? `/api/tasks/${task.id}/assignees` : null
   );
 
-  const { user } = useUser();
+  const user = { id: 'TO-BE-REFACTORED' };
 
   const isMyTask = assignees?.some((assignee) => assignee.id === user?.id);
 

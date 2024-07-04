@@ -1,6 +1,6 @@
 import { User } from '@/types/primitives/User';
+import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
-import { Separator } from '../ui/separator';
 import Link from 'next/link';
 
 interface Props {

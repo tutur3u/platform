@@ -1,18 +1,24 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { match } from '@formatjs/intl-localematcher';
-import Negotiator from 'negotiator';
-import type { User } from '@supabase/auth-helpers-nextjs';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import i18n from '../i18n.json';
+import { Locales, defaultLocale, locales } from './config';
 import { LOCALE_COOKIE_NAME } from './constants/common';
-import type { Database } from '@/types/supabase';
+import { updateSession } from './utils/supabase/middleware';
+import { match } from '@formatjs/intl-localematcher';
+import { User } from '@supabase/supabase-js';
+import Negotiator from 'negotiator';
+import createIntlMiddleware from 'next-intl/middleware';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  const { res, user } = await handleSupabaseAuth({ req });
-  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
+  // Make sure user session is always refreshed
+  const { res, user } = await updateSession(req);
 
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) return res;
+
+  // Handle special cases for public paths
+  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
   if (redirect) return nextRes;
+
   return handleLocale({ req, res: nextRes });
 }
 
@@ -20,48 +26,42 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - media (media files)
      * - favicon.ico (favicon file)
-     * - favicon-16x16.png (favicon file)
-     * - favicon-32x32.png (favicon file)
-     * - apple-touch-icon.png (favicon file)
-     * - android-chrome-192x192.png (favicon file)
-     * - android-chrome-512x512.png (favicon file)
      * - robots.txt (SEO)
      * - sitemap.xml (SEO)
      * - site.webmanifest (SEO)
      * - monitoring (analytics)
+     * Excludes files with the following extensions for static assets:
+     * - svg
+     * - png
+     * - jpg
+     * - jpeg
+     * - gif
+     * - webp
      */
 
-    '/((?!api|_next/static|_next/image|media|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|robots.txt|sitemap.xml|site.webmanifest|monitoring).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
 
-const handleSupabaseAuth = async ({
-  req,
-}: {
-  req: NextRequest;
-}): Promise<{
-  res: NextResponse;
-  user: User | null;
-}> => {
-  // Create a NextResponse object to handle the response
-  const res = NextResponse.next();
+const PUBLIC_PATHS = [
+  '/terms',
+  '/privacy',
+  '/branding',
+  '/ai/chats',
+  '/calendar/meet-together',
+].reduce((acc: string[], path) => {
+  // Add the original path
+  acc.push(path);
 
-  // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient<Database>({ req, res });
+  // Add localized paths
+  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+  acc.push(...localizedPaths);
 
-  // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/server-side/nextjs
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { res, user };
-};
+  return acc;
+}, []);
 
 const handleRedirect = ({
   req,
@@ -85,18 +85,15 @@ const handleRedirect = ({
   }
 
   // If current path ends with /onboarding and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/onboarding') && !user) {
+  if (
+    req.nextUrl.pathname !== '/' &&
+    !req.nextUrl.pathname.endsWith('/login') &&
+    !PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path)) &&
+    !user
+  ) {
     const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/onboarding', '/login')
-    );
-
-    return { res: nextRes, redirect: true };
-  }
-
-  // If current path ends with /realtime and user is not logged in, redirect to login page
-  if (req.nextUrl.pathname.endsWith('/realtime') && !user) {
-    const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/realtime', '/login')
+      req.nextUrl.href.replace(req.nextUrl.pathname, '/login') +
+        `?nextUrl=${req.nextUrl.pathname}`
     );
 
     return { res: nextRes, redirect: true };
@@ -105,18 +102,14 @@ const handleRedirect = ({
   return { res, redirect: false };
 };
 
-const getSupportedLocale = (locale: string): string | null => {
-  const configs = i18n as {
-    locales: string[];
-  };
-
-  return configs.locales.includes(locale) ? locale : null;
+const getSupportedLocale = (locale: string): Locales | null => {
+  return locales.includes(locale as any) ? (locale as Locales) : null;
 };
 
 const getExistingLocale = (
   req: NextRequest
 ): {
-  locale: string | null;
+  locale: Locales | null;
   cookie: string | null;
   pathname: string | null;
 } => {
@@ -128,8 +121,10 @@ const getExistingLocale = (
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
   const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
 
+  const locale = localeFromPathname || localeFromCookie;
+
   return {
-    locale: localeFromPathname || localeFromCookie,
+    locale,
     cookie: localeFromCookie,
     pathname: localeFromPathname,
   };
@@ -138,20 +133,21 @@ const getExistingLocale = (
 const getDefaultLocale = (
   req: NextRequest
 ): {
-  locale: string;
+  locale: Locales;
 } => {
   // Get browser languages
   const headers = {
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
-  const configs = i18n as {
-    locales: string[];
-    defaultLocale: string;
-  };
-
   const languages = new Negotiator({ headers }).languages();
-  return { locale: match(languages, configs.locales, configs.defaultLocale) };
+  const detectedLocale = match(languages, locales, defaultLocale);
+
+  return {
+    locale: locales.includes(detectedLocale as any)
+      ? (detectedLocale as Locales)
+      : defaultLocale,
+  };
 };
 
 const getLocale = (
@@ -196,13 +192,18 @@ const handleLocale = ({
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
 
-  // Update locale in search params to load correct translations
-  req.nextUrl.searchParams.set('lang', locale);
-
   // Construct nextUrl with locale and redirect
   req.nextUrl.pathname = !pathname
     ? `/${locale}${req.nextUrl.pathname}`
     : req.nextUrl.pathname.replace(pathname, locale);
 
-  return NextResponse.rewrite(req.nextUrl, res);
+  NextResponse.rewrite(req.nextUrl, res);
+
+  const nextIntlMiddleware = createIntlMiddleware({
+    locales,
+    defaultLocale: locale as Locales,
+    localeDetection: false,
+  });
+
+  return nextIntlMiddleware(req);
 };

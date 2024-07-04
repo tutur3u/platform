@@ -1,5 +1,4 @@
 import moment from 'moment';
-import type { Translate } from 'next-translate';
 
 export type DateRangeOption = 'present' | 'past' | 'future';
 export type DateRangeUnit =
@@ -108,24 +107,24 @@ export const getDateRange = (
 };
 
 export const getDateRangeUnits = (
-  t: Translate
+  t: any
 ): {
   label: string;
   value: DateRangeUnit;
 }[] => {
   return [
-    { label: t('date-helper:day'), value: 'day' },
-    { label: t('date-helper:week'), value: 'week' },
-    { label: t('date-helper:month'), value: 'month' },
-    { label: t('date-helper:year'), value: 'year' },
-    { label: t('date-helper:all'), value: 'all' },
-    { label: t('date-helper:custom'), value: 'custom' },
+    { label: t('date_helper.day'), value: 'day' },
+    { label: t('date_helper.week'), value: 'week' },
+    { label: t('date_helper.month'), value: 'month' },
+    { label: t('date_helper.year'), value: 'year' },
+    { label: t('date_helper.all'), value: 'all' },
+    { label: t('date_helper.custom'), value: 'custom' },
   ];
 };
 
 export const getDateRangeOptions = (
   unit: DateRangeUnit,
-  t: Translate
+  t: any
 ): {
   label: string;
   value: DateRangeOption;
@@ -133,34 +132,34 @@ export const getDateRangeOptions = (
   switch (unit) {
     case 'day':
       return [
-        { label: t('date-helper:today'), value: 'present' },
-        { label: t('date-helper:yesterday'), value: 'past' },
-        { label: t('date-helper:tomorrow'), value: 'future' },
+        { label: t('date_helper.today'), value: 'present' },
+        { label: t('date_helper.yesterday'), value: 'past' },
+        { label: t('date_helper.tomorrow'), value: 'future' },
       ];
 
     case 'week':
       return [
-        { label: t('date-helper:this-week'), value: 'present' },
-        { label: t('date-helper:last-week'), value: 'past' },
-        { label: t('date-helper:next-week'), value: 'future' },
+        { label: t('date_helper.this-week'), value: 'present' },
+        { label: t('date_helper.last-week'), value: 'past' },
+        { label: t('date_helper.next-week'), value: 'future' },
       ];
 
     case 'month':
       return [
-        { label: t('date-helper:this-month'), value: 'present' },
-        { label: t('date-helper:last-month'), value: 'past' },
-        { label: t('date-helper:next-month'), value: 'future' },
+        { label: t('date_helper.this-month'), value: 'present' },
+        { label: t('date_helper.last-month'), value: 'past' },
+        { label: t('date_helper.next-month'), value: 'future' },
       ];
 
     case 'year':
       return [
-        { label: t('date-helper:this-year'), value: 'present' },
-        { label: t('date-helper:last-year'), value: 'past' },
-        { label: t('date-helper:next-year'), value: 'future' },
+        { label: t('date_helper.this-year'), value: 'present' },
+        { label: t('date_helper.last-year'), value: 'past' },
+        { label: t('date_helper.next-year'), value: 'future' },
       ];
 
     case 'all':
-      return [{ label: t('date-helper:all'), value: 'present' }];
+      return [{ label: t('date_helper.all'), value: 'present' }];
 
     default:
       return [];
@@ -179,8 +178,8 @@ export function timetzToTime(timetz: string) {
   const [hourStr, minuteStr] = time.split(':');
 
   // Parse the hour, minute, and offset as integers
-  const hour = parseInt(hourStr, 10);
-  const minute = parseInt(minuteStr, 10);
+  const hour = parseInt(hourStr ?? '0', 10);
+  const minute = parseInt(minuteStr ?? '0', 10);
   const offset = parseInt(offsetStr, 10);
 
   // Get the current date and time
@@ -207,7 +206,7 @@ export function timetzToTime(timetz: string) {
 export function timetzToHour(timetz?: string) {
   if (!timetz) return undefined;
   const [hourStr] = timetzToTime(timetz).split(':');
-  return parseInt(hourStr);
+  return parseInt(hourStr ?? '0');
 }
 
 export function compareTimetz(timetz1: string, timetz2: string) {

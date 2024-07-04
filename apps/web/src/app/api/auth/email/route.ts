@@ -1,11 +1,8 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic';
 
 export async function PATCH(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const {
     data: { user },

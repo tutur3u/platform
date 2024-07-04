@@ -1,7 +1,0 @@
-{
-  "id": "ID",
-  "name": "Name",
-  "amount": "Transactions",
-  "is_expense": "Is expense",
-  "created_at": "Created at"
-}

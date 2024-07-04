@@ -1,16 +1,16 @@
 'use client';
 
-import { CalendarProvider } from '@/hooks/useCalendar';
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
 import DynamicIsland from './DynamicIsland';
 import WeekdayBar from './WeekdayBar';
+import { CalendarProvider } from '@/hooks/useCalendar';
 import { Workspace } from '@/types/primitives/Workspace';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
 
 const Calendar = ({ workspace }: { workspace: Workspace }) => {
-  const { t } = useTranslation('calendar');
+  const t = useTranslations('calendar');
 
   const [initialized, setInitialized] = useState(false);
 

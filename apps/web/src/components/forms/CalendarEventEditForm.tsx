@@ -1,15 +1,15 @@
+import ColorPallete from '../../../../web/src/components/color/ColorPallete';
+import { useCalendar } from '@/hooks/useCalendar';
+import { SupportedColor } from '@/types/primitives/SupportedColors';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
-import { useEffect, useState } from 'react';
-import { useCalendar } from '@/hooks/useCalendar';
-import ColorPallete from '../../../../web/src/components/color/ColorPallete';
-import moment from 'moment';
-import { SupportedColor } from '@/types/primitives/SupportedColors';
-import useTranslation from 'next-translate/useTranslation';
-import { useRouter } from 'next/router';
-import useSWR from 'swr';
 import 'dayjs/locale/vi';
+import moment from 'moment';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 interface CalendarEventEditFormProps {
   id: string;
@@ -150,7 +150,8 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
     return colors[eventColor];
   };
 
-  const { t, lang } = useTranslation('calendar-event-configs');
+  const locale = useLocale();
+  const t = (key: string) => key;
 
   const countApiPath =
     wsId && event
@@ -224,7 +225,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             setStartDate(date);
           }}
           clearable={false}
-          locale={lang}
+          locale={locale}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
           placeholder={'Date & time'}
@@ -254,7 +255,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             setEndDate(date);
           }}
           clearable={false}
-          locale={lang}
+          locale={locale}
           variant="filled"
           valueFormat="DD/MM/YYYY, HH:mm"
           placeholder={'Date & time'}

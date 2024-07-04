@@ -1,10 +1,7 @@
-import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
@@ -13,7 +10,7 @@ export async function POST(request: Request) {
   const validatedEmail = await validateEmail(email);
 
   const userExists = await checkIfUserExists({ email: validatedEmail });
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   if (userExists) {
     const { error } = await supabase.auth.signInWithOtp({
@@ -65,7 +62,6 @@ const validateEmail = async (email?: string | null) => {
 
 const checkIfUserExists = async ({ email }: { email: string }) => {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) throw 'Could not create admin client';
 
   const { data, error } = await sbAdmin
     .from('user_private_details')

@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClient } from '@/utils/supabase/server';
 import crypto from 'crypto';
-
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
@@ -27,14 +25,6 @@ export async function POST(
   }
 
   const sbAdmin = createAdminClient();
-
-  // if we can't initialize the admin client
-  if (!sbAdmin) {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
 
   const { name, password } = await req.json();
 

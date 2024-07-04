@@ -1,0 +1,14 @@
+name: Test code coverage
+on:
+  push:
+    branches: ['main', 'staging', 'production']
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: codecov/codecov-action@v4
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

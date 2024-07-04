@@ -1,8 +1,8 @@
-import { TrashIcon } from '@heroicons/react/24/solid';
-import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { Vital } from '@/types/primitives/Vital';
-import useSWR from 'swr';
+import { VitalGroup } from '@/types/primitives/VitalGroup';
+import { TrashIcon } from '@heroicons/react/24/solid';
 import { useEffect } from 'react';
+import useSWR from 'swr';
 
 interface Props {
   index: number;

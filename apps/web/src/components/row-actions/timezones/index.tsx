@@ -1,22 +1,21 @@
 'use client';
 
+import TimezoneEditDialog from './edit-dialog';
+import { Timezone } from '@/types/primitives/Timezone';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
-
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { toast } from '../../ui/use-toast';
+} from '@repo/ui/components/ui/dropdown-menu';
+import { toast } from '@repo/ui/hooks/use-toast';
+import { Row } from '@tanstack/react-table';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import useTranslation from 'next-translate/useTranslation';
-import { Timezone } from '@/types/primitives/Timezone';
-import TimezoneEditDialog from './edit-dialog';
 
 interface TimezoneRowActionsProps {
   row: Row<Timezone>;
@@ -24,7 +23,7 @@ interface TimezoneRowActionsProps {
 
 export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   const router = useRouter();
-  const { t } = useTranslation('timezones');
+  const t = useTranslations();
 
   const timezone = row.original;
 
@@ -94,14 +93,14 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
           {timezone?.id != null && (
             <>
               <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                Edit
+                {t('common.edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={deleteTimezone}
                 disabled={!timezone?.id}
               >
-                Delete
+                {t('common.delete')}
               </DropdownMenuItem>
             </>
           )}
@@ -111,7 +110,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
         data={timezone}
         open={showEditDialog}
         setOpen={setShowEditDialog}
-        submitLabel={t('edit_timezone')}
+        submitLabel={'edit_timezone'}
       />
     </>
   );

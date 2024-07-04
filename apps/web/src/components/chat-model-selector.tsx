@@ -1,44 +1,47 @@
-import { Check, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Model, models, providers } from '@/data/models';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@/components/ui/command';
+  CommandList,
+} from '@repo/ui/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@repo/ui/components/ui/popover';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { cn } from '@repo/ui/lib/utils';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
-import { ScrollArea } from './ui/scroll-area';
-import { Model, models, providers } from '@/data/models';
-import { Separator } from './ui/separator';
 
 export function ChatModelSelector({
+  open,
   model,
-  onChange,
   className,
+  setOpen,
+  onChange,
 }: {
-  model: Model;
-  onChange: (value: Model) => void;
+  open: boolean;
+  model?: Model;
   className?: string;
+  setOpen: (open: boolean) => void;
+  onChange: (value: Model) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [previewModel, setPreviewModel] = useState<Model>(model);
+  const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
 
-  const currentModel = models.find((m) => m.value === model.value);
+  const currentModel = model
+    ? models.find((m) => m.value === model.value)
+    : undefined;
 
   return (
     <Popover
       open={open}
       onOpenChange={(o) => {
         if (!o) setPreviewModel(model);
-        setOpen(o);
       }}
     >
       <PopoverTrigger asChild>
@@ -46,21 +49,25 @@ export function ChatModelSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={`flex w-full ${className}`}
+          className={cn('flex w-full', className)}
+          disabled={open}
         >
           <div className="line-clamp-1 text-start">
             {model
               ? `${currentModel?.provider.toLowerCase()}/${currentModel?.label}`
               : 'Select model'}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="grid w-80 p-0 md:w-[48rem] md:grid-cols-2 xl:w-[64rem]">
+      <PopoverContent
+        className="flex w-[calc(100vw-2rem)] flex-col-reverse rounded-b-none p-0 md:grid md:w-[48rem] md:grid-cols-2 xl:w-[64rem]"
+        sideOffset={8}
+        onInteractOutside={() => setOpen(false)}
+      >
         <Command className="rounded-b-none border-b md:rounded-r-none md:border-b-0 md:border-r">
           <CommandInput placeholder="Search model..." />
-          <ScrollArea className="h-48 md:h-64">
-            <CommandEmpty>No model found.</CommandEmpty>
+          <CommandEmpty>No model found.</CommandEmpty>
+          <CommandList>
             {providers.map((provider) => (
               <CommandGroup key={provider} heading={provider}>
                 {models
@@ -70,19 +77,21 @@ export function ChatModelSelector({
                       key={m.value}
                       value={m.value}
                       onSelect={(currentValue) => {
+                        if (currentValue === model?.value) return;
+                        if (m.disabled) return;
+
                         onChange(
                           models.find((m) => m.value === currentValue) as Model
                         );
-
-                        setOpen(false);
                       }}
+                      onClick={() => setPreviewModel(m)}
                       onMouseOver={() => setPreviewModel(m)}
-                      disabled={m.disabled}
+                      className={cn(m.disabled && 'cursor-default opacity-50')}
                     >
                       <Check
                         className={cn(
                           'mr-2 h-4 w-4',
-                          model.value === m.value ? 'opacity-100' : 'opacity-0'
+                          model?.value === m.value ? 'opacity-100' : 'opacity-0'
                         )}
                       />
                       <div className="bg-foreground text-background rounded-full px-2 py-0.5">
@@ -92,7 +101,7 @@ export function ChatModelSelector({
                   ))}
               </CommandGroup>
             ))}
-          </ScrollArea>
+          </CommandList>
         </Command>
 
         <div>
@@ -101,7 +110,9 @@ export function ChatModelSelector({
               {previewModel?.provider}{' '}
             </div>
             <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
-            <div className="line-clamp-1 text-xs">{previewModel?.label}</div>
+            <div className="line-clamp-1 font-mono text-xs">
+              {previewModel?.label}
+            </div>
           </div>
           <Separator className="my-2" />
           <div className="p-2 pt-0">

@@ -1,18 +1,17 @@
 'use client';
 
-import useSWR, { mutate } from 'swr';
-
+import { Team } from '@/types/primitives/Team';
+import { Workspace } from '@/types/primitives/Workspace';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/router';
 import {
+  ReactNode,
   createContext,
   useContext,
-  ReactNode,
-  useState,
   useEffect,
+  useState,
 } from 'react';
-import { Workspace } from '@/types/primitives/Workspace';
-import { useUser } from '@supabase/auth-helpers-react';
-import { useRouter } from 'next/router';
-import { Team } from '@/types/primitives/Team';
+import useSWR, { mutate } from 'swr';
 
 const WorkspaceContext = createContext({
   workspaces: undefined as Workspace[] | undefined,
@@ -29,9 +28,17 @@ const WorkspaceContext = createContext({
   teamsLoading: true,
 });
 
-export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
+export const WorkspaceProvider = async ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const router = useRouter();
-  const user = useUser();
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: workspaces, error: workspacesError } = useSWR<Workspace[]>(
     user ? '/api/workspaces/current' : null

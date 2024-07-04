@@ -1,5 +1,5 @@
-import { SupportedColor } from '@/types/primitives/SupportedColors';
 import ColorOption from './ColorOption';
+import { SupportedColor } from '@/types/primitives/SupportedColors';
 
 interface ColorPalleteProps {
   value: SupportedColor;

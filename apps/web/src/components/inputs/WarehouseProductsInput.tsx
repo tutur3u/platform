@@ -1,8 +1,8 @@
-import { Divider } from '@mantine/core';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import ProductPriceInput from './ProductPriceInput';
-import { useEffect, useState } from 'react';
 import { ProductPrice } from '@/types/primitives/ProductPrice';
+import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
+import { Divider } from '@mantine/core';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 interface Props {
@@ -65,13 +65,13 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
       setPrices((prices) => {
         const newPrices = [...prices];
-        newPrices[oldIndex].unit_id = newId;
+        newPrices[oldIndex]!.unit_id = newId;
         return newPrices;
       });
     } else {
       setPrices((prices) => {
         const newPrices = [...prices];
-        newPrices[index].unit_id = newId;
+        newPrices[index]!.unit_id = newId;
         return newPrices;
       });
     }
@@ -86,7 +86,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
     setPrices((prices) => {
       const newPrices = [...prices];
-      newPrices[index].price = price === '' ? null : price;
+      newPrices[index]!.price = price === '' ? null : price;
       return newPrices;
     });
 
@@ -100,7 +100,7 @@ const WarehouseProductsInput = ({ wsId, productId, warehouse }: Props) => {
 
     setPrices((prices) => {
       const newPrices = [...prices];
-      newPrices[index].min_amount = amount === '' ? null : amount;
+      newPrices[index]!.min_amount = amount === '' ? null : amount;
       return newPrices;
     });
 
