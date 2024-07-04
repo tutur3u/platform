@@ -95,14 +95,14 @@ const CandyCrushClone: React.FC = () => {
 
   const dragStart = (e: React.DragEvent<HTMLDivElement>) => {
     setSquareBeingDragged(e.target as HTMLDivElement);
-    e.dataTransfer.effectAllowed = 'none';
+    e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setDragImage(new Image(), 0, 0);
     (e.target as HTMLDivElement).style.opacity = '0.5';
   };
 
   const dragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'none';
+    e.dataTransfer.dropEffect = 'move';
     e.currentTarget.style.transform = 'scale(1.1)';
   };
 
