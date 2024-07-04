@@ -15,10 +15,9 @@ export const useGameLogic = (
       const isFirstRow = i >= 0 && i <= 7;
 
       if (isFirstRow && currentColorArrangement[i] === undefined) {
-        const randomColor =
-          Object.values(FruitColors)[
-            Math.floor(Math.random() * Object.values(FruitColors).length)
-          ];
+        const randomColor = Object.values(FruitColors).filter(
+          (color) => color !== 'lineEraser'
+        )[Math.floor(Math.random() * (Object.values(FruitColors).length - 2))];
         currentColorArrangement[i] = randomColor!;
       }
 
@@ -29,5 +28,27 @@ export const useGameLogic = (
     }
   }, [currentColorArrangement]);
 
-  return { checkMatches, moveIntoSquareBelow };
+  const handleSpecialFruits = useCallback(
+    (draggedId: number, replacedId: number) => {
+      const draggedColor = currentColorArrangement[draggedId];
+      const replacedColor = currentColorArrangement[replacedId];
+
+      if (draggedColor === 'lineEraser' || replacedColor === 'lineEraser') {
+        const lineEraserIndex =
+          draggedColor === 'lineEraser' ? draggedId : replacedId;
+        const row = Math.floor(lineEraserIndex / width);
+        const col = lineEraserIndex % width;
+
+        // Erase the entire row and column
+        for (let i = 0; i < width; i++) {
+          currentColorArrangement[row * width + i] = undefined!;
+          currentColorArrangement[i * width + col] = undefined!;
+        }
+        setScore((score) => score + width * 2 - 1); // Add score for erased fruits
+      }
+    },
+    [currentColorArrangement, setScore]
+  );
+
+  return { checkMatches, moveIntoSquareBelow, handleSpecialFruits };
 };

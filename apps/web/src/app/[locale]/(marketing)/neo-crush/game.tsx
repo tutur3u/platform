@@ -11,10 +11,8 @@ export const NeoCrushGame: React.FC = () => {
   >([]);
   const [score, setScore] = useState<number>(0);
 
-  const { checkMatches, moveIntoSquareBelow } = useGameLogic(
-    currentColorArrangement,
-    setScore
-  );
+  const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
+    useGameLogic(currentColorArrangement, setScore);
 
   useEffect(() => {
     setCurrentColorArrangement(createBoard());
@@ -35,6 +33,7 @@ export const NeoCrushGame: React.FC = () => {
         <FruitGrid
           currentColorArrangement={currentColorArrangement}
           setCurrentColorArrangement={setCurrentColorArrangement}
+          handleSpecialFruits={handleSpecialFruits}
         />
         <p className="mt-4 text-center text-xl font-bold">Score: {score}</p>
       </CardContent>

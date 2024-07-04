@@ -65,8 +65,20 @@ export const checkForMatches = (
       const match = findMatch(i, currentColorArrangement);
       if (match.length >= 3) {
         totalMatchLength += match.length;
+
+        // Create special fruits
+        if (match.length === 4) {
+          currentColorArrangement[match[0]!] = 'lineEraser';
+          match.slice(1).forEach((square) => {
+            currentColorArrangement[square] = undefined!;
+          });
+        } else {
+          match.forEach((square) => {
+            currentColorArrangement[square] = undefined!;
+          });
+        }
+
         match.forEach((square) => {
-          currentColorArrangement[square] = undefined!;
           checkedIndexes.add(square);
         });
         hasMatch = true;
@@ -124,11 +136,15 @@ export const createBoard = (): FruitColor[] => {
     return false;
   };
 
-  // Fill the board
+  // Filter out "lineEraser" from FruitColors
+  const availableColors = FruitColors.filter((color) => color !== 'lineEraser');
+
+  // Fill the board with available colors
   for (let i = 0; i < board.length; i++) {
     let color;
     do {
-      color = FruitColors[Math.floor(Math.random() * FruitColors.length)];
+      color =
+        availableColors[Math.floor(Math.random() * availableColors.length)];
     } while (!isValidMove(i, color));
     board[i] = color as FruitColor;
   }
@@ -138,7 +154,8 @@ export const createBoard = (): FruitColor[] => {
     for (let i = 0; i < board.length; i++) {
       let color;
       do {
-        color = FruitColors[Math.floor(Math.random() * FruitColors.length)];
+        color =
+          availableColors[Math.floor(Math.random() * availableColors.length)];
       } while (!isValidMove(i, color));
       board[i] = color as FruitColor;
     }

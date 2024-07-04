@@ -14,7 +14,8 @@ export const useDragAndDrop = (
   >,
   setSquareBeingReplaced: React.Dispatch<
     React.SetStateAction<HTMLDivElement | null>
-  >
+  >,
+  handleSpecialFruits: (draggedId: number, replacedId: number) => void
 ) => {
   const dragStart = (e: React.DragEvent<HTMLDivElement>) => {
     setSquareBeingDragged(e.target as HTMLDivElement);
@@ -65,6 +66,8 @@ export const useDragAndDrop = (
         currentColorArrangement[squareBeingReplacedId] = draggedColor;
         currentColorArrangement[squareBeingDraggedId] = replacedColor;
 
+        handleSpecialFruits(squareBeingDraggedId, squareBeingReplacedId);
+
         const isAMatch = checkForMatches(currentColorArrangement);
 
         if (!isAMatch) {
@@ -75,7 +78,7 @@ export const useDragAndDrop = (
         // Invalid move animation logic
       }
 
-      setCurrentColorArrangement([...currentColorArrangement]);
+      setCurrentColorArrangement(currentColorArrangement);
       setSquareBeingDragged(null);
       setSquareBeingReplaced(null);
     },
@@ -84,6 +87,7 @@ export const useDragAndDrop = (
       squareBeingReplaced,
       currentColorArrangement,
       setCurrentColorArrangement,
+      handleSpecialFruits,
     ]
   );
 
