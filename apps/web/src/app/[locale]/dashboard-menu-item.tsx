@@ -1,27 +1,24 @@
-'use client';
-
 import { DEV_MODE } from '@/constants/common';
+import { getWorkspaces } from '@/lib/workspace-helper';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { ActivitySquare, Database } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
-interface Props {
-  defaultWorkspaceId: string | undefined;
-}
+export default async function DashboardMenuItem() {
+  const t = await getTranslations('common');
 
-export default function DashboardMenuItem({ defaultWorkspaceId }: Props) {
-  const t = useTranslations('common');
+  const workspaces = await getWorkspaces(true);
 
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <Link href={`/${defaultWorkspaceId || 'onboarding'}`}>
+        <Link href={`/${workspaces?.[0]?.id || 'onboarding'}`}>
           <DropdownMenuItem className="cursor-pointer">
             <ActivitySquare className="mr-2 h-4 w-4" />
             <span>{t('dashboard')}</span>
