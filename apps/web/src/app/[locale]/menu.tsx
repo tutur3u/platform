@@ -37,6 +37,9 @@ interface NavItem {
 const navItems = (t: any) => {
   return [
     { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
     {
       href: 'https://docs.tuturuuu.com',
@@ -53,7 +56,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   const linkProps = {
     href: item.href,
     className: cn(
-      'h-fit transition-opacity duration-200',
+      'line-clamp-1 h-fit transition-opacity duration-200',
       isActive ? 'opacity-100' : 'opacity-50 hover:opacity-100',
       className
     ),

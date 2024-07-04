@@ -43,27 +43,24 @@ export default async function Footer() {
                 />
               </svg>
             </div>
-            <div className="text-2xl font-semibold md:text-4xl">
+            <div className="flex-none text-2xl font-semibold 2xl:text-4xl">
               Neo Culture Tech
             </div>
           </Link>
 
-          <div>
+          <div className="text-center">
             <div className="font-semibold">
-              702 Nguyen Van Linh, Tan Hung ward,
-              <br />
-              District 7, Ho Chi Minh City, Vietnam
+              702 Nguyen Van Linh, Tan Hung ward, District 7, Ho Chi Minh City,
+              Vietnam
             </div>
-            <div>
-              <Mail className="mr-1 inline-block" size={16} />
-              <span>
-                <Link
-                  href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
-                  className="text-brand-light-red font-semibold underline"
-                >
-                  neoculturetechclub.sgs@rmit.edu.vn
-                </Link>
-              </span>
+            <div className="flex items-center justify-center gap-1">
+              <Mail size={16} />
+              <Link
+                href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
+                className="text-brand-light-red font-semibold underline"
+              >
+                neoculturetechclub.sgs@rmit.edu.vn
+              </Link>
             </div>
           </div>
 

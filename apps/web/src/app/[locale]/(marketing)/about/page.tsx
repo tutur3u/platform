@@ -1,19 +1,10 @@
-import GetStartedButton from './get-started-button';
-import Members from './members';
-import {
-  CalendarHeart,
-  Cpu,
-  MemoryStick,
-  Network,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
-export default function MarketingPage() {
+export default async function MarketingPage() {
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col items-center justify-center gap-6 px-3 py-16 pb-0">
-        <div className="flex flex-col items-center justify-center">
+      <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16">
+        <div className="flex flex-col items-center">
           <h1 className="relative text-center text-4xl font-bold lg:text-7xl">
             <span className="sr-only">RMIT Neo Culture Tech</span>
             <div className="h-64 w-64">
@@ -45,11 +36,11 @@ export default function MarketingPage() {
           </h1>
 
           <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            The{' '}
-            <span className="text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-300">
-              best club for SSET students
-            </span>{' '}
-            to explore the world of technology
+            Established in{' '}
+            <span className="text-blue-500 underline decoration-dashed underline-offset-4 dark:text-blue-300">
+              2020
+            </span>
+            , Neo Culture Tech is a student-led community
             <span>
               {' at '}
               <span className="text-brand-light-red font-bold underline underline-offset-4">
@@ -59,76 +50,68 @@ export default function MarketingPage() {
             .
           </p>
 
-          <GetStartedButton href="/onboarding" />
-        </div>
-
-        <div>
-          <div className="bg-brand-light-blue/5 border-brand-light-blue/10 text-brand-light-blue relative mx-auto mb-4 mt-32 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl">
-            <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
-            <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
-            <span className="text-brand-dark-blue decoration-brand-dark-blue font-bold tracking-wide underline underline-offset-4">
+          <div className="bg-foreground/5 border-foreground/10 text-foreground relative mx-auto mb-4 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide">
+            We are a community fueled by the passion for technology and
+            innovations. Our club has come together to create not only a
+            playground for tech enthusiasts, but also for other students from{' '}
+            <span className="text-brand-light-red font-bold">
+              The School of Science, Engineering, and Technology
+            </span>
+            . So that students are well-prepared for future careers.{' '}
+            <span className="rounded border border-purple-600/20 bg-purple-600/10 px-1 py-0.5 font-semibold text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
               STRONGER TOGETHER
             </span>{' '}
-            is our core value. As a club, we strive to create a community where
-            everyone can learn and grow together.
+            is our philosophy - Once you have passion in technology, you are a
+            part of us!
           </div>
-          <div className="mx-auto flex items-center justify-center text-center">
-            <div className="border-brand-light-red/10 bg-brand-light-red/5 text-brand-dark-red relative mx-4 mb-32 max-w-xl rounded-lg border p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-8 md:text-base lg:text-lg">
-              <Cpu className="text-brand-light-red absolute -bottom-1 -right-3 h-8 w-8 rotate-12 md:bottom-3 md:right-5" />
-              <MemoryStick className="text-brand-light-red absolute -left-5 top-4 h-8 w-8 rotate-12 md:left-2 md:top-3" />
-              If you are passionate about technology, you should definitely
-              consider being{' '}
-              <span className="text-brand-light-red font-bold underline decoration-wavy underline-offset-4">
-                a part of us
-              </span>{' '}
-              to enhance your skills and gain valuable experience.
+
+          <div className="via-foreground/10 my-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
+
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="mb-4 text-4xl font-bold">Our Mission</div>
+            <div className="grid gap-4 font-semibold md:grid-cols-2">
+              <div className="rounded-lg border border-green-600/20 bg-green-600/10 p-4 text-green-600 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">
+                Create a society for emerging technological projects so that you
+                can SHARE & CONNECT
+              </div>
+              <div className="rounded-lg border border-blue-600/20 bg-blue-600/10 p-4 text-blue-600 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300">
+                Bring your technological ideas to real world application and
+                bridge the gap of knowledge between classroom and real-world
+                practices.
+              </div>
+              <div className="rounded-lg border border-purple-600/20 bg-purple-600/10 p-4 text-purple-600 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300">
+                Establish an alumni network so that you can acquire realistic
+                experience from them.
+              </div>
+              <div className="rounded-lg border border-orange-600/20 bg-orange-600/10 p-4 text-orange-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300">
+                Keep you updated with the latest technology trends, events and
+                knowledge.
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
+          <div className="via-foreground/10 my-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
 
-        <Members />
-
-        <div className="via-foreground/10 mt-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
-
-        <div className="w-full text-center">
-          <div className="mb-4 text-4xl font-bold">Why us?</div>
-
-          <div className="grid w-full gap-4 md:grid-cols-3">
-            <div className="flex flex-col items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-4">
-              <CalendarHeart className="h-16 w-16 text-purple-500 dark:text-purple-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-purple-500 dark:text-purple-300">
-                Special Events
-              </div>
-              <div className="text-purple-500 dark:text-purple-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
+          <div>
+            <div className="bg-brand-light-blue/5 text-brand-light-blue relative mx-auto mb-4 mt-32 max-w-4xl rounded-lg border border-cyan-500/20 p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl dark:border-cyan-300/20">
+              <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
+              <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
+              &quot;To newbies of our NEO Culture Tech club, first of all I
+              would like to thank you for choosing to be a member of the NEO
+              family in your unilife. I hope that we will have a wonderful time
+              working together for the development of the club. I also hope you
+              will learn new things, make new friends, and have unforgettable
+              memories in your journey with NEO. I wish you the best. Love you
+              all!&quot;
             </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-4">
-              <Network className="h-16 w-16 text-red-500 dark:text-red-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-red-500 dark:text-red-300">
-                Networking
-              </div>
-              <div className="text-red-500 dark:text-red-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-4">
-              <Telescope className="h-16 w-16 text-blue-500 dark:text-blue-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-blue-500 dark:text-blue-300">
-                Vision
-              </div>
-              <div className="text-blue-500 dark:text-blue-100">
-                We create an environment not only for students from SSET
-                students but also others to learn new knowledge, have fun, and
-                expand their network.
+            <div className="mx-auto flex items-center justify-center text-center">
+              <div className="relative mx-4 mb-32 max-w-xl rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-4 md:text-base lg:text-lg dark:border-red-300/20 dark:bg-red-300/10">
+                <div className="font-bold leading-tight text-red-700 dark:text-red-100">
+                  Tran Mach So Han
+                </div>
+                <div className="text-sm text-red-500 dark:text-red-300">
+                  President of RMIT Neo Culture Tech
+                </div>
               </div>
             </div>
           </div>
