@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  LiveClient,
   LiveConnectionState,
   type LiveSchema,
   type LiveTranscriptionEvent,
   LiveTranscriptionEvents,
+  Liveclient,
   createClient,
 } from '@deepgram/sdk';
 import {
@@ -17,7 +17,7 @@ import {
 } from 'react';
 
 interface DeepgramContextType {
-  connection: LiveClient | null;
+  connection: Liveclient | null;
   connectToDeepgram: (options: LiveSchema, endpoint?: string) => Promise<void>;
   disconnectFromDeepgram: () => void;
   connectionState: LiveConnectionState;
@@ -42,7 +42,7 @@ const getApiKey = async (): Promise<string> => {
 const DeepgramContextProvider: FunctionComponent<
   DeepgramContextProviderProps
 > = ({ children }) => {
-  const [connection, setConnection] = useState<LiveClient | null>(null);
+  const [connection, setConnection] = useState<Liveclient | null>(null);
   const [connectionState, setConnectionState] = useState<LiveConnectionState>(
     LiveConnectionState.CLOSED
   );

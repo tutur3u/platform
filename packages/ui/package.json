@@ -52,7 +52,7 @@
     "react-dom": "19.0.0-rc-6230622a1a-20240610",
     "react-hook-form": "^7.52.1",
     "react-resizable": "^3.0.5",
-    "react-resizable-panels": "^2.0.19",
+    "react-resizable-panels": "^2.0.20",
     "react-syntax-highlighter": "^15.5.0",
     "eslint": "8.57.0",
     "sonner": "^1.5.0",
