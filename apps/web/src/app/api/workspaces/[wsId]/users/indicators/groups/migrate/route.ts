@@ -1,9 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
-
-export const dynamic = 'force-dynamic';
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
@@ -12,7 +9,7 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data = await req.json();
 

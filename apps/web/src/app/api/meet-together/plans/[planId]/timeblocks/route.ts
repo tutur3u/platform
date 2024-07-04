@@ -1,9 +1,5 @@
-import { createAdminClient } from '@/utils/supabase/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -11,21 +7,18 @@ interface Params {
   };
 }
 
-export async function GET(_: Request) {
+export async function GET(_: Request, { params: { planId } }: Params) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const guestTimeBlocksQuery = sbAdmin
     .from('meet_together_guest_timeblocks')
-    .select('*');
+    .select('*')
+    .eq('plan_id', planId);
 
   const userTimeBlocksQuery = sbAdmin
     .from('meet_together_user_timeblocks')
-    .select('*');
+    .select('*')
+    .eq('plan_id', planId);
 
   const [guestTimeBlocks, userTimeBlocks] = await Promise.all([
     guestTimeBlocksQuery,
@@ -54,7 +47,7 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request, { params: { planId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data = await req.json();
 
@@ -92,11 +85,6 @@ export async function POST(req: Request, { params: { planId } }: Params) {
     return NextResponse.json({ id: tb.id, message: 'success' });
   } else {
     const sbAdmin = createAdminClient();
-    if (!sbAdmin)
-      return NextResponse.json(
-        { message: 'Internal server error' },
-        { status: 500 }
-      );
 
     const { data: guest } = await sbAdmin
       .from('meet_together_guests')

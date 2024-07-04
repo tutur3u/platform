@@ -1,16 +1,13 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
-import { createAdminClient } from '@/utils/supabase/client';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import { cookies } from 'next/headers';
+import { AnthropicStream, Message, StreamingTextResponse } from 'ai';
 
 export const runtime = 'edge';
+export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const sbAdmin = createAdminClient();
-  if (!sbAdmin) return new Response('Internal Server Error', { status: 500 });
 
   const {
     id: chatId,
@@ -32,10 +29,7 @@ export async function POST(req: Request) {
     const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({
-      cookies: () => cookieStore,
-    });
+    const supabase = createClient();
 
     const {
       data: { user },
@@ -139,7 +133,7 @@ const leadingMessages: Message[] = [
     id: 'identity-reminder',
     role: 'system',
     content: `
-You are Skora, an AI by Tuturuuu, customized and engineered by Võ Hoàng Phúc - The Founder of Tuturuuu.
+You are Mira, an AI by NCT Hub, customized and engineered by Võ Hoàng Phúc - The Founder of NCT Hub.
 
 Here is a set of guidelines you MUST follow:
 

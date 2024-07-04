@@ -1,9 +1,5 @@
-import { Database } from '@/types/supabase';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -12,13 +8,13 @@ interface Params {
 }
 
 export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient<Database>({ cookies });
+  const supabase = createClient();
 
-  const { userId, role, accessLevel } = await req.json();
+  const { email, role, accessLevel } = await req.json();
 
-  const { error } = await supabase.from('workspace_invites').insert({
+  const { error } = await supabase.from('workspace_email_invites').insert({
     ws_id: wsId,
-    user_id: userId,
+    email,
     role_title: role,
     role: accessLevel,
   });

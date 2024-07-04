@@ -1,9 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/utils/supabase/client';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -16,7 +12,7 @@ export async function DELETE(
   req: Request,
   { params: { planId, timeblockId: id } }: Params
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data = await req.json();
 
@@ -49,11 +45,6 @@ export async function DELETE(
     }
   } else {
     const sbAdmin = createAdminClient();
-    if (!sbAdmin)
-      return NextResponse.json(
-        { message: 'Internal Server Error' },
-        { status: 500 }
-      );
 
     const userId = data.user_id;
 

@@ -1,6 +1,6 @@
-import moment from 'moment';
 import { Workspace } from '@/types/primitives/Workspace';
-import { Separator } from '../ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
+import moment from 'moment';
 
 interface Props {
   ws: Workspace;
@@ -13,9 +13,6 @@ const WorkspaceCard = ({ ws }: Props) => {
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
           <div className="line-clamp-1 font-semibold tracking-wide">
             {ws.name}
-          </div>
-          <div className="line-clamp-1 font-semibold text-blue-600 dark:text-blue-300">
-            {ws?.preset || 'Chưa có preset'}
           </div>
         </div>
       </div>

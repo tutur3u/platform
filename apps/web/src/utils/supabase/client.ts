@@ -1,13 +1,13 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@supabase/supabase-js';
+import { checkEnvVariables } from './common';
+import { Database } from '@/types/supabase';
+import { createBrowserClient } from '@supabase/ssr';
 
-export const createAdminClient = (): SupabaseClient | undefined => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY;
+const { url, key } = checkEnvVariables({ useServiceKey: false });
 
-  if (!url || !key) {
-    throw Error('Missing Supabase URL or key');
-  }
+export const createDynamicClient = () => {
+  return createBrowserClient(url, key);
+};
 
-  return createClient(url, key);
+export const createClient = () => {
+  return createBrowserClient<Database>(url, key);
 };

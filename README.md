@@ -1,9 +1,9 @@
-# NCT Monorepo (NCT Hub)
+# NCT Hub Monorepo
 
-[![Tests](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/test.yaml)
-[![Supabase](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/tutur3u/actions/workflows/supabase-production.yaml)
+[![Tests](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
+[![Supabase](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
 
-This repository is a monorepo for all of Neo Culture Tech's services, powered by Turborepo.
+This repository is a monorepo for all of NCT Hub's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 
 ## What's inside?
 
@@ -11,14 +11,13 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 
 ### Apps
 
-- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT, including the landing page, pricing plans, branding-related resources and NCT's services through a web application interface. On production, this app is located at [**rmitneoculturetechclub.com**](https://rmitneoculturetechclub.com).
+- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT Hub, including the landing page, pricing plans, branding-related resources and NCT Hub's services through a web application interface. On production, this app is located at [**rmitneoculturetechclub.com**](https://rmitneoculturetechclub.com).
 
 ### Packages
 
 - `ui`: a stub React component library with [Tailwind CSS](https://tailwindcss.com/) shared by the `web` application.
-- `eslint-config-custom`: `ESLint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
-- `tailwind-config`: `Tailwind CSS` configurations.
-- `tsconfig`: `tsconfig.json`s used throughout the monorepo.
+- `eslint-config`: `ESLint` configurations (includes `eslint-config-next` and `eslint-config-prettier`).
+- `typescript-config`: `tsconfig.json`s used throughout the monorepo.
 
 ### Utilities
 

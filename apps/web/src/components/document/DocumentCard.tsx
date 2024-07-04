@@ -1,29 +1,29 @@
-import Link from 'next/link';
-import { Document } from '@/types/primitives/Document';
-import moment from 'moment';
+import { WorkspaceDocument } from '@/types/db';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
-import useTranslation from 'next-translate/useTranslation';
+import { Separator } from '@repo/ui/components/ui/separator';
+import moment from 'moment';
 import 'moment/locale/vi';
-import { Separator } from '@/components/ui/separator';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
 
 interface Props {
   wsId: string;
-  document: Document;
+  document: Partial<WorkspaceDocument>;
 }
 
 const DocumentCard = ({ wsId, document }: Props) => {
   const { id, name, content, created_at } = document;
   const href = id ? `/${wsId}/documents/${id}` : '';
 
-  const { lang } = useTranslation();
+  const locale = useLocale();
 
-  const creationDate = moment(created_at).locale(lang).fromNow();
+  const creationDate = moment(created_at).locale(locale).fromNow();
 
   return (
     <Link
       href={href}
       key={`doc-${id}`}
-      className="border-border relative flex flex items-center justify-between gap-4 rounded-lg border bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
+      className="border-border relative flex items-center justify-between gap-4 rounded-lg border bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">

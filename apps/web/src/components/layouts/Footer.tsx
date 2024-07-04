@@ -1,10 +1,10 @@
-import Link from 'next/link';
-import { Separator } from '@/components/ui/separator';
-import useTranslation from 'next-translate/useTranslation';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Mail } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 export default async function Footer() {
-  const { t } = useTranslation('common');
+  const t = await getTranslations();
 
   return (
     <div className="w-full text-center">
@@ -43,27 +43,24 @@ export default async function Footer() {
                 />
               </svg>
             </div>
-            <div className="text-2xl font-semibold md:text-4xl">
+            <div className="flex-none text-2xl font-semibold 2xl:text-4xl">
               Neo Culture Tech
             </div>
           </Link>
 
-          <div>
+          <div className="text-center">
             <div className="font-semibold">
-              702 Nguyen Van Linh, Tan Hung ward,
-              <br />
-              District 7, Ho Chi Minh City, Vietnam
+              702 Nguyen Van Linh, Tan Hung ward, District 7, Ho Chi Minh City,
+              Vietnam
             </div>
-            <div>
-              <Mail className="mr-1 inline-block" size={16} />
-              <span>
-                <Link
-                  href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
-                  className="text-brand-light-red font-semibold underline"
-                >
-                  neoculturetechclub.sgs@rmit.edu.vn
-                </Link>
-              </span>
+            <div className="flex items-center justify-center gap-1">
+              <Mail size={16} />
+              <Link
+                href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
+                className="text-brand-light-red font-semibold underline"
+              >
+                neoculturetechclub.sgs@rmit.edu.vn
+              </Link>
             </div>
           </div>
 
@@ -114,32 +111,70 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-32 lg:gap-32">
-          <div className="flex flex-col md:items-start">
-            <div className="text-xl font-semibold">{t('common:resources')}</div>
+        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
+              {t('common.legal')}
+            </div>
             <Link
-              href="/calendar/meet-together"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              href="/terms"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:meet-together')}
+              {t('common.terms')}
             </Link>
             <Link
-              href="/branding"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              href="/privacy"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:branding')}
+              {t('common.privacy')}
             </Link>
           </div>
 
-          <div className="flex flex-col md:items-start">
-            <div className="text-xl font-semibold">
-              {t('common:developers')}
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
+              {t('common.resources')}
             </div>
             <Link
-              href="https://github.com/rmit-nct/hub"
-              className="text-foreground/80 hover:text-foreground mt-2 block"
+              href="/calendar/meet-together"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
-              {t('common:open-source')}
+              {t('common.meet-together')}
+            </Link>
+            {/* <Link
+              href="/branding"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.branding')}
+            </Link> */}
+          </div>
+
+          <div className="grid gap-1 md:items-start">
+            <div className="text-lg font-semibold md:w-fit md:text-xl">
+              {t('common.developers')}
+            </div>
+            {/* <Link
+              href="https://docs.tuturuuu.com"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.documentation')}
+            </Link> */}
+            <Link
+              href="https://github.com/rmit-nct/hub"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.open-source')}
+            </Link>
+            <Link
+              href="https://tuturuuu.com"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              Tuturuuu
             </Link>
           </div>
         </div>
@@ -147,7 +182,7 @@ export default async function Footer() {
 
       <Separator className="bg-foreground/5 mt-8" />
       <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
-        {t('copyright')}
+        {t('common.copyright')}
       </div>
     </div>
   );

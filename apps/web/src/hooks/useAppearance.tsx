@@ -1,4 +1,3 @@
-import React, { createContext, useContext, useEffect } from 'react';
 import {
   APP_THEME_KEY,
   DEFAULT_APP_THEME,
@@ -10,6 +9,7 @@ import {
   SIDEBAR_STATE_KEY,
 } from '@/constants/prefs';
 import { useLocalStorage } from '@mantine/hooks';
+import React, { createContext, useContext, useEffect } from 'react';
 
 export type Theme = 'light' | 'dark';
 export type SidebarState = 'open' | 'closed';

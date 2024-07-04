@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useTranslation from 'next-translate/useTranslation';
 
 export default function Slogan() {
-  const { t } = useTranslation('common');
+  const t = useTranslations('common');
   const { resolvedTheme } = useTheme();
 
   const isDark = resolvedTheme?.includes('dark');
@@ -15,7 +15,7 @@ export default function Slogan() {
   const stress = t('stress');
 
   return (
-    <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
+    <div className="text-foreground/50 text-2xl font-semibold 2xl:text-4xl">
       <span
         className={
           isDark ? 'text-green-300' : 'text-green-500 dark:text-green-300'

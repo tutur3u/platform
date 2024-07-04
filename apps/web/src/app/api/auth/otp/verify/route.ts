@@ -1,9 +1,7 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
@@ -13,7 +11,7 @@ export async function POST(request: Request) {
   const validatedEmail = await validateEmail(email);
   const validatedOtp = await validateOtp(otp);
 
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { error } = await supabase.auth.verifyOtp({
     email: validatedEmail,

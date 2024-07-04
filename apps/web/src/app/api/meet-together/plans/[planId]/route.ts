@@ -1,7 +1,5 @@
+import { createAdminClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/client';
-
-export const dynamic = 'force-dynamic';
 
 interface Params {
   params: {
@@ -11,12 +9,6 @@ interface Params {
 
 export async function PUT(req: Request, { params: { planId: id } }: Params) {
   const sbAdmin = createAdminClient();
-
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const data = await req.json();
   const name = data.name;
@@ -39,12 +31,6 @@ export async function PUT(req: Request, { params: { planId: id } }: Params) {
 
 export async function DELETE(_: Request, { params: { planId: id } }: Params) {
   const sbAdmin = createAdminClient();
-
-  if (!sbAdmin)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
 
   const { error } = await sbAdmin
     .from('meet_together_plans')

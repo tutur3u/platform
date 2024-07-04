@@ -1,9 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { Wallet } from '@/types/primitives/Wallet';
-
-export const dynamic = 'force-dynamic';
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
@@ -12,7 +9,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('workspace_wallets')
@@ -34,17 +31,14 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
 }
 
 export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
 
   const data: Wallet = await req.json();
 
-  const { error } = await supabase
-    .from('workspace_wallets')
-    .upsert({
-      ...data,
-      ws_id: wsId,
-    })
-    .eq('id', data.id);
+  const { error } = await supabase.from('workspace_wallets').upsert({
+    ...data,
+    ws_id: wsId,
+  });
 
   if (error) {
     console.log(error);

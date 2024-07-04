@@ -1,9 +1,9 @@
-import { JsonInput, Tabs } from '@mantine/core';
-import { useState } from 'react';
-import { AuditLog } from '@/types/primitives/audit-log';
-import { DEV_MODE } from '@/constants/common';
 import AuditSmartContent from './AuditSmartContent';
-import useTranslation from 'next-translate/useTranslation';
+import { DEV_MODE } from '@/constants/common';
+import { AuditLog } from '@/types/primitives/audit-log';
+import { JsonInput, Tabs } from '@mantine/core';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface Props {
   data: AuditLog;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const AuditDescription = ({ data, isExpanded }: Props) => {
-  const { t } = useTranslation('ws-activities');
+  const t = useTranslations();
 
   const [activeTab, setActiveTab] = useState<string | null>('default');
 
@@ -26,7 +26,7 @@ const AuditDescription = ({ data, isExpanded }: Props) => {
       color="blue"
     >
       <Tabs.List>
-        <Tabs.Tab value="default">{t('common:default')}</Tabs.Tab>
+        <Tabs.Tab value="default">{t('common.default')}</Tabs.Tab>
         <Tabs.Tab value="json">JSON</Tabs.Tab>
       </Tabs.List>
 
