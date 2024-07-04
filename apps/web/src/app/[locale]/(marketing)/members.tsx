@@ -20,7 +20,7 @@ export default function Members() {
           </span>
           .
         </div>
-        The club has 6 core teams:{' '}
+        Our club has 6 core teams:{' '}
         <button
           className={`font-semibold text-green-500 underline underline-offset-2 dark:text-green-300 ${
             department !== undefined && department !== 'Finance'
@@ -193,7 +193,7 @@ export default function Members() {
         to oversee the operations of the club.
       </div>
 
-      <div className="my-4 grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="my-4 grid w-full gap-4 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {mbs.map((member) => (
           <div
             key={member.name}

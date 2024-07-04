@@ -21,32 +21,32 @@ export const members: {
   },
   {
     name: 'Vo Khanh Quynh',
-    role: 'Liaison Vice President ,Chief Of Human Resources',
+    role: 'Liaison Vice President & Chief of Human Resources',
     department: 'Executive Board',
   },
   {
     name: 'Huynh Hoang Duc',
-    role: 'Chief of Technology',
+    role: 'Chief Technology Officer',
     department: 'Project Management',
   },
   {
     name: 'Nguyen Vo Phuong Quynh',
-    role: 'Marketing Assistance',
+    role: 'Marketing Assistant',
     department: 'Human Resources',
   },
   {
     name: 'Nguyen Huynh Minh Thu',
-    role: 'Human Resource Assistance',
+    role: 'Human Resource Assistant',
     department: 'Marketing',
   },
   {
     name: 'Dao Ngoc Khanh',
-    role: 'Chief of Marketing',
+    role: 'Chief Marketing Officer',
     department: 'Marketing',
   },
   {
     name: 'Huynh Tan Phat',
-    role: 'Chief of Finance Officer',
+    role: 'Chief Finance Officer',
     department: 'Finance',
   },
 ];
