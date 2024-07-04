@@ -83,7 +83,7 @@ const CandyCrushClone: React.FC = () => {
 
       if (isFirstRow && currentColorArrangement[i] === undefined) {
         let randomNumber = Math.floor(Math.random() * candyColors.length);
-        currentColorArrangement[i] = candyColors[randomNumber];
+        currentColorArrangement[i] = candyColors[randomNumber]!;
       }
 
       if (currentColorArrangement[i + width] === undefined) {
@@ -175,7 +175,7 @@ const CandyCrushClone: React.FC = () => {
       { length: width * width },
       () => candyColors[Math.floor(Math.random() * candyColors.length)]
     );
-    setCurrentColorArrangement(randomColorArrangement);
+    setCurrentColorArrangement(randomColorArrangement as CandyColor[]);
   };
 
   useEffect(() => {
