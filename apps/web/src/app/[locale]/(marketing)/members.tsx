@@ -4,7 +4,15 @@ import { members as mbs } from './data';
 import { useState } from 'react';
 
 export default function Members() {
-  const [department, setDepartment] = useState<string | undefined>(undefined);
+  const [department, setDepartment] = useState<
+    | 'Executive Board'
+    | 'External Relations'
+    | 'Technology'
+    | 'Marketing'
+    | 'Human Resources'
+    | 'Finance'
+    | undefined
+  >(undefined);
   const [pinned, setPinned] = useState<boolean>(false);
 
   return (
@@ -46,33 +54,25 @@ export default function Members() {
         ,{' '}
         <button
           className={`font-semibold text-blue-500 underline underline-offset-2 dark:text-blue-300 ${
-            department !== undefined && department !== 'Project Management'
+            department !== undefined && department !== 'Technology'
               ? 'opacity-30'
               : ''
           } transition duration-300`}
           onClick={() => setPinned((old) => !old)}
           onMouseEnter={() => {
-            setPinned((old) =>
-              department === 'Project Management' ? old : false
-            );
+            setPinned((old) => (department === 'Technology' ? old : false));
 
             setDepartment((old) =>
-              old === 'Project Management'
-                ? pinned
-                  ? old
-                  : undefined
-                : 'Project Management'
+              old === 'Technology' ? (pinned ? old : undefined) : 'Technology'
             );
           }}
           onMouseLeave={() => {
             if (!pinned) {
-              setDepartment((old) =>
-                old === 'Project Management' ? undefined : old
-              );
+              setDepartment((old) => (old === 'Technology' ? undefined : old));
             }
           }}
         >
-          Project Management
+          Technology
         </button>
         ,{' '}
         <button
@@ -193,25 +193,25 @@ export default function Members() {
         to oversee the operations of the club.
       </div>
 
-      <div className="my-4 grid w-full gap-4 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="my-4 grid w-full gap-4 text-center md:grid-cols-2 lg:grid-cols-3">
         {mbs.map((member) => (
           <div
             key={member.name}
             className={`flex w-full items-center justify-center rounded-lg border p-2 ${
-              member.department === 'Executive Board'
+              member.departments.includes('Executive Board')
                 ? 'border-pink-500/20 bg-pink-500/5 text-pink-700 dark:border-pink-300/20 dark:bg-pink-300/5 dark:text-pink-100'
-                : member.department === 'Finance'
+                : member.departments.includes('Finance')
                   ? 'border-green-500/20 bg-green-500/5 text-green-700 dark:border-green-300/20 dark:bg-green-300/5 dark:text-green-100'
-                  : member.department === 'Project Management'
+                  : member.departments.includes('Technology')
                     ? 'border-blue-500/20 bg-blue-500/5 text-blue-700 dark:border-blue-300/20 dark:bg-blue-300/5 dark:text-blue-100'
-                    : member.department === 'Human Resources'
+                    : member.departments.includes('Human Resources')
                       ? 'border-purple-500/20 bg-purple-500/5 text-purple-700 dark:border-purple-300/20 dark:bg-purple-300/5 dark:text-purple-100'
-                      : member.department === 'Marketing'
+                      : member.departments.includes('Marketing')
                         ? 'border-orange-500/20 bg-orange-500/5 text-orange-700 dark:border-orange-300/20 dark:bg-orange-300/5 dark:text-orange-100'
-                        : member.department === 'External Relations'
+                        : member.departments.includes('External Relations')
                           ? 'border-red-500/20 bg-red-500/5 text-red-700 dark:border-red-300/20 dark:bg-red-300/5 dark:text-red-100'
                           : ''
-            } ${department !== undefined && department !== member.department ? 'opacity-30' : ''} transition duration-300`}
+            } ${department !== undefined && !member.departments.includes(department) ? 'opacity-30' : ''} transition duration-300`}
           >
             <div className="flex w-full flex-col items-center justify-center">
               <div className="text-foreground text-lg font-bold">
@@ -222,22 +222,22 @@ export default function Members() {
               </div>
               <div
                 className={`mt-2 w-full rounded border p-1 text-center text-sm font-semibold ${
-                  member.department === 'Executive Board'
+                  member.departments.includes('Executive Board')
                     ? 'border-pink-500/20 bg-pink-500/10 text-pink-500 dark:border-pink-300/20 dark:bg-pink-300/10 dark:text-pink-300'
-                    : member.department === 'Finance'
+                    : member.departments.includes('Finance')
                       ? 'border-green-500/20 bg-green-500/10 text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300'
-                      : member.department === 'Project Management'
+                      : member.departments.includes('Technology')
                         ? 'border-blue-500/20 bg-blue-500/10 text-blue-500 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-300'
-                        : member.department === 'Human Resources'
+                        : member.departments.includes('Human Resources')
                           ? 'border-purple-500/20 bg-purple-500/10 text-purple-500 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300'
-                          : member.department === 'Marketing'
+                          : member.departments.includes('Marketing')
                             ? 'border-orange-500/20 bg-orange-500/10 text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300'
-                            : member.department === 'External Relations'
+                            : member.departments.includes('External Relations')
                               ? 'border-red-500/20 bg-red-500/10 text-red-500 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300'
                               : ''
                 }`}
               >
-                {member.department}
+                {member.departments[0]}
               </div>
             </div>
           </div>

@@ -1,52 +1,43 @@
 export const members: {
   name: string;
   role: string;
-  department:
+  departments: (
     | 'Executive Board'
     | 'External Relations'
-    | 'Project Management'
+    | 'Technology'
     | 'Marketing'
     | 'Human Resources'
-    | 'Finance';
+    | 'Finance'
+  )[];
 }[] = [
   {
     name: 'Cao Nguyen Viet Quang',
     role: 'President',
-    department: 'Executive Board',
+    departments: ['Executive Board', 'External Relations'],
   },
   {
     name: 'Vo Hoang Phuc',
     role: 'Technical Vice President',
-    department: 'Executive Board',
+    departments: ['Executive Board', 'Technology', 'External Relations'],
   },
   {
     name: 'Vo Khanh Quynh',
-    role: 'Liaison Vice President & Chief of Human Resources',
-    department: 'Executive Board',
-  },
-  {
-    name: 'Huynh Hoang Duc',
-    role: 'Chief Technology Officer',
-    department: 'Project Management',
-  },
-  {
-    name: 'Nguyen Vo Phuong Quynh',
-    role: 'Marketing Assistant',
-    department: 'Human Resources',
-  },
-  {
-    name: 'Nguyen Huynh Minh Thu',
-    role: 'Human Resource Assistant',
-    department: 'Marketing',
-  },
-  {
-    name: 'Dao Ngoc Khanh',
-    role: 'Chief Marketing Officer',
-    department: 'Marketing',
+    role: 'Liaison Vice President & Head Human Resources',
+    departments: ['Executive Board', 'Human Resources', 'External Relations'],
   },
   {
     name: 'Huynh Tan Phat',
-    role: 'Chief Finance Officer',
-    department: 'Finance',
+    role: 'Chief of Finance',
+    departments: ['Executive Board', 'Technology', 'Finance'],
+  },
+  {
+    name: 'Huynh Hoang Duc',
+    role: 'Head of Technology',
+    departments: ['Technology'],
+  },
+  {
+    name: 'Dao Ngoc Khanh',
+    role: 'Head of Marketing',
+    departments: ['Marketing'],
   },
 ];
