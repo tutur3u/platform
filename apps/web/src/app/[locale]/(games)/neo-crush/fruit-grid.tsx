@@ -2,10 +2,12 @@
 import { Fruit, colorMap } from './types';
 import { useDragAndDrop } from './use-dnd';
 import {
+  Bomb,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Sparkles,
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
@@ -99,30 +101,6 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             transform: scale(1);
           }
         }
-        .fruit {
-          transition: all 0.3s ease;
-          user-select: none;
-        }
-        .fruit.invalid-swap {
-          animation: shake 0.5s ease-in-out;
-        }
-        @keyframes shake {
-          0% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-5px);
-          }
-          50% {
-            transform: translateX(5px);
-          }
-          75% {
-            transform: translateX(-5px);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
         @keyframes special-pulse {
           0% {
             transform: scale(1);
@@ -138,17 +116,48 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           }
         }
       `}</style>
-      <div className="mx-auto grid grid-cols-8 gap-2">
+      <div className="mx-auto grid grid-cols-8 gap-1 md:gap-2 lg:gap-3">
         {fruits.map((fruit, index) => (
           <div
             key={index}
-            className={`fruit relative flex h-8 w-8 items-center justify-center rounded-full font-bold text-white shadow-md ${
-              fruit?.type === 'horizontal' || fruit?.type === 'vertical'
-                ? 'border-foreground border-2'
+            className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-8 md:w-8 lg:h-10 lg:w-10 ${
+              fruit
+                ? fruit?.type !== 'normal'
+                  ? ''
+                  : 'border-transparent'
+                : 'border-foreground/50'
+            } ${
+              fruit?.type === 'rainbow'
+                ? 'bg-gradient-to-br from-red-600 via-violet-400 to-sky-400'
                 : ''
             }`}
             style={{
-              backgroundColor: fruit ? colorMap[fruit.color] : 'transparent',
+              borderColor: fruit
+                ? fruit?.type === 'rainbow'
+                  ? 'var(--foreground)'
+                  : fruit?.type !== 'normal'
+                    ? colorMap[fruit.color]
+                    : 'transparent'
+                : 'var(--foreground)',
+              opacity: fruit ? 1 : 0.3,
+              backgroundColor:
+                fruit?.type === 'rainbow'
+                  ? undefined
+                  : fruit
+                    ? fruit?.type === 'normal'
+                      ? colorMap[fruit.color]
+                      : // colorMap gives hex color, we need to convert it to rgba
+                        `rgba(${parseInt(
+                          colorMap[fruit.color].slice(1, 3),
+                          16
+                        )}, ${parseInt(
+                          colorMap[fruit.color].slice(3, 5),
+                          16
+                        )}, ${parseInt(
+                          colorMap[fruit.color].slice(5, 7),
+                          16
+                        )}, 0.2)`
+                    : 'transparent',
               cursor: 'grab',
               backgroundSize: 'auto',
             }}
@@ -168,16 +177,54 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           >
             {fruit?.type === 'horizontal' && (
               <>
-                <ChevronLeft className="absolute -left-1 h-6 w-6" />
-                <ChevronRight className="absolute -right-1 h-6 w-6" />
+                <ChevronLeft
+                  className="absolute -left-0.5 h-6 w-6"
+                  style={{
+                    animation: 'pulse 1s infinite',
+                    color: colorMap[fruit.color],
+                  }}
+                />
+                <ChevronRight
+                  className="absolute -right-0.5 h-6 w-6"
+                  style={{
+                    animation: 'pulse 1s infinite',
+                    color: colorMap[fruit.color],
+                  }}
+                />
               </>
             )}
 
             {fruit?.type === 'vertical' && (
               <>
-                <ChevronUp className="absolute -top-1 h-6 w-6" />
-                <ChevronDown className="absolute -bottom-1 h-6 w-6" />
+                <ChevronUp
+                  className="absolute -top-0.5 h-6 w-6"
+                  style={{
+                    animation: 'pulse 1s infinite',
+                    color: colorMap[fruit.color],
+                  }}
+                />
+                <ChevronDown
+                  className="absolute -bottom-0.5 h-6 w-6"
+                  style={{
+                    animation: 'pulse 1s infinite',
+                    color: colorMap[fruit.color],
+                  }}
+                />
               </>
+            )}
+
+            {fruit?.type === 'rainbow' && (
+              <Sparkles className="text-foreground/70 absolute h-6 w-6" />
+            )}
+
+            {fruit?.type === 'explosive' && (
+              <Bomb
+                className="absolute h-6 w-6"
+                style={{
+                  animation: 'pulse 1s infinite',
+                  color: colorMap[fruit.color],
+                }}
+              />
             )}
           </div>
         ))}
