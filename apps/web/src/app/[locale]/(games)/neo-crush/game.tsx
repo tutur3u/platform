@@ -4,7 +4,7 @@ import { Fruit } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { Button } from '@repo/ui/components/ui/button';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
+import { Card } from '@repo/ui/components/ui/card';
 import { Separator } from '@repo/ui/components/ui/separator';
 import React, { useEffect, useState } from 'react';
 
@@ -28,25 +28,23 @@ export const NeoCrushGame: React.FC = () => {
   }, [checkMatches, moveIntoSquareBelow]);
 
   return (
-    <Card className="mx-auto">
-      <CardContent>
-        <FruitGrid
-          fruits={fruits}
-          setFruits={setFruits}
-          handleSpecialFruits={handleSpecialFruits}
-        />
-        <p className="mt-4 text-center text-xl font-bold">Score: {score}</p>
-        <Separator className="my-4" />
-        <Button
-          className="w-full"
-          onClick={() => {
-            setFruits(createBoard());
-            setScore(0);
-          }}
-        >
-          Restart
-        </Button>
-      </CardContent>
+    <Card className="mx-auto p-2 md:p-4">
+      <FruitGrid
+        fruits={fruits}
+        setFruits={setFruits}
+        handleSpecialFruits={handleSpecialFruits}
+      />
+      <p className="mt-4 text-center text-xl font-bold">Score: {score}</p>
+      <Separator className="my-4" />
+      <Button
+        className="w-full"
+        onClick={() => {
+          setFruits(createBoard());
+          setScore(0);
+        }}
+      >
+        Restart
+      </Button>
     </Card>
   );
 };

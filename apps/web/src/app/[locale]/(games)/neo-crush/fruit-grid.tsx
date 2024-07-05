@@ -138,7 +138,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           }
         }
       `}</style>
-      <div className="mx-auto mt-4 grid grid-cols-8 gap-2">
+      <div className="mx-auto grid grid-cols-8 gap-2">
         {fruits.map((fruit, index) => (
           <div
             key={index}
