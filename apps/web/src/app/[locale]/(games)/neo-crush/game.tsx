@@ -40,8 +40,10 @@ export const NeoCrushGame: React.FC = () => {
           setFruits={setFruits}
           handleSpecialFruits={handleSpecialFruits}
         />
-        <p className="mt-4 text-center text-xl font-bold">Score: {score}</p>
-        <Separator className="my-4" />
+        <p className="mt-2 text-center text-sm font-bold md:mt-4 md:text-xl">
+          Score: {score}
+        </p>
+        <Separator className="my-2 md:my-4" />
         <Button
           className="w-full"
           onClick={() => {
