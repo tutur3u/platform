@@ -27,7 +27,7 @@ export default async function NavbarActions() {
           </>
         )}
       </div>
-      <div className="pointer-events-none flex flex-none items-center gap-2 text-transparent">
+      <div className="pointer-events-none hidden flex-none items-center gap-2 text-transparent md:flex">
         <div className="h-8 w-8" />
         <LogoTitle />
       </div>
