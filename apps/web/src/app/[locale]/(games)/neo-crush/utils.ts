@@ -1,3 +1,4 @@
+// utils.ts
 import { FruitColor, FruitColors, width } from './types';
 
 export const findMatch = (

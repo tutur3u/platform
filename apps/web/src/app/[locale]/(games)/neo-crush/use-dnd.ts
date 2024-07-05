@@ -1,3 +1,4 @@
+// use-dnd.ts
 import { FruitColor, width } from './types';
 import { checkForMatches } from './utils';
 import { useCallback } from 'react';
@@ -17,26 +18,40 @@ export const useDragAndDrop = (
   >,
   handleSpecialFruits: (draggedId: number, replacedId: number) => void
 ) => {
-  const dragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    setSquareBeingDragged(e.target as HTMLDivElement);
-    e.dataTransfer.effectAllowed = 'move';
+  const dragStart = (
+    e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    const target = e.target as HTMLDivElement;
+    setSquareBeingDragged(target);
+    if (e.type === 'dragstart') {
+      (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed =
+        'move';
+    }
   };
 
-  const dragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const dragOver = (
+    e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
     e.preventDefault();
   };
 
-  const dragLeave = (_: React.DragEvent<HTMLDivElement>) => {
+  const dragLeave = (
+    _: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
     // No action needed
   };
 
-  const dragDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    setSquareBeingReplaced(e.target as HTMLDivElement);
+  const dragDrop = (
+    e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    const target = e.target as HTMLDivElement;
+    setSquareBeingReplaced(target);
   };
 
   const dragEnd = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      (e.target as HTMLDivElement).style.opacity = '1';
+    (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLDivElement;
+      target.style.opacity = '1';
       if (!squareBeingDragged || !squareBeingReplaced) return;
 
       const squareBeingDraggedId = parseInt(
@@ -91,5 +106,27 @@ export const useDragAndDrop = (
     ]
   );
 
-  return { dragStart, dragOver, dragLeave, dragDrop, dragEnd };
+  const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    dragStart(e);
+  };
+
+  const touchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    dragOver(e);
+  };
+
+  const touchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    dragDrop(e);
+    dragEnd(e);
+  };
+
+  return {
+    dragStart,
+    dragOver,
+    dragLeave,
+    dragDrop,
+    dragEnd,
+    touchStart,
+    touchMove,
+    touchEnd,
+  };
 };

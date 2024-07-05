@@ -1,3 +1,4 @@
+// use-game-logic.ts
 import { FruitColor, FruitColors, width } from './types';
 import { checkForMatches } from './utils';
 import { useCallback } from 'react';

@@ -1,6 +1,7 @@
+// fruit-grid.tsx
 import { FruitColor, colorMap } from './types';
 import { useDragAndDrop } from './use-dnd';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
   currentColorArrangement: FruitColor[];
@@ -19,6 +20,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     useState<HTMLDivElement | null>(null);
   const [squareBeingReplaced, setSquareBeingReplaced] =
     useState<HTMLDivElement | null>(null);
+  const touchStartPosition = useRef<{ x: number; y: number } | null>(null);
 
   const { dragStart, dragOver, dragLeave, dragDrop, dragEnd } = useDragAndDrop(
     currentColorArrangement,
@@ -29,6 +31,53 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     setSquareBeingReplaced,
     handleSpecialFruits
   );
+
+  const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!touch) return;
+    touchStartPosition.current = { x: touch.clientX, y: touch.clientY };
+    dragStart(e);
+  };
+
+  const touchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!touchStartPosition.current) return;
+
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    const diffX = touch.clientX - touchStartPosition.current.x;
+    const diffY = touch.clientY - touchStartPosition.current.y;
+
+    // Only process as a swipe if the movement is significant
+    if (Math.abs(diffX) > 20 || Math.abs(diffY) > 20) {
+      const target = e.target as HTMLDivElement;
+      const currentId = parseInt(target.getAttribute('data-id') || '0');
+
+      let newId;
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Horizontal swipe
+        newId = currentId + (diffX > 0 ? 1 : -1);
+      } else {
+        // Vertical swipe
+        newId = currentId + (diffY > 0 ? 8 : -8); // Assuming 8 columns
+      }
+
+      const newTarget = document.querySelector(
+        `[data-id="${newId}"]`
+      ) as HTMLDivElement;
+      if (newTarget) {
+        setSquareBeingReplaced(newTarget);
+      }
+    }
+  };
+
+  const touchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    touchStartPosition.current = null;
+    dragEnd(e);
+  };
 
   return (
     <>
@@ -117,6 +166,9 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onDragLeave={dragLeave}
             onDrop={dragDrop}
             onDragEnd={dragEnd}
+            onTouchStart={touchStart}
+            onTouchMove={touchMove}
+            onTouchEnd={touchEnd}
           >
             {/* {fruitColor && fruitColor[0]?.toUpperCase()} */}
           </div>

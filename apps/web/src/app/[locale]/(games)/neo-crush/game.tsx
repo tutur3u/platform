@@ -1,9 +1,10 @@
+// game.tsx
+import { Card, CardContent } from '@repo/ui/components/ui/card';
+import React, { useEffect, useState } from 'react';
 import { FruitGrid } from './fruit-grid';
 import { FruitColor } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
-import React, { useEffect, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
   const [currentColorArrangement, setCurrentColorArrangement] = useState<
