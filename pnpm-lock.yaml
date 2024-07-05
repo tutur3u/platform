@@ -129,8 +129,8 @@ importers:
         specifier: 2.44.2
         version: 2.44.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@tabler/icons-react':
-        specifier: ^3.8.0
-        version: 3.8.0(react@19.0.0-rc-6230622a1a-20240610)
+        specifier: ^3.9.0
+        version: 3.9.0(react@19.0.0-rc-6230622a1a-20240610)
       '@tanstack/react-query':
         specifier: ^5.49.2
         version: 5.49.2(react@19.0.0-rc-6230622a1a-20240610)
@@ -2599,13 +2599,13 @@ packages:
   '@swc/helpers@0.5.11':
     resolution: {integrity: sha512-YNlnKRWF2sVojTpIyzwou9XoTNbzbzONwRhOoniEioF1AtaitTvVZblaQRrAzChWQ1bLYyYSWzM18y4WwgzJ+A==}
 
-  '@tabler/icons-react@3.8.0':
-    resolution: {integrity: sha512-+M7x4uCmaZlFBuAXKnu7cCvjX48Ml//GJxgGTOoAq8N5R6NkIGV0o7UmGVlb9Vfw2GhJ638MSSJ7mksSjdSXgQ==}
+  '@tabler/icons-react@3.9.0':
+    resolution: {integrity: sha512-7Fbcrb5LYBGd9rwfkgrJsvLYGqPqO4WV3u6lfqE2wRzEVcevDQcdvo8toKp5Jcc66MPMEmMg+/tnUGwFIKQmUQ==}
     peerDependencies:
       react: '>= 16'
 
-  '@tabler/icons@3.8.0':
-    resolution: {integrity: sha512-SVZSrb0REaTEu+soj+9RTnPpCqIWFYHJ0lhyk+oo6uXr33Ecx2JBcBGeEo/WbIWZg4UF8NIZSVKQgI2PHBokJA==}
+  '@tabler/icons@3.9.0':
+    resolution: {integrity: sha512-wZAwEu4iI0WmUA/bjstzNYri13D8X14f/SCRrzr2MyU+WP/6Vd+xq4YLM52dOS8V6ZVt+ujuE9IFkuJdsdSVAQ==}
 
   '@tailwindcss/typography@0.5.13':
     resolution: {integrity: sha512-ADGcJ8dX21dVVHIwTRgzrcunY6YY9uSlAHHGVKvkA+vLc5qLwEszvKts40lx7z0qc4clpjclwLeK5rVCV2P/uw==}
@@ -9408,12 +9408,12 @@ snapshots:
     dependencies:
       tslib: 2.6.3
 
-  '@tabler/icons-react@3.8.0(react@19.0.0-rc-6230622a1a-20240610)':
+  '@tabler/icons-react@3.9.0(react@19.0.0-rc-6230622a1a-20240610)':
     dependencies:
-      '@tabler/icons': 3.8.0
+      '@tabler/icons': 3.9.0
       react: 19.0.0-rc-6230622a1a-20240610
 
-  '@tabler/icons@3.8.0': {}
+  '@tabler/icons@3.9.0': {}
 
   '@tailwindcss/typography@0.5.13(tailwindcss@3.4.4)':
     dependencies:
