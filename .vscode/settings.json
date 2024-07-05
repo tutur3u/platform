@@ -28,5 +28,6 @@
     "apps/web/messages",
   ],
   "i18n-ally.keystyle": "nested",
-  "codeQL.githubDatabase.update": "never"
+  "codeQL.githubDatabase.update": "never",
+  "codeQL.githubDatabase.download": "never"
 }

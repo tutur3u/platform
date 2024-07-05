@@ -8,7 +8,7 @@ describe('suggestEmails', () => {
       'johndoe@gmail.com',
       'johndoe@yahoo.com',
       'johndoe@outlook.com',
-      'johndoe@tuturuuu.com',
+      'johndoe@rmit.edu.vn',
     ];
     const suggestions = suggestEmails(text);
     expect(suggestions).toEqual(expectedSuggestions);
