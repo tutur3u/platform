@@ -2,6 +2,7 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
+import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
@@ -53,7 +54,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   const linkProps = {
     href: item.href,
     className: cn(
-      'h-fit transition-opacity duration-200',
+      'transition-opacity duration-200',
       isActive ? 'opacity-100' : 'opacity-50 hover:opacity-100',
       className
     ),
@@ -64,13 +65,23 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any }> = ({ t }) => (
-  <div className="hidden gap-8 font-semibold md:flex">
-    {navItems(t).map((item) => (
-      <NavLink key={item.href} item={item} />
-    ))}
-  </div>
-);
+const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
+  const pathname = usePathname();
+
+  if (
+    pathname !== '/' &&
+    !PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+  )
+    return null;
+
+  return (
+    <div className="hidden gap-8 font-semibold md:flex">
+      {navItems(t).map((item) => (
+        <NavLink key={item.href} item={item} />
+      ))}
+    </div>
+  );
+};
 
 const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink

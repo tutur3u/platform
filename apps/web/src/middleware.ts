@@ -1,5 +1,5 @@
 import { Locales, defaultLocale, locales } from './config';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
 import { User } from '@supabase/supabase-js';
@@ -45,23 +45,6 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-
-const PUBLIC_PATHS = [
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/calendar/meet-together',
-].reduce((acc: string[], path) => {
-  // Add the original path
-  acc.push(path);
-
-  // Add localized paths
-  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
-  acc.push(...localizedPaths);
-
-  return acc;
-}, []);
 
 const handleRedirect = ({
   req,
