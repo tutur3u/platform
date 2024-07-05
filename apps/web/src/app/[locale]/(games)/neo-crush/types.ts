@@ -1,17 +1,32 @@
 // types.ts
 export const width = 8;
 
-export const FruitColors = [
+export const FRUIT_COLORS = [
   'red',
   'blue',
   'green',
   'yellow',
   'purple',
   'orange',
-  'horizontalLineEraser',
-  'verticalLineEraser',
 ] as const;
-export type FruitColor = (typeof FruitColors)[number];
+
+export const FRUIT_TYPES = [
+  'normal',
+  'vertical',
+  'horizontal',
+  'explosive',
+  'rainbow',
+] as const;
+
+export type FruitColor = (typeof FRUIT_COLORS)[number];
+export type FruitType = (typeof FRUIT_TYPES)[number];
+
+export type Fruit =
+  | {
+      color: FruitColor;
+      type: FruitType;
+    }
+  | undefined;
 
 export const colorMap: Record<FruitColor, string> = {
   red: '#E63946',
@@ -20,6 +35,4 @@ export const colorMap: Record<FruitColor, string> = {
   yellow: '#FFD700',
   purple: '#9C89B8',
   orange: '#F77F00',
-  horizontalLineEraser: '#333',
-  verticalLineEraser: '#333',
 };

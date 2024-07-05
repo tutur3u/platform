@@ -1,6 +1,6 @@
 // game.tsx
 import { FruitGrid } from './fruit-grid';
-import { FruitColor } from './types';
+import { Fruit } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { Button } from '@repo/ui/components/ui/button';
@@ -9,33 +9,30 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import React, { useEffect, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
-  const [currentColorArrangement, setCurrentColorArrangement] = useState<
-    FruitColor[]
-  >([]);
+  const [fruits, setFruits] = useState<Fruit[]>([]);
   const [score, setScore] = useState<number>(0);
 
   const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
-    useGameLogic(currentColorArrangement, setCurrentColorArrangement, setScore);
+    useGameLogic(fruits, setFruits, setScore);
 
   useEffect(() => {
-    setCurrentColorArrangement(createBoard());
+    setFruits(createBoard());
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       checkMatches();
       moveIntoSquareBelow();
-      setCurrentColorArrangement([...currentColorArrangement]);
     }, 100);
     return () => clearInterval(timer);
-  }, [checkMatches, moveIntoSquareBelow, currentColorArrangement]);
+  }, [checkMatches, moveIntoSquareBelow]);
 
   return (
     <Card className="mx-auto">
       <CardContent>
         <FruitGrid
-          currentColorArrangement={currentColorArrangement}
-          setCurrentColorArrangement={setCurrentColorArrangement}
+          fruits={fruits}
+          setFruits={setFruits}
           handleSpecialFruits={handleSpecialFruits}
         />
         <p className="mt-4 text-center text-xl font-bold">Score: {score}</p>
@@ -43,7 +40,7 @@ export const NeoCrushGame: React.FC = () => {
         <Button
           className="w-full"
           onClick={() => {
-            setCurrentColorArrangement(createBoard());
+            setFruits(createBoard());
             setScore(0);
           }}
         >

@@ -1,13 +1,11 @@
 // use-dnd.ts
-import { FruitColor, width } from './types';
+import { Fruit, FruitColor, FruitType, width } from './types';
 import { checkForMatches } from './utils';
 import { useCallback } from 'react';
 
 export const useDragAndDrop = (
-  currentColorArrangement: FruitColor[],
-  setCurrentColorArrangement: React.Dispatch<
-    React.SetStateAction<FruitColor[]>
-  >,
+  fruits: Fruit[],
+  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   squareBeingDragged: HTMLDivElement | null,
   squareBeingReplaced: HTMLDivElement | null,
   setSquareBeingDragged: React.Dispatch<
@@ -71,27 +69,30 @@ export const useDragAndDrop = (
       const validMove = validMoves.includes(squareBeingReplacedId);
 
       if (validMove) {
-        const draggedColor = squareBeingDragged.getAttribute(
-          'data-color'
-        ) as FruitColor;
-        const replacedColor = squareBeingReplaced.getAttribute(
-          'data-color'
-        ) as FruitColor;
+        const draggedFruit: Fruit = {
+          color: squareBeingDragged.getAttribute('data-color') as FruitColor,
+          type: squareBeingDragged.getAttribute('data-type') as FruitType,
+        };
 
-        currentColorArrangement[squareBeingReplacedId] = draggedColor;
-        currentColorArrangement[squareBeingDraggedId] = replacedColor;
+        const replacedFruit: Fruit = {
+          color: squareBeingReplaced.getAttribute('data-color') as FruitColor,
+          type: squareBeingReplaced.getAttribute('data-type') as FruitType,
+        };
+
+        fruits[squareBeingReplacedId] = draggedFruit;
+        fruits[squareBeingDraggedId] = replacedFruit;
 
         // Call handleSpecialFruits before checking for matches
         handleSpecialFruits(squareBeingDraggedId, squareBeingReplacedId);
 
-        const isAMatch = checkForMatches(currentColorArrangement);
+        const isAMatch = checkForMatches(fruits, setFruits);
 
         if (!isAMatch) {
-          currentColorArrangement[squareBeingReplacedId] = replacedColor;
-          currentColorArrangement[squareBeingDraggedId] = draggedColor;
+          fruits[squareBeingReplacedId] = replacedFruit;
+          fruits[squareBeingDraggedId] = draggedFruit;
         }
 
-        setCurrentColorArrangement([...currentColorArrangement]);
+        setFruits([...fruits]);
       }
 
       setSquareBeingDragged(null);
@@ -100,8 +101,8 @@ export const useDragAndDrop = (
     [
       squareBeingDragged,
       squareBeingReplaced,
-      currentColorArrangement,
-      setCurrentColorArrangement,
+      fruits,
+      setFruits,
       handleSpecialFruits,
     ]
   );

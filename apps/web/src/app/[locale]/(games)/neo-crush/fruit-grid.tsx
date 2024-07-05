@@ -1,5 +1,5 @@
 // fruit-grid.tsx
-import { FruitColor, colorMap } from './types';
+import { Fruit, colorMap } from './types';
 import { useDragAndDrop } from './use-dnd';
 import {
   ChevronDown,
@@ -10,16 +10,14 @@ import {
 import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
-  currentColorArrangement: FruitColor[];
-  setCurrentColorArrangement: React.Dispatch<
-    React.SetStateAction<FruitColor[]>
-  >;
+  fruits: Fruit[];
+  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
   handleSpecialFruits: (draggedId: number, replacedId: number) => void;
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({
-  currentColorArrangement,
-  setCurrentColorArrangement,
+  fruits,
+  setFruits,
   handleSpecialFruits,
 }) => {
   const [squareBeingDragged, setSquareBeingDragged] =
@@ -29,8 +27,8 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
   const touchStartPosition = useRef<{ x: number; y: number } | null>(null);
 
   const { dragStart, dragOver, dragLeave, dragDrop, dragEnd } = useDragAndDrop(
-    currentColorArrangement,
-    setCurrentColorArrangement,
+    fruits,
+    setFruits,
     squareBeingDragged,
     squareBeingReplaced,
     setSquareBeingDragged,
@@ -75,13 +73,15 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
       ) as HTMLDivElement;
       if (newTarget) {
         setSquareBeingReplaced(newTarget);
+        dragDrop({
+          target: newTarget,
+        } as unknown as React.DragEvent<HTMLDivElement>);
       }
     }
   };
 
   const touchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    touchStartPosition.current = null;
+    dragDrop(e);
     dragEnd(e);
   };
 
@@ -139,24 +139,22 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
         }
       `}</style>
       <div className="mx-auto mt-4 grid grid-cols-8 gap-2">
-        {currentColorArrangement.map((fruitColor, index) => (
+        {fruits.map((fruit, index) => (
           <div
             key={index}
             className={`fruit relative flex h-8 w-8 items-center justify-center rounded-full font-bold text-white shadow-md ${
-              fruitColor === 'horizontalLineEraser' ||
-              fruitColor === 'verticalLineEraser'
+              fruit?.type === 'horizontal' || fruit?.type === 'vertical'
                 ? 'border-foreground border-2'
                 : ''
             }`}
             style={{
-              backgroundColor: fruitColor
-                ? colorMap[fruitColor]
-                : 'transparent',
+              backgroundColor: fruit ? colorMap[fruit.color] : 'transparent',
               cursor: 'grab',
               backgroundSize: 'auto',
             }}
             data-id={index}
-            data-color={fruitColor}
+            data-color={fruit?.color as string | undefined}
+            data-type={fruit?.type as string | undefined}
             draggable={true}
             onDragStart={dragStart}
             onDragOver={dragOver}
@@ -168,14 +166,14 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onTouchMove={touchMove}
             onTouchEnd={touchEnd}
           >
-            {fruitColor === 'horizontalLineEraser' && (
+            {fruit?.type === 'horizontal' && (
               <>
                 <ChevronLeft className="absolute -left-1 h-6 w-6" />
                 <ChevronRight className="absolute -right-1 h-6 w-6" />
               </>
             )}
 
-            {fruitColor === 'verticalLineEraser' && (
+            {fruit?.type === 'vertical' && (
               <>
                 <ChevronUp className="absolute -top-1 h-6 w-6" />
                 <ChevronDown className="absolute -bottom-1 h-6 w-6" />

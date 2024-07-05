@@ -1,79 +1,88 @@
 // use-game-logic.ts
-import { FruitColor, FruitColors, width } from './types';
-import { checkForMatches } from './utils';
+import { Fruit, width } from './types';
+import { checkForMatches, createRandomFruit } from './utils';
 import { useCallback } from 'react';
 
 export const useGameLogic = (
-  currentColorArrangement: FruitColor[],
-  setCurrentColorArrangement: React.Dispatch<
-    React.SetStateAction<FruitColor[]>
-  >,
+  fruits: Fruit[],
+  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
   const checkMatches = useCallback(() => {
-    return checkForMatches(currentColorArrangement, setScore);
-  }, [currentColorArrangement, setScore]);
+    return checkForMatches(fruits, setFruits, setScore);
+  }, [fruits, setFruits, setScore]);
 
   const moveIntoSquareBelow = useCallback(() => {
-    for (let i = 0; i <= 55; i++) {
-      const isFirstRow = i >= 0 && i <= 7;
+    const newFruits = [...fruits];
+    let fruitsMoved = false;
 
-      if (isFirstRow && currentColorArrangement[i] === undefined) {
-        const randomColor = Object.values(FruitColors).filter(
-          (color) =>
-            color !== 'horizontalLineEraser' && color !== 'verticalLineEraser'
-        )[Math.floor(Math.random() * (Object.values(FruitColors).length - 3))];
-        currentColorArrangement[i] = randomColor!;
-      }
-
-      if (currentColorArrangement[i + width] === undefined) {
-        currentColorArrangement[i + width] = currentColorArrangement[i]!;
-        currentColorArrangement[i] = undefined!;
+    for (let i = width * width - 1; i >= width; i--) {
+      if (newFruits[i] === undefined) {
+        if (newFruits[i - width] !== undefined) {
+          newFruits[i] = newFruits[i - width];
+          newFruits[i - width] = undefined;
+          fruitsMoved = true;
+        }
       }
     }
-  }, [currentColorArrangement]);
+
+    // Fill the top row with new fruits if empty
+    for (let i = 0; i < width; i++) {
+      if (newFruits[i] === undefined) {
+        newFruits[i] = createRandomFruit();
+        fruitsMoved = true;
+      }
+    }
+
+    if (fruitsMoved) {
+      setFruits(newFruits);
+    }
+
+    return fruitsMoved;
+  }, [fruits, setFruits]);
 
   const handleSpecialFruits = useCallback(
     (draggedId: number, replacedId: number) => {
-      const draggedColor = currentColorArrangement[draggedId];
-      const replacedColor = currentColorArrangement[replacedId];
+      const newFruits = [...fruits];
+      const draggedFruit = newFruits[draggedId];
+      const replacedFruit = newFruits[replacedId];
 
       if (
-        draggedColor === 'horizontalLineEraser' ||
-        replacedColor === 'horizontalLineEraser'
+        draggedFruit?.type === 'horizontal' ||
+        replacedFruit?.type === 'horizontal'
       ) {
         const lineEraserIndex =
-          draggedColor === 'horizontalLineEraser' ? draggedId : replacedId;
+          draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
         const row = Math.floor(lineEraserIndex / width);
 
         // Erase the entire row
         for (let i = 0; i < width; i++) {
-          currentColorArrangement[row * width + i] = undefined!;
+          newFruits[row * width + i] = undefined;
         }
         setScore((score) => score + width);
       } else if (
-        draggedColor === 'verticalLineEraser' ||
-        replacedColor === 'verticalLineEraser'
+        draggedFruit?.type === 'vertical' ||
+        replacedFruit?.type === 'vertical'
       ) {
         const lineEraserIndex =
-          draggedColor === 'verticalLineEraser' ? draggedId : replacedId;
+          draggedFruit?.type === 'vertical' ? draggedId : replacedId;
         const col = lineEraserIndex % width;
 
         // Erase the entire column
         for (let i = 0; i < width; i++) {
-          currentColorArrangement[i * width + col] = undefined!;
+          newFruits[i * width + col] = undefined;
         }
         setScore((score) => score + width);
-
-        // Ensure the special fruit is destroyed after use
-        currentColorArrangement[draggedId] = undefined!;
-        currentColorArrangement[replacedId] = undefined!;
-
-        // Ensure the currentColorArrangement state is updated
-        setCurrentColorArrangement([...currentColorArrangement]);
       }
+
+      // Ensure the special fruit is destroyed after use
+      newFruits[draggedId] = undefined;
+      newFruits[replacedId] = undefined;
+
+      // Update the fruits state
+      setFruits(newFruits);
     },
-    [currentColorArrangement, setCurrentColorArrangement, setScore]
+    [fruits, setFruits, setScore]
   );
 
   return { checkMatches, moveIntoSquareBelow, handleSpecialFruits };
