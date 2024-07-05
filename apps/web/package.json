@@ -102,7 +102,7 @@
     "@next/eslint-plugin-next": "15.0.0-canary.54",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@tanstack/eslint-plugin-query": "^5.50.0",
+    "@tanstack/eslint-plugin-query": "^5.50.1",
     "@tanstack/react-query-devtools": "^5.49.2",
     "@testing-library/react": "^16.0.0",
     "@types/cookie": "^0.6.0",
