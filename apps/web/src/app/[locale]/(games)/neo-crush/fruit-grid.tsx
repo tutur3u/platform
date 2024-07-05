@@ -1,6 +1,12 @@
 // fruit-grid.tsx
 import { FruitColor, colorMap } from './types';
 import { useDragAndDrop } from './use-dnd';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+} from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
@@ -131,24 +137,16 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             opacity: 1;
           }
         }
-        .fruit.line-eraser::before {
-          content: '✖';
-          font-size: 20px;
-          color: black;
-          border: 2px solid white;
-          border-radius: 9999px;
-          animation: special-pulse 2s infinite;
-        }
-        .fruit:not(.line-eraser):hover {
-          animation: pulse 1s infinite;
-        }
       `}</style>
       <div className="mx-auto mt-4 grid grid-cols-8 gap-2">
         {currentColorArrangement.map((fruitColor, index) => (
           <div
             key={index}
-            className={`fruit flex h-8 w-8 items-center justify-center rounded-full font-bold text-white shadow-md ${
-              fruitColor === 'lineEraser' ? 'line-eraser' : ''
+            className={`fruit relative flex h-8 w-8 items-center justify-center rounded-full font-bold text-white shadow-md ${
+              fruitColor === 'horizontalLineEraser' ||
+              fruitColor === 'verticalLineEraser'
+                ? 'border-foreground border-2'
+                : ''
             }`}
             style={{
               backgroundColor: fruitColor
@@ -170,7 +168,19 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onTouchMove={touchMove}
             onTouchEnd={touchEnd}
           >
-            {/* {fruitColor && fruitColor[0]?.toUpperCase()} */}
+            {fruitColor === 'horizontalLineEraser' && (
+              <>
+                <ChevronLeft className="absolute -left-1 h-6 w-6" />
+                <ChevronRight className="absolute -right-1 h-6 w-6" />
+              </>
+            )}
+
+            {fruitColor === 'verticalLineEraser' && (
+              <>
+                <ChevronUp className="absolute -top-1 h-6 w-6" />
+                <ChevronDown className="absolute -bottom-1 h-6 w-6" />
+              </>
+            )}
           </div>
         ))}
       </div>

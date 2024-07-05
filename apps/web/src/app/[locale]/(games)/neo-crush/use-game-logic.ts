@@ -5,6 +5,9 @@ import { useCallback } from 'react';
 
 export const useGameLogic = (
   currentColorArrangement: FruitColor[],
+  setCurrentColorArrangement: React.Dispatch<
+    React.SetStateAction<FruitColor[]>
+  >,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
   const checkMatches = useCallback(() => {
@@ -17,8 +20,9 @@ export const useGameLogic = (
 
       if (isFirstRow && currentColorArrangement[i] === undefined) {
         const randomColor = Object.values(FruitColors).filter(
-          (color) => color !== 'lineEraser'
-        )[Math.floor(Math.random() * (Object.values(FruitColors).length - 2))];
+          (color) =>
+            color !== 'horizontalLineEraser' && color !== 'verticalLineEraser'
+        )[Math.floor(Math.random() * (Object.values(FruitColors).length - 3))];
         currentColorArrangement[i] = randomColor!;
       }
 
@@ -34,21 +38,42 @@ export const useGameLogic = (
       const draggedColor = currentColorArrangement[draggedId];
       const replacedColor = currentColorArrangement[replacedId];
 
-      if (draggedColor === 'lineEraser' || replacedColor === 'lineEraser') {
+      if (
+        draggedColor === 'horizontalLineEraser' ||
+        replacedColor === 'horizontalLineEraser'
+      ) {
         const lineEraserIndex =
-          draggedColor === 'lineEraser' ? draggedId : replacedId;
+          draggedColor === 'horizontalLineEraser' ? draggedId : replacedId;
         const row = Math.floor(lineEraserIndex / width);
-        const col = lineEraserIndex % width;
 
-        // Erase the entire row and column
+        // Erase the entire row
         for (let i = 0; i < width; i++) {
           currentColorArrangement[row * width + i] = undefined!;
+        }
+        setScore((score) => score + width);
+      } else if (
+        draggedColor === 'verticalLineEraser' ||
+        replacedColor === 'verticalLineEraser'
+      ) {
+        const lineEraserIndex =
+          draggedColor === 'verticalLineEraser' ? draggedId : replacedId;
+        const col = lineEraserIndex % width;
+
+        // Erase the entire column
+        for (let i = 0; i < width; i++) {
           currentColorArrangement[i * width + col] = undefined!;
         }
-        setScore((score) => score + width * 2 - 1); // Add score for erased fruits
+        setScore((score) => score + width);
+
+        // Ensure the special fruit is destroyed after use
+        currentColorArrangement[draggedId] = undefined!;
+        currentColorArrangement[replacedId] = undefined!;
+
+        // Ensure the currentColorArrangement state is updated
+        setCurrentColorArrangement([...currentColorArrangement]);
       }
     },
-    [currentColorArrangement, setScore]
+    [currentColorArrangement, setCurrentColorArrangement, setScore]
   );
 
   return { checkMatches, moveIntoSquareBelow, handleSpecialFruits };

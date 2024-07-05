@@ -69,9 +69,16 @@ export const checkForMatches = (
 
         // Create special fruits
         if (match.length === 4) {
-          currentColorArrangement[match[0]!] = 'lineEraser';
-          match.slice(1).forEach((square) => {
-            currentColorArrangement[square] = undefined!;
+          // Place the special fruit at the center of the match
+          const centerIndex = Math.floor(match.length / 2);
+          const isHorizontal = Math.random() < 0.5;
+          currentColorArrangement[match[centerIndex]!] = isHorizontal
+            ? 'horizontalLineEraser'
+            : 'verticalLineEraser';
+          match.forEach((square, index) => {
+            if (index !== centerIndex) {
+              currentColorArrangement[square] = undefined!;
+            }
           });
         } else {
           match.forEach((square) => {
@@ -137,8 +144,11 @@ export const createBoard = (): FruitColor[] => {
     return false;
   };
 
-  // Filter out "lineEraser" from FruitColors
-  const availableColors = FruitColors.filter((color) => color !== 'lineEraser');
+  // Filter out "lineEraser" colors
+  const availableColors = FruitColors.filter(
+    (color) =>
+      color !== 'horizontalLineEraser' && color !== 'verticalLineEraser'
+  );
 
   // Fill the board with available colors
   for (let i = 0; i < board.length; i++) {

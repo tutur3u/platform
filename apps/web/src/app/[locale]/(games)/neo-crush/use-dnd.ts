@@ -81,6 +81,7 @@ export const useDragAndDrop = (
         currentColorArrangement[squareBeingReplacedId] = draggedColor;
         currentColorArrangement[squareBeingDraggedId] = replacedColor;
 
+        // Call handleSpecialFruits before checking for matches
         handleSpecialFruits(squareBeingDraggedId, squareBeingReplacedId);
 
         const isAMatch = checkForMatches(currentColorArrangement);
@@ -89,11 +90,10 @@ export const useDragAndDrop = (
           currentColorArrangement[squareBeingReplacedId] = replacedColor;
           currentColorArrangement[squareBeingDraggedId] = draggedColor;
         }
-      } else {
-        // Invalid move animation logic
+
+        setCurrentColorArrangement([...currentColorArrangement]);
       }
 
-      setCurrentColorArrangement(currentColorArrangement);
       setSquareBeingDragged(null);
       setSquareBeingReplaced(null);
     },
