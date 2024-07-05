@@ -1,3 +1,4 @@
+import { locales } from '@/config';
 import { version } from '@/core/version';
 
 export const APP_VERSION = version;
@@ -17,3 +18,20 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 // Defaults to true when not specified.
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
+
+export const PUBLIC_PATHS = [
+  '/terms',
+  '/privacy',
+  '/branding',
+  '/ai/chats',
+  '/calendar/meet-together',
+].reduce((acc: string[], path) => {
+  // Add the original path
+  acc.push(path);
+
+  // Add localized paths
+  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+  acc.push(...localizedPaths);
+
+  return acc;
+}, []);
