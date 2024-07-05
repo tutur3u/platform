@@ -8,8 +8,15 @@ export const useGameLogic = (
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
+  const scoreUpdated = useRef(false);
+
   const checkMatches = useCallback(() => {
-    return checkForMatches(fruits, setFruits, setScore);
+    const hasMatch = checkForMatches(fruits, setFruits, setScore, scoreUpdated);
+    if (hasMatch) {
+      scoreUpdated.current = true;
+    } else {
+      scoreUpdated.current = false;
+    }
   }, [fruits, setFruits, setScore]);
 
   const moveIntoSquareBelow = useCallback(() => {

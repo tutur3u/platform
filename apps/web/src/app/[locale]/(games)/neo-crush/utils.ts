@@ -70,31 +70,32 @@ export const findMatch = (startIndex: number, fruits: Fruit[]): number[] => {
 export const checkForMatches = (
   fruits: Fruit[],
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
-  setScore?: React.Dispatch<React.SetStateAction<number>>
+  setScore?: React.Dispatch<React.SetStateAction<number>>,
+  scoreUpdated?: React.MutableRefObject<boolean>
 ) => {
   let hasMatch = false;
-  let totalMatchLength = 0;
-
-  const checkedIndexes = new Set<number>();
   const newFruits = [...fruits];
+  const matchedIndices = new Set<number>();
+  let numberOfMatches = 0;
 
   for (let i = 0; i < newFruits.length; i++) {
-    if (!checkedIndexes.has(i)) {
+    if (!matchedIndices.has(i)) {
       const match = findMatch(i, newFruits);
       if (match.length >= 3) {
-        totalMatchLength += match.length;
+        // Increment the number of matches found
+        numberOfMatches++;
 
-        // Create special fruits
+        // Add matched indices to the set to avoid double-counting
+        match.forEach((index) => matchedIndices.add(index));
+
+        // Clear matched fruits and create special fruits if needed
         if (match.length === 4) {
-          // Place the special fruit at the center of the match
           const centerIndex = Math.floor(match.length / 2);
           const isHorizontal = Math.random() < 0.5;
-
           if (newFruits[match[centerIndex]!]?.type)
             newFruits[match[centerIndex]!]!.type = isHorizontal
               ? 'horizontal'
               : 'vertical';
-
           match.forEach((square, index) => {
             if (index !== centerIndex) {
               newFruits[square] = undefined;
@@ -106,21 +107,24 @@ export const checkForMatches = (
           });
         }
 
-        match.forEach((square) => {
-          checkedIndexes.add(square);
-        });
         hasMatch = true;
       }
     }
   }
 
-  if (totalMatchLength > 0) {
-    setScore?.((score) => score + totalMatchLength);
+  // Increment the score by 3 for each distinct match found
+  if (numberOfMatches > 0 && !scoreUpdated?.current) {
+    console.log(`${numberOfMatches} matches found`);
+    setScore?.((score) => score + (numberOfMatches * 3));
+    if (scoreUpdated) {
+      scoreUpdated.current = true; // Set the flag to prevent duplicate scoring
+    }
   }
 
   setFruits(newFruits);
   return hasMatch;
 };
+
 
 export const createBoard = (): Fruit[] => {
   const board = Array.from(
