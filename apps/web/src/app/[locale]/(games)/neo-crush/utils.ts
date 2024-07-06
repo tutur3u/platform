@@ -78,19 +78,18 @@ export const checkForMatches = (
   fruits: Fruit[],
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   setScore?: React.Dispatch<React.SetStateAction<number>>,
-  scoreUpdated?: React.MutableRefObject<boolean>
+  scoreUpdated?: boolean
 ) => {
   let hasMatch = false;
   const newFruits = [...fruits];
   const matchedIndices = new Set<number>();
-  let numberOfMatches = 0;
+  let poppedFruits = 0;
 
   for (let i = 0; i < newFruits.length; i++) {
     if (!matchedIndices.has(i)) {
       const match = findMatch(i, newFruits);
       if (match.length >= 3) {
-        // Increment the number of matches found
-        numberOfMatches++;
+        poppedFruits += match.length;
 
         // Add matched indices to the set to avoid double-counting
         match.forEach((index) => matchedIndices.add(index));
@@ -120,12 +119,9 @@ export const checkForMatches = (
   }
 
   // Increment the score by 3 for each distinct match found
-  if (numberOfMatches > 0 && !scoreUpdated?.current) {
-    console.log(`${numberOfMatches} matches found`);
-    setScore?.((score) => score + numberOfMatches * PTS_PER_FRUIT);
-    if (scoreUpdated) {
-      scoreUpdated.current = true; // Set the flag to prevent duplicate scoring
-    }
+  if (poppedFruits > 0 && !scoreUpdated) {
+    console.log(`${poppedFruits} matches found`);
+    setScore?.((score) => score + poppedFruits * PTS_PER_FRUIT);
   }
 
   setFruits(newFruits);

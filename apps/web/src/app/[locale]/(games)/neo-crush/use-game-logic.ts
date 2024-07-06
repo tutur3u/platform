@@ -1,22 +1,18 @@
 // use-game-logic.ts
 import { BOARD_SIZE, Fruit } from './types';
 import { checkForMatches, createRandomFruit } from './utils';
-import { useCallback, useRef } from 'react';
+import { useCallback, useState } from 'react';
 
 export const useGameLogic = (
   fruits: Fruit[],
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
-  const scoreUpdated = useRef(false);
+  const [scoreUpdated, setScoreUpdated] = useState(false);
 
   const checkMatches = useCallback(() => {
     const hasMatch = checkForMatches(fruits, setFruits, setScore, scoreUpdated);
-    if (hasMatch) {
-      scoreUpdated.current = true;
-    } else {
-      scoreUpdated.current = false;
-    }
+    setScoreUpdated(hasMatch);
   }, [fruits, setFruits, setScore]);
 
   const moveIntoSquareBelow = useCallback(() => {
