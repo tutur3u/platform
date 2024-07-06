@@ -42,13 +42,13 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
           //   disableOnProduction: true,
           //   disabled: true,
           // },
-          // {
-          //   id: 'manage_workspace_security',
-          //   title: t('ws-roles.manage_workspace_security'),
-          //   description: t('ws-roles.manage_workspace_security_description'),
-          //   disableOnProduction: true,
-          //   disabled: true,
-          // },
+          {
+            id: 'manage_workspace_security',
+            title: t('ws-roles.manage_workspace_security'),
+            description: t('ws-roles.manage_workspace_security_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
           // {
           //   id: 'manage_workspace_audit_logs',
           //   title: t('ws-roles.manage_workspace_audit_logs'),
@@ -94,7 +94,17 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
       //   title: 'Drive',
       // },
       // {
-      //   title: 'Virtual Users',
+      //   id: 'users',
+      //   title: 'Users',
+      //   permissions: [
+      //     {
+      //       id: 'manage_user_report_templates',
+      //       title: t('ws-roles.manage_user_report_templates'),
+      //       description: t('ws-roles.manage_user_report_templates_description'),
+      //       disableOnProduction: false,
+      //       disabled: false,
+      //     },
+      //   ],
       // },
       // {
       //   title: 'Inventory',

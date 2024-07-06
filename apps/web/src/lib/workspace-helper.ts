@@ -237,20 +237,30 @@ export async function getPermissions({
     .eq('id', wsId)
     .single();
 
-  const [permissionsRes, workspaceRes] = await Promise.all([
+  const defaultQuery = supabase
+    .from('workspace_default_permissions')
+    .select('permission')
+    .eq('ws_id', wsId)
+    .eq('enabled', true)
+    .in('permission', requiredPermissions);
+
+  const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
     permissionsQuery,
     workspaceQuery,
+    defaultQuery,
   ]);
 
-  const { data: permissionsData, error } = permissionsRes;
+  const { data: permissionsData, error: permissionsError } = permissionsRes;
   const { data: workspaceData, error: workspaceError } = workspaceRes;
+  const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (error) throw error;
-  if (workspaceError) throw workspaceError;
   if (!workspaceData) throw new Error('Workspace not found');
+  if (permissionsError) throw permissionsError;
+  if (workspaceError) throw workspaceError;
+  if (defaultError) throw defaultError;
 
+  const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
-  const hasPermissions = permissionsData.length > 0;
 
   // console.log();
   // console.log('Is creator', isCreator);
@@ -272,7 +282,9 @@ export async function getPermissions({
   const permissions =
     workspaceData.creator_id === user.id
       ? rolePermissions().map(({ id }) => id)
-      : permissionsData.map(({ permission }) => permission);
+      : [...permissionsData, ...defaultData]
+          .map(({ permission }) => permission)
+          .filter((value, index, self) => self.indexOf(value) === index);
 
   return { permissions };
 }

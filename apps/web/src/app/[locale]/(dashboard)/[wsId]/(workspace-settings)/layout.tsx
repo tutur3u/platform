@@ -1,11 +1,6 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
-import {
-  getPermissions,
-  getSecrets,
-  getWorkspace,
-  verifySecret,
-} from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import React from 'react';
 
@@ -22,30 +17,17 @@ export default async function Layout({
 }: LayoutProps) {
   const { permissions } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_roles', 'manage_workspace_members'],
+    requiredPermissions: [
+      'manage_workspace_roles',
+      'manage_workspace_members',
+      'manage_workspace_security',
+    ],
   });
 
   const t = await getTranslations();
 
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
-
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: [
-      'ENABLE_X',
-      'ENABLE_AI',
-      'ENABLE_CHAT',
-      'ENABLE_CALENDAR',
-      'ENABLE_USERS',
-      'ENABLE_PROJECTS',
-      'ENABLE_DOCS',
-      'ENABLE_DRIVE',
-      'ENABLE_INVENTORY',
-      'ENABLE_HEALTHCARE',
-    ],
-    forceAdmin: true,
-  });
 
   const navLinks: NavLink[] = [
     {
@@ -61,26 +43,17 @@ export default async function Layout({
     {
       name: t('workspace-settings-layout.roles'),
       href: `/${wsId}/roles`,
-      allowedRoles: ['OWNER'],
       disabled: !permissions.includes('manage_workspace_roles'),
-    },
-    {
-      name: t('workspace-settings-layout.teams'),
-      href: `/${wsId}/teams`,
-      allowedRoles: ['ADMIN', 'OWNER'],
-      requireRootWorkspace: true,
-      disabled: true,
     },
     {
       name: t('workspace-settings-layout.reports'),
       href: `/${wsId}/settings/reports`,
-      allowedRoles: ['ADMIN', 'OWNER'],
-      disabled: !verifySecret('ENABLE_USERS', 'true', secrets),
+      disabled: !permissions.includes('manage_user_report_templates'),
     },
     {
       name: t('workspace-settings-layout.api_keys'),
       href: `/${wsId}/api-keys`,
-      allowedRoles: ['ADMIN', 'OWNER'],
+      disabled: !permissions.includes('manage_workspace_security'),
     },
     {
       name: t('workspace-settings-layout.secrets'),
