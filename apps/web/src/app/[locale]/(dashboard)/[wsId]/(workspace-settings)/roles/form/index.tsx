@@ -1,6 +1,6 @@
 'use client';
 
-import { permissionGroups } from './permissions';
+import { permissionGroups, totalPermissions } from './permissions';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
@@ -153,9 +153,7 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
                 (acc, group) => acc + group.count,
                 0
               )}
-              /
-              {groups.reduce((acc, group) => acc + group.permissions.length, 0)}
-              )
+              /{totalPermissions})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault}>
               <Users className="mr-1 h-5 w-5" />

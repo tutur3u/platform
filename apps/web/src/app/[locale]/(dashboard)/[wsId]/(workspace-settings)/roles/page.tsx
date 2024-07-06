@@ -1,5 +1,6 @@
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
+import { totalPermissions } from './form/permissions';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
@@ -44,7 +45,9 @@ export default async function WorkspaceRolesPage({
         createDescription={t('ws-roles.create_description')}
         form={<RoleForm wsId={wsId} />}
         defaultData={defaultData}
-        secondaryTriggerTitle={t('ws-roles.manage_default_permissions')}
+        secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
+          defaultData.permissions.filter((p) => p.enabled).length
+        }/${totalPermissions})`}
         secondaryTitle={t('ws-roles.default_permissions')}
         secondaryDescription={t('ws-roles.default_permissions_description')}
         showDefaultFormAsSecondary

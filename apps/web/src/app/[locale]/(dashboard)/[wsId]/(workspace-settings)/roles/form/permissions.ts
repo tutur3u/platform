@@ -12,7 +12,7 @@ type RolePermissionGroup = {
   permissions: RolePermission[];
 };
 
-export const permissionGroups = (t: any) => {
+export const permissionGroups = (t = ((key: string) => key) as any) => {
   return (
     [
       {
@@ -123,3 +123,12 @@ export const permissionGroups = (t: any) => {
         group.title && group.permissions && group.permissions.length > 0
     ) satisfies RolePermissionGroup[];
 };
+
+export const permissions = (t?: any) => {
+  return permissionGroups(t).reduce(
+    (acc, group) => acc.concat(group?.permissions || []),
+    [] as RolePermission[]
+  ) satisfies RolePermission[];
+};
+
+export const totalPermissions = permissions().length;
