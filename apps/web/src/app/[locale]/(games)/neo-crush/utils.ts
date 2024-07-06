@@ -1,5 +1,12 @@
 // utils.ts
-import { FRUIT_COLORS, Fruit, FruitColor, FruitType, width } from './types';
+import {
+  BOARD_SIZE,
+  FRUIT_COLORS,
+  Fruit,
+  FruitColor,
+  FruitType,
+  PTS_PER_FRUIT,
+} from './types';
 
 export const createFruitFromColor = (color: FruitColor): Fruit => ({
   color,
@@ -24,14 +31,14 @@ export const findMatch = (startIndex: number, fruits: Fruit[]): number[] => {
   let verticalMatch: number[] = [startIndex];
 
   // Check horizontal match
-  for (let i = 1; (startIndex % width) + i < width; i++) {
+  for (let i = 1; (startIndex % BOARD_SIZE) + i < BOARD_SIZE; i++) {
     if (fruits[startIndex + i]?.color === decidedColor) {
       horizontalMatch.push(startIndex + i);
     } else {
       break;
     }
   }
-  for (let i = 1; (startIndex % width) - i >= 0; i++) {
+  for (let i = 1; (startIndex % BOARD_SIZE) - i >= 0; i++) {
     if (fruits[startIndex - i]?.color === decidedColor) {
       horizontalMatch.unshift(startIndex - i);
     } else {
@@ -40,16 +47,16 @@ export const findMatch = (startIndex: number, fruits: Fruit[]): number[] => {
   }
 
   // Check vertical match
-  for (let i = 1; startIndex + i * width < width * width; i++) {
-    if (fruits[startIndex + i * width]?.color === decidedColor) {
-      verticalMatch.push(startIndex + i * width);
+  for (let i = 1; startIndex + i * BOARD_SIZE < BOARD_SIZE * BOARD_SIZE; i++) {
+    if (fruits[startIndex + i * BOARD_SIZE]?.color === decidedColor) {
+      verticalMatch.push(startIndex + i * BOARD_SIZE);
     } else {
       break;
     }
   }
-  for (let i = 1; startIndex - i * width >= 0; i++) {
-    if (fruits[startIndex - i * width]?.color === decidedColor) {
-      verticalMatch.unshift(startIndex - i * width);
+  for (let i = 1; startIndex - i * BOARD_SIZE >= 0; i++) {
+    if (fruits[startIndex - i * BOARD_SIZE]?.color === decidedColor) {
+      verticalMatch.unshift(startIndex - i * BOARD_SIZE);
     } else {
       break;
     }
@@ -115,7 +122,7 @@ export const checkForMatches = (
   // Increment the score by 3 for each distinct match found
   if (numberOfMatches > 0 && !scoreUpdated?.current) {
     console.log(`${numberOfMatches} matches found`);
-    setScore?.((score) => score + (numberOfMatches * 3));
+    setScore?.((score) => score + numberOfMatches * PTS_PER_FRUIT);
     if (scoreUpdated) {
       scoreUpdated.current = true; // Set the flag to prevent duplicate scoring
     }
@@ -125,26 +132,25 @@ export const checkForMatches = (
   return hasMatch;
 };
 
-
 export const createBoard = (): Fruit[] => {
   const board = Array.from(
-    { length: width * width },
+    { length: BOARD_SIZE * BOARD_SIZE },
     () => null
   ) as (Fruit | null)[];
 
   const isValidMove = (index: number, fruit?: Fruit | null) => {
     if (fruit?.type !== 'normal') return true;
 
-    const x = index % width;
-    const y = Math.floor(index / width);
+    const x = index % BOARD_SIZE;
+    const y = Math.floor(index / BOARD_SIZE);
 
     if (
       (x >= 2 &&
         board[index - 1]?.color === fruit?.color &&
         board[index - 2]?.color === fruit?.color) ||
       (y >= 2 &&
-        board[index - width]?.color === fruit?.color &&
-        board[index - 2 * width]?.color === fruit?.color)
+        board[index - BOARD_SIZE]?.color === fruit?.color &&
+        board[index - 2 * BOARD_SIZE]?.color === fruit?.color)
     ) {
       return false;
     }
@@ -155,20 +161,20 @@ export const createBoard = (): Fruit[] => {
   const hasPossibleMove = () => {
     for (let i = 0; i < board.length; i++) {
       const fruit = board[i];
-      const x = i % width;
-      const y = Math.floor(i / width);
+      const x = i % BOARD_SIZE;
+      const y = Math.floor(i / BOARD_SIZE);
 
       if (
-        (x < width - 1 &&
+        (x < BOARD_SIZE - 1 &&
           board[i + 1] !== fruit &&
           isValidMove(i, board[i + 1])) ||
-        (y < width - 1 &&
-          board[i + width] !== fruit &&
-          isValidMove(i, board[i + width])) ||
+        (y < BOARD_SIZE - 1 &&
+          board[i + BOARD_SIZE] !== fruit &&
+          isValidMove(i, board[i + BOARD_SIZE])) ||
         (x > 0 && board[i - 1] !== fruit && isValidMove(i, board[i - 1])) ||
         (y > 0 &&
-          board[i - width] !== fruit &&
-          isValidMove(i, board[i - width]))
+          board[i - BOARD_SIZE] !== fruit &&
+          isValidMove(i, board[i - BOARD_SIZE]))
       ) {
         return true;
       }

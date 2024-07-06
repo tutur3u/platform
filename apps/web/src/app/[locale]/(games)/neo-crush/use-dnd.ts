@@ -1,5 +1,5 @@
 // use-dnd.ts
-import { Fruit, FruitColor, FruitType, width } from './types';
+import { BOARD_SIZE, Fruit, FruitColor, FruitType } from './types';
 import { checkForMatches } from './utils';
 import { useCallback } from 'react';
 
@@ -61,9 +61,9 @@ export const useDragAndDrop = (
 
       const validMoves = [
         squareBeingDraggedId - 1,
-        squareBeingDraggedId - width,
+        squareBeingDraggedId - BOARD_SIZE,
         squareBeingDraggedId + 1,
-        squareBeingDraggedId + width,
+        squareBeingDraggedId + BOARD_SIZE,
       ];
 
       const validMove = validMoves.includes(squareBeingReplacedId);
