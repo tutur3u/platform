@@ -20,15 +20,15 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const t = await getTranslations();
-
-  const workspace = await getWorkspace(wsId);
-  const user = await getCurrentUser();
-
   const { permissions } = await getPermissions({
     wsId,
     requiredPermissions: ['manage_workspace_roles', 'manage_workspace_members'],
   });
+
+  const t = await getTranslations();
+
+  const workspace = await getWorkspace(wsId);
+  const user = await getCurrentUser();
 
   const secrets = await getSecrets({
     wsId,

@@ -229,8 +229,7 @@ export async function getPermissions({
     .select('permission, role_id')
     .eq('ws_id', wsId)
     .eq('enabled', true)
-    .in('permission', requiredPermissions)
-    .limit(requiredPermissions.length);
+    .in('permission', requiredPermissions);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -250,14 +249,24 @@ export async function getPermissions({
   if (workspaceError) throw workspaceError;
   if (!workspaceData) throw new Error('Workspace not found');
 
+  const isCreator = workspaceData.creator_id === user.id;
+  const hasPermissions = permissionsData.length > 0;
+
   // console.log();
-  // console.log('Is creator', workspaceData.creator_id === user.id);
-  // console.log('Permissions', permissionsData.length > 0, permissionsData);
+  // console.log('Is creator', isCreator);
+  // console.log('Has permissions', hasPermissions, permissionsData);
   // console.log();
 
-  if (!permissionsData.length && !workspaceData.creator_id) {
-    if (redirectTo) redirect(redirectTo);
-    if (enableNotFound) notFound();
+  if (!isCreator && !hasPermissions) {
+    if (redirectTo) {
+      // console.log('Redirecting to', redirectTo);
+      redirect(redirectTo);
+    }
+
+    if (enableNotFound) {
+      // console.log('Not found');
+      notFound();
+    }
   }
 
   const permissions =
