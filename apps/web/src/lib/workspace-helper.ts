@@ -1,4 +1,6 @@
+import { permissions as rolePermissions } from './permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PermissionId } from '@/types/db';
 import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
@@ -194,4 +196,105 @@ export function verifySecret(
 ) {
   const secret = getSecret(secretName, secrets);
   return secret?.value === secretValue;
+}
+
+export async function getPermissions({
+  wsId,
+  requiredPermissions,
+  redirectTo,
+  enableNotFound,
+}: {
+  wsId: string;
+  requiredPermissions: PermissionId[];
+  redirectTo?: string;
+  enableNotFound?: boolean;
+}) {
+  const supabase = createClient();
+
+  if (
+    !requiredPermissions.every((p) =>
+      rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some((rp) => rp.id === p)
+    )
+  ) {
+    throw new Error(
+      `Invalid permissions provided: ${requiredPermissions
+        .filter(
+          (p) =>
+            !rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some(
+              (rp) => rp.id === p
+            )
+        )
+        .join(', ')}`
+    );
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('User not found');
+
+  const permissionsQuery = supabase
+    .from('workspace_role_permissions')
+    .select('permission, role_id')
+    .eq('ws_id', wsId)
+    .eq('enabled', true)
+    .in('permission', requiredPermissions);
+
+  const workspaceQuery = supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  const defaultQuery = supabase
+    .from('workspace_default_permissions')
+    .select('permission')
+    .eq('ws_id', wsId)
+    .eq('enabled', true)
+    .in('permission', requiredPermissions);
+
+  const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
+    permissionsQuery,
+    workspaceQuery,
+    defaultQuery,
+  ]);
+
+  const { data: permissionsData, error: permissionsError } = permissionsRes;
+  const { data: workspaceData, error: workspaceError } = workspaceRes;
+  const { data: defaultData, error: defaultError } = defaultRes;
+
+  if (!workspaceData) throw new Error('Workspace not found');
+  if (permissionsError) throw permissionsError;
+  if (workspaceError) throw workspaceError;
+  if (defaultError) throw defaultError;
+
+  const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
+  const isCreator = workspaceData.creator_id === user.id;
+
+  // console.log();
+  // console.log('Is creator', isCreator);
+  // console.log('Has permissions', hasPermissions, permissionsData);
+  // console.log();
+
+  if (!isCreator && !hasPermissions) {
+    if (redirectTo) {
+      // console.log('Redirecting to', redirectTo);
+      redirect(redirectTo);
+    }
+
+    if (enableNotFound) {
+      // console.log('Not found');
+      notFound();
+    }
+  }
+
+  const permissions =
+    workspaceData.creator_id === user.id
+      ? rolePermissions({ wsId }).map(({ id }) => id)
+      : [...permissionsData, ...defaultData]
+          .map(({ permission }) => permission)
+          .filter((value, index, self) => self.indexOf(value) === index);
+
+  return { permissions };
 }

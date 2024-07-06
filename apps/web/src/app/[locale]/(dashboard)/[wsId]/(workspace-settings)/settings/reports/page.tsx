@@ -1,6 +1,7 @@
 import { configColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
@@ -23,6 +24,12 @@ export default async function WorkspaceReportsSettingsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_user_report_templates'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const { data } = await getConfigs(wsId, searchParams);
   const locale = await getLocale();
   const t = await getTranslations('ws-reports');

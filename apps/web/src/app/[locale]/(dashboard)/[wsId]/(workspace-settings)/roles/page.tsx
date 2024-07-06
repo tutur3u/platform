@@ -1,6 +1,8 @@
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { permissions, totalPermissions } from '@/lib/permissions';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -22,6 +24,12 @@ export default async function WorkspaceRolesPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_roles'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const {
     data: rawData,
     defaultData,
@@ -34,6 +42,8 @@ export default async function WorkspaceRolesPage({
     ws_id: wsId,
   }));
 
+  const permissionsCount = totalPermissions(wsId);
+
   return (
     <>
       <FeatureSummary
@@ -44,7 +54,11 @@ export default async function WorkspaceRolesPage({
         createDescription={t('ws-roles.create_description')}
         form={<RoleForm wsId={wsId} />}
         defaultData={defaultData}
-        secondaryTriggerTitle={t('ws-roles.manage_default_permissions')}
+        secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
+          defaultData.permissions
+            .filter((p) => permissions({ wsId }).some((dp) => dp.id === p.id))
+            .filter((p) => p.enabled).length
+        }/${permissionsCount})`}
         secondaryTitle={t('ws-roles.default_permissions')}
         secondaryDescription={t('ws-roles.default_permissions_description')}
         showDefaultFormAsSecondary
@@ -52,6 +66,7 @@ export default async function WorkspaceRolesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
+        extraData={permissionsCount}
         columnGenerator={roleColumns}
         namespace="workspace-role-data-table"
         data={data}

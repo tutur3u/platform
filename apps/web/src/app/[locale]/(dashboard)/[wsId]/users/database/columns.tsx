@@ -100,7 +100,7 @@ export const getUserColumns = (
                   '-'}
               </TooltipTrigger>
               <TooltipContent className="text-center">
-                {t('linked_to')}{' '}
+                {t(`${namespace}.linked_to`)}{' '}
                 <div>
                   {row
                     .getValue<WorkspaceUser[]>('linked_users')
@@ -148,7 +148,7 @@ export const getUserColumns = (
                   '-'}
               </TooltipTrigger>
               <TooltipContent className="text-center">
-                {t('linked_to')}{' '}
+                {t(`${namespace}.linked_to`)}{' '}
                 <div>
                   {row
                     .getValue<WorkspaceUser[]>('linked_users')
