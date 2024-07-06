@@ -16,7 +16,7 @@ export const suggestEmails = (text: string): string[] => {
     `${handle}@gmail.com`,
     `${handle}@yahoo.com`,
     `${handle}@outlook.com`,
-    `${handle}@tuturuuu.com`,
+    `${handle}@rmit.edu.vn`,
   ];
 
   return suggestions.filter((suggestion) => isEmail(suggestion));

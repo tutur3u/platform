@@ -1,19 +1,10 @@
-import GetStartedButton from './get-started-button';
-import Members from './members';
-import {
-  CalendarHeart,
-  Cpu,
-  MemoryStick,
-  Network,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
+import Projects from './projects';
 
 export default function MarketingPage() {
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col items-center justify-center gap-6 px-3 py-16 pb-0">
-        <div className="flex flex-col items-center justify-center">
+      <div className="text-foreground mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16">
+        <div className="flex flex-col items-center">
           <h1 className="relative text-center text-4xl font-bold lg:text-7xl">
             <span className="sr-only">RMIT Neo Culture Tech</span>
             <div className="h-64 w-64">
@@ -45,93 +36,14 @@ export default function MarketingPage() {
           </h1>
 
           <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
-            The{' '}
-            <span className="text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-300">
-              best club for SSET students
-            </span>{' '}
-            to explore the world of technology
-            <span>
-              {' at '}
-              <span className="text-brand-light-red font-bold underline underline-offset-4">
-                RMIT University
-              </span>
+            The place where you can learn, grow and have fun with technology, by{' '}
+            <span className="text-brand-light-red font-bold underline underline-offset-4">
+              building projects
             </span>
             .
           </p>
 
-          <GetStartedButton href="/onboarding" />
-        </div>
-
-        <div>
-          <div className="bg-brand-light-blue/5 border-brand-light-blue/10 text-brand-light-blue relative mx-auto mb-4 mt-32 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl">
-            <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
-            <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
-            <span className="text-brand-dark-blue decoration-brand-dark-blue font-bold tracking-wide underline underline-offset-4">
-              STRONGER TOGETHER
-            </span>{' '}
-            is our core value. As a club, we strive to create a community where
-            everyone can learn and grow together.
-          </div>
-          <div className="mx-auto flex items-center justify-center text-center">
-            <div className="border-brand-light-red/10 bg-brand-light-red/5 text-brand-dark-red relative mx-4 mb-32 max-w-xl rounded-lg border p-4 text-center text-sm font-semibold tracking-wide md:mx-8 md:p-8 md:text-base lg:text-lg">
-              <Cpu className="text-brand-light-red absolute -bottom-1 -right-3 h-8 w-8 rotate-12 md:bottom-3 md:right-5" />
-              <MemoryStick className="text-brand-light-red absolute -left-5 top-4 h-8 w-8 rotate-12 md:left-2 md:top-3" />
-              If you are passionate about technology, you should definitely
-              consider being{' '}
-              <span className="text-brand-light-red font-bold underline decoration-wavy underline-offset-4">
-                a part of us
-              </span>{' '}
-              to enhance your skills and gain valuable experience.
-            </div>
-          </div>
-        </div>
-
-        <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
-
-        <Members />
-
-        <div className="via-foreground/10 mt-8 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
-
-        <div className="w-full text-center">
-          <div className="mb-4 text-4xl font-bold">Why us?</div>
-
-          <div className="grid w-full gap-4 md:grid-cols-3">
-            <div className="flex flex-col items-center justify-center rounded-lg border border-purple-300/20 bg-purple-300/10 p-4">
-              <CalendarHeart className="h-16 w-16 text-purple-500 dark:text-purple-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-purple-500 dark:text-purple-300">
-                Special Events
-              </div>
-              <div className="text-purple-500 dark:text-purple-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-red-300/20 bg-red-300/10 p-4">
-              <Network className="h-16 w-16 text-red-500 dark:text-red-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-red-500 dark:text-red-300">
-                Networking
-              </div>
-              <div className="text-red-500 dark:text-red-100">
-                Events organized to support you find career paths in technology,
-                gain deeper insights from company trips and alumni, and join
-                coding competitions.
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-lg border border-blue-300/20 bg-blue-300/10 p-4">
-              <Telescope className="h-16 w-16 text-blue-500 dark:text-blue-300" />
-              <div className="mb-2 mt-1 text-2xl font-semibold text-blue-500 dark:text-blue-300">
-                Vision
-              </div>
-              <div className="text-blue-500 dark:text-blue-100">
-                We create an environment not only for students from SSET
-                students but also others to learn new knowledge, have fun, and
-                expand their network.
-              </div>
-            </div>
-          </div>
+          <Projects />
         </div>
       </div>
     </div>

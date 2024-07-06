@@ -39,12 +39,10 @@ interface NavItem {
 const navItems = (t: any) => {
   return [
     { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.docs'),
-      external: true,
-    },
   ] as NavItem[];
 };
 

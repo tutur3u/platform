@@ -38,7 +38,7 @@ export default async function Login() {
               src="/media/logos/transparent.png"
               width={128}
               height={128}
-              alt="Tuturuuu Logo"
+              alt="NCT Hub Logo"
             />
           </h1>
         </div>

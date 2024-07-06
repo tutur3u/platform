@@ -70,7 +70,7 @@ export function EmptyScreen({
                 : 'from-pink-600 via-yellow-500 to-sky-600'
             }`}
           >
-            Tuturuuu AI
+            NCT Hub AI
           </span>{' '}
           Chat.
         </h1>
