@@ -49,7 +49,24 @@ export const useGameLogic = (
       const newFruits = [...fruits];
       const draggedFruit = newFruits[draggedId];
       const replacedFruit = newFruits[replacedId];
+      // rainbow fruit
+      if (
+        draggedFruit?.type === 'rainbow' ||
+        replacedFruit?.type === 'rainbow'
+      ) {
+        const fruitColorToErase =
+          draggedFruit?.type !== 'rainbow'
+            ? draggedFruit?.color
+            : replacedFruit?.color;
 
+        newFruits.forEach((fruit, index) => {
+          if (fruit?.color === fruitColorToErase) {
+            newFruits[index] = undefined;
+          }
+        });
+
+        setScore((score) => score + BOARD_SIZE * BOARD_SIZE);
+      }
       if (
         draggedFruit?.type === 'horizontal' ||
         replacedFruit?.type === 'horizontal'

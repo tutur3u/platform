@@ -81,13 +81,37 @@ export const useDragAndDrop = (
 
         fruits[squareBeingReplacedId] = draggedFruit;
         fruits[squareBeingDraggedId] = replacedFruit;
+        // Đây code em lấy từ use-game-logic qua
+        if (
+          draggedFruit?.type === 'rainbow' ||
+          replacedFruit?.type === 'rainbow'
+        ) {
+          const fruitColorToErase =
+            draggedFruit?.type !== 'rainbow'
+              ? draggedFruit?.color
+              : replacedFruit?.color;
 
+          fruits.forEach((fruit, index) => {
+            if (fruit?.color === fruitColorToErase) {
+              fruits[index] = undefined;
+            }
+          });
+          fruits[squareBeingReplacedId] = undefined;
+          fruits[squareBeingDraggedId] = undefined;
+        }
+        // Đây hết code em test
         // Call handleSpecialFruits before checking for matches
         handleSpecialFruits(squareBeingDraggedId, squareBeingReplacedId);
 
         const isAMatch = checkForMatches(fruits, setFruits);
-
-        if (!isAMatch) {
+        // if em có thêm điều kiện khi dùng rainbow thì xóa rồi nó ko đặt lại
+        if (
+          !isAMatch &&
+          !(
+            draggedFruit?.type === 'rainbow' ||
+            replacedFruit?.type === 'rainbow'
+          )
+        ) {
           fruits[squareBeingReplacedId] = replacedFruit;
           fruits[squareBeingDraggedId] = draggedFruit;
         }
