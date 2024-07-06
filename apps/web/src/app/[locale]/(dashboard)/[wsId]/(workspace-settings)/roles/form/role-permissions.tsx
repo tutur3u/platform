@@ -29,16 +29,25 @@ export default function RoleFormPermissionsSection({
 
       <Accordion
         type="multiple"
-        defaultValue={groups.map((group) => `group-${group.id}`)}
+        // defaultValue={groups.map((group) => `group-${group.id}`)}
       >
         {groups.map((group, idx) => (
           <Fragment key={`group-${group.id}`}>
             <AccordionItem value={`group-${group.id}`}>
               <AccordionTrigger>
-                {group.title} (
-                {enabledPermissionsCount.find((x) => x.id === group.id)
-                  ?.count || 0}
-                /{group.permissions.length})
+                <div className="flex flex-wrap items-center gap-2">
+                  {group.title}
+                  <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
+                    <span className="text-dynamic-orange">
+                      {enabledPermissionsCount.find((x) => x.id === group.id)
+                        ?.count || 0}
+                    </span>
+                    <span className="opacity-50">/</span>
+                    <span className="text-dynamic-blue">
+                      {group.permissions.length}
+                    </span>
+                  </span>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 {group.permissions.map((permission, idx) => (

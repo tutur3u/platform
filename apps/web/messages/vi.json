@@ -619,6 +619,7 @@
         "id": "Mã số",
         "name": "Tên",
         "description": "Mô tả",
+        "permissions": "Quyền",
         "user_count": "Số người dùng",
         "created_at": "Tạo lúc"
     },

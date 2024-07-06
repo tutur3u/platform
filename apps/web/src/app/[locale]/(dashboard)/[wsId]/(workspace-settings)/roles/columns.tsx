@@ -1,5 +1,6 @@
 'use client';
 
+import { totalPermissions } from './form/permissions';
 import { RoleRowActions } from './row-actions';
 import { WorkspaceRole } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
@@ -59,6 +60,28 @@ export const roleColumns = (
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
         {row.getValue('name') || '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'permissions',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.permissions`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1 font-semibold">
+        <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
+          <span className="text-dynamic-orange">
+            {(row.getValue('permissions') as any[]).filter((x) => x.enabled)
+              .length ?? '-'}
+          </span>
+          <span className="opacity-50">/</span>
+          <span className="text-dynamic-blue">{totalPermissions}</span>
+        </span>
       </div>
     ),
   },

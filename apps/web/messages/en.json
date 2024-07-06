@@ -619,6 +619,7 @@
         "id": "ID",
         "name": "Name",
         "description": "Description",
+        "permissions": "Permissions",
         "user_count": "User count",
         "created_at": "Created at"
     },

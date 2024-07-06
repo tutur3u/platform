@@ -4,6 +4,7 @@ import { cn } from '../../../lib/utils';
 import { Input } from '../input';
 import { debounce } from 'lodash';
 import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 interface Props {
   t: any;
@@ -13,16 +14,32 @@ interface Props {
   onSearch?: (query: string) => void;
 }
 
+// Assuming the rest of your imports and Props interface are unchanged
+
 const SearchBar = ({ t, defaultValue, className, onSearch }: Props) => {
-  const updateQuery = onSearch ? debounce(onSearch, 300) : () => {};
+  // Memoize the updateQuery function to ensure debounce works correctly
+  const updateQuery = useCallback(
+    debounce((query: string) => {
+      if (onSearch) {
+        onSearch(query);
+      }
+    }, 300),
+    [onSearch] // Re-create the debounced function only if onSearch changes
+  );
 
   const searchPlaceholder = t('search.search-placeholder');
-
   const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue]);
+
+  useEffect(() => {
+    // Cleanup the debounced function on component unmount
+    return () => {
+      updateQuery.cancel();
+    };
+  }, [updateQuery]);
 
   return (
     <Input
