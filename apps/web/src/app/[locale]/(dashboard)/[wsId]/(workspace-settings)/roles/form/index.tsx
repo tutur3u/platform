@@ -1,9 +1,9 @@
 'use client';
 
-import { permissionGroups, totalPermissions } from './permissions';
-import RoleFormDisplaySection from './role-display';
-import RoleFormMembersSection from './role-members';
-import RoleFormPermissionsSection from './role-permissions';
+import {
+  permissionGroups,
+  totalPermissions,
+} from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { PermissionId, WorkspaceRole } from '@/types/db';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -26,6 +26,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import RoleFormDisplaySection from './role-display';
+import RoleFormMembersSection from './role-members';
+import RoleFormPermissionsSection from './role-permissions';
 
 const FormSchema = z.object({
   id: z.string().optional(),

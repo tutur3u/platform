@@ -1,6 +1,11 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getSecrets, getWorkspace, verifySecret } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  getSecrets,
+  getWorkspace,
+  verifySecret,
+} from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import React from 'react';
 
@@ -19,6 +24,11 @@ export default async function Layout({
 
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
+
+  const { permissions } = await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_roles', 'manage_workspace_members'],
+  });
 
   const secrets = await getSecrets({
     wsId,
@@ -46,12 +56,13 @@ export default async function Layout({
     {
       name: t('workspace-settings-layout.members'),
       href: `/${wsId}/members`,
+      disabled: !permissions.includes('manage_workspace_members'),
     },
     {
       name: t('workspace-settings-layout.roles'),
       href: `/${wsId}/roles`,
       allowedRoles: ['OWNER'],
-      requireRootMember: true,
+      disabled: !permissions.includes('manage_workspace_roles'),
     },
     {
       name: t('workspace-settings-layout.teams'),

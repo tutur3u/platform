@@ -1,7 +1,7 @@
 'use client';
 
-import { totalPermissions } from './form/permissions';
 import { RoleRowActions } from './row-actions';
+import { totalPermissions } from '@/lib/permissions';
 import { WorkspaceRole } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';

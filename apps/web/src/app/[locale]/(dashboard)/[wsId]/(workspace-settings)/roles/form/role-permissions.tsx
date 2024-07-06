@@ -1,6 +1,6 @@
 import { SectionProps } from './index';
-import { permissionGroups } from './permissions';
 import RolePermission from './role-permission';
+import { permissionGroups } from '@/lib/permissions';
 import {
   Accordion,
   AccordionContent,

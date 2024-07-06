@@ -1,7 +1,8 @@
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
-import { totalPermissions } from './form/permissions';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { totalPermissions } from '@/lib/permissions';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -23,6 +24,12 @@ export default async function WorkspaceRolesPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_roles'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const {
     data: rawData,
     defaultData,

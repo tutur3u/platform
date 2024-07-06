@@ -1,4 +1,6 @@
+import { permissions as rolePermissions } from './permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PermissionId } from '@/types/db';
 import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
@@ -194,4 +196,74 @@ export function verifySecret(
 ) {
   const secret = getSecret(secretName, secrets);
   return secret?.value === secretValue;
+}
+
+export async function getPermissions({
+  wsId,
+  requiredPermissions,
+  redirectTo,
+  enableNotFound,
+}: {
+  wsId: string;
+  requiredPermissions: PermissionId[];
+  redirectTo?: string;
+  enableNotFound?: boolean;
+}) {
+  const supabase = createClient();
+
+  if (
+    !requiredPermissions.every((p) =>
+      rolePermissions().some((rp) => rp.id === p)
+    )
+  )
+    throw new Error('Invalid permissions provided');
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('User not found');
+
+  const permissionsQuery = supabase
+    .from('workspace_role_permissions')
+    .select('permission, role_id')
+    .eq('ws_id', wsId)
+    .eq('enabled', true)
+    .in('permission', requiredPermissions)
+    .limit(requiredPermissions.length);
+
+  const workspaceQuery = supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  const [permissionsRes, workspaceRes] = await Promise.all([
+    permissionsQuery,
+    workspaceQuery,
+  ]);
+
+  const { data: permissionsData, error } = permissionsRes;
+  const { data: workspaceData, error: workspaceError } = workspaceRes;
+
+  if (error) throw error;
+  if (workspaceError) throw workspaceError;
+  if (!workspaceData) throw new Error('Workspace not found');
+
+  // console.log();
+  // console.log('Is creator', workspaceData.creator_id === user.id);
+  // console.log('Permissions', permissionsData.length > 0, permissionsData);
+  // console.log();
+
+  if (!permissionsData.length && !workspaceData.creator_id) {
+    if (redirectTo) redirect(redirectTo);
+    if (enableNotFound) notFound();
+  }
+
+  const permissions =
+    workspaceData.creator_id === user.id
+      ? rolePermissions().map(({ id }) => id)
+      : permissionsData.map(({ permission }) => permission);
+
+  return { permissions };
 }
