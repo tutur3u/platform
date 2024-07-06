@@ -11,6 +11,7 @@
     "bdevrs": "cd apps/web && pnpm bdevrs",
     "devrs": "cd apps/web && pnpm devrs",
     "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -31,12 +32,12 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "8.57.0",
-    "@repo/eslint-config-custom": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
-    "@repo/tsconfig": "workspace:*",
-    "turbo": "^2.0.5",
-    "typescript": "^5.5.2",
+    "@repo/typescript-config": "workspace:*",
+    "turbo": "^2.0.6",
+    "typescript": "^5.5.3",
     "vitest": "^1.6.0"
   },
   "engines": {

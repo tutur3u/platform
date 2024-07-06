@@ -272,6 +272,7 @@ export function ChatPanel({
               />
               <div className="flex w-full items-center">
                 <PromptForm
+                  chat={chat}
                   onSubmit={async (value) => {
                     // If there is no id, create a new chat
                     if (!id) return await createChat(value);
@@ -300,14 +301,14 @@ export function ChatPanel({
                           ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
                           : 'pointer-events-auto ml-2 w-10 opacity-100'
                       )}
-                      disabled={isLoading || !id}
+                      disabled={!id}
                       onClick={() => setShowChatVisibility((prev) => !prev)}
                     >
                       {chat?.is_public ? <Globe /> : <Lock />}
-                      <span className="sr-only">Chat visibility</span>
+                      <span className="sr-only">{t('chat_visibility')}</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Chat visibility</TooltipContent>
+                  <TooltipContent>{t('chat_visibility')}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -326,10 +327,10 @@ export function ChatPanel({
                       disabled={isLoading || showExtraOptions}
                     >
                       <Bolt />
-                      <span className="sr-only">Extra options</span>
+                      <span className="sr-only">{t('extra_options')}</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Extra options</TooltipContent>
+                  <TooltipContent>{t('extra_options')}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -356,7 +357,7 @@ export function ChatPanel({
                 setCopiedLink(false);
                 setUpdating(false);
               }}
-              disabled={isLoading || updating || !id || chat?.is_public}
+              disabled={!id || chat?.is_public}
             >
               {chat?.is_public ? (
                 <Check className="mr-2 h-4 w-4" />
@@ -376,7 +377,7 @@ export function ChatPanel({
                 setCopiedLink(false);
                 setUpdating(false);
               }}
-              disabled={isLoading || updating || !id || !chat?.is_public}
+              disabled={!id || !chat?.is_public}
             >
               {!chat?.is_public ? (
                 <Check className="mr-2 h-4 w-4" />

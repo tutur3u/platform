@@ -23,7 +23,7 @@ interface Props {
   };
 }
 
-export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
+export function generateMetadata({ params: { locale } }: Props): Metadata {
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
@@ -80,7 +80,7 @@ export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
     },
     manifest: `/site.webmanifest`,
   };
-};
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -95,7 +95,7 @@ export const viewport: Viewport = {
 
 const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
-export async function generateStaticParams() {
+export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 

@@ -1,13 +1,17 @@
 'use client';
 
 import { RoleRowActions } from './row-actions';
+import { totalPermissions } from '@/lib/permissions';
 import { WorkspaceRole } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from 'lucide-react';
 import moment from 'moment';
 
-export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
+export const roleColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -32,7 +36,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -43,7 +51,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
@@ -52,9 +64,35 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
     ),
   },
   {
+    accessorKey: 'permissions',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.permissions`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1 font-semibold">
+        <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
+          <span className="text-dynamic-orange">
+            {(row.getValue('permissions') as any[]).filter((x) => x.enabled)
+              .length ?? '-'}
+          </span>
+          <span className="opacity-50">/</span>
+          <span className="text-dynamic-blue">{totalPermissions}</span>
+        </span>
+      </div>
+    ),
+  },
+  {
     accessorKey: 'user_count',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('user_count')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.user_count`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 font-semibold">
@@ -66,7 +104,11 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="break-all">
@@ -78,7 +120,7 @@ export const roleColumns = (t: any): ColumnDef<WorkspaceRole>[] => [
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
     cell: ({ row }) => <RoleRowActions row={row} />,
   },
 ];

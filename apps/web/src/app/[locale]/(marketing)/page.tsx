@@ -1,12 +1,12 @@
 import { getFeatures } from './features';
 import GetStartedButton from './get-started-button';
 import GradientHeadline from './gradient-headline';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function MarketingPage() {
-  const t = useTranslations();
+export default async function MarketingPage() {
+  const t = await getTranslations();
   const features = getFeatures(t);
 
   return (

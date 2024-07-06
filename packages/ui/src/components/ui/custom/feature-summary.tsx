@@ -1,11 +1,12 @@
 import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
-import { Plus } from 'lucide-react';
+import { Cog, Plus } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface Props<T> {
   data?: T & { id?: string };
+  defaultData?: T & { id?: string };
   trigger?: ReactNode;
   form?: ReactNode;
   href?: string;
@@ -15,6 +16,13 @@ interface Props<T> {
   action?: ReactNode;
   createTitle?: string;
   createDescription?: string;
+  secondaryTriggerTitle?: string;
+  secondaryTitle?: string;
+  secondaryDescription?: string;
+  requireExpansion?: boolean;
+  primaryTrigger?: ReactNode;
+  secondaryTrigger?: ReactNode;
+  showDefaultFormAsSecondary?: boolean;
   open?: boolean;
   // eslint-disable-next-line no-unused-vars
   setOpen?: (open: boolean) => void;
@@ -22,6 +30,7 @@ interface Props<T> {
 
 export default function FeatureSummary<T>({
   data,
+  defaultData,
   form,
   href,
   pluralTitle,
@@ -29,8 +38,29 @@ export default function FeatureSummary<T>({
   description,
   action,
   open,
-  createTitle,
+  createTitle: primaryTriggerTitle,
   createDescription,
+  requireExpansion,
+  secondaryTriggerTitle,
+  secondaryTitle,
+  secondaryDescription,
+  primaryTrigger = (
+    <Button className="w-full md:w-fit" disabled={!form && !href}>
+      <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-2' : '')} />
+      {primaryTriggerTitle}
+    </Button>
+  ),
+  secondaryTrigger = (
+    <Button
+      variant="ghost"
+      className="w-full md:w-fit"
+      disabled={!form && !href && !defaultData}
+    >
+      <Cog className={cn('h-5 w-5', secondaryTriggerTitle ? 'mr-2' : '')} />
+      {secondaryTriggerTitle}
+    </Button>
+  ),
+  showDefaultFormAsSecondary,
   setOpen,
 }: Props<T>) {
   return (
@@ -41,19 +71,28 @@ export default function FeatureSummary<T>({
       </div>
 
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+        {showDefaultFormAsSecondary && (
+          <ModifiableDialogTrigger
+            data={defaultData}
+            trigger={secondaryTrigger}
+            form={form}
+            open={open}
+            setOpen={setOpen}
+            editDescription={secondaryDescription}
+            requireExpansion={requireExpansion}
+            title={secondaryTitle}
+            forceDefault
+          />
+        )}
         {action || (
           <ModifiableDialogTrigger
             data={data}
-            trigger={
-              <Button className="w-full md:w-fit" disabled={!form && !href}>
-                <Plus className={cn('h-5 w-5', createTitle ? 'mr-2' : '')} />
-                {createTitle}
-              </Button>
-            }
+            trigger={primaryTrigger}
             form={form}
             open={open}
             setOpen={setOpen}
             createDescription={createDescription}
+            requireExpansion={requireExpansion}
             title={singularTitle}
           />
         )}

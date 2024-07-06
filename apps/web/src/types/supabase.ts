@@ -2778,6 +2778,35 @@ export type Database = {
           },
         ];
       };
+      workspace_default_permissions: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          permission?: Database['public']['Enums']['workspace_role_permission'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_default_permissions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_default_roles: {
         Row: {
           id: string;
@@ -3089,6 +3118,78 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_role_members: {
+        Row: {
+          created_at: string;
+          role_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          role_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          role_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_role_members_role_id_fkey';
+            columns: ['role_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_roles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_role_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_role_permissions: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          role_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          role_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          permission?: Database['public']['Enums']['workspace_role_permission'];
+          role_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_workspace_role_permissions_role_id_fkey';
+            columns: ['role_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_roles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_role_permissions_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -4481,6 +4582,16 @@ export type Database = {
     };
     Enums: {
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
+      workspace_role_permission:
+        | 'manage_workspace_roles'
+        | 'manage_workspace_members'
+        | 'manage_workspace_invites'
+        | 'manage_workspace_settings'
+        | 'manage_workspace_integrations'
+        | 'manage_workspace_billing'
+        | 'manage_workspace_security'
+        | 'manage_workspace_audit_logs'
+        | 'ai_chat';
     };
     CompositeTypes: {
       [_ in never]: never;

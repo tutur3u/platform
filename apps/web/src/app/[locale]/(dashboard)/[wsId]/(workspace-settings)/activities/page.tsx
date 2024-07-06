@@ -21,11 +21,9 @@ export default async function WorkspaceActivitiesPage({
   const logs = await getLogs(wsId, page, ops, userIds, itemsPerPage);
 
   return (
-    <>
-      <div className="flex min-h-full w-full flex-col">
-        <LogList logs={logs} />
-      </div>
-    </>
+    <div className="flex min-h-full w-full flex-col">
+      <LogList logs={logs} />
+    </div>
   );
 }
 

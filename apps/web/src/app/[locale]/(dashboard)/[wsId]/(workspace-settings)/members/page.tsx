@@ -2,7 +2,11 @@ import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  verifyHasSecrets,
+} from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -22,6 +26,12 @@ export default async function WorkspaceMembersPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_members'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const ws = await getWorkspace(wsId);
   const user = await getCurrentUser();
   const members = await getMembers(wsId, searchParams);
@@ -40,6 +50,7 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          <MemberTabs value={searchParams?.status || 'all'} />
           <InviteMemberButton
             wsId={wsId}
             currentUser={{
@@ -53,7 +64,6 @@ export default async function WorkspaceMembersPage({
             }
             disabled={disableInvite}
           />
-          <MemberTabs value={searchParams?.status || 'all'} />
         </div>
       </div>
       <Separator className="my-4" />

@@ -15,12 +15,14 @@ import {
 
 export function DailyTotalChart({
   data,
+  className,
 }: {
   data: {
     day: string;
     total_income: number;
     total_expense: number;
   }[];
+  className?: string;
 }) {
   const locale = useLocale();
   const t = useTranslations('transaction-data-table');
@@ -38,7 +40,12 @@ export function DailyTotalChart({
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center gap-2 overflow-x-auto text-center',
+        className
+      )}
+    >
       <div className="font-semibold">
         {t('daily_total_from_14_recent_days')}
       </div>
@@ -125,12 +132,14 @@ export function DailyTotalChart({
 
 export function MonthlyTotalChart({
   data,
+  className,
 }: {
   data: {
     month: string;
     total_income: number;
     total_expense: number;
   }[];
+  className?: string;
 }) {
   const locale = useLocale();
   const t = useTranslations('transaction-data-table');
@@ -148,7 +157,12 @@ export function MonthlyTotalChart({
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2">
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center gap-2 overflow-x-auto text-center',
+        className
+      )}
+    >
       <div className="font-semibold">
         {t('monthly_total_from_12_recent_months')}
       </div>

@@ -1,10 +1,10 @@
 'use client';
 
+import { TransactionCategoryRowActions } from './row-actions';
 import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { TransactionCategoryRowActions } from './row-actions';
 
 export const transactionCategoryColumns = (
   t: any
@@ -33,21 +33,21 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader t={t} column={column} title={t('id')} />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('name')} />
+      <DataTableColumnHeader t={t} column={column} title={t('name')} />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('amount')} />
+      <DataTableColumnHeader t={t} column={column} title={t('amount')} />
     ),
     cell: ({ row }) => (
       <div className="font-semibold">{row.getValue('amount')}</div>
@@ -56,7 +56,7 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('type')} />
+      <DataTableColumnHeader t={t} column={column} title={t('type')} />
     ),
     cell: ({ row }) => (
       <div>
@@ -75,7 +75,7 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
     ),
     cell: ({ row }) => (
       <div>

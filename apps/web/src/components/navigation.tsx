@@ -4,7 +4,7 @@ import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { User } from '@/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface NavLink {
   name: string;
@@ -59,7 +59,10 @@ export function Navigation({
     }
   };
 
+  const [urlToLoad, setUrlToLoad] = useState<string>();
+
   useEffect(() => {
+    if (urlToLoad) setUrlToLoad(undefined);
     scrollActiveLinksIntoView();
   }, [pathname]);
 
@@ -123,13 +126,16 @@ export function Navigation({
             className={`text-sm md:text-base ${
               isActive
                 ? 'text-foreground border-border bg-foreground/[0.025] dark:bg-foreground/5'
-                : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
+                : urlToLoad === link.href
+                  ? 'text-foreground/70 dark:text-foreground/40 bg-foreground/5 animate-pulse'
+                  : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
             } ${
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'
                 : ''
-            } flex-none rounded-full border px-3 py-1 transition duration-300`}
+            } flex-none rounded-full border px-3 py-1 transition`}
             onClick={() => {
+              setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
             href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}

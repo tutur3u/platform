@@ -94,8 +94,12 @@ export default function InviteMemberButton({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={variant} disabled={!wsId || !currentUser || disabled}>
-          <UserPlus className="mr-2 h-5 w-5" />
+        <Button
+          variant={variant}
+          className="w-full md:w-auto"
+          disabled={!wsId || !currentUser || disabled}
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
           {label}
         </Button>
       </DialogTrigger>

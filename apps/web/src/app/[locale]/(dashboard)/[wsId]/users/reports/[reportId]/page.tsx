@@ -91,7 +91,11 @@ export default async function WorkspaceUserDetailsPage({
               ? userId && users.map((user) => user.id).includes(userId)
                 ? [userId]
                 : []
-              : [userId || report.user_id!]
+              : userId
+                ? [userId]
+                : report.user_id
+                  ? [report.user_id]
+                  : []
           }
           options={users.map((user) => ({
             label: user.full_name || 'No name',

@@ -183,6 +183,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                 <FormItem className="flex flex-col">
                   <FormLabel>{t('transaction-data-table.wallet')}</FormLabel>
                   <Combobox
+                    t={t}
                     {...field}
                     mode="single"
                     options={
@@ -218,6 +219,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                 <FormItem className="flex flex-col">
                   <FormLabel>{t('transaction-data-table.category')}</FormLabel>
                   <Combobox
+                    t={t}
                     {...field}
                     mode="single"
                     options={
