@@ -44,12 +44,12 @@ export default function FeatureSummary<T>({
   secondaryTriggerTitle,
   secondaryTitle,
   secondaryDescription,
-  primaryTrigger = (
+  primaryTrigger = form || href ? (
     <Button className="w-full md:w-fit" disabled={!form && !href}>
       <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-2' : '')} />
       {primaryTriggerTitle}
     </Button>
-  ),
+  ) : undefined,
   secondaryTrigger = (
     <Button
       variant="ghost"
