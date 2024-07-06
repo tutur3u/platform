@@ -1,4 +1,4 @@
-import { PROD_MODE } from '@/constants/common';
+import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
 
 export type RolePermission = {
@@ -14,9 +14,59 @@ export type RolePermissionGroup = {
   permissions: RolePermission[];
 };
 
-export const permissionGroups = (t = ((key: string) => key) as any) => {
+export const permissionGroups = ({
+  t = (key: string) => key,
+  wsId,
+}: {
+  t?: any;
+  wsId: string;
+}) => {
   return (
     [
+      ...(wsId === ROOT_WORKSPACE_ID
+        ? [
+            {
+              id: 'infrastructure',
+              title: t('ws-roles.infrastructure'),
+              permissions: [
+                {
+                  id: 'view_infrastructure',
+                  title: t('ws-roles.view_infrastructure'),
+                  description: t('ws-roles.view_infrastructure_description'),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_workspace_secrets',
+                  title: t('ws-roles.manage_workspace_secrets'),
+                  description: t(
+                    'ws-roles.manage_workspace_secrets_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_external_migrations',
+                  title: t('ws-roles.manage_external_migrations'),
+                  description: t(
+                    'ws-roles.manage_external_migrations_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_workspace_audit_logs',
+                  title: t('ws-roles.manage_workspace_audit_logs'),
+                  description: t(
+                    'ws-roles.manage_workspace_audit_logs_description'
+                  ),
+                  disableOnProduction: true,
+                  disabled: true,
+                },
+              ],
+            },
+          ]
+        : []),
       {
         id: 'workspace',
         title: t('ws-roles.workspace'),
@@ -49,13 +99,6 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
             disableOnProduction: false,
             disabled: false,
           },
-          // {
-          //   id: 'manage_workspace_audit_logs',
-          //   title: t('ws-roles.manage_workspace_audit_logs'),
-          //   description: t('ws-roles.manage_workspace_audit_logs_description'),
-          //   disableOnProduction: true,
-          //   disabled: true,
-          // },
           // {
           //   id: 'manage_workspace_billing',
           //   title: t('ws-roles.manage_workspace_billing'),
@@ -93,19 +136,19 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
       // {
       //   title: 'Drive',
       // },
-      // {
-      //   id: 'users',
-      //   title: 'Users',
-      //   permissions: [
-      //     {
-      //       id: 'manage_user_report_templates',
-      //       title: t('ws-roles.manage_user_report_templates'),
-      //       description: t('ws-roles.manage_user_report_templates_description'),
-      //       disableOnProduction: false,
-      //       disabled: false,
-      //     },
-      //   ],
-      // },
+      {
+        id: 'users',
+        title: 'Users',
+        permissions: [
+          {
+            id: 'manage_user_report_templates',
+            title: t('ws-roles.manage_user_report_templates'),
+            description: t('ws-roles.manage_user_report_templates_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
       // {
       //   title: 'Inventory',
       // },
@@ -117,7 +160,7 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
     .map((group) => ({
       ...group,
       permissions: (
-        group.permissions?.filter((p) => p.title && p.description) || []
+        group?.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
         disabled: p.disableOnProduction ? PROD_MODE : p.disabled,
@@ -129,11 +172,17 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
     ) as RolePermissionGroup[];
 };
 
-export const permissions = (t?: any) => {
-  return permissionGroups(t).reduce(
+export const permissions = ({
+  t = (key: string) => key,
+  wsId,
+}: {
+  t?: any;
+  wsId: string;
+}) => {
+  return permissionGroups({ t, wsId }).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
     [] as RolePermission[]
   ) as RolePermission[];
 };
 
-export const totalPermissions = permissions().length;
+export const totalPermissions = (wsId: string) => permissions({ wsId }).length;

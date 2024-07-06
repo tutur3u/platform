@@ -29,6 +29,7 @@ export interface DataTableProps<TData, TValue> {
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
+  extraData?: any;
   newObjectTitle?: string;
   editContent?: ReactNode;
   namespace?: string;
@@ -54,7 +55,9 @@ export interface DataTableProps<TData, TValue> {
     // eslint-disable-next-line no-unused-vars
     namespace: string,
     // eslint-disable-next-line no-unused-vars
-    extraColumns?: any[]
+    extraColumns?: any[],
+    // eslint-disable-next-line no-unused-vars
+    extraData?: any
   ) => ColumnDef<TData, TValue>[];
 }
 
@@ -62,6 +65,7 @@ export function DataTable<TData, TValue>({
   columns,
   filters,
   extraColumns,
+  extraData,
   newObjectTitle,
   editContent,
   namespace = 'common',
@@ -91,7 +95,7 @@ export function DataTable<TData, TValue>({
     data: data || [],
     columns:
       columnGenerator && t
-        ? columnGenerator(t, namespace, extraColumns)
+        ? columnGenerator(t, namespace, extraColumns, extraData)
         : columns || [],
     state: {
       sorting,

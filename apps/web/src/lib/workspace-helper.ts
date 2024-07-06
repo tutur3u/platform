@@ -213,10 +213,20 @@ export async function getPermissions({
 
   if (
     !requiredPermissions.every((p) =>
-      rolePermissions().some((rp) => rp.id === p)
+      rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some((rp) => rp.id === p)
     )
-  )
-    throw new Error('Invalid permissions provided');
+  ) {
+    throw new Error(
+      `Invalid permissions provided: ${requiredPermissions
+        .filter(
+          (p) =>
+            !rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some(
+              (rp) => rp.id === p
+            )
+        )
+        .join(', ')}`
+    );
+  }
 
   const {
     data: { user },
@@ -281,7 +291,7 @@ export async function getPermissions({
 
   const permissions =
     workspaceData.creator_id === user.id
-      ? rolePermissions().map(({ id }) => id)
+      ? rolePermissions({ wsId }).map(({ id }) => id)
       : [...permissionsData, ...defaultData]
           .map(({ permission }) => permission)
           .filter((value, index, self) => self.indexOf(value) === index);

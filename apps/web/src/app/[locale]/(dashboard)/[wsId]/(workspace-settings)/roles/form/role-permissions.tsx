@@ -13,11 +13,12 @@ import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
 export default function RoleFormPermissionsSection({
+  wsId,
   form,
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
-  const groups = permissionGroups(t);
+  const groups = permissionGroups({ t, wsId });
 
   return (
     <>
