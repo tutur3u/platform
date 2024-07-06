@@ -1,33 +1,40 @@
 // use-game-logic.ts
-import { Fruit, width } from './types';
+import { BOARD_SIZE, Fruit } from './types';
 import { checkForMatches, createRandomFruit } from './utils';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 export const useGameLogic = (
   fruits: Fruit[],
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
+  const scoreUpdated = useRef(false);
+
   const checkMatches = useCallback(() => {
-    return checkForMatches(fruits, setFruits, setScore);
+    const hasMatch = checkForMatches(fruits, setFruits, setScore, scoreUpdated);
+    if (hasMatch) {
+      scoreUpdated.current = true;
+    } else {
+      scoreUpdated.current = false;
+    }
   }, [fruits, setFruits, setScore]);
 
   const moveIntoSquareBelow = useCallback(() => {
     const newFruits = [...fruits];
     let fruitsMoved = false;
 
-    for (let i = width * width - 1; i >= width; i--) {
+    for (let i = BOARD_SIZE * BOARD_SIZE - 1; i >= BOARD_SIZE; i--) {
       if (newFruits[i] === undefined) {
-        if (newFruits[i - width] !== undefined) {
-          newFruits[i] = newFruits[i - width];
-          newFruits[i - width] = undefined;
+        if (newFruits[i - BOARD_SIZE] !== undefined) {
+          newFruits[i] = newFruits[i - BOARD_SIZE];
+          newFruits[i - BOARD_SIZE] = undefined;
           fruitsMoved = true;
         }
       }
     }
 
     // Fill the top row with new fruits if empty
-    for (let i = 0; i < width; i++) {
+    for (let i = 0; i < BOARD_SIZE; i++) {
       if (newFruits[i] === undefined) {
         newFruits[i] = createRandomFruit();
         fruitsMoved = true;
@@ -53,26 +60,26 @@ export const useGameLogic = (
       ) {
         const lineEraserIndex =
           draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
-        const row = Math.floor(lineEraserIndex / width);
+        const row = Math.floor(lineEraserIndex / BOARD_SIZE);
 
         // Erase the entire row
-        for (let i = 0; i < width; i++) {
-          newFruits[row * width + i] = undefined;
+        for (let i = 0; i < BOARD_SIZE; i++) {
+          newFruits[row * BOARD_SIZE + i] = undefined;
         }
-        setScore((score) => score + width);
+        setScore((score) => score + BOARD_SIZE);
       } else if (
         draggedFruit?.type === 'vertical' ||
         replacedFruit?.type === 'vertical'
       ) {
         const lineEraserIndex =
           draggedFruit?.type === 'vertical' ? draggedId : replacedId;
-        const col = lineEraserIndex % width;
+        const col = lineEraserIndex % BOARD_SIZE;
 
         // Erase the entire column
-        for (let i = 0; i < width; i++) {
-          newFruits[i * width + col] = undefined;
+        for (let i = 0; i < BOARD_SIZE; i++) {
+          newFruits[i * BOARD_SIZE + col] = undefined;
         }
-        setScore((score) => score + width);
+        setScore((score) => score + BOARD_SIZE);
       }
 
       // Ensure the special fruit is destroyed after use

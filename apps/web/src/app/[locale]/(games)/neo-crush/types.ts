@@ -1,5 +1,6 @@
 // types.ts
-export const width = 8;
+export const BOARD_SIZE = 8;
+export const PTS_PER_FRUIT = 10;
 
 export const FRUIT_COLORS = [
   'red',
