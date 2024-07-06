@@ -20,6 +20,7 @@ export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
 export const PUBLIC_PATHS = [
+  '/login',
   '/terms',
   '/privacy',
   '/branding',

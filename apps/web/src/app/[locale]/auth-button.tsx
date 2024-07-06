@@ -40,15 +40,8 @@ export function AuthButton({
       </form>
     </div>
   ) : (
-    <Link
-      href="/login"
-      onClick={onClick}
-      className={cn(
-        'border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 flex rounded-md border px-4 py-2 font-semibold no-underline transition',
-        className
-      )}
-    >
-      Login
+    <Link href="/login" onClick={onClick} className="w-full">
+      <Button className="w-full">Login</Button>
     </Link>
   );
 }
