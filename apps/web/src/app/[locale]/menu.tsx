@@ -4,6 +4,7 @@ import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Sheet,
@@ -19,7 +20,7 @@ import { useState } from 'react';
 
 interface MenuProps {
   sbUser: User | null;
-  user: any;
+  user: WorkspaceUser | null;
   t?: any;
 }
 
@@ -105,7 +106,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
             className="w-full items-center justify-center"
             onClick={closeMenu}
           />
-          {!user && <ThemeToggle />}
+          {!user && <ThemeToggle forceDisplay />}
         </div>
         <Separator className="my-4" />
         <div className="grid gap-2 text-center font-semibold">
