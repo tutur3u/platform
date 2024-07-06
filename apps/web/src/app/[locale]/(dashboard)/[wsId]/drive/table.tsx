@@ -32,8 +32,8 @@ export default function StorageObjectsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: any) =>
-          storageObjectsColumns(t, setStorageObject, wsId)
+        columnGenerator={(t: any, namespace: string) =>
+          storageObjectsColumns(t, namespace, setStorageObject, wsId)
         }
         namespace="storage-object-data-table"
         count={count}

@@ -7,7 +7,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
 
-export const walletColumns = (t: any): ColumnDef<Wallet>[] => {
+export const walletColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<Wallet>[] => {
   return [
     // {
     //   id: 'select',
@@ -33,7 +36,11 @@ export const walletColumns = (t: any): ColumnDef<Wallet>[] => {
     {
       accessorKey: 'id',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('id')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.id`)}
+        />
       ),
       cell: ({ row }) => (
         <div className="line-clamp-1">{row.getValue('id')}</div>
@@ -42,21 +49,33 @@ export const walletColumns = (t: any): ColumnDef<Wallet>[] => {
     {
       accessorKey: 'name',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('name')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.name`)}
+        />
       ),
       cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
     },
     {
       accessorKey: 'description',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('description')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.description`)}
+        />
       ),
       cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
     },
     {
       accessorKey: 'balance',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('balance')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.balance`)}
+        />
       ),
       cell: ({ row }) => (
         <div>
@@ -70,21 +89,33 @@ export const walletColumns = (t: any): ColumnDef<Wallet>[] => {
     {
       accessorKey: 'type',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('type')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.type`)}
+        />
       ),
       cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
     },
     {
       accessorKey: 'currency',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('currency')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.currency`)}
+        />
       ),
       cell: ({ row }) => <div>{row.getValue('currency') || '-'}</div>,
     },
     {
       accessorKey: 'report_opt_in',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('report_opt_in')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.report_opt_in`)}
+        />
       ),
       cell: ({ row }) => (
         <div>{row.getValue('report_opt_in') ? <Check /> : <X />}</div>
@@ -93,7 +124,11 @@ export const walletColumns = (t: any): ColumnDef<Wallet>[] => {
     {
       accessorKey: 'created_at',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('created_at')} />
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.created_at`)}
+        />
       ),
       cell: ({ row }) => (
         <div>

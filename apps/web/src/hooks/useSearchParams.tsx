@@ -27,6 +27,13 @@ const useSearchParams = () => {
     [searchParams]
   );
 
+  const getSingle = useCallback(
+    (key: string, fallbackValue?: string) => {
+      return searchParams.get(key) || fallbackValue;
+    },
+    [searchParams]
+  );
+
   const set = useCallback(
     (
       data: Record<string, string | number | string[] | undefined>,
@@ -100,7 +107,18 @@ const useSearchParams = () => {
 
   const isEmpty = searchParams.toString().length === 0;
 
-  return { isEmpty, has, get, set, add, remove, reset, clear: reset, getAll };
+  return {
+    isEmpty,
+    has,
+    get,
+    set,
+    add,
+    remove,
+    reset,
+    clear: reset,
+    getAll,
+    getSingle,
+  };
 };
 
 export default useSearchParams;

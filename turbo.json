@@ -36,6 +36,11 @@
         "^lint"
       ]
     },
+    "check-types": {
+      "dependsOn": [
+        "^check-types"
+      ]
+    },
     "test": {},
     "test:watch": {
       "cache": false
@@ -44,6 +49,5 @@
       "cache": false,
       "persistent": true
     }
-  },
-  "ui": "stream"
+  }
 }

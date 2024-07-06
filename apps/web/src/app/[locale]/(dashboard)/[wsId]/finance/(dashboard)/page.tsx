@@ -56,12 +56,15 @@ export default async function WorkspaceFinancePage({
       </Suspense>
 
       <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
-        <div className="col-span-full mb-32">
-          <Separator className="mb-4" />
-          <DailyTotalChart data={dailyData} />
-          <Separator className="my-4" />
-          <MonthlyTotalChart data={monthlyData} />
-        </div>
+        <>
+          <Separator className="col-span-full mb-4" />
+          <DailyTotalChart data={dailyData} className="col-span-full" />
+          <Separator className="col-span-full my-4" />
+          <MonthlyTotalChart
+            data={monthlyData}
+            className="col-span-full mb-32"
+          />
+        </>
       </Suspense>
     </div>
   );

@@ -3,7 +3,7 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -32,6 +32,8 @@ export default async function WorkspaceSettingsPage({
       .find((s) => s.name === 'PREVENT_WORKSPACE_DELETION')
       ?.value?.toLowerCase() === 'true';
 
+  const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
+
   const enableAvatar = Boolean(
     secrets.find((s) => s.name === 'ENABLE_AVATAR')?.value
   );
@@ -55,7 +57,11 @@ export default async function WorkspaceSettingsPage({
           <Link href={`/${wsId}/members`}>
             <Button className="cursor-pointer">
               <UserPlus className="mr-2 h-4 w-4" />
-              <span>{t('common.invite_users')}</span>
+              <span>
+                {disableInvite
+                  ? t('ws-members.invite_member_disabled')
+                  : t('ws-members.invite_member')}
+              </span>
             </Button>
           </Link>
         }

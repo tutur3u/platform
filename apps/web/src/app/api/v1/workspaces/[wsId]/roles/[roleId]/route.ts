@@ -1,24 +1,51 @@
+import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
+    wsId: string;
     roleId: string;
   };
 }
 
-export async function PUT(req: Request, { params: { roleId: id } }: Params) {
+export async function PUT(
+  req: Request,
+  { params: { wsId, roleId: id } }: Params
+) {
   const supabase = createClient();
 
-  const data = await req.json();
+  const data = (await req.json()) as WorkspaceRole;
 
-  const { error } = await supabase
+  if (!data?.permissions)
+    return NextResponse.json(
+      { message: 'No permissions provided' },
+      { status: 400 }
+    );
+
+  const { permissions, ...coreData } = data;
+
+  const roleQuery = supabase
     .from('workspace_roles')
-    .update(data)
+    .update(coreData)
     .eq('id', id);
 
-  if (error) {
-    console.log(error);
+  const permissionsQuery = supabase.from('workspace_role_permissions').upsert(
+    permissions.map((permission) => ({
+      ws_id: wsId,
+      role_id: id,
+      permission: permission.id,
+      enabled: permission.enabled,
+    }))
+  );
+
+  const [roleRes, permissionsRes] = await Promise.all([
+    roleQuery,
+    permissionsQuery,
+  ]);
+
+  if (roleRes.error || permissionsRes.error) {
+    console.log(roleRes.error, permissionsRes.error);
     return NextResponse.json(
       { message: 'Error updating workspace role' },
       { status: 500 }

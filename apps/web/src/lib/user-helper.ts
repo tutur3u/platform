@@ -1,4 +1,4 @@
-import { User } from '@/types/primitives/User';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 
@@ -34,5 +34,5 @@ export async function getCurrentUser(noRedirect?: boolean) {
 
   if (error) notFound();
   const { user_private_details, ...rest } = data;
-  return { ...rest, ...user_private_details } as User;
+  return { ...rest, ...user_private_details } as WorkspaceUser;
 }

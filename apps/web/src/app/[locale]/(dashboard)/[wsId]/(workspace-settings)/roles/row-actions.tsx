@@ -1,6 +1,6 @@
 'use client';
 
-import RoleForm from './form';
+import { RoleForm } from './form';
 import { WorkspaceRole } from '@/types/db';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
@@ -9,12 +9,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import { Eye } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -54,10 +53,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <Button>
-        <Eye className="mr-1 h-5 w-5" />
-        {t('common.view')}
+      <Button onClick={() => setShowEditDialog(true)}>
+        <Pencil className="mr-1 h-5 w-5" />
+        {t('common.edit')}
       </Button>
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -69,10 +69,6 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={deleteRole}>
             {t('common.delete')}
           </DropdownMenuItem>
@@ -82,10 +78,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-transactions.edit')}
-        editDescription={t('ws-transactions.edit_description')}
+        title={t('ws-roles.edit')}
+        editDescription={t('ws-roles.edit_description')}
         setOpen={setShowEditDialog}
         form={<RoleForm wsId={data.ws_id} data={data} />}
+        requireExpansion
       />
     </div>
   );

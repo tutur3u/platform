@@ -27,5 +27,6 @@
   "i18n-ally.localesPaths": [
     "apps/web/messages",
   ],
-  "i18n-ally.keystyle": "nested"
+  "i18n-ally.keystyle": "nested",
+  "codeQL.githubDatabase.update": "never"
 }

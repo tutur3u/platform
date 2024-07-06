@@ -14,22 +14,21 @@ import {
   EyeNoneIcon,
 } from '@radix-ui/react-icons';
 import { Column } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
+  t: any;
   column: Column<TData, TValue>;
   title?: string;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
+  t,
   column,
   title,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
-  const t = useTranslations();
-
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }

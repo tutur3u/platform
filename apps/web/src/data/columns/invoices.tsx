@@ -11,7 +11,10 @@ import {
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
-export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
+export const invoiceColumns = (
+  t: any,
+  namespace: string
+): ColumnDef<Invoice>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -36,7 +39,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
@@ -45,7 +52,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'customer_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('customer_id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.customer_id`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1">{row.getValue('customer_id')}</div>
@@ -54,7 +65,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'customer',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('customer')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.customer`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('customer') || '-'}</div>
@@ -63,7 +78,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('price')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.price`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -77,7 +96,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'total_diff',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('total_diff')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.total_diff`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -94,7 +117,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'final_price',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('final_price')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.final_price`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
@@ -142,7 +169,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'notice',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('notice')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.notice`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('notice') || '-'}</div>
@@ -151,7 +182,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'note',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('note')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.note`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">{row.getValue('note') || '-'}</div>
@@ -160,7 +195,11 @@ export const invoiceColumns = (t: any): ColumnDef<Invoice>[] => [
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
