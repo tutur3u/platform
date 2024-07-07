@@ -1,13 +1,16 @@
-import { Fruits } from './types';
+import { FruitColorName, FruitType, Fruits } from './types';
 import { cn } from '@/lib/utils';
+import { Separator } from '@repo/ui/components/ui/separator';
 
 export default function GameStats({ fruits }: { fruits: Fruits }) {
   const fruitTypeCounts: {
     empty: number;
     normal: number;
+    plus: number;
     horizontal: number;
     vertical: number;
     explosive: number;
+    'big-explosive': number;
     rainbow: number;
   } = fruits.reduce(
     (acc, fruit) => {
@@ -21,9 +24,11 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
       normal: 0,
       horizontal: 0,
       vertical: 0,
+      plus: 0,
       explosive: 0,
+      'big-explosive': 0,
       rainbow: 0,
-    }
+    } as Record<FruitType | 'empty', number>
   );
 
   const fruitColorCounts = fruits.reduce(
@@ -32,51 +37,78 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
 
       return acc;
     },
-    {} as Record<string, number>
+    {
+      red: 0,
+      yellow: 0,
+      green: 0,
+      blue: 0,
+      purple: 0,
+      orange: 0,
+    } as Record<FruitColorName, number>
   );
 
   return (
     <>
-      <div>
-        {Object.entries(fruitTypeCounts).map(([key, count]) => (
-          <div key={key}>
-            <span
+      <div className="w-full text-right">
+        {Object.entries(fruitTypeCounts)
+          // .sort(([k1], [k2]) => k1.localeCompare(k2))
+          .map(([key, count]) => (
+            <div
+              key={key}
               className={cn(
                 key === 'empty' && 'opacity-50',
+                key === 'plus' && 'text-dynamic-yellow',
                 key === 'horizontal' && 'text-dynamic-blue',
                 key === 'vertical' && 'text-dynamic-green',
                 key === 'explosive' && 'text-dynamic-red',
+                key === 'big-explosive' && 'text-dynamic-purple',
                 key === 'rainbow' &&
                   'bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text py-1 text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300'
               )}
             >
-              {key}
-            </span>
-            : <span className="opacity-30">x</span>
-            <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        {Object.entries(fruitColorCounts)
-          .sort(([, a], [, b]) => b - a)
-          .map(([key, count]) => (
-            <div key={key}>
+              <span>{key}</span>:{' '}
               <span
                 className={cn(
-                  key === 'red' && 'text-dynamic-red',
-                  key === 'yellow' && 'text-dynamic-yellow',
-                  key === 'green' && 'text-dynamic-green',
-                  key === 'blue' && 'text-dynamic-blue',
-                  key === 'purple' && 'text-dynamic-purple',
-                  key === 'orange' && 'text-dynamic-orange'
+                  key === 'rainbow' && 'text-foreground',
+                  'text-xs opacity-30'
                 )}
               >
-                {key}
+                x
               </span>
-              : <span className="opacity-30">x</span>
-              <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
+              <span
+                className={cn(
+                  key === 'rainbow' && 'text-foreground',
+                  count === 0 ? 'opacity-80' : ''
+                )}
+              >
+                {count.toString().padStart(2, '0')}
+              </span>
+            </div>
+          ))}
+      </div>
+
+      <Separator className="mx-4" orientation="vertical" />
+
+      <div className="w-full text-right">
+        {Object.entries(fruitColorCounts)
+          // .sort(([k1], [k2]) => k1.localeCompare(k2))
+          .map(([key, count]) => (
+            <div
+              key={key}
+              className={cn(
+                key === 'red' && 'text-dynamic-red',
+                key === 'yellow' && 'text-dynamic-yellow',
+                key === 'green' && 'text-dynamic-green',
+                key === 'blue' && 'text-dynamic-blue',
+                key === 'purple' && 'text-dynamic-purple',
+                key === 'orange' && 'text-dynamic-orange',
+                key === 'null' && 'opacity-50'
+              )}
+            >
+              <span>{key}</span>: <span className="text-xs opacity-50">x</span>
+              <span className={count === 0 ? 'opacity-80' : ''}>
+                {count.toString().padStart(2, '0')}
+              </span>
             </div>
           ))}
       </div>

@@ -1,14 +1,7 @@
 // fruit-grid.tsx
+import FruitPlaceholder from './fruit-placeholder';
 import { Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
-import {
-  Bomb,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Sparkles,
-} from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
@@ -125,45 +118,10 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
       `}</style>
       <div className="mx-auto grid w-fit grid-cols-8 gap-2 lg:gap-3">
         {fruits.map((fruit, index) => (
-          <div
+          <FruitPlaceholder
             key={index}
-            className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-8 md:w-8 lg:h-10 lg:w-10 ${
-              fruit
-                ? fruit?.type !== 'normal'
-                  ? ''
-                  : 'border-transparent'
-                : 'border-foreground/50'
-            } ${
-              fruit?.type === 'rainbow'
-                ? 'bg-gradient-to-br from-red-600 via-violet-400 to-sky-400'
-                : ''
-            }`}
-            style={{
-              borderColor: fruit
-                ? fruit?.type === 'rainbow'
-                  ? 'var(--foreground)'
-                  : fruit?.type !== 'normal'
-                    ? fruit?.color?.code
-                    : 'transparent'
-                : 'var(--foreground)',
-              opacity: fruit ? 1 : 0.3,
-              backgroundColor:
-                fruit?.type === 'rainbow'
-                  ? undefined
-                  : fruit
-                    ? fruit?.type === 'normal'
-                      ? fruit?.color?.code
-                      : // colorMap gives hex color, we need to convert it to rgba
-                        `rgba(
-                          ${parseInt(fruit?.color?.code.slice(1, 3) as string, 16)},
-                          ${parseInt(fruit?.color?.code.slice(3, 5) as string, 16)},
-                          ${parseInt(fruit?.color?.code.slice(5, 7) as string, 16)},
-                        0.2)`
-                    : 'transparent',
-              cursor: 'grab',
-              backgroundSize: 'auto',
-            }}
             data-id={index}
+            fruit={fruit}
             data-color={fruit?.color?.name}
             data-type={fruit?.type}
             draggable={true}
@@ -175,59 +133,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onTouchStart={touchStart}
             onTouchMove={touchMove}
             onTouchEnd={touchEnd}
-          >
-            {fruit?.type === 'horizontal' && (
-              <>
-                <ChevronLeft
-                  className="pointer-events-none absolute -left-0.5 h-5 w-5 md:h-6 md:w-6"
-                  style={{
-                    animation: 'pulse 1s infinite',
-                    color: fruit?.color?.code,
-                  }}
-                />
-                <ChevronRight
-                  className="pointer-events-none absolute -right-0.5 h-5 w-5 md:h-6 md:w-6"
-                  style={{
-                    animation: 'pulse 1s infinite',
-                    color: fruit?.color?.code,
-                  }}
-                />
-              </>
-            )}
-
-            {fruit?.type === 'vertical' && (
-              <>
-                <ChevronUp
-                  className="pointer-events-none absolute -top-0.5 h-5 w-5 md:h-6 md:w-6"
-                  style={{
-                    animation: 'pulse 1s infinite',
-                    color: fruit?.color?.code,
-                  }}
-                />
-                <ChevronDown
-                  className="pointer-events-none absolute -bottom-0.5 h-5 w-5 md:h-6 md:w-6"
-                  style={{
-                    animation: 'pulse 1s infinite',
-                    color: fruit?.color?.code,
-                  }}
-                />
-              </>
-            )}
-
-            {fruit?.type === 'rainbow' && (
-              <Sparkles className="text-foreground/70 pointer-events-none absolute h-5 w-5 md:h-6 md:w-6" />
-            )}
-
-            {fruit?.type === 'explosive' && (
-              <Bomb
-                className="pointer-events-none absolute h-4 w-4 md:h-6 md:w-6"
-                style={{
-                  animation: 'pulse 1s infinite',
-                  color: fruit?.color?.code,
-                }}
-              />
-            )}
-          </div>
+          ></FruitPlaceholder>
         ))}
       </div>
     </>

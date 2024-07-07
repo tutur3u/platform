@@ -1,9 +1,11 @@
 import { Fruit, Fruits } from './types';
 
 export const summonLineEraser = ({
+  type,
   fruits,
   setFruits,
 }: {
+  type: 'horizontal' | 'vertical' | 'plus';
   fruits: Fruits;
   setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
 }) => {
@@ -23,7 +25,7 @@ export const summonLineEraser = ({
 
     newFruits[randomIndex] = new Fruit(
       newFruits[randomIndex]!.color!.name,
-      Math.random() < 0.5 ? 'horizontal' : 'vertical'
+      type
     );
 
     setFruits(newFruits);
@@ -58,9 +60,11 @@ export const summonRainbowFruit = ({
 };
 
 export const summonExplosiveFruit = ({
+  type,
   fruits,
   setFruits,
 }: {
+  type: 'explosive' | 'big-explosive';
   fruits: Fruits;
   setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
 }) => {
@@ -80,7 +84,7 @@ export const summonExplosiveFruit = ({
 
     newFruits[randomIndex] = new Fruit(
       newFruits[randomIndex]!.color!.name,
-      'explosive'
+      type
     );
 
     setFruits(newFruits);
