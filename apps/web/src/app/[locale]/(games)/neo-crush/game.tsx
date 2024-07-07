@@ -34,8 +34,8 @@ export const NeoCrushGame: React.FC = () => {
   }, [checkMatches, moveIntoSquareBelow]);
 
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-8">
-      <Card className="mx-auto p-2 md:p-4">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
+      <Card className="w-full p-2 md:p-4">
         <FruitGrid
           fruits={fruits}
           setFruits={setFruits}

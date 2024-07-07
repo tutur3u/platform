@@ -1,6 +1,12 @@
 'use client';
 
 import { NeoCrushGame } from './game';
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@repo/ui/components/ui/dialog';
 
 export default function NeoCrushGamePage() {
   return (
@@ -9,7 +15,14 @@ export default function NeoCrushGamePage() {
         <div className="font-semibold">Võ Hoàng Phúc</div>
         <div>s3926761@rmit.edu.vn</div>
       </div> */}
-      <NeoCrushGame />
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button>Start Game</Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-sm md:max-w-4xl lg:max-w-6xl">
+          <NeoCrushGame />
+        </DialogContent>
+      </Dialog>
       {/* <div className="bg-foreground/5 rounded border p-4">
         <div className="font-semibold">Võ Hoàng Phúc</div>
         <div>s3926761@rmit.edu.vn</div>
