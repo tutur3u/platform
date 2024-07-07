@@ -53,43 +53,42 @@ export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
 
 export const checkForMatches = (
   fruits: Fruits,
-  setFruits?: React.Dispatch<React.SetStateAction<Fruits>>,
-  setScore?: React.Dispatch<React.SetStateAction<number>>
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
+  setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
   let hasMatch = false;
   let poppedFruits = 0;
 
   for (let i = 0; i < fruits.length; i++) {
     const allFilled = fruits.every((fruit) => fruit);
-    if (allFilled) {
-      const match = findMatch(i, fruits);
-      if (match.length >= 3) {
-        poppedFruits += match.length;
+    if (!allFilled) break;
 
-        // Clear matched fruits and create special fruits if needed
-        if (match.length === 4) {
-          const centerIndex = Math.floor(match.length / 2);
-          const isHorizontal = Math.random() < 0.5;
-          if (fruits[match[centerIndex]!]?.type)
-            fruits[match[centerIndex]!]!.type = isHorizontal
-              ? 'horizontal'
-              : 'vertical';
-          match.forEach((square, index) => {
-            if (index !== centerIndex && fruits[square]?.type === 'normal') {
-              fruits[square] = undefined;
-            }
-          });
-        } else {
-          match.forEach((square) => {
+    const match = findMatch(i, fruits);
+    if (match.length >= 3) {
+      poppedFruits += match.length;
+
+      // Clear matched fruits and create special fruits if needed
+      if (match.length === 4) {
+        const centerIndex = Math.floor(match.length / 2);
+        const isHorizontal = Math.random() < 0.5;
+        if (fruits[match[centerIndex]!]?.type)
+          fruits[match[centerIndex]!]!.type = isHorizontal
+            ? 'horizontal'
+            : 'vertical';
+        match.forEach((square, index) => {
+          if (index !== centerIndex && fruits[square]?.type === 'normal') {
             fruits[square] = undefined;
-          });
-        }
-        hasMatch = true;
+          }
+        });
+      } else {
+        match.forEach((square) => {
+          if (fruits[square]?.type === 'normal') fruits[square] = undefined;
+        });
       }
+      hasMatch = true;
     }
   }
 
-  // Increment the score by 3 for each distinct match found
   if (poppedFruits > 0 && setScore) {
     setScore((score) => score + poppedFruits * PTS_PER_FRUIT);
   }

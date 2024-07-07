@@ -1,272 +1,298 @@
-// use-game-logic.ts
-import { BOARD_SIZE, Fruit, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
+import {
+  BOARD_SIZE,
+  Fruit,
+  FruitColor,
+  FruitType,
+  Fruits,
+  PTS_PER_FRUIT,
+} from './types';
 import { checkForMatches } from './utils';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+
+type EraseFunction = ({
+  fruits,
+  color,
+  rowIndex,
+  colIndex,
+}: {
+  fruits: Fruits;
+  color: FruitColor;
+  rowIndex: number;
+  colIndex: number;
+}) => Fruits;
+
+export const eraseFunctions: Record<FruitType, EraseFunction> = {
+  normal: ({ fruits }: { fruits: Fruits }) => fruits,
+  rainbow: ({ fruits, color }: { fruits: Fruits; color: FruitColor }) =>
+    fruits.map((fruit) =>
+      fruit?.color === color && fruit.type === 'normal' ? undefined : fruit
+    ),
+  horizontal: ({ fruits, rowIndex }: { fruits: Fruits; rowIndex: number }) =>
+    fruits.map((fruit, index) =>
+      Math.floor(index / BOARD_SIZE) === rowIndex && fruit?.type === 'normal'
+        ? undefined
+        : fruit
+    ),
+  vertical: ({ fruits, colIndex }: { fruits: Fruits; colIndex: number }) =>
+    fruits.map((fruit, index) =>
+      index % BOARD_SIZE === colIndex && fruit?.type === 'normal'
+        ? undefined
+        : fruit
+    ),
+  plus: ({
+    fruits,
+    rowIndex,
+    colIndex,
+  }: {
+    fruits: Fruits;
+    rowIndex: number;
+    colIndex: number;
+  }) =>
+    fruits.map((fruit, index) =>
+      (Math.floor(index / BOARD_SIZE) === rowIndex ||
+        index % BOARD_SIZE === colIndex) &&
+      fruit?.type === 'normal'
+        ? undefined
+        : fruit
+    ),
+  explosive: ({
+    fruits,
+    rowIndex,
+    colIndex,
+  }: {
+    fruits: Fruits;
+    rowIndex: number;
+    colIndex: number;
+  }) =>
+    fruits.map((fruit, index) => {
+      const row = Math.floor(index / BOARD_SIZE);
+      const col = index % BOARD_SIZE;
+      return row >= rowIndex - 1 &&
+        row <= rowIndex + 1 &&
+        col >= colIndex - 1 &&
+        col <= colIndex + 1 &&
+        fruit?.type === 'normal'
+        ? undefined
+        : fruit;
+    }),
+  'big-explosive': ({
+    fruits,
+    rowIndex,
+    colIndex,
+  }: {
+    fruits: Fruits;
+    rowIndex: number;
+    colIndex: number;
+  }) => {
+    const startRowIndex = Math.max(0, rowIndex - 1);
+    const endRowIndex = Math.min(BOARD_SIZE - 1, rowIndex + 1);
+    const startColIndex = Math.max(0, colIndex - 1);
+    const endColIndex = Math.min(BOARD_SIZE - 1, colIndex + 1);
+
+    return fruits.map((fruit, index) => {
+      const row = Math.floor(index / BOARD_SIZE);
+      const col = index % BOARD_SIZE;
+      return ((row >= startRowIndex && row <= endRowIndex) ||
+        (col >= startColIndex && col <= endColIndex)) &&
+        fruit?.type === 'normal'
+        ? undefined
+        : fruit;
+    });
+  },
+};
+
+const specialCombinations: Record<
+  string,
+  (fruits: Fruits, color: FruitColor) => Fruits
+> = {
+  'rainbow-rainbow': (fruits: Fruits) =>
+    fruits.map((fruit) => (fruit?.type === 'normal' ? undefined : fruit)),
+  'rainbow-horizontal': (fruits: Fruits, color: FruitColor) =>
+    fruits.map((fruit) =>
+      fruit?.color === color
+        ? { ...fruit, type: 'horizontal' as FruitType }
+        : fruit
+    ),
+  'rainbow-vertical': (fruits: Fruits, color: FruitColor) =>
+    fruits.map((fruit) =>
+      fruit?.color === color
+        ? { ...fruit, type: 'vertical' as FruitType }
+        : fruit
+    ),
+  'rainbow-plus': (fruits: Fruits, color: FruitColor) =>
+    fruits.map((fruit) =>
+      fruit?.color === color ? { ...fruit, type: 'plus' as FruitType } : fruit
+    ),
+  'rainbow-explosive': (fruits: Fruits, color: FruitColor) =>
+    fruits.map((fruit) =>
+      fruit?.color === color
+        ? { ...fruit, type: 'explosive' as FruitType }
+        : fruit
+    ),
+  'rainbow-big-explosive': (fruits: Fruits, color: FruitColor) =>
+    fruits.map((fruit) =>
+      fruit?.color === color
+        ? { ...fruit, type: 'big-explosive' as FruitType }
+        : fruit
+    ),
+  // 'horizontal-horizontal': (fruits: Fruits) =>
+  //   eraseFunctions.plus(fruits, 0, 0),
+  // 'vertical-vertical': (fruits: Fruits) => eraseFunctions.plus(fruits, 0, 0),
+  // 'horizontal-vertical': (fruits: Fruits) => eraseFunctions.plus(fruits, 0, 0),
+  // 'horizontal-explosive': (fruits: Fruits) =>
+  //   eraseFunctions['big-explosive'](fruits, 0, 0),
+  // 'vertical-explosive': (fruits: Fruits) =>
+  //   eraseFunctions['big-explosive'](fruits, 0, 0),
+  // 'plus-explosive': (fruits: Fruits) =>
+  //   eraseFunctions['big-explosive'](fruits, 0, 0),
+};
 
 export const useGameLogic = (
   fruits: Fruits,
   setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
+  const fruitsRef = useRef(fruits);
+  fruitsRef.current = fruits;
+
   const checkMatches = useCallback(() => {
-    return checkForMatches(fruits, setFruits, setScore);
-  }, [fruits]);
+    return checkForMatches(fruitsRef.current, setFruits, setScore);
+  }, [setFruits, setScore]);
 
   const moveIntoSquareBelow = useCallback(() => {
+    const newFruits = [...fruitsRef.current];
     let fruitsMoved = false;
 
     for (let i = BOARD_SIZE * BOARD_SIZE - 1; i >= BOARD_SIZE; i--) {
-      if (fruits[i] === undefined) {
-        if (fruits[i - BOARD_SIZE] !== undefined) {
-          fruits[i] = fruits[i - BOARD_SIZE];
-          fruits[i - BOARD_SIZE] = undefined;
-          fruitsMoved = true;
-        }
+      if (
+        newFruits[i] === undefined &&
+        newFruits[i - BOARD_SIZE] !== undefined
+      ) {
+        newFruits[i] = newFruits[i - BOARD_SIZE];
+        newFruits[i - BOARD_SIZE] = undefined;
+        fruitsMoved = true;
       }
     }
 
-    // Fill the top row with new fruits if empty
     for (let i = 0; i < BOARD_SIZE; i++) {
-      if (fruits[i] === undefined) {
-        fruits[i] = new Fruit();
+      if (newFruits[i] === undefined) {
+        newFruits[i] = new Fruit();
         fruitsMoved = true;
       }
     }
 
     if (fruitsMoved) {
-      setFruits([...fruits]);
+      setFruits(newFruits);
     }
 
     return fruitsMoved;
-  }, [fruits]);
-
-  // Helper function to erase fruits of a specific color
-  function eraseColor(fruits: Fruits, color: FruitColor) {
-    console.log('Erasing color:', color);
-    const newFruits = fruits.map((fruit) =>
-      fruit?.color === color ? undefined : fruit
-    );
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
-
-  // Helper function to erase an entire row
-  function eraseRow(fruits: Fruits, rowIndex: number, boardSize: number) {
-    console.log('Erasing row:', rowIndex);
-    const newFruits = fruits.map((fruit, index) =>
-      Math.floor(index / boardSize) === rowIndex ? undefined : fruit
-    );
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
-
-  // Helper function to erase an entire column
-  function eraseColumn(fruits: Fruits, colIndex: number, boardSize: number) {
-    console.log('Erasing column:', colIndex);
-    const newFruits = fruits.map((fruit, index) =>
-      index % boardSize === colIndex ? undefined : fruit
-    );
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
-
-  // Helper function to erase both row and column
-  function eraseRowAndColumn(
-    fruits: Fruits,
-    rowIndex: number,
-    colIndex: number,
-    boardSize: number
-  ) {
-    console.log('Erasing row and column:', rowIndex, colIndex);
-    const newFruits = fruits.map((fruit, index) =>
-      Math.floor(index / boardSize) === rowIndex ||
-      index % boardSize === colIndex
-        ? undefined
-        : fruit
-    );
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
-
-  // Helper function to erase 3x3 grid
-  function erase3x3Grid(fruits: Fruits, rowIndex: number, colIndex: number) {
-    console.log('Erasing grid:', rowIndex, colIndex);
-    const newFruits = fruits.map((fruit, index) => {
-      const row = Math.floor(index / BOARD_SIZE);
-      const col = index % BOARD_SIZE;
-
-      if (
-        row >= rowIndex - 1 &&
-        row <= rowIndex + 1 &&
-        col >= colIndex - 1 &&
-        col <= colIndex + 1
-      ) {
-        return undefined;
-      }
-
-      return fruit;
-    });
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
-
-  // Helper function to erase 3 rows x 3 columns grid
-  function eraseBig3x3Grid(
-    fruits: Fruits,
-    rowIndex: number,
-    colIndex: number,
-    boardSize: number
-  ) {
-    console.log('Erasing 3 rows and 3 columns based on given indexes');
-
-    // Calculate the dynamic ranges for rows and columns to be erased
-    const startRowIndex = Math.max(0, rowIndex - 1);
-    const endRowIndex = Math.min(boardSize - 1, rowIndex + 1);
-    const startColIndex = Math.max(0, colIndex - 1);
-    const endColIndex = Math.min(boardSize - 1, colIndex + 1);
-
-    const newFruits = fruits.map((fruit, index) => {
-      const row = Math.floor(index / boardSize);
-      const col = index % boardSize;
-
-      // Check if the current index falls within the dynamically calculated rows or columns
-      if (
-        (row >= startRowIndex && row <= endRowIndex) ||
-        (col >= startColIndex && col <= endColIndex)
-      ) {
-        return undefined;
-      }
-
-      return fruit;
-    });
-
-    console.log(
-      'Erased fruits:',
-      newFruits.filter((fruit) => fruit === undefined).length
-    );
-
-    return newFruits;
-  }
+  }, [setFruits]);
 
   const handleSpecialFruits = useCallback(
     (draggedId: number, replacedId: number, fruits: Fruits) => {
-      let newFruits: Fruits = [...fruits];
-      let erasedFruits = 0;
+      const draggedFruit = fruits[draggedId];
+      const replacedFruit = fruits[replacedId];
 
-      const draggedFruit = newFruits[draggedId];
-      const replacedFruit = newFruits[replacedId];
+      if (!draggedFruit || !replacedFruit) return fruits;
 
-      console.log('Handling special fruits:', draggedFruit, replacedFruit);
+      let newFruits = [...fruits];
+      let combinationFunction:
+        | ((fruits: Fruits, color: FruitColor) => Fruits)
+        | undefined;
+      let normalFruit: Fruit | undefined;
 
-      if (draggedFruit?.type === 'normal' && replacedFruit?.type === 'normal') {
-        // newFruits[draggedId] = replacedFruit;
-        // newFruits[replacedId] = draggedFruit;
-        return newFruits;
+      const combinationKey = `${draggedFruit.type}-${replacedFruit.type}`;
+      const reverseCombinationKey = `${replacedFruit.type}-${draggedFruit.type}`;
+
+      if (specialCombinations[combinationKey]) {
+        combinationFunction = specialCombinations[combinationKey];
+        normalFruit =
+          replacedFruit.type === 'normal' ? replacedFruit : draggedFruit;
+      } else if (specialCombinations[reverseCombinationKey]) {
+        combinationFunction = specialCombinations[reverseCombinationKey];
+        normalFruit =
+          draggedFruit.type === 'normal' ? draggedFruit : replacedFruit;
       }
 
-      if (
-        draggedFruit?.type === 'rainbow' ||
-        replacedFruit?.type === 'rainbow'
-      ) {
-        const fruitColorToErase =
-          draggedFruit?.type !== 'rainbow'
-            ? draggedFruit?.color
-            : replacedFruit?.color;
+      if (combinationFunction) {
+        // Handle the case where the normal fruit's color might be "null"
+        const combinationColor =
+          normalFruit?.color.name === 'null'
+            ? draggedFruit.color.name === 'null'
+              ? replacedFruit.color
+              : draggedFruit.color
+            : normalFruit?.color || draggedFruit.color;
+        newFruits = combinationFunction(newFruits, combinationColor);
 
-        newFruits = eraseColor(newFruits, fruitColorToErase!);
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      } else if (
-        draggedFruit?.type === 'horizontal' ||
-        replacedFruit?.type === 'horizontal'
-      ) {
-        const rowIndex = Math.floor(
-          (draggedFruit?.type === 'horizontal' ? draggedId : replacedId) /
-            BOARD_SIZE
-        );
-        newFruits = eraseRow(newFruits, rowIndex, BOARD_SIZE);
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      } else if (
-        draggedFruit?.type === 'vertical' ||
-        replacedFruit?.type === 'vertical'
-      ) {
-        const colIndex =
-          (draggedFruit?.type === 'vertical' ? draggedId : replacedId) %
-          BOARD_SIZE;
-        newFruits = eraseColumn(newFruits, colIndex, BOARD_SIZE);
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      } else if (
-        draggedFruit?.type === 'plus' ||
-        replacedFruit?.type === 'plus'
-      ) {
-        const rowIndex = Math.floor(
-          (draggedFruit?.type === 'plus' ? draggedId : replacedId) / BOARD_SIZE
-        );
-        const colIndex =
-          (draggedFruit?.type === 'plus' ? draggedId : replacedId) % BOARD_SIZE;
-        newFruits = eraseRowAndColumn(
-          newFruits,
-          rowIndex,
-          colIndex,
-          BOARD_SIZE
-        );
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      } else if (
-        draggedFruit?.type === 'explosive' ||
-        replacedFruit?.type === 'explosive'
-      ) {
-        const rowIndex = Math.floor(
-          (draggedFruit?.type === 'explosive' ? draggedId : replacedId) /
-            BOARD_SIZE
-        );
-        const colIndex =
-          (draggedFruit?.type === 'explosive' ? draggedId : replacedId) %
-          BOARD_SIZE;
-        newFruits = erase3x3Grid(newFruits, rowIndex, colIndex);
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      } else if (
-        draggedFruit?.type === 'big-explosive' ||
-        replacedFruit?.type === 'big-explosive'
-      ) {
-        const rowIndex = Math.floor(
-          (draggedFruit?.type === 'big-explosive' ? draggedId : replacedId) /
-            BOARD_SIZE
-        );
-        const colIndex =
-          (draggedFruit?.type === 'big-explosive' ? draggedId : replacedId) %
-          BOARD_SIZE;
-        newFruits = eraseBig3x3Grid(newFruits, rowIndex, colIndex, BOARD_SIZE);
-        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
-        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
+        // Apply the effect immediately for the new combinations
+        // if (
+        //   [
+        //     'horizontal-horizontal',
+        //     'vertical-vertical',
+        //     'horizontal-vertical',
+        //   ].includes(combinationKey) ||
+        //   [
+        //     'horizontal-horizontal',
+        //     'vertical-vertical',
+        //     'horizontal-vertical',
+        //   ].includes(reverseCombinationKey)
+        // ) {
+        //   newFruits = eraseFunctions.plus(
+        //     newFruits,
+        //     Math.floor(draggedId / BOARD_SIZE),
+        //     draggedId % BOARD_SIZE
+        //   );
+        // } else if (
+        //   [
+        //     'horizontal-explosive',
+        //     'vertical-explosive',
+        //     'plus-explosive',
+        //   ].includes(combinationKey) ||
+        //   [
+        //     'horizontal-explosive',
+        //     'vertical-explosive',
+        //     'plus-explosive',
+        //   ].includes(reverseCombinationKey)
+        // ) {
+        //   newFruits = eraseFunctions['big-explosive'](
+        //     newFruits,
+        //     Math.floor(draggedId / BOARD_SIZE),
+        //     draggedId % BOARD_SIZE
+        //   );
+        // }
+      } else {
+        const specialFruit =
+          draggedFruit.type !== 'normal' ? draggedFruit : replacedFruit;
+        const specialFruitId =
+          draggedFruit.type !== 'normal' ? draggedId : replacedId;
+
+        // For special fruits that require a color (e.g., rainbow),
+        // use the non-"null" color of either fruit
+        const eraseColor =
+          specialFruit.color.name === 'null'
+            ? draggedFruit.color.name === 'null'
+              ? replacedFruit.color
+              : draggedFruit.color
+            : specialFruit.color;
+
+        const eraseFunction = eraseFunctions[specialFruit.type];
+        newFruits = eraseFunction({
+          fruits: newFruits,
+          color: eraseColor,
+          rowIndex: Math.floor(specialFruitId / BOARD_SIZE),
+          colIndex: specialFruitId % BOARD_SIZE,
+        });
       }
+
+      // Count erased fruits and update score
+      const erasedFruits = newFruits.filter(
+        (fruit) => fruit === undefined
+      ).length;
+      setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
 
       return newFruits;
     },
-    [fruits, setScore]
+    [setScore]
   );
 
   return { checkMatches, moveIntoSquareBelow, handleSpecialFruits };

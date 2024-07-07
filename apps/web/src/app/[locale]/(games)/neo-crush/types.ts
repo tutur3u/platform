@@ -28,6 +28,9 @@ export type FruitColorName = FruitColor['name'];
 export type FruitColorCode = FruitColor['code'];
 export type FruitType = (typeof FRUIT_TYPES)[number];
 
+export const getRandomFruitColor = () =>
+  FRUIT_COLORS[Math.floor(Math.random() * (FRUIT_COLORS.length - 1))]!;
+
 export class Fruit {
   color: FruitColor;
   type: FruitType;

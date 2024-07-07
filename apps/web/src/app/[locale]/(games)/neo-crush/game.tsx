@@ -16,7 +16,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import React, { useEffect, useMemo, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
-  const [fruits, setFruits] = useState<Fruits>([]);
+  const [fruits, setFruits] = useState<Fruits>(createBoard());
   const [score, setScore] = useState<number>(0);
 
   const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
@@ -31,9 +31,9 @@ export const NeoCrushGame: React.FC = () => {
       const dragable = fruits.every((fruit) => fruit);
       if (dragable) checkMatches();
       moveIntoSquareBelow();
-    }, 100);
+    }, 150);
     return () => clearInterval(timer);
-  }, [checkMatches, moveIntoSquareBelow]);
+  }, [fruits, checkMatches, moveIntoSquareBelow]);
 
   const presetFruits = useMemo(
     () => ({
