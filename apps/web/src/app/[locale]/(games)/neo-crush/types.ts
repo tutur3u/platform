@@ -8,7 +8,7 @@ const FRUIT_COLORS = [
   { name: 'green', code: '#2A9D8F' },
   { name: 'yellow', code: '#FFD700' },
   { name: 'purple', code: '#9C89B8' },
-  { name: 'orange', code: '#F77F00' }
+  { name: 'orange', code: '#F77F00' },
 ] as const;
 
 const FRUIT_TYPES = [
@@ -19,21 +19,18 @@ const FRUIT_TYPES = [
   'rainbow',
 ] as const;
 
-type FruitColor = (typeof FRUIT_COLORS)[number];
-type FruitType = (typeof FRUIT_TYPES)[number];
+export type FruitColor = (typeof FRUIT_COLORS)[number];
+export type FruitType = (typeof FRUIT_TYPES)[number];
 
 export class Fruit {
-  color: FruitColor | undefined;
-  type: FruitType | undefined;
+  color: FruitColor;
+  type: FruitType;
 
-  constructor(name?: string, type?: string) {
-    if (!name && !type) {
-      this.color = FRUIT_COLORS[Math.floor(Math.random() * FRUIT_COLORS.length)];
-      this.type = 'normal';
-    }
-    else {
-      this.color = FRUIT_COLORS.find((color) => color.name === name);
-      this.type = type as FruitType;
-    }
+  constructor(color?: FruitColor, type?: FruitType) {
+    const colorIndex = Math.floor(Math.random() * FRUIT_COLORS.length);
+    this.color = color ?? FRUIT_COLORS[colorIndex]!;
+    this.type = type ?? 'normal';
   }
 }
+
+export type Fruits = (Fruit | undefined)[];

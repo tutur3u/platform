@@ -1,11 +1,11 @@
 // use-dnd.ts
-import { BOARD_SIZE, Fruit } from './types';
+import { BOARD_SIZE, Fruit, FruitColor, FruitType, Fruits } from './types';
 import { checkForMatches, handleSpecialFruits } from './utils';
 import { useCallback } from 'react';
 
 export const useDragAndDrop = (
-  fruits: (Fruit | undefined)[],
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>,
+  fruits: Fruits,
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
   setScore: React.Dispatch<React.SetStateAction<number>>,
   squareBeingDragged: HTMLDivElement | null,
   squareBeingReplaced: HTMLDivElement | null,
@@ -22,7 +22,8 @@ export const useDragAndDrop = (
     const target = e.target as HTMLDivElement;
     setSquareBeingDragged(target);
     if (e.type === 'dragstart') {
-      (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed = 'move';
+      (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed =
+        'move';
     }
   };
 
@@ -62,57 +63,67 @@ export const useDragAndDrop = (
         squareBeingReplaced.getAttribute('data-id') || '0'
       );
 
-    const validMoves = [
-      squareBeingDraggedId - 1,
-      squareBeingDraggedId - BOARD_SIZE,
-      squareBeingDraggedId + 1,
-      squareBeingDraggedId + BOARD_SIZE,
-    ];
+      const validMoves = [
+        squareBeingDraggedId - 1,
+        squareBeingDraggedId - BOARD_SIZE,
+        squareBeingDraggedId + 1,
+        squareBeingDraggedId + BOARD_SIZE,
+      ];
 
-    const validMove = validMoves.includes(squareBeingReplacedId);
+      const validMove = validMoves.includes(squareBeingReplacedId);
 
-    // Async function to encapsulate logic that needs to wait
-    const handleSwap = async () => {
-      if (validMove) {
-        const draggedFruit: Fruit = {
-          color: squareBeingDragged.getAttribute('data-color') as FruitColor,
-          type: squareBeingDragged.getAttribute('data-type') as FruitType,
-        };
+      // Async function to encapsulate logic that needs to wait
+      const handleSwap = async () => {
+        if (validMove) {
+          const draggedFruit = new Fruit(
+            squareBeingDragged.getAttribute('data-color') as unknown as
+              | FruitColor
+              | undefined,
+            squareBeingDragged.getAttribute('data-type') as FruitType
+          );
 
-        const replacedFruit: Fruit = {
-          color: squareBeingReplaced.getAttribute('data-color') as FruitColor,
-          type: squareBeingReplaced.getAttribute('data-type') as FruitType,
-        };
+          const replacedFruit = new Fruit(
+            squareBeingReplaced.getAttribute('data-color') as unknown as
+              | FruitColor
+              | undefined,
+            squareBeingReplaced.getAttribute('data-type') as FruitType
+          );
 
-        fruits[squareBeingDraggedId] = replacedFruit;
-        fruits[squareBeingReplacedId] = draggedFruit;
-        setFruits([...fruits]);
-
-        // Wait for 100ms
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        
-        const specialFruit = handleSpecialFruits(fruits, setFruits, setScore, squareBeingDraggedId, squareBeingReplacedId);
-        if (specialFruit) return;
-
-        const isAMatch = checkForMatches(fruits, setFruits, setScore);
-        if (!isAMatch) {
-          const tempFruit = fruits[squareBeingReplacedId];
-          fruits[squareBeingReplacedId] = fruits[squareBeingDraggedId];
-          fruits[squareBeingDraggedId] = tempFruit;
+          fruits[squareBeingDraggedId] = replacedFruit;
+          fruits[squareBeingReplacedId] = draggedFruit;
           setFruits([...fruits]);
+
+          // Wait for 100ms
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          const specialFruit = handleSpecialFruits(
+            fruits,
+            setFruits,
+            setScore,
+            squareBeingDraggedId,
+            squareBeingReplacedId
+          );
+          if (specialFruit) return;
+
+          const isAMatch = checkForMatches(fruits, setFruits, setScore);
+          if (!isAMatch) {
+            const tempFruit = fruits[squareBeingReplacedId];
+            fruits[squareBeingReplacedId] = fruits[squareBeingDraggedId];
+            fruits[squareBeingDraggedId] = tempFruit;
+            setFruits([...fruits]);
+          }
         }
-      }
 
-      setSquareBeingDragged(null);
-      setSquareBeingReplaced(null);
-    };
+        setSquareBeingDragged(null);
+        setSquareBeingReplaced(null);
+      };
 
-    // Immediately invoke the async function
-    const dragable = fruits.every((fruit) => fruit);
-    if (dragable) handleSwap();
-  },
-  [fruits, squareBeingDragged, squareBeingReplaced]
-);
+      // Immediately invoke the async function
+      const dragable = fruits.every((fruit) => fruit);
+      if (dragable) handleSwap();
+    },
+    [fruits, squareBeingDragged, squareBeingReplaced]
+  );
 
   const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     dragStart(e);

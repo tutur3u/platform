@@ -1,5 +1,5 @@
 // fruit-grid.tsx
-import { Fruit } from './types';
+import { Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
 import {
   Bomb,
@@ -12,15 +12,15 @@ import {
 import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
-  fruits: (Fruit | undefined)[];
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
+  fruits: Fruits;
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
   setScore: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({
   fruits,
   setFruits,
-  setScore
+  setScore,
 }) => {
   const [squareBeingDragged, setSquareBeingDragged] =
     useState<HTMLDivElement | null>(null);

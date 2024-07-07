@@ -4,8 +4,8 @@ export const summonLineEraser = ({
   fruits,
   setFruits,
 }: {
-  fruits: (Fruit | undefined)[];
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
+  fruits: Fruits;
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits
@@ -34,8 +34,8 @@ export const summonRainbowFruit = ({
   fruits,
   setFruits,
 }: {
-  fruits: (Fruit | undefined)[];
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
+  fruits: Fruits;
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits
@@ -51,10 +51,7 @@ export const summonRainbowFruit = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = new Fruit(
-      undefined,
-      'rainbow'
-    );
+    newFruits[randomIndex] = new Fruit(undefined, 'rainbow');
 
     setFruits(newFruits);
   }
@@ -64,8 +61,8 @@ export const summonExplosiveFruit = ({
   fruits,
   setFruits,
 }: {
-  fruits: (Fruit | undefined)[];
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
+  fruits: Fruits;
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits

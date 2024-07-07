@@ -1,15 +1,11 @@
 // utils.ts
-import {
-  BOARD_SIZE,
-  PTS_PER_FRUIT,
-  Fruit
-} from './types';
+import { BOARD_SIZE, Fruit, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
 
-export const createFruitFromColor = (color: string) => new Fruit(color);
+export const createFruitFromColor = (color: FruitColor) => new Fruit(color);
 
 export const createRandomFruit = () => new Fruit();
 
-export const findMatch = (startIndex: number, fruits: (Fruit | undefined)[]): number[] => {
+export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
   const decidedColor = fruits[startIndex]?.color;
 
   let horizontalMatch: number[] = [startIndex];
@@ -60,13 +56,13 @@ export const findMatch = (startIndex: number, fruits: (Fruit | undefined)[]): nu
 };
 
 export const checkForMatches = (
-  fruits: (Fruit | undefined)[],
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>,
+  fruits: Fruits,
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
   let hasMatch = false;
   let poppedFruits = 0;
-  
+
   for (let i = 0; i < fruits.length; i++) {
     const allFilled = fruits.every((fruit) => fruit);
     if (allFilled) {
@@ -83,7 +79,7 @@ export const checkForMatches = (
               ? 'horizontal'
               : 'vertical';
           match.forEach((square, index) => {
-            if (index !== centerIndex && newFruits[square]?.type === 'normal') {
+            if (index !== centerIndex && fruits[square]?.type === 'normal') {
               fruits[square] = undefined;
             }
           });
@@ -99,7 +95,7 @@ export const checkForMatches = (
 
   // Increment the score by 3 for each distinct match found
   if (poppedFruits > 0) {
-    setScore(score => score + poppedFruits * PTS_PER_FRUIT);
+    setScore((score) => score + poppedFruits * PTS_PER_FRUIT);
   }
 
   setFruits([...fruits]);
@@ -107,46 +103,56 @@ export const checkForMatches = (
 };
 
 export const handleSpecialFruits = (
-  fruits: (Fruit | undefined)[],
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>,
+  fruits: Fruits,
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
   setScore: React.Dispatch<React.SetStateAction<number>>,
-  draggedId: number, 
+  draggedId: number,
   replacedId: number
 ) => {
   let specialFruit = false;
   const draggedFruit = fruits[draggedId];
   const replacedFruit = fruits[replacedId];
 
-  if (draggedFruit?.type === 'horizontal' || replacedFruit?.type === 'horizontal') {
-    const lineEraserIndex = draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
+  if (
+    draggedFruit?.type === 'horizontal' ||
+    replacedFruit?.type === 'horizontal'
+  ) {
+    const lineEraserIndex =
+      draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
     const row = Math.floor(lineEraserIndex / BOARD_SIZE);
 
     // Erase the entire row
     for (let i = 0; i < BOARD_SIZE; i++) {
       fruits[row * BOARD_SIZE + i] = undefined;
     }
-    setScore(score => score + BOARD_SIZE * PTS_PER_FRUIT);
-    
+    setScore((score) => score + BOARD_SIZE * PTS_PER_FRUIT);
+
     // Update the fruits state
     setFruits([...fruits]);
     specialFruit = true;
-  }
-  else if (draggedFruit?.type === 'vertical' || replacedFruit?.type === 'vertical') {
-    const lineEraserIndex = draggedFruit?.type === 'vertical' ? draggedId : replacedId;
+  } else if (
+    draggedFruit?.type === 'vertical' ||
+    replacedFruit?.type === 'vertical'
+  ) {
+    const lineEraserIndex =
+      draggedFruit?.type === 'vertical' ? draggedId : replacedId;
     const col = lineEraserIndex % BOARD_SIZE;
 
     // Erase the entire column
     for (let i = 0; i < BOARD_SIZE; i++) {
       fruits[i * BOARD_SIZE + col] = undefined;
     }
-    setScore(score => score + BOARD_SIZE * PTS_PER_FRUIT);
-    
+    setScore((score) => score + BOARD_SIZE * PTS_PER_FRUIT);
+
     // Update the fruits state
     setFruits([...fruits]);
     specialFruit = true;
-  }
-  else if (draggedFruit?.type === 'explosive' || replacedFruit?.type === 'explosive') {
-    const explosiveIndex = draggedFruit?.type === 'explosive' ? draggedId : replacedId;
+  } else if (
+    draggedFruit?.type === 'explosive' ||
+    replacedFruit?.type === 'explosive'
+  ) {
+    const explosiveIndex =
+      draggedFruit?.type === 'explosive' ? draggedId : replacedId;
     const row = Math.floor(explosiveIndex / BOARD_SIZE);
     const col = explosiveIndex % BOARD_SIZE;
 
@@ -158,14 +164,17 @@ export const handleSpecialFruits = (
         }
       }
     }
-    setScore(score => score + 9 * PTS_PER_FRUIT);
+    setScore((score) => score + 9 * PTS_PER_FRUIT);
 
     // Update the fruits state
     setFruits([...fruits]);
     specialFruit = true;
-  }
-  else if (draggedFruit?.type === 'rainbow' || replacedFruit?.type === 'rainbow') {
-    const rainbowIndex = draggedFruit?.type === 'rainbow' ? draggedId : replacedId;
+  } else if (
+    draggedFruit?.type === 'rainbow' ||
+    replacedFruit?.type === 'rainbow'
+  ) {
+    const rainbowIndex =
+      draggedFruit?.type === 'rainbow' ? draggedId : replacedId;
     fruits[rainbowIndex] = undefined;
 
     // Update the fruits state
@@ -175,7 +184,7 @@ export const handleSpecialFruits = (
   return specialFruit;
 };
 
-export const createBoard = (): (Fruit | undefined)[] => {
+export const createBoard = (): Fruits => {
   const board = Array.from(
     { length: BOARD_SIZE * BOARD_SIZE },
     () => null
@@ -250,5 +259,5 @@ export const createBoard = (): (Fruit | undefined)[] => {
     }
   }
 
-  return board as (Fruit | undefined)[];
+  return board as Fruits;
 };

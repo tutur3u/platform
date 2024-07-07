@@ -6,7 +6,7 @@ import {
   summonLineEraser,
   summonRainbowFruit,
 } from './summoner';
-import { Fruit } from './types';
+import { Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { Button } from '@repo/ui/components/ui/button';
@@ -15,11 +15,14 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import React, { useEffect, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
-  const [fruits, setFruits] = useState<(Fruit | undefined)[]>([]);
+  const [fruits, setFruits] = useState<Fruits>([]);
   const [score, setScore] = useState<number>(0);
 
-  const { checkMatches, moveIntoSquareBelow } =
-    useGameLogic(fruits, setFruits, setScore);
+  const { checkMatches, moveIntoSquareBelow } = useGameLogic(
+    fruits,
+    setFruits,
+    setScore
+  );
 
   useEffect(() => {
     setFruits(createBoard());
@@ -37,11 +40,7 @@ export const NeoCrushGame: React.FC = () => {
   return (
     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
       <Card className="w-full p-2 md:p-4">
-        <FruitGrid
-          fruits={fruits}
-          setFruits={setFruits}
-          setScore={setScore}
-        />
+        <FruitGrid fruits={fruits} setFruits={setFruits} setScore={setScore} />
         <p className="mt-2 text-center text-sm font-bold md:mt-4 md:text-xl">
           Score: {score}
         </p>

@@ -1,7 +1,7 @@
-import { Fruit } from './types';
+import { Fruits } from './types';
 import { cn } from '@/lib/utils';
 
-export default function GameStats({ fruits }: { fruits: Fruit[] }) {
+export default function GameStats({ fruits }: { fruits: Fruits }) {
   const fruitTypeCounts: {
     empty: number;
     normal: number;
@@ -28,7 +28,7 @@ export default function GameStats({ fruits }: { fruits: Fruit[] }) {
 
   const fruitColorCounts = fruits.reduce(
     (acc, fruit) => {
-      if (fruit) acc[fruit.color] = (acc[fruit.color] || 0) + 1;
+      if (fruit) acc[fruit.color.name] = (acc[fruit.color.name] || 0) + 1;
 
       return acc;
     },

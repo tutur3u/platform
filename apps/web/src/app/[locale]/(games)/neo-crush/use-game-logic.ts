@@ -1,11 +1,11 @@
 // use-game-logic.ts
-import { BOARD_SIZE, Fruit, FruitColor, PTS_PER_FRUIT } from './types';
+import { BOARD_SIZE, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
 import { checkForMatches, createRandomFruit } from './utils';
 import { useCallback } from 'react';
 
 export const useGameLogic = (
-  fruits: (Fruit | undefined)[],
-  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>,
+  fruits: Fruits,
+  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
   setScore: React.Dispatch<React.SetStateAction<number>>
 ) => {
   const checkMatches = useCallback(() => {
@@ -41,7 +41,7 @@ export const useGameLogic = (
   }, [fruits]);
 
   // Helper function to erase fruits of a specific color
-  function eraseColor(fruits: Fruit[], color: FruitColor) {
+  function eraseColor(fruits: Fruits, color: FruitColor) {
     console.log('Erasing color:', color);
     const newFruits = fruits.map((fruit) =>
       fruit?.color === color ? undefined : fruit
@@ -55,7 +55,7 @@ export const useGameLogic = (
   }
 
   // Helper function to erase an entire row
-  function eraseRow(fruits: Fruit[], rowIndex: number, boardSize: number) {
+  function eraseRow(fruits: Fruits, rowIndex: number, boardSize: number) {
     console.log('Erasing row:', rowIndex);
     const newFruits = fruits.map((fruit, index) =>
       Math.floor(index / boardSize) === rowIndex ? undefined : fruit
@@ -69,7 +69,7 @@ export const useGameLogic = (
   }
 
   // Helper function to erase an entire column
-  function eraseColumn(fruits: Fruit[], colIndex: number, boardSize: number) {
+  function eraseColumn(fruits: Fruits, colIndex: number, boardSize: number) {
     console.log('Erasing column:', colIndex);
     const newFruits = fruits.map((fruit, index) =>
       index % boardSize === colIndex ? undefined : fruit
@@ -83,8 +83,8 @@ export const useGameLogic = (
   }
 
   const handleSpecialFruits = useCallback(
-    (draggedId: number, replacedId: number, fruits: Fruit[]) => {
-      let newFruits = [...fruits];
+    (draggedId: number, replacedId: number, fruits: Fruits) => {
+      let newFruits: Fruits = [...fruits];
       let erasedFruits = 0;
 
       const draggedFruit = newFruits[draggedId];
