@@ -4,8 +4,8 @@ export const summonLineEraser = ({
   fruits,
   setFruits,
 }: {
-  fruits: Fruit[];
-  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
+  fruits: (Fruit | undefined)[];
+  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits
@@ -21,10 +21,10 @@ export const summonLineEraser = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = {
-      color: newFruits[randomIndex]!.color!,
-      type: Math.random() < 0.5 ? 'horizontal' : 'vertical',
-    };
+    newFruits[randomIndex] = new Fruit(
+      newFruits[randomIndex]!.color!.name,
+      Math.random() < 0.5 ? 'horizontal' : 'vertical'
+    );
 
     setFruits(newFruits);
   }
@@ -34,8 +34,8 @@ export const summonRainbowFruit = ({
   fruits,
   setFruits,
 }: {
-  fruits: Fruit[];
-  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
+  fruits: (Fruit | undefined)[];
+  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits
@@ -51,10 +51,10 @@ export const summonRainbowFruit = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = {
-      color: newFruits[randomIndex]!.color!,
-      type: 'rainbow',
-    };
+    newFruits[randomIndex] = new Fruit(
+      undefined,
+      'rainbow'
+    );
 
     setFruits(newFruits);
   }
@@ -64,8 +64,8 @@ export const summonExplosiveFruit = ({
   fruits,
   setFruits,
 }: {
-  fruits: Fruit[];
-  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
+  fruits: (Fruit | undefined)[];
+  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
 }) => {
   // Filter for normal fruits only
   const normalFruitsIndices = fruits
@@ -81,10 +81,10 @@ export const summonExplosiveFruit = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = {
-      color: newFruits[randomIndex]!.color!,
-      type: 'explosive',
-    };
+    newFruits[randomIndex] = new Fruit(
+      newFruits[randomIndex]!.color!.name,
+      'explosive'
+    );
 
     setFruits(newFruits);
   }

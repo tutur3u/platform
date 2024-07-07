@@ -14,10 +14,10 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import React, { useEffect, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
-  const [fruits, setFruits] = useState<Fruit[]>([]);
+  const [fruits, setFruits] = useState<(Fruit | undefined)[]>([]);
   const [score, setScore] = useState<number>(0);
 
-  const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
+  const { checkMatches, moveIntoSquareBelow } =
     useGameLogic(fruits, setFruits, setScore);
 
   useEffect(() => {
@@ -26,7 +26,8 @@ export const NeoCrushGame: React.FC = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      checkMatches();
+      const dragable = fruits.every((fruit) => fruit);
+      if (dragable) checkMatches();
       moveIntoSquareBelow();
     }, 100);
     return () => clearInterval(timer);
@@ -38,7 +39,7 @@ export const NeoCrushGame: React.FC = () => {
         <FruitGrid
           fruits={fruits}
           setFruits={setFruits}
-          handleSpecialFruits={handleSpecialFruits}
+          setScore={setScore}
         />
         <p className="mt-2 text-center text-sm font-bold md:mt-4 md:text-xl">
           Score: {score}

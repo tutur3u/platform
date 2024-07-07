@@ -1,5 +1,5 @@
 // fruit-grid.tsx
-import { Fruit, colorMap } from './types';
+import { Fruit } from './types';
 import { useDragAndDrop } from './use-dnd';
 import {
   Bomb,
@@ -12,15 +12,15 @@ import {
 import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
-  fruits: Fruit[];
-  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
-  handleSpecialFruits: (draggedId: number, replacedId: number) => void;
+  fruits: (Fruit | undefined)[];
+  setFruits: React.Dispatch<React.SetStateAction<(Fruit | undefined)[]>>;
+  setScore: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({
   fruits,
   setFruits,
-  handleSpecialFruits,
+  setScore
 }) => {
   const [squareBeingDragged, setSquareBeingDragged] =
     useState<HTMLDivElement | null>(null);
@@ -31,11 +31,11 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
   const { dragStart, dragOver, dragLeave, dragDrop, dragEnd } = useDragAndDrop(
     fruits,
     setFruits,
+    setScore,
     squareBeingDragged,
     squareBeingReplaced,
     setSquareBeingDragged,
-    setSquareBeingReplaced,
-    handleSpecialFruits
+    setSquareBeingReplaced
   );
 
   const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -136,7 +136,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
                 ? fruit?.type === 'rainbow'
                   ? 'var(--foreground)'
                   : fruit?.type !== 'normal'
-                    ? colorMap[fruit.color]
+                    ? fruit?.color?.code
                     : 'transparent'
                 : 'var(--foreground)',
               opacity: fruit ? 1 : 0.3,
@@ -145,25 +145,20 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
                   ? undefined
                   : fruit
                     ? fruit?.type === 'normal'
-                      ? colorMap[fruit.color]
+                      ? fruit?.color?.code
                       : // colorMap gives hex color, we need to convert it to rgba
-                        `rgba(${parseInt(
-                          colorMap[fruit.color].slice(1, 3),
-                          16
-                        )}, ${parseInt(
-                          colorMap[fruit.color].slice(3, 5),
-                          16
-                        )}, ${parseInt(
-                          colorMap[fruit.color].slice(5, 7),
-                          16
-                        )}, 0.2)`
+                        `rgba(
+                          ${parseInt(fruit?.color?.code.slice(1, 3) as string, 16)},
+                          ${parseInt(fruit?.color?.code.slice(3, 5) as string, 16)},
+                          ${parseInt(fruit?.color?.code.slice(5, 7) as string, 16)},
+                        0.2)`
                     : 'transparent',
               cursor: 'grab',
               backgroundSize: 'auto',
             }}
             data-id={index}
-            data-color={fruit?.color as string | undefined}
-            data-type={fruit?.type as string | undefined}
+            data-color={fruit?.color?.name}
+            data-type={fruit?.type}
             draggable={true}
             onDragStart={dragStart}
             onDragOver={dragOver}
@@ -181,14 +176,14 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
                   className="absolute -left-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
-                    color: colorMap[fruit.color],
+                    color: fruit?.color?.code,
                   }}
                 />
                 <ChevronRight
                   className="absolute -right-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
-                    color: colorMap[fruit.color],
+                    color: fruit?.color?.code,
                   }}
                 />
               </>
@@ -200,14 +195,14 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
                   className="absolute -top-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
-                    color: colorMap[fruit.color],
+                    color: fruit?.color?.code,
                   }}
                 />
                 <ChevronDown
                   className="absolute -bottom-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
-                    color: colorMap[fruit.color],
+                    color: fruit?.color?.code,
                   }}
                 />
               </>
@@ -222,7 +217,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
                 className="absolute h-4 w-4 md:h-6 md:w-6"
                 style={{
                   animation: 'pulse 1s infinite',
-                  color: colorMap[fruit.color],
+                  color: fruit?.color?.code,
                 }}
               />
             )}
