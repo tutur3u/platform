@@ -1,5 +1,5 @@
 // use-game-logic.ts
-import { BOARD_SIZE, Fruit } from './types';
+import { BOARD_SIZE, Fruit, FruitColor, PTS_PER_FRUIT } from './types';
 import { checkForMatches, createRandomFruit } from './utils';
 import { useCallback, useState } from 'react';
 
@@ -13,7 +13,7 @@ export const useGameLogic = (
   const checkMatches = useCallback(() => {
     const hasMatch = checkForMatches(fruits, setFruits, setScore, scoreUpdated);
     setScoreUpdated(hasMatch);
-  }, [fruits, setFruits, setScore]);
+  }, [fruits, setFruits, setScore, setScoreUpdated]);
 
   const moveIntoSquareBelow = useCallback(() => {
     const newFruits = [...fruits];
@@ -44,48 +44,99 @@ export const useGameLogic = (
     return fruitsMoved;
   }, [fruits, setFruits]);
 
+  // Helper function to erase fruits of a specific color
+  function eraseColor(fruits: Fruit[], color: FruitColor) {
+    console.log('Erasing color:', color);
+    const newFruits = fruits.map((fruit) =>
+      fruit?.color === color ? undefined : fruit
+    );
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
+  // Helper function to erase an entire row
+  function eraseRow(fruits: Fruit[], rowIndex: number, boardSize: number) {
+    console.log('Erasing row:', rowIndex);
+    const newFruits = fruits.map((fruit, index) =>
+      Math.floor(index / boardSize) === rowIndex ? undefined : fruit
+    );
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
+  // Helper function to erase an entire column
+  function eraseColumn(fruits: Fruit[], colIndex: number, boardSize: number) {
+    console.log('Erasing column:', colIndex);
+    const newFruits = fruits.map((fruit, index) =>
+      index % boardSize === colIndex ? undefined : fruit
+    );
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
   const handleSpecialFruits = useCallback(
-    (draggedId: number, replacedId: number) => {
-      const newFruits = [...fruits];
+    (draggedId: number, replacedId: number, fruits: Fruit[]) => {
+      let newFruits = [...fruits];
       const draggedFruit = newFruits[draggedId];
       const replacedFruit = newFruits[replacedId];
+      let erasedFruits = 0;
+
+      if (
+        draggedFruit?.type === 'rainbow' ||
+        replacedFruit?.type === 'rainbow'
+      ) {
+        const fruitColorToErase =
+          draggedFruit?.type !== 'rainbow'
+            ? draggedFruit?.color
+            : replacedFruit?.color;
+
+        newFruits = eraseColor(newFruits, fruitColorToErase!);
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
+      }
 
       if (
         draggedFruit?.type === 'horizontal' ||
         replacedFruit?.type === 'horizontal'
       ) {
-        const lineEraserIndex =
-          draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
-        const row = Math.floor(lineEraserIndex / BOARD_SIZE);
-
-        // Erase the entire row
-        for (let i = 0; i < BOARD_SIZE; i++) {
-          newFruits[row * BOARD_SIZE + i] = undefined;
-        }
-        setScore((score) => score + BOARD_SIZE);
+        const rowIndex = Math.floor(
+          (draggedFruit?.type === 'horizontal' ? draggedId : replacedId) /
+            BOARD_SIZE
+        );
+        newFruits = eraseRow(newFruits, rowIndex, BOARD_SIZE);
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
       } else if (
         draggedFruit?.type === 'vertical' ||
         replacedFruit?.type === 'vertical'
       ) {
-        const lineEraserIndex =
-          draggedFruit?.type === 'vertical' ? draggedId : replacedId;
-        const col = lineEraserIndex % BOARD_SIZE;
-
-        // Erase the entire column
-        for (let i = 0; i < BOARD_SIZE; i++) {
-          newFruits[i * BOARD_SIZE + col] = undefined;
-        }
-        setScore((score) => score + BOARD_SIZE);
+        const colIndex =
+          (draggedFruit?.type === 'vertical' ? draggedId : replacedId) %
+          BOARD_SIZE;
+        newFruits = eraseColumn(newFruits, colIndex, BOARD_SIZE);
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
       }
 
       // Ensure the special fruit is destroyed after use
       newFruits[draggedId] = undefined;
       newFruits[replacedId] = undefined;
 
-      // Update the fruits state
-      setFruits(newFruits);
+      return newFruits;
     },
-    [fruits, setFruits, setScore]
+    [fruits, setScore]
   );
 
   return { checkMatches, moveIntoSquareBelow, handleSpecialFruits };

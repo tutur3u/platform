@@ -14,7 +14,11 @@ import React, { useRef, useState } from 'react';
 interface FruitGridProps {
   fruits: Fruit[];
   setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>;
-  handleSpecialFruits: (draggedId: number, replacedId: number) => void;
+  handleSpecialFruits: (
+    draggedId: number,
+    replacedId: number,
+    fruits: Fruit[]
+  ) => Fruit[];
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({

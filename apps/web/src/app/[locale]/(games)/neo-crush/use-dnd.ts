@@ -14,7 +14,11 @@ export const useDragAndDrop = (
   setSquareBeingReplaced: React.Dispatch<
     React.SetStateAction<HTMLDivElement | null>
   >,
-  handleSpecialFruits: (draggedId: number, replacedId: number) => void
+  handleSpecialFruits: (
+    draggedId: number,
+    replacedId: number,
+    fruits: Fruit[]
+  ) => Fruit[]
 ) => {
   const dragStart = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
@@ -82,14 +86,21 @@ export const useDragAndDrop = (
         fruits[squareBeingReplacedId] = draggedFruit;
         fruits[squareBeingDraggedId] = replacedFruit;
 
-        // Call handleSpecialFruits before checking for matches
-        handleSpecialFruits(squareBeingDraggedId, squareBeingReplacedId);
+        fruits = handleSpecialFruits(
+          squareBeingDraggedId,
+          squareBeingReplacedId,
+          fruits
+        );
 
         const isAMatch = checkForMatches(fruits, setFruits);
 
-        if (!isAMatch) {
-          fruits[squareBeingReplacedId] = replacedFruit;
-          fruits[squareBeingDraggedId] = draggedFruit;
+        if (
+          !isAMatch ||
+          draggedFruit?.type !== 'normal' ||
+          replacedFruit?.type !== 'normal'
+        ) {
+          fruits[squareBeingReplacedId] = undefined;
+          fruits[squareBeingDraggedId] = undefined;
         }
 
         setFruits([...fruits]);
