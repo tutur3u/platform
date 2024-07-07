@@ -46,13 +46,21 @@ export const useDragAndDrop = (
   };
 
   const dragEnd = useCallback(
-  (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement;
-    target.style.opacity = '1';
-    if (!squareBeingDragged || !squareBeingReplaced) return;
+    (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLDivElement;
+      target.style.opacity = '1';
 
-    const squareBeingDraggedId = parseInt(squareBeingDragged.getAttribute('data-id') || '0');
-    const squareBeingReplacedId = parseInt(squareBeingReplaced.getAttribute('data-id') || '0');
+      if (!squareBeingDragged || !squareBeingReplaced) {
+        console.error('Missing dragged or replaced square');
+        return;
+      }
+
+      const squareBeingDraggedId = parseInt(
+        squareBeingDragged.getAttribute('data-id') || '0'
+      );
+      const squareBeingReplacedId = parseInt(
+        squareBeingReplaced.getAttribute('data-id') || '0'
+      );
 
     const validMoves = [
       squareBeingDraggedId - 1,
@@ -66,15 +74,23 @@ export const useDragAndDrop = (
     // Async function to encapsulate logic that needs to wait
     const handleSwap = async () => {
       if (validMove) {
-        const tempFruit = fruits[squareBeingReplacedId];
-        fruits[squareBeingReplacedId] = fruits[squareBeingDraggedId];
-        fruits[squareBeingDraggedId] = tempFruit;
+        const draggedFruit: Fruit = {
+          color: squareBeingDragged.getAttribute('data-color') as FruitColor,
+          type: squareBeingDragged.getAttribute('data-type') as FruitType,
+        };
+
+        const replacedFruit: Fruit = {
+          color: squareBeingReplaced.getAttribute('data-color') as FruitColor,
+          type: squareBeingReplaced.getAttribute('data-type') as FruitType,
+        };
+
+        fruits[squareBeingDraggedId] = replacedFruit;
+        fruits[squareBeingReplacedId] = draggedFruit;
         setFruits([...fruits]);
 
         // Wait for 100ms
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // Call handleSpecialFruits before checking for matches
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        
         const specialFruit = handleSpecialFruits(fruits, setFruits, setScore, squareBeingDraggedId, squareBeingReplacedId);
         if (specialFruit) return;
 

@@ -83,7 +83,7 @@ export const checkForMatches = (
               ? 'horizontal'
               : 'vertical';
           match.forEach((square, index) => {
-            if (index !== centerIndex) {
+            if (index !== centerIndex && newFruits[square]?.type === 'normal') {
               fruits[square] = undefined;
             }
           });

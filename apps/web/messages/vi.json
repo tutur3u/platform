@@ -621,6 +621,7 @@
         "id": "Mã số",
         "name": "Tên",
         "description": "Mô tả",
+        "permissions": "Quyền",
         "user_count": "Số người dùng",
         "created_at": "Tạo lúc"
     },
@@ -875,6 +876,13 @@
         "permissions": "Phân quyền",
         "members": "Thành viên",
         "name": "Tên",
+        "infrastructure": "Cơ sở hạ tầng",
+        "view_infrastructure": "Xem cơ sở hạ tầng",
+        "view_infrastructure_description": "Cho phép thành viên xem thống kê và cài đặt cơ sở hạ tầng.",
+        "manage_workspace_secrets": "Quản lý mã bí mật",
+        "manage_workspace_secrets_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa mã bí mật không gian làm việc.",
+        "manage_external_migrations": "Quản lý chuyển dữ liệu từ bên ngoài",
+        "manage_external_migrations_description": "Cho phép thành viên xem và thực thi chuyển dữ liệu từ bên ngoài.",
         "workspace": "Không gian làm việc",
         "manage_default_permissions": "Quản lý quyền mặc định",
         "default_permissions": "Quyền mặc định",
@@ -895,7 +903,9 @@
         "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
         "ai": "Trí tuệ nhân tạo",
         "ai_chat": "Trò chuyện trí tuệ nhân tạo",
-        "ai_chat_description": "Cho phép các thành viên tương tác với trí tuệ nhân tạo thông qua trò chuyện."
+        "ai_chat_description": "Cho phép các thành viên tương tác với trí tuệ nhân tạo thông qua trò chuyện.",
+        "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
+        "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng."
     },
     "ws-activities": {
         "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",

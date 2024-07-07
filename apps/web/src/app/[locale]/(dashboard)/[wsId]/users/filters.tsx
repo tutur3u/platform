@@ -23,7 +23,7 @@ import { cn } from '@repo/ui/lib/utils';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { ComponentType, ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface UserDatabaseFilterProps {
   tag?: string;
@@ -31,9 +31,12 @@ interface UserDatabaseFilterProps {
   title: string;
   options: {
     label: string;
+    description?: string;
     value: string;
     count?: number;
-    icon?: ComponentType<{ className?: string }>;
+    icon?: ReactNode;
+    checked?: boolean;
+    disabled?: boolean;
   }[];
   href?: string;
   align?: 'start' | 'center' | 'end';
@@ -45,7 +48,18 @@ interface UserDatabaseFilterProps {
   sortCheckedFirst?: boolean;
   multiple?: boolean;
   disabled?: boolean;
-  onSet?: (values: string[]) => void;
+  variant?:
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'link'
+    | 'destructive'
+    | null
+    | undefined;
+  className?: string;
+  contentClassName?: string;
+  hideSelected?: boolean;
+  onSet?: (values: string[]) => Promise<void> | void;
 }
 
 export function UserDatabaseFilter({
@@ -63,6 +77,10 @@ export function UserDatabaseFilter({
   sortCheckedFirst = true,
   multiple = true,
   disabled,
+  variant = 'outline',
+  className,
+  contentClassName,
+  hideSelected = false,
   onSet,
 }: UserDatabaseFilterProps) {
   const t = useTranslations('user-data-table');
@@ -145,13 +163,14 @@ export function UserDatabaseFilter({
     >
       <PopoverTrigger disabled={disabled} asChild>
         <Button
-          variant="outline"
-          className="h-8 border-dashed px-1"
+          variant={variant}
+          className={cn('h-8 border-dashed px-1', className)}
           disabled={disabled}
         >
           {icon}
           {title}
-          {selectedSize > 0 &&
+          {!hideSelected &&
+            selectedSize > 0 &&
             options
               .map((option) => option.value)
               .some((value) => selectedValues.has(value)) && (
@@ -191,8 +210,8 @@ export function UserDatabaseFilter({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[min(calc(100vw-1rem),24rem)] p-0"
-        align={align ?? isMobile ? 'center' : 'start'}
+        className={cn('w-[min(calc(100vw-1rem),24rem)] p-0', contentClassName)}
+        align={isMobile ? 'center' : align ?? 'start'}
       >
         <Command shouldFilter={false}>
           <CommandInput
@@ -227,24 +246,28 @@ export function UserDatabaseFilter({
                           setSelectedValues(new Set(selectedValues));
                         }}
                         disabled={
-                          applying || (!alwaysEnableZero && option.count === 0)
+                          applying ||
+                          (!alwaysEnableZero && option.count === 0) ||
+                          option.disabled
                         }
+                        className="gap-2"
                       >
                         <div
                           className={cn(
-                            'border-primary mr-2 flex h-4 w-4 items-center justify-center border',
+                            'border-primary flex h-4 w-4 items-center justify-center border',
                             multiple ? 'rounded-sm' : 'rounded-full',
-                            isSelected
+                            isSelected || option.checked
                               ? 'bg-primary text-primary-foreground'
                               : 'opacity-50 [&_svg]:invisible'
                           )}
                         >
                           <Check className={cn('h-4 w-4')} />
                         </div>
-                        {option.icon && (
-                          <option.icon className="text-muted-foreground mr-2 h-4 w-4" />
-                        )}
-                        <span>{option.label}</span>
+                        {option.icon}
+                        <div>
+                          <span>{option.label}</span>
+                          <div className="opacity-50">{option.description}</div>
+                        </div>
                         {option.count !== undefined && (
                           <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
                             {option.count}
@@ -274,7 +297,8 @@ export function UserDatabaseFilter({
                   className="w-full justify-center text-center"
                   disabled={
                     applying ||
-                    (!multiple && oldValues.size === 0 && selectedSize === 0)
+                    (!multiple && oldValues.size === 0 && selectedSize === 0) ||
+                    options.every((option) => option.checked && option.disabled)
                   }
                 >
                   {selectedSize === 0 && multiple ? (
@@ -300,11 +324,12 @@ export function UserDatabaseFilter({
                 </CommandItem>
                 <CommandSeparator className="md:hidden" alwaysRender />
                 <CommandItem
-                  onSelect={() => {
+                  onSelect={async () => {
                     setApplying(true);
 
                     if (onSet) {
-                      onSet(Array.from(selectedValues));
+                      await onSet(Array.from(selectedValues));
+                      setSelectedValues(new Set());
                       setApplying(false);
                       setOpen(false);
                       return;

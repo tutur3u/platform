@@ -1,5 +1,6 @@
 // game.tsx
 import { FruitGrid } from './fruit-grid';
+import GameStats from './game-stats';
 import {
   summonExplosiveFruit,
   summonLineEraser,
@@ -34,8 +35,8 @@ export const NeoCrushGame: React.FC = () => {
   }, [checkMatches, moveIntoSquareBelow]);
 
   return (
-    <div className="grid gap-2 md:gap-8">
-      <Card className="mx-auto p-2 md:p-4">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
+      <Card className="w-full p-2 md:p-4">
         <FruitGrid
           fruits={fruits}
           setFruits={setFruits}
@@ -56,28 +57,37 @@ export const NeoCrushGame: React.FC = () => {
         </Button>
       </Card>
 
-      <div className="bg-foreground/5 grid gap-2 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-3">
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => summonLineEraser({ fruits, setFruits })}
-        >
-          +1 Line Eraser
-        </Button>
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => summonRainbowFruit({ fruits, setFruits })}
-        >
-          +1 Rainbow Fruit
-        </Button>
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => summonExplosiveFruit({ fruits, setFruits })}
-        >
-          +1 Explosive Fruit
-        </Button>
+      <div className="bg-foreground/5 hidden gap-2 rounded-lg border p-4 md:grid">
+        <div className="grid h-fit grid-cols-1 gap-2 xl:grid-cols-3">
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={() => summonLineEraser({ fruits, setFruits })}
+          >
+            +1 Line Eraser
+          </Button>
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={() => summonRainbowFruit({ fruits, setFruits })}
+          >
+            +1 Rainbow Fruit
+          </Button>
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={() => summonExplosiveFruit({ fruits, setFruits })}
+          >
+            +1 Explosive Fruit
+          </Button>
+          <Separator className="col-span-full my-2" />
+          <div className="col-span-full flex flex-col gap-2 text-center font-semibold">
+            <div>Statistics</div>
+            <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-2">
+              <GameStats fruits={fruits} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

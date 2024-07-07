@@ -621,6 +621,7 @@
         "id": "ID",
         "name": "Name",
         "description": "Description",
+        "permissions": "Permissions",
         "user_count": "User count",
         "created_at": "Created at"
     },
@@ -874,6 +875,13 @@
         "permissions": "Permissions",
         "members": "Members",
         "name": "Name",
+        "infrastructure": "Infrastructure",
+        "view_infrastructure": "View infrastructure",
+        "view_infrastructure_description": "Allows members to view infrastructure statistics and settings.",
+        "manage_workspace_secrets": "Manage workspace secrets",
+        "manage_workspace_secrets_description": "Allows members to view, create, edit, and delete workspace secrets.",
+        "manage_external_migrations": "Manage external migrations",
+        "manage_external_migrations_description": "Allows members to view and execute external migrations.",
         "workspace": "Workspace",
         "manage_default_permissions": "Manage default permissions",
         "default_permissions": "Default permissions",
@@ -894,7 +902,9 @@
         "manage_workspace_billing_description": "Allows members to view and update billing information.",
         "ai": "Artificial Intelligence",
         "ai_chat": "AI Chat",
-        "ai_chat_description": "Allows members to interact with artificial intelligence through chat."
+        "ai_chat_description": "Allows members to interact with artificial intelligence through chat.",
+        "manage_user_report_templates": "Manage user report templates",
+        "manage_user_report_templates_description": "Allows members to edit user report templates."
     },
     "ws-activities": {
         "description": "View all activities in your workspace",
