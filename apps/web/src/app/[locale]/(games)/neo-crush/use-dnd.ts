@@ -53,6 +53,10 @@ export const useDragAndDrop = (
 
   const dragEnd = useCallback(
     (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      // return if there are still undefined fruits
+      // (animation is still running and we don't want to swap them yet)
+      if (fruits.some((fruit) => !fruit)) return;
+
       const target = e.target as HTMLDivElement;
       target.style.opacity = '1';
 

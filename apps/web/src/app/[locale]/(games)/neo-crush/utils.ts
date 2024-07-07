@@ -9,14 +9,21 @@ export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
 
   // Check horizontal match
   for (let i = 1; (startIndex % BOARD_SIZE) + i < BOARD_SIZE; i++) {
-    if (fruits[startIndex + i]?.color === decidedColor) {
+    if (
+      fruits[startIndex + i]?.color === decidedColor &&
+      fruits[startIndex + i]?.type === 'normal'
+    ) {
       horizontalMatch.push(startIndex + i);
     } else {
       break;
     }
   }
+
   for (let i = 1; (startIndex % BOARD_SIZE) - i >= 0; i++) {
-    if (fruits[startIndex - i]?.color === decidedColor) {
+    if (
+      fruits[startIndex - i]?.color === decidedColor &&
+      fruits[startIndex - i]?.type === 'normal'
+    ) {
       horizontalMatch.unshift(startIndex - i);
     } else {
       break;
@@ -25,14 +32,21 @@ export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
 
   // Check vertical match
   for (let i = 1; startIndex + i * BOARD_SIZE < BOARD_SIZE * BOARD_SIZE; i++) {
-    if (fruits[startIndex + i * BOARD_SIZE]?.color === decidedColor) {
+    if (
+      fruits[startIndex + i * BOARD_SIZE]?.color === decidedColor &&
+      fruits[startIndex + i * BOARD_SIZE]?.type === 'normal'
+    ) {
       verticalMatch.push(startIndex + i * BOARD_SIZE);
     } else {
       break;
     }
   }
+
   for (let i = 1; startIndex - i * BOARD_SIZE >= 0; i++) {
-    if (fruits[startIndex - i * BOARD_SIZE]?.color === decidedColor) {
+    if (
+      fruits[startIndex - i * BOARD_SIZE]?.color === decidedColor &&
+      fruits[startIndex - i * BOARD_SIZE]?.type === 'normal'
+    ) {
       verticalMatch.unshift(startIndex - i * BOARD_SIZE);
     } else {
       break;
