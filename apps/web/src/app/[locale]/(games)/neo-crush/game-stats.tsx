@@ -59,24 +59,26 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
       </div>
 
       <div>
-        {Object.entries(fruitColorCounts).map(([key, count]) => (
-          <div key={key}>
-            <span
-              className={cn(
-                key === 'red' && 'text-dynamic-red',
-                key === 'yellow' && 'text-dynamic-yellow',
-                key === 'green' && 'text-dynamic-green',
-                key === 'blue' && 'text-dynamic-blue',
-                key === 'purple' && 'text-dynamic-purple',
-                key === 'orange' && 'text-dynamic-orange'
-              )}
-            >
-              {key}
-            </span>
-            : <span className="opacity-30">x</span>
-            <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
-          </div>
-        ))}
+        {Object.entries(fruitColorCounts)
+          .sort(([, a], [, b]) => b - a)
+          .map(([key, count]) => (
+            <div key={key}>
+              <span
+                className={cn(
+                  key === 'red' && 'text-dynamic-red',
+                  key === 'yellow' && 'text-dynamic-yellow',
+                  key === 'green' && 'text-dynamic-green',
+                  key === 'blue' && 'text-dynamic-blue',
+                  key === 'purple' && 'text-dynamic-purple',
+                  key === 'orange' && 'text-dynamic-orange'
+                )}
+              >
+                {key}
+              </span>
+              : <span className="opacity-30">x</span>
+              <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
+            </div>
+          ))}
       </div>
     </>
   );

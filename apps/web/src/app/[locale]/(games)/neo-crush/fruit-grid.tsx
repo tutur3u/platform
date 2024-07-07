@@ -15,12 +15,18 @@ interface FruitGridProps {
   fruits: Fruits;
   setFruits: React.Dispatch<React.SetStateAction<Fruits>>;
   setScore: React.Dispatch<React.SetStateAction<number>>;
+  handleSpecialFruits: (
+    draggedId: number,
+    replacedId: number,
+    fruits: Fruits
+  ) => Fruits;
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({
   fruits,
   setFruits,
   setScore,
+  handleSpecialFruits,
 }) => {
   const [squareBeingDragged, setSquareBeingDragged] =
     useState<HTMLDivElement | null>(null);
@@ -35,7 +41,8 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     squareBeingDragged,
     squareBeingReplaced,
     setSquareBeingDragged,
-    setSquareBeingReplaced
+    setSquareBeingReplaced,
+    handleSpecialFruits
   );
 
   const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {

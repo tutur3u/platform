@@ -20,15 +20,20 @@ const FRUIT_TYPES = [
 ] as const;
 
 export type FruitColor = (typeof FRUIT_COLORS)[number];
+export type FruitColorName = FruitColor['name'];
+export type FruitColorCode = FruitColor['code'];
 export type FruitType = (typeof FRUIT_TYPES)[number];
 
 export class Fruit {
   color: FruitColor;
   type: FruitType;
 
-  constructor(color?: FruitColor, type?: FruitType) {
-    const colorIndex = Math.floor(Math.random() * FRUIT_COLORS.length);
-    this.color = color ?? FRUIT_COLORS[colorIndex]!;
+  constructor(color?: FruitColorName, type?: FruitType) {
+    const colorIndex = color
+      ? FRUIT_COLORS.findIndex((fruitColor) => fruitColor.name === color)
+      : Math.floor(Math.random() * FRUIT_COLORS.length);
+
+    this.color = FRUIT_COLORS[colorIndex]!;
     this.type = type ?? 'normal';
   }
 }

@@ -1,6 +1,6 @@
 // use-dnd.ts
-import { BOARD_SIZE, Fruit, FruitColor, FruitType, Fruits } from './types';
-import { checkForMatches, handleSpecialFruits } from './utils';
+import { BOARD_SIZE, Fruit, FruitColorName, FruitType, Fruits } from './types';
+import { checkForMatches } from './utils';
 import { useCallback } from 'react';
 
 export const useDragAndDrop = (
@@ -14,7 +14,12 @@ export const useDragAndDrop = (
   >,
   setSquareBeingReplaced: React.Dispatch<
     React.SetStateAction<HTMLDivElement | null>
-  >
+  >,
+  handleSpecialFruits: (
+    draggedId: number,
+    replacedId: number,
+    fruits: Fruits
+  ) => Fruits
 ) => {
   const dragStart = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
@@ -76,42 +81,43 @@ export const useDragAndDrop = (
       const handleSwap = async () => {
         if (validMove) {
           const draggedFruit = new Fruit(
-            squareBeingDragged.getAttribute('data-color') as unknown as
-              | FruitColor
-              | undefined,
+            squareBeingDragged.getAttribute('data-color') as FruitColorName,
             squareBeingDragged.getAttribute('data-type') as FruitType
           );
 
           const replacedFruit = new Fruit(
-            squareBeingReplaced.getAttribute('data-color') as unknown as
-              | FruitColor
-              | undefined,
+            squareBeingReplaced.getAttribute('data-color') as FruitColorName,
             squareBeingReplaced.getAttribute('data-type') as FruitType
           );
 
           fruits[squareBeingDraggedId] = replacedFruit;
           fruits[squareBeingReplacedId] = draggedFruit;
-          setFruits([...fruits]);
 
-          // Wait for 100ms
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          const specialFruit = handleSpecialFruits(
-            fruits,
-            setFruits,
-            setScore,
+          const newFruits = handleSpecialFruits(
             squareBeingDraggedId,
-            squareBeingReplacedId
+            squareBeingReplacedId,
+            fruits
           );
-          if (specialFruit) return;
 
-          const isAMatch = checkForMatches(fruits, setFruits, setScore);
-          if (!isAMatch) {
-            const tempFruit = fruits[squareBeingReplacedId];
-            fruits[squareBeingReplacedId] = fruits[squareBeingDraggedId];
-            fruits[squareBeingDraggedId] = tempFruit;
-            setFruits([...fruits]);
+          const hasMatch = checkForMatches(newFruits, setFruits, setScore);
+
+          if (
+            !hasMatch ||
+            draggedFruit?.type !== 'normal' ||
+            replacedFruit?.type !== 'normal'
+          ) {
+            const temp = newFruits[squareBeingDraggedId];
+            newFruits[squareBeingDraggedId] = newFruits[squareBeingReplacedId];
+            newFruits[squareBeingReplacedId] = temp;
           }
+
+          if (newFruits[squareBeingDraggedId]?.type !== 'normal')
+            newFruits[squareBeingDraggedId] = undefined;
+
+          if (newFruits[squareBeingReplacedId]?.type !== 'normal')
+            newFruits[squareBeingReplacedId] = undefined;
+
+          setFruits(newFruits);
         }
 
         setSquareBeingDragged(null);

@@ -1,9 +1,5 @@
 // utils.ts
-import { BOARD_SIZE, Fruit, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
-
-export const createFruitFromColor = (color: FruitColor) => new Fruit(color);
-
-export const createRandomFruit = () => new Fruit();
+import { BOARD_SIZE, Fruit, Fruits, PTS_PER_FRUIT } from './types';
 
 export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
   const decidedColor = fruits[startIndex]?.color;
@@ -57,8 +53,8 @@ export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
 
 export const checkForMatches = (
   fruits: Fruits,
-  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
-  setScore: React.Dispatch<React.SetStateAction<number>>
+  setFruits?: React.Dispatch<React.SetStateAction<Fruits>>,
+  setScore?: React.Dispatch<React.SetStateAction<number>>
 ) => {
   let hasMatch = false;
   let poppedFruits = 0;
@@ -94,94 +90,12 @@ export const checkForMatches = (
   }
 
   // Increment the score by 3 for each distinct match found
-  if (poppedFruits > 0) {
+  if (poppedFruits > 0 && setScore) {
     setScore((score) => score + poppedFruits * PTS_PER_FRUIT);
   }
 
-  setFruits([...fruits]);
+  if (setFruits) setFruits([...fruits]);
   return hasMatch;
-};
-
-export const handleSpecialFruits = (
-  fruits: Fruits,
-  setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
-  setScore: React.Dispatch<React.SetStateAction<number>>,
-  draggedId: number,
-  replacedId: number
-) => {
-  let specialFruit = false;
-  const draggedFruit = fruits[draggedId];
-  const replacedFruit = fruits[replacedId];
-
-  if (
-    draggedFruit?.type === 'horizontal' ||
-    replacedFruit?.type === 'horizontal'
-  ) {
-    const lineEraserIndex =
-      draggedFruit?.type === 'horizontal' ? draggedId : replacedId;
-    const row = Math.floor(lineEraserIndex / BOARD_SIZE);
-
-    // Erase the entire row
-    for (let i = 0; i < BOARD_SIZE; i++) {
-      fruits[row * BOARD_SIZE + i] = undefined;
-    }
-    setScore((score) => score + BOARD_SIZE * PTS_PER_FRUIT);
-
-    // Update the fruits state
-    setFruits([...fruits]);
-    specialFruit = true;
-  } else if (
-    draggedFruit?.type === 'vertical' ||
-    replacedFruit?.type === 'vertical'
-  ) {
-    const lineEraserIndex =
-      draggedFruit?.type === 'vertical' ? draggedId : replacedId;
-    const col = lineEraserIndex % BOARD_SIZE;
-
-    // Erase the entire column
-    for (let i = 0; i < BOARD_SIZE; i++) {
-      fruits[i * BOARD_SIZE + col] = undefined;
-    }
-    setScore((score) => score + BOARD_SIZE * PTS_PER_FRUIT);
-
-    // Update the fruits state
-    setFruits([...fruits]);
-    specialFruit = true;
-  } else if (
-    draggedFruit?.type === 'explosive' ||
-    replacedFruit?.type === 'explosive'
-  ) {
-    const explosiveIndex =
-      draggedFruit?.type === 'explosive' ? draggedId : replacedId;
-    const row = Math.floor(explosiveIndex / BOARD_SIZE);
-    const col = explosiveIndex % BOARD_SIZE;
-
-    // Erase the 3x3 square centered around the explosive fruit
-    for (let i = row - 1; i <= row + 1; i++) {
-      for (let j = col - 1; j <= col + 1; j++) {
-        if (i >= 0 && i < BOARD_SIZE && j >= 0 && j < BOARD_SIZE) {
-          fruits[i * BOARD_SIZE + j] = undefined;
-        }
-      }
-    }
-    setScore((score) => score + 9 * PTS_PER_FRUIT);
-
-    // Update the fruits state
-    setFruits([...fruits]);
-    specialFruit = true;
-  } else if (
-    draggedFruit?.type === 'rainbow' ||
-    replacedFruit?.type === 'rainbow'
-  ) {
-    const rainbowIndex =
-      draggedFruit?.type === 'rainbow' ? draggedId : replacedId;
-    fruits[rainbowIndex] = undefined;
-
-    // Update the fruits state
-    setFruits([...fruits]);
-    specialFruit = true;
-  }
-  return specialFruit;
 };
 
 export const createBoard = (): Fruits => {

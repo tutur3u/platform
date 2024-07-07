@@ -1,6 +1,6 @@
 // use-game-logic.ts
-import { BOARD_SIZE, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
-import { checkForMatches, createRandomFruit } from './utils';
+import { BOARD_SIZE, Fruit, FruitColor, Fruits, PTS_PER_FRUIT } from './types';
+import { checkForMatches } from './utils';
 import { useCallback } from 'react';
 
 export const useGameLogic = (
@@ -28,7 +28,7 @@ export const useGameLogic = (
     // Fill the top row with new fruits if empty
     for (let i = 0; i < BOARD_SIZE; i++) {
       if (fruits[i] === undefined) {
-        fruits[i] = createRandomFruit();
+        fruits[i] = new Fruit();
         fruitsMoved = true;
       }
     }
@@ -131,14 +131,6 @@ export const useGameLogic = (
         newFruits = eraseColumn(newFruits, colIndex, BOARD_SIZE);
         erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
         setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      }
-
-      if (draggedFruit?.type !== 'normal') {
-        newFruits[draggedId] = undefined;
-      }
-
-      if (replacedFruit?.type !== 'normal') {
-        newFruits[replacedId] = undefined;
       }
 
       return newFruits;
