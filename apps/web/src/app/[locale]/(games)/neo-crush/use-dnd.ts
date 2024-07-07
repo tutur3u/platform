@@ -93,7 +93,7 @@ export const useDragAndDrop = (
         );
 
         const isAMatch = checkForMatches(fruits, setFruits);
-        // if em có thêm điều kiện khi dùng rainbow thì xóa rồi nó ko đặt lại
+
         if (
           !isAMatch ||
           draggedFruit?.type !== 'normal' ||
