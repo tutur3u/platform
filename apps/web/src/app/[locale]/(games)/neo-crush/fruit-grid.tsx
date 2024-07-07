@@ -171,7 +171,6 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             draggable={true}
             onDragStart={dragStart}
             onDragOver={dragOver}
-            onDragEnter={(e) => e.preventDefault()}
             onDragLeave={dragLeave}
             onDrop={dragDrop}
             onDragEnd={dragEnd}
@@ -182,14 +181,14 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             {fruit?.type === 'horizontal' && (
               <>
                 <ChevronLeft
-                  className="absolute -left-0.5 h-5 w-5 md:h-6 md:w-6"
+                  className="pointer-events-none absolute -left-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
                     color: colorMap[fruit.color],
                   }}
                 />
                 <ChevronRight
-                  className="absolute -right-0.5 h-5 w-5 md:h-6 md:w-6"
+                  className="pointer-events-none absolute -right-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
                     color: colorMap[fruit.color],
@@ -201,14 +200,14 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             {fruit?.type === 'vertical' && (
               <>
                 <ChevronUp
-                  className="absolute -top-0.5 h-5 w-5 md:h-6 md:w-6"
+                  className="pointer-events-none absolute -top-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
                     color: colorMap[fruit.color],
                   }}
                 />
                 <ChevronDown
-                  className="absolute -bottom-0.5 h-5 w-5 md:h-6 md:w-6"
+                  className="pointer-events-none absolute -bottom-0.5 h-5 w-5 md:h-6 md:w-6"
                   style={{
                     animation: 'pulse 1s infinite',
                     color: colorMap[fruit.color],
@@ -218,12 +217,12 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             )}
 
             {fruit?.type === 'rainbow' && (
-              <Sparkles className="text-foreground/70 absolute h-5 w-5 md:h-6 md:w-6" />
+              <Sparkles className="text-foreground/70 pointer-events-none absolute h-5 w-5 md:h-6 md:w-6" />
             )}
 
             {fruit?.type === 'explosive' && (
               <Bomb
-                className="absolute h-4 w-4 md:h-6 md:w-6"
+                className="pointer-events-none absolute h-4 w-4 md:h-6 md:w-6"
                 style={{
                   animation: 'pulse 1s infinite',
                   color: colorMap[fruit.color],

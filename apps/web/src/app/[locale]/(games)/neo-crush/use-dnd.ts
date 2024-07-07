@@ -54,7 +54,11 @@ export const useDragAndDrop = (
     (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
       const target = e.target as HTMLDivElement;
       target.style.opacity = '1';
-      if (!squareBeingDragged || !squareBeingReplaced) return;
+
+      if (!squareBeingDragged || !squareBeingReplaced) {
+        console.error('Missing dragged or replaced square');
+        return;
+      }
 
       const squareBeingDraggedId = parseInt(
         squareBeingDragged.getAttribute('data-id') || '0'
@@ -92,15 +96,18 @@ export const useDragAndDrop = (
           fruits
         );
 
-        const isAMatch = checkForMatches(fruits, setFruits);
-
         if (
-          !isAMatch ||
           draggedFruit?.type !== 'normal' ||
           replacedFruit?.type !== 'normal'
         ) {
-          fruits[squareBeingReplacedId] = undefined;
-          fruits[squareBeingDraggedId] = undefined;
+          fruits[squareBeingDraggedId] = fruits[squareBeingReplacedId];
+          fruits[squareBeingReplacedId] = fruits[squareBeingDraggedId];
+        }
+
+        const isAMatch = checkForMatches(fruits, setFruits);
+        if (!isAMatch) {
+          fruits[squareBeingDraggedId] = draggedFruit;
+          fruits[squareBeingReplacedId] = replacedFruit;
         }
 
         setFruits([...fruits]);

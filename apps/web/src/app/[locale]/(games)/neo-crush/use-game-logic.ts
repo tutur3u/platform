@@ -89,9 +89,18 @@ export const useGameLogic = (
   const handleSpecialFruits = useCallback(
     (draggedId: number, replacedId: number, fruits: Fruit[]) => {
       let newFruits = [...fruits];
+      let erasedFruits = 0;
+
       const draggedFruit = newFruits[draggedId];
       const replacedFruit = newFruits[replacedId];
-      let erasedFruits = 0;
+
+      console.log('Handling special fruits:', draggedFruit, replacedFruit);
+
+      if (draggedFruit?.type === 'normal' && replacedFruit?.type === 'normal') {
+        // newFruits[draggedId] = replacedFruit;
+        // newFruits[replacedId] = draggedFruit;
+        return newFruits;
+      }
 
       if (
         draggedFruit?.type === 'rainbow' ||
@@ -105,9 +114,7 @@ export const useGameLogic = (
         newFruits = eraseColor(newFruits, fruitColorToErase!);
         erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
         setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
-      }
-
-      if (
+      } else if (
         draggedFruit?.type === 'horizontal' ||
         replacedFruit?.type === 'horizontal'
       ) {
@@ -130,9 +137,13 @@ export const useGameLogic = (
         setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
       }
 
-      // Ensure the special fruit is destroyed after use
-      newFruits[draggedId] = undefined;
-      newFruits[replacedId] = undefined;
+      if (draggedFruit?.type !== 'normal') {
+        newFruits[draggedId] = undefined;
+      }
+
+      if (replacedFruit?.type !== 'normal') {
+        newFruits[replacedId] = undefined;
+      }
 
       return newFruits;
     },
