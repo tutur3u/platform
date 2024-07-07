@@ -9,6 +9,7 @@ import {
   LoaderPinwheel,
   Sparkle,
 } from 'lucide-react';
+import Image from 'next/image';
 
 function FruitPlaceholder({
   fruit,
@@ -23,7 +24,7 @@ function FruitPlaceholder({
   return (
     <div
       className={cn(
-        'relative flex h-7 w-7 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-8 md:w-8 lg:h-10 lg:w-10',
+        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
         fruit
           ? fruit?.type !== 'normal'
             ? ''
@@ -43,8 +44,9 @@ function FruitPlaceholder({
               : 'transparent'
           : 'var(--foreground)',
         opacity: fruit ? 1 : 0.3,
-        backgroundColor:
-          fruit?.type === 'rainbow'
+        backgroundColor: fruit?.src
+          ? undefined
+          : fruit?.type === 'rainbow'
             ? undefined
             : fruit
               ? fruit?.type === 'normal'
@@ -61,6 +63,16 @@ function FruitPlaceholder({
       }}
       {...props}
     >
+      {fruit?.src && (
+        <Image
+          src={fruit?.src}
+          alt={fruit?.color?.name}
+          width={1400}
+          height={1400}
+          className="pointer-events-none h-8 w-8 object-contain md:h-9 md:w-9 lg:h-10 lg:w-10"
+        />
+      )}
+
       {(fruit?.type === 'horizontal' || fruit?.type === 'plus') && (
         <>
           <ChevronLeft

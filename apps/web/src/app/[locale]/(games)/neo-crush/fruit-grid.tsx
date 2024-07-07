@@ -116,7 +116,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           }
         }
       `}</style>
-      <div className="mx-auto grid w-fit grid-cols-8 gap-2 lg:gap-3">
+      <div className="mx-auto grid w-fit grid-cols-7 gap-2 lg:gap-3">
         {fruits.map((fruit, index) => (
           <FruitPlaceholder
             key={index}
@@ -133,7 +133,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onTouchStart={touchStart}
             onTouchMove={touchMove}
             onTouchEnd={touchEnd}
-          ></FruitPlaceholder>
+          />
         ))}
       </div>
     </>
