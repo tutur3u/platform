@@ -41,7 +41,7 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
       red: 0,
       yellow: 0,
       green: 0,
-      blue: 0,
+      // blue: 0,
       purple: 0,
       orange: 0,
     } as Record<FruitColorName, number>
