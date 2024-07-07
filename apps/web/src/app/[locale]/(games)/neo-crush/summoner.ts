@@ -1,4 +1,4 @@
-import { Fruit } from './types';
+import { Fruit, Fruits } from './types';
 
 export const summonLineEraser = ({
   fruits,
