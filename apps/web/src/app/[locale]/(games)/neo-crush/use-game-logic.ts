@@ -82,6 +82,92 @@ export const useGameLogic = (
     return newFruits;
   }
 
+  // Helper function to erase both row and column
+  function eraseRowAndColumn(
+    fruits: Fruits,
+    rowIndex: number,
+    colIndex: number,
+    boardSize: number
+  ) {
+    console.log('Erasing row and column:', rowIndex, colIndex);
+    const newFruits = fruits.map((fruit, index) =>
+      Math.floor(index / boardSize) === rowIndex ||
+      index % boardSize === colIndex
+        ? undefined
+        : fruit
+    );
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
+  // Helper function to erase 3x3 grid
+  function erase3x3Grid(fruits: Fruits, rowIndex: number, colIndex: number) {
+    console.log('Erasing grid:', rowIndex, colIndex);
+    const newFruits = fruits.map((fruit, index) => {
+      const row = Math.floor(index / BOARD_SIZE);
+      const col = index % BOARD_SIZE;
+
+      if (
+        row >= rowIndex - 1 &&
+        row <= rowIndex + 1 &&
+        col >= colIndex - 1 &&
+        col <= colIndex + 1
+      ) {
+        return undefined;
+      }
+
+      return fruit;
+    });
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
+  // Helper function to erase 3 rows x 3 columns grid
+  function eraseBig3x3Grid(
+    fruits: Fruits,
+    rowIndex: number,
+    colIndex: number,
+    boardSize: number
+  ) {
+    console.log('Erasing 3 rows and 3 columns based on given indexes');
+
+    // Calculate the dynamic ranges for rows and columns to be erased
+    const startRowIndex = Math.max(0, rowIndex - 1);
+    const endRowIndex = Math.min(boardSize - 1, rowIndex + 1);
+    const startColIndex = Math.max(0, colIndex - 1);
+    const endColIndex = Math.min(boardSize - 1, colIndex + 1);
+
+    const newFruits = fruits.map((fruit, index) => {
+      const row = Math.floor(index / boardSize);
+      const col = index % boardSize;
+
+      // Check if the current index falls within the dynamically calculated rows or columns
+      if (
+        (row >= startRowIndex && row <= endRowIndex) ||
+        (col >= startColIndex && col <= endColIndex)
+      ) {
+        return undefined;
+      }
+
+      return fruit;
+    });
+
+    console.log(
+      'Erased fruits:',
+      newFruits.filter((fruit) => fruit === undefined).length
+    );
+
+    return newFruits;
+  }
+
   const handleSpecialFruits = useCallback(
     (draggedId: number, replacedId: number, fruits: Fruits) => {
       let newFruits: Fruits = [...fruits];
@@ -129,6 +215,51 @@ export const useGameLogic = (
           (draggedFruit?.type === 'vertical' ? draggedId : replacedId) %
           BOARD_SIZE;
         newFruits = eraseColumn(newFruits, colIndex, BOARD_SIZE);
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
+      } else if (
+        draggedFruit?.type === 'plus' ||
+        replacedFruit?.type === 'plus'
+      ) {
+        const rowIndex = Math.floor(
+          (draggedFruit?.type === 'plus' ? draggedId : replacedId) / BOARD_SIZE
+        );
+        const colIndex =
+          (draggedFruit?.type === 'plus' ? draggedId : replacedId) % BOARD_SIZE;
+        newFruits = eraseRowAndColumn(
+          newFruits,
+          rowIndex,
+          colIndex,
+          BOARD_SIZE
+        );
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
+      } else if (
+        draggedFruit?.type === 'explosive' ||
+        replacedFruit?.type === 'explosive'
+      ) {
+        const rowIndex = Math.floor(
+          (draggedFruit?.type === 'explosive' ? draggedId : replacedId) /
+            BOARD_SIZE
+        );
+        const colIndex =
+          (draggedFruit?.type === 'explosive' ? draggedId : replacedId) %
+          BOARD_SIZE;
+        newFruits = erase3x3Grid(newFruits, rowIndex, colIndex);
+        erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
+        setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
+      } else if (
+        draggedFruit?.type === 'big-explosive' ||
+        replacedFruit?.type === 'big-explosive'
+      ) {
+        const rowIndex = Math.floor(
+          (draggedFruit?.type === 'big-explosive' ? draggedId : replacedId) /
+            BOARD_SIZE
+        );
+        const colIndex =
+          (draggedFruit?.type === 'big-explosive' ? draggedId : replacedId) %
+          BOARD_SIZE;
+        newFruits = eraseBig3x3Grid(newFruits, rowIndex, colIndex, BOARD_SIZE);
         erasedFruits += newFruits.filter((fruit) => fruit === undefined).length;
         setScore((score) => score + erasedFruits * PTS_PER_FRUIT);
       }
