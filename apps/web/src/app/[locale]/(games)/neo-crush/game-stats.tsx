@@ -1,7 +1,7 @@
-import { Fruit } from './types';
+import { Fruits } from './types';
 import { cn } from '@/lib/utils';
 
-export default function GameStats({ fruits }: { fruits: Fruit[] }) {
+export default function GameStats({ fruits }: { fruits: Fruits }) {
   const fruitTypeCounts: {
     empty: number;
     normal: number;
@@ -28,7 +28,7 @@ export default function GameStats({ fruits }: { fruits: Fruit[] }) {
 
   const fruitColorCounts = fruits.reduce(
     (acc, fruit) => {
-      if (fruit) acc[fruit.color] = (acc[fruit.color] || 0) + 1;
+      if (fruit) acc[fruit.color.name] = (acc[fruit.color.name] || 0) + 1;
 
       return acc;
     },
@@ -59,24 +59,26 @@ export default function GameStats({ fruits }: { fruits: Fruit[] }) {
       </div>
 
       <div>
-        {Object.entries(fruitColorCounts).map(([key, count]) => (
-          <div key={key}>
-            <span
-              className={cn(
-                key === 'red' && 'text-dynamic-red',
-                key === 'yellow' && 'text-dynamic-yellow',
-                key === 'green' && 'text-dynamic-green',
-                key === 'blue' && 'text-dynamic-blue',
-                key === 'purple' && 'text-dynamic-purple',
-                key === 'orange' && 'text-dynamic-orange'
-              )}
-            >
-              {key}
-            </span>
-            : <span className="opacity-30">x</span>
-            <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
-          </div>
-        ))}
+        {Object.entries(fruitColorCounts)
+          .sort(([, a], [, b]) => b - a)
+          .map(([key, count]) => (
+            <div key={key}>
+              <span
+                className={cn(
+                  key === 'red' && 'text-dynamic-red',
+                  key === 'yellow' && 'text-dynamic-yellow',
+                  key === 'green' && 'text-dynamic-green',
+                  key === 'blue' && 'text-dynamic-blue',
+                  key === 'purple' && 'text-dynamic-purple',
+                  key === 'orange' && 'text-dynamic-orange'
+                )}
+              >
+                {key}
+              </span>
+              : <span className="opacity-30">x</span>
+              <span className={count === 0 ? 'opacity-50' : ''}>{count}</span>
+            </div>
+          ))}
       </div>
     </>
   );

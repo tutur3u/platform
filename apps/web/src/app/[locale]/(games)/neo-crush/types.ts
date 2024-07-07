@@ -2,16 +2,16 @@
 export const BOARD_SIZE = 8;
 export const PTS_PER_FRUIT = 10;
 
-export const FRUIT_COLORS = [
-  'red',
-  'blue',
-  'green',
-  'yellow',
-  'purple',
-  'orange',
+const FRUIT_COLORS = [
+  { name: 'red', code: '#E63946' },
+  { name: 'blue', code: '#457B9D' },
+  { name: 'green', code: '#2A9D8F' },
+  { name: 'yellow', code: '#FFD700' },
+  { name: 'purple', code: '#9C89B8' },
+  { name: 'orange', code: '#F77F00' },
 ] as const;
 
-export const FRUIT_TYPES = [
+const FRUIT_TYPES = [
   'normal',
   'vertical',
   'horizontal',
@@ -20,20 +20,22 @@ export const FRUIT_TYPES = [
 ] as const;
 
 export type FruitColor = (typeof FRUIT_COLORS)[number];
+export type FruitColorName = FruitColor['name'];
+export type FruitColorCode = FruitColor['code'];
 export type FruitType = (typeof FRUIT_TYPES)[number];
 
-export type Fruit =
-  | {
-      color: FruitColor;
-      type: FruitType;
-    }
-  | undefined;
+export class Fruit {
+  color: FruitColor;
+  type: FruitType;
 
-export const colorMap: Record<FruitColor, string> = {
-  red: '#E63946',
-  blue: '#457B9D',
-  green: '#2A9D8F',
-  yellow: '#FFD700',
-  purple: '#9C89B8',
-  orange: '#F77F00',
-};
+  constructor(color?: FruitColorName, type?: FruitType) {
+    const colorIndex = color
+      ? FRUIT_COLORS.findIndex((fruitColor) => fruitColor.name === color)
+      : Math.floor(Math.random() * FRUIT_COLORS.length);
+
+    this.color = FRUIT_COLORS[colorIndex]!;
+    this.type = type ?? 'normal';
+  }
+}
+
+export type Fruits = (Fruit | undefined)[];

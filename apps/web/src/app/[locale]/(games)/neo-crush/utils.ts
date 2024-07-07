@@ -1,30 +1,7 @@
 // utils.ts
-import {
-  BOARD_SIZE,
-  FRUIT_COLORS,
-  Fruit,
-  FruitColor,
-  FruitType,
-  PTS_PER_FRUIT,
-} from './types';
+import { BOARD_SIZE, Fruit, Fruits, PTS_PER_FRUIT } from './types';
 
-export const createFruitFromColor = (color: FruitColor): Fruit => ({
-  color,
-  type: 'normal',
-});
-
-export const createRandomFruit = ({
-  type = 'normal',
-}: {
-  type?: FruitType;
-} = {}): Fruit => {
-  const color = FRUIT_COLORS[
-    Math.floor(Math.random() * FRUIT_COLORS.length)
-  ] as FruitColor;
-  return { color, type };
-};
-
-export const findMatch = (startIndex: number, fruits: Fruit[]): number[] => {
+export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
   const decidedColor = fruits[startIndex]?.color;
 
   let horizontalMatch: number[] = [startIndex];
@@ -75,60 +52,53 @@ export const findMatch = (startIndex: number, fruits: Fruit[]): number[] => {
 };
 
 export const checkForMatches = (
-  fruits: Fruit[],
-  setFruits: React.Dispatch<React.SetStateAction<Fruit[]>>,
-  setScore?: React.Dispatch<React.SetStateAction<number>>,
-  scoreUpdated?: boolean
+  fruits: Fruits,
+  setFruits?: React.Dispatch<React.SetStateAction<Fruits>>,
+  setScore?: React.Dispatch<React.SetStateAction<number>>
 ) => {
   let hasMatch = false;
-  const newFruits = [...fruits];
-  const matchedIndices = new Set<number>();
   let poppedFruits = 0;
 
-  for (let i = 0; i < newFruits.length; i++) {
-    if (!matchedIndices.has(i)) {
-      const match = findMatch(i, newFruits);
+  for (let i = 0; i < fruits.length; i++) {
+    const allFilled = fruits.every((fruit) => fruit);
+    if (allFilled) {
+      const match = findMatch(i, fruits);
       if (match.length >= 3) {
         poppedFruits += match.length;
-
-        // Add matched indices to the set to avoid double-counting
-        match.forEach((index) => matchedIndices.add(index));
 
         // Clear matched fruits and create special fruits if needed
         if (match.length === 4) {
           const centerIndex = Math.floor(match.length / 2);
           const isHorizontal = Math.random() < 0.5;
-          if (newFruits[match[centerIndex]!]?.type)
-            newFruits[match[centerIndex]!]!.type = isHorizontal
+          if (fruits[match[centerIndex]!]?.type)
+            fruits[match[centerIndex]!]!.type = isHorizontal
               ? 'horizontal'
               : 'vertical';
           match.forEach((square, index) => {
-            if (index !== centerIndex && newFruits[square]?.type === 'normal') {
-              newFruits[square] = undefined;
+            if (index !== centerIndex && fruits[square]?.type === 'normal') {
+              fruits[square] = undefined;
             }
           });
         } else {
           match.forEach((square) => {
-            newFruits[square] = undefined;
+            fruits[square] = undefined;
           });
         }
-
         hasMatch = true;
       }
     }
   }
 
   // Increment the score by 3 for each distinct match found
-  if (poppedFruits > 0 && !scoreUpdated) {
-    console.log(`${poppedFruits} matches found`);
-    setScore?.((score) => score + poppedFruits * PTS_PER_FRUIT);
+  if (poppedFruits > 0 && setScore) {
+    setScore((score) => score + poppedFruits * PTS_PER_FRUIT);
   }
 
-  setFruits(newFruits);
+  if (setFruits) setFruits([...fruits]);
   return hasMatch;
 };
 
-export const createBoard = (): Fruit[] => {
+export const createBoard = (): Fruits => {
   const board = Array.from(
     { length: BOARD_SIZE * BOARD_SIZE },
     () => null
@@ -181,13 +151,10 @@ export const createBoard = (): Fruit[] => {
 
   // Fill the board with available colors
   for (let i = 0; i < board.length; i++) {
-    let fruit: Fruit | null;
+    let fruit: Fruit;
 
     do {
-      fruit = {
-        color: FRUIT_COLORS[Math.floor(Math.random() * FRUIT_COLORS.length)]!,
-        type: 'normal',
-      };
+      fruit = new Fruit();
     } while (!isValidMove(i, fruit));
 
     board[i] = fruit;
@@ -196,18 +163,15 @@ export const createBoard = (): Fruit[] => {
   // Ensure at least one possible move exists
   while (!hasPossibleMove()) {
     for (let i = 0; i < board.length; i++) {
-      let fruit: Fruit | null;
+      let fruit: Fruit;
 
       do {
-        fruit = {
-          color: FRUIT_COLORS[Math.floor(Math.random() * FRUIT_COLORS.length)]!,
-          type: 'normal',
-        };
+        fruit = new Fruit();
       } while (!isValidMove(i, fruit));
 
       board[i] = fruit;
     }
   }
 
-  return board as Fruit[];
+  return board as Fruits;
 };
