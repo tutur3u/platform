@@ -1,5 +1,5 @@
 // utils.ts
-import { BOARD_SIZE, Fruit, Fruits, PTS_PER_FRUIT } from './types';
+import { BOARD_SIZE, Fruit, Fruits, PTS_PER_FRUIT,FruitType } from './types';
 
 export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
   const decidedColor = fruits[startIndex]?.color;
@@ -82,7 +82,18 @@ export const checkForMatches = (
       poppedFruits += match.length;
 
       // Clear matched fruits and create special fruits if needed
-      if (match.length === 4) {
+      if (match.length === 5) {
+        const centerIndex = Math.floor(match.length / 2);
+        fruits[match[centerIndex]!] = {
+          color: fruits[match[centerIndex]!]!.color,
+          type: 'rainbow' as FruitType,
+        };
+        match.forEach((square, index) => {
+          if (index !== centerIndex && fruits[square]?.type === 'normal') {
+            fruits[square] = undefined;
+          }
+        });
+      } else if (match.length === 4) {
         const centerIndex = Math.floor(match.length / 2);
         const isHorizontal = Math.random() < 0.5;
         if (fruits[match[centerIndex]!]?.type)
@@ -110,7 +121,6 @@ export const checkForMatches = (
   if (setFruits) setFruits([...fruits]);
   return hasMatch;
 };
-
 export const createBoard = (): Fruits => {
   const board = Array.from(
     { length: BOARD_SIZE * BOARD_SIZE },
