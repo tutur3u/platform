@@ -33,7 +33,7 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
 
   const fruitColorCounts = fruits.reduce(
     (acc, fruit) => {
-      if (fruit) acc[fruit.color.name] = (acc[fruit.color.name] || 0) + 1;
+      if (fruit) acc[fruit.color] = (acc[fruit.color] || 0) + 1;
 
       return acc;
     },
@@ -101,6 +101,7 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
                 key === 'green' && 'text-dynamic-green',
                 key === 'blue' && 'text-dynamic-blue',
                 key === 'purple' && 'text-dynamic-purple',
+                key === 'pink' && 'text-dynamic-pink',
                 key === 'orange' && 'text-dynamic-orange',
                 key === 'null' && 'opacity-50'
               )}

@@ -10,6 +10,7 @@ import {
 import { Fruit, Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
+import { DEV_MODE } from '@/constants/common';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -73,89 +74,97 @@ export const NeoCrushGame: React.FC = () => {
 
       <div className="bg-foreground/5 hidden gap-2 rounded-lg border p-4 font-mono md:grid">
         <div className="grid h-fit grid-cols-1 gap-2 md:grid-cols-3">
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() =>
-              summonLineEraser({ type: 'horizontal', fruits, setFruits })
-            }
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits.horizontal}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-4 md:h-4"
-            />
-          </Button>
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() =>
-              summonLineEraser({ type: 'vertical', fruits, setFruits })
-            }
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits.vertical}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-4 md:h-4"
-            />
-          </Button>
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() =>
-              summonLineEraser({ type: 'plus', fruits, setFruits })
-            }
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits.plus}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-3 md:h-3"
-            />
-          </Button>
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() =>
-              summonExplosiveFruit({ type: 'explosive', fruits, setFruits })
-            }
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits.explosive}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-3 md:h-3"
-            />
-          </Button>
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() =>
-              summonExplosiveFruit({ type: 'big-explosive', fruits, setFruits })
-            }
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits['big-explosive']}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-3 md:h-3"
-            />
-          </Button>
-          <Button
-            className="flex w-full items-center gap-1"
-            variant="secondary"
-            onClick={() => summonRainbowFruit({ fruits, setFruits })}
-          >
-            +1
-            <FruitPlaceholder
-              fruit={presetFruits.rainbow}
-              className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
-              iconClassName="md:w-4 md:h-4"
-            />
-          </Button>
-          <Separator className="col-span-full my-2" />
+          {DEV_MODE && (
+            <>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() =>
+                  summonLineEraser({ type: 'horizontal', fruits, setFruits })
+                }
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits.horizontal}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-4 md:h-4"
+                />
+              </Button>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() =>
+                  summonLineEraser({ type: 'vertical', fruits, setFruits })
+                }
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits.vertical}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-4 md:h-4"
+                />
+              </Button>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() =>
+                  summonLineEraser({ type: 'plus', fruits, setFruits })
+                }
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits.plus}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-3 md:h-3"
+                />
+              </Button>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() =>
+                  summonExplosiveFruit({ type: 'explosive', fruits, setFruits })
+                }
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits.explosive}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-3 md:h-3"
+                />
+              </Button>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() =>
+                  summonExplosiveFruit({
+                    type: 'big-explosive',
+                    fruits,
+                    setFruits,
+                  })
+                }
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits['big-explosive']}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-3 md:h-3"
+                />
+              </Button>
+              <Button
+                className="flex w-full items-center gap-1"
+                variant="secondary"
+                onClick={() => summonRainbowFruit({ fruits, setFruits })}
+              >
+                +1
+                <FruitPlaceholder
+                  fruit={presetFruits.rainbow}
+                  className="h-4 w-4 md:h-6 md:w-6 lg:h-6 lg:w-6"
+                  iconClassName="md:w-4 md:h-4"
+                />
+              </Button>
+              <Separator className="col-span-full my-2" />
+            </>
+          )}
           <div className="col-span-full flex flex-col gap-2 text-center font-semibold">
             <div>Statistics</div>
             <Separator className="col-span-full my-2" />

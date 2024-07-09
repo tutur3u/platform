@@ -1,7 +1,7 @@
 import {
   BOARD_SIZE,
   Fruit,
-  FruitColor,
+  FruitColorName,
   FruitType,
   Fruits,
   PTS_PER_FRUIT,
@@ -16,14 +16,14 @@ type EraseFunction = ({
   colIndex,
 }: {
   fruits: Fruits;
-  color: FruitColor;
+  color: FruitColorName;
   rowIndex: number;
   colIndex: number;
 }) => Fruits;
 
 export const eraseFunctions: Record<FruitType, EraseFunction> = {
   normal: ({ fruits }: { fruits: Fruits }) => fruits,
-  rainbow: ({ fruits, color }: { fruits: Fruits; color: FruitColor }) =>
+  rainbow: ({ fruits, color }: { fruits: Fruits; color: FruitColorName }) =>
     fruits.map((fruit) =>
       fruit?.color === color && fruit.type === 'normal' ? undefined : fruit
     ),
@@ -103,33 +103,33 @@ export const eraseFunctions: Record<FruitType, EraseFunction> = {
 
 const specialCombinations: Record<
   string,
-  (fruits: Fruits, color: FruitColor) => Fruits
+  (fruits: Fruits, color: FruitColorName) => Fruits
 > = {
   'rainbow-rainbow': (fruits: Fruits) =>
     fruits.map((fruit) => (fruit?.type === 'normal' ? undefined : fruit)),
-  'rainbow-horizontal': (fruits: Fruits, color: FruitColor) =>
+  'rainbow-horizontal': (fruits: Fruits, color: FruitColorName) =>
     fruits.map((fruit) =>
       fruit?.color === color
         ? { ...fruit, type: 'horizontal' as FruitType }
         : fruit
     ),
-  'rainbow-vertical': (fruits: Fruits, color: FruitColor) =>
+  'rainbow-vertical': (fruits: Fruits, color: FruitColorName) =>
     fruits.map((fruit) =>
       fruit?.color === color
         ? { ...fruit, type: 'vertical' as FruitType }
         : fruit
     ),
-  'rainbow-plus': (fruits: Fruits, color: FruitColor) =>
+  'rainbow-plus': (fruits: Fruits, color: FruitColorName) =>
     fruits.map((fruit) =>
       fruit?.color === color ? { ...fruit, type: 'plus' as FruitType } : fruit
     ),
-  'rainbow-explosive': (fruits: Fruits, color: FruitColor) =>
+  'rainbow-explosive': (fruits: Fruits, color: FruitColorName) =>
     fruits.map((fruit) =>
       fruit?.color === color
         ? { ...fruit, type: 'explosive' as FruitType }
         : fruit
     ),
-  'rainbow-big-explosive': (fruits: Fruits, color: FruitColor) =>
+  'rainbow-big-explosive': (fruits: Fruits, color: FruitColorName) =>
     fruits.map((fruit) =>
       fruit?.color === color
         ? { ...fruit, type: 'big-explosive' as FruitType }
@@ -197,7 +197,7 @@ export const useGameLogic = (
 
       let newFruits = [...fruits];
       let combinationFunction:
-        | ((fruits: Fruits, color: FruitColor) => Fruits)
+        | ((fruits: Fruits, color: FruitColorName) => Fruits)
         | undefined;
       let normalFruit: Fruit | undefined;
 
@@ -217,8 +217,8 @@ export const useGameLogic = (
       if (combinationFunction) {
         // Handle the case where the normal fruit's color might be "null"
         const combinationColor =
-          normalFruit?.color.name === 'null'
-            ? draggedFruit.color.name === 'null'
+          normalFruit?.color === 'null'
+            ? draggedFruit.color === 'null'
               ? replacedFruit.color
               : draggedFruit.color
             : normalFruit?.color || draggedFruit.color;
@@ -269,8 +269,8 @@ export const useGameLogic = (
         // For special fruits that require a color (e.g., rainbow),
         // use the non-"null" color of either fruit
         const eraseColor =
-          specialFruit.color.name === 'null'
-            ? draggedFruit.color.name === 'null'
+          specialFruit.color === 'null'
+            ? draggedFruit.color === 'null'
               ? replacedFruit.color
               : draggedFruit.color
             : specialFruit.color;
@@ -282,6 +282,9 @@ export const useGameLogic = (
           rowIndex: Math.floor(specialFruitId / BOARD_SIZE),
           colIndex: specialFruitId % BOARD_SIZE,
         });
+
+        if (newFruits[specialFruitId]?.type !== 'normal')
+          newFruits[specialFruitId] = undefined;
       }
 
       // Count erased fruits and update score

@@ -18,6 +18,7 @@ export default function NeoCrushGamePage() {
         height={2000}
         alt="Neo Citrus Tech"
         className="h-64 w-64 rounded-full"
+        priority
       />
       <div className="grid gap-2">
         <div className="font-serif text-5xl font-semibold tracking-wider">

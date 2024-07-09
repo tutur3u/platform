@@ -122,13 +122,13 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           }
         }
       `}</style>
-      <div className="mx-auto grid w-fit grid-cols-7 gap-2 lg:gap-3">
+      <div className="mx-auto grid w-fit grid-cols-8 gap-2 lg:gap-3">
         {fruits.map((fruit, index) => (
           <FruitPlaceholder
             key={index}
             data-id={index}
             fruit={fruit}
-            data-color={fruit?.color?.name}
+            data-color={fruit?.color}
             data-type={fruit?.type}
             draggable={true}
             onDragStart={dragStart}

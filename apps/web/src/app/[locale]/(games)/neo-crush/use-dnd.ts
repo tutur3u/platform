@@ -78,8 +78,6 @@ export const useDragAndDrop = (
 
       const validMove = validMoves.includes(squareBeingReplacedId);
 
-      console.log('Valid Move:', validMove);
-
       const handleSwap = async () => {
         if (validMove) {
           const draggedFruit = new Fruit(
@@ -101,23 +99,23 @@ export const useDragAndDrop = (
             fruits
           );
 
-          const hasMatch = checkForMatches(newFruits, setFruits, setScore);
+          const hasMatch = checkForMatches(
+            newFruits,
+            setFruits,
+            setScore,
+            squareBeingDraggedId,
+            squareBeingReplacedId
+          );
 
           if (
-            !hasMatch ||
-            draggedFruit?.type !== 'normal' ||
-            replacedFruit?.type !== 'normal'
+            !hasMatch &&
+            draggedFruit?.type === 'normal' &&
+            replacedFruit?.type === 'normal'
           ) {
             const temp = newFruits[squareBeingDraggedId];
             newFruits[squareBeingDraggedId] = newFruits[squareBeingReplacedId];
             newFruits[squareBeingReplacedId] = temp;
           }
-
-          if (newFruits[squareBeingDraggedId]?.type !== 'normal')
-            newFruits[squareBeingDraggedId] = undefined;
-
-          if (newFruits[squareBeingReplacedId]?.type !== 'normal')
-            newFruits[squareBeingReplacedId] = undefined;
 
           setFruits(newFruits);
         }

@@ -1,17 +1,40 @@
 // types.ts
-export const BOARD_SIZE = 7;
+export const BOARD_SIZE = 8;
 export const PTS_PER_FRUIT = 10;
 const NULL_COLOR = 'var(--foreground)';
 
-const FRUIT_COLORS = [
-  { name: 'red', code: '#E63946', src: '/neo-crush/red.png' },
-  // { name: 'blue', code: '#457B9D', src: '/neo-crush/blue.png' },
-  { name: 'green', code: '#2A9D8F', src: '/neo-crush/green.png' },
-  { name: 'yellow', code: '#FFD700', src: '/neo-crush/yellow.png' },
-  { name: 'purple', code: '#9C89B8', src: '/neo-crush/purple.png' },
-  { name: 'orange', code: '#F77F00', src: '/neo-crush/orange.png' },
-  { name: 'null', code: NULL_COLOR, src: undefined },
+const FRUIT_COLOR_NAMES = [
+  'red',
+  'blue',
+  'green',
+  'yellow',
+  'purple',
+  'pink',
+  'orange',
+  'null',
 ] as const;
+
+const FRUIT_COLOR_CODES = {
+  red: '#E63946',
+  blue: '#457B9D',
+  green: '#2A9D8F',
+  yellow: '#FFD700',
+  purple: '#9C89B8',
+  pink: '#F4A261',
+  orange: '#F77F00',
+  null: NULL_COLOR,
+} as const;
+
+const FRUIT_COLOR_SOURCES = {
+  red: '/neo-crush/red.png',
+  blue: '/neo-crush/blue.png',
+  green: '/neo-crush/green.png',
+  yellow: '/neo-crush/yellow.png',
+  purple: '/neo-crush/purple.png',
+  pink: '/neo-crush/pink.png',
+  orange: '/neo-crush/orange.png',
+  null: undefined,
+} as const;
 
 const FRUIT_TYPES = [
   'normal',
@@ -23,31 +46,30 @@ const FRUIT_TYPES = [
   'rainbow',
 ] as const;
 
-export type FruitColor = (typeof FRUIT_COLORS)[number];
-export type FruitColorName = FruitColor['name'];
-export type FruitColorCode = FruitColor['code'];
-export type FruitColorSrc = FruitColor['src'];
+export type FruitColorName = (typeof FRUIT_COLOR_NAMES)[number];
+export type FruitColorCode = (typeof FRUIT_COLOR_CODES)[FruitColorName];
+export type FruitColorSrc = (typeof FRUIT_COLOR_SOURCES)[FruitColorName];
 export type FruitType = (typeof FRUIT_TYPES)[number];
 
+export const getColorCode = (color: FruitColorName) => FRUIT_COLOR_CODES[color];
+export const getColorSrc = (color: FruitColorName) =>
+  FRUIT_COLOR_SOURCES[color];
+
 export const getRandomFruitColor = () =>
-  FRUIT_COLORS[Math.floor(Math.random() * (FRUIT_COLORS.length - 1))]!;
+  FRUIT_COLOR_NAMES[Math.floor(Math.random() * FRUIT_COLOR_NAMES.length)];
 
 export class Fruit {
-  color: FruitColor;
+  color: FruitColorName;
   type: FruitType;
-  src?: string;
 
-  constructor(color?: FruitColorName, type?: FruitType, src?: string) {
+  constructor(color?: FruitColorName, type?: FruitType) {
     const colorIndex = color
-      ? FRUIT_COLORS.findIndex((fruitColor) => fruitColor.name === color)
-      : Math.floor(Math.random() * (FRUIT_COLORS.length - 1));
+      ? FRUIT_COLOR_NAMES.indexOf(color)
+      : Math.floor(Math.random() * (FRUIT_COLOR_NAMES.length - 1));
 
     this.color =
-      type === 'rainbow'
-        ? FRUIT_COLORS[FRUIT_COLORS.length - 1]!
-        : FRUIT_COLORS[colorIndex]!;
+      type === 'rainbow' ? 'null' : FRUIT_COLOR_NAMES[colorIndex] ?? 'null';
     this.type = type ?? 'normal';
-    this.src = src ?? this.color.src;
   }
 }
 

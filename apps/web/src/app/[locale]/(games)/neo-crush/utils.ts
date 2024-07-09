@@ -1,5 +1,5 @@
 // utils.ts
-import { BOARD_SIZE, Fruit, Fruits, PTS_PER_FRUIT,FruitType } from './types';
+import { BOARD_SIZE, Fruit, FruitType, Fruits, PTS_PER_FRUIT } from './types';
 
 export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
   const decidedColor = fruits[startIndex]?.color;
@@ -68,7 +68,9 @@ export const findMatch = (startIndex: number, fruits: Fruits): number[] => {
 export const checkForMatches = (
   fruits: Fruits,
   setFruits: React.Dispatch<React.SetStateAction<Fruits>>,
-  setScore: React.Dispatch<React.SetStateAction<number>>
+  setScore: React.Dispatch<React.SetStateAction<number>>,
+  draggedId?: number,
+  replacedId?: number
 ) => {
   let hasMatch = false;
   let poppedFruits = 0;
@@ -81,25 +83,44 @@ export const checkForMatches = (
     if (match.length >= 3) {
       poppedFruits += match.length;
 
+      let centerIndex = Math.floor(match.length / 2);
+
+      // Check if draggedId or replacedId is in the match array and use it as centerIndex
+      const specialIndex =
+        draggedId !== undefined && replacedId !== undefined
+          ? match.indexOf(draggedId) !== -1
+            ? match.indexOf(draggedId)
+            : match.indexOf(replacedId)
+          : -1;
+
+      // console.log('match', match);
+      // console.log('centerIndex', centerIndex);
+      // console.log('specialIndex', specialIndex);
+      // console.log('draggedId', draggedId);
+      // console.log('replacedId', replacedId);
+
+      if (specialIndex !== -1) {
+        centerIndex = specialIndex;
+      }
+
       // Clear matched fruits and create special fruits if needed
-      if (match.length === 5) {
-        const centerIndex = Math.floor(match.length / 2);
+      if (match.length >= 5) {
         fruits[match[centerIndex]!] = {
-          color: fruits[match[centerIndex]!]!.color,
+          color: 'null',
           type: 'rainbow' as FruitType,
         };
+
         match.forEach((square, index) => {
           if (index !== centerIndex && fruits[square]?.type === 'normal') {
             fruits[square] = undefined;
           }
         });
       } else if (match.length === 4) {
-        const centerIndex = Math.floor(match.length / 2);
         const isHorizontal = Math.random() < 0.5;
-        if (fruits[match[centerIndex]!]?.type)
-          fruits[match[centerIndex]!]!.type = isHorizontal
-            ? 'horizontal'
-            : 'vertical';
+        fruits[match[centerIndex]!]!.type = isHorizontal
+          ? 'horizontal'
+          : 'vertical';
+
         match.forEach((square, index) => {
           if (index !== centerIndex && fruits[square]?.type === 'normal') {
             fruits[square] = undefined;
@@ -121,6 +142,7 @@ export const checkForMatches = (
   if (setFruits) setFruits([...fruits]);
   return hasMatch;
 };
+
 export const createBoard = (): Fruits => {
   const board = Array.from(
     { length: BOARD_SIZE * BOARD_SIZE },

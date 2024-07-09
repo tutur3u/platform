@@ -23,10 +23,7 @@ export const summonLineEraser = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = new Fruit(
-      newFruits[randomIndex]!.color!.name,
-      type
-    );
+    newFruits[randomIndex] = new Fruit(newFruits[randomIndex]!.color, type);
 
     setFruits(newFruits);
   }
@@ -82,10 +79,7 @@ export const summonExplosiveFruit = ({
       ]!;
     const newFruits = [...fruits];
 
-    newFruits[randomIndex] = new Fruit(
-      newFruits[randomIndex]!.color!.name,
-      type
-    );
+    newFruits[randomIndex] = new Fruit(newFruits[randomIndex]!.color, type);
 
     setFruits(newFruits);
   }
