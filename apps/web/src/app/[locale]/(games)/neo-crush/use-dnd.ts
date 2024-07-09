@@ -18,11 +18,14 @@ export const useDragAndDrop = (
     draggedId: number,
     replacedId: number,
     fruits: Fruits
-  ) => Fruits
+  ) => Fruits,
+  decrementTurns: () => void,
+  disabled: boolean
 ) => {
   const dragStart = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
+    if (disabled) return;
     const target = e.target as HTMLDivElement;
     setSquareBeingDragged(target);
     if (e.type === 'dragstart') {
@@ -35,23 +38,27 @@ export const useDragAndDrop = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
     e.preventDefault();
+    if (disabled) return;
   };
 
   const dragLeave = (
     _: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
+    if (disabled) return;
     // No action needed
   };
 
   const dragDrop = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
+    if (disabled) return;
     const target = e.target as HTMLDivElement;
     setSquareBeingReplaced(target);
   };
 
   const dragEnd = useCallback(
     (e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      if (disabled) return;
       if (fruits.some((fruit) => !fruit)) return;
 
       const target = e.target as HTMLDivElement;
@@ -78,8 +85,6 @@ export const useDragAndDrop = (
 
       const validMove = validMoves.includes(squareBeingReplacedId);
 
-      console.log('Valid Move:', validMove);
-
       const handleSwap = async () => {
         if (validMove) {
           const draggedFruit = new Fruit(
@@ -101,24 +106,25 @@ export const useDragAndDrop = (
             fruits
           );
 
-          const hasMatch = checkForMatches(newFruits, setFruits, setScore);
+          const hasMatch = checkForMatches(
+            newFruits,
+            setFruits,
+            setScore,
+            squareBeingDraggedId,
+            squareBeingReplacedId
+          );
 
           if (
-            !hasMatch ||
-            draggedFruit?.type !== 'normal' ||
-            replacedFruit?.type !== 'normal'
+            !hasMatch &&
+            draggedFruit?.type === 'normal' &&
+            replacedFruit?.type === 'normal'
           ) {
             const temp = newFruits[squareBeingDraggedId];
             newFruits[squareBeingDraggedId] = newFruits[squareBeingReplacedId];
             newFruits[squareBeingReplacedId] = temp;
           }
 
-          if (newFruits[squareBeingDraggedId]?.type !== 'normal')
-            newFruits[squareBeingDraggedId] = undefined;
-
-          if (newFruits[squareBeingReplacedId]?.type !== 'normal')
-            newFruits[squareBeingReplacedId] = undefined;
-
+          decrementTurns();
           setFruits(newFruits);
         }
 
@@ -127,7 +133,7 @@ export const useDragAndDrop = (
       };
 
       const dragable = fruits.every((fruit) => fruit);
-      if (dragable) handleSwap();
+      if (dragable && !disabled) handleSwap();
     },
     [
       fruits,

@@ -35,6 +35,7 @@ const config = {
         'brand-light-red': 'hsl(var(--brand-light-red))',
         'brand-dark-red': 'hsl(var(--brand-dark-red))',
 
+        'dynamic-pink': 'hsl(var(--pink))',
         'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-blue': 'hsl(var(--blue))',
         'dynamic-green': 'hsl(var(--green))',

@@ -1,4 +1,4 @@
-import { Fruit } from './types';
+import { Fruit, getColorCode, getColorSrc } from './types';
 import { cn } from '@/lib/utils';
 import {
   Bomb,
@@ -40,36 +40,38 @@ function FruitPlaceholder({
           ? fruit?.type === 'rainbow'
             ? 'var(--foreground)'
             : fruit?.type !== 'normal'
-              ? fruit?.color?.code
+              ? getColorCode(fruit?.color)
               : 'transparent'
           : 'var(--foreground)',
         opacity: fruit ? 1 : 0.3,
-        backgroundColor: fruit?.src
-          ? undefined
-          : fruit?.type === 'rainbow'
+        backgroundColor:
+          fruit?.color && getColorSrc(fruit?.color)
             ? undefined
-            : fruit
-              ? fruit?.type === 'normal'
-                ? fruit?.color?.code
-                : // colorMap gives hex color, we need to convert it to rgba
-                  `rgba(
-                  ${parseInt(fruit?.color?.code.slice(1, 3) as string, 16)},
-                  ${parseInt(fruit?.color?.code.slice(3, 5) as string, 16)},
-                  ${parseInt(fruit?.color?.code.slice(5, 7) as string, 16)},
+            : fruit?.type === 'rainbow'
+              ? undefined
+              : fruit
+                ? fruit?.type === 'normal'
+                  ? getColorCode(fruit?.color)
+                  : // colorMap gives hex color, we need to convert it to rgba
+                    `rgba(
+                  ${parseInt(getColorCode(fruit?.color).slice(1, 3) as string, 16)},
+                  ${parseInt(getColorCode(fruit?.color).slice(3, 5) as string, 16)},
+                  ${parseInt(getColorCode(fruit?.color).slice(5, 7) as string, 16)},
                 0.2)`
-              : 'transparent',
+                : 'transparent',
         cursor: 'grab',
         backgroundSize: 'auto',
       }}
       {...props}
     >
-      {fruit?.src && (
+      {fruit?.color && getColorSrc(fruit?.color) && (
         <Image
-          src={fruit?.src}
-          alt={fruit?.color?.name}
+          src={getColorSrc(fruit?.color)!}
+          alt={fruit?.color}
           width={1400}
           height={1400}
           className="pointer-events-none h-8 w-8 object-contain md:h-9 md:w-9 lg:h-10 lg:w-10"
+          priority
         />
       )}
 
@@ -85,7 +87,7 @@ function FruitPlaceholder({
             )}
             style={{
               animation: 'pulse 1s infinite',
-              color: fruit?.color?.code,
+              color: getColorCode(fruit?.color),
             }}
           />
           <ChevronRight
@@ -98,7 +100,7 @@ function FruitPlaceholder({
             )}
             style={{
               animation: 'pulse 1s infinite',
-              color: fruit?.color?.code,
+              color: getColorCode(fruit?.color),
             }}
           />
         </>
@@ -116,7 +118,7 @@ function FruitPlaceholder({
             )}
             style={{
               animation: 'pulse 1s infinite',
-              color: fruit?.color?.code,
+              color: getColorCode(fruit?.color),
             }}
           />
           <ChevronDown
@@ -129,7 +131,7 @@ function FruitPlaceholder({
             )}
             style={{
               animation: 'pulse 1s infinite',
-              color: fruit?.color?.code,
+              color: getColorCode(fruit?.color),
             }}
           />
         </>
@@ -143,7 +145,7 @@ function FruitPlaceholder({
           )}
           style={{
             animation: 'pulse 1s infinite',
-            color: fruit?.color?.code,
+            color: getColorCode(fruit?.color),
           }}
         />
       )}
@@ -156,7 +158,7 @@ function FruitPlaceholder({
           )}
           style={{
             animation: 'pulse 1s infinite',
-            color: fruit?.color?.code,
+            color: getColorCode(fruit?.color),
           }}
         />
       )}
