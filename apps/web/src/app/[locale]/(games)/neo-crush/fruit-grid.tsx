@@ -12,6 +12,8 @@ interface FruitGridProps {
     replacedId: number,
     fruits: Fruits
   ) => Fruits;
+  decrementTurns: () => void;
+  disabled?: boolean;
 }
 
 export const FruitGrid: React.FC<FruitGridProps> = ({
@@ -19,6 +21,8 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
   setFruits,
   setScore,
   handleSpecialFruits,
+  decrementTurns,
+  disabled = false,
 }) => {
   const [squareBeingDragged, setSquareBeingDragged] =
     useState<HTMLDivElement | null>(null);
@@ -42,11 +46,15 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     squareBeingReplaced,
     setSquareBeingDragged,
     setSquareBeingReplaced,
-    handleSpecialFruits
+    handleSpecialFruits,
+    decrementTurns,
+    disabled
   );
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (disabled) return;
+
     const touch = e.touches[0];
     if (!touch) return;
     touchStartPosition.current = { x: touch.clientX, y: touch.clientY };
@@ -55,6 +63,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (disabled) return;
     if (!touchStartPosition.current) return;
 
     const touch = e.touches[0];
@@ -90,6 +99,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (disabled) return;
     touchEnd(e);
   };
 

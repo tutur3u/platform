@@ -1,5 +1,6 @@
 // types.ts
 export const BOARD_SIZE = 8;
+export const DEFAULT_TURNS = 20;
 export const PTS_PER_FRUIT = 10;
 const NULL_COLOR = 'var(--foreground)';
 

@@ -7,7 +7,7 @@ import {
   summonLineEraser,
   summonRainbowFruit,
 } from './summoner';
-import { Fruit, Fruits } from './types';
+import { DEFAULT_TURNS, Fruit, Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { DEV_MODE } from '@/constants/common';
@@ -19,6 +19,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 export const NeoCrushGame: React.FC = () => {
   const [fruits, setFruits] = useState<Fruits>(createBoard());
   const [score, setScore] = useState<number>(0);
+
+  const [unlimitedTurns, setUnlimitedTurns] = useState(false);
+  const [turns, setTurns] = useState<number>(DEFAULT_TURNS);
 
   const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
     useGameLogic(fruits, setFruits, setScore);
@@ -51,25 +54,52 @@ export const NeoCrushGame: React.FC = () => {
   return (
     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
       <Card className="w-full p-2 md:p-4">
-        <FruitGrid
-          fruits={fruits}
-          setFruits={setFruits}
-          setScore={setScore}
-          handleSpecialFruits={handleSpecialFruits}
-        />
+        <div className={turns <= 0 ? 'opacity-50' : ''}>
+          <FruitGrid
+            fruits={fruits}
+            setFruits={setFruits}
+            setScore={setScore}
+            handleSpecialFruits={handleSpecialFruits}
+            decrementTurns={() =>
+              unlimitedTurns ? () => {} : setTurns((prev) => prev - 1)
+            }
+            disabled={turns <= 0 && !unlimitedTurns}
+          />
+        </div>
         <p className="mt-2 text-center text-sm font-bold md:mt-4 md:text-xl">
-          Score: {score}
+          <span className="opacity-70">Score</span>: {score}
         </p>
         <Separator className="my-2 md:my-4" />
-        <Button
-          className="w-full"
-          onClick={() => {
-            setFruits(createBoard());
-            setScore(0);
-          }}
-        >
-          Restart
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            className="w-full"
+            onClick={() => {
+              setFruits(createBoard());
+              setUnlimitedTurns(false);
+              setTurns(DEFAULT_TURNS);
+              setScore(0);
+            }}
+            variant="destructive"
+          >
+            Restart
+          </Button>
+          <Button
+            className="flex w-full flex-wrap gap-1 font-semibold"
+            onClick={() => {
+              setUnlimitedTurns((prev) => !prev);
+              setTurns(DEFAULT_TURNS);
+            }}
+            disabled={turns !== DEFAULT_TURNS || unlimitedTurns}
+            variant="secondary"
+          >
+            <span className="opacity-70">UNLIMITED:</span>
+            {unlimitedTurns ? (
+              <span className="text-dynamic-green">ON</span>
+            ) : (
+              <span className="text-dynamic-red">OFF</span>
+            )}
+          </Button>
+        </div>
       </Card>
 
       <div className="bg-foreground/5 hidden gap-2 rounded-lg border p-4 font-mono md:grid">
@@ -170,6 +200,10 @@ export const NeoCrushGame: React.FC = () => {
             <Separator className="col-span-full my-2" />
             <div className="flex items-start justify-center gap-2 text-sm lg:text-base">
               <GameStats fruits={fruits} />
+            </div>
+            <Separator className="col-span-full my-2" />
+            <div className="flex items-start justify-center gap-2 text-sm lg:text-base">
+              <div>Turns: {unlimitedTurns ? '∞' : turns}</div>
             </div>
           </div>
         </div>
