@@ -16,7 +16,7 @@ const GeneralSearchBar = ({ resetPage = true, className }: Props) => {
 
   return (
     <SearchBar
-    t={t}
+      t={t}
       className={cn('w-full', className)}
       defaultValue=""
       onSearch={(q: string) =>

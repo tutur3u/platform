@@ -1,5 +1,5 @@
 import FruitPlaceholder from './fruit-placeholder';
-import { Fruits,BOARD_SIZE } from './types';
+import { BOARD_SIZE, Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
 import React, { useRef, useState } from 'react';
 
@@ -25,7 +25,6 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
   const [squareBeingReplaced, setSquareBeingReplaced] =
     useState<HTMLDivElement | null>(null);
   const touchStartPosition = useRef<{ x: number; y: number } | null>(null);
-
 
   const {
     dragStart,
