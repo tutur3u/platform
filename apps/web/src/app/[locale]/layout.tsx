@@ -120,7 +120,7 @@ export default async function RootLayout({
         <VercelInsights />
         <Providers
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           themes={[
             'system',
 
