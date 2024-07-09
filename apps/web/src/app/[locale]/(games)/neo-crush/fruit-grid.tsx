@@ -1,6 +1,5 @@
-// fruit-grid.tsx
 import FruitPlaceholder from './fruit-placeholder';
-import { Fruits } from './types';
+import { BOARD_SIZE, Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
 import React, { useRef, useState } from 'react';
 
@@ -27,7 +26,15 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     useState<HTMLDivElement | null>(null);
   const touchStartPosition = useRef<{ x: number; y: number } | null>(null);
 
-  const { dragStart, dragOver, dragLeave, dragDrop, dragEnd } = useDragAndDrop(
+  const {
+    dragStart,
+    dragOver,
+    dragLeave,
+    dragDrop,
+    dragEnd,
+    touchStart,
+    touchEnd,
+  } = useDragAndDrop(
     fruits,
     setFruits,
     setScore,
@@ -38,15 +45,15 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     handleSpecialFruits
   );
 
-  const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
     const touch = e.touches[0];
     if (!touch) return;
     touchStartPosition.current = { x: touch.clientX, y: touch.clientY };
-    dragStart(e);
+    touchStart(e);
   };
 
-  const touchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (!touchStartPosition.current) return;
 
@@ -56,7 +63,6 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     const diffX = touch.clientX - touchStartPosition.current.x;
     const diffY = touch.clientY - touchStartPosition.current.y;
 
-    // Only process as a swipe if the movement is significant
     if (Math.abs(diffX) > 20 || Math.abs(diffY) > 20) {
       const target = e.target as HTMLDivElement;
       const currentId = parseInt(target.getAttribute('data-id') || '0');
@@ -67,7 +73,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
         newId = currentId + (diffX > 0 ? 1 : -1);
       } else {
         // Vertical swipe
-        newId = currentId + (diffY > 0 ? 8 : -8); // Assuming 8 columns
+        newId = currentId + (diffY > 0 ? BOARD_SIZE : -BOARD_SIZE);
       }
 
       const newTarget = document.querySelector(
@@ -82,9 +88,9 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
     }
   };
 
-  const touchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    dragDrop(e);
-    dragEnd(e);
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    touchEnd(e);
   };
 
   return (
@@ -130,9 +136,9 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
             onDragLeave={dragLeave}
             onDrop={dragDrop}
             onDragEnd={dragEnd}
-            onTouchStart={touchStart}
-            onTouchMove={touchMove}
-            onTouchEnd={touchEnd}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
         ))}
       </div>
