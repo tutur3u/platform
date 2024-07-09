@@ -26,7 +26,8 @@ export const useDragAndDrop = (
     const target = e.target as HTMLDivElement;
     setSquareBeingDragged(target);
     if (e.type === 'dragstart') {
-      (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed = 'move';
+      (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed =
+        'move';
     }
   };
 
@@ -67,8 +68,6 @@ export const useDragAndDrop = (
       const squareBeingReplacedId = parseInt(
         squareBeingReplaced.getAttribute('data-id') || '0'
       );
-
-  
 
       const validMoves = [
         squareBeingDraggedId - 1,
@@ -130,7 +129,14 @@ export const useDragAndDrop = (
       const dragable = fruits.every((fruit) => fruit);
       if (dragable) handleSwap();
     },
-    [fruits, squareBeingDragged, squareBeingReplaced, handleSpecialFruits, setFruits, setScore]
+    [
+      fruits,
+      squareBeingDragged,
+      squareBeingReplaced,
+      handleSpecialFruits,
+      setFruits,
+      setScore,
+    ]
   );
 
   const touchStart = (e: React.TouchEvent<HTMLDivElement>) => {
