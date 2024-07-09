@@ -28,7 +28,7 @@ export const useDragAndDrop = (
     if (disabled) return;
     const target = e.target as HTMLDivElement;
     setSquareBeingDragged(target);
-    if (e.type === 'dragstart') {
+    if (e.type === 'dragstart' && !disabled) {
       (e as React.DragEvent<HTMLDivElement>).dataTransfer.effectAllowed =
         'move';
     }
