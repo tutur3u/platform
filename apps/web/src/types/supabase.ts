@@ -4594,7 +4594,15 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_audit_logs'
         | 'manage_user_report_templates'
-        | 'ai_chat';
+        | 'manage_calendar'
+        | 'manage_projects'
+        | 'manage_documents'
+        | 'manage_drive'
+        | 'manage_users'
+        | 'manage_inventory'
+        | 'manage_finance'
+        | 'ai_chat'
+        | 'ai_lab';
     };
     CompositeTypes: {
       [_ in never]: never;
