@@ -11,7 +11,7 @@ This turborepo uses [pnpm](https://pnpm.io) as a package manager. It includes th
 
 ### Apps
 
-- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT Hub, including the landing page, pricing plans, branding-related resources and NCT Hub's services through a web application interface. On production, this app is located at [**rmitneoculturetechclub.com**](https://rmitneoculturetechclub.com).
+- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT Hub, including the landing page, pricing plans, branding-related resources and NCT Hub's services through a web application interface. On production, this app is located at [**rmitnct.club**](https://rmitnct.club).
 
 ### Packages
 
