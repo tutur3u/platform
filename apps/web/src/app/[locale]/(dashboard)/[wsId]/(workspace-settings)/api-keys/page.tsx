@@ -1,6 +1,7 @@
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -23,6 +24,12 @@ export default async function WorkspaceApiKeysPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_security'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const { data: apiKeys, count } = await getApiKeys(wsId, searchParams);
   const t = await getTranslations('ws-api-keys');
 

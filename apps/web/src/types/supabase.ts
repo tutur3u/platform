@@ -4583,15 +4583,26 @@ export type Database = {
     Enums: {
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       workspace_role_permission:
+        | 'view_infrastructure'
+        | 'manage_workspace_secrets'
+        | 'manage_external_migrations'
         | 'manage_workspace_roles'
         | 'manage_workspace_members'
-        | 'manage_workspace_invites'
         | 'manage_workspace_settings'
         | 'manage_workspace_integrations'
         | 'manage_workspace_billing'
         | 'manage_workspace_security'
         | 'manage_workspace_audit_logs'
-        | 'ai_chat';
+        | 'manage_user_report_templates'
+        | 'manage_calendar'
+        | 'manage_projects'
+        | 'manage_documents'
+        | 'manage_drive'
+        | 'manage_users'
+        | 'manage_inventory'
+        | 'manage_finance'
+        | 'ai_chat'
+        | 'ai_lab';
     };
     CompositeTypes: {
       [_ in never]: never;

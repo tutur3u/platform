@@ -1096,3 +1096,31 @@ values (
         'Bảo vệ',
         '00000000-0000-0000-0000-000000000003'
     );
+
+-- insert manage_workspace_roles as permission into workspace_default_permissions for all workspaces
+insert into public.workspace_default_permissions (ws_id, permission, enabled)
+values (
+        '00000000-0000-0000-0000-000000000000',
+        'manage_workspace_roles',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'manage_workspace_roles',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'manage_workspace_roles',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'manage_workspace_roles',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        'manage_workspace_roles',
+        true
+    );

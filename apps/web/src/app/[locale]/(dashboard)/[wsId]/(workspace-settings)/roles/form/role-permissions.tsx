@@ -13,19 +13,18 @@ import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
 export default function RoleFormPermissionsSection({
+  wsId,
   form,
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
-  const groups = permissionGroups(t);
+  const groups = permissionGroups({ t, wsId });
 
   return (
     <>
-      {form.watch('name') && (
-        <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
-          {form.watch('name')}
-        </div>
-      )}
+      <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+        {form.watch('name') || '-'}
+      </div>
 
       <Accordion
         type="multiple"

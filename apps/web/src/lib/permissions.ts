@@ -1,10 +1,11 @@
-import { PROD_MODE } from '@/constants/common';
+import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
 
 export type RolePermission = {
   id: PermissionId;
   title: string;
   description: string;
+  disableOnProduction?: boolean;
   disabled?: boolean;
 };
 
@@ -14,9 +15,59 @@ export type RolePermissionGroup = {
   permissions: RolePermission[];
 };
 
-export const permissionGroups = (t = ((key: string) => key) as any) => {
+export const permissionGroups = ({
+  t = (key: string) => key,
+  wsId,
+}: {
+  t?: any;
+  wsId: string;
+}) => {
   return (
     [
+      ...(wsId === ROOT_WORKSPACE_ID
+        ? [
+            {
+              id: 'infrastructure',
+              title: t('ws-roles.infrastructure'),
+              permissions: [
+                {
+                  id: 'view_infrastructure',
+                  title: t('ws-roles.view_infrastructure'),
+                  description: t('ws-roles.view_infrastructure_description'),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_workspace_secrets',
+                  title: t('ws-roles.manage_workspace_secrets'),
+                  description: t(
+                    'ws-roles.manage_workspace_secrets_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_external_migrations',
+                  title: t('ws-roles.manage_external_migrations'),
+                  description: t(
+                    'ws-roles.manage_external_migrations_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_workspace_audit_logs',
+                  title: t('ws-roles.manage_workspace_audit_logs'),
+                  description: t(
+                    'ws-roles.manage_workspace_audit_logs_description'
+                  ),
+                  disableOnProduction: true,
+                  disabled: true,
+                },
+              ],
+            },
+          ]
+        : []),
       {
         id: 'workspace',
         title: t('ws-roles.workspace'),
@@ -42,20 +93,13 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
           //   disableOnProduction: true,
           //   disabled: true,
           // },
-          // {
-          //   id: 'manage_workspace_security',
-          //   title: t('ws-roles.manage_workspace_security'),
-          //   description: t('ws-roles.manage_workspace_security_description'),
-          //   disableOnProduction: true,
-          //   disabled: true,
-          // },
-          // {
-          //   id: 'manage_workspace_audit_logs',
-          //   title: t('ws-roles.manage_workspace_audit_logs'),
-          //   description: t('ws-roles.manage_workspace_audit_logs_description'),
-          //   disableOnProduction: true,
-          //   disabled: true,
-          // },
+          {
+            id: 'manage_workspace_security',
+            title: t('ws-roles.manage_workspace_security'),
+            description: t('ws-roles.manage_workspace_security_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
           // {
           //   id: 'manage_workspace_billing',
           //   title: t('ws-roles.manage_workspace_billing'),
@@ -65,49 +109,130 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
           // },
         ],
       },
-      // {
-      //   id: 'ai',
-      //   title: t('ws-roles.ai'),
-      //   permissions: [
-      //     {
-      //       id: 'ai_chat',
-      //       title: t('ws-roles.ai_chat'),
-      //       description: t('ws-roles.ai_chat_description'),
-      //       disableOnProduction: true,
-      //       disabled: true,
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: 'AI Lab',
-      // },
-      // {
-      //   title: 'Calendar',
-      // },
-      // {
-      //   title: 'Projects',
-      // },
-      // {
-      //   title: 'Documents',
-      // },
-      // {
-      //   title: 'Drive',
-      // },
-      // {
-      //   title: 'Virtual Users',
-      // },
-      // {
-      //   title: 'Inventory',
-      // },
-      // {
-      //   title: 'Finance',
-      // },
+      {
+        id: 'ai',
+        title: t('ws-roles.ai'),
+        permissions: [
+          {
+            id: 'ai_chat',
+            title: t('ws-roles.ai_chat'),
+            description: t('ws-roles.ai_chat_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'ai_lab',
+            title: t('ws-roles.ai_lab'),
+            description: t('ws-roles.ai_lab_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'calendar',
+        title: t('sidebar_tabs.calendar'),
+        permissions: [
+          {
+            id: 'manage_calendar',
+            title: t('ws-roles.manage_calendar'),
+            description: t('ws-roles.manage_calendar_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'projects',
+        title: t('sidebar_tabs.projects'),
+        permissions: [
+          {
+            id: 'manage_projects',
+            title: t('ws-roles.manage_projects'),
+            description: t('ws-roles.manage_projects_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'documents',
+        title: t('sidebar_tabs.documents'),
+        permissions: [
+          {
+            id: 'manage_documents',
+            title: t('ws-roles.manage_documents'),
+            description: t('ws-roles.manage_documents_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'drive',
+        title: t('sidebar_tabs.drive'),
+        permissions: [
+          {
+            id: 'manage_drive',
+            title: t('ws-roles.manage_drive'),
+            description: t('ws-roles.manage_drive_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'users',
+        title: t('sidebar_tabs.users'),
+        permissions: [
+          {
+            id: 'manage_users',
+            title: t('ws-roles.manage_users'),
+            description: t('ws-roles.manage_users_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'manage_user_report_templates',
+            title: t('ws-roles.manage_user_report_templates'),
+            description: t('ws-roles.manage_user_report_templates_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'inventory',
+        title: t('sidebar_tabs.inventory'),
+        permissions: [
+          {
+            id: 'manage_inventory',
+            title: t('ws-roles.manage_inventory'),
+            description: t('ws-roles.manage_inventory_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'finance',
+        title: t('sidebar_tabs.finance'),
+        permissions: [
+          {
+            id: 'manage_finance',
+            title: t('ws-roles.manage_finance'),
+            description: t('ws-roles.manage_finance_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
     ] as const
   )
     .map((group) => ({
       ...group,
       permissions: (
-        group.permissions?.filter((p) => p.title && p.description) || []
+        group?.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
         disabled: p.disableOnProduction ? PROD_MODE : p.disabled,
@@ -119,11 +244,17 @@ export const permissionGroups = (t = ((key: string) => key) as any) => {
     ) as RolePermissionGroup[];
 };
 
-export const permissions = (t?: any) => {
-  return permissionGroups(t).reduce(
+export const permissions = ({
+  t = (key: string) => key,
+  wsId,
+}: {
+  t?: any;
+  wsId: string;
+}) => {
+  return permissionGroups({ t, wsId }).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
     [] as RolePermission[]
   ) as RolePermission[];
 };
 
-export const totalPermissions = permissions().length;
+export const totalPermissions = (wsId: string) => permissions({ wsId }).length;

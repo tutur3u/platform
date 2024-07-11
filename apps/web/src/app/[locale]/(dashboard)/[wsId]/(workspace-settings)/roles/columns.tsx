@@ -1,7 +1,6 @@
 'use client';
 
 import { RoleRowActions } from './row-actions';
-import { totalPermissions } from '@/lib/permissions';
 import { WorkspaceRole } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
@@ -10,7 +9,9 @@ import moment from 'moment';
 
 export const roleColumns = (
   t: any,
-  namespace: string
+  namespace: string,
+  _?: any[],
+  extraData?: any
 ): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
@@ -80,7 +81,7 @@ export const roleColumns = (
               .length ?? '-'}
           </span>
           <span className="opacity-50">/</span>
-          <span className="text-dynamic-blue">{totalPermissions}</span>
+          <span className="text-dynamic-blue">{extraData}</span>
         </span>
       </div>
     ),

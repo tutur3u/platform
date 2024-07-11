@@ -3,7 +3,11 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getWorkspace, verifyHasSecrets } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  verifyHasSecrets,
+} from '@/lib/workspace-helper';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -22,6 +26,11 @@ interface Props {
 export default async function WorkspaceSettingsPage({
   params: { wsId },
 }: Props) {
+  const { permissions } = await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_members'],
+  });
+
   const t = await getTranslations();
 
   const ws = await getWorkspace(wsId);
@@ -54,16 +63,18 @@ export default async function WorkspaceSettingsPage({
         pluralTitle={t('common.settings')}
         description={t('ws-settings.description')}
         action={
-          <Link href={`/${wsId}/members`}>
-            <Button className="cursor-pointer">
-              <UserPlus className="mr-2 h-4 w-4" />
-              <span>
-                {disableInvite
-                  ? t('ws-members.invite_member_disabled')
-                  : t('ws-members.invite_member')}
-              </span>
-            </Button>
-          </Link>
+          permissions.length > 0 ? (
+            <Link href={`/${wsId}/members`}>
+              <Button className="cursor-pointer">
+                <UserPlus className="mr-2 h-4 w-4" />
+                <span>
+                  {disableInvite
+                    ? t('ws-members.invite_member_disabled')
+                    : t('ws-members.invite_member')}
+                </span>
+              </Button>
+            </Link>
+          ) : undefined
         }
       />
       <Separator className="my-4" />

@@ -3,8 +3,7 @@
 import { cn } from '../../../lib/utils';
 import { Input } from '../input';
 import { debounce } from 'lodash';
-import { useEffect, useState } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
   t: any;
@@ -16,7 +15,7 @@ interface Props {
 
 // Assuming the rest of your imports and Props interface are unchanged
 
-const SearchBar = ({ t, defaultValue, className, onSearch }: Props) => {
+const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
   // Memoize the updateQuery function to ensure debounce works correctly
   const updateQuery = useCallback(
     debounce((query: string) => {
