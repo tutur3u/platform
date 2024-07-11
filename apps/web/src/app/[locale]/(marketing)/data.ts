@@ -22,7 +22,7 @@ export const members: {
   },
   {
     name: 'Vo Khanh Quynh',
-    role: 'Liaison Vice President & Head Human Resources',
+    role: 'Liaison Vice President',
     departments: ['Executive Board', 'Human Resources', 'External Relations'],
   },
   {
