@@ -1,5 +1,3 @@
-import { UserDatabaseFilter } from '../../../users/filters';
-import { SectionProps } from './index';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
@@ -15,6 +13,8 @@ import { useQuery } from '@tanstack/react-query';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { UserDatabaseFilter } from '../../../users/filters';
+import { SectionProps } from './index';
 
 export default function RoleFormMembersSection({
   wsId,
@@ -77,11 +77,9 @@ export default function RoleFormMembersSection({
 
   return (
     <>
-      {form.watch('name') && (
-        <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
-          {form.watch('name')}
-        </div>
-      )}
+      <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+        {form.watch('name') || '-'}
+      </div>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
         <UserDatabaseFilter

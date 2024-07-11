@@ -1,9 +1,10 @@
 'use client';
 
-import {
-  permissionGroups,
-  totalPermissions,
-} from '@/lib/permissions';
+import RoleFormDisplaySection from './role-display';
+import RoleFormMembersSection from './role-members';
+import RoleFormPermissionsSection from './role-permissions';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { permissionGroups, totalPermissions } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { PermissionId, WorkspaceRole } from '@/types/db';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -26,15 +27,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import RoleFormDisplaySection from './role-display';
-import RoleFormMembersSection from './role-members';
-import RoleFormPermissionsSection from './role-permissions';
 
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   permissions: z.object(
-    permissionGroups((key: string) => key).reduce(
+    permissionGroups({ wsId: ROOT_WORKSPACE_ID }).reduce(
       (acc, group) => {
         group.permissions.forEach((permission) => {
           acc[permission.id] = z.boolean();
@@ -67,7 +65,9 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
   const router = useRouter();
 
   const roleId = data?.id;
-  const groups = permissionGroups(t);
+
+  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID });
+  const groups = permissionGroups({ t, wsId });
 
   const workspaceMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'members'],
@@ -88,7 +88,7 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
     values: {
       id: forceDefault ? 'DEFAULT' : roleId,
       name: forceDefault ? t('ws-roles.default_permissions') : data?.name || '',
-      permissions: groups.reduce(
+      permissions: rootGroups.reduce(
         (acc, group) => {
           group.permissions.forEach((permission) => {
             acc[permission.id] =
@@ -185,7 +185,7 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
                 (acc, group) => acc + group.count,
                 0
               )}
-              /{totalPermissions})
+              /{totalPermissions(wsId)})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />
