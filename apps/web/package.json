@@ -35,7 +35,7 @@
     "@ai-sdk/azure": "^0.0.12",
     "@ai-sdk/cohere": "^0.0.5",
     "@ai-sdk/google": "^0.0.26",
-    "@ai-sdk/google-vertex": "^0.0.14",
+    "@ai-sdk/google-vertex": "^0.0.15",
     "@ai-sdk/mistral": "^0.0.22",
     "@ai-sdk/openai": "^0.0.36",
     "@ai-sdk/react": "^0.0.20",
