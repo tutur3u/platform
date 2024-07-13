@@ -86,7 +86,10 @@ ColorPicker.displayName = 'ColorPicker';
 
 export { ColorPicker };
 
-function ensureVisibleColor(color: string, theme: 'light' | 'dark'): string {
+export function ensureVisibleColor(
+  color: string,
+  theme: 'light' | 'dark'
+): string {
   const getLuminance = (r: number, g: number, b: number) => {
     const a = [r, g, b].map((v) => {
       v /= 255;
