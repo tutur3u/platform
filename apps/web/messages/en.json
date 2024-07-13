@@ -111,7 +111,15 @@
         "0_usd_per_month": "$0/month",
         "currently_online": "Currently online",
         "no_online_users": "No online users",
-        "waiting_for_response": "I'll respond to you shortly, please wait..."
+        "waiting_for_response": "I'll respond to you shortly, please wait...",
+        "qr_generator": "QR Generator",
+        "qr_name": "QR Name",
+        "shapes": "Shapes",
+        "styles": "Styles",
+        "formats": "Formats",
+        "foreground": "Foreground",
+        "background": "Background",
+        "scan_me": "Scan me"
     },
     "date_helper": {
         "time-unit": "Time unit",

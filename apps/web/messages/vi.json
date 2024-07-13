@@ -111,7 +111,15 @@
         "0_usd_per_month": "không có phí hàng tháng",
         "currently_online": "Đang trực tuyến",
         "no_online_users": "Không có ai trực tuyến",
-        "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi..."
+        "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi...",
+        "qr_generator": "Tạo mã QR",
+        "qr_name": "Tên mã QR",
+        "shapes": "Hình dạng",
+        "styles": "Kiểu dáng",
+        "formats": "Định dạng",
+        "foreground": "Màu chi tiết",
+        "background": "Màu nền",
+        "scan_me": "Quét mã QR"
     },
     "date_helper": {
         "time-unit": "Đơn vị thời gian",
