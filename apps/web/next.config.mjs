@@ -9,7 +9,6 @@ const nextConfig = {
   experimental: {
     ppr: true,
     // reactCompiler: true,
-    useLightningcss: true,
     optimizeServerReact: true,
     serverComponentsHmrCache: true,
   },
