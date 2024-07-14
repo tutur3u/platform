@@ -40,11 +40,11 @@ const navItems = (t: any) => {
   return [
     { href: '/', label: t('common.home') },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.docs'),
-      external: true,
-    },
+    // {
+    //   href: 'https://docs.tuturuuu.com',
+    //   label: t('common.docs'),
+    //   external: true,
+    // },
   ] as NavItem[];
 };
 
