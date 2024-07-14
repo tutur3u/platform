@@ -14,19 +14,17 @@ const LandingPage = () => {
       </div>
 
       <section>
-        <h1 className="mb-2 text-2xl font-semibold">{t('our-logo')}</h1>
+        <h1 className="mb-2 text-2xl font-semibold">Tuturuuu</h1>
 
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <LogoTab
-            logoImage="/media/official-logos/dark-logo.svg"
-            pngLink="/media/official-logos/dark-logo.png"
-            svgLink="/media/official-logos/dark-logo.svg"
+            logoImage="/media/logos/dark-rounded.png"
+            pngLink="/media/logos/dark-rounded.png"
             alt="Dark logo"
           />
           <LogoTab
-            logoImage="/media/official-logos/light-logo.svg"
-            pngLink="/media/official-logos/light-logo.png"
-            svgLink="/media/official-logos/light-logo.svg"
+            logoImage="/media/logos/light-rounded.png"
+            pngLink="/media/logos/light-rounded.png"
             alt="Light logo"
             light
           />
@@ -34,28 +32,49 @@ const LandingPage = () => {
       </section>
 
       <section>
+        <h1 className="mb-2 text-2xl font-semibold">Mira AI</h1>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <LogoTab
+            logoImage="/media/logos/mira-dark.png"
+            pngLink="/media/logos/mira-dark.png"
+            alt="Dark logo"
+          />
+          <LogoTab
+            logoImage="/media/logos/mira-light.png"
+            pngLink="/media/logos/mira-light.png"
+            alt="Light logo"
+            light
+          />
+        </div>
+      </section>
+
+      <section className="mb-8">
         <h1 className="mb-2 text-2xl font-semibold">{t('colors')}</h1>
 
         <div className="grid grid-cols-2 gap-4 font-bold md:text-lg lg:grid-cols-3 xl:grid-cols-4 xl:text-xl">
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#4180E9] text-white md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#4180E9] text-white md:h-48">
             #4180E9
           </div>
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#4ACA3F] text-white md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#4ACA3F] text-white md:h-48">
             #4ACA3F
           </div>
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#FB7B05] text-white md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#FB7B05] text-white md:h-48">
             #FB7B05
           </div>
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#E94646] text-white md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#E94646] text-white md:h-48">
             #E94646
           </div>
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#26292F] text-white md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#09090B] text-white md:h-48">
+            #09090B
+          </div>
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#26292F] text-white md:h-48">
             #26292F
           </div>
-          <div className="flex h-32 items-center justify-center rounded-lg bg-[#FFFFFF] text-[#363636] md:h-48">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#FFFFFF] text-[#363636] md:h-48">
             #FFFFFF
           </div>
-          <div className="col-span-full flex h-32 items-center justify-center rounded-lg bg-[#363636] text-white md:h-48 xl:col-span-2">
+          <div className="flex h-32 items-center justify-center rounded-lg border bg-[#363636] text-white md:h-48">
             #363636
           </div>
         </div>
