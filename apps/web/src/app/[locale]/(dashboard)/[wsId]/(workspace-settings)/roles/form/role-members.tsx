@@ -1,3 +1,5 @@
+import { UserDatabaseFilter } from '../../../users/filters';
+import { SectionProps } from './index';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
@@ -13,8 +15,6 @@ import { useQuery } from '@tanstack/react-query';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { UserDatabaseFilter } from '../../../users/filters';
-import { SectionProps } from './index';
 
 export default function RoleFormMembersSection({
   wsId,

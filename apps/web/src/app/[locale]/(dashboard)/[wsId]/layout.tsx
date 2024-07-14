@@ -28,6 +28,7 @@ export default async function Layout({
       'ENABLE_X',
       'ENABLE_AI',
       'ENABLE_CHAT',
+      'ENABLE_SLIDES',
       'ENABLE_CALENDAR',
       'ENABLE_USERS',
       'ENABLE_PROJECTS',
@@ -86,6 +87,11 @@ export default async function Layout({
       name: t('sidebar_tabs.blackbox'),
       href: `/${wsId}/blackbox`,
       disabled: true,
+    },
+    {
+      name: t('sidebar_tabs.slides'),
+      href: `/${wsId}/slides`,
+      disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
     },
     {
       name: t('sidebar_tabs.calendar'),

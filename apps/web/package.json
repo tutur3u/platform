@@ -79,6 +79,7 @@
     "next-intl": "^3.17.0",
     "next-themes": "^0.3.0",
     "openai": "^4.52.7",
+    "pptxgenjs": "^3.12.0",
     "react": "19.0.0-rc-6230622a1a-20240610",
     "react-beautiful-dnd": "^13.1.1",
     "react-csv-reader": "^4.0.0",
