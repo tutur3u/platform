@@ -60,7 +60,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "2.44.3",
-    "@tabler/icons-react": "^3.10.0",
+    "@tabler/icons-react": "^3.11.0",
     "@tanstack/react-query": "^5.51.1",
     "@tanstack/react-table": "^8.19.3",
     "@upstash/qstash": "^2.6.1",
