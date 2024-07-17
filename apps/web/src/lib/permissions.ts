@@ -1,5 +1,6 @@
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
+import { User } from '@supabase/supabase-js';
 
 export type RolePermission = {
   id: PermissionId;
@@ -18,9 +19,11 @@ export type RolePermissionGroup = {
 export const permissionGroups = ({
   t = (key: string) => key,
   wsId,
+  user,
 }: {
   t?: any;
   wsId: string;
+  user: User | null;
 }) => {
   return (
     [
@@ -72,6 +75,20 @@ export const permissionGroups = ({
         id: 'workspace',
         title: t('ws-roles.workspace'),
         permissions: [
+          ...(wsId === ROOT_WORKSPACE_ID ||
+          user?.email?.endsWith('@tuturuuu.com')
+            ? [
+                {
+                  id: 'manage_workspace_secrets',
+                  title: t('ws-roles.manage_workspace_secrets'),
+                  description: t(
+                    'ws-roles.manage_workspace_secrets_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+              ]
+            : []),
           {
             id: 'manage_workspace_roles',
             title: t('ws-roles.manage_workspace_roles'),
@@ -244,17 +261,21 @@ export const permissionGroups = ({
     ) as RolePermissionGroup[];
 };
 
-export const permissions = ({
-  t = (key: string) => key,
-  wsId,
-}: {
+export const permissions = (args: {
   t?: any;
   wsId: string;
+  user: User | null;
 }) => {
-  return permissionGroups({ t, wsId }).reduce(
+  return permissionGroups(args).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
     [] as RolePermission[]
   ) as RolePermission[];
 };
 
-export const totalPermissions = (wsId: string) => permissions({ wsId }).length;
+export const totalPermissions = ({
+  wsId,
+  user,
+}: {
+  wsId: string;
+  user: User | null;
+}) => permissions({ wsId, user }).length;

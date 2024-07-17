@@ -1,7 +1,7 @@
 'use client';
 
-import { RoleForm } from './form';
-import { WorkspaceRole } from '@/types/db';
+import GroupTagForm from './form';
+import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
@@ -9,29 +9,28 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
 import { Row } from '@tanstack/react-table';
-import { Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface RoleRowActionsProps {
-  row: Row<WorkspaceRole>;
+interface ApiKeyRowActionsProps {
+  row: Row<WorkspaceApiKey>;
 }
 
-export function RoleRowActions({ row }: RoleRowActionsProps) {
+export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
   const data = row.original;
 
-  const deleteRole = async () => {
+  const deleteSlideFile = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/roles/${data.id}`,
+      `/api/v1/workspaces/${data.ws_id}/slides/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -42,7 +41,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace role',
+        title: 'Failed to delete workspace user group tag',
         description: data.message,
       });
     }
@@ -54,11 +53,6 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <Button onClick={() => setShowEditDialog(true)}>
-        <Pencil className="mr-1 h-5 w-5" />
-        {t('common.edit')}
-      </Button>
-
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -70,7 +64,11 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={deleteRole}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+            {t('common.edit')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={deleteSlideFile}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -79,17 +77,10 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-roles.edit')}
-        editDescription={t('ws-roles.edit_description')}
+        title={t('ws-slides.edit')}
+        editDescription={t('ws-slides.edit_description')}
         setOpen={setShowEditDialog}
-        form={
-          <RoleForm
-            wsId={data.ws_id}
-            user={{} as unknown as User}
-            data={data}
-          />
-        }
-        requireExpansion
+        form={<GroupTagForm wsId={data.ws_id} data={data} />}
       />
     </div>
   );

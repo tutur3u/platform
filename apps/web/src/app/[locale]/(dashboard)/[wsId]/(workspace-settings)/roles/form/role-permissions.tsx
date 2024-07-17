@@ -14,11 +14,12 @@ import { Fragment } from 'react';
 
 export default function RoleFormPermissionsSection({
   wsId,
+  user,
   form,
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
-  const groups = permissionGroups({ t, wsId });
+  const groups = permissionGroups({ t, wsId, user });
 
   return (
     <>
