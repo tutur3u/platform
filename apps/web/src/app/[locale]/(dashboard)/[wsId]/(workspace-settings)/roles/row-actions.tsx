@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 import { Row } from '@tanstack/react-table';
 import { Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -81,7 +82,13 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         title={t('ws-roles.edit')}
         editDescription={t('ws-roles.edit_description')}
         setOpen={setShowEditDialog}
-        form={<RoleForm wsId={data.ws_id} data={data} />}
+        form={
+          <RoleForm
+            wsId={data.ws_id}
+            user={{} as unknown as User}
+            data={data}
+          />
+        }
         requireExpansion
       />
     </div>
