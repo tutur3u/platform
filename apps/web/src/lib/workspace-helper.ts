@@ -211,26 +211,30 @@ export async function getPermissions({
 }) {
   const supabase = createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('User not found');
+
   if (
     !requiredPermissions.every((p) =>
-      rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some((rp) => rp.id === p)
+      rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
+        (rp) => rp.id === p
+      )
     )
   ) {
     throw new Error(
       `Invalid permissions provided: ${requiredPermissions
         .filter(
           (p) =>
-            !rolePermissions({ wsId: ROOT_WORKSPACE_ID }).some(
+            !rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
               (rp) => rp.id === p
             )
         )
         .join(', ')}`
     );
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (!user) throw new Error('User not found');
 
@@ -274,7 +278,10 @@ export async function getPermissions({
 
   // console.log();
   // console.log('Is creator', isCreator);
-  // console.log('Has permissions', hasPermissions, permissionsData);
+  // console.log('Required permissions', requiredPermissions);
+  // console.log('Workspace permissions', permissionsData);
+  // console.log('Default permissions', defaultData);
+  // console.log('Has permissions', hasPermissions);
   // console.log();
 
   if (!isCreator && !hasPermissions) {
@@ -291,7 +298,7 @@ export async function getPermissions({
 
   const permissions =
     workspaceData.creator_id === user.id
-      ? rolePermissions({ wsId }).map(({ id }) => id)
+      ? rolePermissions({ wsId, user }).map(({ id }) => id)
       : [...permissionsData, ...defaultData]
           .map(({ permission }) => permission)
           .filter((value, index, self) => self.indexOf(value) === index);

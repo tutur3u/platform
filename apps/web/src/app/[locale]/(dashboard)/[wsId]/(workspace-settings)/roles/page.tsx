@@ -24,6 +24,8 @@ export default async function WorkspaceRolesPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const supabase = createClient();
+
   await getPermissions({
     wsId,
     requiredPermissions: ['manage_workspace_roles'],
@@ -35,6 +37,11 @@ export default async function WorkspaceRolesPage({
     defaultData,
     count,
   } = await getRoles(wsId, searchParams);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const t = await getTranslations();
 
   const data = rawData.map((role) => ({
@@ -42,7 +49,7 @@ export default async function WorkspaceRolesPage({
     ws_id: wsId,
   }));
 
-  const permissionsCount = totalPermissions(wsId);
+  const permissionsCount = totalPermissions({ wsId, user });
 
   return (
     <>
@@ -52,11 +59,13 @@ export default async function WorkspaceRolesPage({
         description={t('ws-roles.description')}
         createTitle={t('ws-roles.create')}
         createDescription={t('ws-roles.create_description')}
-        form={<RoleForm wsId={wsId} />}
+        form={<RoleForm wsId={wsId} user={user} />}
         defaultData={defaultData}
         secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
           defaultData.permissions
-            .filter((p) => permissions({ wsId }).some((dp) => dp.id === p.id))
+            .filter((p) =>
+              permissions({ wsId, user }).some((dp) => dp.id === p.id)
+            )
             .filter((p) => p.enabled).length
         }/${permissionsCount})`}
         secondaryTitle={t('ws-roles.default_permissions')}
