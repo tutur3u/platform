@@ -106,7 +106,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.51.1",
-    "@tanstack/react-query-devtools": "^5.51.3",
+    "@tanstack/react-query-devtools": "^5.51.9",
     "@testing-library/react": "^16.0.0",
     "@types/cookie": "^0.6.0",
     "@types/js-cookie": "^3.0.6",
