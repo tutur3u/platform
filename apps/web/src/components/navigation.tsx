@@ -103,7 +103,7 @@ export function Navigation({
             .map((href) =>
               matchExact
                 ? pathname === href
-                : pathname?.startsWith(href) ?? false
+                : (pathname?.startsWith(href) ?? false)
             )
             .filter(Boolean).length > 0;
 

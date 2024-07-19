@@ -1,10 +1,14 @@
 'use client';
 
-import { permissionGroups } from './permissions';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { permissionGroups, totalPermissions } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 import { PermissionId, WorkspaceRole } from '@/types/db';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import { Form } from '@repo/ui/components/ui/form';
@@ -16,6 +20,8 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
+import { useQuery } from '@tanstack/react-query';
 import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -27,7 +33,17 @@ const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   permissions: z.object(
-    permissionGroups((key: string) => key).reduce(
+    permissionGroups({
+      wsId: ROOT_WORKSPACE_ID,
+      user: {
+        id: 'default',
+        email: 'contact@tuturuuu.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: '',
+        created_at: '',
+      },
+    }).reduce(
       (acc, group) => {
         group.permissions.forEach((permission) => {
           acc[permission.id] = z.boolean();
@@ -43,6 +59,7 @@ type FormType = z.infer<typeof FormSchema>;
 
 interface Props {
   wsId: string;
+  user: User | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
   onFinish?: (data: FormType) => void;
@@ -50,22 +67,41 @@ interface Props {
 
 export interface SectionProps {
   wsId: string;
+  user: User | null;
+  roleId?: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
 
-export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
+export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
-  const groups = permissionGroups(t);
+  const roleId = data?.id;
+
+  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID, user });
+  const groups = permissionGroups({ t, wsId, user });
+
+  const workspaceMembersQuery = useQuery({
+    queryKey: ['workspaces', wsId, 'members'],
+    queryFn: () => getWorkspaceUsers(wsId),
+    enabled: forceDefault,
+  });
+
+  const [roleMembersCount, setRoleMembersCount] = useState(
+    data?.user_count ?? 0
+  );
+
+  const membersCount = forceDefault
+    ? workspaceMembersQuery.data?.count
+    : roleMembersCount;
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: forceDefault ? 'DEFAULT' : data?.id,
+      id: forceDefault ? 'DEFAULT' : roleId,
       name: forceDefault ? t('ws-roles.default_permissions') : data?.name || '',
-      permissions: groups.reduce(
+      permissions: rootGroups.reduce(
         (acc, group) => {
           group.permissions.forEach((permission) => {
             acc[permission.id] =
@@ -92,11 +128,11 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
     const res = await fetch(
       forceDefault
         ? `/api/v1/workspaces/${wsId}/roles/default`
-        : data?.id
-          ? `/api/v1/workspaces/${wsId}/roles/${data.id}`
+        : roleId
+          ? `/api/v1/workspaces/${wsId}/roles/${roleId}`
           : `/api/v1/workspaces/${wsId}/roles`,
       {
-        method: data.id || forceDefault ? 'PUT' : 'POST',
+        method: roleId || forceDefault ? 'PUT' : 'POST',
         body: JSON.stringify({
           ...data,
           permissions: Object.entries(data.permissions).map(
@@ -116,13 +152,13 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
       setLoading(false);
       const data = await res.json();
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} role`,
+        title: `Failed to ${roleId ? 'edit' : 'create'} role`,
         description: data.message,
       });
     }
   };
 
-  const isEdit = !!data?.id;
+  const isEdit = !!roleId;
   const disabled = !isDirty || !isValid || isSubmitting || loading;
 
   const enabledPermissionsCount = Object.values(groups).map((group) => ({
@@ -132,7 +168,10 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
     ).length,
   }));
 
-  const sectionProps = { wsId, form, enabledPermissionsCount };
+  const sectionProps = { wsId, user, roleId, form, enabledPermissionsCount };
+  const [tab, setTab] = useState<'display' | 'permissions' | 'members'>(
+    forceDefault ? 'permissions' : 'display'
+  );
 
   return (
     <Form {...form}>
@@ -140,8 +179,14 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
         <Tabs
           defaultValue={forceDefault ? 'permissions' : 'display'}
           className="w-full"
+          value={tab}
+          onValueChange={(value) =>
+            setTab(value as 'display' | 'permissions' | 'members')
+          }
         >
-          <TabsList className="grid h-fit w-full grid-cols-1 md:grid-cols-3">
+          <TabsList
+            className={cn('grid h-fit w-full grid-cols-1 md:grid-cols-3')}
+          >
             <TabsTrigger value="display" disabled={forceDefault}>
               <Monitor className="mr-1 h-5 w-5" />
               {t('ws-roles.display')}
@@ -153,26 +198,29 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
                 (acc, group) => acc + group.count,
                 0
               )}
-              /
-              {groups.reduce((acc, group) => acc + group.permissions.length, 0)}
-              )
+              /{totalPermissions({ wsId, user })})
             </TabsTrigger>
-            <TabsTrigger value="members" disabled={forceDefault}>
+            <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />
-              {t('ws-roles.members')} (0)
+              {t('ws-roles.members')} ({membersCount})
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[70vh] pb-4">
-            <TabsContent value="display">
-              <RoleFormDisplaySection {...sectionProps} />
-            </TabsContent>
-            <TabsContent value="permissions">
-              <RoleFormPermissionsSection {...sectionProps} />
-            </TabsContent>
-            <TabsContent value="members">
-              <RoleFormMembersSection {...sectionProps} />
-            </TabsContent>
+          <ScrollArea className="h-[70vh] border-b">
+            <div className="mb-4">
+              <TabsContent value="display">
+                <RoleFormDisplaySection {...sectionProps} />
+              </TabsContent>
+              <TabsContent value="permissions">
+                <RoleFormPermissionsSection {...sectionProps} />
+              </TabsContent>
+              <TabsContent value="members">
+                <RoleFormMembersSection
+                  {...sectionProps}
+                  onUpdate={setRoleMembersCount}
+                />
+              </TabsContent>
+            </div>
           </ScrollArea>
         </Tabs>
 
@@ -186,4 +234,24 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
       </form>
     </Form>
   );
+}
+
+async function getWorkspaceUsers(wsId: string) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_user_linked_users')
+    .select(
+      'id:platform_user_id, ...workspace_users!inner(full_name, display_name), ...users(...user_private_details(email))',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('ws_id', wsId)
+    .order('platform_user_id');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: WorkspaceUser[]; count: number };
 }

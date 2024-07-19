@@ -1,4 +1,4 @@
-import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export default async function FinanceCategoryStatistics({
@@ -12,7 +12,22 @@ export default async function FinanceCategoryStatistics({
   const enabled =
     forceEnable || (await verifyHasSecrets(wsId, ['ENABLE_FINANCE']));
 
-  if (!enabled) return null;
+  const { permissions } = await getPermissions({
+    wsId,
+    requiredPermissions: [
+      'ai_chat',
+      'ai_lab',
+      'manage_calendar',
+      'manage_projects',
+      'manage_documents',
+      'manage_drive',
+      'manage_users',
+      'manage_inventory',
+      'manage_finance',
+    ],
+  });
+
+  if (!enabled || !permissions.includes('manage_finance')) return null;
 
   return (
     <div className="my-2 text-2xl font-semibold">

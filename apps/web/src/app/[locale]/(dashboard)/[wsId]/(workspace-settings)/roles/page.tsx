@@ -1,6 +1,8 @@
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { permissions, totalPermissions } from '@/lib/permissions';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceRole } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -22,17 +24,32 @@ export default async function WorkspaceRolesPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const supabase = createClient();
+
+  await getPermissions({
+    wsId,
+    requiredPermissions: ['manage_workspace_roles'],
+    redirectTo: `/${wsId}/settings`,
+  });
+
   const {
     data: rawData,
     defaultData,
     count,
   } = await getRoles(wsId, searchParams);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const t = await getTranslations();
 
   const data = rawData.map((role) => ({
     ...role,
     ws_id: wsId,
   }));
+
+  const permissionsCount = totalPermissions({ wsId, user });
 
   return (
     <>
@@ -42,9 +59,13 @@ export default async function WorkspaceRolesPage({
         description={t('ws-roles.description')}
         createTitle={t('ws-roles.create')}
         createDescription={t('ws-roles.create_description')}
-        form={<RoleForm wsId={wsId} />}
+        form={<RoleForm wsId={wsId} user={user} />}
         defaultData={defaultData}
-        secondaryTriggerTitle={t('ws-roles.manage_default_permissions')}
+        secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
+          permissions({ wsId, user }).filter((p) =>
+            defaultData.permissions.some((dp) => dp.id === p.id && dp.enabled)
+          ).length
+        }/${permissionsCount})`}
         secondaryTitle={t('ws-roles.default_permissions')}
         secondaryDescription={t('ws-roles.default_permissions_description')}
         showDefaultFormAsSecondary
@@ -52,6 +73,7 @@ export default async function WorkspaceRolesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
+        extraData={permissionsCount}
         columnGenerator={roleColumns}
         namespace="workspace-role-data-table"
         data={data}

@@ -2,7 +2,9 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
+import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Sheet,
@@ -18,7 +20,7 @@ import { useState } from 'react';
 
 interface MenuProps {
   sbUser: User | null;
-  user: any;
+  user: WorkspaceUser | null;
   t?: any;
 }
 
@@ -41,11 +43,11 @@ const navItems = (t: any) => {
     { href: '/projects', label: t('common.projects') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.docs'),
-      external: true,
-    },
+    // {
+    //   href: 'https://docs.tuturuuu.com',
+    //   label: t('common.docs'),
+    //   external: true,
+    // },
   ] as NavItem[];
 };
 
@@ -56,7 +58,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   const linkProps = {
     href: item.href,
     className: cn(
-      'line-clamp-1 h-fit transition-opacity duration-200',
+      'transition-opacity duration-200',
       isActive ? 'opacity-100' : 'opacity-50 hover:opacity-100',
       className
     ),
@@ -67,13 +69,23 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any }> = ({ t }) => (
-  <div className="hidden gap-8 font-semibold md:flex">
-    {navItems(t).map((item) => (
-      <NavLink key={item.href} item={item} />
-    ))}
-  </div>
-);
+const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
+  const pathname = usePathname();
+
+  if (
+    pathname !== '/' &&
+    !PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+  )
+    return null;
+
+  return (
+    <div className="hidden gap-8 font-semibold md:flex">
+      {navItems(t).map((item) => (
+        <NavLink key={item.href} item={item} />
+      ))}
+    </div>
+  );
+};
 
 const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
@@ -99,7 +111,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
             className="w-full items-center justify-center"
             onClick={closeMenu}
           />
-          {!user && <ThemeToggle />}
+          {!user && <ThemeToggle forceDisplay />}
         </div>
         <Separator className="my-4" />
         <div className="grid gap-2 text-center font-semibold">

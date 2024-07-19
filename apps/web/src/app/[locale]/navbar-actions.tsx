@@ -1,3 +1,5 @@
+import { LanguageWrapper } from './language-wrapper';
+import LogoTitle from './logo-title';
 import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
 import { UserNavWrapper } from './user-nav-wrapper';
@@ -12,18 +14,25 @@ export default async function NavbarActions() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="hidden items-center gap-2 md:flex">
-      {sbUser ? (
-        <>
-          <NotificationPopover />
-          <UserNavWrapper />
-        </>
-      ) : (
-        <>
-          <GetStartedButton />
-          <ThemeToggle />
-        </>
-      )}
+    <div className="relative">
+      <div className="absolute inset-y-0 right-0 flex items-center gap-1">
+        {sbUser ? (
+          <>
+            <NotificationPopover />
+            <UserNavWrapper />
+          </>
+        ) : (
+          <>
+            <GetStartedButton />
+            <LanguageWrapper />
+            <ThemeToggle />
+          </>
+        )}
+      </div>
+      <div className="pointer-events-none hidden flex-none items-center gap-2 text-transparent md:flex">
+        <div className="h-8 w-8" />
+        <LogoTitle />
+      </div>
     </div>
   );
 }

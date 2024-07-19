@@ -13,8 +13,10 @@ export default function GetStartedButton() {
   return (
     <Link
       href={`/login${pathname !== '/' ? `?nextUrl=${encodeURIComponent(pathname)}` : ''}`}
-      className={`border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5 rounded-full border px-4 py-1 text-sm transition duration-300 md:text-base ${
-        hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
+      className={`border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5 hidden flex-none rounded border px-4 py-1.5 text-sm transition duration-300 md:block md:text-base ${
+        hidden
+          ? 'text-foreground/50 pointer-events-none select-none opacity-50'
+          : 'opacity-100'
       }`}
     >
       {t('common.get-started')}

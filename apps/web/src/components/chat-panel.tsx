@@ -37,6 +37,7 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
+import { QRCode } from 'react-qrcode-logo';
 
 export interface ChatPanelProps
   extends Pick<
@@ -390,11 +391,27 @@ export function ChatPanel({
             </Button>
           </div>
 
-          <Separator className="mb-2 mt-4" />
+          {chat?.is_public && (
+            <>
+              <Separator className="my-4" />
+
+              <div className="flex items-center justify-center">
+                <QRCode
+                  value={`${window.location.origin}/ai/chats/${id}`}
+                  size={256}
+                  style={{
+                    borderRadius: '0.5rem',
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          <Separator className="my-4" />
 
           <Button
             variant="outline"
-            className="mt-2 w-full"
+            className="w-full"
             onClick={() => {
               navigator.clipboard.writeText(
                 `${window.location.origin}/ai/chats/${id}`
@@ -412,7 +429,7 @@ export function ChatPanel({
             {t('copy_public_link')}
           </Button>
           <Button
-            className="mt-2 w-full"
+            className="w-full"
             onClick={() =>
               window.open(`${window.location.origin}/ai/chats/${id}`)
             }
