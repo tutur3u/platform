@@ -10,13 +10,13 @@ export const projects: {
   {
     name: 'Neo Crush',
     description:
-      'An attempt to clone Honkai: Star Rail\'s "Origami Bird Clash" mini game.',
-    type: 'software',
+      'The first stable release of Neo Crush with new features and improvements.',
+    type: 'web',
     techStack: [
       'Next.js',
       'Typescript',
       'Tailwind CSS',
-      'Supabase',
+      'Supabase Realtime',
       'Shadcn UI',
     ],
     status: 'in-progress',
@@ -25,9 +25,88 @@ export const projects: {
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
   },
   {
+    name: 'Neo Chess',
+    description:
+      "An in-house chess game that is planned for RMIT 2024 Semester C's Club Day.",
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase Realtime',
+      'Shadcn UI',
+    ],
+    status: 'in-progress',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+  },
+  {
+    name: 'Neo Checker',
+    description:
+      "An in-house checkers game that is planned for RMIT 2024 Semester C's Club Day.",
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase Realtime',
+      'Shadcn UI',
+    ],
+    status: 'in-progress',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+  },
+  {
+    name: 'NCT-2024C Landing Page',
+    description:
+      "The landing page for RMIT 2024 Semester C's Club Day, showcasing the club's projects and activities.",
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'planning',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A revamp of the club landing page to showcase the club projects and activities.',
+  },
+  {
+    name: 'NCT AI Chatbot',
+    description:
+      "An AI chatbot that is planned for RMIT 2024 Semester C's Club Day.",
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase',
+      'Shadcn UI',
+    ],
+    status: 'planning',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A short-term project to demonstrate AI chatbot development with cutting-edge technologies.',
+  },
+  {
+    name: 'Neo Crush Alpha',
+    description:
+      "An 4-day internal hackathon game that was planned for RMIT 2024 Semester B's Club Day.",
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase',
+      'Shadcn UI',
+    ],
+    status: 'completed',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A short-term project to demonstrate game development with short deadline.',
+  },
+  {
     name: 'NCT Hub',
     description:
-      'The second version of the club web platform, based on Tuturuuu.',
+      'The official web-based platform for RMIT Neo Culture Tech, based on Tuturuuu.',
     type: 'web',
     techStack: [
       'Next.js',
@@ -37,7 +116,7 @@ export const projects: {
       'Supabase',
       'Shadcn UI',
     ],
-    status: 'in-progress',
+    status: 'completed',
     manager: 'Vo Hoang Phuc',
     purpose:
       'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
@@ -93,7 +172,7 @@ export const projects: {
     description: 'A custom bluetooth keyboard.',
     type: 'hardware',
     techStack: ['C++', 'BLE'],
-    status: 'in-progress',
+    status: 'completed',
     manager: 'Dinh Ngoc Minh',
     purpose:
       'Build a Multifunctional Bluetooth Keyboard for Calculation, Bluetooth Connectivity, and Application Resource Monitoring.',
@@ -112,7 +191,7 @@ export const projects: {
     description: 'A fingerprint lock with sensors.',
     type: 'hardware',
     techStack: ['C++', 'Arduino'],
-    status: 'planning',
+    status: 'completed',
     manager: 'Cao Viet Quang',
     purpose:
       'Hands on intermediate embedded project with hardware design and C programming.',
