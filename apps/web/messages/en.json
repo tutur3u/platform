@@ -893,6 +893,8 @@
     "permissions": "Permissions",
     "members": "Members",
     "name": "Name",
+    "admin": "Administrator",
+    "admin_description": "Full access to all features and settings.",
     "infrastructure": "Infrastructure",
     "view_infrastructure": "View infrastructure",
     "view_infrastructure_description": "Allows members to view infrastructure statistics and settings.",

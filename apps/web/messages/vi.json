@@ -894,6 +894,8 @@
     "permissions": "Phân quyền",
     "members": "Thành viên",
     "name": "Tên",
+    "admin": "Quản trị viên",
+    "admin_description": "Truy cập đầy đủ vào tất cả các tính năng và cài đặt.",
     "infrastructure": "Cơ sở hạ tầng",
     "view_infrastructure": "Xem cơ sở hạ tầng",
     "view_infrastructure_description": "Cho phép thành viên xem thống kê và cài đặt cơ sở hạ tầng.",
