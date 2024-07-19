@@ -15,7 +15,7 @@ export default async function Footer() {
           <Link
             href="/"
             className="flex items-center gap-4 transition dark:hover:text-blue-200"
-            aria-label="Tuturuuu"
+            aria-label="Neo Culture Tech"
           >
             <div className="h-12 w-12">
               <svg
