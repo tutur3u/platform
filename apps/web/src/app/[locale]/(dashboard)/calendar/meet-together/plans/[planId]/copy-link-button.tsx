@@ -1,11 +1,18 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@repo/ui/components/ui/button';
 import { Check, LinkIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-export default function CopyLinkButton({ url }: { url: string }) {
+export default function CopyLinkButton({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
   const t = useTranslations('meet-together-plan-details');
   const [copied, setCopied] = useState(false);
 
@@ -23,7 +30,7 @@ export default function CopyLinkButton({ url }: { url: string }) {
         navigator.clipboard.writeText(url);
         setCopied(true);
       }}
-      className="w-full md:w-auto"
+      className={cn('w-full md:w-auto', className)}
       disabled={copied || !url}
     >
       {copied ? (

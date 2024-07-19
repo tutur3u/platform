@@ -119,7 +119,8 @@
     "formats": "Formats",
     "foreground": "Foreground",
     "background": "Background",
-    "scan_me": "Scan me"
+    "scan_me": "Scan me",
+    "qr_code": "QR Code"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -244,7 +245,9 @@
     "no_users_yet": "No users yet",
     "are_you_absolutely_sure": "Are you absolutely sure?",
     "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from Tuturuuu.",
-    "select_users_to_filter": "Select users to filter"
+    "select_users_to_filter": "Select users to filter",
+    "show_qr_code": "Show QR Code",
+    "qr_code_description": "Scan this QR code to quickly access the meet together plan details."
   },
   "invite": {
     "invited-to": "You have been invited to join",
