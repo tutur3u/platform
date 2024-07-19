@@ -10,7 +10,6 @@ const nextConfig = {
     ppr: true,
     // reactCompiler: true,
     optimizeServerReact: true,
-    serverComponentsHmrCache: true,
   },
   transpilePackages: ['@repo/ui'],
   images: {
