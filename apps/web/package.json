@@ -76,7 +76,7 @@
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
     "next": "15.0.0-canary.73",
-    "next-intl": "^3.17.1",
+    "next-intl": "^3.17.2",
     "next-themes": "^0.3.0",
     "openai": "^4.52.7",
     "pptxgenjs": "^3.12.0",
