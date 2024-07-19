@@ -20,6 +20,7 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -32,7 +33,17 @@ const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   permissions: z.object(
-    permissionGroups({ wsId: ROOT_WORKSPACE_ID }).reduce(
+    permissionGroups({
+      wsId: ROOT_WORKSPACE_ID,
+      user: {
+        id: 'default',
+        email: 'contact@tuturuuu.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: '',
+        created_at: '',
+      },
+    }).reduce(
       (acc, group) => {
         group.permissions.forEach((permission) => {
           acc[permission.id] = z.boolean();
@@ -48,6 +59,7 @@ type FormType = z.infer<typeof FormSchema>;
 
 interface Props {
   wsId: string;
+  user: User | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
   onFinish?: (data: FormType) => void;
@@ -55,19 +67,20 @@ interface Props {
 
 export interface SectionProps {
   wsId: string;
+  user: User | null;
   roleId?: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
 
-export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
+export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
   const roleId = data?.id;
 
-  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID });
-  const groups = permissionGroups({ t, wsId });
+  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID, user });
+  const groups = permissionGroups({ t, wsId, user });
 
   const workspaceMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'members'],
@@ -155,7 +168,7 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
     ).length,
   }));
 
-  const sectionProps = { wsId, roleId, form, enabledPermissionsCount };
+  const sectionProps = { wsId, user, roleId, form, enabledPermissionsCount };
   const [tab, setTab] = useState<'display' | 'permissions' | 'members'>(
     forceDefault ? 'permissions' : 'display'
   );
@@ -185,7 +198,7 @@ export function RoleForm({ wsId, data, forceDefault, onFinish }: Props) {
                 (acc, group) => acc + group.count,
                 0
               )}
-              /{totalPermissions(wsId)})
+              /{totalPermissions({ wsId, user })})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />

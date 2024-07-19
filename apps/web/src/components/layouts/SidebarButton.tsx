@@ -1,5 +1,4 @@
 import { DEV_MODE } from '@/constants/common';
-import { useAppearance } from '@/hooks/useAppearance';
 import { Tooltip } from '@mantine/core';
 import React from 'react';
 
@@ -31,9 +30,6 @@ export default function SidebarButton({
   classNames,
   disabled = false,
 }: SidebarButtonProps) {
-  const { sidebar } = useAppearance();
-  const isExpanded = sidebar === 'open';
-
   if (disabled && !DEV_MODE) return null;
 
   return (
@@ -46,7 +42,7 @@ export default function SidebarButton({
       <div
         onClick={disabled ? undefined : onClick}
         className={`flex select-none items-center gap-2 rounded p-2 ${
-          left || isExpanded ? 'justify-start' : 'justify-center'
+          left ? 'justify-start' : 'justify-center'
         } ${
           disabled
             ? 'cursor-not-allowed text-zinc-600'

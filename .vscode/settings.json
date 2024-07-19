@@ -29,5 +29,8 @@
   ],
   "i18n-ally.keystyle": "nested",
   "codeQL.githubDatabase.update": "never",
-  "codeQL.githubDatabase.download": "never"
+  "codeQL.githubDatabase.download": "never",
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  }
 }

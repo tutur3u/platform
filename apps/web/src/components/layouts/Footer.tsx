@@ -142,6 +142,12 @@ export default async function Footer() {
             >
               {t('common.meet-together')}
             </Link>
+            <Link
+              href="/qr-generator"
+              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.qr_generator')}
+            </Link>
             {/* <Link
               href="/branding"
               target="_blank"

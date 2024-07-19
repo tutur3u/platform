@@ -1,3 +1,4 @@
+import { LanguageWrapper } from './language-wrapper';
 import LogoTitle from './logo-title';
 import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
@@ -23,6 +24,7 @@ export default async function NavbarActions() {
         ) : (
           <>
             <GetStartedButton />
+            <LanguageWrapper />
             <ThemeToggle />
           </>
         )}

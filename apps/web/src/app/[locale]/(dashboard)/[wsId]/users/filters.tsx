@@ -211,7 +211,7 @@ export function UserDatabaseFilter({
       </PopoverTrigger>
       <PopoverContent
         className={cn('w-[min(calc(100vw-1rem),24rem)] p-0', contentClassName)}
-        align={isMobile ? 'center' : align ?? 'start'}
+        align={isMobile ? 'center' : (align ?? 'start')}
       >
         <Command shouldFilter={false}>
           <CommandInput

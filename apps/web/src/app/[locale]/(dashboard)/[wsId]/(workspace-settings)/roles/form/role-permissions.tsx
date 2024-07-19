@@ -14,17 +14,43 @@ import { Fragment } from 'react';
 
 export default function RoleFormPermissionsSection({
   wsId,
+  user,
   form,
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
-  const groups = permissionGroups({ t, wsId });
+  const groups = permissionGroups({ t, wsId, user });
 
   return (
     <>
       <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
         {form.watch('name') || '-'}
       </div>
+
+      <div className="rounded border p-4">
+        <RolePermission
+          title={t('ws-roles.admin')}
+          description={t('ws-roles.admin_description')}
+          value={groups.every((group) =>
+            group.permissions.every(
+              (permission) =>
+                form.watch(`permissions.${permission.id}`) === true
+            )
+          )}
+          onChange={(value) => {
+            groups.forEach((group) =>
+              group.permissions.forEach((permission) => {
+                form.setValue(`permissions.${permission.id}`, value, {
+                  shouldDirty: true,
+                });
+              })
+            );
+            form.trigger('permissions');
+          }}
+        />
+      </div>
+
+      <Separator className="my-4" />
 
       <Accordion
         type="multiple"
