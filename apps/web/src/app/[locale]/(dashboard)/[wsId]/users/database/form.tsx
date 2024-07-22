@@ -85,7 +85,10 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
           : `/api/v1/workspaces/${wsId}/users`,
         {
           method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            ...data,
+            birthday: data.birthday?.toISOString(),
+          }),
         }
       );
 
