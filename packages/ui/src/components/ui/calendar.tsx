@@ -13,8 +13,12 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  onSubmit,
   ...props
-}: CalendarProps) {
+}: CalendarProps & {
+  // eslint-disable-next-line no-unused-vars
+  onSubmit?: (date: Date) => void;
+}) {
   return (
     <>
       <div className="flex items-center justify-center p-2">
@@ -23,6 +27,7 @@ function Calendar({
           // @ts-ignore
           // eslint-disable-next-line no-unused-vars
           onChange={props.onSelect as unknown as (date: Date) => void}
+          onSubmit={onSubmit}
         />
       </div>
       <DayPicker

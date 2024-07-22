@@ -61,7 +61,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
       id: data?.id,
       full_name: data?.full_name || '',
       display_name: data?.display_name || '',
-      email: data?.email,
+      email: data?.email || undefined,
       phone: data?.phone || '',
       gender: data?.gender?.toLocaleUpperCase() as
         | 'MALE'

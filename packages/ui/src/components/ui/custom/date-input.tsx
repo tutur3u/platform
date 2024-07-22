@@ -4,6 +4,8 @@ interface DateInputProps {
   value?: Date;
   // eslint-disable-next-line no-unused-vars
   onChange?: (date: Date) => void;
+  // eslint-disable-next-line no-unused-vars
+  onSubmit?: (date: Date) => void;
 }
 
 interface DateParts {
@@ -12,7 +14,7 @@ interface DateParts {
   year: number;
 }
 
-const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
+const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
   const [date, setDate] = React.useState<DateParts>(() => {
     const d = value ? new Date(value) : new Date();
     return {
@@ -214,6 +216,14 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
           if (field === 'month') dayRef.current?.focus();
           if (field === 'year') monthRef.current?.focus();
         }
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dayRef.current?.blur();
+        monthRef.current?.blur();
+        yearRef.current?.blur();
+        onSubmit?.(new Date(date.year, date.month - 1, date.day));
       }
     };
 
