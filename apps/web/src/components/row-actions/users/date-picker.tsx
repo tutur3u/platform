@@ -44,7 +44,7 @@ export function DatePicker({ defaultValue, onValueChange, className }: Props) {
             setDate(date);
             onValueChange?.(date);
           }}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>
