@@ -1,5 +1,4 @@
 import { createAdminClient, createClient } from '@/utils/supabase/server';
-import dayjs from 'dayjs';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -118,7 +117,6 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
 
   const { error } = await supabase.from('workspace_users').insert({
     ...data,
-    birthday: data.birthday ? dayjs(data.birthday).format('YYYY-MM-DD') : null,
     ws_id: id,
   });
 

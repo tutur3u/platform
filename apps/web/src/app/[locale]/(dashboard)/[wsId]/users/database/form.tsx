@@ -87,7 +87,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify({
             ...data,
-            birthday: data.birthday?.toISOString(),
+            birthday: dayjs(data.birthday).format('YYYY-MM-DD'),
           }),
         }
       );
