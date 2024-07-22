@@ -78,7 +78,7 @@
     "next": "15.0.0-canary.76",
     "next-intl": "^3.17.2",
     "next-themes": "^0.3.0",
-    "openai": "^4.52.7",
+    "openai": "^4.53.0",
     "pptxgenjs": "^3.12.0",
     "react": "19.0.0-rc-6230622a1a-20240610",
     "react-beautiful-dnd": "^13.1.1",
