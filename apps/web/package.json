@@ -38,7 +38,7 @@
     "@ai-sdk/google-vertex": "^0.0.16",
     "@ai-sdk/mistral": "^0.0.22",
     "@ai-sdk/openai": "^0.0.37",
-    "@ai-sdk/react": "^0.0.25",
+    "@ai-sdk/react": "^0.0.26",
     "@anthropic-ai/sdk": "^0.24.3",
     "@deepgram/sdk": "^3.5.0",
     "@emotion/react": "^11.13.0",
