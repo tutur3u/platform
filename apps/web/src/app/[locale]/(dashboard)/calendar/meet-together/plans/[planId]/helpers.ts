@@ -1,10 +1,8 @@
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { createAdminClient } from '@/utils/supabase/server';
-import { unstable_noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 
 export async function getPlan(planId: string) {
-  unstable_noStore();
   const sbAdmin = createAdminClient();
 
   // planId is an uuid without dashes, so we need to add them back in

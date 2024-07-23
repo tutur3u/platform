@@ -1,6 +1,7 @@
 import { getPlan } from './helpers';
 import { siteConfig } from '@/constants/configs';
 import { Metadata } from 'next';
+import { unstable_noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -16,6 +17,7 @@ interface Props {
 export const generateMetadata = async ({
   params: { locale, planId },
 }: Props): Promise<Metadata> => {
+  unstable_noStore();
   try {
     const viTitle = 'Họp cùng nhau';
     const enTitle = 'Meet together';

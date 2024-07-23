@@ -2,6 +2,7 @@ import { siteConfig } from '@/constants/configs';
 import { AIChat } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Metadata } from 'next';
+import { unstable_noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -35,6 +36,7 @@ const getChat = async (chatId: string) => {
 export const generateMetadata = async ({
   params: { locale, chatId },
 }: Props): Promise<Metadata> => {
+  unstable_noStore();
   try {
     const viTitle = 'Trò chuyện AI';
     const enTitle = 'AI Chat';

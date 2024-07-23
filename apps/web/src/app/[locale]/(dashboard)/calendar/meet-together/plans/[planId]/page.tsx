@@ -9,7 +9,6 @@ import { getCurrentUser } from '@/lib/user-helper';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import 'dayjs/locale/vi';
-import { unstable_noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -23,7 +22,6 @@ export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
   const platformUser = await getCurrentUser(true);
-
   const plan = await getPlan(planId);
   const users = await getUsers(planId);
   const timeblocks = await getTimeBlocks(planId);
@@ -71,7 +69,6 @@ export default async function MeetTogetherPlanDetailsPage({
 }
 
 async function getUsers(planId: string) {
-  unstable_noStore();
   const sbAdmin = createAdminClient();
 
   const { data, error } = await sbAdmin
@@ -88,7 +85,6 @@ async function getUsers(planId: string) {
 }
 
 async function getTimeBlocks(planId: string) {
-  unstable_noStore();
   const sbAdmin = createAdminClient();
 
   const guestQueryBuilder = sbAdmin
