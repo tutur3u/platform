@@ -2,10 +2,8 @@ import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
 import { AIChat } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
+import { unstable_noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
-export const experimental_ppr = false;
 
 interface Props {
   params: {
@@ -53,6 +51,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async (chatId: string) => {
+  unstable_noStore();
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -74,6 +73,7 @@ const getMessages = async (chatId: string) => {
 };
 
 const getChat = async (chatId: string) => {
+  unstable_noStore();
   const supabase = createAdminClient();
 
   const { data, error } = await supabase

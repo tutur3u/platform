@@ -1,8 +1,10 @@
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
+import { unstable_noStore } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {
+  unstable_noStore();
   const supabase = createClient();
 
   const {
@@ -13,6 +15,7 @@ export async function getCurrentSupabaseUser() {
 }
 
 export async function getCurrentUser(noRedirect?: boolean) {
+  unstable_noStore();
   const supabase = createClient();
 
   const {
