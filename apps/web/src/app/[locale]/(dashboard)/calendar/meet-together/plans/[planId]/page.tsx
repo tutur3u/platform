@@ -12,6 +12,9 @@ import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+export const dynamic = 'force-dynamic';
+export const experimental_ppr = false;
+
 interface Props {
   params: {
     planId: string;
