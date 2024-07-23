@@ -21,17 +21,19 @@ function Calendar({
 }) {
   return (
     <>
-      <div className="flex items-center justify-center p-2">
-        <DateInput
-          value={props.selected as Date}
-          // @ts-ignore
-          // eslint-disable-next-line no-unused-vars
-          onChange={props.onSelect as unknown as (date: Date) => void}
-          onSubmit={onSubmit}
-        />
-      </div>
+      {props.mode === 'single' && (
+        <div className="flex items-center justify-center p-2">
+          <DateInput
+            value={props.selected as Date}
+            // @ts-ignore
+            // eslint-disable-next-line no-unused-vars
+            onChange={props.onSelect as unknown as (date: Date) => void}
+            onSubmit={onSubmit}
+          />
+        </div>
+      )}
       <DayPicker
-        month={props.selected as Date}
+        month={props.mode === 'single' ? (props.selected as Date) : undefined}
         showOutsideDays={showOutsideDays}
         className={cn('p-3', className)}
         classNames={{
@@ -78,6 +80,7 @@ function Calendar({
     </>
   );
 }
+
 Calendar.displayName = 'Calendar';
 
 export { Calendar };
