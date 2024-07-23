@@ -125,7 +125,10 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          birthday: dayjs(data.birthday).format('YYYY/MM/DD'),
+        }),
       }
     );
 
