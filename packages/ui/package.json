@@ -44,7 +44,7 @@
     "embla-carousel-react": "^8.1.7",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.414.0",
+    "lucide-react": "^0.416.0",
     "next-themes": "^0.3.0",
     "react": "19.0.0-rc-6230622a1a-20240610",
     "react-colorful": "^5.6.1",
@@ -70,10 +70,10 @@
     "@types/react": "^18.3.3",
     "@types/react-resizable": "^3.0.8",
     "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.39",
+    "postcss": "^8.4.40",
     "postcss-load-config": "^6.0.1",
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss": "^3.4.6",
+    "tailwindcss": "^3.4.7",
     "typescript": "^5.5.4"
   },
   "exports": {
