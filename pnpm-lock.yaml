@@ -39,8 +39,8 @@ importers:
   apps/web:
     dependencies:
       '@ai-sdk/amazon-bedrock':
-        specifier: ^0.0.8
-        version: 0.0.8(zod@3.23.8)
+        specifier: ^0.0.9
+        version: 0.0.9(zod@3.23.8)
       '@ai-sdk/anthropic':
         specifier: ^0.0.32
         version: 0.0.32(zod@3.23.8)
@@ -552,8 +552,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/amazon-bedrock@0.0.8':
-    resolution: {integrity: sha512-VwkQbnjQWKyel3iF7HAvXyIYUEDD/DghuAa4GDdW6cyDadmZhHqIPwyUscY9dWMhOKTBAznKhTPzGJEaedYxww==}
+  '@ai-sdk/amazon-bedrock@0.0.9':
+    resolution: {integrity: sha512-QUjFTvenYmThQgm6feCftf/TdxIjqr9V87MUUXh7iuG983/HehNd3HkYf0AENBE4GyHuvE68+1FB5Qd4hZjZHQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -609,8 +609,21 @@ packages:
       zod:
         optional: true
 
+  '@ai-sdk/provider-utils@1.0.5':
+    resolution: {integrity: sha512-XfOawxk95X3S43arn2iQIFyWGMi0DTxsf9ETc6t7bh91RPWOOPYN1tsmS5MTKD33OGJeaDQ/gnVRzXUCRBrckQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   '@ai-sdk/provider@0.0.13':
     resolution: {integrity: sha512-RBstpG/3RqVBBJgTvjZpou/+1fNQMDIwB9enqQPXqr0MoCrJHscLD2Zsfr6cKM5HFfY1D4KhdSPTycCDebVGlQ==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@0.0.14':
+    resolution: {integrity: sha512-gaQ5Y033nro9iX1YUjEDFDRhmMcEiCk56LJdIUbX5ozEiCNCfpiBpEqrjSp/Gp5RzBS2W0BVxfG7UGW6Ezcrzg==}
     engines: {node: '>=18'}
 
   '@ai-sdk/react@0.0.28':
@@ -7037,10 +7050,10 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/amazon-bedrock@0.0.8(zod@3.23.8)':
+  '@ai-sdk/amazon-bedrock@0.0.9(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/provider': 0.0.13
-      '@ai-sdk/provider-utils': 1.0.4(zod@3.23.8)
+      '@ai-sdk/provider': 0.0.14
+      '@ai-sdk/provider-utils': 1.0.5(zod@3.23.8)
       '@aws-sdk/client-bedrock-runtime': 3.602.0
       zod: 3.23.8
     transitivePeerDependencies:
@@ -7101,7 +7114,20 @@ snapshots:
     optionalDependencies:
       zod: 3.23.8
 
+  '@ai-sdk/provider-utils@1.0.5(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider': 0.0.14
+      eventsource-parser: 1.1.2
+      nanoid: 3.3.6
+      secure-json-parse: 2.7.0
+    optionalDependencies:
+      zod: 3.23.8
+
   '@ai-sdk/provider@0.0.13':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@0.0.14':
     dependencies:
       json-schema: 0.4.0
 
