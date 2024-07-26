@@ -105,7 +105,7 @@
     "@next/eslint-plugin-next": "15.0.0-canary.83",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@tanstack/eslint-plugin-query": "^5.51.13",
+    "@tanstack/eslint-plugin-query": "^5.51.15",
     "@tanstack/react-query-devtools": "^5.51.11",
     "@testing-library/react": "^16.0.0",
     "@types/cookie": "^0.6.0",
