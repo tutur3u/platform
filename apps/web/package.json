@@ -39,7 +39,7 @@
     "@ai-sdk/mistral": "^0.0.25",
     "@ai-sdk/openai": "^0.0.40",
     "@ai-sdk/react": "^0.0.30",
-    "@anthropic-ai/sdk": "^0.24.3",
+    "@anthropic-ai/sdk": "^0.25.0",
     "@deepgram/sdk": "^3.5.0",
     "@emotion/react": "^11.13.0",
     "@emotion/server": "^11.11.0",
