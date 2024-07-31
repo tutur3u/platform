@@ -72,7 +72,7 @@
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.12",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.417.0",
+    "lucide-react": "^0.418.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
     "next": "15.0.0-canary.94",
