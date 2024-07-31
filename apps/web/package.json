@@ -128,7 +128,7 @@
     "postcss": "^8.4.40",
     "supabase": "^1.187.10",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.5"
   },
   "workspaces": [
     "apps/*",
