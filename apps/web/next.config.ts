@@ -1,16 +1,15 @@
+import { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
     ppr: true,
     // reactCompiler: true,
     optimizeServerReact: true,
-    serverComponentsHmrCache: true,
   },
   transpilePackages: ['@repo/ui'],
   images: {

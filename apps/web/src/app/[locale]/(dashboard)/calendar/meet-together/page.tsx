@@ -41,9 +41,7 @@ export default async function MeetTogetherPage({
           </p>
         </div>
       </div>
-
       <Form />
-
       <Separator className="mb-4 mt-8 md:mt-16" />
 
       <div className="text-foreground flex w-full flex-col items-center justify-center p-4 pb-8">

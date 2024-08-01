@@ -7,6 +7,7 @@ import {
 } from '@repo/ui/components/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 
 export function CustomDataTable<TData, TValue>({
   namespace,
@@ -21,21 +22,25 @@ export function CustomDataTable<TData, TValue>({
   const pageIndex = page > 0 ? page - 1 : 0;
 
   return (
-    <DataTable
-      t={t}
-      namespace={namespace}
-      pageIndex={pageIndex || 0}
-      pageSize={pageSize || 10}
-      onRefresh={() => router.refresh()}
-      defaultQuery={searchParams.getSingle('q', '')}
-      onSearch={(query: string) =>
-        query ? searchParams.set({ q: query, page: '1' }) : searchParams.reset()
-      }
-      setParams={(params) => searchParams.set(params)}
-      resetParams={() => searchParams.reset()}
-      isEmpty={searchParams.isEmpty}
-      newObjectTitle={t('common.create')}
-      {...props}
-    />
+    <Suspense fallback={null}>
+      <DataTable
+        t={t}
+        namespace={namespace}
+        pageIndex={pageIndex || 0}
+        pageSize={pageSize || 10}
+        onRefresh={() => router.refresh()}
+        defaultQuery={searchParams.getSingle('q', '')}
+        onSearch={(query: string) =>
+          query
+            ? searchParams.set({ q: query, page: '1' })
+            : searchParams.reset()
+        }
+        setParams={(params) => searchParams.set(params)}
+        resetParams={() => searchParams.reset()}
+        isEmpty={searchParams.isEmpty}
+        newObjectTitle={t('common.create')}
+        {...props}
+      />
+    </Suspense>
   );
 }

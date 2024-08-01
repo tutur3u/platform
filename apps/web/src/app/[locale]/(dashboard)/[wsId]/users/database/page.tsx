@@ -1,5 +1,6 @@
 import { getUserColumns } from './columns';
 import Filters from './filters';
+import UserForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -47,7 +48,7 @@ export default async function WorkspaceUsersPage({
         description={t('description')}
         createTitle={t('create')}
         createDescription={t('create_description')}
-        // form={<UserForm wsId={wsId} />}
+        form={<UserForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

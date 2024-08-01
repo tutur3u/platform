@@ -62,11 +62,9 @@ export default async function WorkspaceRolesPage({
         form={<RoleForm wsId={wsId} user={user} />}
         defaultData={defaultData}
         secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
-          defaultData.permissions
-            .filter((p) =>
-              permissions({ wsId, user }).some((dp) => dp.id === p.id)
-            )
-            .filter((p) => p.enabled).length
+          permissions({ wsId, user }).filter((p) =>
+            defaultData.permissions.some((dp) => dp.id === p.id && dp.enabled)
+          ).length
         }/${permissionsCount})`}
         secondaryTitle={t('ws-roles.default_permissions')}
         secondaryDescription={t('ws-roles.default_permissions_description')}

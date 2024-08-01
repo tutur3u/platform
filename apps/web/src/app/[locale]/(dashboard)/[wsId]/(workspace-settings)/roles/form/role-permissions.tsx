@@ -27,6 +27,31 @@ export default function RoleFormPermissionsSection({
         {form.watch('name') || '-'}
       </div>
 
+      <div className="rounded border p-4">
+        <RolePermission
+          title={t('ws-roles.admin')}
+          description={t('ws-roles.admin_description')}
+          value={groups.every((group) =>
+            group.permissions.every(
+              (permission) =>
+                form.watch(`permissions.${permission.id}`) === true
+            )
+          )}
+          onChange={(value) => {
+            groups.forEach((group) =>
+              group.permissions.forEach((permission) => {
+                form.setValue(`permissions.${permission.id}`, value, {
+                  shouldDirty: true,
+                });
+              })
+            );
+            form.trigger('permissions');
+          }}
+        />
+      </div>
+
+      <Separator className="my-4" />
+
       <Accordion
         type="multiple"
         // defaultValue={groups.map((group) => `group-${group.id}`)}

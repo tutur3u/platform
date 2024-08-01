@@ -1,5 +1,5 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { getTranslations } from 'next-intl/server';
 
@@ -29,7 +29,22 @@ export default async function UnitsStatistics({
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  if (!enabled) return null;
+  const { permissions } = await getPermissions({
+    wsId,
+    requiredPermissions: [
+      'ai_chat',
+      'ai_lab',
+      'manage_calendar',
+      'manage_projects',
+      'manage_documents',
+      'manage_drive',
+      'manage_users',
+      'manage_inventory',
+      'manage_finance',
+    ],
+  });
+
+  if (!enabled || !permissions.includes('manage_inventory')) return null;
 
   return (
     <StatisticCard
