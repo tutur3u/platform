@@ -36,9 +36,9 @@
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.5",
     "@repo/typescript-config": "workspace:*",
-    "turbo": "^2.0.10",
+    "turbo": "^2.0.11",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.5"
   },
   "engines": {
     "node": ">=20.0.0"
