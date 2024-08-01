@@ -119,7 +119,8 @@
     "formats": "Định dạng",
     "foreground": "Màu chi tiết",
     "background": "Màu nền",
-    "scan_me": "Quét mã QR"
+    "scan_me": "Quét mã QR",
+    "qr_code": "Mã QR"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -244,7 +245,9 @@
     "no_users_yet": "Chưa có người dùng nào",
     "are_you_absolutely_sure": "Bạn có chắc chắn không?",
     "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của Tuturuuu.",
-    "select_users_to_filter": "Chọn người dùng để lọc kết quả"
+    "select_users_to_filter": "Chọn người dùng để lọc kết quả",
+    "show_qr_code": "Xem mã QR",
+    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt."
   },
   "invite": {
     "invited-to": "Bạn được mời vào",
@@ -357,7 +360,8 @@
     "invite-people": "Mời người dùng",
     "collapse-sidebar": "Đóng thanh bên",
     "expand-sidebar": "Mở thanh bên",
-    "slides": "Trang trình bày"
+    "slides": "Trang trình bày",
+    "mailbox": "Hộp thư"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -893,6 +897,8 @@
     "permissions": "Phân quyền",
     "members": "Thành viên",
     "name": "Tên",
+    "admin": "Quản trị viên",
+    "admin_description": "Truy cập đầy đủ vào tất cả các tính năng và cài đặt.",
     "infrastructure": "Cơ sở hạ tầng",
     "view_infrastructure": "Xem cơ sở hạ tầng",
     "view_infrastructure_description": "Cho phép thành viên xem thống kê và cài đặt cơ sở hạ tầng.",

@@ -125,25 +125,6 @@ export const models: {
   },
 
   {
-    value: 'gemma-2b-it',
-    label: 'gemma-2b-it',
-    provider: 'Google',
-    description:
-      'Gemma is a family of lightweight, state-of-the-art open models built from the same research and technology used to create the Gemini models.',
-    context: 8000,
-    disabled: true,
-  },
-  {
-    value: 'gemma-7b-it',
-    label: 'gemma-7b-it',
-    provider: 'Google',
-    description:
-      'Gemma is a family of lightweight, state-of-the-art open models built from the same research and technology used to create the Gemini models.',
-    context: 8000,
-    disabled: true,
-  },
-
-  {
     value: 'llama-2-7b-chat',
     label: 'llama-2-7b-chat',
     provider: 'Meta',
@@ -344,85 +325,12 @@ export const models: {
   },
 
   {
-    value: 'gpt-4',
-    label: 'gpt-4',
-    provider: 'OpenAI',
-    description:
-      'GPT-4 from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately.',
-    context: 8192,
-    disabled: true,
-  },
-  {
-    value: 'gpt-4-0613',
-    label: 'gpt-4-0613',
-    provider: 'OpenAI',
-    description:
-      'Snapshot of gpt-4 from June 13th 2023 with function calling data. Unlike gpt-4, this model does not receive updates, and is deprecated 3 months after a new version is released.',
-    context: 8192,
-    disabled: true,
-  },
-  {
-    value: 'gpt-4-1106-preview',
-    label: 'gpt-4-1106-preview',
-    provider: 'OpenAI',
-    description:
-      'The latest GPT-4 model with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more. Returns a maximum of 4,096 output tokens. This preview model is not yet suited for production traffic.',
-    context: 128000,
-    disabled: true,
-  },
-  {
-    value: 'gpt-4-turbo',
-    label: 'gpt-4-turbo',
-    provider: 'OpenAI',
-    description:
-      'gpt-4-turbo from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It has a knowledge cutoff of April 2023 and a 128,000 token context window.',
-    context: 128000,
-    disabled: true,
-  },
-  {
-    value: 'gpt-4o',
-    label: 'gpt-4o',
-    provider: 'OpenAI',
-    description:
-      'GPT-4o from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It matches GPT-4 Turbo performance with a faster and cheaper API.',
-    context: 128000,
-    disabled: true,
-  },
-  {
     value: 'gpt-3.5-turbo',
     label: 'gpt-3.5-turbo',
     provider: 'OpenAI',
     description:
       "OpenAI's most capable and cost effective model in the GPT-3.5 family optimized for chat purposes, but also works well for traditional completions tasks.",
     context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'gpt-3.5-turbo-1106',
-    label: 'gpt-3.5-turbo-1106',
-    provider: 'OpenAI',
-    description:
-      'The latest GPT-3.5 Turbo model with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more. Returns a maximum of 4,096 output tokens.',
-    context: 16384,
-    disabled: true,
-  },
-  {
-    value: 'gpt-3.5-turbo-16k',
-    label: 'gpt-3.5-turbo-16k',
-    provider: 'OpenAI',
-    description:
-      'Same capabilities as the standard gpt-3.5-turbo model but with 4 times the context.',
-    context: 16384,
-    disabled: true,
-  },
-  {
-    value: 'gpt-3.5-turbo-16k-0613',
-    label: 'gpt-3.5-turbo-16k-0613',
-    provider: 'OpenAI',
-    description:
-      'Snapshot of gpt-3.5-turbo-16k from June 13th 2023. Unlike gpt-3.5-turbo-16k, this model does not receive updates, and will be deprecated 3 months after a new version is released.',
-    context: 16384,
-    disabled: true,
   },
   {
     value: 'gpt-3.5-turbo-instruct',
@@ -431,9 +339,48 @@ export const models: {
     description:
       'Similar capabilities as GPT-3 era models. Compatible with legacy Completions endpoint and not Chat Completions.',
     context: 4096,
-    disabled: true,
   },
-] as const;
+  {
+    value: 'gpt-4',
+    label: 'gpt-4',
+    provider: 'OpenAI',
+    description:
+      'GPT-4 from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately.',
+    context: 8192,
+  },
+  {
+    value: 'gpt-4-turbo',
+    label: 'gpt-4-turbo',
+    provider: 'OpenAI',
+    description:
+      'gpt-4-turbo from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It has a knowledge cutoff of April 2023 and a 128,000 token context window.',
+    context: 128000,
+  },
+  {
+    value: 'gpt-4o',
+    label: 'gpt-4o',
+    provider: 'OpenAI',
+    description:
+      'GPT-4o from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It matches GPT-4 Turbo performance with a faster and cheaper API.',
+    context: 128000,
+  },
+  {
+    value: 'gpt-4o-mini',
+    label: 'gpt-4o-mini',
+    provider: 'OpenAI',
+    description:
+      'GPT-4o mini from OpenAI is their most advanced and cost-efficient small model. It is multi-modal (accepting text or image inputs and outputting text) and has higher intelligence than gpt-3.5-turbo but is just as fast.',
+    context: 128000,
+  },
+].sort(
+  // Sort by provider (ones that have all models disabled should be at the end)
+  (a, b) => {
+    if (a.disabled && b.disabled) return 0;
+    if (a.disabled) return 1;
+    if (b.disabled) return -1;
+    return a.provider.localeCompare(b.provider);
+  }
+);
 
 const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel =

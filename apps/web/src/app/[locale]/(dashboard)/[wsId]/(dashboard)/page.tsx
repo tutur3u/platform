@@ -34,7 +34,9 @@ import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getWorkspace } from '@/lib/workspace-helper';
 import { createAdminClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -45,6 +47,7 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
+  const t = await getTranslations();
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
 
@@ -54,6 +57,19 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
   return (
     <>
+      <FeatureSummary
+        pluralTitle={t('ws-home.home')}
+        description={
+          <>
+            {t('ws-home.description_p1')}{' '}
+            <span className="text-foreground font-semibold underline">
+              {workspace.name || t('common.untitled')}
+            </span>{' '}
+            {t('ws-home.description_p2')}
+          </>
+        }
+      />
+
       <FinanceCategoryStatistics wsId={wsId} />
 
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">

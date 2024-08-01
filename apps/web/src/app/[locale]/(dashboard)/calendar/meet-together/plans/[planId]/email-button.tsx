@@ -21,6 +21,7 @@ export default function EmailButton({
           : '#'
       }
       target="_blank"
+      className="hidden md:block"
     >
       <Button variant="outline" disabled={!url}>
         <Mail className="mr-1 h-5 w-5" />

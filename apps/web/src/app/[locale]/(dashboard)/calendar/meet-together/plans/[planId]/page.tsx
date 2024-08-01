@@ -22,7 +22,6 @@ export default async function MeetTogetherPlanDetailsPage({
   params: { planId },
 }: Props) {
   const platformUser = await getCurrentUser(true);
-
   const plan = await getPlan(planId);
   const users = await getUsers(planId);
   const timeblocks = await getTimeBlocks(planId);

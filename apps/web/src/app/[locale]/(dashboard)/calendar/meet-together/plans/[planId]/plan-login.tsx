@@ -178,12 +178,7 @@ export default function PlanLogin({
                       {t('meet-together-plan-details.your_name')}
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Tuturuuu"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        {...field}
-                      />
+                      <Input placeholder="Tuturuuu" autoFocus {...field} />
                     </FormControl>
                     <FormDescription>
                       {t('meet-together-plan-details.your_name_desc')}

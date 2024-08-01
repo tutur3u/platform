@@ -41,15 +41,6 @@ export const permissionGroups = ({
                   disabled: false,
                 },
                 {
-                  id: 'manage_workspace_secrets',
-                  title: t('ws-roles.manage_workspace_secrets'),
-                  description: t(
-                    'ws-roles.manage_workspace_secrets_description'
-                  ),
-                  disableOnProduction: false,
-                  disabled: false,
-                },
-                {
                   id: 'manage_external_migrations',
                   title: t('ws-roles.manage_external_migrations'),
                   description: t(
