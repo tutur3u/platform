@@ -28,6 +28,14 @@ const config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
 
+        'brand-light-blue': 'hsl(var(--brand-light-blue))',
+        'brand-dark-blue': 'hsl(var(--brand-dark-blue))',
+        'brand-light-yellow': 'hsl(var(--brand-light-yellow))',
+        'brand-dark-yellow': 'hsl(var(--brand-dark-yellow))',
+        'brand-light-red': 'hsl(var(--brand-light-red))',
+        'brand-dark-red': 'hsl(var(--brand-dark-red))',
+
+        'dynamic-pink': 'hsl(var(--pink))',
         'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-blue': 'hsl(var(--blue))',
         'dynamic-green': 'hsl(var(--green))',

@@ -8,5 +8,5 @@ export default function LogoTitle({ className }: { className?: string }) {
   const hasWorkspace = !!params.wsId;
 
   if (hasWorkspace) return null;
-  return <div className={cn('text-2xl', className)}>Tuturuuu</div>;
+  return <div className={cn('text-2xl', className)}>Neo Culture Tech</div>;
 }
