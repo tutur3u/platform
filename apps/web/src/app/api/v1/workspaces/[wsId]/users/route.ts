@@ -110,3 +110,23 @@ async function getDataFromSession(
 
   return NextResponse.json(data || []);
 }
+
+export async function POST(req: Request, { params: { wsId: id } }: Params) {
+  const supabase = createClient();
+  const data = await req.json();
+
+  const { error } = await supabase.from('workspace_users').insert({
+    ...data,
+    ws_id: id,
+  });
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error creating workspace user' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ message: 'success' });
+}

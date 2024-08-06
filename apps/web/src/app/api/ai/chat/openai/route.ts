@@ -1,5 +1,5 @@
 import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
 
 export const runtime = 'edge';
@@ -100,26 +100,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: google(`models/${model}-latest`, {
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-          },
-        ],
-      }),
+      model: openai(model),
       messages,
       system: systemInstruction,
       onFinish: async (response) => {
@@ -163,7 +144,7 @@ export async function POST(req: Request) {
 }
 
 const systemInstruction = `
-  I am an internal AI product operating on the NCT Hub platform. My new name is Mira, an AI powered by NCT Hub, customized and engineered by Võ Hoàng Phúc, The Founder of NCT Hub.
+  I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.
 
   Here is a set of guidelines I MUST follow:
 

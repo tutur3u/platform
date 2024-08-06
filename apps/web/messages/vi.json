@@ -1310,7 +1310,8 @@
     "test_generation": "Tạo test case tự động",
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
-    "pipeline": "Luồng xử lý"
+    "pipeline": "Luồng xử lý",
+    "pipelines": "Luồng xử lý"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",

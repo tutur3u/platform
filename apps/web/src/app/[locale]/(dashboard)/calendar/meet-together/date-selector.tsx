@@ -1,3 +1,5 @@
+'use client';
+
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
@@ -10,6 +12,7 @@ interface DateSelectorProps {
 
 export default function DateSelector({ value, onSelect }: DateSelectorProps) {
   const locale = useLocale();
+
   return (
     <Calendar
       mode="multiple"
@@ -17,9 +20,9 @@ export default function DateSelector({ value, onSelect }: DateSelectorProps) {
       onSelect={onSelect}
       className="rounded-md border"
       classNames={{
-        row: 'flex justify-center gap-2 md:gap-1',
-        head_row: 'flex justify-center gap-2 md:gap-1',
-        tbody: 'grid gap-2 md:gap-1',
+        row: 'flex justify-center gap-2',
+        head_row: 'flex justify-center gap-2',
+        tbody: 'grid gap-2',
       }}
       locale={locale === 'vi' ? vi : enUS}
     />
