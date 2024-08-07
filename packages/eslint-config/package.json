@@ -9,10 +9,10 @@
   ],
   "devDependencies": {
     "@vercel/style-guide": "^6.0.0",
-    "eslint-config-turbo": "^2.0.11",
-    "@typescript-eslint/parser": "^8.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "eslint-config-turbo": "^2.0.12",
+    "@typescript-eslint/parser": "^8.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.1",
     "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@9.6.0"
+  "packageManager": "pnpm@9.7.0"
 }

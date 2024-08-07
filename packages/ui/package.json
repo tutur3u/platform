@@ -70,10 +70,10 @@
     "@types/react": "^18.3.3",
     "@types/react-resizable": "^3.0.8",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.40",
+    "postcss": "^8.4.41",
     "postcss-load-config": "^6.0.1",
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss": "^3.4.7",
+    "tailwindcss": "^3.4.8",
     "typescript": "^5.5.4"
   },
   "exports": {
