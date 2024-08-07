@@ -63,7 +63,7 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@tailwindcss/typography": "^0.5.13",
+    "@tailwindcss/typography": "^0.5.14",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.1.0",
     "@types/react-syntax-highlighter": "^15.5.13",
