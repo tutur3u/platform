@@ -20,6 +20,8 @@
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
     "back-to-home": "Quay lại trang chủ",
     "home": "Trang chủ",
+    "about": "Về chúng tôi",
+    "projects": "Các dự án",
     "docs": "Tài liệu",
     "dashboard": "Bảng điều khiển",
     "local_database": "CSDL cục bộ",
@@ -1308,7 +1310,8 @@
     "test_generation": "Tạo test case tự động",
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
-    "pipeline": "Luồng xử lý"
+    "pipeline": "Luồng xử lý",
+    "pipelines": "Luồng xử lý"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",

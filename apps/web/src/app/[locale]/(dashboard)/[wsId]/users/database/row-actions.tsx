@@ -96,10 +96,10 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: user?.id || '',
+      id: user?.id,
       full_name: user?.full_name || '',
       display_name: user?.display_name || '',
-      email: user?.email || '',
+      email: user?.email || undefined,
       phone: user?.phone || '',
       gender: user?.gender?.toLocaleUpperCase() as
         | 'MALE'
@@ -125,7 +125,10 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          birthday: dayjs(data.birthday).format('YYYY/MM/DD'),
+        }),
       }
     );
 

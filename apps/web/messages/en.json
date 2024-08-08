@@ -20,6 +20,8 @@
     "unsaved-changes": "You have unsaved changes.",
     "back-to-home": "Go back to home",
     "home": "Home",
+    "about": "About",
+    "projects": "Projects",
     "docs": "Docs",
     "dashboard": "Dashboard",
     "local_database": "Local Database",
@@ -775,7 +777,8 @@
     "create": "Create Tag",
     "edit": "Edit Tag",
     "create_description": "Create a new group tag",
-    "edit_description": "Edit an existing group tag"
+    "edit_description": "Edit an existing group tag",
+    "enable_custom_color": "Enable custom color"
   },
   "ws-user-reports": {
     "singular": "User Report",
@@ -1307,7 +1310,8 @@
     "test_generation": "Test Generation",
     "prompts": "Prompts",
     "workflows": "Workflows",
-    "pipelines": "Pipelines"
+    "pipelines": "Pipelines",
+    "pipeline": "Pipeline"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",

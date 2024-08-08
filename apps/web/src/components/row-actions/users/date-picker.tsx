@@ -20,9 +20,10 @@ interface Props {
 
 export function DatePicker({ defaultValue, onValueChange, className }: Props) {
   const [date, setDate] = useState<Date | undefined>(defaultValue);
+  const [open, setOpen] = useState(false);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={'outline'}
@@ -43,6 +44,11 @@ export function DatePicker({ defaultValue, onValueChange, className }: Props) {
           onSelect={(date) => {
             setDate(date);
             onValueChange?.(date);
+          }}
+          onSubmit={(date) => {
+            setDate(date);
+            onValueChange?.(date);
+            setOpen(false);
           }}
           initialFocus
         />
