@@ -142,13 +142,13 @@ importers:
         version: 2.6.2
       '@vercel/analytics':
         specifier: ^1.3.1
-        version: 1.3.1(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+        version: 1.3.1(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       '@vercel/speed-insights':
         specifier: ^1.0.12
-        version: 1.0.12(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(svelte@4.2.18)(vue@3.4.29(typescript@5.5.4))
+        version: 1.0.12(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(svelte@4.2.18)(vue@3.4.29(typescript@5.5.4))
       '@vercel/toolbar':
         specifier: ^0.1.15
-        version: 0.1.15(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(vite@5.3.5(@types/node@22.1.0))
+        version: 0.1.15(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(vite@5.3.5(@types/node@22.1.0))
       ai:
         specifier: ^3.3.3
         version: 3.3.3(openai@4.55.1(zod@3.23.8))(react@19.0.0-rc-06d0b89e-20240801)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.18))(svelte@4.2.18)(vue@3.4.29(typescript@5.5.4))(zod@3.23.8)
@@ -174,11 +174,11 @@ importers:
         specifier: ^0.6.3
         version: 0.6.3
       next:
-        specifier: 15.0.0-canary.106
-        version: 15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+        specifier: 15.0.0-canary.102
+        version: 15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       next-intl:
         specifier: ^3.17.2
-        version: 3.17.2(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+        version: 3.17.2(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
@@ -247,11 +247,11 @@ importers:
         version: 3.23.8
     devDependencies:
       '@next/bundle-analyzer':
-        specifier: 15.0.0-canary.106
-        version: 15.0.0-canary.106(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 15.0.0-canary.102
+        version: 15.0.0-canary.102(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@next/eslint-plugin-next':
-        specifier: 15.0.0-canary.106
-        version: 15.0.0-canary.106
+        specifier: 15.0.0-canary.102
+        version: 15.0.0-canary.102
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -1415,65 +1415,65 @@ packages:
   '@microsoft/tsdoc@0.14.2':
     resolution: {integrity: sha512-9b8mPpKrfeGRuhFH5iO1iwCLeIIsV6+H1sRfxbkoGXIyQE2BTsPd9zqSqQJ+pv5sJ/hT5M1zvOFL02MnEezFug==}
 
-  '@next/bundle-analyzer@15.0.0-canary.106':
-    resolution: {integrity: sha512-3reHlQRD5fxkthbT0VzWiTyJHqWOLW3hOttpCJDA9TtntrlgzbRwmWP8HJ1LdlLrhV3FNNOpPRXOar9dHDi+Zw==}
+  '@next/bundle-analyzer@15.0.0-canary.102':
+    resolution: {integrity: sha512-V2zLMaLidw7nQ9vAJobKZP02so0YucKPLLQU0mR1PBIos70/3yz9M5UU1Zuf14pdZulS/g4EQTxk5+guitdgLg==}
 
-  '@next/env@15.0.0-canary.106':
-    resolution: {integrity: sha512-AWBXtEKqiN5x1GLU1XXKzMCoVhxIQ4rAe5nkKcAY6dtVSS/fzesBTV8PSm1DobJgxnNIWyBP+vDaIGc6s7d15Q==}
+  '@next/env@15.0.0-canary.102':
+    resolution: {integrity: sha512-WTexUwFzLdAM1CKKCG9fxU2097J+iqwx6mfaR1AoeFfekrvikJC4vQ6ygIHWtYZ5kceS5F46aWWJkUjGmfVSjw==}
 
-  '@next/eslint-plugin-next@15.0.0-canary.106':
-    resolution: {integrity: sha512-0+uuuZVv3qL8lpVWpt9iq6805fqufHUw20FOHQiAZkWRw0ohnoc7HwniDv30NJ3wHaPmtbHheeVtMZb3T5toBg==}
+  '@next/eslint-plugin-next@15.0.0-canary.102':
+    resolution: {integrity: sha512-aj4QSfkm3HWi0Mqc82ouVzKpb3WHxWqB4XMzZJGbkweKAFAbCyymA337vTVfHnVzU9lOC3OcBxMbxudgIjtBrg==}
 
-  '@next/swc-darwin-arm64@15.0.0-canary.106':
-    resolution: {integrity: sha512-V4zC4OAbUpwuDdqY2MHZiLNyiZmPjIDBdO5vRGemPyritg0dwRLpBcSn7B2PC0jJJ/+C3Ta4TxNQRlWyxkhivQ==}
+  '@next/swc-darwin-arm64@15.0.0-canary.102':
+    resolution: {integrity: sha512-Wi1+BuCSLP7dVBoDytJNjjF7O6PHxNCFlVc75e+0DNq6FyBq+PmTbE9NXharGA5+Wt40XRsqC2TXyc3UlkubIw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@15.0.0-canary.106':
-    resolution: {integrity: sha512-P1nkvs5yLrEREeKXGOGya7xOPV0ahjdIvHrHJ0zAjGqsJpyqMI5Xg5P5MFq88JLMP2Ee5JyUXXV5z+kQOIrIAA==}
+  '@next/swc-darwin-x64@15.0.0-canary.102':
+    resolution: {integrity: sha512-uhT4cO9cuImpNVltxhhDQk7uwOwBfn9ouwGVgia1nEYOqvjngr8asxdIjsdHKH0T9hmAoBEPm5+Cma7IICoziA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@15.0.0-canary.106':
-    resolution: {integrity: sha512-Lq8+yFN9zaw36386Wlz4SKfsadE8CBbGDulHFGl3zaiJZTf88ErLFPBa6sKJfW2uVC0EBGmhXsI80qt8ZS3Zyw==}
+  '@next/swc-linux-arm64-gnu@15.0.0-canary.102':
+    resolution: {integrity: sha512-l2FaW1+497uyMr5O5D0wpM0uMtRU00x07xrDx0veGYkyLB172YJEXknPGhjyFT++p4CtphRXCGQCDvPqhB1gfw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-musl@15.0.0-canary.106':
-    resolution: {integrity: sha512-Z1KTxbspGvisUncFWJkbungF5sQZDW3CJ2O4rmg2hrQAPCQK45/JECMSW2HSo4pmYhs30umVt6M/UIkZBe+b7A==}
+  '@next/swc-linux-arm64-musl@15.0.0-canary.102':
+    resolution: {integrity: sha512-NYAvuZmQ7YSkGm3XOv9KNpbm9gWXTA4c+I3kc+Ne6MXhh3FZ3X56FQDuZFCD54YKd+8tzP4XgOv6RsabFxEazw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-x64-gnu@15.0.0-canary.106':
-    resolution: {integrity: sha512-GZD5Ib1Y13twoq3xXz7/n+UObfjjyCcOdfTtoydQ4iBZn2N4qkmaqMPyiVb40mZrvFxVzwThh+S8i/UQ1ogT6A==}
+  '@next/swc-linux-x64-gnu@15.0.0-canary.102':
+    resolution: {integrity: sha512-Qn8CT23TyF1SJqSqWN9yHXITV0UVxM9tfiDAnoAkj5ZVA/cyoKSuBEns7wmhmOIlbDd46JwFUf4hho3oTWwnoQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-musl@15.0.0-canary.106':
-    resolution: {integrity: sha512-umbKFzvO6swW9+Q27L9yF5b62xyo00QENIaSLxdfLu1vULRkZZUxUENmfST5WnyBCf1SWNIQ0lqzxFw36BOV0A==}
+  '@next/swc-linux-x64-musl@15.0.0-canary.102':
+    resolution: {integrity: sha512-wK54cGoy58VZzHd291e6KK80SnG92JTfBlr+g/h9S4u34ECfXdr1U0Lq1U537IYN6mKnldeKVyfFrhEhPgRARg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-win32-arm64-msvc@15.0.0-canary.106':
-    resolution: {integrity: sha512-4wSeWc5K6ETdqY2yyvf+eRupNIbtLvFAittLVWn+dPp20Ly1FA9C7xV5aVqoiVHRAPm7iMRm/3QLL5UFybElPw==}
+  '@next/swc-win32-arm64-msvc@15.0.0-canary.102':
+    resolution: {integrity: sha512-logCQvWVdS8IkrBGuqXQMwZgsa2tnaJVIzKpbvHpQOfeldTn5jq+kW+h6/yfuM3y4CR80xJJ55YbUtGDzqUR1A==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-ia32-msvc@15.0.0-canary.106':
-    resolution: {integrity: sha512-E3RzJDoNj0moNa2fJu2gzHI48u6rHnKe6vf/i72D3qjz/is/Y9b5CaTbBQghxah/9KgOHZ3E7kupQ0z52tshiA==}
+  '@next/swc-win32-ia32-msvc@15.0.0-canary.102':
+    resolution: {integrity: sha512-s+mRpJBvMrj3rTOCFRN8bm2MDRfRCVtxxLI7CBq+6ySEgGsWBnrTzxFXv+a1ajQec4e/Aat2gZRxFY+XKfofvg==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@15.0.0-canary.106':
-    resolution: {integrity: sha512-waAebx1Ytclo1QGo0knWgKZCLP8eH36DYMbNF67Xe3NjglsUhCivaXk4/8tthmtMaKEka3kdje/EJDo4waadig==}
+  '@next/swc-win32-x64-msvc@15.0.0-canary.102':
+    resolution: {integrity: sha512-5yYeDomq0L/EVzLgMGGZpOlZRYCRCcbQ/zSzBSGSuvtDOHC1HEVEeWg77OCpjt+Kzt0Vt7TXbLEzpCQQOPLHNA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -5308,8 +5308,8 @@ packages:
       react: ^16.8 || ^17 || ^18
       react-dom: ^16.8 || ^17 || ^18
 
-  next@15.0.0-canary.106:
-    resolution: {integrity: sha512-LWaAmvrRQsa7XeKmGkrOGwsWMVrbTR2H6IKkE0DgJmGR4gQMqUVQGdWAp91Uwg8c43i0rV79tjk8GLKyaN39Og==}
+  next@15.0.0-canary.102:
+    resolution: {integrity: sha512-APyY6FcWPTxaZq/3eqfzfgiWlfdJdZAUw9Osa7DKZP0fsXJK1nlXRlGvs0UVFMBYMXWkIYOogx2/LGCxn1Tp7Q==}
     engines: {node: '>=18.18.0'}
     hasBin: true
     peerDependencies:
@@ -8228,44 +8228,44 @@ snapshots:
 
   '@microsoft/tsdoc@0.14.2': {}
 
-  '@next/bundle-analyzer@15.0.0-canary.106(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@next/bundle-analyzer@15.0.0-canary.102(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       webpack-bundle-analyzer: 4.10.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@next/env@15.0.0-canary.106': {}
+  '@next/env@15.0.0-canary.102': {}
 
-  '@next/eslint-plugin-next@15.0.0-canary.106':
+  '@next/eslint-plugin-next@15.0.0-canary.102':
     dependencies:
       fast-glob: 3.3.1
 
-  '@next/swc-darwin-arm64@15.0.0-canary.106':
+  '@next/swc-darwin-arm64@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-darwin-x64@15.0.0-canary.106':
+  '@next/swc-darwin-x64@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@15.0.0-canary.106':
+  '@next/swc-linux-arm64-gnu@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-linux-arm64-musl@15.0.0-canary.106':
+  '@next/swc-linux-arm64-musl@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-linux-x64-gnu@15.0.0-canary.106':
+  '@next/swc-linux-x64-gnu@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-linux-x64-musl@15.0.0-canary.106':
+  '@next/swc-linux-x64-musl@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@15.0.0-canary.106':
+  '@next/swc-win32-arm64-msvc@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-win32-ia32-msvc@15.0.0-canary.106':
+  '@next/swc-win32-ia32-msvc@15.0.0-canary.102':
     optional: true
 
-  '@next/swc-win32-x64-msvc@15.0.0-canary.106':
+  '@next/swc-win32-x64-msvc@15.0.0-canary.102':
     optional: true
 
   '@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1':
@@ -10169,16 +10169,16 @@ snapshots:
       crypto-js: 4.2.0
       jose: 5.6.3
 
-  '@vercel/analytics@1.3.1(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)':
+  '@vercel/analytics@1.3.1(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)':
     dependencies:
       server-only: 0.0.1
     optionalDependencies:
-      next: 15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+      next: 15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       react: 19.0.0-rc-06d0b89e-20240801
 
-  '@vercel/speed-insights@1.0.12(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(svelte@4.2.18)(vue@3.4.29(typescript@5.5.4))':
+  '@vercel/speed-insights@1.0.12(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(svelte@4.2.18)(vue@3.4.29(typescript@5.5.4))':
     optionalDependencies:
-      next: 15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+      next: 15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       react: 19.0.0-rc-06d0b89e-20240801
       svelte: 4.2.18
       vue: 3.4.29(typescript@5.5.4)
@@ -10216,7 +10216,7 @@ snapshots:
       - supports-color
       - vitest
 
-  '@vercel/toolbar@0.1.15(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(vite@5.3.5(@types/node@22.1.0))':
+  '@vercel/toolbar@0.1.15(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)(vite@5.3.5(@types/node@22.1.0))':
     dependencies:
       '@tinyhttp/app': 1.3.0
       chokidar: 3.6.0
@@ -10225,7 +10225,7 @@ snapshots:
       get-port: 5.1.1
       strip-ansi: 6.0.1
     optionalDependencies:
-      next: 15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+      next: 15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       react: 19.0.0-rc-06d0b89e-20240801
       vite: 5.3.5(@types/node@22.1.0)
 
@@ -12837,11 +12837,11 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  next-intl@3.17.2(next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801):
+  next-intl@3.17.2(next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801):
     dependencies:
       '@formatjs/intl-localematcher': 0.2.32
       negotiator: 0.6.3
-      next: 15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
+      next: 15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801)
       react: 19.0.0-rc-06d0b89e-20240801
       use-intl: 3.17.2(react@19.0.0-rc-06d0b89e-20240801)
 
@@ -12850,9 +12850,9 @@ snapshots:
       react: 19.0.0-rc-06d0b89e-20240801
       react-dom: 19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801)
 
-  next@15.0.0-canary.106(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801):
+  next@15.0.0-canary.102(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801))(react@19.0.0-rc-06d0b89e-20240801):
     dependencies:
-      '@next/env': 15.0.0-canary.106
+      '@next/env': 15.0.0-canary.102
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.12
       busboy: 1.6.0
@@ -12863,15 +12863,15 @@ snapshots:
       react-dom: 19.0.0-rc-06d0b89e-20240801(react@19.0.0-rc-06d0b89e-20240801)
       styled-jsx: 5.1.6(@babel/core@7.25.2)(react@19.0.0-rc-06d0b89e-20240801)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 15.0.0-canary.106
-      '@next/swc-darwin-x64': 15.0.0-canary.106
-      '@next/swc-linux-arm64-gnu': 15.0.0-canary.106
-      '@next/swc-linux-arm64-musl': 15.0.0-canary.106
-      '@next/swc-linux-x64-gnu': 15.0.0-canary.106
-      '@next/swc-linux-x64-musl': 15.0.0-canary.106
-      '@next/swc-win32-arm64-msvc': 15.0.0-canary.106
-      '@next/swc-win32-ia32-msvc': 15.0.0-canary.106
-      '@next/swc-win32-x64-msvc': 15.0.0-canary.106
+      '@next/swc-darwin-arm64': 15.0.0-canary.102
+      '@next/swc-darwin-x64': 15.0.0-canary.102
+      '@next/swc-linux-arm64-gnu': 15.0.0-canary.102
+      '@next/swc-linux-arm64-musl': 15.0.0-canary.102
+      '@next/swc-linux-x64-gnu': 15.0.0-canary.102
+      '@next/swc-linux-x64-musl': 15.0.0-canary.102
+      '@next/swc-win32-arm64-msvc': 15.0.0-canary.102
+      '@next/swc-win32-ia32-msvc': 15.0.0-canary.102
+      '@next/swc-win32-x64-msvc': 15.0.0-canary.102
       '@opentelemetry/api': 1.9.0
       babel-plugin-react-compiler: 0.0.0-experimental-334f00b-20240725
       sharp: 0.33.4

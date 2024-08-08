@@ -75,7 +75,7 @@
     "lucide-react": "^0.424.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.106",
+    "next": "15.0.0-canary.102",
     "next-intl": "^3.17.2",
     "next-themes": "^0.3.0",
     "openai": "^4.55.1",
@@ -101,8 +101,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.106",
-    "@next/eslint-plugin-next": "15.0.0-canary.106",
+    "@next/bundle-analyzer": "15.0.0-canary.102",
+    "@next/eslint-plugin-next": "15.0.0-canary.102",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.51.15",
