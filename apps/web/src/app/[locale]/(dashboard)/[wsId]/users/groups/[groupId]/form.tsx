@@ -15,24 +15,25 @@ import SearchBar from '@repo/ui/components/ui/custom/search-bar';
 import { useQuery } from '@tanstack/react-query';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export interface GroupMemberFormProps {
   wsId: string;
   groupId: string;
-  onUpdate?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function GroupMemberForm({
   wsId,
   groupId,
-  onUpdate = () => {},
 }: GroupMemberFormProps) {
   const t = useTranslations();
+  const router = useRouter();
+
   const [query, setQuery] = useState('');
 
   const workspaceMembersQuery = useQuery({
-    queryKey: ['workspaces', wsId, 'members'],
+    queryKey: ['workspaces', wsId, 'user-groups', 'members', { query }],
     queryFn: () => getWorkspaceUsers(wsId),
   });
 
@@ -53,14 +54,9 @@ export default function GroupMemberForm({
   const users = workspaceMembersQuery.data?.data || [];
   const groupUsers = groupMembersQuery.data?.data || [];
 
-  useEffect(() => {
-    if (groupMembersQuery.isFetched)
-      onUpdate(groupMembersQuery.data?.count || 0);
-  }, [groupMembersQuery.isFetched, groupMembersQuery.data?.count, onUpdate]);
-
   const handleNewMembers = async (memberIds: string[]) => {
     const res = await fetch(
-      `/api/v1/workspaces/${wsId}/users/groups/${groupId}/members`,
+      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
       {
         method: 'POST',
         headers: {
@@ -72,12 +68,13 @@ export default function GroupMemberForm({
 
     if (res.ok) {
       groupMembersQuery.refetch();
+      router.refresh();
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     const res = await fetch(
-      `/api/v1/workspaces/${wsId}/users/groups/${groupId}/members/${memberId}`,
+      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${memberId}`,
       {
         method: 'DELETE',
       }
@@ -85,6 +82,7 @@ export default function GroupMemberForm({
 
     if (res.ok) {
       groupMembersQuery.refetch();
+      router.refresh();
     }
   };
 
@@ -179,12 +177,10 @@ async function getWorkspaceUsers(wsId: string) {
   const supabase = createClient();
 
   const queryBuilder = supabase
-    .from('workspace_user_linked_users')
-    .select(
-      'id:platform_user_id, ...workspace_users!inner(full_name, display_name), ...users(...user_private_details(email))'
-    )
+    .from('workspace_users')
+    .select('*')
     .eq('ws_id', wsId)
-    .order('platform_user_id');
+    .order('id');
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
@@ -192,17 +188,17 @@ async function getWorkspaceUsers(wsId: string) {
   return { data, count } as { data: WorkspaceUser[]; count: number };
 }
 
-async function getUsers(roleId: string, query?: string) {
+async function getUsers(groupId: string, query?: string) {
   const supabase = createClient();
 
   const queryBuilder = supabase
-    .from('workspace_role_members')
-    .select('...users!inner(*)', {
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
       count: 'exact',
     })
-    .eq('role_id', roleId);
+    .eq('group_id', groupId);
 
-  if (query) queryBuilder.ilike('users.display_name', `%${query}%`);
+  if (query) queryBuilder.ilike('workspace_users.display_name', `%${query}%`);
 
   const { data, count, error } = await queryBuilder;
   if (error) throw error;

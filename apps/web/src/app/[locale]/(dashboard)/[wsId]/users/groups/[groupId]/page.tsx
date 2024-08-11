@@ -67,15 +67,12 @@ export default async function UserGroupDetailsPage({
       />
       <Separator className="my-4" />
 
-       {/* <div className="mb-2 flex flex-col items-center justify-center gap-2 text-lg font-semibold">
-        {group.name && <div>{group.name}</div>}
-      </div>  */}
-
       <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
+        extraData={{ wsId, groupId }}
         count={usersCount}
         filters={[
           <UserDatabaseFilter
