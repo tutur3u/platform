@@ -763,7 +763,9 @@
     "create": "Tạo nhóm",
     "edit": "Sửa nhóm",
     "create_description": "Thêm nhóm mới",
-    "edit_description": "Sửa nhóm hiện có"
+    "edit_description": "Sửa nhóm hiện có",
+    "add_user": "Thêm người dùng",
+    "add_user_description": "Thêm người dùng vào nhóm"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
