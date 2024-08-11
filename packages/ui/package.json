@@ -65,7 +65,7 @@
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/typography": "^0.5.14",
     "@types/lodash": "^4.17.7",
-    "@types/node": "^22.1.0",
+    "@types/node": "^22.2.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/react": "^18.3.3",
     "@types/react-resizable": "^3.0.8",
