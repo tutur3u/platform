@@ -1,5 +1,6 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
+import GroupMemberForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -7,6 +8,8 @@ import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -30,7 +33,7 @@ export default async function UserGroupDetailsPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = await getTranslations('user-data-table');
+  const t = await getTranslations();
 
   const group = await getData(wsId, groupId);
 
@@ -54,21 +57,28 @@ export default async function UserGroupDetailsPage({
 
   return (
     <>
-      <div className="mb-2 flex flex-col items-center justify-center gap-2 text-lg font-semibold">
-        {group.name && <div>{group.name}</div>}
-      </div>
+      <FeatureSummary
+        pluralTitle={group.name || t('ws-user-groups.plural')}
+        singularTitle={group.name || t('ws-user-groups.singular')}
+        description={t('ws-user-groups.description')}
+        createTitle={t('ws-user-groups.add_user')}
+        createDescription={t('ws-user-groups.add_user_description')}
+        form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
+      />
+      <Separator className="my-4" />
 
       <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
+        extraData={{ wsId, groupId }}
         count={usersCount}
         filters={[
           <UserDatabaseFilter
             key="excluded-user-groups-filter"
             tag="excludedGroups"
-            title={t('excluded_groups')}
+            title={t('user-data-table.excluded_groups')}
             icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
             options={excludedUserGroups.map((group) => ({
               label: group.name || 'No name',
