@@ -1,7 +1,5 @@
 'use client';
 
-import UserPresenceIndicator from './user-presence-indicator';
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
@@ -53,10 +51,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -69,7 +65,11 @@ const FormSchema = z.object({
   plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
 });
 
-export default function WorkspaceSelect() {
+export default function WorkspaceSelect({
+  hideLeading,
+}: {
+  hideLeading?: boolean;
+}) {
   const t = useTranslations();
 
   const [user, setUser] = useState<User | undefined>();
@@ -224,76 +224,78 @@ export default function WorkspaceSelect() {
     };
   }, []);
 
-  const [onlineUsers, setOnlineUsers] = useState<User[] | undefined>();
+  // const [onlineUsers, setOnlineUsers] = useState<User[] | undefined>();
 
-  useEffect(() => {
-    async function trackPresence(channel: RealtimeChannel | null) {
-      if (!wsId || !user || !channel) return;
+  // useEffect(() => {
+  //   async function trackPresence(channel: RealtimeChannel | null) {
+  //     if (!wsId || !user || !channel) return;
 
-      const userStatus = {
-        id: user.id,
-        display_name: user.display_name || user.handle || user.email,
-        avatar_url: user.avatar_url,
-        online_at: new Date().toISOString(),
-      };
+  //     const userStatus = {
+  //       id: user.id,
+  //       display_name: user.display_name || user.handle || user.email,
+  //       avatar_url: user.avatar_url,
+  //       online_at: new Date().toISOString(),
+  //     };
 
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const newState = channel.presenceState();
-          // console.log('sync', newState);
+  //     channel
+  //       .on('presence', { event: 'sync' }, () => {
+  //         const newState = channel.presenceState();
+  //         // console.log('sync', newState);
 
-          const users = Object.values(newState)
-            .map(
-              (user) =>
-                ({
-                  ...user?.[0],
-                }) as unknown as User
-            )
-            // sort ones with display_name first, then prioritize ones with avatar_url
-            .sort((a, b) => {
-              if (a.display_name && !b.display_name) return -1;
-              if (!a.display_name && b.display_name) return 1;
-              if (a.avatar_url && !b.avatar_url) return -1;
-              if (!a.avatar_url && b.avatar_url) return 1;
-              return 0;
-            });
+  //         const users = Object.values(newState)
+  //           .map(
+  //             (user) =>
+  //               ({
+  //                 ...user?.[0],
+  //               }) as unknown as User
+  //           )
+  //           // sort ones with display_name first, then prioritize ones with avatar_url
+  //           .sort((a, b) => {
+  //             if (a.display_name && !b.display_name) return -1;
+  //             if (!a.display_name && b.display_name) return 1;
+  //             if (a.avatar_url && !b.avatar_url) return -1;
+  //             if (!a.avatar_url && b.avatar_url) return 1;
+  //             return 0;
+  //           });
 
-          setOnlineUsers(users);
-        })
-        // .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        //   console.log('join', key, newPresences);
-        // })
-        // .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        //   console.log('leave', key, leftPresences);
-        // })
-        .subscribe(async (status) => {
-          if (status !== 'SUBSCRIBED') return;
-          await channel.track(userStatus);
-        });
-    }
+  //         setOnlineUsers(users);
+  //       })
+  //       // .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+  //       //   console.log('join', key, newPresences);
+  //       // })
+  //       // .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+  //       //   console.log('leave', key, leftPresences);
+  //       // })
+  //       .subscribe(async (status) => {
+  //         if (status !== 'SUBSCRIBED') return;
+  //         await channel.track(userStatus);
+  //       });
+  //   }
 
-    if (!wsId || !user?.id) return;
-    const supabase = createClient();
+  //   if (!wsId || !user?.id) return;
+  //   const supabase = createClient();
 
-    const channel = supabase.channel(`workspace:${wsId}`, {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
-    });
+  //   const channel = supabase.channel(`workspace:${wsId}`, {
+  //     config: {
+  //       presence: {
+  //         key: user.id,
+  //       },
+  //     },
+  //   });
 
-    trackPresence(channel);
-    return () => {
-      channel?.unsubscribe();
-    };
-  }, [wsId, user]);
+  //   trackPresence(channel);
+  //   return () => {
+  //     channel?.unsubscribe();
+  //   };
+  // }, [wsId, user]);
 
   if (!wsId) return null;
 
   return (
     <>
-      <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+      {hideLeading || (
+        <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+      )}
       <Dialog
         open={showNewWorkspaceDialog}
         onOpenChange={(open) => {
@@ -311,10 +313,15 @@ export default function WorkspaceSelect() {
               role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
-              className={cn('w-full justify-between md:max-w-[16rem]')}
+              className={cn(
+                hideLeading ? 'justify-center p-0' : 'justify-start',
+                'w-full whitespace-normal text-start'
+              )}
               disabled={!workspaces || workspaces.length === 0}
             >
-              <Avatar className="mr-2 h-5 w-5">
+              <Avatar
+                className={cn(hideLeading || 'mr-2', 'h-5 w-5 flex-none')}
+              >
                 <AvatarImage
                   src={
                     workspace?.name
@@ -327,10 +334,18 @@ export default function WorkspaceSelect() {
                   {workspace?.name ? getInitials(workspace.name) : '?'}
                 </AvatarFallback>
               </Avatar>
-              <span className="line-clamp-1 hidden md:block">
-                {workspace?.name || t('common.loading') + '...'}
-              </span>
-              <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+              <div
+                className={cn(
+                  hideLeading ? 'hidden' : 'hidden w-full md:block'
+                )}
+              >
+                <span className="line-clamp-1 w-full break-all">
+                  {workspace?.name || t('common.loading') + '...'}
+                </span>
+              </div>
+              {hideLeading || (
+                <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+              )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full max-w-[16rem] p-0">
@@ -488,7 +503,7 @@ export default function WorkspaceSelect() {
         </DialogContent>
       </Dialog>
 
-      <Popover>
+      {/* <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -579,7 +594,7 @@ export default function WorkspaceSelect() {
             ))}
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover> */}
     </>
   );
 }

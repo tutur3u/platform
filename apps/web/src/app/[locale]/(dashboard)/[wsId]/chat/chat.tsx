@@ -299,7 +299,7 @@ const Chat = ({
   }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
-    <>
+    <div className="relative h-screen max-h-screen">
       <div className={cn('pt-4 md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
@@ -414,7 +414,7 @@ const Chat = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 

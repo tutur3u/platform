@@ -39,7 +39,6 @@ export interface DataTableProps<TData, TValue> {
   pageSize?: number;
   defaultQuery?: string;
   defaultVisibility?: VisibilityState;
-  noBottomPadding?: boolean;
   disableSearch?: boolean;
   isEmpty?: boolean;
   onRefresh?: () => void;
@@ -75,7 +74,6 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   defaultQuery,
   defaultVisibility = {},
-  noBottomPadding,
   disableSearch,
   isEmpty,
   t,
@@ -198,22 +196,17 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      {noBottomPadding || count === undefined || (
-        <DataTablePagination
-          t={t}
-          table={table}
-          className="pointer-events-none hidden opacity-0 lg:block"
-          setParams={setParams}
-        />
-      )}
       {count !== undefined && (
-        <DataTablePagination
-          t={t}
-          table={table}
-          count={count}
-          className="bg-foreground/[0.025] dark:bg-foreground/5 inset-x-0 bottom-0 z-50 rounded-lg border px-4 py-2 backdrop-blur-xl lg:fixed lg:rounded-none lg:border-0 lg:border-t"
-          setParams={setParams}
-        />
+        <>
+          <DataTablePagination
+            t={t}
+            table={table}
+            count={count}
+            className="bg-foreground/[0.025] dark:bg-foreground/5 rounded-lg border px-4 py-2 backdrop-blur-xl"
+            setParams={setParams}
+          />
+          <div className="h-4" />
+        </>
       )}
     </div>
   );
