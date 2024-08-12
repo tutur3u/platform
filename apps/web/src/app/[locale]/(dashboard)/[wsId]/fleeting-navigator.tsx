@@ -86,7 +86,8 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
 
   return (
     <>
-      {scrollPosition ? <div className="m-2 h-14" /> : null}
+      {/* {scrollPosition ? <div className="m-2 h-14" /> : null} */}
+      {scrollPosition ? <div className="" /> : null}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-center">
         <div
           ref={ref}

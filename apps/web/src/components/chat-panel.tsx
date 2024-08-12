@@ -104,7 +104,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
-      <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
+      <div className="sticky inset-x-0 bottom-0">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
@@ -409,35 +409,37 @@ export function ChatPanel({
 
           <Separator className="my-4" />
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              navigator.clipboard.writeText(
-                `${window.location.origin}/ai/chats/${id}`
-              );
-              setCopiedLink(true);
-              setTimeout(() => setCopiedLink(false), 2000);
-            }}
-            disabled={disablePublicLink || copiedLink}
-          >
-            {copiedLink ? (
-              <CheckCheck className="mr-2 h-4 w-4" />
-            ) : (
-              <LinkIcon className="mr-2 h-4 w-4" />
-            )}
-            {t('copy_public_link')}
-          </Button>
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open(`${window.location.origin}/ai/chats/${id}`)
-            }
-            disabled={disablePublicLink}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            {t('open_public_link')}
-          </Button>
+          <div className="grid w-full gap-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/ai/chats/${id}`
+                );
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              disabled={disablePublicLink || copiedLink}
+            >
+              {copiedLink ? (
+                <CheckCheck className="mr-2 h-4 w-4" />
+              ) : (
+                <LinkIcon className="mr-2 h-4 w-4" />
+              )}
+              {t('copy_public_link')}
+            </Button>
+            <Button
+              className="w-full"
+              onClick={() =>
+                window.open(`${window.location.origin}/ai/chats/${id}`)
+              }
+              disabled={disablePublicLink}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {t('open_public_link')}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

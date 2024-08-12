@@ -72,7 +72,7 @@ export default async function NotificationPopover() {
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="end">
+      <PopoverContent className="w-72 p-0" align="start">
         <div className="px-4 py-2 font-semibold">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}

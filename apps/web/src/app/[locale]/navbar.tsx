@@ -7,7 +7,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
-export default function Navbar() {
+export default function Navbar({
+  hideMetadata = false,
+}: {
+  hideMetadata?: boolean;
+}) {
   return (
     <nav id="navbar" className="fixed inset-x-0 top-0 z-50">
       <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
@@ -45,7 +49,7 @@ export default function Navbar() {
                 <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
               }
             >
-              <NavbarActions />
+              <NavbarActions hideMetadata={hideMetadata} />
             </Suspense>
           </div>
         </div>
