@@ -19,9 +19,16 @@ interface NavProps {
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
   links: NavLink[];
+  onClick?: () => void;
 }
 
-export function Nav({ wsId, currentUser, links, isCollapsed }: NavProps) {
+export function Nav({
+  wsId,
+  currentUser,
+  links,
+  isCollapsed,
+  onClick,
+}: NavProps) {
   const pathname = usePathname();
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
@@ -85,6 +92,7 @@ export function Nav({ wsId, currentUser, links, isCollapsed }: NavProps) {
                   )}
                   onClick={() => {
                     setUrlToLoad(link.href);
+                    onClick?.();
                   }}
                 >
                   {link.icon}
@@ -115,6 +123,7 @@ export function Nav({ wsId, currentUser, links, isCollapsed }: NavProps) {
               )}
               onClick={() => {
                 setUrlToLoad(link.href);
+                onClick?.();
               }}
             >
               {link.icon && (

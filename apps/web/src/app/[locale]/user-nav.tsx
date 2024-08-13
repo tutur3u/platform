@@ -45,10 +45,10 @@ export async function UserNav({
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex w-full gap-2 rounded-lg border border-transparent p-1 text-start transition',
+            'flex w-full gap-2 rounded-lg border p-1 text-start transition',
             hideMetadata
-              ? 'items-center justify-center'
-              : 'hover:bg-foreground/10 hover:border-foreground/10 items-start justify-start'
+              ? 'items-center justify-center border-transparent'
+              : 'hover:bg-foreground/10 hover:border-foreground/10 border-foreground/10 bg-foreground/10 items-start justify-start md:border-transparent md:bg-transparent'
           )}
         >
           <Avatar className="relative cursor-pointer overflow-visible font-semibold">
