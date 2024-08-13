@@ -334,11 +334,7 @@ export default function WorkspaceSelect({
                   {workspace?.name ? getInitials(workspace.name) : '?'}
                 </AvatarFallback>
               </Avatar>
-              <div
-                className={cn(
-                  hideLeading ? 'hidden' : 'hidden w-full md:block'
-                )}
-              >
+              <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
                 <span className="line-clamp-1 w-full break-all">
                   {workspace?.name || t('common.loading') + '...'}
                 </span>
