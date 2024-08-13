@@ -187,10 +187,15 @@ const Chat = ({
       count !== undefined
     ) {
       setInitialScroll(false);
-      window.scrollTo({
-        top: chat?.id ? document.body.scrollHeight : 0,
-        behavior: 'smooth',
-      });
+      const mainChatContent = document.getElementById('main-chat-content');
+
+      if (mainChatContent) {
+        const scrollTop = chat?.id ? mainChatContent.scrollTop : 0;
+        mainChatContent.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth',
+        });
+      }
     }
 
     if (chat?.id && input) {

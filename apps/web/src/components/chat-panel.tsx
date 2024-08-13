@@ -3,6 +3,7 @@ import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
+import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
@@ -104,7 +105,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
-      <div className="sticky inset-x-0 bottom-0">
+      <div className="sticky inset-x-0 bottom-[66px] md:bottom-0">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
@@ -397,7 +398,7 @@ export function ChatPanel({
 
               <div className="flex items-center justify-center">
                 <QRCode
-                  value={`${window.location.origin}/ai/chats/${id}`}
+                  value={`${BASE_URL}/ai/chats/${id}`}
                   size={256}
                   style={{
                     borderRadius: '0.5rem',
@@ -414,9 +415,7 @@ export function ChatPanel({
               variant="outline"
               className="w-full"
               onClick={() => {
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/ai/chats/${id}`
-                );
+                navigator.clipboard.writeText(`${BASE_URL}/ai/chats/${id}`);
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 2000);
               }}
@@ -431,9 +430,7 @@ export function ChatPanel({
             </Button>
             <Button
               className="w-full"
-              onClick={() =>
-                window.open(`${window.location.origin}/ai/chats/${id}`)
-              }
+              onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
               disabled={disablePublicLink}
             >
               <ExternalLink className="mr-2 h-4 w-4" />

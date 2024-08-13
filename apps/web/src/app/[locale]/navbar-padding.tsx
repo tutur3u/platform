@@ -1,7 +1,5 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface Props {
   onlyOnMobile?: boolean;
@@ -12,27 +10,17 @@ export default function NavbarPadding({
   onlyOnMobile = false,
   children,
 }: Props) {
-  const pathname = usePathname();
-
-  const defaultHeight = 66;
-  const [navbarHeight, setNavbarHeight] = useState(defaultHeight);
-
-  useEffect(() => {
-    if (pathname === '/') return;
-
-    const navbar = document.getElementById('navbar');
-    const height = navbar?.clientHeight || defaultHeight;
-
-    setNavbarHeight(height);
-  }, [pathname]);
+  const navbarHeight = 66;
 
   return (
     <>
       <div
         style={{ height: `${navbarHeight}px` }}
-        className={onlyOnMobile ? 'md:hidden' : ''}
+        className={cn(onlyOnMobile ? 'md:hidden' : '')}
       />
-      <main className="relative">{children}</main>
+      <div style={{ paddingTop: `${navbarHeight}px` }} className="relative">
+        {children}
+      </div>
     </>
   );
 }

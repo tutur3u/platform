@@ -50,7 +50,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="flex items-center justify-between border-b px-4 py-2 md:hidden"
+        className="flex flex-none items-center justify-between gap-2 border-b px-4 py-2 md:hidden"
       >
         <div className="flex items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -65,7 +65,7 @@ export function Structure({
             </Link>
           </div>
           <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="text-lg font-semibold">
+          <div className="line-clamp-1 break-all text-lg font-semibold">
             {
               links
                 .filter((link) => pathname.startsWith(link.href))
@@ -116,7 +116,7 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-foreground/5 absolute inset-0 z-50 flex md:static md:z-[5] md:bg-transparent',
+                : 'bg-foreground/5 absolute inset-0 z-40 flex md:static md:bg-transparent',
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -185,9 +185,12 @@ export function Structure({
           </ResizablePanel>
           <ResizableHandle withHandle className="hidden md:flex" />
           <ResizablePanel defaultSize={defaultLayout[1]}>
-            <div className="flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-0 lg:px-8 xl:px-16">
+            <main
+              id="main-content"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-0 lg:px-8 xl:px-16"
+            >
               {children}
-            </div>
+            </main>
           </ResizablePanel>
         </ResizablePanelGroup>
       </TooltipProvider>
