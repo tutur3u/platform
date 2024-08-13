@@ -138,8 +138,8 @@ importers:
         specifier: ^8.20.1
         version: 8.20.1(react-dom@19.0.0-rc-187dd6a7-20240806(react@19.0.0-rc-187dd6a7-20240806))(react@19.0.0-rc-187dd6a7-20240806)
       '@upstash/qstash':
-        specifier: ^2.6.3
-        version: 2.6.3(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5)))(rollup@4.19.2)(solid-js@1.8.17)(svelte@4.2.18)(vinxi@0.4.1(@types/node@22.2.0)(ioredis@5.4.1)(terser@5.31.5))(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))
+        specifier: ^2.6.4
+        version: 2.6.4(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5)))(rollup@4.19.2)(solid-js@1.8.17)(svelte@4.2.18)(vinxi@0.4.1(@types/node@22.2.0)(ioredis@5.4.1)(terser@5.31.5))(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.3.1(next@15.0.0-canary.112(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-334f00b-20240725)(react-dom@19.0.0-rc-187dd6a7-20240806(react@19.0.0-rc-187dd6a7-20240806))(react@19.0.0-rc-187dd6a7-20240806))(react@19.0.0-rc-187dd6a7-20240806)
@@ -3540,8 +3540,8 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@upstash/qstash@2.6.3':
-    resolution: {integrity: sha512-fzX8AXdOIYGfOjHyMOukYADKdu+ftdXiMF26W6k1gvnUFaBg0+1jSmwSIojhi8KMOBDfSHCAxBCCq6z1+mDiEA==}
+  '@upstash/qstash@2.6.4':
+    resolution: {integrity: sha512-DSRol9j5zjRydV0C1GuPgqCURlxPgJY8ATSHTv750CmQZUNX2I7y4uRHxa8yUqYwOjLX5V3qrlBAFhqJQNu0Qg==}
 
   '@vercel/analytics@1.3.1':
     resolution: {integrity: sha512-xhSlYgAuJ6Q4WQGkzYTLmXwhYl39sWjoMA3nHxfkvG+WdBT25c563a7QhwwKivEOZtPJXifYHR1m2ihoisbWyA==}
@@ -11945,7 +11945,7 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@upstash/qstash@2.6.3(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5)))(rollup@4.19.2)(solid-js@1.8.17)(svelte@4.2.18)(vinxi@0.4.1(@types/node@22.2.0)(ioredis@5.4.1)(terser@5.31.5))(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))':
+  '@upstash/qstash@2.6.4(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5)))(rollup@4.19.2)(solid-js@1.8.17)(svelte@4.2.18)(vinxi@0.4.1(@types/node@22.2.0)(ioredis@5.4.1)(terser@5.31.5))(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))':
     dependencies:
       '@solidjs/start': 1.0.6(rollup@4.19.2)(solid-js@1.8.17)(vinxi@0.4.1(@types/node@22.2.0)(ioredis@5.4.1)(terser@5.31.5))(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))
       '@sveltejs/kit': 2.5.21(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5)))(svelte@4.2.18)(vite@5.3.5(@types/node@22.2.0)(terser@5.31.5))
