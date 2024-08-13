@@ -45,7 +45,7 @@
     "@emotion/server": "^11.11.0",
     "@faker-js/faker": "^8.4.1",
     "@formatjs/intl-localematcher": "^0.5.4",
-    "@google/generative-ai": "^0.16.0",
+    "@google/generative-ai": "^0.17.0",
     "@heroicons/react": "^2.1.5",
     "@hookform/resolvers": "^3.9.0",
     "@mantine/core": "^7.12.1",
