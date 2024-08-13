@@ -187,7 +187,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-0 lg:px-8 xl:px-16"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-96 lg:px-8 xl:px-16"
             >
               {children}
             </main>
