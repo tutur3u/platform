@@ -54,8 +54,8 @@ importers:
         specifier: ^0.0.36
         version: 0.0.36(zod@3.23.8)
       '@ai-sdk/google-vertex':
-        specifier: ^0.0.26
-        version: 0.0.26(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
+        specifier: ^0.0.27
+        version: 0.0.27(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
       '@ai-sdk/mistral':
         specifier: ^0.0.31
         version: 0.0.31(zod@3.23.8)
@@ -579,8 +579,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/google-vertex@0.0.26':
-    resolution: {integrity: sha512-MvPJ2hQWO3Uun/h41DjBD/Zq4IzABwL/lTA9A1LSIlmlEHH+tss7x5rCVEPLBVPxalhy4qvoV11ltrHI33XJig==}
+  '@ai-sdk/google-vertex@0.0.27':
+    resolution: {integrity: sha512-tkHRPGn7bk+ArqAWoFGF9zJwg1QYuJ5ZUb1gAbKMBMWv1ckw6/g5vYVj0sXLJ1cEuxXefGjKNvDBTziE7nPvMg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@google-cloud/vertexai': ^1.4.0
@@ -8531,7 +8531,7 @@ snapshots:
       '@ai-sdk/provider-utils': 1.0.10(zod@3.23.8)
       zod: 3.23.8
 
-  '@ai-sdk/google-vertex@0.0.26(@google-cloud/vertexai@1.3.1)(zod@3.23.8)':
+  '@ai-sdk/google-vertex@0.0.27(@google-cloud/vertexai@1.3.1)(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider': 0.0.18
       '@ai-sdk/provider-utils': 1.0.10(zod@3.23.8)
