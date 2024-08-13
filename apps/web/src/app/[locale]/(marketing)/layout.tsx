@@ -12,10 +12,7 @@ export default async function Layout({ children }: LayoutProps) {
     <>
       <Navbar hideMetadata />
       <NavbarPadding>
-        <div
-          id="main-content"
-          className="h-screen max-h-screen min-h-screen overflow-y-auto"
-        >
+        <div className="h-screen max-h-screen min-h-screen overflow-y-auto">
           {children}
           <Footer />
         </div>

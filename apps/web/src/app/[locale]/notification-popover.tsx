@@ -63,7 +63,11 @@ export default async function NotificationPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="hidden md:flex">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden flex-none md:flex"
+        >
           <div className="relative">
             <Bell className="h-5 w-5" />
             {notifications.length > 0 && (
