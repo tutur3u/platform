@@ -148,6 +148,7 @@ export default function UserGroupPosts({
                 <Input
                   id="title"
                   name="title"
+                  placeholder='e.g. "Meeting Notes"'
                   value={currentPost?.title || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -158,6 +159,7 @@ export default function UserGroupPosts({
                 <Textarea
                   id="content"
                   name="content"
+                  placeholder='e.g. "Today we discussed the upcoming event."'
                   value={currentPost?.content || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -168,6 +170,7 @@ export default function UserGroupPosts({
                 <Textarea
                   id="notes"
                   name="notes"
+                  placeholder='e.g. "Remember to follow up with the team."'
                   value={currentPost?.notes || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
