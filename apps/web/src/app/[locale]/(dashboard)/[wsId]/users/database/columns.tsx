@@ -11,7 +11,8 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import moment from 'moment';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -232,7 +233,11 @@ export const getUserColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('birthday')
-          ? format(row.getValue('birthday'), 'PPP')
+          ? dayjs(row.getValue('birthday'))
+              .locale(extraData?.locale)
+              .format(
+                extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
+              )
           : '-'}
       </div>
     ),
