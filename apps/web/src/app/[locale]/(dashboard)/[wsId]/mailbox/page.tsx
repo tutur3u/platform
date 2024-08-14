@@ -1,51 +1,36 @@
-'use client'
-import React, { useState } from 'react';
-import useEmail from '@/hooks/useEmail'; 
+import React from 'react';
+import UserList from '@/components/userLIst';
+import SendEmailForm from '@/components/sendEmailForm';
+import { createClient } from '@/utils/supabase/server';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 
-const EmailForm = ({ user, wsId, onClose }: { user: any, wsId: string, onClose: () => void }) => {
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const { sendEmail, loading, error, success } = useEmail();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await sendEmail({
-      to: 'tanphat.huynh23@gmail.com',
-      subject,
-      message,
-    });
-
-    if (success) {
-      alert('Email sent successfully!');
-      onClose();
-    }
+interface Props {
+  params: {
+    wsId: string;
   };
+}
+
+export default async function MailBox({ params: { wsId } }: Props) {
+  const supabase = createClient();
+  const { data: userData, error } = await supabase
+    .from('workspace_users')
+    .select('*')
+    .eq('ws_id', wsId);
+
+  if (error) {
+    return <div>Error fetching user data: {error.message}</div>;
+  }
+
+  if (!userData || userData.length === 0) {
+    return <div>No users found.</div>;
+  }
+
+
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Subject</label>
-        <input
-          type="text"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label>Message</label>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Sending...' : 'Send Email'}
-      </button>
-      {error && <p>Error: {error}</p>}
-    </form>
+    <div className='flex'>
+      <SendEmailForm users={userData as WorkspaceUser[]}  /> 
+      <UserList users={userData as WorkspaceUser[]} />  {/* Pass the first user to UserList */}
+    </div>
   );
-};
-
-export default EmailForm;
+}
