@@ -66,8 +66,8 @@ importers:
         specifier: ^0.0.42
         version: 0.0.42(react@19.0.0-rc-187dd6a7-20240806)(zod@3.23.8)
       '@anthropic-ai/sdk':
-        specifier: ^0.25.2
-        version: 0.25.2
+        specifier: ^0.26.0
+        version: 0.26.0
       '@deepgram/sdk':
         specifier: ^3.5.1
         version: 3.5.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
@@ -675,8 +675,8 @@ packages:
   '@antfu/utils@0.7.10':
     resolution: {integrity: sha512-+562v9k4aI80m1+VuMHehNJWLOFjBnXn3tdOitzD0il5b7smkSBal4+a3oKiQTbrwMmN/TBUMDvbdoWDehgOww==}
 
-  '@anthropic-ai/sdk@0.25.2':
-    resolution: {integrity: sha512-F1Hck/asswwidFLtGdMg3XYgRxEUfygNbpkq5KEaEGsHNaSfxeX18/uZGQCL0oQNcj/tYNx8BaFXVwRhFDi45g==}
+  '@anthropic-ai/sdk@0.26.0':
+    resolution: {integrity: sha512-vNbZ2rnnMfk8Bf4OdeVy6GA4EXao8tGC0tLEoSAl1NZrip9oOxnEGUkXl3FsPQgeBM5hmpGE1tSLuu9HEVJiHg==}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -8628,7 +8628,7 @@ snapshots:
 
   '@antfu/utils@0.7.10': {}
 
-  '@anthropic-ai/sdk@0.25.2':
+  '@anthropic-ai/sdk@0.26.0':
     dependencies:
       '@types/node': 18.19.42
       '@types/node-fetch': 2.6.11
