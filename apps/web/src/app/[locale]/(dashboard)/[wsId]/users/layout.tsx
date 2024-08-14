@@ -17,41 +17,39 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('overview'),
+      title: t('overview'),
       href: `/${wsId}/users`,
       matchExact: true,
     },
     {
-      name: t('attendance'),
+      title: t('attendance'),
       href: `/${wsId}/users/attendance`,
     },
     {
-      name: t('database'),
+      title: t('database'),
       href: `/${wsId}/users/database`,
     },
     {
-      name: t('groups'),
+      title: t('groups'),
       href: `/${wsId}/users/groups`,
     },
     {
-      name: t('group_tags'),
+      title: t('group_tags'),
       href: `/${wsId}/users/group-tags`,
     },
     {
-      name: t('reports'),
+      title: t('reports'),
       href: `/${wsId}/users/reports`,
     },
     {
-      name: t('fields'),
+      title: t('fields'),
       href: `/${wsId}/users/fields`,
     },
   ];
 
   return (
     <div>
-      <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto font-semibold">
-        <Navigation navLinks={navLinks} />
-      </div>
+      <Navigation navLinks={navLinks} />
       {children}
     </div>
   );

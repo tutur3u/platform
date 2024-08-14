@@ -46,7 +46,7 @@ export default function FeatureSummary<T>({
   secondaryDescription,
   primaryTrigger = form || href ? (
     <Button className="w-full md:w-fit" disabled={!form && !href}>
-      <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-2' : '')} />
+      <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-1' : '')} />
       {primaryTriggerTitle}
     </Button>
   ) : undefined,
@@ -56,7 +56,7 @@ export default function FeatureSummary<T>({
       className="w-full md:w-fit"
       disabled={!form && !href && !defaultData}
     >
-      <Cog className={cn('h-5 w-5', secondaryTriggerTitle ? 'mr-2' : '')} />
+      <Cog className={cn('h-5 w-5', secondaryTriggerTitle ? 'mr-1' : '')} />
       {secondaryTriggerTitle}
     </Button>
   ),

@@ -39,7 +39,7 @@ export default function Form() {
   const missingFields = !dates?.length || !startTime || !endTime || !timezone;
 
   return (
-    <div className="mb-32 flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
+    <div className="flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
       <div className="grid justify-center gap-2">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
         <DateSelector value={dates} onSelect={setDates} />

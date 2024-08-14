@@ -4,9 +4,20 @@ import { useAtTop } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@repo/ui/components/ui/button';
 import { IconArrowDown } from '@repo/ui/components/ui/icons';
 import { cn } from '@repo/ui/lib/utils';
+import { useEffect, useState } from 'react';
 
 export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   const isAtTop = useAtTop();
+  const [element, setElement] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setElement(document.getElementById('main-content'));
+    return () => {
+      setElement(null);
+    };
+  }, []);
+
+  if (!element) return null;
 
   return (
     <Button
@@ -15,7 +26,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
         className
       )}
       onClick={() => {
-        window.scrollTo({
+        element.scrollTo({
           top: 0,
           behavior: 'smooth',
         });

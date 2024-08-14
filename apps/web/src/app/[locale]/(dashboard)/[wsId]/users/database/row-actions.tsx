@@ -43,7 +43,7 @@ import dayjs from 'dayjs';
 import { Eye, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -51,6 +51,7 @@ import * as z from 'zod';
 interface UserRowActionsProps {
   row: Row<WorkspaceUser>;
   href?: string;
+  extraData?: any;
 }
 
 const FormSchema = z.object({
@@ -68,9 +69,10 @@ const FormSchema = z.object({
   note: z.string().optional(),
 });
 
-export function UserRowActions({ row, href }: UserRowActionsProps) {
+export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
 
   const user = row.original;
 
@@ -88,6 +90,33 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
       const data = await res.json();
       toast({
         title: 'Failed to delete workspace user',
+        description: data.message,
+      });
+    }
+  };
+
+  const removeUserFromGroup = async ({
+    wsId,
+    groupId,
+    userId,
+  }: {
+    wsId: string;
+    groupId: string;
+    userId: string;
+  }) => {
+    const res = await fetch(
+      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${userId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
+      toast({
+        title: 'Failed to remove user from group',
         description: data.message,
       });
     }
@@ -449,28 +478,30 @@ export function UserRowActions({ row, href }: UserRowActionsProps) {
           <DropdownMenuItem onClick={() => setOpen(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
-          {/* <DropdownMenuItem>Make a copy</DropdownMenuItem> */}
-          {/* <DropdownMenuItem>Favorite</DropdownMenuItem> */}
-          {/* <DropdownMenuSeparator /> */}
-          {/* <DropdownMenuSub>
-          <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={task.label}>
-              {labels.map((label) => (
-                <DropdownMenuRadioItem key={label.value} value={label.value}>
-                  {label.label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub> */}
+
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteUser}
-            disabled={!user.id || !user.ws_id}
-          >
-            Delete
-          </DropdownMenuItem>
+          {pathname.includes('/users/database') && (
+            <DropdownMenuItem
+              onClick={deleteUser}
+              disabled={!user.id || !user.ws_id}
+            >
+              Delete
+            </DropdownMenuItem>
+          )}
+          {extraData?.wsId && extraData?.groupId && (
+            <DropdownMenuItem
+              onClick={() =>
+                removeUserFromGroup({
+                  wsId: extraData.wsId,
+                  groupId: extraData.groupId,
+                  userId: user.id,
+                })
+              }
+              disabled={!user.id || !user.ws_id}
+            >
+              Remove from group
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
