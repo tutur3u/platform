@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import moment from 'moment';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -231,7 +232,7 @@ export const getUserColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('birthday')
-          ? moment(row.getValue('birthday')).format('DD/MM/YYYY')
+          ? format(row.getValue('birthday'), 'PPP')
           : '-'}
       </div>
     ),
