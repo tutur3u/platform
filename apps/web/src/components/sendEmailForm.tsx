@@ -1,18 +1,16 @@
-'use client'
-import useEmail from '@/hooks/useEmail';
-import React from 'react';
+'use client';
+
 import ReportEmail from '@/app/email/emailContents';
+import useEmail from '@/hooks/useEmail';
 
 const MyComponent = () => {
   const { sendEmail, loading, error, success } = useEmail();
 
   const handleSendEmail = async () => {
-  
-
     await sendEmail({
       to: 'tanphat.huynh23@gmail.com',
       subject: 'Your Report Preview',
-      component: <ReportEmail></ReportEmail>
+      component: <ReportEmail></ReportEmail>,
     });
   };
 

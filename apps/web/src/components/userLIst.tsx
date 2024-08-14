@@ -1,25 +1,25 @@
-import React from 'react';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from '../../../../packages/ui/src/components/ui/dropdown-menu'; // Adjust the import path
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
+import React from 'react';
 
 interface Props {
-  users: WorkspaceUser[]; // Accept an array of WorkspaceUser objects
+  users: WorkspaceUser[];
 }
 
 const UserList: React.FC<Props> = ({ users }) => {
-    console.log("user in userList"+ users);
+  console.log('user in userList' + users);
   return (
     <div>
       {users.map((user) => (
         <div key={user.id} className="mb-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-2 bg-gray-200 rounded">
+              <button className="rounded bg-gray-200 p-2">
                 {user.full_name || 'Unnamed User'}
               </button>
             </DropdownMenuTrigger>

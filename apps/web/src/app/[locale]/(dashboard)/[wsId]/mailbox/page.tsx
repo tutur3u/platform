@@ -1,8 +1,7 @@
-import React from 'react';
-import UserList from '@/components/userLIst';
+import UserList from '@/components/UserList';
 import SendEmailForm from '@/components/sendEmailForm';
-import { createClient } from '@/utils/supabase/server';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { createClient } from '@/utils/supabase/server';
 
 interface Props {
   params: {
@@ -11,14 +10,14 @@ interface Props {
 }
 
 // Sample report data structure
-interface UserGroupPost {
-  id: string;
-  groupid: string;
-  title: string;
-  content: string;
-  notes: string;
-  created_at: string;
-}
+// interface UserGroupPost {
+//   id: string;
+//   groupid: string;
+//   title: string;
+//   content: string;
+//   notes: string;
+//   created_at: string;
+// }
 
 export default async function MailBox({ params: { wsId } }: Props) {
   const supabase = createClient();
@@ -36,33 +35,34 @@ export default async function MailBox({ params: { wsId } }: Props) {
   }
 
   // Sample report data for testing
-  const reportData: UserGroupPost[] = [
-    {
-      id: '1',
-      groupid: 'grp-001',
-      title: 'Monthly Performance Report',
-      content: 'This is the detailed content of the report for the group.',
-      notes: 'These are additional notes about the performance.',
-      created_at: '2024-08-14T06:27:02.264969+00:00',
-    },
-    {
-      id: '2',
-      groupid: 'grp-002',
-      title: 'Weekly Update',
-      content: 'This is the content of the weekly update for the group.',
-      notes: 'Additional notes for the weekly update.',
-      created_at: '2024-08-07T06:27:02.264969+00:00',
-    },
-  ];
+  // const reportData: UserGroupPost[] = [
+  //   {
+  //     id: '1',
+  //     groupid: 'grp-001',
+  //     title: 'Monthly Performance Report',
+  //     content: 'This is the detailed content of the report for the group.',
+  //     notes: 'These are additional notes about the performance.',
+  //     created_at: '2024-08-14T06:27:02.264969+00:00',
+  //   },
+  //   {
+  //     id: '2',
+  //     groupid: 'grp-002',
+  //     title: 'Weekly Update',
+  //     content: 'This is the content of the weekly update for the group.',
+  //     notes: 'Additional notes for the weekly update.',
+  //     created_at: '2024-08-07T06:27:02.264969+00:00',
+  //   },
+  // ];
 
   return (
-    <div className='flex'>
-      <SendEmailForm 
-        users={userData as WorkspaceUser[]}  // Pass the fetched user data
-        posts={reportData}                   // Pass the sample report data
-        userGroupPostId="1"                  // Specify the ID of the report to send
-      /> 
-      <UserList users={userData as WorkspaceUser[]} />  {/* Pass the users to UserList */}
+    <div className="flex">
+      <SendEmailForm
+      // users={userData as WorkspaceUser[]}
+      // posts={reportData}
+      // userGroupPostId="1"
+      />
+      <UserList users={userData as WorkspaceUser[]} />{' '}
+      {/* Pass the users to UserList */}
     </div>
   );
 }

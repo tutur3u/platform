@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import juice from 'juice';
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import juice from 'juice';
 
 interface SendEmailParams {
   to: string;
