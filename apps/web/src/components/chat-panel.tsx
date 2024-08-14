@@ -105,7 +105,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
-      <div className="sticky inset-x-0 bottom-[66px] md:bottom-0">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-96">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
@@ -259,7 +259,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`bg-background/20 flex flex-col items-start justify-end rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg transition-all`}
+              className={`bg-background/20 flex flex-col items-start justify-end rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all`}
             >
               <ChatModelSelector
                 open={showExtraOptions}
