@@ -30,7 +30,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^0.0.14",
+    "@ai-sdk/amazon-bedrock": "^0.0.15",
     "@ai-sdk/anthropic": "^0.0.40",
     "@ai-sdk/azure": "^0.0.23",
     "@ai-sdk/cohere": "^0.0.14",
