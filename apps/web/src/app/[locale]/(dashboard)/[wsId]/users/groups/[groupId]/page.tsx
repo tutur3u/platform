@@ -1,6 +1,7 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
+import UserGroupPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -10,8 +11,6 @@ import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { format } from 'date-fns';
-import { Clock } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -69,34 +68,14 @@ export default async function UserGroupDetailsPage({
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <div className="border-border bg-foreground/5 grid w-full justify-between rounded-lg border p-4 pb-0">
-          <div className="text-xl font-semibold">Posts</div>
-          <Separator className="mt-4 w-full" />
-          <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="hover:bg-foreground/10 flex flex-col gap-2 rounded border p-2"
-              >
-                <div>
-                  <div className="text-sm font-semibold">{post.title}</div>
-                  <div className="flex items-center gap-0.5 text-xs opacity-50">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
-                  </div>
-                </div>
-                {post.content && (
-                  <div className="text-sm opacity-70">{post.content}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-          <div className="text-xl font-semibold">Attendance Calendar</div>
-        </div>
+      {/* <div className="grid w-full grid-cols-1 gap-2"> */}
+      <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
+        <UserGroupPosts wsId={wsId} groupId={groupId} posts={posts} />
       </div>
+      {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+          <div className="text-xl font-semibold">Attendance Calendar</div>
+        </div> */}
+      {/* </div> */}
       <Separator className="my-4" />
 
       <CustomDataTable
