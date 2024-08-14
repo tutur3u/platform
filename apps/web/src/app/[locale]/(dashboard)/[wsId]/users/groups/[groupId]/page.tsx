@@ -23,6 +23,7 @@ interface SearchParams {
 
 interface Props {
   params: {
+    locale: string;
     wsId: string;
     groupId: string;
   };
@@ -30,7 +31,7 @@ interface Props {
 }
 
 export default async function UserGroupDetailsPage({
-  params: { wsId, groupId },
+  params: { locale, wsId, groupId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
@@ -83,7 +84,7 @@ export default async function UserGroupDetailsPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ wsId, groupId }}
+        extraData={{ locale, wsId, groupId }}
         count={usersCount}
         filters={[
           <UserDatabaseFilter
