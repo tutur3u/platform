@@ -1,0 +1,23 @@
+{
+  "name": "transactional",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    ".react-email"
+  ],
+  "scripts": {
+    "dev": "email dev -p 3001",
+    "export": "email export"
+  },
+  "packageManager": "pnpm@9.7.1",
+  "dependencies": {
+    "@react-email/components": "0.0.22",
+    "@react-email/tailwind": "0.0.19",
+    "react": "18.3.1",
+    "react-email": "2.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.3.0",
+    "@types/react": "^18.3.3"
+  }
+}
