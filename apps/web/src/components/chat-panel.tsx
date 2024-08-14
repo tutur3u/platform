@@ -3,6 +3,7 @@ import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
+import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
@@ -104,7 +105,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
-      <div className="to-muted/50 fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-96">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
@@ -258,7 +259,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`bg-background/20 flex flex-col items-start justify-end rounded-t-xl border border-t p-2 shadow-lg backdrop-blur-lg transition-all`}
+              className={`bg-background/20 flex flex-col items-start justify-end rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all`}
             >
               <ChatModelSelector
                 open={showExtraOptions}
@@ -397,7 +398,7 @@ export function ChatPanel({
 
               <div className="flex items-center justify-center">
                 <QRCode
-                  value={`${window.location.origin}/ai/chats/${id}`}
+                  value={`${BASE_URL}/ai/chats/${id}`}
                   size={256}
                   style={{
                     borderRadius: '0.5rem',
@@ -409,35 +410,33 @@ export function ChatPanel({
 
           <Separator className="my-4" />
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              navigator.clipboard.writeText(
-                `${window.location.origin}/ai/chats/${id}`
-              );
-              setCopiedLink(true);
-              setTimeout(() => setCopiedLink(false), 2000);
-            }}
-            disabled={disablePublicLink || copiedLink}
-          >
-            {copiedLink ? (
-              <CheckCheck className="mr-2 h-4 w-4" />
-            ) : (
-              <LinkIcon className="mr-2 h-4 w-4" />
-            )}
-            {t('copy_public_link')}
-          </Button>
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open(`${window.location.origin}/ai/chats/${id}`)
-            }
-            disabled={disablePublicLink}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            {t('open_public_link')}
-          </Button>
+          <div className="grid w-full gap-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                navigator.clipboard.writeText(`${BASE_URL}/ai/chats/${id}`);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              disabled={disablePublicLink || copiedLink}
+            >
+              {copiedLink ? (
+                <CheckCheck className="mr-2 h-4 w-4" />
+              ) : (
+                <LinkIcon className="mr-2 h-4 w-4" />
+              )}
+              {t('copy_public_link')}
+            </Button>
+            <Button
+              className="w-full"
+              onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
+              disabled={disablePublicLink}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {t('open_public_link')}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

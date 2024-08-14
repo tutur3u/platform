@@ -187,10 +187,15 @@ const Chat = ({
       count !== undefined
     ) {
       setInitialScroll(false);
-      window.scrollTo({
-        top: chat?.id ? document.body.scrollHeight : 0,
-        behavior: 'smooth',
-      });
+      const mainChatContent = document.getElementById('main-chat-content');
+
+      if (mainChatContent) {
+        const scrollTop = chat?.id ? mainChatContent.scrollTop : 0;
+        mainChatContent.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth',
+        });
+      }
     }
 
     if (chat?.id && input) {
@@ -299,8 +304,8 @@ const Chat = ({
   }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
-    <>
-      <div className={cn('pt-4 md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
+    <div className="relative h-screen max-h-screen">
+      <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -414,7 +419,7 @@ const Chat = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 

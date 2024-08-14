@@ -3,10 +3,16 @@
 import { cn } from '@/lib/utils';
 import { useParams } from 'next/navigation';
 
-export default function LogoTitle({ className }: { className?: string }) {
+export default function LogoTitle({
+  forceShow = false,
+  className,
+}: {
+  forceShow?: boolean;
+  className?: string;
+}) {
   const params = useParams();
   const hasWorkspace = !!params.wsId;
 
-  if (hasWorkspace) return null;
+  if (!forceShow && hasWorkspace) return null;
   return <div className={cn('text-2xl', className)}>Tuturuuu</div>;
 }

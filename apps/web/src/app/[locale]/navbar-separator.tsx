@@ -9,16 +9,28 @@ export default function NavbarSeparator() {
   const [scroll, setScroll] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => setScroll(window.scrollY);
+    const mainContentElement = document.getElementById('main-content');
+
+    const handleScroll = () => {
+      if (mainContentElement) {
+        setScroll(mainContentElement.scrollTop);
+      }
+    };
 
     // Set initial scroll value
     handleScroll();
 
     // Add event listener
-    window.addEventListener('scroll', handleScroll);
+    if (mainContentElement) {
+      mainContentElement.addEventListener('scroll', handleScroll);
+    }
 
     // Remove event listener
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      if (mainContentElement) {
+        mainContentElement.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
 
   const forceShow = pathname.startsWith('/docs');
