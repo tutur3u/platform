@@ -34,4 +34,3 @@ yarn-error.log*
 
 # ui
 dist/
-apps/web/src/components/sendEmailForm.tsx
