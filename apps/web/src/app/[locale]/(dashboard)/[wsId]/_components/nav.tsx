@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface NavProps {
@@ -30,13 +30,14 @@ export function Nav({
   onClick,
 }: NavProps) {
   const pathname = usePathname();
-  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+  const searchParams = useSearchParams();
 
+  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return (
     <div
@@ -80,7 +81,9 @@ export function Nav({
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
-                  href={link.href}
+                  href={
+                    link.forceRefresh ? `${link.href}?refresh=true` : link.href
+                  }
                   className={cn(
                     buttonVariants({
                       variant: isActive ? 'default' : 'ghost',
@@ -111,7 +114,7 @@ export function Nav({
           ) : (
             <Link
               key={index}
-              href={link.href}
+              href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
               className={cn(
                 buttonVariants({
                   variant: isActive ? 'default' : 'ghost',

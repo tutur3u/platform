@@ -11,7 +11,10 @@ export default async function Layout({ children }: LayoutProps) {
     <>
       <Navbar hideMetadata />
       <NavbarPadding>
-        <div className="h-screen max-h-screen min-h-screen overflow-y-auto">
+        <div
+          id="main-content"
+          className="h-screen max-h-screen min-h-screen overflow-y-auto"
+        >
           {children}
         </div>
       </NavbarPadding>

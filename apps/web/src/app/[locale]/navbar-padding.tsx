@@ -18,9 +18,7 @@ export default function NavbarPadding({
         style={{ height: `${navbarHeight}px` }}
         className={cn(onlyOnMobile ? 'md:hidden' : '')}
       />
-      <div style={{ paddingTop: `${navbarHeight}px` }} className="relative">
-        {children}
-      </div>
+      <div className="relative">{children}</div>
     </>
   );
 }
