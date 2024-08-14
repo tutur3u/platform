@@ -185,62 +185,71 @@ export default function UserGroupPosts({
           </DialogContent>
         </Dialog>
 
-        {posts.map((post) => (
-          <div key={post.id} className="flex flex-col gap-2 rounded border p-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-sm font-semibold">{post.title}</div>
-                {post.created_at && (
-                  <div className="flex items-center gap-0.5 text-xs opacity-50">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
-                  </div>
-                )}
+        {posts.length > 0 ? (
+          posts.map((post) => (
+            <div
+              key={post.id}
+              className="flex flex-col gap-2 rounded border p-2"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-sm font-semibold">{post.title}</div>
+                  {post.created_at && (
+                    <div className="flex items-center gap-0.5 text-xs opacity-50">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenDialog(post)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete your account and remove your data from our
+                          servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => post.id && deletePost(post.id)}
+                        >
+                          Continue
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleOpenDialog(post)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete your account and remove your data from our
-                        servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => post.id && deletePost(post.id)}
-                      >
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+              {post.content && (
+                <div className="whitespace-pre-line text-sm opacity-70">
+                  {post.content}
+                </div>
+              )}
             </div>
-            {post.content && (
-              <div className="whitespace-pre-line text-sm opacity-70">
-                {post.content}
-              </div>
-            )}
+          ))
+        ) : (
+          <div className="text-center text-sm opacity-50">
+            No posts to show.
           </div>
-        ))}
+        )}
       </div>
     </>
   );
