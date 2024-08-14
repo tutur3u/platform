@@ -1,4 +1,4 @@
-import UserList from '@/components/UserList';
+import UserList from '@/components/CustomUserList';
 import SendEmailForm from '@/components/sendEmailForm';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
