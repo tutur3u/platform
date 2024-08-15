@@ -1331,5 +1331,14 @@
     "monthly_total_from_12_recent_months": "Tổng số token sử dụng hàng tháng trong 12 tháng gần đây",
     "prompt_tokens": "Token lệnh nhắc",
     "completion_tokens": "Token hoàn thành"
+  },
+  "workspace-mailbox": {
+    "overview": "Tổng quan",
+    "emails": "Lịch sử gửi thư",
+    "history": "Lịch sử",
+    "send": "Gửi thư"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Địa chỉ đích"
   }
 }

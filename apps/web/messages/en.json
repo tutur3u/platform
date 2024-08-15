@@ -1331,5 +1331,14 @@
     "monthly_total_from_12_recent_months": "Monthly total token from 12 most recent months",
     "prompt_tokens": "Prompt tokens",
     "completion_tokens": "Completion tokens"
+  },
+  "workspace-mailbox": {
+    "overview": "Overview",
+    "emails": "Emails",
+    "history": "History",
+    "send": "Send email"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Destination Addresses"
   }
 }

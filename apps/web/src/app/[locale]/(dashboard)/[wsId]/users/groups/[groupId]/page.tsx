@@ -1,7 +1,7 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
-import UserGroupPosts from './posts';
+import PostsClient from './posts-client';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -71,7 +71,7 @@ export default async function UserGroupDetailsPage({
       <Separator className="my-4" />
       {/* <div className="grid w-full grid-cols-1 gap-2"> */}
       <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
-        <UserGroupPosts wsId={wsId} groupId={groupId} posts={posts} />
+        <PostsClient wsId={wsId} groupId={groupId} posts={posts} />
       </div>
       {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
           <div className="text-xl font-semibold">Attendance Calendar</div>

@@ -115,7 +115,7 @@ export default async function Layout({
     },
     {
       title: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox`,
+      href: `/${wsId}/mailbox/send`,
       icon: <Mail className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_MAILBOX', 'true', secrets),
     },

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
 
 interface SendEmailParams {
-  to: string;
+  recipients: string[];
   subject: string;
   component: React.ReactElement; // Accept a React component
 }
@@ -23,7 +23,7 @@ const useEmail = () => {
   const [success, setSuccess] = useState(false);
 
   const sendEmail = async ({
-    to,
+    recipients,
     subject,
     component,
   }: SendEmailParams): Promise<void> => {
@@ -39,9 +39,9 @@ const useEmail = () => {
       const inlinedHtmlContent = juice(htmlContent);
 
       const params = {
-        Source: process.env.NEXT_PUBLIC_SOURCE_EMAIL,
+        Source: `${process.env.NEXT_PUBLIC_SOURCE_NAME} <${process.env.NEXT_PUBLIC_SOURCE_EMAIL}>`,
         Destination: {
-          ToAddresses: [to],
+          ToAddresses: recipients,
         },
         Message: {
           Subject: { Data: subject },
