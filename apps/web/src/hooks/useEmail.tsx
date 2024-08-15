@@ -41,7 +41,7 @@ const useEmail = () => {
       const params = {
         Source: `${process.env.NEXT_PUBLIC_SOURCE_NAME} <${process.env.NEXT_PUBLIC_SOURCE_EMAIL}>`,
         Destination: {
-          ToAddresses: recipients,
+          BccAddresses: recipients,
         },
         Message: {
           Subject: { Data: subject },

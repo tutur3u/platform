@@ -10,9 +10,18 @@ export interface UserGroupPost {
 }
 
 const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
-  // const baseUrl = process.env.VERCEL_URL
-  //   ? `https://${process.env.VERCEL_URL}`
-  //   : '';
+  const forcePost: Partial<UserGroupPost> = {
+    id: '1',
+    group_name: '[COSC1234] Event Management',
+    title: 'MINDSET 2 - UNIT 8 - FESTIVALS AND TRADITIONS',
+    content: 'Listening - Exam skills',
+  };
+
+  const nextPost = forcePost.id ? forcePost : post;
+
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : '';
 
   return (
     <Html>
@@ -51,7 +60,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <div className="text-center font-semibold uppercase">
                   Báo cáo tiến độ học tập theo ngày
                 </div>
-                <div className="text-blue-500">{post.group_name}</div>
+                <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
@@ -66,16 +75,17 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 })}
                 , lớp{' '}
                 <span className="font-semibold underline">
-                  {post.group_name}
+                  {nextPost.group_name}
                 </span>
                 , với nội dung như sau:
               </p>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Bài học:</span>{' '}
-                <span className="">{post.title}</span>
+                <span className="">{nextPost.title}</span>
               </p>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Nội dung:</span> {post.content}
+                <span className="font-semibold">Nội dung:</span>{' '}
+                {nextPost.content}
               </p>
             </div>
             <hr />
@@ -89,7 +99,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <div className="text-center font-semibold uppercase">
                   Daily learning progress report
                 </div>
-                <div className="text-blue-500">{post.group_name}</div>
+                <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
                 Easy Center kindly sends parents a report on the learning
@@ -105,16 +115,17 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 })}
                 , class{' '}
                 <span className="font-semibold underline">
-                  {post.group_name}
+                  {nextPost.group_name}
                 </span>
                 , with the following content:
               </p>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Lesson:</span>{' '}
-                <span className="">{post.title}</span>
+                <span className="">{nextPost.title}</span>
               </p>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Content:</span> {post.content}
+                <span className="font-semibold">Content:</span>{' '}
+                {nextPost.content}
               </p>
             </div>
             {/* <hr />

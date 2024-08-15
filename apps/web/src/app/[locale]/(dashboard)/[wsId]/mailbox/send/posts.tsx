@@ -38,6 +38,7 @@ export default function MailboxPosts({
       <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
         <UserGroupPosts
           wsId={wsId}
+          selectedPostId={selectedPostId || undefined}
           posts={posts}
           onClick={(id) => setSelectedPostId(id)}
         />
@@ -45,10 +46,12 @@ export default function MailboxPosts({
 
       <Separator className="my-4" />
       <div>
-        <div className="text-2xl font-semibold">Destination Emails</div>
+        <div className="text-xl font-semibold">Destination Emails</div>
         <div>
-          {emails.map((email) => (
-            <div key={email}>{email}</div>
+          {emails.map((email, idx) => (
+            <div key={email} className="font-semibold">
+              {idx + 1}. <span className="underline">{email}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -56,14 +59,32 @@ export default function MailboxPosts({
       {selectedPost?.id && (
         <>
           <Separator className="my-4" />
-          <div className="mb-4">
+          <div className="border-border bg-foreground/5 mb-4 grid rounded-lg border p-4">
             <div>
-              <div className="text-2xl font-semibold">Selected Post</div>
-              <div>Group Name: {selectedPost.group_name}</div>
+              <div className="text-xl font-semibold">Selected Post</div>
+              <div>
+                <span className="font-semibold">Group Name:</span>{' '}
+                {selectedPost.group_name}
+              </div>
             </div>
-            <div>Title: {selectedPost.title}</div>
-            <div>Content: {selectedPost.content}</div>
-            <div>Notes: {selectedPost.notes}</div>
+            {selectedPost.title && (
+              <div>
+                <span className="font-semibold">Title:</span>{' '}
+                {selectedPost.title}
+              </div>
+            )}
+            {selectedPost.content && (
+              <div>
+                <span className="font-semibold">Content:</span>{' '}
+                {selectedPost.content}
+              </div>
+            )}
+            {selectedPost.notes && (
+              <div>
+                <span className="font-semibold">Notes:</span>{' '}
+                {selectedPost.notes}
+              </div>
+            )}
           </div>
           <PostEmailForm post={selectedPost} />
         </>

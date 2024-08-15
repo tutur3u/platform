@@ -80,7 +80,6 @@ export default async function WorkspaceUsersPage({
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
       />
-      <Separator className="mb-4" />
       <MailboxPosts
         wsId={wsId}
         emails={

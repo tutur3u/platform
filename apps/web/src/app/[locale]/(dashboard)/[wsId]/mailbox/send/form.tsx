@@ -1,7 +1,7 @@
 'use client';
 
 import { UserGroupPost } from '../../users/groups/[groupId]/posts';
-import { PostEmailTemplate } from './post-template';
+import PostEmailTemplate from './post-template';
 import useEmail from '@/hooks/useEmail';
 import { Button } from '@repo/ui/components/ui/button';
 
@@ -10,8 +10,8 @@ const PostEmailForm = ({ post }: { post: UserGroupPost }) => {
 
   const handleSendEmail = async () => {
     await sendEmail({
-      recipients: ['vohoangphuc@tuturuuu.com'],
-      subject: `New post from ${post.group_name}`,
+      recipients: ['vohoangphuc@tuturuuu.com', 'phathuynh@tuturuuu.com'],
+      subject: `Bài viết mới từ ${post.group_name}`,
       component: <PostEmailTemplate post={post} />,
     });
   };

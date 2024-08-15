@@ -23,6 +23,7 @@ import { Label } from '@repo/ui/components/ui/label';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -40,11 +41,13 @@ export interface UserGroupPost {
 export default function UserGroupPosts({
   wsId,
   groupId,
+  selectedPostId,
   posts,
   onClick,
 }: {
   wsId: string;
   groupId?: string;
+  selectedPostId?: string;
   posts: UserGroupPost[];
   onClick?: (id: string) => void;
 }) {
@@ -126,10 +129,12 @@ export default function UserGroupPosts({
     <>
       <div className="flex items-center justify-between">
         <div className="text-xl font-semibold">Posts</div>
-        <Button onClick={() => handleOpenDialog()}>
-          <BookPlus className="mr-1 h-5 w-5" />
-          Add Post
-        </Button>
+        {groupId && (
+          <Button onClick={() => handleOpenDialog()}>
+            <BookPlus className="mr-1 h-5 w-5" />
+            Add Post
+          </Button>
+        )}
       </div>
       <Separator className="mt-4 w-full" />
       <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
@@ -192,7 +197,12 @@ export default function UserGroupPosts({
           posts.map((post) => (
             <div
               key={post.id}
-              className="flex flex-col gap-2 rounded border p-2"
+              className={cn(
+                'flex flex-col gap-2 rounded border p-2',
+                selectedPostId === post.id &&
+                  'border-foreground bg-foreground/10',
+                groupId || 'cursor-pointer'
+              )}
               onClick={() => post.id && onClick && onClick(post.id)}
             >
               <div className="flex items-start justify-between">
