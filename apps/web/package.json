@@ -40,7 +40,7 @@
     "@ai-sdk/openai": "^0.0.46",
     "@ai-sdk/react": "^0.0.43",
     "@anthropic-ai/sdk": "^0.26.0",
-    "@aws-sdk/client-ses": "^3.629.0",
+    "@aws-sdk/client-ses": "^3.631.0",
     "@deepgram/sdk": "^3.5.1",
     "@emotion/react": "^11.13.0",
     "@emotion/server": "^11.11.0",
