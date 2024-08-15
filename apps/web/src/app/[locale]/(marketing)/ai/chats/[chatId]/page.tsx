@@ -32,7 +32,7 @@ export default async function AIPage({
   };
 
   return (
-    <div className="p-4 lg:p-0">
+    <div className="h-full p-4 lg:p-0">
       <Chat
         wsId={wsId}
         hasKeys={hasKeys}

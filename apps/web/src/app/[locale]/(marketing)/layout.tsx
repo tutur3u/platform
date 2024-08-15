@@ -14,9 +14,9 @@ export default async function Layout({ children }: LayoutProps) {
       <NavbarPadding>
         <div
           id="main-content"
-          className="h-screen max-h-screen min-h-screen overflow-y-auto"
+          className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto"
         >
-          {children}
+          <div className="flex-none">{children}</div>
           <Footer />
         </div>
       </NavbarPadding>

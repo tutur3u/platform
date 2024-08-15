@@ -304,7 +304,7 @@ const Chat = ({
   }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
-    <div className="relative h-screen max-h-screen">
+    <div className="relative">
       <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
