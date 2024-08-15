@@ -123,7 +123,7 @@ async function getData(wsId: string, groupId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as WorkspaceUser;
+  return data as UserGroup;
 }
 
 async function getUserData(
