@@ -1,4 +1,4 @@
-import { Head, Html, Tailwind } from '@react-email/components';
+import { Head, Html, Img, Tailwind } from '@react-email/components';
 
 export interface UserGroupPost {
   id?: string;
@@ -27,16 +27,18 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
     <Html>
       <Head />
       <Tailwind>
-        <div className="bg-gray-100 p-6 font-sans">
+        <div className="m-4 rounded-lg border bg-gray-100 p-6 font-sans">
           <div className="mx-auto max-w-md overflow-hidden rounded-lg bg-white shadow-lg">
             <div className="px-6 py-4">
               <div className="text-center">
                 <div className="w-full text-center">
-                  {/* <Img
-                    src={`${baseUrl}/media/logos/easy.png`}
-                    width="100"
-                    height="38"
-                  /> */}
+                  <div className="flex items-center justify-center">
+                    <Img
+                      src={`${baseUrl}/static/easy.png`}
+                      width="100"
+                      height="38"
+                    />
+                  </div>
                   <div className="text-lg font-bold text-gray-800">
                     Easy Center
                   </div>
