@@ -31,7 +31,7 @@ interface Props {
 
 export default async function WorkspaceFinancePage({
   params: { wsId },
-  searchParams,
+  searchParams: _,
 }: Props) {
   const { data: dailyData } = await getDailyData(wsId);
   const { data: monthlyData } = await getMonthlyData(wsId);
