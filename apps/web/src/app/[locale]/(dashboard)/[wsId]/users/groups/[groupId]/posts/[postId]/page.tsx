@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default async function HomeworkCheck({
-  params: { locale, wsId, groupId, postId },
+  params: {  wsId, groupId, postId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
@@ -43,7 +43,6 @@ export default async function HomeworkCheck({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
-  // console.log("Hello users" +  JSON.stringify(users.length));
   return (
     <div>
       <FeatureSummary
@@ -54,7 +53,7 @@ export default async function HomeworkCheck({
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
-    <CardList users= {users}></CardList>
+    <CardList wsId={wsId} postId={postId} groupId={groupId} users= {users}></CardList>
     </div>
   );
 }
