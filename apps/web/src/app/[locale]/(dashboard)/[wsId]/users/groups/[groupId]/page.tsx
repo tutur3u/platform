@@ -58,6 +58,7 @@ export default async function UserGroupDetailsPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
+  
   return (
     <>
       <FeatureSummary
@@ -78,7 +79,6 @@ export default async function UserGroupDetailsPage({
         </div> */}
       {/* </div> */}
       <Separator className="my-4" />
-
       <CustomDataTable
         data={users}
         namespace="user-data-table"
