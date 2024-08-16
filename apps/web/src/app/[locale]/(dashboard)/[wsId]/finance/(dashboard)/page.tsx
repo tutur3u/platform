@@ -8,6 +8,7 @@ import {
   WalletsStatistics,
 } from '../../(dashboard)/statistics';
 import { DailyTotalChart, MonthlyTotalChart } from './charts';
+import { Filter } from './filter';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -17,46 +18,56 @@ interface Props {
   params: {
     wsId: string;
   };
+  searchParams: {
+    view?: string;
+    startDate?: string;
+    endDate?: string;
+    startMonth?: string;
+    endMonth?: string;
+    startYear?: string;
+    endYear?: string;
+  };
 }
 
 export default async function WorkspaceFinancePage({
   params: { wsId },
+  searchParams,
 }: Props) {
   const { data: dailyData } = await getDailyData(wsId);
   const { data: monthlyData } = await getMonthlyData(wsId);
-
   return (
-    <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-        <TotalBalanceStatistics wsId={wsId} />
-      </Suspense>
+    <>
+      <Filter className="mb-4 flex items-end gap-4 p-2" />
+      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
+          <TotalBalanceStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <IncomeStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <IncomeStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <ExpenseStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <ExpenseStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <WalletsStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <WalletsStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <TransactionCategoriesStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <TransactionCategoriesStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <TransactionsStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <TransactionsStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard />}>
-        <InvoicesStatistics wsId={wsId} />
-      </Suspense>
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <InvoicesStatistics wsId={wsId} />
+        </Suspense>
 
-      <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
-        <>
+        <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
           <Separator className="col-span-full mb-4" />
           <DailyTotalChart data={dailyData} className="col-span-full" />
           <Separator className="col-span-full my-4" />
@@ -64,9 +75,9 @@ export default async function WorkspaceFinancePage({
             data={monthlyData}
             className="col-span-full mb-32"
           />
-        </>
-      </Suspense>
-    </div>
+        </Suspense>
+      </div>
+    </>
   );
 }
 
