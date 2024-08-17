@@ -1,17 +1,9 @@
+import { UserGroupPost } from '../../users/groups/[groupId]/posts/[postId]/card';
 import { Head, Html, Img, Tailwind } from '@react-email/components';
-
-export interface UserGroupPost {
-  id?: string;
-  group_name?: string;
-  title: string | null;
-  content: string | null;
-  notes: string | null;
-  created_at?: string;
-}
 
 interface Props {
   post: UserGroupPost;
-  isHomeworkDone: boolean;
+  isHomeworkDone?: boolean;
 }
 
 const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
@@ -56,9 +48,11 @@ const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
                 <div className="text-center font-semibold uppercase">
                   Báo cáo tiến độ học tập theo ngày
                 </div>
-                <div className="text-lg text-red-500">
-                  {isHomeworkDone ? 'Đã làm bài tập' : 'Chưa làm bài tập'}
-                </div>
+                {isHomeworkDone !== undefined && (
+                  <div className="text-lg text-red-500">
+                    {isHomeworkDone ? 'Đã làm bài tập' : 'Chưa làm bài tập'}
+                  </div>
+                )}
                 <div className="text-blue-500">{post.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">

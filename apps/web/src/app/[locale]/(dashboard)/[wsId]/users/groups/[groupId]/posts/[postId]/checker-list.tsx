@@ -1,13 +1,5 @@
-import React from "react";
+import React from 'react';
 
-
-
-export default function CheckList({}:{
-
-}){
-    return(
-        <div>
-            hello wolrd
-        </div>
-    )
+export default function CheckList({}: {}) {
+  return <div>hello wolrd</div>;
 }

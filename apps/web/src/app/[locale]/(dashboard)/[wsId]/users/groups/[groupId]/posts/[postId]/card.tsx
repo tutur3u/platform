@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
+import useEmail from '@/hooks/useEmail';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
@@ -6,15 +7,13 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Input } from '@repo/ui/components/ui/input';
 import { Check, Save, X } from 'lucide-react';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
-import useEmail from '@/hooks/useEmail';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
 interface Props {
   user: WorkspaceUser;
   wsId: string;
-  group: UserGroupPost;
-  postId: string;
-  groupId: string;
+  post: UserGroupPost;
 }
 
 interface Post {
@@ -27,14 +26,14 @@ interface Post {
 
 export interface UserGroupPost {
   id?: string;
-  ws_id?:string;
+  title: string | null;
+  content: string | null;
+  ws_id?: string;
   name?: string;
   created_at?: string;
-  archived?: string;
-  ending_data?: string;
-  notes?: string;
-  sessions?: string;
-  starting_data?: string;
+  notes: string | null;
+  group_id?: string;
+  group_name?: string;
 }
 
 interface ButtonState {
@@ -42,7 +41,7 @@ interface ButtonState {
   saveType: string;
 }
 
-function UserCard({ user, wsId,group, postId, groupId }: Props) {
+function UserCard({ user, wsId, post }: Props) {
   const [buttonState, setButtonState] = useState<ButtonState>({
     isClicked: false,
     saveType: '',
@@ -55,11 +54,13 @@ function UserCard({ user, wsId,group, postId, groupId }: Props) {
 
   useEffect(() => {
     async function fetchData() {
+      if (!user.id || !post.id) return;
+
       const { data, error } = await supabase
         .from('user_group_post_checks')
         .select('*')
         .eq('user_id', user.id)
-        .eq('post_id', postId)
+        .eq('post_id', post.id)
         .single();
 
       if (error) {
@@ -71,15 +72,15 @@ function UserCard({ user, wsId,group, postId, groupId }: Props) {
       }
     }
     fetchData();
-  }, [supabase, user.id, postId]);
-
+  }, [supabase, user.id, post.id]);
 
   async function handleSave() {
+    if (!user.id || !post.id || !post.group_id) return;
+
     const method = isExist ? 'PUT' : 'POST';
-    const endpoint =
-      isExist
-        ? `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}`
-        : `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/`;
+    const endpoint = isExist
+      ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
+      : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/`;
 
     const response = await fetch(endpoint, {
       method,
@@ -88,7 +89,7 @@ function UserCard({ user, wsId,group, postId, groupId }: Props) {
       },
       body: JSON.stringify({
         user_id: user.id,
-        post_id: postId,
+        post_id: post.id,
         notes: notes,
         is_completed: buttonState.saveType === 'approve',
         created_at: isExist ? isExist.created_at : new Date().toISOString(),
@@ -115,12 +116,17 @@ function UserCard({ user, wsId,group, postId, groupId }: Props) {
   }
 
   const handleSendEmail = async () => {
-    console.log("hello sned email");
-    if (group) {
+    console.log('hello sned email');
+    if (post) {
       await sendEmail({
         recipients: ['phathuynh@tuturuuu.com'],
-        subject: `Easy Center | Báo cáo tiến độ - ${group.name}`,
-        component: <PostEmailTemplate isHomeworkDone={isCompleted} post={group} />,
+        subject: `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()}`,
+        component: (
+          <PostEmailTemplate
+            isHomeworkDone={isCompleted ?? undefined}
+            post={post}
+          />
+        ),
       });
     }
   };
@@ -138,7 +144,9 @@ function UserCard({ user, wsId,group, postId, groupId }: Props) {
           />
         ) : (
           <Avatar className="h-12 w-12 rounded-full object-cover">
-            <AvatarFallback>{user.full_name?  user.full_name.charAt(0) : 'u'}</AvatarFallback>
+            <AvatarFallback>
+              {user.full_name ? user.full_name.charAt(0) : 'u'}
+            </AvatarFallback>
           </Avatar>
         )}
         <div className="ml-4 w-full">

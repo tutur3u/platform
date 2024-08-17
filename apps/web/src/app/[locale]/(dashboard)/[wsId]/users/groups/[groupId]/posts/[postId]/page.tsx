@@ -1,12 +1,11 @@
 import GroupMemberForm from '../../form';
+import CardList from './card-list';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import CardList from './card-list';
-import React from 'react';
 
 interface SearchParams {
   q?: string;
@@ -26,19 +25,16 @@ interface Props {
 }
 
 export default async function HomeworkCheck({
-  params: {  wsId, groupId, postId },
+  params: { wsId, groupId, postId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
-  const group = await getData(wsId, groupId);
+  const post = await getPostData(wsId, postId);
+  const group = await getGroupData(wsId, groupId);
 
-  const { data: rawUsers } = await getUserData(
-    wsId,
-    groupId,
-    searchParams
-  );
+  const { data: rawUsers } = await getUserData(wsId, groupId, searchParams);
   const users = rawUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
@@ -53,12 +49,28 @@ export default async function HomeworkCheck({
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
-    <CardList wsId={wsId} postId={postId} group={group}  groupId={groupId} users= {users}></CardList>
+      <CardList wsId={wsId} post={post} users={users}></CardList>
     </div>
   );
 }
 
-async function getData(wsId: string, groupId: string) {
+async function getPostData(wsId: string, postId: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('user_group_posts')
+    .select('*')
+    .eq('ws_id', wsId)
+    .eq('id', postId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) notFound();
+
+  return data;
+}
+
+async function getGroupData(wsId: string, groupId: string) {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -71,7 +83,7 @@ async function getData(wsId: string, groupId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as WorkspaceUser;
+  return data;
 }
 
 async function getUserData(
@@ -127,4 +139,3 @@ async function getUserData(
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }
-

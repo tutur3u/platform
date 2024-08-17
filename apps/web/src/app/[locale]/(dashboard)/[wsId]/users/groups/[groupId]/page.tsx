@@ -58,7 +58,6 @@ export default async function UserGroupDetailsPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
-  
   return (
     <>
       <FeatureSummary
