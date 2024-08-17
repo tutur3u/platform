@@ -1,5 +1,3 @@
-'use client';
-
 import { DatePicker } from './date-picker';
 import { useEffect } from 'react';
 
@@ -28,11 +26,19 @@ export function DateRangePicker({
     <div className={className}>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Select start date</h2>
-        <DatePicker defaultValue={startDate} onValueChange={setStartDate} />
+        <DatePicker
+          defaultValue={startDate}
+          onValueChange={setStartDate}
+          toDate={endDate}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Select end date</h2>
-        <DatePicker defaultValue={endDate} onValueChange={setEndDate} />
+        <DatePicker
+          defaultValue={endDate}
+          onValueChange={setEndDate}
+          fromDate={startDate}
+        />
       </div>
     </div>
   );

@@ -1,5 +1,3 @@
-'use client';
-
 import { YearPicker } from './year-picker';
 import { useEffect } from 'react';
 
@@ -28,11 +26,19 @@ export function YearRangePicker({
     <div className={className}>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Select start year</h2>
-        <YearPicker defaultValue={startYear} onValueChange={setStartYear} />
+        <YearPicker
+          defaultValue={startYear}
+          onValueChange={setStartYear}
+          toDate={endYear}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Select end year</h2>
-        <YearPicker defaultValue={endYear} onValueChange={setEndYear} />
+        <YearPicker
+          defaultValue={endYear}
+          onValueChange={setEndYear}
+          fromDate={startYear}
+        />
       </div>
     </div>
   );

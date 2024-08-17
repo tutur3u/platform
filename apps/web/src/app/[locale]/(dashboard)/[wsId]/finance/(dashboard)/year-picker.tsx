@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Popover,
@@ -7,18 +5,36 @@ import {
   PopoverTrigger,
 } from '@repo/ui/components/ui/popover';
 import { cn } from '@repo/ui/lib/utils';
-import { add, eachYearOfInterval, format } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import {
+  add,
+  eachYearOfInterval,
+  format,
+  isAfter,
+  isBefore,
+  startOfYear,
+} from 'date-fns';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
   defaultValue?: Date;
+  fromDate?: Date;
+  toDate?: Date;
   onValueChange: (date?: Date) => void;
   className?: string;
 }
 
-export function YearPicker({ defaultValue, onValueChange, className }: Props) {
+export function YearPicker({
+  defaultValue,
+  fromDate,
+  toDate,
+  onValueChange,
+  className,
+}: Props) {
   const [open, setOpen] = useState(false);
   const today = new Date();
   const [previewDate, setPreviewDate] = useState(
@@ -35,14 +51,28 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
     previewDate.getFullYear() - (previewDate.getFullYear() % 10);
   const firstYearOfDecadeDate = new Date(firstYearOfDecade, 0, 1);
   const lastYearOfDecade = firstYearOfDecade + 9;
-  const lastYearOfDecadeDate = new Date(lastYearOfDecade, 11);
+  const lastYearOfDecadeDate = new Date(lastYearOfDecade, 11, 31);
   const years = eachYearOfInterval({
     start: firstYearOfDecadeDate,
     end: lastYearOfDecadeDate,
   });
 
-  const changeDecade = (decades: number) =>
-    setPreviewDate(add(firstYearOfDecadeDate, { years: decades * 10 }));
+  const changeDecade = (decades: number) => {
+    const newDate = add(firstYearOfDecadeDate, { years: decades * 10 });
+    if (
+      (!fromDate || !isBefore(newDate, startOfYear(fromDate))) &&
+      (!toDate || !isAfter(newDate, startOfYear(toDate)))
+    ) {
+      setPreviewDate(newDate);
+    }
+  };
+
+  const isYearDisabled = (year: Date) => {
+    return (
+      (fromDate && isBefore(year, startOfYear(fromDate))) ||
+      (toDate && isAfter(year, startOfYear(toDate)))
+    );
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,9 +98,16 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
         <div className="flex items-center justify-between pb-2">
           <Button
             variant="outline"
-            name="previous-year"
-            aria-label="Go to previous year"
+            name="previous-decade"
+            aria-label="Go to previous decade"
             onClick={() => changeDecade(-1)}
+            disabled={
+              fromDate &&
+              isBefore(
+                add(firstYearOfDecadeDate, { years: -10 }),
+                startOfYear(fromDate)
+              )
+            }
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -79,7 +116,7 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
             className="text-sm font-medium"
             aria-live="polite"
             role="presentation"
-            id="month-picker"
+            id="year-picker"
           >
             {format(firstYearOfDecadeDate, 'yyyy')} -{' '}
             {format(lastYearOfDecadeDate, 'yyyy')}
@@ -87,9 +124,16 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
 
           <Button
             variant="outline"
-            name="next-year"
-            aria-label="Go to next year"
+            name="next-decade"
+            aria-label="Go to next decade"
             onClick={() => changeDecade(1)}
+            disabled={
+              toDate &&
+              isAfter(
+                add(lastYearOfDecadeDate, { years: 1 }),
+                startOfYear(toDate)
+              )
+            }
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -98,7 +142,7 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
         <div
           className="grid w-full grid-cols-3 gap-2"
           role="grid"
-          aria-labelledby="month-picker"
+          aria-labelledby="year-picker"
         >
           {years.map((year) => (
             <div
@@ -114,6 +158,7 @@ export function YearPicker({ defaultValue, onValueChange, className }: Props) {
                 }
                 className="w-full"
                 onClick={() => onValueChange(year)}
+                disabled={isYearDisabled(year)}
               >
                 <time dateTime={format(year, 'yyyy-MM-dd')}>
                   {format(year, 'yyyy')}

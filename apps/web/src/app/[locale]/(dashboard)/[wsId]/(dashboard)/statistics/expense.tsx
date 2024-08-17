@@ -2,14 +2,14 @@ import { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import dayjs from 'dayjs';
+import dayjs, { OpUnitType } from 'dayjs';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function ExpenseStatistics({
   wsId,
-  searchParams: { startDate, endDate },
+  searchParams: { view, startDate, endDate },
 }: {
   wsId: string;
   searchParams: FinanceDashboardSearchParams;
@@ -20,8 +20,18 @@ export default async function ExpenseStatistics({
   const { data: expense } = enabled
     ? await supabase.rpc('get_workspace_wallets_expense', {
         ws_id: wsId,
-        start_date: startDate ? dayjs(startDate).toISOString() : undefined,
-        end_date: endDate ? dayjs(endDate).toISOString() : undefined,
+        start_date:
+          startDate && view
+            ? dayjs(startDate)
+                .startOf(view as OpUnitType)
+                .toISOString()
+            : undefined,
+        end_date:
+          endDate && view
+            ? dayjs(endDate)
+                .endOf(view as OpUnitType)
+                .toISOString()
+            : undefined,
       })
     : { data: 0 };
 

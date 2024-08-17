@@ -1,5 +1,3 @@
-'use client';
-
 import { MonthPicker } from './month-picker';
 import { useEffect } from 'react';
 
@@ -28,11 +26,19 @@ export function MonthRangePicker({
     <div className={className}>
       <div className="flex flex-col justify-end gap-2">
         <h2 className="text-lg font-semibold">Select start month</h2>
-        <MonthPicker defaultValue={startMonth} onValueChange={setStartMonth} />
+        <MonthPicker
+          defaultValue={startMonth}
+          onValueChange={setStartMonth}
+          toDate={endMonth}
+        />
       </div>
       <div className="flex flex-col justify-end gap-2">
         <h2 className="text-lg font-semibold">Select end month</h2>
-        <MonthPicker defaultValue={endMonth} onValueChange={setEndMonth} />
+        <MonthPicker
+          defaultValue={endMonth}
+          onValueChange={setEndMonth}
+          fromDate={startMonth}
+        />
       </div>
     </div>
   );

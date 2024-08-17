@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Popover,
@@ -7,18 +5,36 @@ import {
   PopoverTrigger,
 } from '@repo/ui/components/ui/popover';
 import { cn } from '@repo/ui/lib/utils';
-import { add, eachMonthOfInterval, format } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import {
+  add,
+  eachMonthOfInterval,
+  format,
+  isAfter,
+  isBefore,
+  startOfMonth,
+} from 'date-fns';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
   defaultValue?: Date;
+  fromDate?: Date;
+  toDate?: Date;
   onValueChange: (date?: Date) => void;
   className?: string;
 }
 
-export function MonthPicker({ defaultValue, onValueChange, className }: Props) {
+export function MonthPicker({
+  defaultValue,
+  fromDate,
+  toDate,
+  onValueChange,
+  className,
+}: Props) {
   const [open, setOpen] = useState(false);
   const today = new Date();
   const [previewDate, setPreviewDate] = useState(
@@ -37,8 +53,22 @@ export function MonthPicker({ defaultValue, onValueChange, className }: Props) {
     end: add(firstDayCurrentYear, { months: 11 }),
   });
 
-  const changeYear = (years: number) =>
-    setPreviewDate(add(firstDayCurrentYear, { years }));
+  const changeYear = (years: number) => {
+    const newDate = add(firstDayCurrentYear, { years });
+    if (
+      (!fromDate || !isBefore(newDate, startOfMonth(fromDate))) &&
+      (!toDate || !isAfter(newDate, startOfMonth(toDate)))
+    ) {
+      setPreviewDate(newDate);
+    }
+  };
+
+  const isMonthDisabled = (month: Date) => {
+    return (
+      (fromDate && isBefore(month, startOfMonth(fromDate))) ||
+      (toDate && isAfter(month, startOfMonth(toDate)))
+    );
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -66,6 +96,13 @@ export function MonthPicker({ defaultValue, onValueChange, className }: Props) {
             name="previous-year"
             aria-label="Go to previous year"
             onClick={() => changeYear(-1)}
+            disabled={
+              fromDate &&
+              isBefore(
+                add(firstDayCurrentYear, { years: -1 }),
+                startOfMonth(fromDate)
+              )
+            }
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -84,6 +121,13 @@ export function MonthPicker({ defaultValue, onValueChange, className }: Props) {
             name="next-year"
             aria-label="Go to next year"
             onClick={() => changeYear(1)}
+            disabled={
+              toDate &&
+              isAfter(
+                add(firstDayCurrentYear, { years: 1 }),
+                startOfMonth(toDate)
+              )
+            }
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -109,6 +153,7 @@ export function MonthPicker({ defaultValue, onValueChange, className }: Props) {
                 }
                 className="w-full"
                 onClick={() => onValueChange(month)}
+                disabled={isMonthDisabled(month)}
               >
                 <time dateTime={format(month, 'yyyy-MM-dd')}>
                   {format(month, 'MMMM')}

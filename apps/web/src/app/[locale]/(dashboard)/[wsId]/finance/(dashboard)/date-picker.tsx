@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@repo/ui/components/ui/button';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import {
@@ -15,10 +13,18 @@ import { useState } from 'react';
 interface Props {
   defaultValue?: Date;
   onValueChange: (date?: Date) => void;
+  fromDate?: Date;
+  toDate?: Date;
   className?: string;
 }
 
-export function DatePicker({ defaultValue, onValueChange, className }: Props) {
+export function DatePicker({
+  defaultValue,
+  onValueChange,
+  className,
+  fromDate,
+  toDate,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -50,6 +56,8 @@ export function DatePicker({ defaultValue, onValueChange, className }: Props) {
           onSubmit={(date) => {
             onValueChange(date);
           }}
+          fromDate={fromDate}
+          toDate={toDate}
           initialFocus
         />
       </PopoverContent>

@@ -2,13 +2,14 @@ import { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
+import dayjs, { OpUnitType } from 'dayjs';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function TransactionsStatistics({
   wsId,
-  searchParams: { startDate, endDate },
+  searchParams: { view, startDate, endDate },
 }: {
   wsId: string;
   searchParams: FinanceDashboardSearchParams;
@@ -25,8 +26,21 @@ export default async function TransactionsStatistics({
       })
       .eq('workspace_wallets.ws_id', wsId);
 
-    if (startDate) query.gte('created_at', startDate);
-    if (endDate) query.lte('created_at', endDate);
+    if (startDate && view)
+      query.gte(
+        'created_at',
+        dayjs(startDate)
+          .startOf(view as OpUnitType)
+          .toISOString()
+      );
+
+    if (endDate && view)
+      query.lte(
+        'created_at',
+        dayjs(endDate)
+          .endOf(view as OpUnitType)
+          .toISOString()
+      );
 
     return query;
   };
