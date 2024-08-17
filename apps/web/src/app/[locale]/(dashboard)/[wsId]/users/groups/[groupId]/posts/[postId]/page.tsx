@@ -4,6 +4,7 @@ import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -31,7 +32,7 @@ export default async function HomeworkCheck({
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
-  const post = await getPostData(wsId, postId);
+  const post = await getPostData(postId);
   const group = await getGroupData(wsId, groupId);
 
   const { data: rawUsers } = await getUserData(wsId, groupId, searchParams);
@@ -49,18 +50,18 @@ export default async function HomeworkCheck({
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
+      <Separator className="my-4" />
       <CardList wsId={wsId} post={post} users={users}></CardList>
     </div>
   );
 }
 
-async function getPostData(wsId: string, postId: string) {
+async function getPostData(postId: string) {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from('user_group_posts')
     .select('*')
-    .eq('ws_id', wsId)
     .eq('id', postId)
     .maybeSingle();
 

@@ -60,4 +60,17 @@ grant truncate on table "public"."user_group_post_checks" to "service_role";
 
 grant update on table "public"."user_group_post_checks" to "service_role";
 
+alter table "public"."user_group_post_checks" add column "notes" text;
 
+alter table "public"."user_group_post_checks" enable row level security;
+
+create policy "Enable all access for workspace users"
+on "public"."user_group_post_checks"
+as permissive
+for all
+to authenticated
+using (((EXISTS ( SELECT 1
+   FROM workspace_users wu
+  WHERE (wu.id = user_group_post_checks.user_id))) AND (EXISTS ( SELECT 1
+   FROM user_group_posts ugp
+  WHERE (ugp.id = user_group_post_checks.post_id)))));

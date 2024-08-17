@@ -17,7 +17,8 @@ export async function PUT(
       is_completed: data.is_completed,
       created_at: data.created_at,
     })
-    .eq('post_id', postId);
+    .eq('post_id', postId)
+    .eq('user_id', data.user_id);
 
   if (error) {
     console.error('Error updating user_group_post_checks:', error.message);
