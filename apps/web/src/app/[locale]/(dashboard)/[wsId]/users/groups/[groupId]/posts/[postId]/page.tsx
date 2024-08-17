@@ -53,7 +53,7 @@ export default async function HomeworkCheck({
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
-    <CardList wsId={wsId} postId={postId} groupId={groupId} users= {users}></CardList>
+    <CardList wsId={wsId} postId={postId} group={group}  groupId={groupId} users= {users}></CardList>
     </div>
   );
 }

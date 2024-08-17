@@ -9,7 +9,12 @@ export interface UserGroupPost {
   created_at?: string;
 }
 
-const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
+interface Props {
+  post: UserGroupPost;
+  isHomeworkDone: boolean;
+}
+
+const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : '';
@@ -51,6 +56,9 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <div className="text-center font-semibold uppercase">
                   Báo cáo tiến độ học tập theo ngày
                 </div>
+                <div className="text-lg text-red-500">
+                  {isHomeworkDone ? 'Đã làm bài tập' : 'Chưa làm bài tập'}
+                </div>
                 <div className="text-blue-500">{post.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
@@ -89,6 +97,9 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <div className="text-center font-semibold uppercase">
                   Daily learning progress report
                 </div>
+                <div className="text-lg text-red-500">
+                  {isHomeworkDone ? 'Homework done' : 'Homework not done'}
+                </div>
                 <div className="text-blue-500">{post.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
@@ -117,23 +128,6 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <span className="font-semibold">Content:</span> {post.content}
               </p>
             </div>
-            {/* <hr />
-            <div className="text-center px-6 py-4">
-              <div className="ml-2">
-                <p className="text-sm font-semibold text-gray-700">Tuturuuu</p>
-                <p className="text-xs text-gray-500">
-                  <a href="#" className="text-blue-500">
-                    Tuturuuu
-                  </a>{' '}
-                  makes everything connected.
-                </p>
-              </div>
-            </div> */}
-            {/* <div className="bg-gray-50 px-6 py-4">
-              <a href="#" className="text-xs text-gray-500">
-                Update your email settings
-              </a>
-            </div> */}
           </div>
         </div>
       </Tailwind>

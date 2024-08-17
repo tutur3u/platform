@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
@@ -5,13 +6,13 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Input } from '@repo/ui/components/ui/input';
 import { Check, Save, X } from 'lucide-react';
-// Ensure you import your Supabase client
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
+import useEmail from '@/hooks/useEmail';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
-
 interface Props {
   user: WorkspaceUser;
   wsId: string;
+  group: UserGroupPost;
   postId: string;
   groupId: string;
 }
@@ -23,12 +24,25 @@ interface Post {
   created_at: string;
   is_completed: boolean;
 }
+
+export interface UserGroupPost {
+  id?: string;
+  ws_id?:string;
+  name?: string;
+  created_at?: string;
+  archived?: string;
+  ending_data?: string;
+  notes?: string;
+  sessions?: string;
+  starting_data?: string;
+}
+
 interface ButtonState {
   isClicked: boolean;
   saveType: string;
 }
 
-function UserCard({ user, wsId, postId, groupId }: Props) {
+function UserCard({ user, wsId,group, postId, groupId }: Props) {
   const [buttonState, setButtonState] = useState<ButtonState>({
     isClicked: false,
     saveType: '',
@@ -36,7 +50,7 @@ function UserCard({ user, wsId, postId, groupId }: Props) {
   const [notes, setNotes] = useState<string | null>('');
   const [isCompleted, setIsCompleted] = useState<boolean | null>(null);
   const [isExist, setIsExist] = useState<Post | null>(null);
-
+  const { sendEmail, loading, error, success } = useEmail();
   const supabase = createClient();
 
   useEffect(() => {
@@ -59,13 +73,14 @@ function UserCard({ user, wsId, postId, groupId }: Props) {
     fetchData();
   }, [supabase, user.id, postId]);
 
+
   async function handleSave() {
-    const method = isCompleted !== null ? 'PUT' : 'POST';
+    const method = isExist ? 'PUT' : 'POST';
     const endpoint =
-      isCompleted !== null
+      isExist
         ? `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}`
         : `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/`;
-    console.log('helllo notes ' + notes);
+
     const response = await fetch(endpoint, {
       method,
       headers: {
@@ -99,28 +114,40 @@ function UserCard({ user, wsId, postId, groupId }: Props) {
     });
   }
 
+  const handleSendEmail = async () => {
+    console.log("hello sned email");
+    if (group) {
+      await sendEmail({
+        recipients: ['phathuynh@tuturuuu.com'],
+        subject: `Easy Center | Báo cáo tiến độ - ${group.name}`,
+        component: <PostEmailTemplate isHomeworkDone={isCompleted} post={group} />,
+      });
+    }
+  };
+
   return (
     <Card className="w-full max-w-lg rounded-lg p-4 shadow-md">
       <div className="flex items-center">
-        {user.avatar_url && (
+        {user.avatar_url ? (
           <Image
             src={user.avatar_url}
-            width={12}
-            height={12}
+            width={48}
+            height={48}
             alt="User avatar"
             className="h-12 w-12 rounded-full object-cover"
           />
-        )}
-        {!user.avatar_url && (
+        ) : (
           <Avatar className="h-12 w-12 rounded-full object-cover">
-            <AvatarFallback>T</AvatarFallback>
+            <AvatarFallback>{user.full_name?  user.full_name.charAt(0) : 'u'}</AvatarFallback>
           </Avatar>
         )}
         <div className="ml-4 w-full">
           <h3 className="text-foreground text-lg font-semibold text-white">
             {user.full_name}
           </h3>
-          <p className="text-foreground text-sm">{user.phone}</p>
+          <p className="text-foreground text-sm">
+            {user.phone ? user.phone : 'No phone'}
+          </p>
           <Input
             placeholder="Notes"
             value={notes || ''}
@@ -130,6 +157,15 @@ function UserCard({ user, wsId, postId, groupId }: Props) {
         </div>
       </div>
       <div className="mt-4 flex justify-end">
+        <Button
+          onClick={handleSendEmail}
+          disabled={loading}
+          className="rounded-m mr-[200px] px-4 py-1 hover:bg-green-600"
+        >
+          Send Email
+        </Button>
+        {error && <p>Error: {error}</p>}
+        {success && <p>Email sent successfully!</p>}
         {buttonState.isClicked && (
           <Button className="mr-2" onClick={handleSave}>
             <Save />
@@ -140,14 +176,14 @@ function UserCard({ user, wsId, postId, groupId }: Props) {
           className="mr-2 rounded-md bg-red-500 px-4 py-1 text-white hover:bg-red-600"
           disabled={isCompleted !== null && !isCompleted}
         >
-          <X></X>
+          <X />
         </Button>
         <Button
           onClick={() => handleClick('approve')}
           className="rounded-md bg-green-500 px-4 py-1 text-white hover:bg-green-600"
           disabled={isCompleted !== null && isCompleted}
         >
-          <Check></Check>
+          <Check />
         </Button>
       </div>
     </Card>
