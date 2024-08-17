@@ -2195,6 +2195,59 @@ export type Database = {
           },
         ];
       };
+      user_group_post_checks: {
+        Row: {
+          created_at: string;
+          is_completed: boolean;
+          notes: string | null;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          is_completed: boolean;
+          notes?: string | null;
+          post_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          is_completed?: boolean;
+          notes?: string | null;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_group_posts: {
         Row: {
           content: string | null;

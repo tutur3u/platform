@@ -763,7 +763,9 @@
     "create": "Tạo nhóm",
     "edit": "Sửa nhóm",
     "create_description": "Thêm nhóm mới",
-    "edit_description": "Sửa nhóm hiện có"
+    "edit_description": "Sửa nhóm hiện có",
+    "add_user": "Thêm người dùng",
+    "add_user_description": "Thêm người dùng vào nhóm"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
@@ -1308,7 +1310,8 @@
     "test_generation": "Tạo test case tự động",
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
-    "pipeline": "Luồng xử lý"
+    "pipeline": "Luồng xử lý",
+    "pipelines": "Luồng xử lý"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",
@@ -1328,5 +1331,14 @@
     "monthly_total_from_12_recent_months": "Tổng số token sử dụng hàng tháng trong 12 tháng gần đây",
     "prompt_tokens": "Token lệnh nhắc",
     "completion_tokens": "Token hoàn thành"
+  },
+  "workspace-mailbox": {
+    "overview": "Tổng quan",
+    "emails": "Lịch sử gửi thư",
+    "history": "Lịch sử",
+    "send": "Gửi thư"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Địa chỉ đích"
   }
 }

@@ -34,16 +34,16 @@
     "eslint": "8.57.0",
     "@repo/eslint-config": "workspace:*",
     "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.5",
+    "prettier-plugin-tailwindcss": "^0.6.6",
     "@repo/typescript-config": "workspace:*",
-    "turbo": "^2.0.11",
+    "turbo": "^2.0.14",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@9.6.0",
+  "packageManager": "pnpm@9.7.1",
   "workspaces": {
     "packages": [
       "apps/*",

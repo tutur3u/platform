@@ -763,7 +763,9 @@
     "create": "Create group",
     "edit": "Edit group",
     "create_description": "Create a new user group",
-    "edit_description": "Edit an existing user group"
+    "edit_description": "Edit an existing user group",
+    "add_user": "Add users",
+    "add_user_description": "Add users to this group"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",
@@ -775,7 +777,8 @@
     "create": "Create Tag",
     "edit": "Edit Tag",
     "create_description": "Create a new group tag",
-    "edit_description": "Edit an existing group tag"
+    "edit_description": "Edit an existing group tag",
+    "enable_custom_color": "Enable custom color"
   },
   "ws-user-reports": {
     "singular": "User Report",
@@ -1307,7 +1310,8 @@
     "test_generation": "Test Generation",
     "prompts": "Prompts",
     "workflows": "Workflows",
-    "pipelines": "Pipelines"
+    "pipelines": "Pipelines",
+    "pipeline": "Pipeline"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",
@@ -1327,5 +1331,14 @@
     "monthly_total_from_12_recent_months": "Monthly total token from 12 most recent months",
     "prompt_tokens": "Prompt tokens",
     "completion_tokens": "Completion tokens"
+  },
+  "workspace-mailbox": {
+    "overview": "Overview",
+    "emails": "Emails",
+    "history": "History",
+    "send": "Send email"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Destination Addresses"
   }
 }

@@ -1,13 +1,34 @@
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
-import { NavLink, Navigation } from '@/components/navigation';
+import { Structure } from './structure';
+import { NavLink } from '@/components/navigation';
+import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getSecrets,
   verifySecret,
 } from '@/lib/workspace-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  Archive,
+  Banknote,
+  Calendar,
+  ChartArea,
+  CheckCheck,
+  Cog,
+  Gamepad,
+  HardDrive,
+  HeartPulse,
+  Mail,
+  MessageCircleIcon,
+  NotebookPen,
+  Presentation,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { ReactNode } from 'react';
+import { cookies } from 'next/headers';
+import { ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
   params: {
@@ -58,104 +79,112 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('sidebar_tabs.x'),
-      href: `/${wsId}/x`,
-      disabled: !verifySecret('ENABLE_X', 'true', secrets),
-      requireRootMember: true,
-      requireRootWorkspace: true,
-    },
-    {
-      name: t('sidebar_tabs.chat'),
+      title: t('sidebar_tabs.chat'),
       href: `/${wsId}/chat`,
+      icon: <MessageCircleIcon className="h-4 w-4" />,
       forceRefresh: true,
       disabled:
         !verifySecret('ENABLE_CHAT', 'true', secrets) ||
         !permissions.includes('ai_chat'),
     },
     {
-      name: t('common.dashboard'),
+      title: t('common.dashboard'),
       href: `/${wsId}`,
+      icon: <ChartArea className="h-4 w-4" />,
       matchExact: true,
     },
     {
-      name: t('sidebar_tabs.ai'),
+      title: t('sidebar_tabs.ai'),
       href: `/${wsId}/ai`,
+      icon: <Sparkles className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
         !permissions.includes('ai_lab'),
     },
     {
-      name: t('sidebar_tabs.blackbox'),
+      title: t('sidebar_tabs.blackbox'),
       href: `/${wsId}/blackbox`,
+      icon: <Gamepad className="h-4 w-4" />,
       disabled: true,
     },
     {
-      name: t('sidebar_tabs.slides'),
+      title: t('sidebar_tabs.slides'),
       href: `/${wsId}/slides`,
+      icon: <Presentation className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
     },
     {
-      name: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox`,
+      title: t('sidebar_tabs.mailbox'),
+      href: `/${wsId}/mailbox/send`,
+      icon: <Mail className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_MAILBOX', 'true', secrets),
     },
     {
-      name: t('sidebar_tabs.calendar'),
+      title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
+      icon: <Calendar className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_CALENDAR', 'true', secrets) ||
         !permissions.includes('manage_calendar'),
     },
     {
-      name: t('sidebar_tabs.projects'),
+      title: t('sidebar_tabs.projects'),
       href: `/${wsId}/projects`,
+      icon: <CheckCheck className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_PROJECTS', 'true', secrets) ||
         !permissions.includes('manage_projects'),
     },
     {
-      name: t('sidebar_tabs.documents'),
+      title: t('sidebar_tabs.documents'),
       href: `/${wsId}/documents`,
+      icon: <NotebookPen className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DOCS', 'true', secrets) ||
         !permissions.includes('manage_documents'),
     },
     {
-      name: t('sidebar_tabs.drive'),
+      title: t('sidebar_tabs.drive'),
       href: `/${wsId}/drive`,
+      icon: <HardDrive className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DRIVE', 'true', secrets) ||
         !permissions.includes('manage_drive'),
     },
     {
-      name: t('sidebar_tabs.users'),
+      title: t('sidebar_tabs.users'),
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
+      icon: <Users className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_USERS', 'true', secrets) ||
         !permissions.includes('manage_users'),
     },
     {
-      name: t('sidebar_tabs.inventory'),
+      title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
+      icon: <Archive className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_INVENTORY', 'true', secrets) ||
         !permissions.includes('manage_inventory'),
     },
     {
-      name: t('sidebar_tabs.healthcare'),
+      title: t('sidebar_tabs.healthcare'),
       href: `/${wsId}/healthcare`,
+      icon: <HeartPulse className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_HEALTHCARE', 'true', secrets),
     },
     {
-      name: t('sidebar_tabs.finance'),
+      title: t('sidebar_tabs.finance'),
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
+      icon: <Banknote className="h-4 w-4" />,
       disabled: !permissions.includes('manage_finance'),
     },
     {
-      name: t('common.settings'),
+      title: t('common.settings'),
       href: `/${wsId}/settings`,
+      icon: <Cog className="h-4 w-4" />,
       aliases: [
         `/${wsId}/members`,
         `/${wsId}/teams`,
@@ -167,16 +196,45 @@ export default async function Layout({
     },
   ];
 
+  const user = await getCurrentUser();
+
+  const layout = cookies().get('react-resizable-panels:layout:mail');
+  const collapsed = cookies().get('react-resizable-panels:collapsed');
+
+  const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
+  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
+
   return (
     <>
-      <div className="px-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
-        <div className="scrollbar-none flex gap-1 overflow-x-auto">
-          <Navigation currentWsId={wsId} navLinks={navLinks} />
-        </div>
-      </div>
-      <Separator className="opacity-50" />
+      <Structure
+        wsId={wsId}
+        user={user}
+        defaultLayout={defaultLayout}
+        defaultCollapsed={defaultCollapsed}
+        navCollapsedSize={4}
+        links={navLinks}
+        actions={
+          <Suspense
+            fallback={
+              <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            }
+          >
+            <NavbarActions />
+          </Suspense>
+        }
+        userPopover={
+          <Suspense
+            fallback={
+              <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            }
+          >
+            <UserNav hideMetadata />
+          </Suspense>
+        }
+      >
+        {children}
+      </Structure>
 
-      <div className="p-4 pt-2 md:px-8 lg:px-16 xl:px-32">{children}</div>
       {verifySecret('ENABLE_CHAT', 'true', secrets) && (
         <FleetingNavigator wsId={wsId} />
       )}
