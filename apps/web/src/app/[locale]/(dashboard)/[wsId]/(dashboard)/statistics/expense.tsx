@@ -1,17 +1,27 @@
+import { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
+import dayjs from 'dayjs';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
-export default async function ExpenseStatistics({ wsId }: { wsId: string }) {
+export default async function ExpenseStatistics({
+  wsId,
+  searchParams: { startDate, endDate },
+}: {
+  wsId: string;
+  searchParams: FinanceDashboardSearchParams;
+}) {
   const supabase = createClient();
   const t = await getTranslations();
 
   const { data: expense } = enabled
     ? await supabase.rpc('get_workspace_wallets_expense', {
         ws_id: wsId,
+        start_date: startDate ? dayjs(startDate).toISOString() : undefined,
+        end_date: endDate ? dayjs(endDate).toISOString() : undefined,
       })
     : { data: 0 };
 

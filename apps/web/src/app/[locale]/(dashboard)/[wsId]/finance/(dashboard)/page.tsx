@@ -14,41 +14,40 @@ import { createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Suspense } from 'react';
 
+export interface FinanceDashboardSearchParams {
+  view?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 interface Props {
   params: {
     wsId: string;
   };
-  searchParams: {
-    view?: string;
-    startDate?: string;
-    endDate?: string;
-    startMonth?: string;
-    endMonth?: string;
-    startYear?: string;
-    endYear?: string;
-  };
+  searchParams: FinanceDashboardSearchParams;
 }
 
 export default async function WorkspaceFinancePage({
   params: { wsId },
-  searchParams: _,
+  searchParams,
 }: Props) {
   const { data: dailyData } = await getDailyData(wsId);
   const { data: monthlyData } = await getMonthlyData(wsId);
+
   return (
     <>
       <Filter className="mb-4 flex items-end gap-4 p-2" />
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-          <TotalBalanceStatistics wsId={wsId} />
+          <TotalBalanceStatistics wsId={wsId} searchParams={searchParams} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <IncomeStatistics wsId={wsId} />
+          <IncomeStatistics wsId={wsId} searchParams={searchParams} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <ExpenseStatistics wsId={wsId} />
+          <ExpenseStatistics wsId={wsId} searchParams={searchParams} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
@@ -60,11 +59,11 @@ export default async function WorkspaceFinancePage({
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionsStatistics wsId={wsId} />
+          <TransactionsStatistics wsId={wsId} searchParams={searchParams} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <InvoicesStatistics wsId={wsId} />
+          <InvoicesStatistics wsId={wsId} searchParams={searchParams} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>

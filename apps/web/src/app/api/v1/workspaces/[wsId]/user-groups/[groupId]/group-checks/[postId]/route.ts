@@ -8,8 +8,6 @@ export async function PUT(
   const supabase = createClient();
   const data = await req.json();
 
-  console.log('Data received:', data);
-
   const { error } = await supabase
     .from('user_group_post_checks')
     .update({

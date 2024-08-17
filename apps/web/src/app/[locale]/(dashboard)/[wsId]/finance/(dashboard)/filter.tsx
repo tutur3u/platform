@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { format } from 'date-fns';
+import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -25,36 +26,21 @@ export function Filter({ className }: { className: string }) {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
-  const [startMonth, setStartMonth] = useState<Date | undefined>(undefined);
-  const [endMonth, setEndMonth] = useState<Date | undefined>(undefined);
-
-  const [startYear, setStartYear] = useState<Date | undefined>(undefined);
-  const [endYear, setEndYear] = useState<Date | undefined>(undefined);
-
   useEffect(() => {
     const viewParam = searchParams.get('view');
-    if (viewParam === 'date' || viewParam === 'month' || viewParam === 'year') {
-      setView(viewParam);
-    } else {
-      setView('date');
-    }
-  }, []);
+    const view =
+      viewParam === 'date' || viewParam === 'month' || viewParam === 'year'
+        ? viewParam
+        : 'date';
+
+    setView(view);
+  }, [searchParams.get('view')]);
 
   useEffect(() => {
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
     setStartDate(startDateParam ? new Date(startDateParam) : undefined);
     setEndDate(endDateParam ? new Date(endDateParam) : undefined);
-
-    const startMonthParam = searchParams.get('startMonth');
-    const endMonthParam = searchParams.get('endMonth');
-    setStartMonth(startMonthParam ? new Date(startMonthParam) : undefined);
-    setEndMonth(endMonthParam ? new Date(endMonthParam) : undefined);
-
-    const startYearParam = searchParams.get('startYear');
-    const endYearParam = searchParams.get('endYear');
-    setStartYear(startYearParam ? new Date(startYearParam) : undefined);
-    setEndYear(endYearParam ? new Date(endYearParam) : undefined);
   }, [searchParams]);
 
   const resetFilter = () => {
@@ -63,24 +49,24 @@ export function Filter({ className }: { className: string }) {
 
   const applyFilter = () => {
     const params = new URLSearchParams();
+    params.set('view', view);
 
-    if (view === 'date') {
-      params.set('view', view);
-      params.set('startDate', startDate ? format(startDate, 'yyyy-MM-dd') : '');
-      params.set('endDate', endDate ? format(endDate, 'yyyy-MM-dd') : '');
-    }
-    if (view === 'month') {
-      params.set('view', view);
-      params.set('startMonth', startMonth ? format(startMonth, 'yyyy-MM') : '');
-      params.set('endMonth', endMonth ? format(endMonth, 'yyyy-MM') : '');
-    }
-    if (view === 'year') {
-      params.set('view', view);
-      params.set('startYear', startYear ? format(startYear, 'yyyy') : '');
-      params.set('endYear', endYear ? format(endYear, 'yyyy') : '');
-    }
+    if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'));
+    if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'));
 
     router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const isDirty = () => {
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+
+    return (
+      (startDate && format(startDate, 'yyyy-MM-dd') !== startDateParam) ||
+      (endDate && format(endDate, 'yyyy-MM-dd') !== endDateParam) ||
+      (!startDate && startDateParam) ||
+      (!endDate && endDateParam)
+    );
   };
 
   return (
@@ -111,20 +97,29 @@ export function Filter({ className }: { className: string }) {
 
       {view === 'month' && (
         <MonthRangePicker
-          startMonth={startMonth}
-          endMonth={endMonth}
-          setStartMonth={setStartMonth}
-          setEndMonth={setEndMonth}
+          // date that is the first day of the month
+          startMonth={
+            startDate ? dayjs(startDate).startOf('month').toDate() : undefined
+          }
+          endMonth={
+            endDate ? dayjs(endDate).startOf('month').toDate() : undefined
+          }
+          setStartMonth={setStartDate}
+          setEndMonth={setEndDate}
           className="flex gap-4"
         />
       )}
 
       {view === 'year' && (
         <YearRangePicker
-          startYear={startYear}
-          endYear={endYear}
-          setStartYear={setStartYear}
-          setEndYear={setEndYear}
+          startYear={
+            startDate ? dayjs(startDate).startOf('year').toDate() : undefined
+          }
+          endYear={
+            endDate ? dayjs(endDate).startOf('year').toDate() : undefined
+          }
+          setStartYear={setStartDate}
+          setEndYear={setEndDate}
           className="flex gap-4"
         />
       )}
@@ -133,6 +128,7 @@ export function Filter({ className }: { className: string }) {
         variant="outline"
         className="md:min-w-20 lg:min-w-24"
         onClick={resetFilter}
+        disabled={searchParams.toString() === ''}
       >
         Reset
       </Button>
@@ -140,6 +136,7 @@ export function Filter({ className }: { className: string }) {
         variant="default"
         className="md:min-w-20 lg:min-w-24"
         onClick={applyFilter}
+        disabled={!isDirty()}
       >
         Apply
       </Button>
