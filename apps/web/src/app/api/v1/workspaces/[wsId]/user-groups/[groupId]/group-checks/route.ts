@@ -30,15 +30,16 @@ export async function PUT(req: Request, { params: { postId } }: { params: { post
         .eq('id', postId);
 
     if (error) {
-        console.log(error);
+        console.error('Error updating user_group_post_checks:', error.message);
         return NextResponse.json(
-            { message: 'Error updating user_group_post_checks' },
+            { message: 'Error updating user_group_post_checks', details: error.message },
             { status: 500 }
         );
     }
 
     return NextResponse.json({ message: 'Data updated successfully' });
 }
+
 
 export async function DELETE(req: Request, { params: { postId } }: { params: { postId: string } }) {
     const supabase = createClient();
