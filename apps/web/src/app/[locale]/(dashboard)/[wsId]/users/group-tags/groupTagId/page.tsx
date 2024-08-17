@@ -137,7 +137,7 @@ async function getGroupData(
 
   const queryBuilder = supabase
     .rpc(
-      'get_user_groups',
+      'get_workspace_user_groups',
       {
         _ws_id: wsId,
         included_tags: [tagId],
