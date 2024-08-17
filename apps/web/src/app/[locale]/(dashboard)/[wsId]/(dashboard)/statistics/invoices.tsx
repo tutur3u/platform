@@ -9,10 +9,10 @@ const enabled = true;
 
 export default async function InvoicesStatistics({
   wsId,
-  searchParams: { view, startDate, endDate },
+  searchParams: { view, startDate, endDate } = {},
 }: {
   wsId: string;
-  searchParams: FinanceDashboardSearchParams;
+  searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = createClient();
   const t = await getTranslations();
