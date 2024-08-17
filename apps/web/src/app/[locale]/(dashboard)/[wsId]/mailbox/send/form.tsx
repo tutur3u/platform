@@ -10,7 +10,7 @@ const PostEmailForm = ({ post }: { post: UserGroupPost }) => {
 
   const handleSendEmail = async () => {
     await sendEmail({
-      recipients: ['vohoangphuc@tuturuuu.com'],
+      recipients: ['tanphat.huynh23@gmail.com'],
       subject: `Easy Center | Báo cáo tiến độ - ${post.group_name}`,
       component: <PostEmailTemplate post={post} />,
     });

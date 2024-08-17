@@ -78,7 +78,6 @@ export default async function UserGroupDetailsPage({
         </div> */}
       {/* </div> */}
       <Separator className="my-4" />
-
       <CustomDataTable
         data={users}
         namespace="user-data-table"
