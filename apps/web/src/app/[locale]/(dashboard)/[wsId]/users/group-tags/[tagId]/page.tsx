@@ -1,4 +1,3 @@
-import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
@@ -11,6 +10,7 @@ import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getUserGroupColumns } from '../../groups/columns';
 
 interface SearchParams {
   q?: string;
@@ -65,19 +65,19 @@ export default async function GroupTagDetailsPage({
 
       <CustomDataTable
         data={userGroups}
-        namespace="user-data-table"
-        columnGenerator={getUserColumns}
+        namespace="user-group-data-table"
+        columnGenerator={getUserGroupColumns}
         extraData={{ wsId, tagId }}
         count={userGroupsCount}
         filters={[
           <UserDatabaseFilter
             key="excluded-user-groups-filter"
             tag="excludedGroups"
-            title={t('user-data-table.excluded_groups')}
+            title={t('user-group-data-table.excluded_tags')}
             icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
             options={excludedUserGroups.map((group) => ({
               label: group.name || 'No name',
-              value: group.id,
+              value: group.id as string,
               count: group.amount,
             }))}
           />,
