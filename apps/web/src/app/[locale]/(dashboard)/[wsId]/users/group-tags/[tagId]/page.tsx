@@ -67,7 +67,6 @@ export default async function GroupTagDetailsPage({
         data={userGroups}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
-        extraColumns={extraFields}
         extraData={{ wsId, tagId }}
         count={userGroupsCount}
         filters={[
