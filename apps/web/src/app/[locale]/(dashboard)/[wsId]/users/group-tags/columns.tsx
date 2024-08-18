@@ -1,16 +1,16 @@
 'use client';
 
 import { ApiKeyRowActions } from './row-actions';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 
 export const groupTagColumns = (
   t: any,
   namespace: string
-): ColumnDef<WorkspaceApiKey>[] => [
+): ColumnDef<UserGroupTag>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

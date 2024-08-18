@@ -1,7 +1,7 @@
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -88,5 +88,5 @@ async function getGroupTags(
       group_ids: group_ids.map((group) => group.group_id),
     })),
     count,
-  } as { data: WorkspaceApiKey[]; count: number };
+  } as { data: UserGroupTag[]; count: number };
 }
